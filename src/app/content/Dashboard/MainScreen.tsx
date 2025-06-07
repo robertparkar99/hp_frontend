@@ -31,59 +31,50 @@ const MainScreen: React.FC = () => {
   }, []);
 
   const renderComponent = () => {
-  if (!selectedMenu) return null;
-  // alert(selectedMenu.access);
-    switch (selectedMenu) {
-      case selectedMenu:
-        const DynamicComponent = lazy(() => {
-          const tryImport = (attempt: number): Promise<{ default: React.ComponentType<any> }> => {
-            let importPath = '';
-            console.log('attempt ', attempt);
-            const formattedMenu = selectedMenu.menu.replace(/ /g, '');
-            
-            switch (attempt) {
-              case 1:
-                importPath = `@/app/content/${selectedMenu.access}`;
-                console.log('case ', importPath);
-                break;
-              case 2:
-                importPath = `@/app/content/Libraries/${formattedMenu}`;
-                console.log('case ', importPath);
-                break;
-              default:
-                return Promise.resolve({
-                  default: () => <div>{selectedMenu.menu} component not found (404).</div>,
-                });
+    if (!selectedMenu) return null;
+
+    const DynamicComponent = lazy(() => {
+      const tryImport = (attempt: number): Promise<{ default: React.ComponentType<any> }> => {
+        let importPath = '';
+        console.log('attempt ', attempt);
+        const formattedMenu = selectedMenu.menu.replace(/ /g, '');
+        
+        switch (attempt) {
+          case 1:
+            importPath = `../Libraries/skillLibrary`;
+            console.log('case ', importPath);
+            break;
+          case 2:
+            importPath = `@/app/content/Libraries/skillLibrary`;
+            console.log('case ', importPath);
+            break;
+          default:
+            return Promise.resolve({
+              default: () => <div>{selectedMenu.menu} component not found (404).</div>,
+            });
+        }
+
+        return import(importPath)
+          .then((module) => {
+            if (!module.default) {
+              return tryImport(attempt + 1);
             }
+            return { default: module.default };
+          })
+          .catch((error) => {
+            console.error('Import error:', error);
+            return tryImport(attempt + 1);
+          });
+      };
 
-            return import(importPath)
-              .then((module) => {
-                if (!module.default) {
-                  return tryImport(attempt + 1);
-                }
-                return { default: module.default };
-              })
-              .catch((error) => {
-                console.error('Import error:', error);
-                return tryImport(attempt + 1);
-              });
-          };
+      return tryImport(1);
+    });
 
-          return tryImport(1);
-        });
-
-        return (
-          <Suspense fallback={<div>Loading...</div>}>
-            <DynamicComponent />
-          </Suspense>
-        );
-      default:
-        return (
-          <h2 className="text-2xl font-semibold text-gray-500">
-            {selectedMenu.menu} page is under construction.
-          </h2>
-        );
-    }
+    return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <DynamicComponent />
+      </Suspense>
+    );
   };
 
   if (!selectedMenu) {
