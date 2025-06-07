@@ -36,29 +36,19 @@ const MainScreen: React.FC = () => {
     switch (selectedMenu) {
       case selectedMenu:
         const DynamicComponent = lazy(() => {
-          // Helper function to try imports based on attempt number
           const tryImport = (attempt: number): Promise<{ default: React.ComponentType<any> }> => {
             let importPath = '';
-            console.log('attempt ',attempt);
+            console.log('attempt ', attempt);
             switch (attempt) {
               case 1:
-                importPath = `${selectedMenu.access}`;
-                console.log('case ',importPath);
+                importPath = `@/app/content/${selectedMenu.access}`;
+                console.log('case ', importPath);
                 break;
               case 2:
-                importPath = `./${selectedMenu.access}`;
-                console.log('case ',importPath);
-                break;
-              case 3:
-                importPath = `../${selectedMenu.access}`;
-                console.log('case ',importPath);
-                break;
-              case 4:
-                importPath = `./../${selectedMenu.access}`;
-                console.log('case ',importPath);
+                importPath = `@/app/content/Libraries/${selectedMenu.menu}`;
+                console.log('case ', importPath);
                 break;
               default:
-                // All attempts failed, return fallback component
                 return Promise.resolve({
                   default: () => <div>{selectedMenu.menu} component not found (404).</div>,
                 });
@@ -67,18 +57,15 @@ const MainScreen: React.FC = () => {
             return import(importPath)
               .then((module) => {
                 if (!module.default) {
-                  // no default export, try next attempt
                   return tryImport(attempt + 1);
                 }
                 return { default: module.default };
               })
               .catch(() => {
-                // import failed, try next attempt
                 return tryImport(attempt + 1);
               });
           };
 
-          // Start with attempt 1
           return tryImport(1);
         });
 
