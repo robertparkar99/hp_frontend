@@ -39,7 +39,7 @@ const MainScreen: React.FC = () => {
           // Helper function to try imports based on attempt number
           const tryImport = (attempt: number): Promise<{ default: React.ComponentType<any> }> => {
             let importPath = '';
-
+            console.log('attempt ',attempt);
             switch (attempt) {
               case 1:
                 importPath = `${selectedMenu.access}`;
