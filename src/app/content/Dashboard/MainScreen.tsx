@@ -37,15 +37,16 @@ const MainScreen: React.FC = () => {
       const tryImport = (attempt: number): Promise<{ default: React.ComponentType<any> }> => {
         let importPath = '';
         console.log('attempt ', attempt);
-        const formattedMenu = selectedMenu.menu.replace(/ /g, '');
         
         switch (attempt) {
           case 1:
-            importPath = `../Libraries/skillLibrary`;
+            // Try relative path from current location (MainScreen.tsx is in Dashboard folder)
+            importPath = '../Libraries/skillLibrary';
             console.log('case ', importPath);
             break;
           case 2:
-            importPath = `@/app/content/Libraries/skillLibrary`;
+            // Try alternative relative path
+            importPath = '../../content/Libraries/skillLibrary';
             console.log('case ', importPath);
             break;
           default:
