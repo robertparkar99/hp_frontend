@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { StatGrid } from "./StatGrid";
 import { Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
-
+import SkillLibrary from "../Libraries/skillLibrary";
 type Props = {
   componentName: string;
 };
@@ -31,51 +31,71 @@ const MainScreen: React.FC = () => {
   }, []);
 
   const renderComponent = () => {
-    if (!selectedMenu) return null;
-
-    const DynamicComponent = lazy(() => {
-      const tryImport = (attempt: number): Promise<{ default: React.ComponentType<any> }> => {
-        let importPath = '';
-        console.log('attempt ', attempt);
-        
-        switch (attempt) {
-          case 1:
-            // Try relative path from Dashboard folder to Libraries folder
-            importPath = '../Libraries/skillLibrary';
-            console.log('case ', importPath);
-            break;
-          case 2:
-            // Try absolute path from src/app
-            importPath = '@/app/content/Libraries/skillLibrary';
-            console.log('case ', importPath);
-            break;
-          default:
-            return Promise.resolve({
-              default: () => <div>{selectedMenu.menu} component not found (404).</div>,
-            });
-        }
-
-        return import(importPath)
-          .then((module) => {
-            if (!module.default) {
-              return tryImport(attempt + 1);
+  if (!selectedMenu) return null;
+  // alert(selectedMenu.access);
+    switch (selectedMenu) {
+      case selectedMenu:
+        const DynamicComponent = lazy(() => {
+          // Helper function to try imports based on attempt number
+          const tryImport = (attempt: number): Promise<{ default: React.ComponentType<any> }> => {
+            let importPath = '';
+            console.log('attempt ',attempt);
+            switch (attempt) {
+              case 1:
+                importPath = `${selectedMenu.access}`;
+                console.log('case ',importPath);
+                break;
+              case 2:
+                importPath = `./${selectedMenu.access}`;
+                console.log('case ',importPath);
+                break;
+              case 3:
+                importPath = `../${selectedMenu.access}`;
+                console.log('case ',importPath);
+                break;
+              case 4:
+                importPath = `./../${selectedMenu.access}`;
+                console.log('case ',importPath);
+                break;
+              default:
+                // All attempts failed, return fallback component
+                importPath = '../Libraries/skillLibrary';
+                break;
+                // return Promise.resolve({
+                //   default: () => <div>{selectedMenu.menu} component not found (404).</div>,
+                // });
             }
-            return { default: module.default };
-          })
-          .catch((error) => {
-            console.error('Import error:', error);
-            return tryImport(attempt + 1);
-          });
-      };
 
-      return tryImport(1);
-    });
+            return import(importPath)
+              .then((module) => {
+                if (!module.default) {
+                  // no default export, try next attempt
+                  return tryImport(attempt + 1);
+                }
+                return { default: module.default };
+              })
+              .catch(() => {
+                // import failed, try next attempt
+                return tryImport(attempt + 1);
+              });
+          };
 
-    return (
-      <Suspense fallback={<div>Loading...</div>}>
-        <DynamicComponent />
-      </Suspense>
-    );
+          // Start with attempt 1
+          return tryImport(1);
+        });
+
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <DynamicComponent />
+          </Suspense>
+        );
+      default:
+        return (
+          <h2 className="text-2xl font-semibold text-gray-500">
+            {selectedMenu.menu} page is under construction.
+          </h2>
+        );
+    }
   };
 
   if (!selectedMenu) {
