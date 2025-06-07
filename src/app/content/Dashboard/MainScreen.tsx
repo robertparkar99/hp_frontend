@@ -43,15 +43,19 @@ const MainScreen: React.FC = () => {
             switch (attempt) {
               case 1:
                 importPath = `${selectedMenu.access}`;
+                console.log('case ',importPath);
                 break;
               case 2:
                 importPath = `./${selectedMenu.access}`;
+                console.log('case ',importPath);
                 break;
               case 3:
                 importPath = `../${selectedMenu.access}`;
+                console.log('case ',importPath);
                 break;
               case 4:
                 importPath = `./../${selectedMenu.access}`;
+                console.log('case ',importPath);
                 break;
               default:
                 // All attempts failed, return fallback component
