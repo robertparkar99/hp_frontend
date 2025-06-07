@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --background: #E3ECFF;
+  --foreground: black;
+}
+
+:root {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #E3ECFF;
+    --foreground: #E3ECFF;
+  }
+}
+
+body {
+  background: var(--background);
+  color:black;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.loginRightImage{
+  position: fixed;
+  left: 34%;
+  height: 950px;
+}
+/* added on 11-04-2025 by uma  */
+.contentDiv{
+  display: flex;
+}
+
+.mainDiv{
+  width: 100%;
+}
+.historyDiv{
+  width: 17%;
+}
+
+.historySection{
+  margin: 1rem 0rem;;
+}
+
+.hiddenMenu{
+  margin-top:4px;
+}
+
+.leftaside{
+  position: absolute;
+  top: 0;
+  width:17%;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 1s ease-in-out;
+}
+.hide-scroll {
+ -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;
+}
+
+@media screen and (max-width: 660px) {
+  body{
+    margin:0;
+    padding: 0;
+  }
+  .contentDiv {
+    display: block;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .mainDiv,
+  .historyDiv {
+    width: 100%;
+  }
+}

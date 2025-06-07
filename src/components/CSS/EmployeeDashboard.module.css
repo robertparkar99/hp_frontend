@@ -1,0 +1,144 @@
+/* styles/EmployeeDashboard.module.css */
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: #f4f8ff;
+    padding: 20px;
+  }
+  
+  .dashboard {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 1200px;
+    margin: auto;
+  }
+  
+  .profileCard {
+    grid-column: span 2;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  
+  .profileHeader {
+    display: flex;
+    align-items: center;
+    background-color: #349dff;
+    color: white;
+    padding: 15px;
+    position: relative;
+  }
+  
+  .avatar {
+    border-radius: 50%;
+    width: 80px;
+    margin-right: 15px;
+  }
+  
+  .profileInfo h2 {
+    margin: 0;
+  }
+  
+  .editIcon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 18px;
+    cursor: pointer;
+  }
+  
+  .profileContact {
+    padding: 15px;
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .certificate {
+    border: 2px solid #ffdada;
+  }
+  
+  .task {
+    border: 2px solid #ffe4a1;
+  }
+  
+  .skills {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 2px solid #c4f1f9;
+  }
+  
+  .chartPlaceholder {
+    width: 50%;
+    height: 180px;
+    background: #eaeaea;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+  }
+  
+  .skillList {
+    width: 50%;
+    padding-left: 20px;
+  }
+  
+  .skillList h3 {
+    margin-bottom: 10px;
+  }
+  
+  .skillList ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .skillList li {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+    display: inline-block;
+  }
+  
+  .violet {
+    background: #9b59b6;
+  }
+  .red {
+    background: #e74c3c;
+  }
+  .blue {
+    background: #3498db;
+  }
+  .orange {
+    background: #f39c12;
+  }
+  .teal {
+    background: #1abc9c;
+  }
+  .green {
+    background: #2ecc71;
+  }
+  .purple {
+    background: #8e44ad;
+  }
+  
