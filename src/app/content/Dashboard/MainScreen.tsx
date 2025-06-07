@@ -29,72 +29,29 @@ const MainScreen: React.FC = () => {
     return () => window.removeEventListener("menuSelected", handleMenuSelect);
   }, []);
 
+  // Define a type for the component map
+  type ComponentMap = {
+    [key: string]: React.LazyExoticComponent<React.ComponentType<any>>;
+  };
+  console.log(selectedMenu?.access)
+  // Create the component map with proper typing
+  const componentMap: ComponentMap = {
+    'Libraries/skillLibrary.tsx': lazy(() => import('@/app/content/Libraries/skillLibrary')),
+    // Add other components here as needed
+  };
+  
   const renderComponent = () => {
-  if (!selectedMenu) return null;
-  // alert(selectedMenu.access);
-    switch (selectedMenu) {
-      case selectedMenu:
-        const DynamicComponent = lazy(() => {
-          // Helper function to try imports based on attempt number
-          const tryImport = (attempt: number): Promise<{ default: React.ComponentType<any> }> => {
-            let importPath = '';
-            console.log('attempt ',attempt);
-            switch (attempt) {
-              case 1:
-                importPath = `${selectedMenu.access}`;
-                console.log('case ',importPath);
-                break;
-              case 2:
-                importPath = `./${selectedMenu.access}`;
-                console.log('case ',importPath);
-                break;
-              case 3:
-                importPath = `../${selectedMenu.access}`;
-                console.log('case ',importPath);
-                break;
-              case 4:
-                importPath = `./../${selectedMenu.access}`;
-                console.log('case ',importPath);
-                break;
-              default:
-                // All attempts failed, return fallback component
-                // importPath = '../Libraries/skillLibrary';
-                // break;
-                return Promise.resolve({
-                  default: () => <div>{selectedMenu.menu} component not found (404).</div>,
-                });
-            }
-
-            return import(importPath)
-              .then((module) => {
-                if (!module.default) {
-                  // no default export, try next attempt
-                  return tryImport(attempt + 1);
-                }
-                return { default: module.default };
-              })
-              .catch(() => {
-                // import failed, try next attempt
-                return tryImport(attempt + 1);
-              });
-          };
-
-          // Start with attempt 1
-          return tryImport(1);
-        });
-
-        return (
-          <Suspense fallback={<div>Loading...</div>}>
-            <DynamicComponent />
-          </Suspense>
-        );
-      default:
-        return (
-          <h2 className="text-2xl font-semibold text-gray-500">
-            {selectedMenu.menu} page is under construction.
-          </h2>
-        );
-    }
+    if (!selectedMenu) return null;
+    
+    // Safely get the component or fallback
+    const DynamicComponent = componentMap[selectedMenu.access as keyof ComponentMap] || 
+      (() => <div>{selectedMenu.menu} component not found (404).</div>);
+  
+    return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <DynamicComponent />
+      </Suspense>
+    );
   };
 
   if (!selectedMenu) {
