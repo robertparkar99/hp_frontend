@@ -79,20 +79,7 @@ export const LogoSection: React.FC = () => {
         alt="Divider"
         className="object-contain shrink-0 w-px aspect-[0.02]"
       />
-    {JSON.parse(localStorage.getItem('userData') || '{}').org_logo ? (
-            <img
-          src={`https://erp.triz.co.in/admin_dep/images/${JSON.parse(localStorage.getItem('userData') || '{}').org_logo}`}
-          alt="Logo"
-          className="object-contain shrink-0 my-auto max-w-full aspect-[2.75] w-[80px]"
-            />
-          ) : (
-            <div
-          className="flex items-center justify-center shrink-0 my-auto mt-[10px] mb-[10px] w-[100px] h-[50px] text-[#51a2ff] font-bold text-lg"
-          style={{ aspectRatio: '2.75' }}
-            >
-          {JSON.parse(localStorage.getItem('userData') || '{}').org_user || 'User'}
-            </div>
-          )}
+    
       </div>
     </div>
   );
