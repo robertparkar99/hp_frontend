@@ -8,6 +8,8 @@ import HistorySection from '@/components/SideMenu/HistorySection'
 import LeftSideMenu from '@/components/SideMenu/LeftSideMenu'
 import Login from "./login/Login"
 // // app/page.tsx
+// here 
+
 export default function HomePage() {
   useEffect(() => {
     const el = document.querySelector('.leftaside') as HTMLElement | null

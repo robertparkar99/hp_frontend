@@ -6,7 +6,7 @@ import LeftSideMenu from '@/components/SideMenu/LeftSideMenu'
 import Login from './login/Login'
 
 // import Footer from '../components/Footer'
-
+// here 
 export const metadata = {
   title: 'HP Menu',
   description: 'Simple layout with header, footer, and dynamic content',
