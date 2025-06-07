@@ -40,13 +40,13 @@ const MainScreen: React.FC = () => {
         
         switch (attempt) {
           case 1:
-            // Try relative path from current location (MainScreen.tsx is in Dashboard folder)
+            // Try relative path from Dashboard folder to Libraries folder
             importPath = '../Libraries/skillLibrary';
             console.log('case ', importPath);
             break;
           case 2:
-            // Try alternative relative path
-            importPath = '../../content/Libraries/skillLibrary';
+            // Try absolute path from src/app
+            importPath = '@/app/content/Libraries/skillLibrary';
             console.log('case ', importPath);
             break;
           default:
