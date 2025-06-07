@@ -44,7 +44,7 @@ const Login: React.FC = () => {
     setUrl(servUrl);
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/login?email=${email}&password=${password}&type=API`,
+        `https://hp.triz.co.in/login?email=${email}&password=${password}&type=API`,
         {
           method: "GET",
            credentials: 'include', 
