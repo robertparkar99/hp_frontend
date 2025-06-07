@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { StatGrid } from "./StatGrid";
 import { Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
-import SkillLibrary from "../Libraries/skillLibrary";
 type Props = {
   componentName: string;
 };
@@ -59,11 +58,11 @@ const MainScreen: React.FC = () => {
                 break;
               default:
                 // All attempts failed, return fallback component
-                importPath = '../Libraries/skillLibrary';
-                break;
-                // return Promise.resolve({
-                //   default: () => <div>{selectedMenu.menu} component not found (404).</div>,
-                // });
+                // importPath = '../Libraries/skillLibrary';
+                // break;
+                return Promise.resolve({
+                  default: () => <div>{selectedMenu.menu} component not found (404).</div>,
+                });
             }
 
             return import(importPath)
