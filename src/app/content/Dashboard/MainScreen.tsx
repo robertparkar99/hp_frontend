@@ -39,13 +39,15 @@ const MainScreen: React.FC = () => {
           const tryImport = (attempt: number): Promise<{ default: React.ComponentType<any> }> => {
             let importPath = '';
             console.log('attempt ', attempt);
+            const formattedMenu = selectedMenu.menu.replace(/ /g, '');
+            
             switch (attempt) {
               case 1:
                 importPath = `@/app/content/${selectedMenu.access}`;
                 console.log('case ', importPath);
                 break;
               case 2:
-                importPath = `@/app/content/Libraries/${selectedMenu.menu}`;
+                importPath = `@/app/content/Libraries/${formattedMenu}`;
                 console.log('case ', importPath);
                 break;
               default:
@@ -61,7 +63,8 @@ const MainScreen: React.FC = () => {
                 }
                 return { default: module.default };
               })
-              .catch(() => {
+              .catch((error) => {
+                console.error('Import error:', error);
                 return tryImport(attempt + 1);
               });
           };
