@@ -186,17 +186,17 @@ const getSkillData = async (subdeps: string[]) => {
           ))}
         </div>
 
-        {activeTab === 'Tree' &&( 
+        {/* {activeTab === 'Tree' &&( 
         <TreeView allSkillData={allSkillData} setuserSkillsData={setuserSkillsData}/>
-        )}
+        )} */}
 
         {activeTab === 'Table' && (
          <TableView tableData={tableData} />
         )}
 
-         {activeTab === 'Added Skills' && (
+         {/* {activeTab === 'Added Skills' && (
          <AddSkillView userSkillsData={userSkillsData}/>
-        )}
+        )} */}
       </div>
     </div>
   );
