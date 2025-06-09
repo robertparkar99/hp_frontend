@@ -41,6 +41,17 @@ const MainScreen: React.FC = () => {
     return () => window.removeEventListener("menuSelected", handleMenuSelect);
   }, []);
 
+  // Define a type for the component map
+  type ComponentMap = {
+    [key: string]: React.LazyExoticComponent<React.ComponentType<any>>;
+  };
+  console.log(selectedMenu?.access)
+  // Create the component map with proper typing
+  const componentMap: ComponentMap = {
+    'Libraries/skillLibrary.tsx': lazy(() => import('@/app/content/Libraries/skillLibrary')),
+    // Add other components here as needed
+  };
+  
   const renderComponent = () => {
     if (!selectedMenu) return null;
 
