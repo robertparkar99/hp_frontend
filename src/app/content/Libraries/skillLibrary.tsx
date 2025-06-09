@@ -9,19 +9,7 @@ interface SubDepartment { sub_department: string }
 interface TableData { id: number; category: string; sub_category: string; title: string }
 interface allSkillData { id: number; category: string; sub_category: string; no_sub_category: string; title: string }
 interface userSkillsData { id: number; category: string; sub_category: string; no_sub_category: string; title: string }
-interface SkillItem {
-  id: number;
-  category: string;
-  sub_category: string;
-  no_sub_category: string;
-  title: string;
-}
 
-type SkillTree = {
-  [category: string]: {
-    [subCategory: string]: SkillItem[];
-  };
-};
 const SkillLibrary = () => {
   const [sessionUrl, setSessionUrl] = useState<string>();
   const [sessionToken, setSessionToken] = useState<string>();
@@ -37,26 +25,6 @@ const SkillLibrary = () => {
   const [userSkillsData, setuserSkillsData] = useState<userSkillsData[]>([]);
   const [activeTab, setActiveTab] = useState<'Tree' | 'Table' | 'Added Skills'>('Tree'); // start with Table for demo
   const [selectedSubDepartments, setSelectedSubDepartments] = useState<string[]>([]);
-  const transformToTree = (data: allSkillData[] | userSkillsData[]): SkillTree => {
-    const tree: SkillTree = {};
-    
-    data.forEach((item) => {
-      const category = item.category;
-      const subCategory = item.sub_category || 'no_sub_category';
-      
-      if (!tree[category]) {
-        tree[category] = {};
-      }
-      
-      if (!tree[category][subCategory]) {
-        tree[category][subCategory] = [];
-      }
-      
-      tree[category][subCategory].push(item);
-    });
-    
-    return tree;
-  };
 
   useEffect(() => {
     const userData = localStorage.getItem('userData');
@@ -76,11 +44,15 @@ const SkillLibrary = () => {
     async function fetchData() {
       const res = await fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}`);
       const data = await res.json();
+      // console.log('data', data);
       setIndustries(data.jobroleSkill || []);
       setTableData(data.tableData || []);
       setDepartments(data.jobroleSkill || []);
       setallSkillData(data.allSkillData || []);
       setuserSkillsData(data.userTree || []);
+      
+        // console.log('allData',data.allSkillData);
+        // console.log('userSkills',data.userTree);
     }
   }, [sessionUrl, sessionToken]);
 
@@ -214,13 +186,17 @@ const getSkillData = async (subdeps: string[]) => {
           ))}
         </div>
 
-        {activeTab === 'Tree' && (
-        <TreeView allSkillData={transformToTree(allSkillData)} />
-      )}
+        {activeTab === 'Tree' &&( 
+        <TreeView allSkillData={allSkillData} setuserSkillsData={setuserSkillsData}/>
+        )}
 
-      {activeTab === 'Added Skills' && (
-        <AddSkillView userSkillsData={transformToTree(userSkillsData)} />
-      )}
+        {activeTab === 'Table' && (
+         <TableView tableData={tableData} />
+        )}
+
+         {activeTab === 'Added Skills' && (
+         <AddSkillView userSkillsData={userSkillsData}/>
+        )}
       </div>
     </div>
   );
