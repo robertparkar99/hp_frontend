@@ -34,6 +34,8 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
     token: "",
     orgType: "",
     subInstituteId: "",
+    userId: "",
+    userProfile: "",
   });
   const [skillsData, setSkillsData] = useState<SkillTree>({});
   const [dialogOpen, setDialogOpen] = useState({
@@ -41,17 +43,20 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
     add: false,
     edit: false,
   });
+  const [refreshKey, setRefreshKey] = useState(0); // Add refresh key state
 
   // Initialize session data
   useEffect(() => {
     const userData = localStorage.getItem('userData');
     if (userData) {
-      const { APP_URL, token, org_type, sub_institute_id } = JSON.parse(userData);
+      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name } = JSON.parse(userData);
       setSessionData({
         url: APP_URL,
         token,
         orgType: org_type,
         subInstituteId: sub_institute_id,
+        userId: user_id,
+        userProfile: user_profile_name,
       });
     }
   }, []);
@@ -72,7 +77,7 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
       };
       fetchData();
     }
-  }, [sessionData]);
+  }, [sessionData, refreshKey]); // Add refreshKey to dependencies
 
   // Initialize expanded state
   useEffect(() => {
@@ -128,38 +133,39 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
     setSelectedSkill(skillId);
   };
 
-  const handleAddSkill= (skillId: number|null) => {
+  const handleAddSkill = (skillId: number|null) => {
     setSelectedSkill(skillId);
   };
 
   const handleDelete = async () => {
     if (!selectedSkill) return;
     
-    try {
-      await fetch(`${sessionData.url}/skill_library/delete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token: sessionData.token,
-          skill_id: selectedSkill,
-        }),
-      });
-      // Refresh data after deletion
-      const res = await fetch(
-        `${sessionData.url}/skill_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}`
-      );
-      const data = await res.json();
-      setSkillsData(data.userTree || {});
-      setSelectedSkill(null);
-    } catch (error) {
-      console.error("Error deleting skill:", error);
+    if (window.confirm("Are you sure you want to delete this job role?")) {
+      try {
+        const res = await fetch(
+          `${sessionData.url}/skill_library/${selectedSkill}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=user`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${sessionData.token}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+        alert(data.message);
+        // Refresh the tree view by incrementing the refresh key
+        setRefreshKey(prev => prev + 1);
+        setSelectedSkill(null);
+      } catch (error) {
+        console.error("Error deleting job role:", error);
+        alert("Error deleting job role");
+      }
     }
   };
- const dbclickLi = (id: number | null) => {
-  // alert(id);
-  if (id !== null) setDialogOpen({...dialogOpen, view: true});
+
+  const dbclickLi = (id: number | null) => {
+    if (id !== null) setDialogOpen({...dialogOpen, view: true});
   };
 
   const displayedSkills = filterTree();
@@ -282,7 +288,6 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
                                 subCategory !== "no_sub_category" ? "border-b-1 border-[#ddd]" : ""
                               }`}
                             >
-
                               {subCategory !== "no_sub_category" && (
                                 <span className="flex items-center font-bold">
                                   <i className="mdi mdi-folder-multiple-outline mr-2 text-green-400"></i>
@@ -293,13 +298,13 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
                             {expanded[`sub-${category}-${subCategory}`] && (
                               <ul className="ml-6 mt-1 space-y-0.5">
                                 {skills.map(skill => (
-                                  <li key={skill.id} className="text-sm"   onDoubleClick={() => dbclickLi(skill.id)}>
+                                  <li key={skill.id} className="text-sm" onDoubleClick={() => dbclickLi(skill.id)}>
                                     <summary className="hover:bg-gray-100 rounded">
                                       <span
                                         className="flex items-center cursor-pointer border-b-1 border-[#ddd]"
                                         onClick={() => handleAddSkill(skill.id)}
                                       >
-                                        <i className="mdi mdi-star-outline mr-2 text-yellow-400"></i>
+                                        <i className="mdi mdi-plus-circle mr-2 text-blue-400"></i>
                                         {skill.title}
                                       </span>
                                     </summary>
@@ -337,6 +342,7 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
           onClose={() => setDialogOpen({...dialogOpen, add: false})}
           onSuccess={() => {
             setDialogOpen({...dialogOpen, add: false});
+            setRefreshKey(prev => prev + 1); // Refresh tree after adding
         }}
         />
       )}
@@ -346,10 +352,7 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
           skillId={selectedSkill}
           onClose={() => setDialogOpen({...dialogOpen, edit: false})}
           onSuccess={() => {
-            // Refresh data after editing
-            fetch(`${sessionData.url}/skill_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}`)
-              .then(res => res.json())
-              .then(data => setSkillsData(data.userTree || {}));
+            setRefreshKey(prev => prev + 1); // Refresh tree after editing
             setDialogOpen({...dialogOpen, edit: false});
           }}
         />

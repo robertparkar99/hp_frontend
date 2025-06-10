@@ -60,10 +60,10 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
       const fetchData = async () => {
         // const res = await fetch(`${sessionUrl}/skill_library/${skillId}/edit/?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&formType=${formType}`);
         // const data = await res.json();
-         const res = await fetch(
-        `${sessionUrl}/skill_library/${skillId}/edit?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&formType=user`
-      );
-      const data = await res.json();
+        const res = await fetch(
+          `${sessionUrl}/skill_library/${skillId}/edit?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&formType=${formType}`
+        );
+        const data = await res.json();
         setViewData(data.editData || null);
 
         setJobroleData(data.userJobroleData || []);

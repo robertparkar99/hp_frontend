@@ -36,7 +36,7 @@ const SkillLibrary = () => {
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [allSkillData, setallSkillData] = useState<allSkillData[]>([]);
   const [userSkillsData, setuserSkillsData] = useState<userSkillsData[]>([]);
-  const [activeTab, setActiveTab] = useState<'Tree' | 'Table' | 'Added Skills'>('Added Skills'); // start with Table for demo
+  const [activeTab, setActiveTab] = useState<'My Skills' | 'All Skills' | 'Skill Library'>('My Skills'); // start with Table for demo
   const [selectedSubDepartments, setSelectedSubDepartments] = useState<string[]>([]);
   // const transformToTree = (data: allSkillData[] | userSkillsData[]): SkillTree => {
   //   const tree: SkillTree = {};
@@ -234,7 +234,7 @@ const SkillLibrary = () => {
                 className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br text-white w-[100px] h-[38px] px-4 rounded-lg"
                 onClick={handleAddClick}
               >
-                Add
+                Import
               </button>
             )}
           </div>
@@ -243,24 +243,25 @@ const SkillLibrary = () => {
 
         <div className="tabDiv rounded-sm shadow-lg shadow-blue-300/60 bg-[#f0f6ff] rounded-lg">
           <div className="text-center">
-            {['Added Skills', 'Table', 'Tree'].map(tab => (
+            {['My Skills', 'All Skills', 'Skill Library'].map(tab => (
               <button
                 key={tab}
                 className={`px-4 py-2 ${activeTab === tab ? ' mt-2 border-b-2 border-blue-500 font-bold bg-[#fff] rounded-t-lg' : ''}`}
-                onClick={() => setActiveTab(tab as 'Tree' | 'Table')}
+                onClick={() => setActiveTab(tab as 'My Skills' | 'All Skills')}
               >{tab}</button>
             ))}
           </div>
 
-          {activeTab === 'Added Skills' && (
+          {activeTab === 'My Skills' && (
             <AddSkillView userSkillsData={
               Array.isArray(userSkillsData) ? transformToTree(userSkillsData) : userSkillsData
             } />
           )}
-          {activeTab === 'Table' && (
+          {activeTab === 'All Skills' && (
             <TableView tableData={tableData} />
           )}
-          {activeTab === 'Tree' && (
+          
+          {activeTab === 'Skill Library' && (
             <TreeView allSkillData={
               Array.isArray(allSkillData) ? transformToTree(allSkillData) : allSkillData
             } />

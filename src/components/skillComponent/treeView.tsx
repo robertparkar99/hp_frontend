@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import ViewSkill from "./viewDialouge"; // Adjust path as needed
+import AddDialog from "./addDialouge";
 
 interface allSkillData {
   id: number;
@@ -187,6 +188,15 @@ const TreeView: React.FC<TreeViewProps> = ({ allSkillData }) => {
             }}
           />
         )}
+
+        {dialogOpen.add && selectedSkillId && (
+        <AddDialog skillId={selectedSkillId}
+          onClose={() => setDialogOpen({...dialogOpen, add: false})}
+          onSuccess={() => {
+            setDialogOpen({...dialogOpen, add: false});
+        }}
+        />
+      )}
       </div>
       <div className="flex gap-4 mx-2 mb-2">
         {/* Sidebar */}
@@ -226,7 +236,7 @@ const TreeView: React.FC<TreeViewProps> = ({ allSkillData }) => {
             </div>
 
             {/* Disabled Buttons */}
-            <div>
+            {/* <div>
               <h6 className="text-sm font-semibold text-gray-700">CONTROL</h6>
               <hr className="my-2" />
               <div className="space-y-2">
@@ -249,18 +259,18 @@ const TreeView: React.FC<TreeViewProps> = ({ allSkillData }) => {
                   Delete
                 </button>
               </div>
-            </div>
+            </div> */}
 
             {/* Add New */}
             <div>
               <h6 className="text-sm font-semibold text-gray-700">ADD NEW</h6>
               <hr className="my-2" />
-              <a
-                className="w-full flex items-center justify-center gap-2 border border-gray-400 rounded px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
-                href="https://erp.triz.co.in/lms/skill_library/create"
-              >
+                <button
+                  className="w-full flex items-center justify-center gap-2 border border-gray-400 rounded px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setDialogOpen({...dialogOpen, add: true})}
+                >
                 New Skill
-              </a>
+               </button>
             </div>
           </div>
         </div>
@@ -349,6 +359,7 @@ const TreeView: React.FC<TreeViewProps> = ({ allSkillData }) => {
           </div>
         </div>
       </div>
+       
     </>
   );
 };
