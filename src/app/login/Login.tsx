@@ -3,12 +3,12 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from '../../components/utils/api_url';
 
 const Login: React.FC = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [serverUrl, setUrl] = useState("");
   const [isLoading, setLoading] = useState(true);
 
   // Disable browser back button and handle browser back button click
@@ -35,19 +35,9 @@ const Login: React.FC = () => {
        setLoading(true);
 
     // get server 
-    const baseUrl = `${window.location.protocol}//${window.location.host}`;
-    // console.log("baseUrl=", baseUrl);
-    let servUrl = "http://127.0.0.1:8000";
-    if (baseUrl == "http://localhost:3000") {
-      servUrl = "http://127.0.0.1:8000";
-    }
-    else {
-      servUrl = "https://hp.triz.co.in";
-    }
-    setUrl(servUrl);
     try {
       const response = await fetch(
-        `https://hp.triz.co.in/login?email=${email}&password=${password}&type=API`,
+        `${API_BASE_URL}/login?email=${email}&password=${password}&type=API`,
         {
           method: "GET",
           credentials: 'include',
