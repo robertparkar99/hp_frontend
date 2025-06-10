@@ -25,7 +25,7 @@ export const UserProfile: React.FC<UserProfileProps> = (props) => {
   };
 
   return (
-    <header className="flex gap-10 self-start text-1xl leading-none">
+    <header className="flex gap-10 self-start text-1xl leading-none mt-4">
       <div className="flex gap-4">
         <img
           src="https://cdn.builder.io/api/v1/image/assets/TEMP/6e022c162dc36d40093888ccc1816c6170541029?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"

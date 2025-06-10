@@ -213,7 +213,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
               icon=""
               text={menuName.name}
               menuName={menuName.name}
-              onClick={() => handleMenuClick(menuName.key, "", "")}
+              onClick={() => handleMenuClick(menuName.key, "page", menuName.key)}
             />
           ))}
         </MenuSection>
@@ -223,68 +223,70 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
       // Default menu content
       return (
         <>
-          {isLoading == true && (
-            <div className="fixed inset-0 flex flex-col justify-center items-center transform h-screen bg-white w-[220px]">
-              <img src="/assets/loading/simple_loading.gif" alt="loading.." className="w-[50px] h-[50px]" />
-              <p className="text-[var(--color-blue-400)] mt-4">Please wait...</p>
-            </div>
-          )}
-          <MenuSection title="MAIN MENU">
-            {menuItemArr.map((item) => (
-              <div key={item.id}>
-                <MenuItem
-                  imgIcon="https://cdn.builder.io/api/v1/image/assets/TEMP/3677ab9baa84cdb831d836dec797d42d38b543b6?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-                  icon={item.icon}
-                  text={item.menu_name}
-                  menuName={item.menu_name}
-                  showArrow={true}
-                  onClick={() => handleMenuItemClick(item.menu_name, item.id)}
-                />
-                {activeParent === item.id && (
-                  <div
-                    className={`dropdown-card dropdown-card-${item.id}`}
-                    style={{
-                      fontSize: "12px",
-                      display: openSubmenu === item.id ? "block" : "none",
-                    }}
-                  >
-                    <ul className="max-h-[200px] w-[200px] ml-6 overflow-y-auto">
-                      {submenuItemArr
-                        .filter((subItem) => subItem.parent_id === item.id)
-                        .map((subMenuItem) => (
-                          <li key={subMenuItem.id}>
-                            {/* <span className={subMenuItem.icon} style={{ fontSize: "20px"}}></span> */}
-                            {subMenuItem.page_type === "link" ? (
-                              <a href={subMenuItem.access_link} target="_blank" rel="noopener noreferrer">
-                                {subMenuItem.menu_name}
-                              </a>
-                            ) : subMenuItem.page_type === "blade" ? (
-                              <a href={`${sessionData.url}/${subMenuItem.access_link}?type=web&user_id=${sessionData.userId}`} target="_blank">
-                                {subMenuItem.menu_name}
-                              </a>
-                            ) : (
-                              <span
-                                onClick={() =>
-                                  handleMenuClick(subMenuItem.menu_name, subMenuItem.page_type, subMenuItem.access_link)
-                                }
-                                style={{
-                                  marginBottom: "10px",
-                                  color: activeMenu === subMenuItem.menu_name ? "#4B9CD3" : "inherit",
-                                  cursor: "pointer",
-                                }}
-                              >
-                                {subMenuItem.menu_name}
-                              </span>
-                            )}
 
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                )}
+            {isLoading === true ? ( // or just isLoading
+              <div className="relative flex flex-col justify-center items-center transform bg-white w-[220px]">
+                <img src="/assets/loading/simple_loading_black.gif" alt="loading.." className="w-[30px] h-[30px]" />
+                <p className="mt-4">Please wait...</p>
               </div>
-            ))}
+            ) : ( // Corrected: removed the extra '{' and added a ')'
+          <MenuSection title="MAIN MENU">
+              {menuItemArr.map((item) => (
+                <div key={item.id}>
+                  <MenuItem
+                    imgIcon="https://cdn.builder.io/api/v1/image/assets/TEMP/3677ab9baa84cdb831d836dec797d42d38b543b6?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
+                    icon={item.icon}
+                    text={item.menu_name}
+                    menuName={item.menu_name}
+                    showArrow={true}
+                    onClick={() => handleMenuItemClick(item.menu_name, item.id)}
+                  />
+                  {activeParent === item.id && (
+                    <div
+                      className={`dropdown-card dropdown-card-${item.id}`}
+                      style={{
+                        fontSize: "12px",
+                        display: openSubmenu === item.id ? "block" : "none",
+                      }}
+                    >
+                      <ul className="max-h-[200px] w-[200px] ml-6 overflow-y-auto">
+                        {submenuItemArr
+                          .filter((subItem) => subItem.parent_id === item.id)
+                          .map((subMenuItem) => (
+                            <li key={subMenuItem.id}>
+                              {/* <span className={subMenuItem.icon} style={{ fontSize: "20px"}}></span> */}
+                              {subMenuItem.page_type === "link" ? (
+                                <a href={subMenuItem.access_link} target="_blank" rel="noopener noreferrer">
+                                  {subMenuItem.menu_name}
+                                </a>
+                              ) : subMenuItem.page_type === "blade" ? (
+                                <a href={`${sessionData.url}/${subMenuItem.access_link}?type=web&user_id=${sessionData.userId}`} target="_blank">
+                                  {subMenuItem.menu_name}
+                                </a>
+                              ) : (
+                                <span
+                                  onClick={() =>
+                                    handleMenuClick(subMenuItem.menu_name, subMenuItem.page_type, subMenuItem.access_link)
+                                  }
+                                  style={{
+                                    marginBottom: "10px",
+                                    color: activeMenu === subMenuItem.menu_name ? "#4B9CD3" : "inherit",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {subMenuItem.menu_name}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
           </MenuSection>
+            )}
+
         </>
       );
     }
@@ -293,13 +295,13 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
   return (
     <>
       {isMenuOpen && (
-        <aside className="flex flex-col pt-6 pb-20 bg-white rounded-none max-w-[280px] shadow-[2px_4px_15px_rgba(71,160,255,0.25)] text-stone-500 leftaside rounded-xl">
+        <aside className="flex flex-col pb-20 bg-white rounded-none max-w-[280px] shadow-[2px_4px_15px_rgba(71,160,255,0.25)] text-stone-500 leftaside rounded-xl">
           <UserProfile onClick={() => handleMenuItemClick("User Profile", 0)} />
           <main className="flex overflow-hidden flex-col px-2.5 pt-2.5 pb-7 mt-15 w-full text-sm leading-6 bg-white rounded-xl">
             {renderMenuContent()}
           </main>
 
-          <MenuSection title="OTHER" className="px-2.5 pt-2.5 pb-7 mt-15">
+          <MenuSection title="OTHER" className="px-2.5 pb-7 mt-2">
             <div className="flex flex-col gap-8 mt-4">
               <MenuItem
                 imgIcon=""
