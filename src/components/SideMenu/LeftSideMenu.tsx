@@ -224,7 +224,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
       return (
         <>
           {isLoading == true && (
-            <div className="fixed inset-0 flex flex-col justify-center items-center transform h-screen bg-white w-[260px]">
+            <div className="fixed inset-0 flex flex-col justify-center items-center transform h-screen bg-white w-[220px]">
               <img src="/assets/loading/simple_loading.gif" alt="loading.." className="w-[50px] h-[50px]" />
               <p className="text-[var(--color-blue-400)] mt-4">Please wait...</p>
             </div>
