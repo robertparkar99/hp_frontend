@@ -9,27 +9,30 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [serverUrl, setUrl] = useState("");
+  const [isLoading, setLoading] = useState(true);
 
   // Disable browser back button and handle browser back button click
   useEffect(() => {
-    history.pushState(null, '', window.location.pathname);
-    window.addEventListener('popstate', function (event) {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+    setLoading(true);
+      router.push("/Maindashboard");
+    }
+    else {
+    setLoading(false);
       history.pushState(null, '', window.location.pathname);
-    });
+      window.addEventListener('popstate', function (event) {
+        history.pushState(null, '', window.location.pathname);
+      });
+    }
+
   }, []);
   // Disable browser back button and handle browser back button click end
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const gif = document.getElementById("overloadGif");
-    const mainDiv = document.getElementById("mainDiv");
-    if (gif) {
-      gif.style.display = "flex";
-    }
-    if (mainDiv) {
-      mainDiv.style.display = "none";
-    }
+       setLoading(true);
 
     // get server 
     const baseUrl = `${window.location.protocol}//${window.location.host}`;
@@ -56,14 +59,8 @@ const Login: React.FC = () => {
       const data = await response.json();
       // console.log("data=", data);
       if (!data.status) {
-        const gif = document.getElementById("overloadGif");
-        const mainDiv = document.getElementById("mainDiv");
-        if (gif) {
-          gif.style.display = "none";
-        }
-        if (mainDiv) {
-          mainDiv.style.display = "flex";
-        }
+           setLoading(false);
+
         const alertDiv = document.getElementById("alertDiv");
         const alertMessage = document.getElementById("alertMessage");
         if (alertDiv && alertMessage) {
@@ -96,10 +93,9 @@ const Login: React.FC = () => {
 
   return (
     <>
-      <div
+    {isLoading && (<div
         className="overloadGif flex items-center justify-center w-full h-screen z-[1000] bg-white"
         id="overloadGif"
-        style={{ display: "none" }}
       >
         <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900 space-y-6">
           {/* Glowing Ring Spinner */}
@@ -116,8 +112,9 @@ const Login: React.FC = () => {
           {/* Optional subtitle or loader bar */}
           <div className="w-40 h-2 bg-gradient-to-r from-blue-400 via-bluse-400 to-blue-400 rounded-full animate-pulse"></div>
         </div>
-      </div>
-      <main className="flex overflow-hidden flex-col bg-blue-400 h-[100vh] max-md:h-auto" id="mainDiv">
+      </div>)}
+      
+      <main className="flex overflow-hidden flex-col bg-blue-400 h-screen max-md:h-auto" id="mainDiv">
         <section className="flex gap-5 max-md:flex-col">
           <article className="w-[200vh] max-md:ml-0 max-md:w-full flex items-end">
             <img
