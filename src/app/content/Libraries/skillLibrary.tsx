@@ -30,50 +30,51 @@ const SkillLibrary = () => {
   const [sessionUserID, setessionUserID] = useState<string>();
   const [sessionUserProfile, setessionUserProfile] = useState<string>();
   const [industries, setIndustries] = useState<Industry[]>([]);
+  const [isLoading, setLoading] = useState(true);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [subDepartments, setSubDepartments] = useState<SubDepartment[]>([]);
   const [tableData, setTableData] = useState<TableData[]>([]);
   const [allSkillData, setallSkillData] = useState<allSkillData[]>([]);
   const [userSkillsData, setuserSkillsData] = useState<userSkillsData[]>([]);
-  const [activeTab, setActiveTab] = useState<'Tree' | 'Table' | 'Added Skills'>('Tree'); // start with Table for demo
+  const [activeTab, setActiveTab] = useState<'Tree' | 'Table' | 'Added Skills'>('Added Skills'); // start with Table for demo
   const [selectedSubDepartments, setSelectedSubDepartments] = useState<string[]>([]);
   // const transformToTree = (data: allSkillData[] | userSkillsData[]): SkillTree => {
   //   const tree: SkillTree = {};
-    
+
   //   data.forEach((item) => {
   //     const category = item.category;
   //     const subCategory = item.sub_category || 'no_sub_category';
-      
+
   //     if (!tree[category]) {
   //       tree[category] = {};
   //     }
-      
+
   //     if (!tree[category][subCategory]) {
   //       tree[category][subCategory] = [];
   //     }
-      
+
   //     tree[category][subCategory].push(item);
   //   });
-    
+
   //   return tree;
   // };
   const transformToTree = (data: allSkillData[] | userSkillsData[]): SkillTree => {
-  const tree: SkillTree = {};
-  if (!Array.isArray(data)) return tree;
-  data.forEach((item) => {
-    const category = item.category;
-    const subCategory = item.sub_category || 'no_sub_category';
-    if (!tree[category]) tree[category] = {};
-    if (!tree[category][subCategory]) tree[category][subCategory] = [];
-    tree[category][subCategory].push(item);
-  });
-  return tree;
-};
+    const tree: SkillTree = {};
+    if (!Array.isArray(data)) return tree;
+    data.forEach((item) => {
+      const category = item.category;
+      const subCategory = item.sub_category || 'no_sub_category';
+      if (!tree[category]) tree[category] = {};
+      if (!tree[category][subCategory]) tree[category][subCategory] = [];
+      tree[category][subCategory].push(item);
+    });
+    return tree;
+  };
 
   useEffect(() => {
     const userData = localStorage.getItem('userData');
     if (userData) {
-      const { APP_URL, token, org_type,sub_institute_id,user_id, user_profile_name } = JSON.parse(userData);
+      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name } = JSON.parse(userData);
       setSessionUrl(APP_URL);
       setSessionToken(token);
       setessionOrgType(org_type);
@@ -88,6 +89,7 @@ const SkillLibrary = () => {
     async function fetchData() {
       const res = await fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}`);
       const data = await res.json();
+      setLoading(false);
       setIndustries(data.jobroleSkill || []);
       setTableData(data.tableData || []);
       setDepartments(data.jobroleSkill || []);
@@ -104,13 +106,13 @@ const SkillLibrary = () => {
   // };
 
   const getSubDepartment = async (department: string) => {
-    if (!department){
+    if (!department) {
       const res = await fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}`);
-        setSubDepartments([]);
-        const data = await res.json();
-        setTableData(data.tableData || []);
-        setallSkillData(data.allSkillData || []);
-        setuserSkillsData(data.userTree || []);
+      setSubDepartments([]);
+      const data = await res.json();
+      setTableData(data.tableData || []);
+      setallSkillData(data.allSkillData || []);
+      setuserSkillsData(data.userTree || []);
     }
     else {
       const res = await fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&department=${department}`);
@@ -119,128 +121,153 @@ const SkillLibrary = () => {
     }
   };
 
-const getSkillData = async (subdeps: string[]) => {
-   const res = await fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&sub_department=${subdeps}`);
-     setSelectedSubDepartments(subdeps);
+  const getSkillData = async (subdeps: string[]) => {
+    const res = await fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&sub_department=${subdeps}`);
+    setSelectedSubDepartments(subdeps);
     const data = await res.json();
     setTableData(data.tableData || []);
     setallSkillData(data.allSkillData || []);
     setuserSkillsData(data.userTree || []);
-};
+  };
 
 
-    // console.log("Selected Sub Departments:", selectedSubDepartments);
-     const handleAddClick = async () => {
-      // alert(sessionToken);
-      try {
-        
-        const res = await fetch(`${sessionUrl}/skill_library`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${sessionToken}`,
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({
-            type: "API",
-            token: sessionToken,
-            method_field: 'POST',
-            org_type: sessionOrgType,
-            sub_department: selectedSubDepartments,
-            sub_institute_id : sessionSubInstituteId,
-            user_id: sessionUserID,
-            user_profile_name : sessionUserProfile,
-            formType : 'master',
-          }),
-        });
+  // console.log("Selected Sub Departments:", selectedSubDepartments);
+  const handleAddClick = async () => {
+    // alert(sessionToken);
+    try {
 
-        const data = await res.json();
-        if(data.status_code==1){
-          alert(data.message);
-          setuserSkillsData([]);
-          setuserSkillsData(data.userTree || []);
-        }else{
-          alert(data.message);
-        }
-        // console.log("API response:", data);
-      } catch (error) {
-        console.error("Error:", error);
+      const res = await fetch(`${sessionUrl}/skill_library`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          type: "API",
+          token: sessionToken,
+          method_field: 'POST',
+          org_type: sessionOrgType,
+          sub_department: selectedSubDepartments,
+          sub_institute_id: sessionSubInstituteId,
+          user_id: sessionUserID,
+          user_profile_name: sessionUserProfile,
+          formType: 'master',
+        }),
+      });
+
+      const data = await res.json();
+      if (data.status_code == 1) {
+        alert(data.message);
+        setuserSkillsData([]);
+        setuserSkillsData(data.userTree || []);
+      } else {
+        alert(data.message);
       }
-    };
-    useEffect(() => {
-      console.log('Updated skills data:', userSkillsData);
-    }, [userSkillsData]);
+      // console.log("API response:", data);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+  useEffect(() => {
+    console.log('Updated skills data:', userSkillsData);
+  }, [userSkillsData]);
   // In a real application, you'd likely manage the 'open' state using React state (e.g., useState)
   // For this direct conversion, we'll keep the classes as they are.
   return (
-    <div className="container mx-auto px-4">
-      <h2 className="text-2xl font-semibold mb-4">Skill Library</h2>
+    <>
+      {isLoading && (
+        <div
+          className="overloadGif flex items-center justify-center w-full h-screen z-[1000] bg-white"
+          id="overloadGif"
+        >
+          <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900 space-y-6">
+            {/* Glowing Ring Spinner */}
+            <div className="relative w-20 h-20">
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-l-blue-500 animate-spin shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
+              <div className="absolute inset-2 rounded-full bg-white dark:bg-gray-900"></div>
+            </div>
 
-      {/* Industry / Department dropdowns (unchanged) */}
-      <div className="mb-6 p-4 rounded-sm shadow-lg shadow-blue-300/60">
-        <div className="flex gap-20">
-          {/* <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getDepartment(e.target.value)}>
+            {/* Animated Text */}
+            <p className="text-xl font-semibold bg-gradient-to-r from-blue-500 to-bluse-500 text-transparent bg-clip-text animate-pulse tracking-wide">
+              Loading Please Wait...
+            </p>
+
+            {/* Optional subtitle or loader bar */}
+            <div className="w-40 h-2 bg-gradient-to-r from-blue-400 via-bluse-400 to-blue-400 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      )}
+
+      <div className="container mx-auto px-4">
+        <h2 className="text-2xl font-semibold mb-4">Skill Library</h2>
+
+        {/* Industry / Department dropdowns (unchanged) */}
+        <div className="mb-6 p-4 rounded-sm shadow-lg shadow-blue-300/60">
+          <div className="flex gap-20">
+            {/* <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getDepartment(e.target.value)}>
             <option value="">Select Industry</option>
             {industries.map(i => <option key={i.industries} value={i.industries}>{i.industries}</option>)}
           </select> */}
-          <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getSubDepartment(e.target.value)}>
-            <option value="">Select Department</option>
-            {departments.map(d => <option key={d.department} value={d.department}>{d.department}</option>)}
-          </select>
-       <select
-          className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] resize-y p-2"
-          multiple
-          onChange={e => {
-            const selectedValues = Array.from(e.target.selectedOptions).map(option => option.value);
-            getSkillData(selectedValues);
-          }}
-        >
-          <option value="">Select Sub Department</option>
-          {subDepartments.map(s => (
-            <option key={s.sub_department} value={s.sub_department}>
-              {s.sub_department}
-            </option>
-          ))}
-        </select>
-         {selectedSubDepartments.length > 0 && (
-          <button
-            type="button"
-            className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br text-white w-[100px] h-[38px] px-4 rounded-lg"
-            onClick={handleAddClick}
-          >
-            Add
-          </button>
-        )}
-        </div>
-      </div>
-
-
-      <div className="tabDiv rounded-sm shadow-lg shadow-blue-300/60 bg-[#f0f6ff] rounded-lg">
-        <div className="text-center">
-          {['Tree', 'Table','Added Skills'].map(tab => (
-            <button
-              key={tab}
-              className={`px-4 py-2 ${activeTab === tab ? ' mt-2 border-b-2 border-blue-500 font-bold bg-[#fff] rounded-t-lg' : ''}`}
-              onClick={() => setActiveTab(tab as 'Tree' | 'Table')}
-            >{tab}</button>
-          ))}
+            <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getSubDepartment(e.target.value)}>
+              <option value="">Select Department</option>
+              {departments.map(d => <option key={d.department} value={d.department}>{d.department}</option>)}
+            </select>
+            <select
+              className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] resize-y p-2"
+              multiple
+              onChange={e => {
+                const selectedValues = Array.from(e.target.selectedOptions).map(option => option.value);
+                getSkillData(selectedValues);
+              }}
+            >
+              <option value="">Select Sub Department</option>
+              {subDepartments.map(s => (
+                <option key={s.sub_department} value={s.sub_department}>
+                  {s.sub_department}
+                </option>
+              ))}
+            </select>
+            {selectedSubDepartments.length > 0 && (
+              <button
+                type="button"
+                className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br text-white w-[100px] h-[38px] px-4 rounded-lg"
+                onClick={handleAddClick}
+              >
+                Add
+              </button>
+            )}
+          </div>
         </div>
 
-       {activeTab === 'Tree' && (
-  <TreeView allSkillData={
-    Array.isArray(allSkillData) ? transformToTree(allSkillData) : allSkillData
-  } />
-)}
- {activeTab === 'Table' && (
-         <TableView tableData={tableData} />
-        )}
-     {activeTab === 'Added Skills' && (
-  <AddSkillView userSkillsData={
-    Array.isArray(userSkillsData) ? transformToTree(userSkillsData) : userSkillsData
-  } />
-)}
+
+        <div className="tabDiv rounded-sm shadow-lg shadow-blue-300/60 bg-[#f0f6ff] rounded-lg">
+          <div className="text-center">
+            {['Added Skills', 'Table', 'Tree'].map(tab => (
+              <button
+                key={tab}
+                className={`px-4 py-2 ${activeTab === tab ? ' mt-2 border-b-2 border-blue-500 font-bold bg-[#fff] rounded-t-lg' : ''}`}
+                onClick={() => setActiveTab(tab as 'Tree' | 'Table')}
+              >{tab}</button>
+            ))}
+          </div>
+
+          {activeTab === 'Added Skills' && (
+            <AddSkillView userSkillsData={
+              Array.isArray(userSkillsData) ? transformToTree(userSkillsData) : userSkillsData
+            } />
+          )}
+          {activeTab === 'Table' && (
+            <TableView tableData={tableData} />
+          )}
+          {activeTab === 'Tree' && (
+            <TreeView allSkillData={
+              Array.isArray(allSkillData) ? transformToTree(allSkillData) : allSkillData
+            } />
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

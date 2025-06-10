@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 
 const Login: React.FC = () => {
   const router = useRouter();
@@ -11,17 +11,17 @@ const Login: React.FC = () => {
   const [serverUrl, setUrl] = useState("");
 
   // Disable browser back button and handle browser back button click
-    useEffect(() => {
+  useEffect(() => {
+    history.pushState(null, '', window.location.pathname);
+    window.addEventListener('popstate', function (event) {
       history.pushState(null, '', window.location.pathname);
-      window.addEventListener('popstate', function (event) {
-          history.pushState(null, '', window.location.pathname);
-      });
-    }, []);
+    });
+  }, []);
   // Disable browser back button and handle browser back button click end
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const gif = document.getElementById("overloadGif");
     const mainDiv = document.getElementById("mainDiv");
     if (gif) {
@@ -32,13 +32,13 @@ const Login: React.FC = () => {
     }
 
     // get server 
-  const baseUrl = `${window.location.protocol}//${window.location.host}`;
+    const baseUrl = `${window.location.protocol}//${window.location.host}`;
     // console.log("baseUrl=", baseUrl);
     let servUrl = "http://127.0.0.1:8000";
-    if(baseUrl=="http://localhost:3000"){
+    if (baseUrl == "http://localhost:3000") {
       servUrl = "http://127.0.0.1:8000";
     }
-    else{
+    else {
       servUrl = "https://hp.triz.co.in";
     }
     setUrl(servUrl);
@@ -47,7 +47,7 @@ const Login: React.FC = () => {
         `https://hp.triz.co.in/login?email=${email}&password=${password}&type=API`,
         {
           method: "GET",
-           credentials: 'include', 
+          credentials: 'include',
           headers: {
             "Content-Type": "application/json",
           },
@@ -85,115 +85,125 @@ const Login: React.FC = () => {
         mainDiv.style.display = "flex";
       }
       const alertDiv = document.getElementById("alertDiv");
-        const alertMessage = document.getElementById("alertMessage");
-        if (alertDiv && alertMessage) {
-          alertDiv.style.display = "block";
-          alertMessage.textContent = String(error);
-        }
+      const alertMessage = document.getElementById("alertMessage");
+      if (alertDiv && alertMessage) {
+        alertDiv.style.display = "block";
+        alertMessage.textContent = String(error);
+      }
       console.error("Error fetching menu items:", error);
     }
   };
 
   return (
     <>
-      <div 
-          className="overloadGif flex items-center justify-center w-full h-screen z-[1000] bg-white" 
-          id="overloadGif" 
-          style={{ display: "none" }}
-        >
-          <img 
-            src={`http://127.0.0.1:8000/assets/loading/walking_robo.gif`} 
-            alt="overloadGif" 
-            className="h-[100px]"
-          />
+      <div
+        className="overloadGif flex items-center justify-center w-full h-screen z-[1000] bg-white"
+        id="overloadGif"
+        style={{ display: "none" }}
+      >
+        <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900 space-y-6">
+          {/* Glowing Ring Spinner */}
+          <div className="relative w-20 h-20">
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-l-blue-500 animate-spin shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
+            <div className="absolute inset-2 rounded-full bg-white dark:bg-gray-900"></div>
+          </div>
+
+          {/* Animated Text */}
+          <p className="text-xl font-semibold bg-gradient-to-r from-blue-500 to-bluse-500 text-transparent bg-clip-text animate-pulse tracking-wide">
+            Loading Please Wait...
+          </p>
+
+          {/* Optional subtitle or loader bar */}
+          <div className="w-40 h-2 bg-gradient-to-r from-blue-400 via-bluse-400 to-blue-400 rounded-full animate-pulse"></div>
         </div>
-    <main className="flex overflow-hidden flex-col bg-blue-400 h-[100vh] max-md:h-auto" id="mainDiv">
-     <section className="flex gap-5 max-md:flex-col">
-        <article className="w-[200vh] max-md:ml-0 max-md:w-full flex items-end">
-          <img
-            src="./Group 1.svg"
-            alt="Logo"
-            className="w-auto max-md:w-1/3 max-sm:w-1/2 mb-0"
-          />
-        </article>
+      </div>
+      <main className="flex overflow-hidden flex-col bg-blue-400 h-[100vh] max-md:h-auto" id="mainDiv">
+        <section className="flex gap-5 max-md:flex-col">
+          <article className="w-[200vh] max-md:ml-0 max-md:w-full flex items-end">
+            <img
+              src="./Group 1.svg"
+              alt="Logo"
+              className="w-auto max-md:w-1/3 max-sm:w-1/2 mb-0"
+            />
+          </article>
 
-        <article className="flex flex-col items-center justify-center w-[500%] h-screen max-md:ml-0 max-md:w-full z-100">
-          <div className="flex w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl bg-white h-[550px]">
-            <div className="w-1/2 bg-gradient-to-b from-blue-700 to-blue-900 flex flex-col items-center justify-center text-white p-10">
-              <img
-                src="./Group 292.svg"
-                alt="Company Logo"
-                className="w-2/3 mb-6"
-              />
-              <h1 className="text-3xl font-bold mb-2">Company Name</h1>
-              <p className="text-lg text-center">
-                One line Description of The Company
-              </p>
-            </div>
+          <article className="flex flex-col items-center justify-center w-[500%] h-screen max-md:ml-0 max-md:w-full z-100">
+            {/* <div className="flex w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl bg-white h-[550px]"> */}
+            <div className="flex flex-col md:flex-row w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[550px] max-sm:min-h-[250px]">
+              {/* Left Panel */}
+              <div className="flex-1 bg-gradient-to-b from-blue-700 to-blue-900 text-white flex flex-col items-center justify-center p-8 min-h-[500px] max-sm:min-h-[250px]">
+                <img src="./Group 292.svg" alt="Company Logo" className="w-2/3 mb-4" />
+                <h1 className="text-2xl md:text-3xl font-bold mb-1">Company Name</h1>
+                <p className="text-sm md:text-lg text-center">
+                  One line Description of The Company
+                </p>
+              </div>
 
-            <div className="w-1/2 bg-white flex flex-col justify-center items-center p-10">
-           
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                Hello Again!
-              </h2>
-              <p className="text-gray-500 mb-6">Welcome Back</p>
-              {/* alert message start  */}
-              <div
-                  id="alertDiv"  style={{ display: "none" }}
-                  className="hidden w-full p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
-                  role="alert"
-                  >
+              {/* Right Panel */}
+              <div className="flex-1 bg-white flex flex-col justify-center items-center p-8 min-h-[500px] max-sm:min-h-[200px]">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+                  Hello Again!
+                </h2>
+                <p className="text-sm md:text-base text-gray-500 mb-4">
+                  Welcome Back
+                </p>
+
+                <div
+                  id="alertDiv"
+                  style={{ display: "none" }}
+                  className="w-full p-3 mb-3 text-sm text-red-700 bg-red-100 rounded-lg"
+                >
                   <span id="alertMessage"></span>
                 </div>
-            {/* alert message ends  */}
-              <form
-                className="w-full max-w-sm flex flex-col gap-4"
-                onSubmit={handleLogin}
-              >
-                <input
-                  type="email"
-                  placeholder="Email"
-                  name="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="p-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  name="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="p-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <button
-                  type="submit"
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-2xl mt-4"
-                >
-                  Login
-                </button>
-              </form>
 
-              <div className="mt-4">
-                <a href="#" className="text-sm text-blue-500 hover:underline">
-                  Forgot Password?
-                </a>
+                <form
+                  className="w-full max-w-sm flex flex-col gap-4"
+                  onSubmit={handleLogin}
+                >
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    name="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="p-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    name="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="p-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-2xl mt-2"
+                  >
+                    Login
+                  </button>
+                </form>
+
+                <div className="mt-3">
+                  <a href="#" className="text-sm text-blue-500 hover:underline">
+                    Forgot Password?
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        </article>
+          </article>
 
-        <article className="ml-5 w-full max-md:ml-0 max-md:w-full">
-          <img
-            src="https://cdn.builder.io/api/v1/image/assets/TEMP/b9e93eff85539beead9a70cd2e4a92d72d046658?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-            alt="Right Image"
-            className="max-md:max-w-full loginRightImage"
-          />
-        </article>
-      </section>
-    </main>
+          <article className="ml-5 w-full max-md:ml-0 max-md:w-full">
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets/TEMP/b9e93eff85539beead9a70cd2e4a92d72d046658?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
+              alt="Right Image"
+              className="max-md:max-w-full loginRightImage"
+            />
+          </article>
+        </section>
+      </main>
     </>
   );
 };

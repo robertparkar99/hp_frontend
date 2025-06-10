@@ -8,9 +8,9 @@ interface NavigationMenuProps {
   onMenuItemClick: (menuId: number) => void; // Prop for handling menu item clicks
 }
 export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuItemClick }) => {
-   const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [menuItemArr, setMenuItemArr] = useState<{ id: number; menu_name: string; icon: string; access_link: string; menu_type: string }[]>([]);
-
+  const [isLoading, setLoading] = useState(true);
   useEffect(() => {
     let userData: any = null;
     const item = localStorage.getItem('userData');
@@ -31,9 +31,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuItemClick 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-  
+        setLoading(false);
         const data = await response.json();
-  
+
         setMenuItemArr(
           data.map((item: any) => ({
             id: item.id,
@@ -47,11 +47,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuItemClick 
         console.error("Error fetching menu items:", error);
       }
     };
-  
+
     fetchMenuItems();
   }, []);
-  
-
 
   const handleMenuClick = (item: string) => {
     const el = document.querySelector('.leftaside') as HTMLElement | null;
@@ -85,89 +83,56 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuItemClick 
     }
   };
 
-  const handleMenuClickWithAnimation = (item: string,menuId: number) => {
+  const handleMenuClickWithAnimation = (item: string, menuId: number) => {
     localStorage.setItem('mainMenuId', menuId?.toString() || '');
     const storedId = localStorage.getItem("mainMenuId");
     window.dispatchEvent(new Event('storage'));
     //console.log(`Menu item clicked nav : ${storedId}`);
     handleMenuClick(item);
     onMenuItemClick(menuId);
-    // const el = document.querySelector('.leftaside') as HTMLElement | null;
-    // if (el) {
-    //   el.style.opacity = '0';
-    //   el.style.transition = 'opacity 1.0s ease-in-out';
-    //   setTimeout(() => {
-    //     el.style.opacity = '1';
-    //   }, 0);
-    // }
   };
 
   return (
-    <nav
-      className="flex overflow-hidden flex-col justify-center items-center px-28 py-3 text-sm text-blue-400 bg-white max-md:px-5 hiddenMenu"
-      role="navigation"
-      aria-label="Main navigation"
-    >
-      <div className="flex flex-wrap gap-2 justify-between w-full max-w-[1389px] max-md:max-w-full">
-        {/* <MenuItem
-          iconSrc="https://cdn.builder.io/api/v1/image/assets/TEMP/d00d71d9c1bc913fa00df0572008f1f12358d667?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-          text="Organizational Development"
-          onClick={() => handleMenuClickWithAnimation("Organizational Development")}
-        />
-        <MenuItem
-          iconSrc="https://cdn.builder.io/api/v1/image/assets/TEMP/e650ec2387aa2d88e29a964d7c6a8b4f568ac84f?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-          text="Skill Management"
-          onClick={() => handleMenuClickWithAnimation("Skill Management")}
-        />
-        <MenuItem
-          iconSrc="https://cdn.builder.io/api/v1/image/assets/TEMP/6ef17bfbca34341b9a4caa06e5b89d149b5a16a4?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-          text="Talent Management"
-          onClick={() => handleMenuClickWithAnimation("Talent Management")}
-        />
-        <MenuItem
-          iconSrc="https://cdn.builder.io/api/v1/image/assets/TEMP/585861c1d12cb05e56b4562173176128abf0f642?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-          text="LMS"
-          onClick={() => handleMenuClickWithAnimation("LMS")}
-        />
-        <MenuItem
-          iconSrc="https://cdn.builder.io/api/v1/image/assets/TEMP/ef1f5543a96e8df9fedefdae7e229eb311b350c3?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-          text="HRIT Solution"
-          onClick={() => handleMenuClickWithAnimation("HRIT Solution")}
-        />
-        <MenuItem
-          iconSrc="https://cdn.builder.io/api/v1/image/assets/TEMP/7ad6cfa32ac11f46cbf34fa6baab2bb1cb352269?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-          text="Reports"
-          onClick={() => handleMenuClickWithAnimation("Reports")}
-        /> */}
+    <>
+      {isLoading && (<div
+        className="overloadGif flex items-center justify-center w-full h-screen z-[1000] bg-white"
+        id="overloadGif"
+      >
+        <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900 space-y-6">
+          {/* Glowing Ring Spinner */}
+          <div className="relative w-20 h-20">
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-l-blue-500 animate-spin shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
+            <div className="absolute inset-2 rounded-full bg-white dark:bg-gray-900"></div>
+          </div>
 
-        {menuItemArr.map((item) => (
-          // <div key={item.id} className="flex flex-col items-start gap-2">
-          //   <label htmlFor={`menu_name_${item.id}`}>Menu Name:</label>
-          //   <input
-          //     id={`menu_name_${item.id}`}
-          //     type="text"
-          //     value={item.menu_name}
-          //     readOnly
-          //     className="border p-2 rounded"
-          //   />
-          //   <label htmlFor={`icon_${item.id}`}>Icon:</label>
-          //   <input
-          //     id={`icon_${item.id}`}
-          //     type="text"
-          //     value={item.icon}
-          //     readOnly
-          //     className="border p-2 rounded"
-          //   />
-          // </div>
-          <MenuItem
-          key={item.id}
-          iconSrc="https://cdn.builder.io/api/v1/image/assets/TEMP/7ad6cfa32ac11f46cbf34fa6baab2bb1cb352269?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-          text={item.menu_name}
-          onClick={() => handleMenuClickWithAnimation(item.menu_name,item.id)}
-        /> 
-        ))}
-      </div>
-    </nav>
+          {/* Animated Text */}
+          <p className="text-xl font-semibold bg-gradient-to-r from-blue-500 to-bluse-500 text-transparent bg-clip-text animate-pulse tracking-wide">
+            Loading Please Wait...
+          </p>
+
+          {/* Optional subtitle or loader bar */}
+          <div className="w-40 h-2 bg-gradient-to-r from-blue-400 via-bluse-400 to-blue-400 rounded-full animate-pulse"></div>
+        </div>
+      </div>)}
+      <nav
+        className="flex overflow-hidden flex-col justify-center items-center px-28 py-3 text-sm text-blue-400 bg-white max-md:px-5 hiddenMenu"
+        role="navigation"
+        aria-label="Main navigation"
+      >
+        <div className="flex flex-wrap gap-2 justify-between w-full max-w-[1389px] max-md:max-w-full">
+
+          {menuItemArr.map((item) => (
+
+            <MenuItem
+              key={item.id}
+              iconSrc="https://cdn.builder.io/api/v1/image/assets/TEMP/7ad6cfa32ac11f46cbf34fa6baab2bb1cb352269?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
+              text={item.menu_name}
+              onClick={() => handleMenuClickWithAnimation(item.menu_name, item.id)}
+            />
+          ))}
+        </div>
+      </nav>
+    </>
   );
 };
 

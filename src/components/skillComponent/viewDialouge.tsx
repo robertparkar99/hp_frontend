@@ -72,7 +72,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
         setAbililtyData(data.userabilityData || []);
         setApplicationData(data.userApplicationData || []);
 
-        if (data.editData.related_skills) {
+        if (data.editData?.related_skills) {
           try {
             const parsedRelatedSkills = JSON.parse(data.editData.related_skills);
             // console.log(parsedRelatedSkills);
@@ -82,7 +82,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
           }
         }
 
-        if (data.editData.custom_tags) {
+        if (data.editData?.custom_tags) {
           try {
             const parsedCustomTags = JSON.parse(data.editData.custom_tags);
             setCustomTags(parsedCustomTags);
@@ -212,7 +212,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
         <div className="flex w-full">
           {/* Left: GIF */}
           <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
-            <img src={`${sessionUrl}/assets/loading/robo_dance.gif`} alt="Loading..." className="w-full h-auto" />
+            <img src={`/assets/loading/robo_dance.gif`} alt="Loading..." className="w-full h-auto" />
           </div>
 
           {/* Center Content */}
@@ -333,7 +333,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                     <h4 className="text-[14px] text-[#2060E6] font-bold">Related Skills</h4>
                     <hr className="text-[#ddd] pt-2" />
-                    {relatedSkills.map((skill, index) => (
+                    {relatedSkills && relatedSkills.map((skill, index) => (
                       <ul key={index} className="skill-item px-4">
                         <li className="list-disc text-[12px]">{skill}</li>
                       </ul>
