@@ -98,7 +98,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuItemClick 
         className="overloadGif flex items-center justify-center w-full h-screen z-[1000] bg-white"
         id="overloadGif"
       >
-        <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-900 space-y-6">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-white space-y-6">
           {/* Glowing Ring Spinner */}
           <div className="relative w-20 h-20">
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-l-blue-500 animate-spin shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
