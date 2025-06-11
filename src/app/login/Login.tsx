@@ -106,7 +106,7 @@ const Login: React.FC = () => {
       
       <main className="flex overflow-hidden flex-col bg-blue-400 h-screen max-md:h-auto" id="mainDiv">
         <section className="flex gap-5 max-md:flex-col">
-          <article className="w-[200vh] max-md:ml-0 max-md:w-full flex items-end">
+          <article className="w-[200vh] max-md:ml-0 max-md:w-full flex items-end max-md:hidden max-sm:hidden">
             <img
               src="./Group 1.svg"
               alt="Logo"
@@ -114,9 +114,10 @@ const Login: React.FC = () => {
             />
           </article>
 
-          <article className="flex flex-col items-center justify-center w-[500%] h-screen max-md:ml-0 max-md:w-full z-100">
+          <article className="flex flex-col items-center justify-center w-[500%] h-screen max-md:ml-0 max-md:w-full z-100 px-[40px]">
             {/* <div className="flex w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl bg-white h-[550px]"> */}
-            <div className="flex flex-col md:flex-row w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[550px] max-sm:min-h-[250px]">
+            {/* <div className="flex flex-col md:flex-row w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[550px] max-md:min-h-[300px] max-sm:min-h-[200px] max-sm:mx-[20px]"> */}
+            <div className="flex flex-col md:flex-row w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[550px] max-md:min-h-[300px] max-sm:min-h-[200px]">
               {/* Left Panel */}
               <div className="flex-1 bg-gradient-to-b from-blue-700 to-blue-900 text-white flex flex-col items-center justify-center p-8 min-h-[500px] max-sm:min-h-[250px]">
                 <img src="./Group 292.svg" alt="Company Logo" className="w-2/3 mb-4" />
@@ -182,7 +183,7 @@ const Login: React.FC = () => {
             </div>
           </article>
 
-          <article className="ml-5 w-full max-md:ml-0 max-md:w-full">
+          <article className="ml-5 w-full max-md:ml-0 max-md:w-full max-md:hidden max-sm:hidden">
             <img
               src="https://cdn.builder.io/api/v1/image/assets/TEMP/b9e93eff85539beead9a70cd2e4a92d72d046658?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
               alt="Right Image"

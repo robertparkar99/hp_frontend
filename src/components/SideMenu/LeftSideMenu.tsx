@@ -226,7 +226,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
 
             {isLoading === true ? ( // or just isLoading
               <div className="relative flex flex-col justify-center items-center transform bg-white w-[220px]">
-                <img src="/assets/loading/simple_loading_black.gif" alt="loading.." className="w-[30px] h-[30px]" />
+                <img src="/assets/loading/black_simple_laoding.gif" alt="loading.." className="w-[30px] h-[30px]" />
                 <p className="mt-4">Please wait...</p>
               </div>
             ) : ( // Corrected: removed the extra '{' and added a ')'
