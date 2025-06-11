@@ -333,7 +333,7 @@ const TreeView: React.FC<TreeViewProps> = ({ allSkillData }) => {
                                           <summary className="hover:bg-gray-100 rounded">
                                             <span className="flex items-center cursor-pointer border-b-1 border-[#ddd]">
                                               <i
-                                                className="mdi mdi-star-outline mr-2 text-gray-400 text-yellow-400"
+                                                className="mdi mdi mdi-plus-circle mr-2 text-blue-400"
                                                 onClick={() =>
                                                   handleAddClick(skill.title)
                                                 }

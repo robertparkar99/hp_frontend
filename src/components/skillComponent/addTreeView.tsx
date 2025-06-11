@@ -304,7 +304,7 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
                                         className="flex items-center cursor-pointer border-b-1 border-[#ddd]"
                                         onClick={() => handleAddSkill(skill.id)}
                                       >
-                                        <i className="mdi mdi-plus-circle mr-2 text-blue-400"></i>
+                                        <i className="mdi mdi-star-outline mr-2 text-yellow-400"></i>
                                         {skill.title}
                                       </span>
                                     </summary>
