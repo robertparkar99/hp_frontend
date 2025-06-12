@@ -20,7 +20,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="contentDiv w-full max-w-[1445px] max-md:max-w-full">
             <div className="mainDiv">
             <main style={{ padding: '1rem' }}> <MainScreen /></main>
-           
             </div>
              
             {/* <div className="historyDiv">
