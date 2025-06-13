@@ -51,12 +51,12 @@ const JobroleLibrary = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [subDepartments, setSubDepartments] = useState<SubDepartment[]>([]);
   const [tableData, setTableData] = useState<any[]>([]);
-  const [masterTable,setmasterTable] = useState<masterTable[]>([]);
+  const [masterTable, setmasterTable] = useState<masterTable[]>([]);
   const [alljobroleData, setalljobroleData] = useState<alljobroleData[]>([]);
   const [userSkillsData, setuserSkillsData] = useState<userSkillsData[]>([]);
   const [activeTab, setActiveTab] = useState<'My Jobroles' | 'All Jobroles' | 'Jobrole Library'>('My Jobroles'); // start with Table for demo
   const [selectedSubDepartments, setSelectedSubDepartments] = useState<string[]>([]);
-  
+
   const transformToTree = (data: alljobroleData[] | userSkillsData[]): SkillTree => {
     const tree: SkillTree = {};
     if (!Array.isArray(data)) return tree;
@@ -175,7 +175,7 @@ const JobroleLibrary = () => {
   // For this direct conversion, we'll keep the classes as they are.
   return (
     <>
-      {isLoading && (
+      {isLoading ? (
         <div
           className="overloadGif flex items-center justify-center w-full h-screen z-[1000] bg-white"
           id="overloadGif"
@@ -196,19 +196,19 @@ const JobroleLibrary = () => {
             <div className="w-40 h-2 bg-gradient-to-r from-blue-400 via-bluse-400 to-blue-400 rounded-full animate-pulse"></div>
           </div>
         </div>
-      )}
+      ) : (
 
-      <div className="container mx-auto px-4">
-        <h2 className="text-2xl font-semibold mb-4">Jobrole Library</h2>
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-semibold mb-4">Jobrole Library</h2>
 
-        {/* Industry / Department dropdowns (unchanged) */}
-        {/* <div className="mb-6 p-4 rounded-sm shadow-lg shadow-blue-300/60">
+          {/* Industry / Department dropdowns (unchanged) */}
+          {/* <div className="mb-6 p-4 rounded-sm shadow-lg shadow-blue-300/60">
           <div className="flex gap-20">
             {/* <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getDepartment(e.target.value)}>
             <option value="">Select Industry</option>
             {industries.map(i => <option key={i.industries} value={i.industries}>{i.industries}</option>)}
           </select> */}
-            {/* <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getSubDepartment(e.target.value)}>
+          {/* <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getSubDepartment(e.target.value)}>
               <option value="">Select Department</option>
               {departments.map(d => <option key={d.department} value={d.department}>{d.department}</option>)}
             </select>
@@ -238,32 +238,33 @@ const JobroleLibrary = () => {
             )}
           </div>
         </div> */}
- 
-        <div className="tabDiv rounded-sm shadow-lg shadow-blue-300/60 bg-[#f0f6ff] rounded-lg">
-          <div className="text-center">
-            {['My Jobroles', 'Jobrole Library'].map(tab => (
-              <button
-                key={tab}
-                className={`px-4 py-2 ${activeTab === tab ? ' mt-2 border-b-2 border-blue-500 font-bold bg-[#fff] rounded-t-lg' : ''}`}
-                onClick={() => setActiveTab(tab as 'My Jobroles' | 'All Jobroles')}
-              >{tab}</button>
-            ))}
-          </div>
 
-          {activeTab === 'Jobrole Library' && (
-           <MasterTable tableData={masterTable} />
-          )}
-          {activeTab === 'My Jobroles' && (
-            <TableView tableData={tableData} />
-          )}
-          
-          {/* {activeTab === 'Jobrole Library' && (
+          <div className="tabDiv rounded-sm shadow-lg shadow-blue-300/60 bg-[#f0f6ff] rounded-lg">
+            <div className="text-center">
+              {['My Jobroles', 'Jobrole Library'].map(tab => (
+                <button
+                  key={tab}
+                  className={`px-4 py-2 ${activeTab === tab ? ' mt-2 border-b-2 border-blue-500 font-bold bg-[#fff] rounded-t-lg' : ''}`}
+                  onClick={() => setActiveTab(tab as 'My Jobroles' | 'All Jobroles')}
+                >{tab}</button>
+              ))}
+            </div>
+
+            {activeTab === 'Jobrole Library' && (
+              <MasterTable tableData={masterTable} />
+            )}
+            {activeTab === 'My Jobroles' && (
+              <TableView tableData={tableData} />
+            )}
+
+            {/* {activeTab === 'Jobrole Library' && (
             <TreeView alljobroleData={
               Array.isArray(alljobroleData) ? transformToTree(alljobroleData) : alljobroleData
             } />
           )} */}
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 };

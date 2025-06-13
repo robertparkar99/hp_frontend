@@ -202,8 +202,8 @@ const TableView: React.FC<TableViewProps> = ({ tableData }) => {
                   <tr key={`${row.id}-${index}`}>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.jobrole}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.description
-                          ? row.description.slice(0, 50) + (row.description.length > 50 ? "..." : "")
-                          : "-"}</td>
+                      ? row.description.slice(0, 50) + (row.description.length > 50 ? "..." : "")
+                      : "-"}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.company_information}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.contact_information}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.location}</td>
@@ -217,20 +217,20 @@ const TableView: React.FC<TableViewProps> = ({ tableData }) => {
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.internal_tracking}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>
                       <div className="flex items-center space-x-2">
+
                         <button
                           onClick={() => handleEditClick(row.id)}
-                          className="border border-green-600 text-green-600 hover:bg-green-50 rounded-full p-2 transition-colors"
-                          title="Edit Job Role"
+                          className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
                         >
-                          <i className="fa fa-solid fa-pencil"></i>
+                          <span className="mdi mdi-pencil"></span>
                         </button>
                         <button
-                          onClick={() => handleDeleteClick(row.id)}
-                          className="border border-red-600 text-red-600 hover:bg-red-50 rounded-full p-2 transition-colors"
-                          title="Delete Job Role"
+                          onClick={() => row.id && handleDeleteClick(row.id)}
+                          className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
                         >
-                          <i className="fa fa-solid fa-trash"></i>
+                          <span className="mdi mdi-trash-can"></span>
                         </button>
+
                       </div>
                     </td>
                   </tr>
