@@ -107,7 +107,7 @@ const MasterTable: React.FC<MasterTableProps> = ({ tableData }) => {
     return (
         <div className='bg-[#fff] mx-2 rounded-sm'>
             <div className="flex justify-between items-right mb-2 px-4 pt-4 text-right">
-                <button className="bg-blue-500 text-white px-4 py-2 rounded mr-4" onClick={() => setDialogOpen({ ...dialogOpen, add: true })}>Add Skill</button>
+                <button className="bg-blue-500 text-white px-4 py-2 rounded mr-4" onClick={() => setDialogOpen({ ...dialogOpen, add: true })}>Add Jobrole</button>
             </div>
 
             <div className="mb-2 flex items-center gap-2 px-4">
