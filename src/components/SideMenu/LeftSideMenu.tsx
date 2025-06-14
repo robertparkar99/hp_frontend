@@ -5,6 +5,7 @@ import { MenuItem } from "./MenuItem";
 import { otherItem as OtherItem } from "./otherItem";
 import { MenuSection } from "./MenuSection";
 import { UserProfile } from "./UserProfile";
+
 interface LeftSideMenuProps {
   activeMenuId: number | null; // Prop to receive the active menu ID
 }
@@ -224,13 +225,13 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
       return (
         <>
 
-            {isLoading === true ? ( // or just isLoading
-              <div className="relative flex flex-col justify-center items-center transform bg-white w-[220px]">
-                <img src="/assets/loading/black_simple_laoding.gif" alt="loading.." className="w-[30px] h-[30px]" />
-                <p className="mt-4">Please wait...</p>
-              </div>
-            ) : ( // Corrected: removed the extra '{' and added a ')'
-          <MenuSection title="MAIN MENU">
+          {isLoading === true ? ( // or just isLoading
+            <div className="relative flex flex-col justify-center items-center transform bg-white w-[220px]">
+              <img src="/assets/loading/black_simple_laoding.gif" alt="loading.." className="w-[30px] h-[30px]" />
+              <p className="mt-4">Please wait...</p>
+            </div>
+          ) : ( // Corrected: removed the extra '{' and added a ')'
+            <MenuSection title="MAIN MENU">
               {menuItemArr.map((item) => (
                 <div key={item.id}>
                   <MenuItem
@@ -284,8 +285,8 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
                   )}
                 </div>
               ))}
-          </MenuSection>
-            )}
+            </MenuSection>
+          )}
 
         </>
       );

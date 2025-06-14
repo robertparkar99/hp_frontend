@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import TableView from '@/components/skillComponent/tableView';
 import TreeView from '@/components/skillComponent/treeView';
 import AddSkillView from '@/components/skillComponent/addTreeView';
+import Loading from "../../../components/utils/loading"; // Import the Loading component
 
 interface Industry { industries: string }
 interface Department { department: string }
@@ -176,98 +177,80 @@ const SkillLibrary = () => {
   // For this direct conversion, we'll keep the classes as they are.
   return (
     <>
-      {isLoading && (
-        <div
-          className="overloadGif flex items-center justify-center w-full h-screen z-[1000] bg-white"
-          id="overloadGif"
-        >
-          <div className="flex flex-col items-center justify-center min-h-screen bg-white space-y-6">
-            {/* Glowing Ring Spinner */}
-            <div className="relative w-20 h-20">
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-l-blue-500 animate-spin shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
-              <div className="absolute inset-2 rounded-full bg-white dark:bg-gray-900"></div>
-            </div>
+      {isLoading ? (
+        <Loading />
+      ) : (
 
-            {/* Animated Text */}
-            <p className="text-xl font-semibold bg-gradient-to-r from-blue-500 to-bluse-500 text-transparent bg-clip-text animate-pulse tracking-wide">
-              Loading Please Wait...
-            </p>
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-semibold mb-4">Skill Library</h2>
 
-            {/* Optional subtitle or loader bar */}
-            <div className="w-40 h-2 bg-gradient-to-r from-blue-400 via-bluse-400 to-blue-400 rounded-full animate-pulse"></div>
-          </div>
-        </div>
-      )}
-
-      <div className="container mx-auto px-4">
-        <h2 className="text-2xl font-semibold mb-4">Skill Library</h2>
-
-        {/* Industry / Department dropdowns (unchanged) */}
-        <div className="mb-6 p-4 rounded-sm shadow-lg shadow-blue-300/60">
-          <div className="flex gap-20">
-            {/* <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getDepartment(e.target.value)}>
+          {/* Industry / Department dropdowns (unchanged) */}
+          <div className="mb-6 p-4 rounded-sm shadow-lg shadow-blue-300/60">
+            <div className="flex gap-20">
+              {/* <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getDepartment(e.target.value)}>
             <option value="">Select Industry</option>
             {industries.map(i => <option key={i.industries} value={i.industries}>{i.industries}</option>)}
           </select> */}
-            <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getSubDepartment(e.target.value)}>
-              <option value="">Select Department</option>
-              {departments.map(d => <option key={d.department} value={d.department}>{d.department}</option>)}
-            </select>
-            <select
-              className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] resize-y p-2"
-              multiple
-              onChange={e => {
-                const selectedValues = Array.from(e.target.selectedOptions).map(option => option.value);
-                getSkillData(selectedValues);
-              }}
-            >
-              <option value="">Select Sub Department</option>
-              {subDepartments.map(s => (
-                <option key={s.sub_department} value={s.sub_department}>
-                  {s.sub_department}
-                </option>
-              ))}
-            </select>
-            {selectedSubDepartments.length > 0 && (
-              <button
-                type="button"
-                className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br text-white w-[100px] h-[38px] px-4 rounded-lg"
-                onClick={handleAddClick}
+              <select className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] h-[38px]" onChange={e => getSubDepartment(e.target.value)}>
+                <option value="">Select Department</option>
+                {departments.map(d => <option key={d.department} value={d.department}>{d.department}</option>)}
+              </select>
+              <select
+                className="form-select w-1/3 rounded-sm border-2 border-[var(--color-blue-100)] resize-y p-2"
+                multiple
+                onChange={e => {
+                  const selectedValues = Array.from(e.target.selectedOptions).map(option => option.value);
+                  getSkillData(selectedValues);
+                }}
               >
-                Import
-              </button>
+                <option value="">Select Sub Department</option>
+                {subDepartments.map(s => (
+                  <option key={s.sub_department} value={s.sub_department}>
+                    {s.sub_department}
+                  </option>
+                ))}
+              </select>
+              {selectedSubDepartments.length > 0 && (
+                <button
+                  type="button"
+                  className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br text-white w-[100px] h-[38px] px-4 rounded-lg"
+                  onClick={handleAddClick}
+                >
+                  Import
+                </button>
+              )}
+            </div>
+          </div>
+
+
+          <div className="tabDiv rounded-sm shadow-lg shadow-blue-300/60 bg-[#f0f6ff] rounded-lg">
+            <div className="text-center">
+              {['My Skills', 'All Skills', 'Skill Library'].map(tab => (
+                <button
+                  key={tab}
+                  className={`px-4 py-2 ${activeTab === tab ? ' mt-2 border-b-2 border-blue-500 font-bold bg-[#fff] rounded-t-lg' : ''}`}
+                  onClick={() => setActiveTab(tab as 'My Skills' | 'All Skills')}
+                >{tab}</button>
+              ))}
+            </div>
+
+            {activeTab === 'My Skills' && (
+              <AddSkillView userSkillsData={
+                Array.isArray(userSkillsData) ? transformToTree(userSkillsData) : userSkillsData
+              } />
+            )}
+            {activeTab === 'All Skills' && (
+              <TableView tableData={tableData} />
+            )}
+
+            {activeTab === 'Skill Library' && (
+              <TreeView allSkillData={
+                Array.isArray(allSkillData) ? transformToTree(allSkillData) : allSkillData
+              } />
             )}
           </div>
         </div>
-
-
-        <div className="tabDiv rounded-sm shadow-lg shadow-blue-300/60 bg-[#f0f6ff] rounded-lg">
-          <div className="text-center">
-            {['My Skills', 'All Skills', 'Skill Library'].map(tab => (
-              <button
-                key={tab}
-                className={`px-4 py-2 ${activeTab === tab ? ' mt-2 border-b-2 border-blue-500 font-bold bg-[#fff] rounded-t-lg' : ''}`}
-                onClick={() => setActiveTab(tab as 'My Skills' | 'All Skills')}
-              >{tab}</button>
-            ))}
-          </div>
-
-          {activeTab === 'My Skills' && (
-            <AddSkillView userSkillsData={
-              Array.isArray(userSkillsData) ? transformToTree(userSkillsData) : userSkillsData
-            } />
-          )}
-          {activeTab === 'All Skills' && (
-            <TableView tableData={tableData} />
-          )}
-          
-          {activeTab === 'Skill Library' && (
-            <TreeView allSkillData={
-              Array.isArray(allSkillData) ? transformToTree(allSkillData) : allSkillData
-            } />
-          )}
-        </div>
-      </div>
+      )}
     </>
   );
 };
