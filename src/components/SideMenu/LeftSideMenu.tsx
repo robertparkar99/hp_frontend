@@ -199,11 +199,11 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
   const renderMenuContent = () => {
     if (activeMenu === "User Profile") {
       const menuNames = [
-        { key: 'MyProfile', name: "My Profile" },
-        { key: 'MyCertificate', name: "My Certificate" },
-        { key: 'MyAssignedTask', name: "My Assigned Task" },
-        { key: 'MySkills', name: "My Skills" },
-        { key: 'MySkillGapAnalysis', name: "My Skill Gap Analysis" },
+        { key: 'Dashboard/MyProfile.tsx', name: "My Profile" },
+        { key: 'Dashboard/MyCertificate.tsx', name: "My Certificate" },
+        { key: 'Dashboard/MyAssignedTask.tsx', name: "My Assigned Task" },
+        { key: 'Dashboard/MySkills.tsx', name: "My Skills" },
+        { key: 'Dashboard/MySkillGapAnalysis.tsx', name: "My Skill Gap Analysis" },
       ];
       return (
         <MenuSection title="MAIN MENU">
