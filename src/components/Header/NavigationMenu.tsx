@@ -96,7 +96,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuItemClick 
 
   return (
     <>
-      {isLoading ? (<Loading />) : (<nav
+      {isLoading ? (<div></div>) : (<nav
         className="flex overflow-hidden flex-col justify-center items-center px-28 py-3 text-sm text-blue-400 bg-white max-md:px-5 hiddenMenu"
         role="navigation"
         aria-label="Main navigation"
