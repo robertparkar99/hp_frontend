@@ -338,7 +338,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                 />
               </div>
 
-              <div className="relative z-0 w-full mb-5 group text-left">
+              {/* <div className="relative z-0 w-full mb-5 group text-left">
                 <label htmlFor="proficiency_level" className="text-left">Proficiency Levels</label><br />
                   <select
                     name="proficiency_level"
@@ -350,7 +350,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                       {proficiencyLevels.map(d => <option key={d.select_value} value={d.select_value}>{d.select_option}</option>)}
                   
                   </select>
-              </div>
+              </div> */}
             </div>
 
             <div className="grid md:grid-cols-2 md:gap-6">

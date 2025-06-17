@@ -71,7 +71,7 @@ const MainScreen: React.FC = () => {
 
   if (!selectedMenu && !isLoading) {
     return (
-      <main className="flex overflow-hidden flex-col w-auto pt-5 px-10 bg-white rounded-2xl shadow-sm pb-[680px] max-md:px-5 max-md:pb-24">
+      <main className="flex overflow-hidden flex-col w-auto pt-5 px-10 bg-white rounded-2xl shadow-sm h-[550px] max-md:px-5 max-md:pb-24">
         <img
           src="https://cdn.builder.io/api/v1/image/assets/TEMP/e6eab4227e391bd1268df1fb318a60e266703003?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
           alt=""

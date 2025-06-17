@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import AddDialog from "./addDialouge";
+import Loading from "../../components/utils/loading"; // Import the Loading component
 
 interface TableData {
     id: number;
@@ -17,6 +18,7 @@ interface MasterTableProps {
 const MasterTable: React.FC<MasterTableProps> = ({ tableData }) => {
     // New states for table control
     const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(100);
     const [dialogOpen, setDialogOpen] = useState({
@@ -34,6 +36,7 @@ const MasterTable: React.FC<MasterTableProps> = ({ tableData }) => {
     useEffect(() => {
         const userData = localStorage.getItem('userData');
         if (userData) {
+            setLoading(false);
             const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name } = JSON.parse(userData);
             setSessionData({
                 url: APP_URL,
@@ -71,7 +74,7 @@ const MasterTable: React.FC<MasterTableProps> = ({ tableData }) => {
 
     const handleClick = async (id: number,jobrole:string) => {
         // alert(id);
-
+        setLoading(true);
         const payload = {
             type: "API",
             method_field: 'POST',
@@ -97,7 +100,10 @@ const MasterTable: React.FC<MasterTableProps> = ({ tableData }) => {
             });
 
             const data = await res.json();
-            alert(data.message);
+            if(data){
+                setLoading(false);
+                alert(data.message);
+            }
         } catch (error) {
             console.error("Error submitting form:", error);
             alert("Error submitting form");

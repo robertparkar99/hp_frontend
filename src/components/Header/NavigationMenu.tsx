@@ -23,7 +23,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuItemClick 
 
     const fetchMenuItems = async () => {
       try {
-        const response = await fetch(`${userData.APP_URL}/table_data?table=tblmenumaster&filters[parent_id]=0&filters[level]=1`, {
+        const response = await fetch(`${userData.APP_URL}/table_data?table=tblmenumaster&filters[parent_id]=0&filters[level]=1&sort_order=sort_order`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

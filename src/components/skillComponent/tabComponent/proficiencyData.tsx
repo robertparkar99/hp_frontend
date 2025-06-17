@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
-import dynamic from 'next/dynamic'; // Import dynamic for client-side rendering
+import dynamic from 'next/dynamic';
 
-// Dynamically import ExcelExportButton, PdfExportButton, and PrintButton
-// This ensures they are only loaded and rendered on the client side,
-// which is crucial for browser-specific APIs like jsPDF and window.open.
+// Dynamic imports for export buttons
 const ExcelExportButton = dynamic(
   () => import('../../exportButtons/excelExportButton').then(mod => mod.ExcelExportButton),
   { ssr: false }
@@ -20,35 +18,40 @@ const PrintButton = dynamic(
   { ssr: false }
 );
 
-// Define the type for the form input fields (assuming proficiency_level and description are always strings, even if empty)
+// Updated type definitions based on API response
 type ProficiencyLevel = {
   id?: number;
-  proficiency_level: string; // Made required
-  description: string; // Made required
-  category?: string;
-  sub_category?: string;
-  skillTitle?: string;
-  created_by_user?: string;
+  proficiency_level: string;
+  description: string;
+  proficiency_type?: string;
+  type_description?: string;
+  skill_id?: number | null;
+  sub_institute_id?: number | null;
+  created_by?: string | null;
+  updated_by?: string | null;
+  deleted_by?: string | null;
+  deleted_at?: string | null;
   created_at?: string;
   updated_at?: string;
 };
 
-// Define the type for the data displayed in the table
 type SubmittedProficiency = {
   id: number;
   proficiency_level: string;
   description: string;
-  category?: string;
-  sub_category?: string;
-  skillTitle?: string;
-  created_by_user?: string;
+  proficiency_type?: string;
+  type_description?: string;
+  created_by?: string;
   created_at?: string;
   updated_at?: string;
 };
 
-// Define the props for the ProficiencyLevelData component
+type ApiResponse = {
+  proficiency_levels: ProficiencyLevel[];
+  userproficiency_levelData: any[];
+};
+
 const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
-  // State for session data, initialized from localStorage
   const [sessionData, setSessionData] = useState(() => {
     if (typeof window !== 'undefined' && localStorage.getItem("userData")) {
       const userData = JSON.parse(localStorage.getItem("userData")!);
@@ -64,16 +67,21 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
     return { url: "", token: "", orgType: "", subInstituteId: "", userId: "", userProfile: "" };
   });
 
-  // Component states
-  const [proficiencyLevels, setProficiencyLevels] = useState<ProficiencyLevel[]>([{ proficiency_level: "", description: "" }]);
-  const [submittedData, setSubmittedData] = useState<SubmittedProficiency[]>([]);
-  const [loading, setLoading] = useState(false); // For form submission loading state
-  const [tableLoading, setTableLoading] = useState(false); // For data table loading state
-  const [editingId, setEditingId] = useState<number | null>(null); // ID of the item being edited
-  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({}); // For DataTable column filtering
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null); // For success/error messages
+  const defaultProficiencyLevel = {
+    proficiency_level: "",
+    description: "",
+    proficiency_type: "Autonomy", // Default value
+    type_description: ""
+  };
 
-  // Effect to fetch initial data on component mount or when session data/editData changes
+  const [proficiencyLevels, setProficiencyLevels] = useState<ProficiencyLevel[]>([defaultProficiencyLevel]);
+  const [submittedData, setSubmittedData] = useState<SubmittedProficiency[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
       if (editData?.id) {
@@ -82,127 +90,135 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
         fetchSubmittedData();
       }
     }
-    // Parse proficiency_level_data if available in editData (for pre-filling form on edit)
+
     if (editData?.proficiency_level_data) {
       try {
         const parsedData = JSON.parse(editData.proficiency_level_data);
         if (Array.isArray(parsedData)) {
-          // Ensure that parsed data conforms to ProficiencyLevel type
           const typedParsedData: ProficiencyLevel[] = parsedData.map((item: any) => ({
+            ...defaultProficiencyLevel,
+            ...item,
             proficiency_level: item.proficiency_level || "",
             description: item.description || "",
-            // Assign other properties if they exist in parsedData
-            ...item
           }));
-          setProficiencyLevels(typedParsedData.length ? typedParsedData : [{ proficiency_level: "", description: "" }]);
+          setProficiencyLevels(typedParsedData.length ? typedParsedData : [defaultProficiencyLevel]);
         }
       } catch (error) {
         console.error("Error parsing proficiency_level_data:", error);
+        setProficiencyLevels([defaultProficiencyLevel]);
       }
     }
   }, [sessionData, editData]);
 
-  // Helper function to transform raw API data into SubmittedProficiency format
-  const transformData = (item: any): SubmittedProficiency => ({
-    id: item.id,
-    proficiency_level: item.proficiency_level || item.job_role || "", // Handle potential different field names and ensure string
-    description: item.description || "", // Ensure description is a string
-    category: item.category,
-    sub_category: item.sub_category,
-    skillTitle: item.skillTitle,
-    created_by_user: item?.first_name ? `${item.first_name} ${item.last_name}` : undefined,
+  const transformData = (item: ProficiencyLevel): SubmittedProficiency => ({
+    id: item.id || 0,
+    proficiency_level: item.proficiency_level,
+    description: item.description,
+    proficiency_type: item.proficiency_type,
+    type_description: item.type_description,
+    created_by: item.created_by || undefined,
     created_at: item.created_at,
     updated_at: item.updated_at
   });
 
-  // Function to fetch data for editing a specific skill (initial form load)
   const fetchInitialData = async () => {
-    setTableLoading(false);
+    setTableLoading(true);
     try {
       const res = await fetch(
         `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=proficiency_level`
       );
-      const data = await res.json();
-      setSubmittedData(data.userproficiency_levelData);
       
+      if (!res.ok) throw new Error('Failed to fetch data');
+      
+      const data: ApiResponse = await res.json();
+      const transformedData = data.proficiency_levels.map(transformData);
+      setSubmittedData(transformedData);
+
     } catch (error) {
       console.error("Error fetching initial data:", error);
-      setMessage({ type: 'error', text: 'Failed to fetch initial data.' });
-      setSubmittedData([]); // Set to empty array on error
+      // setMessage({ type: 'error', text: 'Failed to fetch initial data.' });
+      setSubmittedData([]);
     } finally {
       setTableLoading(false);
     }
   };
 
-  // Function to fetch all submitted proficiency levels for the table
   const fetchSubmittedData = async () => {
-    setTableLoading(false);
+    setTableLoading(true);
     try {
       const res = await fetch(
         `${sessionData.url}/skill_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=proficiency_level`,
         { headers: { Authorization: `Bearer ${sessionData.token}` } }
       );
-      const data = await res.json();
-      
-        setSubmittedData(data.userproficiency_levelData); 
+
+      if (!res.ok) throw new Error('Failed to fetch data');
+
+      const data: ApiResponse = await res.json();
+      const transformedData = data.proficiency_levels.map(transformData);
+      setSubmittedData(transformedData);
     } catch (error) {
       console.error("Error fetching submitted data:", error);
-      setMessage({ type: 'error', text: 'Failed to fetch submitted data.' });
-      setSubmittedData([]); // Set to empty array on error
+      // setMessage({ type: 'error', text: 'Failed to fetch submitted data.' });
+      setSubmittedData([]);
     } finally {
       setTableLoading(false);
     }
   };
 
-
-  // Form handlers for adding, removing, and changing proficiency level inputs
-  const handleAddProficiencyLevel = () =>
-    setProficiencyLevels([...proficiencyLevels, { proficiency_level: "", description: "" }]);
+  const handleAddProficiencyLevel = () => {
+    setProficiencyLevels([...proficiencyLevels, { ...defaultProficiencyLevel }]);
+  };
 
   const handleRemoveProficiencyLevel = (index: number) => {
-    // Added a check to ensure proficiencyLevels is an array before filtering
-    if (proficiencyLevels && Array.isArray(proficiencyLevels)) {
+    if (proficiencyLevels.length > 1) {
       setProficiencyLevels(proficiencyLevels.filter((_, i) => i !== index));
-    } else {
-      console.warn("Attempted to remove from an invalid proficiencyLevels state.");
-      // Optionally, reset to a default empty array or handle the error
-      setProficiencyLevels([{ proficiency_level: "", description: "" }]);
     }
   };
 
-
-  const handleProficiencyLevelChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const handleProficiencyLevelChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setProficiencyLevels(proficiencyLevels.map((level, i) =>
       i === index ? { ...level, [e.target.name]: e.target.value } : level
     ));
+  };
 
-  // Handle form submission (create or update)
+  const validateForm = () => {
+    for (const level of proficiencyLevels) {
+      if (!level.proficiency_level.trim() || !level.description.trim()) {
+        // setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setLoading(true);
-    setMessage(null); // Clear previous messages
+    setMessage(null);
 
     const payload = {
       type: "API",
-      method_field: "PUT", // Assuming PUT for both create and update based on backend logic
+      method_field: "PUT",
       proficiency_level: proficiencyLevels.map(level => level.proficiency_level),
       description: proficiencyLevels.map(level => level.description),
+      proficiency_type: proficiencyLevels.map(level => level.proficiency_type),
+      type_description: proficiencyLevels.map(level => level.type_description),
       token: sessionData.token,
       sub_institute_id: sessionData.subInstituteId,
       org_type: sessionData.orgType,
       user_profile_name: sessionData.userProfile,
       user_id: sessionData.userId,
       formType: "proficiency_level",
-      proficiency_level_data: JSON.stringify(proficiencyLevels), // Store as JSON string
-      ...(editingId && { id: editingId }), // Include ID if editing
+      proficiency_level_data: JSON.stringify(proficiencyLevels),
+      ...(editingId && { id: editingId }),
     };
 
     try {
-      // Determine URL based on whether we are editing or creating
-      const url = `${sessionData.url}/skill_library/${editingId || editData?.id || ''}`; // Use editingId if present, else editData.id, else empty for new
-
+      const url = `${sessionData.url}/skill_library/${editingId || editData?.id || ''}`;
       const res = await fetch(url, {
-        method: "PUT", // Use PUT for update/create for this endpoint based on backend
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${sessionData.token}`,
@@ -212,72 +228,72 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
       });
 
       const data = await res.json();
-      alert(data.message);
+      
       if (res.ok) {
-        setProficiencyLevels([{ proficiency_level: "", description: "" }]); // Reset form
-        setEditingId(null); // Clear editing state
-        fetchInitialData(); // Refresh table data
+        // setMessage({ type: 'success', text: data.message || 'Successfully submitted.' });
+        setProficiencyLevels([defaultProficiencyLevel]);
+        setEditingId(null);
+        fetchSubmittedData();
       } else {
-        setMessage({ type: 'error', text: data.message || 'Failed to submit proficiency level.' });
+        // setMessage({ type: 'error', text: data.message || 'Failed to submit proficiency level.' });
+        console.log('Failed to submit proficiency level.');
       }
-
     } catch (error) {
       console.error("Error submitting form:", error);
-      setMessage({ type: 'error', text: 'An unexpected error occurred.' });
+      // setMessage({ type: 'error', text: 'An unexpected error occurred.' });
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle Edit: Populate the form with data from the selected row
   const handleEdit = (row: SubmittedProficiency) => {
     setEditingId(row.id);
-    // Set proficiencyLevels to an array containing the edited row's data
     setProficiencyLevels([{
       proficiency_level: row.proficiency_level,
-      description: row.description
+      description: row.description,
+      proficiency_type: row.proficiency_type || defaultProficiencyLevel.proficiency_type,
+      type_description: row.type_description || ""
     }]);
-    setMessage(null); // Clear any previous messages
-    window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top to show the form
+    setMessage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Handle Delete
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this proficiency level?")) { // Changed job role to proficiency level
-      try {
-        const res = await fetch(
-          `${sessionData.url}/skill_library/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=proficiency_level`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${sessionData.token}`,
-            },
-          }
-        );
+    if (!window.confirm("Are you sure you want to delete this proficiency level?")) return;
 
-        const data = await res.json();
-        alert(data.message);
-        fetchInitialData(); // Changed fetchInitialData to fetchSubmittedData to refresh the table
-      } catch (error) {
-        console.error("Error deleting proficiency level:", error); // Changed job role to proficiency level
-        alert("Error deleting proficiency level");
+    try {
+      const res = await fetch(
+        `${sessionData.url}/skill_library/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=proficiency_level`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      // setMessage({ type: res.ok ? 'success' : 'error', text: data.message });
+      if (res.ok) {
+        fetchSubmittedData();
       }
+    } catch (error) {
+      console.error("Error deleting proficiency level:", error);
+      // setMessage({ type: 'error', text: 'Error deleting proficiency level' });
     }
   };
 
-  // Handler for column filter changes in DataTable
   const handleColumnFilter = (column: string, value: string) => {
     setColumnFilters(prev => ({ ...prev, [column]: value }));
   };
 
-  // Filtered data for DataTable based on column filters
   const filteredData = submittedData.filter(item =>
     Object.entries(columnFilters).every(([column, value]) =>
       !value || String(item[column as keyof SubmittedProficiency] || "").toLowerCase().includes(value.toLowerCase())
     )
   );
 
-  // DataTable column definitions
+  // Column definitions remain the same...
   const columns = [
     {
       name: (
@@ -314,47 +330,33 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Category</div>
+          <div>Proficiency Type</div>
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("category", e.target.value)}
+            onChange={(e) => handleColumnFilter("proficiency_type", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: SubmittedProficiency) => row.category || "N/A",
+      selector: (row: SubmittedProficiency) => row.proficiency_type || "N/A",
       sortable: true,
     },
     {
       name: (
         <div>
-          <div>Sub Category</div>
+          <div>Type Description</div>
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("sub_category", e.target.value)}
+            onChange={(e) => handleColumnFilter("type_description", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: SubmittedProficiency) => row.sub_category || "N/A",
+      selector: (row: SubmittedProficiency) => row.type_description || "N/A",
       sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Skill Title</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("skillTitle", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedProficiency) => row.skillTitle || "N/A",
-      sortable: true,
+      wrap: true,
     },
     {
       name: (
@@ -363,14 +365,12 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) =>
-              handleColumnFilter("created_by_user", e.target.value)
-            }
+            onChange={(e) => handleColumnFilter("created_by", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: SubmittedProficiency) => row.created_by_user || "N/A",
+      selector: (row: SubmittedProficiency) => row.created_by || "N/A",
       sortable: true,
     },
     {
@@ -416,7 +416,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
             <span className="mdi mdi-pencil"></span>
           </button>
           <button
-            onClick={() => row?.id && handleDelete(row?.id)}
+            onClick={() => row.id && handleDelete(row.id)}
             className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
           >
             <span className="mdi mdi-trash-can"></span>
@@ -429,7 +429,6 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
     },
   ];
 
-  // Define custom styles for DataTable
   const customStyles = {
     headCells: {
       style: {
@@ -464,9 +463,11 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
 
       <form className="w-[100%]" onSubmit={handleSubmit}>
         {proficiencyLevels.map((level, index) => (
-          <div key={index} className="grid md:grid-cols-3 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-4 rounded-lg mt-2">
+          <div key={index} className="grid md:grid-cols-3 md:gap-4 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-4 rounded-lg mt-2">
             <div className="relative z-0 w-full group text-left">
-              <label htmlFor={`proficiency_level-${index}`}>Proficiency Level</label>
+              <label htmlFor={`proficiency_level-${index}`} className="block mb-2">
+                Proficiency Level*
+              </label>
               <input
                 type="text"
                 name="proficiency_level"
@@ -480,7 +481,9 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
             </div>
 
             <div className="relative z-0 w-full group text-left">
-              <label htmlFor={`description-${index}`}>Description</label>
+              <label htmlFor={`description-${index}`} className="block mb-2">
+                Description*
+              </label>
               <textarea
                 name="description"
                 id={`description-${index}`}
@@ -489,15 +492,50 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
                 placeholder="Describe this proficiency level..."
                 value={level.description}
                 onChange={(e) => handleProficiencyLevelChange(index, e)}
+                required
               />
             </div>
 
-            <div className="flex items-center mt-2 md:mt-0">
+            <div className="relative z-0 w-full group text-left">
+              <label htmlFor={`proficiency_type-${index}`} className="block mb-2">
+                Proficiency Type
+              </label>
+              <select
+                name="proficiency_type"
+                id={`proficiency_type-${index}`}
+                className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+                value={level.proficiency_type}
+                onChange={(e) => handleProficiencyLevelChange(index, e)}
+              >
+                <option value="Autonomy">Autonomy</option>
+                <option value="Influence">Influence</option>
+                <option value="Complexity">Complexity</option>
+                <option value="Business Skills">Business Skills</option>
+                <option value="Knowledge">Knowledge</option>
+              </select>
+            </div>
+
+            <div className="relative z-0 w-full group text-left">
+              <label htmlFor={`type_description-${index}`} className="block mb-2">
+                Type Description
+              </label>
+              <input
+                type="text"
+                name="type_description"
+                id={`type_description-${index}`}
+                className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+                placeholder="Description for type"
+                value={level.type_description || ""}
+                onChange={(e) => handleProficiencyLevelChange(index, e)}
+              />
+            </div>
+
+            <div className="flex items-center justify-end">
               {proficiencyLevels.length > 1 && (
                 <button
                   type="button"
                   onClick={() => handleRemoveProficiencyLevel(index)}
-                  className="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded-full mt-6 ml-2"
+                  className="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded-full ml-2"
                 >
                   -
                 </button>
@@ -506,35 +544,36 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
                 <button
                   type="button"
                   onClick={handleAddProficiencyLevel}
-                  className="bg-transparent hover:bg-green-500 text-green-700 font-semibold hover:text-white py-2 px-4 border border-green-500 hover:border-transparent rounded-full mt-6 ml-2"
+                  className="bg-transparent hover:bg-green-500 text-green-700 font-semibold hover:text-white py-2 px-4 border border-green-500 hover:border-transparent rounded-full ml-2"
                 >
-                  +
+                 +
                 </button>
               )}
             </div>
           </div>
         ))}
 
-        <button
-          type="submit"
-          className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2"
-          disabled={loading}
-        >
-          {loading ? "Submitting..." : editingId ? "Update" : "Submit"}
-        </button>
-
-        {editingId && (
           <button
-            type="button"
-            onClick={() => {
-              setEditingId(null);
-              setProficiencyLevels([{ proficiency_level: "", description: "" }]);
-            }}
-            className="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2"
+            type="submit"
+            className="text-white mt-2 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+            disabled={loading}
           >
-            Cancel
+            {loading ? "Submitting..." : editingId ? "Update" : "Submit"}
           </button>
-        )}
+
+          {editingId && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingId(null);
+                setProficiencyLevels([defaultProficiencyLevel]);
+                setMessage(null);
+              }}
+              className="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+            >
+              Cancel
+            </button>
+          )}
       </form>
 
       <div className="mt-8 bg-white p-4 rounded-lg shadow-lg">

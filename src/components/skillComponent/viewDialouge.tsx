@@ -353,11 +353,11 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                     <hr className="text-[#ddd] pt-2" />
                     <p className="text-[12px]">{viewData.bussiness_links ? viewData.bussiness_links : '-'}</p>
                   </div>
-                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                  {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                     <h4 className="text-[14px] text-[#2060E6] font-bold">Proficiency Level</h4>
                     <hr className="text-[#ddd] pt-2" />
                     <p className="text-[12px]">{viewData.proficiency_level ? viewData.proficiency_level : '-'}</p>
-                  </div>
+                  </div> */}
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                     <h4 className="text-[14px] text-[#2060E6] font-bold">Learning Resource</h4>
                     <hr className="text-[#ddd] pt-2" />
@@ -400,10 +400,10 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                           ? jobrole.jobrole.slice(0, 50) + (jobrole.jobrole.length > 50 ? "..." : "")
                           : "-"}</h2>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]"><span><b>Category : </b></span>{jobrole.category ? jobrole.category : '-'}</p>
+                        {/* <p className="text-[12px]"><span><b>Category : </b></span>{jobrole.category ? jobrole.category : '-'}</p>
                         <p className="text-[12px]"><span><b>Sub Category : </b></span>{jobrole.sub_category ? jobrole.sub_category : '-'}</p>
-                        <p className="text-[12px]"><span><b>Skill Name : </b></span>{jobrole.skillTitle ? jobrole.skillTitle : '-'}</p>
-                        <p className="text-[12px]"><span><b>Description : </b></span>{jobrole.description ? jobrole.description : '-'}</p>
+                        <p className="text-[12px]"><span><b>Skill Name : </b></span>{jobrole.skillTitle ? jobrole.skillTitle : '-'}</p> */}
+                        <p className="text-[12px]"><span><b>Jobrole Description : </b></span>{jobrole.description ? jobrole.description : '-'}</p>
 
                       </div>
                     ))}
@@ -433,10 +433,12 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                             : "-"}
                         </h2>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]"><span><b>Category :</b></span> {proficiencyLevel.category || '-'}</p>
+                        {/* <p className="text-[12px]"><span><b>Category :</b></span> {proficiencyLevel.category || '-'}</p>
                         <p className="text-[12px]"><span><b>Sub Category :</b></span> {proficiencyLevel.sub_category || '-'}</p>
-                        <p className="text-[12px]"><span><b>Skill Name :</b></span> {proficiencyLevel.skillTitle || '-'}</p>
-                        <p className="text-[12px]"><span><b>Description :</b></span> {proficiencyLevel.description || '-'}</p>
+                        <p className="text-[12px]"><span><b>Skill Name :</b></span> {proficiencyLevel.skillTitle || '-'}</p> */}
+                        <p className="text-[12px]"><span><b>Level Description :</b></span> {proficiencyLevel.description || '-'}</p>
+                        <p className="text-[12px]"><span><b>Level Type :</b></span> {proficiencyLevel.proficiency_type || '-'}</p>
+                        <p className="text-[12px]"><span><b>Type Description :</b></span> {proficiencyLevel.type_description || '-'}</p>
                       </div>
                     ))}
                   </div>
@@ -460,9 +462,9 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                           ? knowldegeData.classification_item.slice(0, 50) + (knowldegeData.classification_item.length > 50 ? "..." : "")
                           : "-"}</h2>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]"><span><b>Category :</b></span>{knowldegeData.category ? knowldegeData.category : '-'}</p>
+                        {/* <p className="text-[12px]"><span><b>Category :</b></span>{knowldegeData.category ? knowldegeData.category : '-'}</p>
                         <p className="text-[12px]"><span><b>Sub Category :</b></span>{knowldegeData.sub_category ? knowldegeData.sub_category : '-'}</p>
-                        <p className="text-[12px]"><span><b>Skill Name :</b></span>{knowldegeData.skillTitle ? knowldegeData.skillTitle : '-'}</p>
+                        <p className="text-[12px]"><span><b>Skill Name :</b></span>{knowldegeData.skillTitle ? knowldegeData.skillTitle : '-'}</p> */}
                         <p className="text-[12px]"><span><b>Proficiency Level :</b></span>{knowldegeData.proficiency_level ? knowldegeData.proficiency_level : '-'}</p>
 
                       </div>
@@ -486,8 +488,9 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                         <h2 className="text-[14px] h-[48px] text-[#2060E6] font-bold" title={abilityData.classification_item ? abilityData.classification_item : '-'}> {abilityData.classification_item
                           ? abilityData.classification_item.slice(0, 50) + (abilityData.classification_item.length > 50 ? "..." : "")
                           : "-"}</h2>
-                        <hr className="text-[#ddd] pt-2" /><p className="text-[12px]"><span><b>Category :</b></span>{abilityData.category ? abilityData.category : '-'}</p>
-                        <p className="text-[12px]"><span><b>Sub Category :</b></span>{abilityData.sub_category ? abilityData.sub_category : '-'}</p>
+                        <hr className="text-[#ddd] pt-2" />
+                        {/* <p className="text-[12px]"><span><b>Category :</b></span>{abilityData.category ? abilityData.category : '-'}</p>
+                        <p className="text-[12px]"><span><b>Sub Category :</b></span>{abilityData.sub_category ? abilityData.sub_category : '-'}</p> */}
                         <p className="text-[12px]"><span><b>Skill Name :</b></span>{abilityData.skillTitle ? abilityData.skillTitle : '-'}</p>
                         <p className="text-[12px]"><span><b>Proficiency Level :</b></span>{abilityData.proficiency_level ? abilityData.proficiency_level : '-'}</p>
 
@@ -515,10 +518,9 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                           : "-"}</h2>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]"><span><b>Proficiency Level :</b></span>{applicationData.proficiency_level ? applicationData.proficiency_level : '-'}</p>
-                        <p className="text-[12px]"><span><b>Category :</b></span>{applicationData.category ? applicationData.category : '-'}</p>
+                        {/* <p className="text-[12px]"><span><b>Category :</b></span>{applicationData.category ? applicationData.category : '-'}</p>
                         <p className="text-[12px]"><span><b>Sub Category :</b></span>{applicationData.sub_category ? applicationData.sub_category : '-'}</p>
-                        <p className="text-[12px]"><span><b>Skill Name :</b></span>{applicationData.skillTitle ? applicationData.skillTitle : '-'}</p>
-
+                        <p className="text-[12px]"><span><b>Skill Name :</b></span>{applicationData.skillTitle ? applicationData.skillTitle : '-'}</p> */}
                       </div>
                     ))}
                   </div>

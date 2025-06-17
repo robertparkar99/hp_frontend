@@ -434,7 +434,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
             />
           </div>
 
-          <div className="relative z-0 w-full mb-5 group text-left">
+          {/* <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="proficiency_level" className="text-left">
               Proficiency Levels
             </label>
@@ -454,7 +454,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
                 ))}
               </select>
             )}
-          </div>
+          </div> */}
         </div>
 
         <div className="grid md:grid-cols-2 md:gap-6">
