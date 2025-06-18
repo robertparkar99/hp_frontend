@@ -449,7 +449,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       ignoreRowClick: true,
-      allowOverflow: true,
+      // allowOverflow: true,
       button: true,
     },
   ];
