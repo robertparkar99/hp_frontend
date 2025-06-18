@@ -4,18 +4,18 @@ import dynamic from 'next/dynamic';
 // Type Definitions
 // Dynamically import ExcelExportButton, PdfExportButton, and PrintButton
 const ExcelExportButton = dynamic(
-  () => import('../../exportButtons/excelExportButton').then(mod => mod.ExcelExportButton),
-  { ssr: false }
+  () => import('../../exportButtons/excelExportButton').then(mod => mod.ExcelExportButton),
+  { ssr: false }
 );
 
 const PdfExportButton = dynamic(
-  () => import('../../exportButtons/PdfExportButton').then(mod => mod.PdfExportButton),
-  { ssr: false }
+  () => import('../../exportButtons/PdfExportButton').then(mod => mod.PdfExportButton),
+  { ssr: false }
 );
 
 const PrintButton = dynamic(
-  () => import('../../exportButtons/printExportButton').then(mod => mod.PrintButton),
-  { ssr: false }
+  () => import('../../exportButtons/printExportButton').then(mod => mod.PrintButton),
+  { ssr: false }
 );
 type Props = { editData: any };
 
@@ -100,33 +100,33 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
       if (data?.userJobroleData) {
         const transformedData = Array.isArray(data.userJobroleData)
           ? data.userJobroleData.map((item: any) => ({
-              id: item.id,
-              jobrole: item.jobrole || item.job_role,
-              description: item.description,
-              category: item.category,
-              sub_category: item.sub_category,
-              skillTitle: item.skillTitle,
-              created_by_user: item?.first_name + " " + item?.last_name,
-              created_at: item.created_at,
-              updated_at: item.updated_at,
-            }))
+            id: item.id,
+            jobrole: item.jobrole || item.job_role,
+            description: item.description,
+            category: item.category,
+            sub_category: item.sub_category,
+            skillTitle: item.skillTitle,
+            created_by_user: item?.first_name + " " + item?.last_name,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+          }))
           : [
-              {
-                id: data.userJobroleData.id,
-                jobrole:
-                  data.userJobroleData.jobrole || data.userJobroleData.job_role,
-                description: data.userJobroleData.description,
-                category: data.userJobroleData.category,
-                sub_category: data.userJobroleData.sub_category,
-                skillTitle: data.userJobroleData.skillTitle,
-                created_by_user:
-                  data.userJobroleData?.first_name +
-                  " " +
-                  data.userJobroleData?.last_name,
-                created_at: data.userJobroleData.created_at,
-                updated_at: data.userJobroleData.updated_at,
-              },
-            ];
+            {
+              id: data.userJobroleData.id,
+              jobrole:
+                data.userJobroleData.jobrole || data.userJobroleData.job_role,
+              description: data.userJobroleData.description,
+              category: data.userJobroleData.category,
+              sub_category: data.userJobroleData.sub_category,
+              skillTitle: data.userJobroleData.skillTitle,
+              created_by_user:
+                data.userJobroleData?.first_name +
+                " " +
+                data.userJobroleData?.last_name,
+              created_at: data.userJobroleData.created_at,
+              updated_at: data.userJobroleData.updated_at,
+            },
+          ];
 
         setSubmittedData(transformedData);
       }
@@ -144,10 +144,8 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
 
     try {
       const res = await fetch(
-        `${sessionData.url}/search_skill?type=API&token=${
-          sessionData.token
-        }&sub_institute_id=${sessionData.subInstituteId}&org_type=${
-          sessionData.orgType
+        `${sessionData.url}/search_skill?type=API&token=${sessionData.token
+        }&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType
         }&searchType=jobrole&searchWord=${encodeURIComponent(keyword)}`
       );
       const data = await res.json();
@@ -331,7 +329,10 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
           />
         </div>
       ),
-      selector: (row: SubmittedJobRole) => row.description,
+      selector: (row: SubmittedJobRole) => 
+        row.description.length > 100 
+          ? `${row.description.substring(0, 100)}...` 
+          : row.description,
       sortable: true,
       wrap: true,
     },
@@ -448,7 +449,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       ignoreRowClick: true,
-      allowOverflow: true,
+      // allowOverflow: true,
       button: true,
     },
   ];
@@ -478,82 +479,82 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
       <form className="w-[100%]" onSubmit={handleSubmit}>
         {jobRoles.map((jobRole, index) => (
           <div
-  key={index}
-  className="grid md:grid-cols-3 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-2 mb-2 rounded-lg relative" // Added relative here
->
-  <div className="relative z-10 w-full group text-left"> {/* Changed z-0 to z-10 */}
-    <label htmlFor={`job_role-${index}`} className="text-left">
-      Job Role
-    </label>
-    <br />
-    <div className="relative"> {/* Added wrapper div with relative positioning */}
-      <input
-        type="text"
-        name="job_role"
-        id={`job_role-${index}`}
-        className="w-full z-10 rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
-        placeholder="Enter Job Role..."
-        value={jobRole.job_role}
-        onChange={(e) => handleJobRoleChange(index, e)}
-        autoComplete="off"
-      />
+            key={index}
+            className="grid md:grid-cols-3 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-2 mb-2 rounded-lg relative" // Added relative here
+          >
+            <div className="relative z-10 w-full group text-left"> {/* Changed z-0 to z-10 */}
+              <label htmlFor={`job_role-${index}`} className="text-left">
+                Job Role
+              </label>
+              <br />
+              <div className="relative"> {/* Added wrapper div with relative positioning */}
+                <input
+                  type="text"
+                  name="job_role"
+                  id={`job_role-${index}`}
+                  className="w-full z-10 rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+                  placeholder="Enter Job Role..."
+                  value={jobRole.job_role}
+                  onChange={(e) => handleJobRoleChange(index, e)}
+                  autoComplete="off"
+                />
 
-      {jobRoleSuggestions[index]?.length > 0 && (
-        <ul
-          className="relative z-20 w-full max-h-60 overflow-y-auto border border-gray-300 rounded-lg mt-1 shadow-lg bg-white" // Removed opacity classes, added z-20
-        >
-          {jobRoleSuggestions[index].map((suggestion, sIndex) => (
-            <li
-              key={sIndex}
-              className="p-2 hover:bg-blue-100 cursor-pointer"
-              onClick={() => handleSelectSuggestion(index, suggestion)}
-            >
-              {suggestion}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  </div>
+                {jobRoleSuggestions[index]?.length > 0 && (
+                  <ul
+                    className="relative z-20 w-full max-h-60 overflow-y-auto border border-gray-300 rounded-lg mt-1 shadow-lg bg-white" // Removed opacity classes, added z-20
+                  >
+                    {jobRoleSuggestions[index].map((suggestion, sIndex) => (
+                      <li
+                        key={sIndex}
+                        className="p-2 hover:bg-blue-100 cursor-pointer"
+                        onClick={() => handleSelectSuggestion(index, suggestion)}
+                      >
+                        {suggestion}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
 
-  {/* Rest of your code remains the same */}
-  <div className="relative z-0 w-full group text-left">
-    <label htmlFor={`description-${index}`} className="text-left">
-      Description
-    </label>
-    <br />
-    <textarea
-      name="description"
-      id={`description-${index}`}
-      rows={2}
-      className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
-      placeholder="Enter Description..."
-      value={jobRole.description}
-      onChange={(e) => handleJobRoleChange(index, e)}
-    ></textarea>
-  </div>
-  
-  <div className="relative z-0 w-full group text-left">
-    {jobRoles.length > 1 && (
-      <button
-        type="button"
-        onClick={() => handleRemoveJobRole(index)}
-        className="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded-full mt-6 ml-2"
-      >
-        -
-      </button>
-    )}
-    {index === jobRoles.length - 1 && (
-      <button
-        type="button"
-        onClick={handleAddJobRole}
-        className="bg-transparent hover:bg-green-500 text-green-700 font-semibold hover:text-white py-2 px-4 border border-green-500 hover:border-transparent rounded-full mt-6 ml-2"
-      >
-        +
-      </button>
-    )}
-  </div>
-</div>
+            {/* Rest of your code remains the same */}
+            <div className="relative z-0 w-full group text-left">
+              <label htmlFor={`description-${index}`} className="text-left">
+                Description
+              </label>
+              <br />
+              <textarea
+                name="description"
+                id={`description-${index}`}
+                rows={2}
+                className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
+                placeholder="Enter Description..."
+                value={jobRole.description}
+                onChange={(e) => handleJobRoleChange(index, e)}
+              ></textarea>
+            </div>
+
+            <div className="relative z-0 w-full group text-left">
+              {jobRoles.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveJobRole(index)}
+                  className="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded-full mt-6 ml-2"
+                >
+                  -
+                </button>
+              )}
+              {index === jobRoles.length - 1 && (
+                <button
+                  type="button"
+                  onClick={handleAddJobRole}
+                  className="bg-transparent hover:bg-green-500 text-green-700 font-semibold hover:text-white py-2 px-4 border border-green-500 hover:border-transparent rounded-full mt-6 ml-2"
+                >
+                  +
+                </button>
+              )}
+            </div>
+          </div>
         ))}
 
         <button

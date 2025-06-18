@@ -27,7 +27,7 @@ const Navbar: React.FC = () => {
   return (
     <>
       {isLoading ? (<Loading />) : (
-        <><nav className="flex justify-between overflow-hidden flex-wrap gap-10 px-10 py-1.0 bg-white shadow-[0px_4px_4px_rgba(71,160,255,0.25)] max-md:px-5">
+        <><nav className="flex justify-between overflow-hidden flex-wrap gap-10 px-[16px] py-[10px] bg-white shadow-[0px_4px_4px_rgba(71,160,255,0.25)] max-md:px-5">
           {/* UserProfile and LogoSection always display */}
           <UserProfile />
           <LogoSection />

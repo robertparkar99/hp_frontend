@@ -174,7 +174,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
 
             {/* Responsibilities and Required Skills */}
-            <div className="flex gap-4">
+            {/* <div className="flex gap-4">
 
               <div className="relative z-0 w-full mb-5 group text-left">
                 <label htmlFor="responsibilities" className="text-left">Responsibilities</label><br />
@@ -198,7 +198,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                   value={formData.required_skill_experience}
                 ></textarea>
               </div>
-            </div>
+            </div> */}
 
             {/* Salary Range and Company Info */}
             <div className="flex gap-4">
