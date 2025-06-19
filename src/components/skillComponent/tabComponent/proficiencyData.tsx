@@ -44,6 +44,7 @@ type SubmittedProficiency = {
   created_by?: string;
   created_at?: string;
   updated_at?: string;
+  sub_institute_id?: number | null;
 };
 
 type ApiResponse = {
@@ -409,18 +410,18 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
       name: "Actions",
       cell: (row: SubmittedProficiency) => (
         <div className="flex space-x-2">
-          <button
+         {row.sub_institute_id!=null && ( <><button
             onClick={() => handleEdit(row)}
             className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
           >
             <span className="mdi mdi-pencil"></span>
-          </button>
-          <button
+          </button><button
             onClick={() => row.id && handleDelete(row.id)}
             className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
           >
-            <span className="mdi mdi-trash-can"></span>
-          </button>
+              <span className="mdi mdi-trash-can"></span>
+            </button></>
+          )}
         </div>
       ),
       ignoreRowClick: true,

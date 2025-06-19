@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import DataTable from "react-data-table-component";
 import dynamic from 'next/dynamic';
-// Type Definitions
-// Dynamically import ExcelExportButton, PdfExportButton, and PrintButton
+
+// Dynamically import export buttons
 const ExcelExportButton = dynamic(
   () => import('../../exportButtons/excelExportButton').then(mod => mod.ExcelExportButton),
   { ssr: false }
@@ -17,6 +17,7 @@ const PrintButton = dynamic(
   () => import('../../exportButtons/printExportButton').then(mod => mod.PrintButton),
   { ssr: false }
 );
+
 type Props = { editData: any };
 
 type JobRoleEntry = {
@@ -46,17 +47,13 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
     userId: "",
     userProfile: "",
   });
-  const [jobRoleSuggestions, setJobRoleSuggestions] = useState<
-    Record<number, string[]>
-  >({});
+  const [jobRoleSuggestions, setJobRoleSuggestions] = useState<Record<number, string[]>>({});
   const [jobRoles, setJobRoles] = useState<JobRoleEntry[]>([
     { job_role: "", description: "" },
   ]);
   const [submittedData, setSubmittedData] = useState<SubmittedJobRole[]>([]);
   const [loading, setLoading] = useState(false);
-  const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
-    {}
-  );
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Session Data from Local Storage
@@ -101,30 +98,28 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
         const transformedData = Array.isArray(data.userJobroleData)
           ? data.userJobroleData.map((item: any) => ({
             id: item.id,
-            jobrole: item.jobrole || item.job_role,
-            description: item.description,
-            category: item.category,
-            sub_category: item.sub_category,
-            skillTitle: item.skillTitle,
-            created_by_user: item?.first_name + " " + item?.last_name,
-            created_at: item.created_at,
-            updated_at: item.updated_at,
+            jobrole: item.jobrole || item.job_role || "",
+            description: item.description || "",
+            category: item.category || "N/A",
+            sub_category: item.sub_category || "N/A",
+            skillTitle: item.skillTitle || "N/A",
+            created_by_user: item?.first_name ? `${item.first_name} ${item.last_name || ""}` : "N/A",
+            created_at: item.created_at || "N/A",
+            updated_at: item.updated_at || "N/A",
           }))
           : [
             {
               id: data.userJobroleData.id,
-              jobrole:
-                data.userJobroleData.jobrole || data.userJobroleData.job_role,
-              description: data.userJobroleData.description,
-              category: data.userJobroleData.category,
-              sub_category: data.userJobroleData.sub_category,
-              skillTitle: data.userJobroleData.skillTitle,
-              created_by_user:
-                data.userJobroleData?.first_name +
-                " " +
-                data.userJobroleData?.last_name,
-              created_at: data.userJobroleData.created_at,
-              updated_at: data.userJobroleData.updated_at,
+              jobrole: data.userJobroleData.jobrole || data.userJobroleData.job_role || "",
+              description: data.userJobroleData.description || "",
+              category: data.userJobroleData.category || "N/A",
+              sub_category: data.userJobroleData.sub_category || "N/A",
+              skillTitle: data.userJobroleData.skillTitle || "N/A",
+              created_by_user: data.userJobroleData?.first_name 
+                ? `${data.userJobroleData.first_name} ${data.userJobroleData.last_name || ""}`
+                : "N/A",
+              created_at: data.userJobroleData.created_at || "N/A",
+              updated_at: data.userJobroleData.updated_at || "N/A",
             },
           ];
 
@@ -252,7 +247,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
   // Handle Edit
   const handleEdit = (row: SubmittedJobRole) => {
     setEditingId(row.id || null);
-    setJobRoles([{ job_role: row.jobrole, description: row.description }]);
+    setJobRoles([{ job_role: row.jobrole || "", description: row.description || "" }]);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -279,6 +274,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
       }
     }
   };
+
   // Handle Column Filtering
   const handleColumnFilter = (column: string, value: string) => {
     setColumnFilters((prev) => ({
@@ -292,9 +288,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
     return Object.entries(columnFilters).every(([column, filterValue]) => {
       if (!filterValue) return true;
 
-      const columnValue = String(
-        item[column as keyof SubmittedJobRole] || ""
-      ).toLowerCase();
+      const columnValue = String(item[column as keyof SubmittedJobRole] || "").toLowerCase();
       return columnValue.includes(filterValue.toLowerCase());
     });
   });
@@ -313,7 +307,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
           />
         </div>
       ),
-      selector: (row: SubmittedJobRole) => row.jobrole,
+      selector: (row: SubmittedJobRole) => row.jobrole || "N/A",
       sortable: true,
       wrap: true,
     },
@@ -330,9 +324,11 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       selector: (row: SubmittedJobRole) => 
-        row.description.length > 100 
-          ? `${row.description.substring(0, 100)}...` 
-          : row.description,
+        row.description 
+          ? (row.description.length > 100 
+              ? `${row.description.substring(0, 100)}...` 
+              : row.description)
+          : "N/A",
       sortable: true,
       wrap: true,
     },
@@ -388,9 +384,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) =>
-              handleColumnFilter("created_by_user", e.target.value)
-            }
+            onChange={(e) => handleColumnFilter("created_by_user", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
@@ -449,7 +443,6 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       ignoreRowClick: true,
-      // allowOverflow: true,
       button: true,
     },
   ];
@@ -480,14 +473,14 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
         {jobRoles.map((jobRole, index) => (
           <div
             key={index}
-            className="grid md:grid-cols-3 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-2 mb-2 rounded-lg relative" // Added relative here
+            className="grid md:grid-cols-3 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-2 mb-2 rounded-lg relative"
           >
-            <div className="relative z-10 w-full group text-left"> {/* Changed z-0 to z-10 */}
+            <div className="relative z-10 w-full group text-left">
               <label htmlFor={`job_role-${index}`} className="text-left">
                 Job Role
               </label>
               <br />
-              <div className="relative"> {/* Added wrapper div with relative positioning */}
+              <div className="relative">
                 <input
                   type="text"
                   name="job_role"
@@ -500,9 +493,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
                 />
 
                 {jobRoleSuggestions[index]?.length > 0 && (
-                  <ul
-                    className="relative z-20 w-full max-h-60 overflow-y-auto border border-gray-300 rounded-lg mt-1 shadow-lg bg-white" // Removed opacity classes, added z-20
-                  >
+                  <ul className="relative z-20 w-full max-h-60 overflow-y-auto border border-gray-300 rounded-lg mt-1 shadow-lg bg-white">
                     {jobRoleSuggestions[index].map((suggestion, sIndex) => (
                       <li
                         key={sIndex}
@@ -517,7 +508,6 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
               </div>
             </div>
 
-            {/* Rest of your code remains the same */}
             <div className="relative z-0 w-full group text-left">
               <label htmlFor={`description-${index}`} className="text-left">
                 Description
@@ -585,7 +575,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
             <PrintButton
               data={submittedData}
               title="Job Roles Report"
-              excludedFields={["id", "internal_id"]} // Optional: exclude these fields
+              excludedFields={["id", "internal_id"]}
               buttonText={
                 <>
                   <span className="mdi mdi-printer-outline"></span>
@@ -604,9 +594,9 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
             />
 
             <PdfExportButton
-              data={submittedData} // Pass your array of data here
-              fileName="Skills Jobrole" // The desired file name
-              onClick={() => console.log("PDF export initiated")} // Optional callback
+              data={submittedData}
+              fileName="Skills Jobrole"
+              onClick={() => console.log("PDF export initiated")}
               buttonText={
                 <>
                   <span className="mdi mdi-file-pdf-box"></span>
