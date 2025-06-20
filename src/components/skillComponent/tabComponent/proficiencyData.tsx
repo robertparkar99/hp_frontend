@@ -410,7 +410,9 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
       name: "Actions",
       cell: (row: SubmittedProficiency) => (
         <div className="flex space-x-2">
+
          {row.created_by!=null && ( <><button
+
             onClick={() => handleEdit(row)}
             className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
           >
