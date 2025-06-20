@@ -101,7 +101,7 @@ type ApplicationEntry = {
   const fetchInitialData = async () => {
     const res = await fetch( `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=application`);
     const data = await res.json();
-    setProficiencyLevel(data.proficiency_levels || []);
+    setProficiencyLevel(data.grouped_proficiency_levels || []);
     setSubmittedData(data.userApplicationData||[]);
   };
 
