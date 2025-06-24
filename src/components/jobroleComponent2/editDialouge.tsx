@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 // Placeholder components for demonstration.
 // In a real Next.js app, these would be imported from:
 import DetailData from "./tabComponent/detailData";
+import JobroleData from "./tabComponent/jobroleData";
 import SkillData from "./tabComponent/skillData";
 import TaskData from "./tabComponent/taskData";
 
@@ -83,7 +84,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
   const [sessionUserID, setessionUserID] = useState<string>();
   const [sessionUserProfile, setessionUserProfile] = useState<string>();
   const [editData, setEditData] = useState<any>({});
-  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -121,17 +121,17 @@ const EditDialog: React.FC<EditDialogProps> = ({
   const tabs = [
     {
       id: "detail",
-      name: "Jobrole Detail",
-      component: <DetailData editData={editData} onClose={onClose} onSuccess={onSuccess} />,
+      name: "Detail",
+      component: <DetailData editData={editData} />,
     },
     {
       id: "Skill Map",
-      name: "Jobrole Skills",
+      name: "Skill Map",
       component: <SkillData editData={editData} />,
     },
     {
       id: "Task Map",
-      name: "Jobrole Tasks",
+      name: "Task Map",
       component: <TaskData editData={editData} />,
     },
   ];
@@ -148,41 +148,21 @@ const EditDialog: React.FC<EditDialogProps> = ({
           ✖
         </button>
 
-        {/* header parts start  */}
-        <div className="flex w-full">
-          {/* Left: GIF */}
-          <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
-            <img src={`/assets/loading/robo_dance.gif`} alt="Loading..." className="w-full h-auto" />
-          </div>
-
-          {/* Center Content */}
-          <div className="w-[90%] bg-gradient-to-r from-violet-100 to-violet-200 py-2 flex justify-center rounded-r-lg">
-            <div className="heade">
-              <h2 className="text-gray-800 font-bold text-lg"><b>Jobrole : </b>{editData?.jobrole}</h2>
-              <h5 className="text-gray-600 font-semibold text-sm">
-                <b>Industry : </b>{sessionOrgType}
-              </h5>
-              <h5 className="text-gray-600 font-semibold text-sm"><b>Department : </b>{editData?.department}</h5>
-              {editData.sub_department ? (
-                <h5 className="text-gray-600 font-semibold text-sm"><b>Sub Department : </b>{editData.sub_department}</h5>
-              ) : ''}
-            </div>
-
-          </div>
+        <div className="w-[100%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 text-center rounded-lg">
+          <h2 className="font-bold">{editData.title}</h2>
         </div>
-
-        {/* header parts end  */}
         {/* Tab Navigation */}
-        <div className="w-full custom-oklch-gradient my-2 p-4 text-center rounded-lg shadow-md font-semibold">
+        <div className="w-[100%] bg-gradient-to-r from-blue-100 to-blue-200 my-2 p-4 text-center rounded-lg gap-4">
           {tabs.map((tab) => (
             <span
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
                 m-2 px-2 py-2 rounded-lg text-md font-semibold transition-all duration-300
-                ${activeTab === tab.id
-                  ? "bg-blue-600 text-white shadow-lg transform scale-105"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-blue-600"
+                ${
+                  activeTab === tab.id
+                    ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-blue-600"
                 }
               `}
             >

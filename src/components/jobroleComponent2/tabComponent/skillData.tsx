@@ -24,7 +24,6 @@ type Props = { editData: any };
 type SkillNameEntry = {
   skillName: string;
   description: string;
-  proficiency_level?:string,
   skill_id?: string; // Added to hold the unique ID of the skill for updates
 };
 
@@ -33,7 +32,6 @@ type SubmittedSkillName = {
   SkillName: string;
   description: string;
   jobrole?: string;
-  proficiency_level?: string;
   created_by_user?: string;
   created_at?: string;
   updated_at?: string;
@@ -57,7 +55,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
     Record<number, string[]>
   >({});
   const [SkillNames, setSkillNames] = useState<SkillNameEntry[]>([
-    { skillName: "", description: "",proficiency_level: "", skill_id: "" }, // Initialize with skill_id field
+    { skillName: "", description: "", skill_id: "" }, // Initialize with skill_id field
   ]);
   const [submittedData, setSubmittedData] = useState<SubmittedSkillName[]>([]);
   const [loading, setLoading] = useState(false);
@@ -113,7 +111,6 @@ const SkillData: React.FC<Props> = ({ editData }) => {
               : String(item.skillTitle || ''),
             description: String(item.description || item.skillDescription || ''), // Added item.skillDescription fallback
             jobrole: String(editData?.jobrole || ''),
-            proficiency_level:String(item.proficiency_level) || '',
             category: String(item.category || ''),
             sub_category: String(item.sub_category || ''),
             skillTitle: typeof item.skillTitle === 'object' && item.skillTitle !== null
@@ -132,7 +129,6 @@ const SkillData: React.FC<Props> = ({ editData }) => {
                 : String(data.userskillData.skillTitle || ''),
               description: String(data.userskillData.description || data.userskillData.skillDescription || ''),
               jobrole: String(editData?.jobrole || ''),
-              proficiency_level:String(data.userskillData?.proficiency_level) || '',
               category: String(data.userskillData.category || ''),
               sub_category: String(data.userskillData.sub_category || ''),
               skillTitle: typeof data.userskillData.skillTitle === 'object' && data.userskillData.skillTitle !== null
@@ -202,7 +198,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
 
   // Add New Skills Entry
   const handleAddSkillName = () => {
-    setSkillNames([...SkillNames, { skillName: "", description: "",proficiency_level: "", skill_id: "" }]);
+    setSkillNames([...SkillNames, { skillName: "", description: "", skill_id: "" }]);
   };
 
   // Remove Skills Entry
@@ -226,7 +222,6 @@ const SkillData: React.FC<Props> = ({ editData }) => {
     const skillsToSubmit = SkillNames.map(skill => ({
       skillName: skill.skillName,
       description: skill.description,
-      proficiency_level : skill.proficiency_level,
       // Only include skill_id if it exists (i.e., when editing an existing skill)
       ...(skill.skill_id && { skill_id: skill.skill_id })
     }));
@@ -238,7 +233,6 @@ const SkillData: React.FC<Props> = ({ editData }) => {
       // the `skillName_data` often holds the primary structured data for APIs.
       skillName: skillsToSubmit.map((s) => s.skillName),
       description: skillsToSubmit.map((s) => s.description),
-      proficiency_level: skillsToSubmit.map((s) => s.proficiency_level),
       jobrole: editData?.jobrole, // Ensure jobrole is passed with the submission
       token: sessionData.token,
       sub_institute_id: sessionData.subInstituteId,
@@ -268,7 +262,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
       const data = await res.json();
       alert(data.message); // Consider replacing alert with a custom modal UI
 
-      setSkillNames([{ skillName: "", description: "",proficiency_level:"", skill_id: "" }]); // Reset form
+      setSkillNames([{ skillName: "", description: "", skill_id: "" }]); // Reset form
       setSkillNameSuggestions({});
       setEditingId(null);
 
@@ -287,7 +281,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
   const handleEdit = (row: SubmittedSkillName) => {
     setEditingId(row.id || null); // Use row.id for editingId
     // Populate the form with the selected skill's data, including skill_id
-    setSkillNames([{ skillName: row.SkillName, description: row.description,proficiency_level : row.proficiency_level, skill_id: row.skill_id }]);
+    setSkillNames([{ skillName: row.SkillName, description: row.description, skill_id: row.skill_id }]);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -356,7 +350,23 @@ const SkillData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Skill Description</div>
+          <div>Job Role</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row: SubmittedSkillName) => row.jobrole || "N/A",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: (
+        <div>
+          <div>Description</div>
           <input
             type="text"
             placeholder="Search..."
@@ -366,73 +376,42 @@ const SkillData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       selector: (row: SubmittedSkillName) => row.description,
-      cell: (row: SubmittedSkillName) => (
-        <div
-          title={row.description}
-          style={{
-            // whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            maxWidth: '300px'
-          }}
-        >
-          {row.description.length > 100
-            ? `${row.description.substring(0, 100)}...`
-            : row.description}
-        </div>
-      ),
       sortable: true,
-      wrap: false, // Changed to false to enable ellipsis
+      wrap: true,
     },
     {
       name: (
         <div>
-          <div>Skill Proficiency Level</div>
+          <div>Created By</div>
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("proficiency_level", e.target.value)}
+            onChange={(e) =>
+              handleColumnFilter("created_by_user", e.target.value)
+            }
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: SubmittedSkillName) => row.proficiency_level || "N/A",
+      selector: (row: SubmittedSkillName) => row.created_by_user || "N/A",
       sortable: true,
-      wrap: true,
     },
-    // {
-    //   name: (
-    //     <div>
-    //       <div>Created By</div>
-    //       <input
-    //         type="text"
-    //         placeholder="Search..."
-    //         onChange={(e) =>
-    //           handleColumnFilter("created_by_user", e.target.value)
-    //         }
-    //         style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-    //       />
-    //     </div>
-    //   ),
-    //   selector: (row: SubmittedSkillName) => row.created_by_user || "N/A",
-    //   sortable: true,
-    // },
-    // {
-    //   name: (
-    //     <div>
-    //       <div>Created At</div>
-    //       <input
-    //         type="text"
-    //         placeholder="Search..."
-    //         onChange={(e) => handleColumnFilter("created_at", e.target.value)}
-    //         style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-    //       />
-    //     </div>
-    //   ),
-    //   selector: (row: SubmittedSkillName) =>
-    //     row.created_at ? new Date(row.created_at).toLocaleDateString() : "N/A",
-    //   sortable: true,
-    // },
+    {
+      name: (
+        <div>
+          <div>Created At</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("created_at", e.target.value)}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row: SubmittedSkillName) =>
+        row.created_at ? new Date(row.created_at).toLocaleDateString() : "N/A",
+      sortable: true,
+    },
     {
       name: "Actions",
       cell: (row: SubmittedSkillName) => (
@@ -452,7 +431,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       ignoreRowClick: true,
-      // allowOverflow: true,
+      allowOverflow: true,
       button: true,
     },
   ];
@@ -483,7 +462,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
         {SkillNames.map((SkillName, index) => (
           <div
             key={index}
-            className="grid md:grid-cols-4 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-2 mb-2 rounded-lg relative"
+            className="grid md:grid-cols-3 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-2 mb-2 rounded-lg relative"
           >
             {/* Hidden input for skill_id */}
             <input type="hidden" name="skill_id" id={`skill_id-${index}`} value={SkillName.skill_id || ''} />
@@ -525,7 +504,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
 
             <div className="relative z-0 w-full group text-left">
               <label htmlFor={`description-${index}`} className="text-left">
-                Skill Description
+                Description
               </label>
               <br />
               <textarea
@@ -537,23 +516,6 @@ const SkillData: React.FC<Props> = ({ editData }) => {
                 value={SkillName.description}
                 onChange={(e) => handleSkillNameChange(index, e)}
               ></textarea>
-            </div>
-
-             <div className="relative z-0 w-full group text-left">
-              <label htmlFor={`proficiency_level-${index}`} className="text-left">
-                Skill Poficiency Level
-              </label>
-              <br />
-              <input
-                  type="text"
-                  name="proficiency_level"
-                  id={`proficiency_level-${index}`}
-                  className="w-full z-10 rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
-                  placeholder="Enter Poficiency Level..."
-                  value={SkillName.proficiency_level}
-                  autoComplete="off"
-                />
-             
             </div>
 
             <div className="relative z-0 w-full group text-left">
@@ -591,7 +553,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
             type="button"
             onClick={() => {
               setEditingId(null);
-              setSkillNames([{ skillName: "", description: "",proficiency_level:"", skill_id: "" }]); // Reset form and skill_id
+              setSkillNames([{ skillName: "", description: "", skill_id: "" }]); // Reset form and skill_id
             }}
             className="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2"
           >

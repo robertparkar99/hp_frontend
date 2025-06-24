@@ -139,7 +139,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
 
     try {
       const res = await fetch(
-        `${sessionData.url}/search_skill?type=API&token=${sessionData.token
+        `${sessionData.url}/search_data?type=API&token=${sessionData.token
         }&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType
         }&searchType=jobrole&searchWord=${encodeURIComponent(keyword)}`
       );
@@ -314,7 +314,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Description</div>
+          <div>Jobrole Description</div>
           <input
             type="text"
             placeholder="Search..."
@@ -331,98 +331,6 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
           : "N/A",
       sortable: true,
       wrap: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Category</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("category", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedJobRole) => row.category || "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Sub Category</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("sub_category", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedJobRole) => row.sub_category || "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Skill Title</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("skillTitle", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedJobRole) => row.skillTitle || "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Created By</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("created_by_user", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedJobRole) => row.created_by_user || "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Created At</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("created_at", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedJobRole) =>
-        row.created_at ? new Date(row.created_at).toLocaleDateString() : "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Updated At</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("updated_at", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedJobRole) =>
-        row.updated_at ? new Date(row.updated_at).toLocaleDateString() : "N/A",
-      sortable: true,
     },
     {
       name: "Actions",
@@ -510,7 +418,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
 
             <div className="relative z-0 w-full group text-left">
               <label htmlFor={`description-${index}`} className="text-left">
-                Description
+                Jobrole Description
               </label>
               <br />
               <textarea
@@ -518,7 +426,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
                 id={`description-${index}`}
                 rows={2}
                 className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
-                placeholder="Enter Description..."
+                placeholder="Enter Jobrole Description..."
                 value={jobRole.description}
                 onChange={(e) => handleJobRoleChange(index, e)}
               ></textarea>

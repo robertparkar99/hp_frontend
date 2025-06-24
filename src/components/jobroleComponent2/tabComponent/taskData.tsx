@@ -352,6 +352,38 @@ const TaskData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
+          <div>Tasks</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("taskName", e.target.value)}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row: SubmittedTaskName) => row.taskName,
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: (
+        <div>
+          <div>Job Role</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row: SubmittedTaskName) => row.jobrole || "N/A",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: (
+        <div>
           <div>Critical Work Function</div>
           <input
             type="text"
@@ -368,69 +400,36 @@ const TaskData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Tasks</div>
+          <div>Created By</div>
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("taskName", e.target.value)}
+            onChange={(e) =>
+              handleColumnFilter("created_by_user", e.target.value)
+            }
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: SubmittedTaskName) => row.taskName,
+      selector: (row: SubmittedTaskName) => row.created_by_user || "N/A",
       sortable: true,
-      wrap: true,
     },
-    // {
-    //   name: (
-    //     <div>
-    //       <div>Job Role</div>
-    //       <input
-    //         type="text"
-    //         placeholder="Search..."
-    //         onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
-    //         style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-    //       />
-    //     </div>
-    //   ),
-    //   selector: (row: SubmittedTaskName) => row.jobrole || "N/A",
-    //   sortable: true,
-    //   wrap: true,
-    // },
-    
-    // {
-    //   name: (
-    //     <div>
-    //       <div>Created By</div>
-    //       <input
-    //         type="text"
-    //         placeholder="Search..."
-    //         onChange={(e) =>
-    //           handleColumnFilter("created_by_user", e.target.value)
-    //         }
-    //         style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-    //       />
-    //     </div>
-    //   ),
-    //   selector: (row: SubmittedTaskName) => row.created_by_user || "N/A",
-    //   sortable: true,
-    // },
-    // {
-    //   name: (
-    //     <div>
-    //       <div>Created At</div>
-    //       <input
-    //         type="text"
-    //         placeholder="Search..."
-    //         onChange={(e) => handleColumnFilter("created_at", e.target.value)}
-    //         style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-    //       />
-    //     </div>
-    //   ),
-    //   selector: (row: SubmittedTaskName) =>
-    //     row.created_at ? new Date(row.created_at).toLocaleDateString() : "N/A",
-    //   sortable: true,
-    // },
+    {
+      name: (
+        <div>
+          <div>Created At</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("created_at", e.target.value)}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row: SubmittedTaskName) =>
+        row.created_at ? new Date(row.created_at).toLocaleDateString() : "N/A",
+      sortable: true,
+    },
     {
       name: "Actions",
       cell: (row: SubmittedTaskName) => (
@@ -450,7 +449,7 @@ const TaskData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       ignoreRowClick: true,
-      // allowOverflow: true,
+      allowOverflow: true,
       button: true,
     },
   ];

@@ -96,7 +96,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     }
 
     const res = await fetch(
-      `${sessionData.url}/search_skill?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchWord=${word}`
+      `${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchWord=${word}`
     );
     const data = await res.json();
     setResults(data.searchData || []);
@@ -185,16 +185,27 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
           ✖
         </button>
 
-        <div className="w-[100%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 text-center rounded-lg">
-          <h2>Add New Skills</h2>
-        </div>
+       {/* header parts start  */}
+        <div className="flex w-full">
+          {/* Left: GIF */}
+          <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
+            <img src={`/assets/loading/robo_dance.gif`} alt="Loading..." className="w-full h-auto" />
+          </div>
 
+          {/* Center Content */}
+          <div className="w-[90%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 text-center rounded-r-lg">
+            <h2 className="text-gray-800 font-bold text-lg">Add New Skill</h2>
+            <h4 className="text-gray-700 font-semibold text-sm">  
+              <b>Industry : </b>{sessionData.orgType}
+            </h4>
+          </div>
+        </div>
         <div className="w-[100%] bg-gradient-to-r from-blue-100 to-blue-200 my-2 p-4 text-center rounded-lg gap-4">
           <form className="w-[100%]" onSubmit={handleSubmit}>
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="category" className="text-left">Select Category</label><br />
+                <label htmlFor="category" className="text-left">Category</label><br />
                 <select
                   name="category"
                   className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black" // Changed w-3/3 to w-full
@@ -226,7 +237,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="skill_name" className="text-left">Add Skill</label><br />
+                <label htmlFor="skill_name" className="text-left">Skill Name</label><br />
                 <input
                   type="text"
                   name="skill_name"
@@ -239,7 +250,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
               </div>
 
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="description" className="text-left">Add Description</label><br />
+                <label htmlFor="description" className="text-left">Skill Description</label><br />
                 <textarea
                   name="description"
                   rows={2}

@@ -1,23 +1,36 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
+import AddDialog from "./addDialouge";
 import EditDialog from "./editDialouge";
 
-// interface TableViewProps {
-//   tableData: any[];
-// }
-interface TableViewProps {
-  refreshKey?: number;
+interface TableData {
+  id: number;
+  jobrole: string;
+  description: string;
+  company_information: string;
+  contact_information: string;
+  location: string;
+  job_posting_date: string;
+  application_deadline: string;
+  salary_range: string;
+  required_skill_experience: string;
+  responsibilities: string;
+  benefits: string;
+  keyword_tags: string;
+  internal_tracking: string;
 }
 
-const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
+interface TableViewProps {
+  tableData: TableData[];
+}
+
+const TableView: React.FC<TableViewProps> = ({ tableData }) => {
 
   // New states for table control
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(100);
-  const [tableData, setTableData] = useState<any[]>([]);
-
   const [dialogOpen, setDialogOpen] = useState({
     view: false,
     add: false,
@@ -28,6 +41,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
   const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
 
   // State to trigger a refresh of the data (e.g., after an edit/delete operation)
+  const [refreshKey, setRefreshKey] = useState(0);
   const [sessionData, setSessionData] = useState({
     url: "",
     token: "",
@@ -50,34 +64,25 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
       });
     }
   }, []);
-
-  useEffect(() => {
-    if (sessionData.url && sessionData.token) fetchData();
-  }, [sessionData.url, sessionData.token, refreshKey]);
-
-  async function fetchData() {
-    const res = await fetch(`${sessionData.url}/jobrole_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}`);
-    const data = await res.json();
-
-    setTableData(data.tableData || []);
-  }
-  const handleCloseModel = () => {
-    setDialogOpen({ ...dialogOpen, edit: false });
-    fetchData();
-  }
   // Filtered and paginated data
   const filteredData = useMemo(() => {
     if (!searchTerm) return tableData;
     const lowerSearch = searchTerm.toLowerCase();
     return tableData.filter(row =>
-      Object.values(row).some(
-        value =>
-          value &&
-          value
-            .toString()
-            .toLowerCase()
-            .includes(lowerSearch)
-      )
+      row.jobrole.toLowerCase().includes(lowerSearch) ||
+      row.description.toLowerCase().includes(lowerSearch) ||
+      row.company_information.toLowerCase().includes(lowerSearch) ||
+      row.contact_information.toLowerCase().includes(lowerSearch) ||
+      row.location.toLowerCase().includes(lowerSearch) ||
+      row.job_posting_date.toLowerCase().includes(lowerSearch) ||
+      row.application_deadline.toLowerCase().includes(lowerSearch) ||
+      row.salary_range.toLowerCase().includes(lowerSearch) ||
+      row.required_skill_experience.toLowerCase().includes(lowerSearch) ||
+      row.responsibilities.toLowerCase().includes(lowerSearch) ||
+      row.benefits.toLowerCase().includes(lowerSearch) ||
+      row.keyword_tags.toLowerCase().includes(lowerSearch) ||
+      row.internal_tracking.toLowerCase().includes(lowerSearch)
+
     );
   }, [searchTerm, tableData]);
 
@@ -96,7 +101,6 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
 
   // Function to handle opening the edit dialog
   const handleEditClick = (id: number) => {
-    // alert(id);
     setSelectedJobRole(id);
     setDialogOpen({ ...dialogOpen, edit: true });
   };
@@ -119,8 +123,8 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
 
         const data = await res.json();
         alert(data.message);
-        fetchData();
         // Refresh the tree view by incrementing the refresh key
+        setRefreshKey(prev => prev + 1);
         setSelectedJobRole(null);
       } catch (error) {
         console.error("Error deleting job role:", error);
@@ -129,8 +133,11 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
     }
   };
 
-  return (<>
-    <div className='bg-[#fff] mx-2 rounded-sm drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)] p-4'>
+  return (
+    <div className='bg-[#fff] mx-2 rounded-sm'>
+      <div className="flex justify-between items-right mb-2 px-4 pt-4 text-right">
+        <button className="bg-blue-500 text-white px-4 py-2 rounded mr-4" onClick={() => setDialogOpen({ ...dialogOpen, add: true })}>Add Jobrole</button>
+      </div>
 
       <div className="mb-2 flex items-center gap-2 px-4">
         <label>Rows per page:</label>
@@ -162,7 +169,6 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
           /> <br />
           {totalRows} records found
         </span>
-
       </div>
 
       <div className="w-full p-[10px] overflow-x-auto">
@@ -170,13 +176,9 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
           <table id="example" className="min-w-full leading-normal">
             <thead>
               <tr>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>Department</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap'>Sub Department</th>
                 <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>Jobrole</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap'>Jobrole description</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap'>Performance Expectation</th>
-                {/* commented on 24-06-2025 as per discussion with team */}
-                {/* <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>company information</th>
+                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>description</th>
+                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>company information</th>
                 <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>contact information</th>
                 <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>location</th>
                 <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>job posting date</th>
@@ -186,7 +188,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                 <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>responsibilities</th>
                 <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>benefits</th>
                 <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>keyword tags</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>internal tracking</th> */}
+                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>internal tracking</th>
                 <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>Actions</th>
               </tr>
             </thead>
@@ -198,18 +200,11 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
               ) : (
                 paginatedData.map((row, index) => (
                   <tr key={`${row.id}-${index}`}>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.department}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.sub_department}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.jobrole}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm' title={row.description}>{row.description
-                      ? row.description.slice(0, 100) + (row.description.length > 100 ? "..." : "")
+                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.description
+                      ? row.description.slice(0, 50) + (row.description.length > 50 ? "..." : "")
                       : "-"}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.performance_expectation
-                      ? row.performance_expectation.slice(0, 50) + (row.performance_expectation.length > 50 ? "..." : "")
-                      : "-"}</td>
-                    {/* commented on 24-06-2025 as per discussion with team */}
-
-                    {/* <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.company_information}</td>
+                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.company_information}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.contact_information}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.location}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.job_posting_date}</td>
@@ -219,7 +214,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.responsibilities}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.benefits}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.keyword_tags}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.internal_tracking}</td> */}
+                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.internal_tracking}</td>
                     <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>
                       <div className="flex items-center space-x-2">
 
@@ -284,29 +279,26 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
           </button>
         </div>
       )}
-
+      {dialogOpen.add && (
+        <AddDialog skillId={null}
+          onClose={() => setDialogOpen({ ...dialogOpen, add: false })}
+          onSuccess={() => {
+            setDialogOpen({ ...dialogOpen, add: false });
+          }}
+        />
+      )}
+      {dialogOpen.edit && selectedJobRole && (
+        <EditDialog
+          jobRoleId={selectedJobRole}
+          onClose={() => setDialogOpen({ ...dialogOpen, edit: false })}
+          onSuccess={() => {
+            setRefreshKey(prev => prev + 1); // Trigger data refresh (e.g., re-fetch from API)
+            setDialogOpen({ ...dialogOpen, edit: false });
+            setSelectedJobRole(null); // Clear selected job role
+          }}
+        />
+      )}
     </div>
-
-
-    {dialogOpen.edit && selectedJobRole && (
-      // <EditDialog
-      //   jobRoleId={selectedJobRole}
-      //   onClose={() => setDialogOpen({ ...dialogOpen, edit: false })}
-      //   onSuccess={() => {
-      //     setDialogOpen({ ...dialogOpen, edit: false });
-      //     setSelectedJobRole(null); // Clear selected job role
-      //   }}
-      // />
-      <EditDialog
-        jobRoleId={selectedJobRole}
-        onClose={() => handleCloseModel()}
-        onSuccess={() => {
-          setDialogOpen({ ...dialogOpen, edit: false });
-          refreshKey; // This will refresh TableView
-        }}
-      />
-    )}
-  </>
   )
 };
 

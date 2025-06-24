@@ -165,9 +165,31 @@ const EditDialog: React.FC<EditDialogProps> = ({
           ✖
         </button>
 
-        <div className="w-[100%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 text-center rounded-lg">
+        {/* <div className="w-[100%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 text-center rounded-lg">
           <h2 className="font-bold">{editData.title}</h2>
-        </div>
+        </div> */}
+         {/* header parts start  */}
+        <div className="flex w-full">
+          {/* Left: GIF */}
+          <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
+            <img src={`/assets/loading/robo_dance.gif`} alt="Loading..." className="w-full h-auto" />
+          </div>
+
+          {/* Center Content */}
+          <div className="w-[90%] bg-gradient-to-r from-violet-100 to-violet-200 py-2 flex justify-center rounded-r-lg">
+            <div className="heade">
+              <h2 className="text-gray-800 font-bold text-lg"><b>Skill Name : </b>{editData?.title}</h2>
+              <h5 className="text-gray-600 font-semibold text-sm">
+                <b>Industry : </b>{sessionOrgType}
+              </h5>
+              <h5 className="text-gray-600 font-semibold text-sm"><b>Department : </b>{editData?.department}</h5>
+              {editData.sub_department ? (
+                <h5 className="text-gray-600 font-semibold text-sm"><b>Sub Department : </b>{editData.sub_department}</h5>
+              ) : ''}
+            </div>
+
+          </div>
+          </div>
         {/* Tab Navigation */}
         <div className="w-[100%] bg-gradient-to-r from-blue-100 to-blue-200 my-2 p-4 text-center rounded-lg gap-4">
           {tabs.map((tab) => (
