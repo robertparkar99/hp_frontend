@@ -208,7 +208,7 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Proficiency Level</div>
+          <div>Knowledge Proficiency Level</div>
           <input
             type="text"
             placeholder="Search..."
@@ -224,7 +224,7 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Classification Items</div>
+          <div>Knowledge Classification Items</div>
           <input
             type="text"
             placeholder="Search..."
@@ -236,100 +236,6 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
       selector: (row: KnowledgeAbilityEntry) => row.classification_item ?? "",
       sortable: true,
       wrap: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Category</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("category", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: KnowledgeAbilityEntry) => row.category ?? "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Sub Category</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("sub_category", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: KnowledgeAbilityEntry) => row.sub_category ?? "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Skill Title</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("skillTitle", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: KnowledgeAbilityEntry) => row.skillTitle ?? "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Created By</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) =>
-              handleColumnFilter("created_by_user", e.target.value)
-            }
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: KnowledgeAbilityEntry) => row.created_by_user ?? "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Created At</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("created_at", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: KnowledgeAbilityEntry) =>
-        row.created_at ? new Date(row.created_at).toLocaleDateString() : "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Updated At</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("updated_at", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: KnowledgeAbilityEntry) =>
-        row.updated_at ? new Date(row.updated_at).toLocaleDateString() : "N/A",
-      sortable: true,
     },
     {
       name: "Actions",

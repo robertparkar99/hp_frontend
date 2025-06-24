@@ -315,7 +315,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Description</div>
+          <div>Proficiency Description</div>
           <input
             type="text"
             placeholder="Search..."
@@ -358,53 +358,6 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
       selector: (row: SubmittedProficiency) => row.type_description || "N/A",
       sortable: true,
       wrap: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Created By</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("created_by", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedProficiency) => row.created_by || "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Created At</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("created_at", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedProficiency) =>
-        row.created_at ? new Date(row.created_at).toLocaleDateString() : "N/A",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Updated At</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("updated_at", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedProficiency) =>
-        row.updated_at ? new Date(row.updated_at).toLocaleDateString() : "N/A",
-      sortable: true,
     },
     {
       name: "Actions",
@@ -485,7 +438,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
 
             <div className="relative z-0 w-full group text-left">
               <label htmlFor={`description-${index}`} className="block mb-2">
-                Description*
+                Proficiency Description*
               </label>
               <textarea
                 name="description"

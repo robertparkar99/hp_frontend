@@ -10,6 +10,7 @@ interface allSkillData {
   sub_category: string | null;
   no_sub_category: string | null;
   title: string;
+  description?: string;
 }
 
 type SkillTree = {
@@ -27,6 +28,7 @@ interface userSkillsData {
   sub_category: string;
   no_sub_category: string;
   title: string;
+  description?: string;
 }
 
 const TreeView: React.FC<TreeViewProps> = ({ allSkillData }) => {
@@ -63,6 +65,7 @@ const TreeView: React.FC<TreeViewProps> = ({ allSkillData }) => {
       setessinSubInstituteId(sub_institute_id);
       setessionUserID(user_id);
       setessionUserProfile(user_profile_name);
+      // console.log('allSkillData',allSkillData);
     }
 
     const initialExpanded: { [key: string]: boolean } = {};
@@ -329,6 +332,7 @@ const TreeView: React.FC<TreeViewProps> = ({ allSkillData }) => {
                                           onDoubleClick={() =>
                                             dbclickLi(skill.id)
                                           }
+                                          title={skill.title ? skill.title : '555'}
                                         >
                                           <summary className="hover:bg-gray-100 rounded">
                                             <span className="flex items-center cursor-pointer border-b-1 border-[#ddd]">

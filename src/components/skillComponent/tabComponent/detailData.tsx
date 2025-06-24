@@ -159,7 +159,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
     }
 
     const res = await fetch(
-      `${sessionData.url}/search_skill?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchWord=${word}`
+      `${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchWord=${word}`
     );
     const data = await res.json();
     setResults(data.searchData || []);
@@ -252,7 +252,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
         <div className="grid md:grid-cols-2 md:gap-6">
           <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="category" className="text-left">
-              Select Category
+              Category
             </label>
             <br />
             <select
@@ -301,7 +301,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
         <div className="grid md:grid-cols-2 md:gap-6">
           <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="skill_name" className="text-left">
-              Add Skill
+              Skill Name
             </label>
             <br />
             <input
@@ -317,7 +317,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
 
           <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="description" className="text-left">
-              Add Description
+              Skill Description
             </label>
             <br />
             <textarea

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #E3ECFF;
+  --background: #e3ecff;
   --foreground: black;
 }
 
@@ -14,46 +14,46 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #E3ECFF;
-    --foreground: #E3ECFF;
+    --background: #e3ecff;
+    --foreground: #e3ecff;
   }
 }
 
 body {
   background: var(--background);
-  color:black;
+  color: black;
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.loginRightImage{
+.loginRightImage {
   position: fixed;
   left: 34%;
   height: 950px;
 }
 /* added on 11-04-2025 by uma  */
-.contentDiv{
+.contentDiv {
   display: flex;
 }
 
-.mainDiv{
+.mainDiv {
   width: 100%;
 }
-.historyDiv{
+.historyDiv {
   width: 17%;
 }
 
-.historySection{
-  margin: 1rem 0rem;;
+.historySection {
+  margin: 1rem 0rem;
 }
 
-.hiddenMenu{
-  margin-top:4px;
+.hiddenMenu {
+  margin-top: 4px;
 }
 
-.leftaside{
+.leftaside {
   position: absolute;
   top: 0;
-  width:17%;
+  width: 17%;
 }
 
 @keyframes fadeIn {
@@ -71,13 +71,21 @@ body {
   animation: fadeIn 1s ease-in-out;
 }
 .hide-scroll {
- -ms-overflow-style: none;  /* IE and Edge */
+  -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none;
 }
 
+.custom-oklch-gradient {
+  background-image: linear-gradient(
+    to right,
+    oklch(83.571% 0.08421 300.858),
+    #bfdbfe
+  ); /* Using oklch for from and a common blue-200 hex for to */
+}
+
 @media screen and (max-width: 660px) {
-  body{
-    margin:0;
+  body {
+    margin: 0;
     padding: 0;
   }
   .contentDiv {
