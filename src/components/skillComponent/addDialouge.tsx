@@ -205,7 +205,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="category" className="text-left">Category</label><br />
+                <label htmlFor="category" className="text-left">Skill Category</label><br />
                 <select
                   name="category"
                   className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black" // Changed w-3/3 to w-full
@@ -222,7 +222,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
               </div>
 
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="sub_category" className="text-left">Sub Category</label><br />
+                <label htmlFor="sub_category" className="text-left">Skill Sub Category</label><br />
                 <select
                   name="sub_category"
                   className="form-select focus:border-blue-500 w-full rounded-lg border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black" // Changed w-3/3 to w-full
@@ -309,7 +309,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
               </div>
 
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="custom_tags" className="text-left">Custom Tags</label><br />
+                <label htmlFor="custom_tags" className="text-left">Skill Custom Tags</label><br />
                 <input
                   type="text"
                   name="custom_tags_input"
@@ -338,7 +338,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 opacity-100 w-full mb-5 group text-left">
-                <label htmlFor="business_links" className="text-left">Business links</label><br />
+                <label htmlFor="business_links" className="text-left">Skill Business links</label><br />
                 <input
                   type="text"
                   name="business_links"
@@ -366,7 +366,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="learning_resources" className="text-left">Learning Resources</label><br />
+                <label htmlFor="learning_resources" className="text-left">Skill Learning Resources</label><br />
                 <textarea
                   name="learning_resources"
                   rows={2}
@@ -377,7 +377,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                 ></textarea>
               </div>
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="assesment_method" className="text-left">Add Assesment Method</label><br />
+                <label htmlFor="assesment_method" className="text-left">Skill Assesment Method</label><br />
                 <textarea
                   name="assesment_method"
                   rows={2}
@@ -391,7 +391,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="certification_qualifications" className="text-left">Certification/Qualifications</label><br />
+                <label htmlFor="certification_qualifications" className="text-left">Skill Certification/Qualifications</label><br />
                 <textarea
                   name="certification_qualifications"
                   rows={2}
@@ -402,7 +402,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                 ></textarea>
               </div>
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="experience_project" className="text-left">Add Experience/Project</label><br />
+                <label htmlFor="experience_project" className="text-left">Skill Experience/Project</label><br />
                 <textarea
                   name="experience_project"
                   rows={2}
@@ -429,7 +429,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
             </div>
 
             <button type="submit" className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
-              Submit
+              Add
             </button>
           </form>
         </div>

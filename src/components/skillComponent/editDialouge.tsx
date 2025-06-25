@@ -123,32 +123,32 @@ const EditDialog: React.FC<EditDialogProps> = ({
   const tabs = [
     {
       id: "detail",
-      name: "Detail",
+      name: "Skill Details",
       component: <DetailData editData={editData} />,
     },
     {
       id: "jobrole",
-      name: "Job Role",
+      name: "Skill JobRole",
       component: <JobroleData editData={editData} />,
     },
     {
       id: "proficiencylevel",
-      name: "Proficiency Level",
+      name: "Skill Proficiency Level",
       component: <ProficiencyLevelData editData={editData} />,
     },
     {
       id: "knowledge",
-      name: "Knowledge",
+      name: "Skill Knowledge",
       component: <KnowledgeAbilityData editData={editData} />,
     },
     {
       id: "ability",
-      name: "Ability",
+      name: "Skill Ability",
       component: <AbilityData editData={editData} />,
     },
     {
       id: "applications",
-      name: "Applications",
+      name: "Skill Applications",
       component: <ApplicationData editData={editData} />,
     },
   ];
@@ -182,19 +182,19 @@ const EditDialog: React.FC<EditDialogProps> = ({
               <h5 className="text-gray-600 font-semibold text-sm">
                 <b>Industry : </b>{sessionOrgType}
               </h5>
-              <h5 className="text-gray-600 font-semibold text-sm"><b>Department : </b>{editData?.department}</h5>
+              <h5 className="text-gray-600 font-semibold text-sm"><b>Skill Department : </b>{editData?.department}</h5>
               {editData.sub_department ? (
-                <h5 className="text-gray-600 font-semibold text-sm"><b>Sub Department : </b>{editData.sub_department}</h5>
+                <h5 className="text-gray-600 font-semibold text-sm"><b>Skill Sub Department : </b>{editData.sub_department}</h5>
               ) : ''}
             </div>
 
           </div>
           </div>
         {/* Tab Navigation */}
-        <div className="w-[100%] bg-gradient-to-r from-blue-100 to-blue-200 my-2 p-4 text-center rounded-lg gap-4">
-          {tabs.map((tab) => (
+        <div className="w-[100%] custom-oklch-gradient my-2 p-4 text-center rounded-lg gap-4">
+          {tabs.map((tab,index) => (
             <span
-              key={tab.id}
+              key={index}
               onClick={() => setActiveTab(tab.id)}
               className={`
                 m-2 px-2 py-2 rounded-lg text-md font-semibold transition-all duration-300

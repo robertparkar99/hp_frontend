@@ -104,27 +104,27 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
       images: "assets/skill_images/book.png",
     },
     {
-      title: "Jobrole",
+      title: "Skill Jobrole",
       iconClass: "mdi mdi-account-hard-hat",
       images: "assets/skill_images/jobrole.png",
     },
     {
-      title: "Proficiency Level",
+      title: "Skill Proficiency Level",
       iconClass: "mdi mdi-arrow-up-box",
       images: "assets/skill_images/proficiency.png",
     },
     {
-      title: "Knowledge",
+      title: "Skill Knowledge",
       iconClass: "mdi mdi-head-snowflake",
       images: "assets/skill_images/knowledge.png",
     },
     {
-      title: "Ability",
+      title: "Skill Ability",
       iconClass: "mdi mdi-alpha-a-box",
       images: "assets/skill_images/ability.png",
     },
     {
-      title: "Application",
+      title: "Skill Application",
       iconClass: "mdi mdi-send",
       images: "assets/skill_images/application.png",
     },
@@ -204,6 +204,10 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
   const handleCardClick = (index: number | 0) => {
     setActiveCardIndex(index);
   };
+  function empty(arr: any[]) {
+    return !Array.isArray(arr) || arr.length === 0;
+  }
+
   return (
     <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-4">
       <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative h-screen overflow-auto hide-scroll">
@@ -216,11 +220,17 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
           </div>
 
           {/* Center Content */}
-          <div className="w-[70%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 text-center">
-            <h2 className="text-gray-800 font-bold text-lg">{viewData.title}</h2>
-            <h4 className="text-gray-700 font-semibold text-sm">
-              ({viewData.category}{viewData.sub_category ? ` > ${viewData.sub_category}` : ''})
-            </h4>
+          <div className="w-[70%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 flex justify-center">
+           <div className="heade">
+              <h2 className="text-gray-800 font-bold text-lg"><b>Skill Name : </b>{viewData?.title}</h2>
+              <h5 className="text-gray-600 font-semibold text-sm">
+                <b>Industry : </b>{sessionOrgType}
+              </h5>
+              <h5 className="text-gray-600 font-semibold text-sm"><b>Skill Department : </b>{viewData?.department}</h5>
+              {viewData.sub_department ? (
+                <h5 className="text-gray-600 font-semibold text-sm"><b>Skill Sub Department : </b>{viewData.sub_department}</h5>
+              ) : ''}
+            </div>
           </div>
 
           {/* Right Dropdown */}
@@ -268,7 +278,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
           <div className="grid grid-cols-3 gap-6 p-4">
             {cardData.map((card, index) => (
               <div
-                key={index} // Using index as key is okay if items don't change order or get added/removed often.
+                key={`card`+index} // Using index as key is okay if items don't change order or get added/removed often.
                 className="flex relative mx-auto w-[250px] h-[120px] bg-white shadow-[5px_5px_60px_rgb(235,235,235),-5px_-5px_60px_rgb(237,237,237)] rounded-[15px] transition-all duration-[2s] items-center justify-center cursor-pointer group overflow-hidden"
                 onClick={() => handleCardClick(index)}
               >
@@ -311,12 +321,12 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                 </div>
                 <div className="cardDetails grid grid-cols-3 gap-6 p-4">
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                    <h4 className="text-[14px] text-[#2060E6] font-bold">Category</h4>
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Category</h4>
                     <hr className="text-[#ddd] pt-2" />
                     <p className="text-[12px]">{viewData.category ? viewData.category : '-'}</p>
                   </div>
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                    <h4 className="text-[14px] text-[#2060E6] font-bold">Sub Category</h4>
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Sub Category</h4>
                     <hr className="text-[#ddd] pt-2" />
                     <p className="text-[12px]">{viewData.sub_category ? viewData.sub_category : '-'}</p>
                   </div>
@@ -333,23 +343,23 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                     <h4 className="text-[14px] text-[#2060E6] font-bold">Related Skills</h4>
                     <hr className="text-[#ddd] pt-2" />
-                    {relatedSkills && relatedSkills.map((skill, index) => (
-                      <ul key={index} className="skill-item px-4">
+                    {(relatedSkills && !empty(relatedSkills)) ? relatedSkills.map((skill, index) => (
+                      <ul key={`related`+index} className="skill-item px-4">
                         <li className="list-disc text-[12px]">{skill}</li>
                       </ul>
-                    ))}
+                    )): (<p className="text-[12px]">-</p>) }
                   </div>
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                    <h4 className="text-[14px] text-[#2060E6] font-bold">Custom Tags</h4>
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Custom Tags</h4>
                     <hr className="text-[#ddd] pt-2" />
-                    {customTags.map((skill, index) => (
-                      <ul key={index} className="skill-item px-4">
+                    {(customTags && !empty(customTags)) ? customTags.map((skill, index) => (
+                      <ul key={`tags`+index} className="skill-item px-4">
                         <li className="list-disc text-[12px]">{skill}</li>
                       </ul>
-                    ))}
+                    )) : '-'}
                   </div>
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                    <h4 className="text-[14px] text-[#2060E6] font-bold">Business Links</h4>
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Business Links</h4>
                     <hr className="text-[#ddd] pt-2" />
                     <p className="text-[12px]">{viewData.bussiness_links ? viewData.bussiness_links : '-'}</p>
                   </div>
@@ -359,22 +369,22 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                     <p className="text-[12px]">{viewData.proficiency_level ? viewData.proficiency_level : '-'}</p>
                   </div> */}
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                    <h4 className="text-[14px] text-[#2060E6] font-bold">Learning Resource</h4>
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Learning Resource</h4>
                     <hr className="text-[#ddd] pt-2" />
                     <p className="text-[12px]">{viewData.learning_resources ? viewData.learning_resources : '-'}</p>
                   </div>
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                    <h4 className="text-[14px] text-[#2060E6] font-bold">Assesment Method</h4>
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Assesment Method</h4>
                     <hr className="text-[#ddd] pt-2" />
                     <p className="text-[12px]">{viewData.assesment_method ? viewData.assesment_method : '-'}</p>
                   </div>
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                    <h4 className="text-[14px] text-[#2060E6] font-bold">Certification/Qualification</h4>
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Certification/Qualification</h4>
                     <hr className="text-[#ddd] pt-2" />
                     <p className="text-[12px]">{viewData.certification_qualifications ? viewData.certification_qualifications : '-'}</p>
                   </div>
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                    <h4 className="text-[14px] text-[#2060E6] font-bold">Experience/Project</h4>
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Experience/Project</h4>
                     <hr className="text-[#ddd] pt-2" />
                     <p>{viewData.experience_project ? viewData.experience_project : '-'}</p>
                   </div>
@@ -403,7 +413,9 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                         {/* <p className="text-[12px]"><span><b>Category : </b></span>{jobrole.category ? jobrole.category : '-'}</p>
                         <p className="text-[12px]"><span><b>Sub Category : </b></span>{jobrole.sub_category ? jobrole.sub_category : '-'}</p>
                         <p className="text-[12px]"><span><b>Skill Name : </b></span>{jobrole.skillTitle ? jobrole.skillTitle : '-'}</p> */}
-                        <p className="text-[12px]"><span><b>Jobrole Description : </b></span>{jobrole.description ? jobrole.description : '-'}</p>
+                        <p className="text-[12px]" title={jobrole.description}><span><b>Jobrole Description : </b></span>{jobrole.description
+                          ? jobrole.description.slice(0, 150) + (jobrole.description.length > 150 ? "..." : "")
+                          : "-"}</p>
 
                       </div>
                     ))}

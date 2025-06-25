@@ -128,9 +128,9 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
       const res = await fetch(
         `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=proficiency_level`
       );
-      
+
       if (!res.ok) throw new Error('Failed to fetch data');
-      
+
       const data: ApiResponse = await res.json();
       const transformedData = data.proficiency_levels.map(transformData);
       setSubmittedData(transformedData);
@@ -229,7 +229,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
       });
 
       const data = await res.json();
-      
+
       if (res.ok) {
         // setMessage({ type: 'success', text: data.message || 'Successfully submitted.' });
         setProficiencyLevels([defaultProficiencyLevel]);
@@ -324,9 +324,23 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
           />
         </div>
       ),
-      selector: (row: SubmittedProficiency) => row.description,
+      selector: (row: SubmittedProficiency) =>
+        row.description
+          ? (row.description.length > 100
+            ? `${row.description.substring(0, 100)}...`
+            : row.description)
+          : "N/A",
       sortable: true,
       wrap: true,
+      cell: (row: SubmittedProficiency) => (
+        <span title={row.description || "N/A"}>
+          {row.description
+            ? row.description.length > 100
+              ? `${row.description.substring(0, 100)}...`
+              : row.description
+            : "N/A"}
+        </span>
+      ),
     },
     {
       name: (
@@ -364,7 +378,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
       cell: (row: SubmittedProficiency) => (
         <div className="flex space-x-2">
 
-         {row.created_by!=null && ( <><button
+          {row.created_by != null && (<><button
 
             onClick={() => handleEdit(row)}
             className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
@@ -380,7 +394,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
         </div>
       ),
       ignoreRowClick: true,
-      allowOverflow: true,
+      // allowOverflow: true,
       button: true,
     },
   ];
@@ -502,34 +516,34 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
                   onClick={handleAddProficiencyLevel}
                   className="bg-transparent hover:bg-green-500 text-green-700 font-semibold hover:text-white py-2 px-4 border border-green-500 hover:border-transparent rounded-full ml-2"
                 >
-                 +
+                  +
                 </button>
               )}
             </div>
           </div>
         ))}
 
-          <button
-            type="submit"
-            className="text-white mt-2 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-            disabled={loading}
-          >
-            {loading ? "Submitting..." : editingId ? "Update" : "Submit"}
-          </button>
+        <button
+          type="submit"
+          className="text-white mt-2 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+          disabled={loading}
+        >
+          {loading ? "Submitting..." : editingId ? "Update" : "Submit"}
+        </button>
 
-          {editingId && (
-            <button
-              type="button"
-              onClick={() => {
-                setEditingId(null);
-                setProficiencyLevels([defaultProficiencyLevel]);
-                setMessage(null);
-              }}
-              className="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-            >
-              Cancel
-            </button>
-          )}
+        {editingId && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditingId(null);
+              setProficiencyLevels([defaultProficiencyLevel]);
+              setMessage(null);
+            }}
+            className="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+          >
+            Cancel
+          </button>
+        )}
       </form>
 
       <div className="mt-8 bg-white p-4 rounded-lg shadow-lg">
