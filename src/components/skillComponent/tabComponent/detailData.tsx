@@ -252,7 +252,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
         <div className="grid md:grid-cols-2 md:gap-6">
           <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="category" className="text-left">
-              Category
+              Skill Category
             </label>
             <br />
             <select
@@ -265,8 +265,8 @@ const DetailData: React.FC<Props> = ({ editData }) => {
               value={formData.category} // Controlled component
               required
             >
-              {categories.map((d) => (
-                <option key={d.category} value={d.category}>
+              {categories.map((d,index) => (
+                <option key={index} value={d.category}>
                   {d.category}
                 </option>
               ))}
@@ -275,7 +275,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
 
           <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="sub_category" className="text-left">
-              Sub Category
+              Skill Sub Category
             </label>
             <br />
             <select
@@ -286,8 +286,8 @@ const DetailData: React.FC<Props> = ({ editData }) => {
             >
               <option value="">Select Sub Category</option>
               {subCategories && subCategories.length > 0 ? (
-                subCategories.map((d) => (
-                  <option key={d.sub_category} value={d.sub_category}>
+                subCategories.map((d,index) => (
+                  <option key={index} value={d.sub_category}>
                     {d.sub_category}
                   </option>
                 ))
@@ -351,9 +351,9 @@ const DetailData: React.FC<Props> = ({ editData }) => {
               />
               {showDropdown && results.length > 0 && (
                 <ul className="absolute z-[9999] bg-opacity-100 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
-                  {results.map((skill) => (
+                  {results.map((skill,index) => (
                     <li
-                      key={skill.id}
+                      key={index}
                       className="p-2 hover:bg-gray-100 cursor-pointer"
                       onClick={() => handleSelectSkill(skill.title)}
                     >
@@ -365,9 +365,9 @@ const DetailData: React.FC<Props> = ({ editData }) => {
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
               {[...new Set([...relatedSkills, ...selectedSkills])].map(
-                (skill) => (
+                (skill,index) => (
                   <div
-                    key={skill}
+                    key={index}
                     className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
                   >
                     {skill}
@@ -386,7 +386,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
 
           <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="custom_tags" className="text-left">
-              Custom Tags
+              Skill Custom Tags
             </label>
             <br />
             <input
@@ -399,9 +399,9 @@ const DetailData: React.FC<Props> = ({ editData }) => {
               className="w-full rounded-lg p-2 z-0 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
             />
             <div className="flex flex-wrap gap-2 mt-2">
-              {[...new Set([...editCustomTags, ...customTags])].map((tag) => (
+              {[...new Set([...editCustomTags, ...customTags])].map((tag,index) => (
                 <div
-                  key={tag}
+                  key={index}
                   className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
                 >
                   {tag}
@@ -421,7 +421,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
         <div className="grid md:grid-cols-2 md:gap-6">
           <div className="relative z-0 opacity-100 w-full mb-5 group text-left">
             <label htmlFor="business_links" className="text-left">
-              Business links
+              Skill Business links
             </label>
             <br />
             <input
@@ -460,7 +460,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
         <div className="grid md:grid-cols-2 md:gap-6">
           <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="learning_resources" className="text-left">
-              Learning Resources
+              Skill Learning Resources
             </label>
             <br />
             <textarea
@@ -474,7 +474,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
           </div>
           <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="assesment_method" className="text-left">
-              Add Assesment Method
+              Skill Assesment Method
             </label>
             <br />
             <textarea
@@ -491,7 +491,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
         <div className="grid md:grid-cols-2 md:gap-6">
           <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="certification_qualifications" className="text-left">
-              Certification Qualifications
+              Skill Certification Qualifications
             </label>
             <br />
             <textarea
@@ -505,7 +505,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
           </div>
           <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="experience_project" className="text-left">
-              Add Experience Project
+              Skill Experience Project
             </label>
             <br />
             <textarea
@@ -540,7 +540,7 @@ const DetailData: React.FC<Props> = ({ editData }) => {
           type="submit"
           className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
         >
-          Submit
+          Update
         </button>
       </form>
     </div>

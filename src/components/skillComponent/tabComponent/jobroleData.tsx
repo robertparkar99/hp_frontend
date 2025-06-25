@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
 import dynamic from 'next/dynamic';
 
@@ -115,7 +115,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
               category: data.userJobroleData.category || "N/A",
               sub_category: data.userJobroleData.sub_category || "N/A",
               skillTitle: data.userJobroleData.skillTitle || "N/A",
-              created_by_user: data.userJobroleData?.first_name 
+              created_by_user: data.userJobroleData?.first_name
                 ? `${data.userJobroleData.first_name} ${data.userJobroleData.last_name || ""}`
                 : "N/A",
               created_at: data.userJobroleData.created_at || "N/A",
@@ -323,14 +323,23 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
           />
         </div>
       ),
-      selector: (row: SubmittedJobRole) => 
-        row.description 
-          ? (row.description.length > 100 
-              ? `${row.description.substring(0, 100)}...` 
-              : row.description)
+      selector: (row: SubmittedJobRole) =>
+        row.description
+          ? (row.description.length > 100
+            ? `${row.description.substring(0, 100)}...`
+            : row.description)
           : "N/A",
       sortable: true,
       wrap: true,
+      cell: (row: SubmittedJobRole) => (
+        <span title={row.description || "N/A"}>
+          {row.description
+            ? row.description.length > 100
+              ? `${row.description.substring(0, 100)}...`
+              : row.description
+            : "N/A"}
+        </span>
+      ),
     },
     {
       name: "Actions",
@@ -460,7 +469,7 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
           className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2"
           disabled={loading}
         >
-          {loading ? "Submitting..." : editingId ? "Update" : "Submit"}
+          {loading ? "Submitting..." : editingId ? "Update" : "Add"}
         </button>
         {editingId && (
           <button

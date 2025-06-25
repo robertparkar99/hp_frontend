@@ -23,7 +23,7 @@ type Props = { editData: any };
 type Submittedability = {
   id: number;
   proficiency_level?: string;
-  classification_item?:string;
+  classification_item?: string;
   category?: string;
   sub_category?: string;
   skillTitle?: string;
@@ -55,13 +55,13 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     userId: "",
     userProfile: "",
   });
-  const [proficiencyLevel,setProficiencyLevel] = useState<any[]>([]);
-  const [submittedData,setSubmittedData] = useState<Submittedability[]>([]);
+  const [proficiencyLevel, setProficiencyLevel] = useState<any[]>([]);
+  const [submittedData, setSubmittedData] = useState<Submittedability[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
-      {}
-    );
+    {}
+  );
 
   // State to hold an array of ability/ability entries
   const [abilityAbilities, setabilityAbilities] = useState<abilityAbilityEntry[]>([
@@ -71,7 +71,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
-      const {APP_URL,token,org_type,sub_institute_id,user_id,user_profile_name,} = JSON.parse(userData);
+      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, } = JSON.parse(userData);
       setSessionData({
         url: APP_URL,
         token,
@@ -90,10 +90,10 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
   }, [sessionData]);
 
   const fetchInitialData = async () => {
-    const res = await fetch( `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=ability`);
+    const res = await fetch(`${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=ability`);
     const data = await res.json();
     setProficiencyLevel(data.grouped_proficiency_levels || []);
-    setSubmittedData(data.userabilityData||[]);
+    setSubmittedData(data.userabilityData || []);
   };
 
   const handleAddRow = () => {
@@ -148,7 +148,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
       alert(data.message);
       setabilityAbilities([{ proficiency_level: "", classification_item: "" }]);
       setSubmittedData([]);
-      setSubmittedData(data.userabilityData||[]);
+      setSubmittedData(data.userabilityData || []);
       setEditingId(null);
       setLoading(false);
     } catch (error) {
@@ -208,7 +208,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Ability Proficiency Level</div>
+          <div>Skill Proficiency Level</div>
           <input
             type="text"
             placeholder="Search..."
@@ -224,7 +224,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Ability Classification Items</div>
+          <div>Skill Abilitys</div>
           <input
             type="text"
             placeholder="Search..."
@@ -233,9 +233,23 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
           />
         </div>
       ),
-      selector: (row: abilityAbilityEntry) => row.classification_item ?? "",
+      selector: (row: abilityAbilityEntry) =>
+        row.classification_item
+          ? (row.classification_item.length > 100
+            ? `${row.classification_item.substring(0, 100)}...`
+            : row.classification_item)
+          : "N/A",
       sortable: true,
       wrap: true,
+      cell: (row: abilityAbilityEntry) => (
+        <span title={row.classification_item || "N/A"}>
+          {row.classification_item
+            ? row.classification_item.length > 100
+              ? `${row.classification_item.substring(0, 100)}...`
+              : row.classification_item
+            : "N/A"}
+        </span>
+      ),
     },
     {
       name: "Actions",
@@ -256,7 +270,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       ignoreRowClick: true,
-      allowOverflow: true,
+      // allowOverflow: true,
       button: true,
     },
   ];
@@ -280,14 +294,14 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     },
   };
 
-  return ( <>
+  return (<>
     <div className="w-[100%]">
       <form className="w-[100%]" onSubmit={handleSubmit}>
         {abilityAbilities.map((entry, index) => (
           <div key={index} className="grid md:grid-cols-3 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-4 rounded-lg mt-2">
             <div className="relative z-0 w-full group text-left">
               <label htmlFor={`proficiency_level-${index}`} className="text-left">
-                Proficiency Level
+                Skill Proficiency Level
               </label>
               <br />
               <select
@@ -298,15 +312,15 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
                 onChange={(e) => handleInputChange(index, e)}
                 required
               >
-              <option value="">Select Proficiency Level</option>
-              {proficiencyLevel.map(d => <option key={d.proficiency_level} value={d.proficiency_level}>{d.proficiency_level}</option>)}
+                <option value="">Select Proficiency Level</option>
+                {proficiencyLevel.map(d => <option key={d.proficiency_level} value={d.proficiency_level}>{d.proficiency_level}</option>)}
 
               </select>
             </div>
 
             <div className="relative z-0 w-full group text-left">
               <label htmlFor={`classification_item-${index}`} className="text-left">
-                Classification Item
+                Skill Ability
               </label>
               <br />
               <textarea
@@ -322,7 +336,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
 
             <div className="flex items-center mt-2 md:mt-0">
               {abilityAbilities.length > 1 && (
-               <button
+                <button
                   type="button"
                   onClick={() => handleRemoveRow(index)}
                   className="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded-full mt-6 ml-2"
@@ -331,7 +345,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
                 </button>
               )}
               {index === abilityAbilities.length - 1 && (
-               <button
+                <button
                   type="button"
                   onClick={handleAddRow}
                   className="bg-transparent hover:bg-green-500 text-green-700 font-semibold hover:text-white py-2 px-4 border border-green-500 hover:border-transparent rounded-full mt-6 ml-2"
@@ -351,60 +365,60 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
       </form>
     </div>
     <div className="w-[100%]">{
-      submittedData.length>0 &&
-        <div className="mt-8 bg-white p-4 rounded-lg shadow-lg">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Ability</h2>
-            <div className="space-x-2">
-              <PrintButton
-                data={submittedData}
-                title="Job Roles Report"
-                excludedFields={["id", "internal_id"]}
-                buttonText={
-                  <>
-                    <span className="mdi mdi-printer-outline"></span>
-                  </>
-                }
-              />
-              <ExcelExportButton
-                sheets={[{ data: submittedData, sheetName: "Submissions" }]}
-                fileName="Skills Jobrole"
-                onClick={() => console.log("Export initiated")}
-                buttonText={
-                  <>
-                    <span className="mdi mdi-file-excel"></span>
-                  </>
-                }
-              />
+      submittedData.length > 0 &&
+      <div className="mt-8 bg-white p-4 rounded-lg shadow-lg">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Ability</h2>
+          <div className="space-x-2">
+            <PrintButton
+              data={submittedData}
+              title="Job Roles Report"
+              excludedFields={["id", "internal_id"]}
+              buttonText={
+                <>
+                  <span className="mdi mdi-printer-outline"></span>
+                </>
+              }
+            />
+            <ExcelExportButton
+              sheets={[{ data: submittedData, sheetName: "Submissions" }]}
+              fileName="Skills Jobrole"
+              onClick={() => console.log("Export initiated")}
+              buttonText={
+                <>
+                  <span className="mdi mdi-file-excel"></span>
+                </>
+              }
+            />
 
-              <PdfExportButton
-                data={submittedData}
-                fileName="Skills Jobrole"
-                onClick={() => console.log("PDF export initiated")}
-                buttonText={
-                  <>
-                    <span className="mdi mdi-file-pdf-box"></span>
-                  </>
-                }
-              />
-            </div>
+            <PdfExportButton
+              data={submittedData}
+              fileName="Skills Jobrole"
+              onClick={() => console.log("PDF export initiated")}
+              buttonText={
+                <>
+                  <span className="mdi mdi-file-pdf-box"></span>
+                </>
+              }
+            />
           </div>
-
-          <DataTable
-            columns={columns}
-            data={filteredData}
-            pagination
-            highlightOnHover
-            responsive
-            striped
-            paginationPerPage={100}
-            paginationRowsPerPageOptions={[100, 500, 1000]}
-            customStyles={customStyles}
-            progressPending={loading}
-            noDataComponent={<div className="p-4">No records found</div>}
-          />
         </div>
-      }</div>
+
+        <DataTable
+          columns={columns}
+          data={filteredData}
+          pagination
+          highlightOnHover
+          responsive
+          striped
+          paginationPerPage={100}
+          paginationRowsPerPageOptions={[100, 500, 1000]}
+          customStyles={customStyles}
+          progressPending={loading}
+          noDataComponent={<div className="p-4">No records found</div>}
+        />
+      </div>
+    }</div>
   </>);
 };
 

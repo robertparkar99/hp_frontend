@@ -219,7 +219,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     {
       name: (
         <div>
-          <div>Application Proficiency Level</div>
+          <div>Skill Proficiency Level</div>
           <input
             type="text"
             placeholder="Search..."
@@ -244,9 +244,23 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           />
         </div>
       ),
-      selector: (row: ApplicationEntry) => row.application ?? "",
+      selector: (row: ApplicationEntry) => 
+         row.application
+          ? (row.application.length > 100
+            ? `${row.application.substring(0, 100)}...`
+            : row.application)
+          : "N/A",
       sortable: true,
       wrap: true,
+       cell: (row: ApplicationEntry) => (
+        <span title={row.application || "N/A"}>
+          {row.application
+            ? row.application.length > 100
+              ? `${row.application.substring(0, 100)}...`
+              : row.application
+            : "N/A"}
+        </span>
+      ),
     },
     {
       name: "Actions",
@@ -267,7 +281,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         </div>
       ),
       ignoreRowClick: true,
-      allowOverflow: true,
+      // allowOverflow: true,
       button: true,
     },
   ];
@@ -299,7 +313,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           <div key={index} className="grid md:grid-cols-3 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-4 rounded-lg mt-2">
             <div className="relative z-0 w-full group text-left">
               <label htmlFor={`proficiency_level-${index}`} className="text-left">
-                Proficiency Level
+              Skill Proficiency Level
               </label>
               <br />
               <select

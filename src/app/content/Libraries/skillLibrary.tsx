@@ -1,18 +1,18 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import TreeView from '@/components/skillComponent/treeView';
+import AddSkillView from '@/components/skillComponent/addTreeView';
 import Loading from "../../../components/utils/loading"; // Import the Loading component
 import AddDialog from "@/components/skillComponent/addDialouge";
 // import { console } from 'inspector';
 
-interface allSkillData { id: number; category: string; sub_category: string; no_sub_category: string; title: string }
-interface userSkillsData { id: number; category: string; sub_category: string; no_sub_category: string; title: string }
+interface allSkillData { id: number; category: string; sub_category: string; no_sub_category: string; title: string;description : string; }
+interface userSkillsData { id: number; category: string; sub_category: string; no_sub_category: string; title: string;description : string; }
 interface SkillItem {
   id: number;
   category: string;
   sub_category: string;
   no_sub_category: string;
   title: string;
-  description?:string;
+  description: string;
 }
 
 type SkillTree = {
@@ -31,6 +31,7 @@ const SkillLibrary = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('');
    const [departments, setDepartments] = useState<any[]>([]);
     const [subDepartments, setSubDepartments] = useState<any[]>([]);
+    const [userSkillsData, setuserSkillsData] = useState<userSkillsData[]>([]);
   const [selectedSubDepartments, setSelectedSubDepartments] = useState<string[]>([]);
    const [dialogOpen, setDialogOpen] = useState({
       view: false,
@@ -58,18 +59,18 @@ const SkillLibrary = () => {
 
   //   return tree;
   // };
-  // const transformToTree = (data: allSkillData[] | userSkillsData[]): SkillTree => {
-  //   const tree: SkillTree = {};
-  //   if (!Array.isArray(data)) return tree;
-  //   data.forEach((item) => {
-  //     const category = item.category;
-  //     const subCategory = item.sub_category || 'no_sub_category';
-  //     if (!tree[category]) tree[category] = {};
-  //     if (!tree[category][subCategory]) tree[category][subCategory] = [];
-  //     tree[category][subCategory].push(item);
-  //   });
-  //   return tree;
-  // };
+  const transformToTree = (data: allSkillData[] | userSkillsData[]): SkillTree => {
+    const tree: SkillTree = {};
+    if (!Array.isArray(data)) return tree;
+    data.forEach((item) => {
+      const category = item.category;
+      const subCategory = item.sub_category || 'no_sub_category';
+      if (!tree[category]) tree[category] = {};
+      if (!tree[category][subCategory]) tree[category][subCategory] = [];
+      tree[category][subCategory].push(item);
+    });
+    return tree;
+  };
 
   useEffect(() => {
     const userData = localStorage.getItem('userData');
@@ -96,6 +97,7 @@ const SkillLibrary = () => {
       const data = await res.json();
       console.log('skillData',data)
       setLoading(false);
+      setuserSkillsData(data.userTree || []);
     }
   // const getDepartment = async (industries: string) => {
   //   if (!industries) return setDepartments([]);
@@ -262,6 +264,9 @@ const SkillLibrary = () => {
         </div>
         
       )}
+      <AddSkillView userSkillsData={
+                Array.isArray(userSkillsData) ? transformToTree(userSkillsData) : userSkillsData
+              } />
       {dialogOpen.add  && (
         <AddDialog skillId={0}
           onClose={() => setDialogOpen({...dialogOpen, add: false})}
