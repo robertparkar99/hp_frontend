@@ -164,15 +164,15 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
     fetchData(selectedDepartment, sub_department);
   }
   return (<>
-    <div className='relative bg-[#fff] mx-6 rounded-lg drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)] p-4'>
+    <div className='relative bg-[#fff] mx-6 rounded-lg'>
       {/* add department and sub department wise search 25-06-2025 by uma start */}
-      <div className="flex justify-center gap-8  mb-[20px] py-4">
+      <div className="flex justify-center gap-8 py-6 inset-shadow-sm inset-shadow-[#EBF7FF] rounded-lg">
         {/* Department Select */}
         <div className="flex flex-col items-center w-[320px]">
           <label htmlFor="Department" className="self-start mb-1 px-3">Jobrole Department</label>
           <select
             name="department"
-            className="rounded-full p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000"
+            className="rounded-full p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
             onChange={e => fetchSubDepartments(e.target.value)}
           >
             <option value="">Choose a Department to Filter</option>
@@ -190,7 +190,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
           <label htmlFor="subDepartment" className="self-start mb-1 px-3">Jobrole Sub-Department</label>
           <select
             name="sub_department"
-            className="rounded-full p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000"
+            className="rounded-full p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
             onChange={e => getFilteredData(e.target.value)}
             autoComplete="off"
           >
@@ -215,7 +215,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             setRowsPerPage(val);
             setCurrentPage(1); // reset page on page size change
           }}
-          className="border-2 border-[#CDE4F5] rounded-full px-2 py-1 bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white focus:rounded-none transition-colors duration-2000"
+          className="border-2 border-[#CDE4F5] rounded-full px-2 py-1 bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white focus:rounded-none transition-colors duration-2000  drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)] p-4"
         >
           <option value="100">50</option>
           <option value="100">100</option>
@@ -227,7 +227,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
           <input
             type="text"
             placeholder="Search..."
-            className="border-2 border-[#CDE4F5] rounded-full px-3 py-1 w-64 bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white focus:rounded-none transition-colors duration-2000"
+            className="border-2 border-[#CDE4F5] rounded-full px-3 py-1 w-64 bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white focus:rounded-none transition-colors duration-2000  drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)] p-4"
             value={searchTerm}
             onChange={e => {
               setSearchTerm(e.target.value);
