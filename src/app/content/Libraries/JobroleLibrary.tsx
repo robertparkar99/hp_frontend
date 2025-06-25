@@ -135,19 +135,17 @@ const JobroleLibrary = () => {
         <Loading />
       ) : (
 
-        <div className="container mx-auto px-1">
-          <div className='flex'>
+        <div className="container mx-auto px-1 rounded-lg pb-4">
+          <div className='flex rounded-lg p-4'>
             <div className="headerMenu">
-              {/* <h2 className="text-3xl font-bold">{sessionOrgType}</h2>
-              <hr /> */}
-              <p className="text-3xl font-bold mb-4">Jobrole Library</p>
+              <p className="text-3xl font-bold mb-4 text-[#4876ab]" style={{ fontFamily: "cursive" }}>Jobrole Library</p>
             </div>
             <div className="ml-auto">
-              <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setDialogOpen({ ...dialogOpen, add: true })}>Add Jobrole</button>
+              <button className="bg-blue-500 text-white px-4 py-2 rounded-full" onClick={() => setDialogOpen({ ...dialogOpen, add: true })} title="Add New Jobrole">+</button>
             </div>
           </div>
 
-          <TableView refreshKey={refreshKey} />
+          <TableView refreshKey={refreshKey}/>
         </div>
       )}
 

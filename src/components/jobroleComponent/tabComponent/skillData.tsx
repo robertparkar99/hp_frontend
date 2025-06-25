@@ -253,7 +253,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
     };
 
     try {
-      const url = `${sessionData.url}/jobrole_library/${editData?.id}`; // URL identifies the job role
+      const url = `${sessionData.url}/jobrole_library/${editingId}`; // URL identifies the job role
 
       const res = await fetch(url, {
         method: "PUT",
@@ -539,18 +539,19 @@ const SkillData: React.FC<Props> = ({ editData }) => {
               ></textarea>
             </div>
 
-             <div className="relative z-0 w-full group text-left">
+             <div className="relative w-full group text-left">
               <label htmlFor={`proficiency_level-${index}`} className="text-left">
-                Skill Poficiency Level
+                Skill Proficiency Level
               </label>
               <br />
-              <input
+                  <input
                   type="text"
                   name="proficiency_level"
                   id={`proficiency_level-${index}`}
                   className="w-full z-10 rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
-                  placeholder="Enter Poficiency Level..."
+                  placeholder="Enter proficiency level..."
                   value={SkillName.proficiency_level}
+                  onChange={(e) => handleSkillNameChange(index, e)}
                   autoComplete="off"
                 />
              

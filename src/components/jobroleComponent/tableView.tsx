@@ -17,6 +17,9 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(100);
   const [tableData, setTableData] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [subDepartments, setSubDepartments] = useState<any[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState('');
 
   const [dialogOpen, setDialogOpen] = useState({
     view: false,
@@ -52,11 +55,15 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
   }, []);
 
   useEffect(() => {
-    if (sessionData.url && sessionData.token) fetchData();
+    if (sessionData.url && sessionData.token) {
+      fetchData();
+      fetchDepartments();
+    }
   }, [sessionData.url, sessionData.token, refreshKey]);
 
-  async function fetchData() {
-    const res = await fetch(`${sessionData.url}/jobrole_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}`);
+  async function fetchData(department: string | null = '', sub_department: string | null = '') {
+    // alert(searchType);
+    const res = await fetch(`${sessionData.url}/jobrole_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&department=${department}&sub_department=${sub_department}`);
     const data = await res.json();
 
     setTableData(data.tableData || []);
@@ -129,11 +136,78 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
     }
   };
 
-  return (<>
-    <div className='bg-[#fff] mx-2 rounded-sm drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)] p-4'>
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=department&searchWord="departments"`);
+      const data = await res.json();
+      setDepartments(data.searchData || []);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      alert("Failed to load departments");
+    }
+  };
 
+  const fetchSubDepartments = async (department: string) => {
+    try {
+      setSelectedDepartment(department);
+      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=sub_department&searchWord=${encodeURIComponent(department)}`);
+      fetchData(department);
+      const data = await res.json();
+      setSubDepartments(data.searchData || []);
+    } catch (error) {
+      console.error("Error fetching sub-departments:", error);
+      alert("Failed to load sub-departments");
+    }
+  };
+
+  const getFilteredData = async (sub_department: string) => {
+    fetchData(selectedDepartment, sub_department);
+  }
+  return (<>
+    <div className='relative bg-[#fff] mx-6 rounded-lg drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)] p-4'>
+      {/* add department and sub department wise search 25-06-2025 by uma start */}
+      <div className="flex justify-center gap-8  mb-[20px] py-4">
+        {/* Department Select */}
+        <div className="flex flex-col items-center w-[320px]">
+          <label htmlFor="Department" className="self-start mb-1 px-3">Jobrole Department</label>
+          <select
+            name="department"
+            className="rounded-full p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000"
+            onChange={e => fetchSubDepartments(e.target.value)}
+          >
+            <option value="">Choose a Department to Filter</option>
+            {departments.map((dept) => (
+              <option key={dept} value={dept}>
+                {dept}
+              </option>
+            ))}
+          </select>
+
+        </div>
+
+        {/* Sub-department Select */}
+        <div className="flex flex-col items-center w-[320px]">
+          <label htmlFor="subDepartment" className="self-start mb-1 px-3">Jobrole Sub-Department</label>
+          <select
+            name="sub_department"
+            className="rounded-full p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000"
+            onChange={e => getFilteredData(e.target.value)}
+            autoComplete="off"
+          >
+            <option value="">Choose a Sub-Department to Filter</option>
+            {subDepartments.map((dept) => (
+              <option key={dept} value={dept}>
+                {dept}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <hr className='mb-[26px] text-[#ddd] border-2 border-[#449dd5] rounded' />
+      {/* add department and sub department wise search 25-06-2025 by uma end */}
       <div className="mb-2 flex items-center gap-2 px-4">
-        <label>Rows per page:</label>
+        <label>Show Entries:</label>
         <select
           value={rowsPerPage}
           onChange={e => {
@@ -141,7 +215,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             setRowsPerPage(val);
             setCurrentPage(1); // reset page on page size change
           }}
-          className="border rounded px-2 py-1"
+          className="border-2 border-[#CDE4F5] rounded-full px-2 py-1 bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white focus:rounded-none transition-colors duration-2000"
         >
           <option value="100">50</option>
           <option value="100">100</option>
@@ -153,14 +227,13 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
           <input
             type="text"
             placeholder="Search..."
-            className="border rounded px-3 py-1 w-64"
+            className="border-2 border-[#CDE4F5] rounded-full px-3 py-1 w-64 bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white focus:rounded-none transition-colors duration-2000"
             value={searchTerm}
             onChange={e => {
               setSearchTerm(e.target.value);
               setCurrentPage(1); // reset to first page on search
             }}
           /> <br />
-          {totalRows} records found
         </span>
 
       </div>
@@ -169,58 +242,35 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
         <div className="inline-block min-w-full shadow rounded-lg overflow-hidden">
           <table id="example" className="min-w-full leading-normal">
             <thead>
-              <tr>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>Department</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap'>Sub Department</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>Jobrole</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap'>Jobrole description</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap'>Performance Expectation</th>
-                {/* commented on 24-06-2025 as per discussion with team */}
-                {/* <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>company information</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>contact information</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>location</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>job posting date</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>application deadline</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>salary range</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>required skill experience</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>responsibilities</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>benefits</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>keyword tags</th>
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>internal tracking</th> */}
-                <th className='px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider'>Actions</th>
+              <tr className='bg-[#4876ab] text-white'>
+                <th className='px-3 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold uppercase tracking-wider'>Department</th>
+                <th className='px-3 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap'>Sub Department</th>
+                <th className='px-3 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold uppercase tracking-wider'>Jobrole</th>
+                <th className='px-3 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap'>Jobrole description</th>
+                <th className='px-3 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap'>Performance Expectation</th>
+
+                <th className='px-3 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold uppercase tracking-wider'>Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="border-b dark:border-gray-700 border-gray-200">
               {paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan={13} className="text-left p-4">No records found</td>
                 </tr>
               ) : (
                 paginatedData.map((row, index) => (
-                  <tr key={`${row.id}-${index}`}>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.department}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.sub_department}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.jobrole}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm' title={row.description}>{row.description
-                      ? row.description.slice(0, 100) + (row.description.length > 100 ? "..." : "")
+                  <tr key={`${row.id}-${index}`} className="odd:bg-white even:bg-gray-100 hover:bg-blue-50 dark:hover:bg-gray-700"  >
+                    <td className='px-3 py-3 border-b border-gray-200 text-sm'>{row.department}</td>
+                    <td className='px-3 py-3 border-b border-gray-200 text-sm'>{row.sub_department}</td>
+                    <td className='px-3 py-3 border-b border-gray-200 text-sm'>{row.jobrole}</td>
+                    <td className='px-3 py-3 border-b border-gray-200 text-sm' title={row.description}>{row.description
+                      ? row.description.slice(0, 50) + (row.description.length > 50 ? "..." : "")
                       : "-"}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.performance_expectation
+                    <td className='px-3 py-3 border-b border-gray-200 text-sm' title={row.performance_expectation}>{row.performance_expectation
                       ? row.performance_expectation.slice(0, 50) + (row.performance_expectation.length > 50 ? "..." : "")
                       : "-"}</td>
-                    {/* commented on 24-06-2025 as per discussion with team */}
 
-                    {/* <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.company_information}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.contact_information}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.location}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.job_posting_date}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.application_deadline}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.salary_range}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.required_skill_experience}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.responsibilities}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.benefits}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.keyword_tags}</td>
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>{row.internal_tracking}</td> */}
-                    <td className='px-5 py-5 border-b border-gray-200 bg-white text-sm'>
+                    <td className='px-3 py-3 border-b border-gray-200 text-sm'>
                       <div className="flex items-center space-x-2">
 
                         <button
@@ -248,40 +298,46 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
 
       {/* Pagination controls */}
       {rowsPerPage !== -1 && totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-4">
-          <button
-            className="px-3 py-1 border rounded disabled:opacity-50"
-            onClick={() => setCurrentPage(1)}
-            disabled={currentPage === 1}
-          >
-            {'<<'}
-          </button>
-          <button
-            className="px-3 py-1 border rounded disabled:opacity-50"
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            {'<'}
-          </button>
+        <div className="flex gap-[60%] mt-4">
+          <div className="totalRecord">
+            {totalRows} records found
+          </div>
+          <div className="pages">
+            <button
+              className="px-3 py-1 border rounded disabled:opacity-50"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              {'<<'}
+            </button>
+            <button
+              className="px-3 py-1 border rounded disabled:opacity-50"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              {'<'}
+            </button>
 
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
 
-          <button
-            className="px-3 py-1 border rounded disabled:opacity-50"
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            {'>'}
-          </button>
-          <button
-            className="px-3 py-1 border rounded disabled:opacity-50"
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage === totalPages}
-          >
-            {'>>'}
-          </button>
+            <button
+              className="px-3 py-1 border rounded disabled:opacity-50"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              {'>'}
+            </button>
+            <button
+              className="px-3 py-1 border rounded disabled:opacity-50"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              {'>>'}
+            </button>
+          </div>
+
         </div>
       )}
 
