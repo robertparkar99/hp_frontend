@@ -34,6 +34,11 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
     const [subDepartments, setSubDepartments] = useState<any[]>([]);
     const [selectedDepartment, setSelectedDepartment] = useState('');
     const [selectedSubDepartments, setSelectedSubDepartments] = useState<string[]>([]);
+    const [paginationPerPageVal, setPaginationPerPageVal] = useState(100);
+    const [tableData, setTableData] = useState<JobroleData[]>([]);
+    const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
     const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
         {}
     );
@@ -42,8 +47,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
         add: false,
         edit: false,
     });
-    const [tableData, setTableData] = useState<JobroleData[]>([]);
-    const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
+
     const [sessionData, setSessionData] = useState({
         url: "",
         token: "",
@@ -52,7 +56,6 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
         userId: "",
         userProfile: "",
     });
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const userData = localStorage.getItem('userData');
@@ -74,7 +77,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             fetchData();
             fetchDepartments();
         }
-    }, [sessionData.url, sessionData.token, refreshKey]);
+    }, [paginationPerPageVal, currentPage, sessionData.url, sessionData.token, refreshKey]);
 
     async function fetchData(department: string = '', subDepartments: string[] = []) {
         setLoading(true);
@@ -171,6 +174,13 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             ...prev,
             [column]: value,
         }));
+    };
+
+    const handlePerPageChange = (newPerPage: any, page: number) => {
+        setPaginationPerPageVal(Number(newPerPage));
+        setCurrentPage(1);
+        alert(newPerPage);
+        console.log(newPerPage);
     };
 
     interface ColumnFilters {
@@ -284,7 +294,6 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                 </div>
             ),
             ignoreRowClick: true,
-            // allowOverflow: true,
             button: true,
         },
     ];
@@ -310,106 +319,124 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
 
     return (
         <>
-        <div className='relative bg-[#fff] mx-6 rounded-lg'>
-        {/* Department and Sub-department Filters */}
-        <div className="flex justify-center gap-8 py-6 inset-shadow-sm inset-shadow-[#EBF7FF] rounded-lg">
-          {/* Department Select */}
-          <div className="flex flex-col items-center w-[320px]">
-            <label htmlFor="Department" className="self-start mb-1 px-3">Jobrole Department</label>
-            <select
-              name="department"
-              className="rounded-lg p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
-              onChange={e => fetchSubDepartments(e.target.value)}
-              value={selectedDepartment}
-            >
-              <option value="">Choose a Department to Filter</option>
-              {departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Sub-department Multi-Select */}
-          <div className="flex flex-col items-center w-[320px]">
-            <label htmlFor="subDepartment" className="self-start mb-1 px-3">Jobrole Sub-Department</label>
-            <select
-              name="sub_department"
-              className="rounded-lg p-2 resize-y overflow-hidden border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
-              onChange={handleSubDepartmentChange}
-              multiple
-              size={3}
-              value={selectedSubDepartments}
-            >
-              <option value="" disabled>Choose Sub-Departments (Hold Ctrl for multiple)</option>
-              {subDepartments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <hr className='mb-[26px] text-[#ddd] border-2 border-[#449dd5] rounded' />
-        </div>
-            <div className="w-[100%]">{
-                tableData.length > 0 &&
-                <div className="mt-8 bg-white px-4 rounded-lg shadow-lg">
-                    <div className="flex justify-end items-center mb-4">
-                        <div className="space-x-2 self-end">
-                            <PrintButton
-                                data={tableData}
-                                title="Job Roles Report"
-                                excludedFields={["id", "internal_id"]}
-                                buttonText={
-                                    <>
-                                        <span className="mdi mdi-printer-outline"></span>
-                                    </>
-                                }
-                            />
-                            <ExcelExportButton
-                                sheets={[{ data: tableData, sheetName: "Submissions" }]}
-                                fileName="Skills Jobrole"
-                                onClick={() => console.log("Export initiated")}
-                                buttonText={
-                                    <>
-                                        <span className="mdi mdi-file-excel"></span>
-                                    </>
-                                }
-                            />
-
-                            <PdfExportButton
-                                data={tableData}
-                                fileName="Skills Jobrole"
-                                onClick={() => console.log("PDF export initiated")}
-                                buttonText={
-                                    <>
-                                        <span className="mdi mdi-file-pdf-box"></span>
-                                    </>
-                                }
-                            />
-                        </div>
+            <div className='relative bg-[#fff] mx-6 rounded-lg'>
+                {/* Department and Sub-department Filters */}
+                <div className="flex justify-center gap-8 py-6 inset-shadow-sm inset-shadow-[#EBF7FF] rounded-lg">
+                    {/* Department Select */}
+                    <div className="flex flex-col items-center w-[320px]">
+                        <label htmlFor="Department" className="self-start mb-1 px-3">Jobrole Department</label>
+                        <select
+                            name="department"
+                            className="rounded-lg p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
+                            onChange={e => fetchSubDepartments(e.target.value)}
+                            value={selectedDepartment}
+                        >
+                            <option value="">Choose a Department to Filter</option>
+                            {departments.map((dept) => (
+                                <option key={dept} value={dept}>
+                                    {dept}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
-                    <DataTable
-                        columns={columns}
-                        data={filteredData}
-                        pagination
-                        highlightOnHover
-                        responsive
-                        striped
-                        paginationPerPage={100}
-                        paginationRowsPerPageOptions={[100, 500, 1000]}
-                        customStyles={customStyles}
-                        progressPending={loading}
-                        noDataComponent={<div className="p-4">No records found</div>}
-                    />
+                    {/* Sub-department Multi-Select */}
+                    <div className="flex flex-col items-center w-[320px]">
+                        <label htmlFor="subDepartment" className="self-start mb-1 px-3">Jobrole Sub-Department</label>
+                        <select
+                            name="sub_department"
+                            className="rounded-lg p-2 resize-y overflow-hidden border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
+                            onChange={handleSubDepartmentChange}
+                            multiple
+                            size={3}
+                            value={selectedSubDepartments}
+                        >
+                            <option value="" disabled>Choose Sub-Departments (Hold Ctrl for multiple)</option>
+                            {subDepartments.map((dept) => (
+                                <option key={dept} value={dept}>
+                                    {dept}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-            }
-            </div>
 
+                <hr className='mb-[26px] text-[#ddd] border-2 border-[#449dd5] rounded' />
+            </div>
+            <div className="w-[100%]">
+                {tableData.length > 0 && (
+                    <div className="mt-2 bg-white px-4 rounded-lg shadow-lg">
+                        {/* Header row with pagination left and export buttons right */}
+                        <div className="flex justify-between items-center mb-4 py-4">
+                            {/* Left side - Pagination controls */}
+                            <div className="space-x-4">
+                                <select
+                                    onChange={(e) => handlePerPageChange(Number(e.target.value), 1)}
+                                    className="rounded-lg p-1 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
+                                    value={paginationPerPageVal}
+                                >
+                                    <option value={100}>100</option>
+                                    <option value={500}>500</option>
+                                    <option value={1000}>1000</option>
+                                </select>
+                                <br />
+                                <span className="text-sm">Total records : {filteredData.length}</span>
+                            </div>
+
+                            {/* Right side - Export buttons */}
+                            <div className="flex space-x-2">
+                                <PrintButton
+                                    data={tableData}
+                                    title="Job Roles Report"
+                                    excludedFields={["id", "internal_id"]}
+                                    buttonText={
+                                        <>
+                                            <span className="mdi mdi-printer-outline"></span>
+                                        </>
+                                    }
+                                />
+                                <ExcelExportButton
+                                    sheets={[{ data: tableData, sheetName: "Submissions" }]}
+                                    fileName="Skills Jobrole"
+                                    onClick={() => console.log("Export initiated")}
+                                    buttonText={
+                                        <>
+                                            <span className="mdi mdi-file-excel"></span>
+                                        </>
+                                    }
+                                />
+                                <PdfExportButton
+                                    data={tableData}
+                                    fileName="Skills Jobrole"
+                                    onClick={() => console.log("PDF export initiated")}
+                                    buttonText={
+                                        <>
+                                            <span className="mdi mdi-file-pdf-box"></span>
+                                        </>
+                                    }
+                                />
+                            </div>
+                        </div>
+                        
+                        <DataTable
+                            columns={columns}
+                            data={filteredData}
+                            pagination
+                            highlightOnHover
+                            responsive
+                            striped
+                            paginationPerPage={paginationPerPageVal}
+                            paginationRowsPerPageOptions={[100, 500, 1000]}
+                            onChangeRowsPerPage={handlePerPageChange}
+                            customStyles={customStyles}
+                            progressPending={loading}
+                            noDataComponent={<div className="p-4">No records found</div>}
+                            paginationDefaultPage={currentPage}
+                            onChangePage={setCurrentPage}
+                        />
+                    </div>
+                )}
+            </div>
             {/* Edit Dialog */}
             {dialogOpen.edit && selectedJobRole && (
                 <EditDialog
@@ -421,7 +448,8 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                     }}
                 />
             )}
-        </>);
+        </>
+    );
 };
 
 export default TableView;
