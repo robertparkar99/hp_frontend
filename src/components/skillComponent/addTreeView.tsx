@@ -267,7 +267,7 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
                 <span className="flex items-center font-semibold border-1 border-[#ddd] rounded-sm px-2">
                   <i className="mdi mdi-folder mr-2 font-bold text-yellow-700"></i> All Skills
                   <div className="openClose pl-4">
-                    <i className={`mdi mdi-plus-circle m-2 text-xl ${isOpen ? "text-cyan-600" : ""}`} onClick={() => toggleAll(true)} title="All Skill Open"></i>
+                    <i className={`mdi mdi-plus-box m-2 text-xl ${isOpen ? "text-cyan-600" : ""}`} onClick={() => toggleAll(true)} title="All Skill Open"></i>
                     <i
                       className={`mdi mdi-minus-box text-xl ${isOpen ? "" : "text-cyan-600"}`}
                       onClick={() => toggleAll(false)}
