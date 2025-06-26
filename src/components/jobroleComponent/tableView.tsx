@@ -179,7 +179,8 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
     const handlePerPageChange = (newPerPage: any, page: number) => {
         setPaginationPerPageVal(Number(newPerPage));
         setCurrentPage(1);
-        console.log('newPerPage',newPerPage);
+        // alert(newPerPage);
+        console.log(newPerPage);
     };
 
     interface ColumnFilters {
