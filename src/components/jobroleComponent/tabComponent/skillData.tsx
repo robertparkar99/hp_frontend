@@ -449,7 +449,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
       selector: (row: SubmittedSkillName) => row.description,
       cell: (row: SubmittedSkillName) => (
         <div
-          title={row.description}
+          data-titleHead={row.description}
           style={{
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -698,7 +698,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
           <div className="space-x-2">
             <PrintButton
               data={submittedData}
-              title="Skills Report"
+              data-titleHead="Skills Report"
               excludedFields={["id", "internal_id", "skillTitle", "skill_id", "updated_at"]}
               buttonText={
                 <>

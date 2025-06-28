@@ -141,7 +141,7 @@ const JobroleLibrary = () => {
               <p className="text-3xl font-bold mb-4 text-[#4876ab]" style={{ fontFamily: "cursive" }}>Jobrole Library</p>
             </div>
             <div className="ml-auto">
-              <button className="bg-blue-500 text-white px-4 py-2 rounded-full" onClick={() => setDialogOpen({ ...dialogOpen, add: true })} title="Add New Jobrole">+</button>
+              <button className="bg-blue-500 text-white px-4 py-2 rounded-full" onClick={() => setDialogOpen({ ...dialogOpen, add: true })} data-titleHead="Add New Jobrole">+</button>
             </div>
           </div>
 

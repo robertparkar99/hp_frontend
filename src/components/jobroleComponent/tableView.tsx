@@ -236,7 +236,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             sortable: true,
             wrap: true,
             cell: (row: JobroleData) => (
-                <span title={row.description || "N/A"}>
+                <span data-title={row.description || "N/A"}>
                     {row.description
                         ? row.description.length > 100
                             ? `${row.description.substring(0, 100)}...`
@@ -266,7 +266,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             sortable: true,
             wrap: true,
             cell: (row: JobroleData) => (
-                <span title={row.performance_expectation || "N/A"}>
+                <span data-title={row.performance_expectation || "N/A"}>
                     {row.performance_expectation
                         ? row.performance_expectation.length > 100
                             ? `${row.performance_expectation.substring(0, 100)}...`
@@ -283,13 +283,13 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                         onClick={() => row.id && handleEditClick(row.id)}
                         className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
                     >
-                        <span className="mdi mdi-pencil"></span>
+                        <span className="mdi mdi-pencil" data-titleHead="Edit Jobrole"></span>
                     </button>
                     <button
                         onClick={() => row.id && handleDeleteClick(row.id)}
                         className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
                     >
-                        <span className="mdi mdi-trash-can"></span>
+                        <span className="mdi mdi-trash-can" data-titleHead="Delete Jobrole"></span>
                     </button>
                 </div>
             ),
@@ -370,7 +370,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                         <div className="flex justify-between items-center mb-4 py-4">
                             {/* Left side - Pagination controls */}
                             <div className="space-x-4">
-                                <select
+                                {/* <select
                                     onChange={(e) => handlePerPageChange(Number(e.target.value), 1)}
                                     className="rounded-lg p-1 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
                                     value={paginationPerPageVal}
@@ -380,7 +380,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                                     <option value={1000}>1000</option>
                                 </select>
                                 <br />
-                                <span className="text-sm">Total records : {filteredData.length}</span>
+                                <span className="text-sm">Total records : {filteredData.length}</span> */}
                             </div>
 
                             {/* Right side - Export buttons */}
