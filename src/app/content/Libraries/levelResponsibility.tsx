@@ -4,7 +4,7 @@ const LevelResponsibility = () => {
   const [sessionData, setSessionData] = useState<any>([]);
   const [allData, setAllData] = useState<any[]>([]);
   const [levelsData, setLevelsData] = useState<any[]>([]);
-  const [attrData, setAttrData] = useState<any[]>([]);
+  const [attrData, setAttrData] = useState<{ [key: string]: any }>({});
   const [activeLevel, setActiveLevel] = useState('');
 
   useEffect(() => {
@@ -53,7 +53,7 @@ const LevelResponsibility = () => {
      <div className="container mx-auto px-1 rounded-lg pb-4">
           <div className='flex rounded-lg p-4'>
             <div className="headerMenu">
-              <p className="text-3xl font-bold mb-4 text-[#4876ab]" style={{ fontFamily: "cursive" }}>Jobrole Library</p>
+              <p className="text-3xl font-bold text-[#4876ab]" style={{ fontFamily: "cursive" }}>Level of Responsibility</p>
             </div>
             {/* <div className="ml-auto">
               <button className="bg-blue-500 text-white px-4 py-2 rounded-full" title="Add New Jobrole">+</button>
@@ -62,6 +62,7 @@ const LevelResponsibility = () => {
 
         </div>
       <div>
+        <hr className='mb-[26px] text-[#ddd] border-2 border-[#449dd5] rounded' />
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-6">
           {levelsData.map(item => (
@@ -74,29 +75,56 @@ const LevelResponsibility = () => {
                 }`}
                 data-title={item.guiding_phrase}
             >
-              Level <span>{item.level}:</span>
+              Level <span>{item.level}</span>
             </button>
           ))}
         </div>
 
         {/* Content */}
         {levelsData.length > 0 ? (
-          <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+          <div className="bg-white py-6 px-4 rounded-lg shadow border border-gray-200">
             {levelsData
               .filter(item => item.level === activeLevel)
               .map(item => (
                 <div key={item.level}>
-                  <h2 className="text-xl font-bold mb-4">
-                    Level <span>{item.level}:</span>
-                    
-                    <span> {item.guiding_phrase}</span>
+                  <h2 className="text-2xl font-bold p-2 bg-[#bbb1f1] rounded-t-lg">
+                  Levels of responsibility: Level <span>{item.level} -</span>
+                  <span> {item.guiding_phrase}</span>
                   </h2>
-                  <div className="prose max-w-none">
-                    <h3 className="text-lg font-semibold mb-2">Essence of the level:</h3>
-                    <p className="mb-4">{item.essence_level}</p>
-
-                    <h3 className="text-lg font-semibold mb-2">Attribute Description:</h3>
-                    <p>{item.attribute_description}</p>
+                  <div className="prose max-w-none p-2 bg-[#e7efff]">
+                  <p className="mb-4">{item.essence_level}</p>
+                  {/* guiding_notes  */}
+                  <div className="guidenceNotes bg-[#f3f3f3] rounded-lg p-2">
+                    <h2 className="font-bold text-xl mb-2">Guidance notes</h2>
+                    <p>{item.guidance_notes}</p>
+                  </div>
+                  {/* attributes start */}
+                  <div className="attributeData p-2">
+                    {attrData && attrData[item.level] && attrData[item.level].Attributes
+                    ? Object.entries(attrData[item.level].Attributes).map(([key, attribute]: [string, any]) => (
+                      <div key={attribute.id || key} className="mb-4">
+                        <h3 className="font-bold text-lg bg-[#a5cef7] rounded-lg px-2 py-1 w-[fit-content] mb-2">{key}</h3>
+                        <p>{attribute.attribute_overall_description}</p>
+                      </div>
+                      ))
+                    : <p>&nbsp;</p>
+                    }
+                  </div>
+                  {/* attributes end  */}
+                  {/* Business skills / Behavioural factors start  */}
+                  <div className='p-2 bg-[#dedfff] rounded-lg'>
+                    <h2 className="text-xl font-bold mb-2">Business skills / Behavioural factors</h2>
+                    {attrData && attrData[item.level] && attrData[item.level].Business_skills
+                    ? Object.entries(attrData[item.level].Business_skills).map(([key, attribute]: [string, any]) => (
+                      <div key={attribute.id || key} className="mb-4">
+                        <h3 className="font-bold text-lg bg-[#ceb0fddd] rounded-lg px-2 py-1 w-[fit-content] mb-2">{key}</h3>
+                        <p>{attribute.attribute_overall_description}</p>
+                      </div>
+                      ))
+                    : <p>&nbsp;</p>
+                    }
+                  </div>
+                  {/* Business skills / Behavioural factors end  */}
                   </div>
                 </div>
               ))}
