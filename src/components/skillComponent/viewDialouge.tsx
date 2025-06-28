@@ -458,14 +458,14 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                   <div className="cardDetails grid grid-cols-3 gap-6 p-4">
                     {jobroleData.map((jobrole, index) => (
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h2 className="text-[14px] h-[48px] text-[#2060E6] font-bold" title={jobrole.jobrole ? jobrole.jobrole : '-'}> {jobrole.jobrole
+                        <h2 className="text-[14px] h-[48px] text-[#2060E6] font-bold" data-titleHead={jobrole.jobrole ? jobrole.jobrole : '-'}> {jobrole.jobrole
                           ? jobrole.jobrole.slice(0, 50) + (jobrole.jobrole.length > 50 ? "..." : "")
                           : "-"}</h2>
                         <hr className="text-[#ddd] pt-2" />
                         {/* <p className="text-[12px]"><span><b>Category : </b></span>{jobrole.category ? jobrole.category : '-'}</p>
                         <p className="text-[12px]"><span><b>Sub Category : </b></span>{jobrole.sub_category ? jobrole.sub_category : '-'}</p>
                         <p className="text-[12px]"><span><b>Skill Name : </b></span>{jobrole.skillTitle ? jobrole.skillTitle : '-'}</p> */}
-                        <p className="text-[12px]" title={jobrole.description}><span><b>Jobrole Description : </b></span>{jobrole.description
+                        <p className="text-[12px]" data-titleHead={jobrole.description}><span><b>Jobrole Description : </b></span>{jobrole.description
                           ? jobrole.description.slice(0, 150) + (jobrole.description.length > 150 ? "..." : "")
                           : "-"}</p>
 

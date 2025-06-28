@@ -307,11 +307,12 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
                             {expanded[`sub-${category}-${subCategory}`] && (
                               <ul className="ml-6 mt-1 space-y-0.5">
                                 {skills.map(skill => (
-                                  <li key={skill.id} className="text-sm" title={skill.description} onDoubleClick={() => dbclickLi(skill.id)}>
+                                  <li key={skill.id} className="text-sm" onDoubleClick={() => dbclickLi(skill.id)}>
                                     <summary className="hover:bg-gray-100 rounded flex justify-between  border-b-1 border-[#ddd]">
                                       <span
                                         className="flex items-center cursor-pointer"
                                         onClick={() => handleAddSkill(skill.id)}
+                                        data-title={skill.description}
                                       >
                                         <i className="mdi mdi-star-outline mr-2 text-yellow-400"></i>
                                         {skill.title}
@@ -321,10 +322,10 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
                                         className="flex items-center cursor-pointer"
                                         onClick={() => handleAddSkill(skill.id)}
                                       >
-                                          <span className="mdi mdi-eye mr-2 text-lg text-cyan-700" title="View Skill" onClick={() => setDialogOpen({ ...dialogOpen, view: true })}></span>
-                                        <span className="mdi mdi-pencil-box mr-2 text-lg text-blue-400" title="Edit Skill"
+                                          <span className="mdi mdi-eye mr-2 text-lg text-cyan-700" data-titleHead="View Skill" onClick={() => setDialogOpen({ ...dialogOpen, view: true })}></span>
+                                        <span className="mdi mdi-pencil-box mr-2 text-lg text-blue-400" data-titleHead="Edit Skill"
                                           onClick={() => setDialogOpen({ ...dialogOpen, edit: true })}></span>
-                                        <span className="mdi mdi-close-box mr-2 text-lg text-red-400" title="Delete Skill" onClick={handleDelete}></span>
+                                        <span className="mdi mdi-close-box mr-2 text-lg text-red-400" data-titleHead="Delete Skill" onClick={handleDelete}></span>
                                     
                                       </span>
                                     </summary>
@@ -346,7 +347,7 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
 
       {/* Dialogs */}
       {dialogOpen.view && selectedSkill && (
-        <ViewSkill skillId={selectedSkill} formType="user"
+        <ViewDialog skillId={selectedSkill} formType="user"
           onClose={() => {
             setDialogOpen({ ...dialogOpen, view: false });
             setSelectedSkillId(null);
