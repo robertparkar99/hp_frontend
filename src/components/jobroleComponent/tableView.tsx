@@ -39,6 +39,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
     const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
+    const [showResetFilters, setShowResetFilters] = useState(false);
     const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
         {}
     );
@@ -104,6 +105,10 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
     const handleEditClick = (id: number) => {
         setSelectedJobRole(id);
         setDialogOpen({ ...dialogOpen, edit: true });
+    };
+    const resetFilters = () => {
+        setColumnFilters({});
+        setShowResetFilters(false);
     };
 
     const handleDeleteClick = async (id: number) => {
@@ -266,7 +271,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             sortable: true,
             wrap: true,
             cell: (row: JobroleData) => (
-                <span data-title={row.performance_expectation || "N/A"}>
+                <span data-titleHead={row.performance_expectation || "N/A"}>
                     {row.performance_expectation
                         ? row.performance_expectation.length > 100
                             ? `${row.performance_expectation.substring(0, 100)}...`
@@ -417,10 +422,10 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <DataTable
                             columns={columns}
-                            data={filteredData}
+                            data={filteredData.length > 0 ? filteredData : tableData}
                             pagination
                             highlightOnHover
                             responsive
@@ -430,7 +435,40 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                             onChangeRowsPerPage={handlePerPageChange}
                             customStyles={customStyles}
                             progressPending={loading}
-                            noDataComponent={<div className="p-4">No records found</div>}
+                            noDataComponent={
+                                <div className="w-full">
+                                    <table className="rdt-table w-full">
+                                        <thead>
+                                            <tr>
+                                                {columns.map((col, idx) => (
+                                                    <th key={idx} style={customStyles.headCells.style}>
+                                                        {col.name}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colSpan={columns.length} style={{ textAlign: 'center', padding: '20px' }}>
+                                                    {showResetFilters ? (
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <div>No records found matching your search criteria</div>
+                                                            <button
+                                                                onClick={resetFilters}
+                                                                className="bg-blue-500 hover:bg-blue-700 text-white py-1 px-3 rounded"
+                                                            >
+                                                                Reset Filters
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        "No records available"
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
                             paginationDefaultPage={currentPage}
                             onChangePage={setCurrentPage}
                         />
