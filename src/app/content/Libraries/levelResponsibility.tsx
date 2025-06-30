@@ -104,7 +104,7 @@ const LevelResponsibility = () => {
                     ? Object.entries(attrData[item.level].Attributes).map(([key, attribute]: [string, any]) => (
                       <div key={attribute.id || key} className="mb-4">
                         <h3 className="font-bold text-lg bg-[#a5cef7] rounded-lg px-2 py-1 w-[fit-content] mb-2">{key}</h3>
-                        <p>{attribute.attribute_overall_description}</p>
+                        <p>{attribute.attribute_description}</p>
                       </div>
                       ))
                     : <p>&nbsp;</p>
@@ -118,7 +118,7 @@ const LevelResponsibility = () => {
                     ? Object.entries(attrData[item.level].Business_skills).map(([key, attribute]: [string, any]) => (
                       <div key={attribute.id || key} className="mb-4">
                         <h3 className="font-bold text-lg bg-[#ceb0fddd] rounded-lg px-2 py-1 w-[fit-content] mb-2">{key}</h3>
-                        <p>{attribute.attribute_overall_description}</p>
+                        <p>{attribute.attribute_description}</p>
                       </div>
                       ))
                     : <p>&nbsp;</p>
