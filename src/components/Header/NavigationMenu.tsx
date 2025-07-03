@@ -55,10 +55,26 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({ onMenuItemClick 
 
   const handleMenuClick = (item: string) => {
     const el = document.querySelector('.leftaside') as HTMLElement | null;
+    const dashboardCard = document.querySelector('.dashboardCard') as HTMLElement | null;
+    const renderComponent = document.querySelector('.renderComponent') as HTMLElement | null;
+
     if (el) {
       el.style.width = '17%';
-
       el.style.display = 'block';
+      if (dashboardCard) {
+      dashboardCard.style.height = 'calc(90vh - 20px)';
+      }
+      if (renderComponent) {
+      renderComponent.style.height = 'calc(87vh - 20px)';
+      }
+    }
+    else{
+       if (dashboardCard) {
+          dashboardCard.style.height = 'calc(80vh - 20px)';
+        }
+        if (renderComponent) {
+        renderComponent.style.height = 'calc(80vh - 20px)';
+        }
     }
 
     const el2 = document.querySelector('.hiddenMenu') as HTMLElement | null;

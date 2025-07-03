@@ -7,9 +7,18 @@ interface UserProfileProps {
 export const UserProfile: React.FC<UserProfileProps> = (props) => {
   // Function to handle the left panel display
   const handleLeftPanel = (item: string) => {
-    const el = document.querySelector('.leftaside') as HTMLElement | null
+    const el = document.querySelector('.leftaside') as HTMLElement | null;
+    const dashboardCard = document.querySelector('.dashboardCard') as HTMLElement | null;
+    const renderComponent = document.querySelector('.renderComponent') as HTMLElement | null;
+
     if (el) {
       el.style.display = 'none'
+       if (dashboardCard) {
+      dashboardCard.style.height = 'calc(80vh - 20px)';
+      }
+      if (renderComponent) {
+        renderComponent.style.height = 'calc(80vh - 20px)';
+        }
     }
 
     const el2 = document.querySelector('.hiddenMenu') as HTMLElement | null

@@ -250,7 +250,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
                         display: openSubmenu === item.id ? "block" : "none",
                       }}
                     >
-                      <ul className="max-h-[200px] w-[200px] ml-6 overflow-y-auto">
+                      <ul className="w-[200px] ml-6 overflow-y-auto">
                         {submenuItemArr
                           .filter((subItem) => subItem.parent_id === item.id)
                           .map((subMenuItem) => (
@@ -296,7 +296,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
   return (
     <>
       {isMenuOpen && (
-        <aside className="flex flex-col pb-20 bg-white rounded-none max-w-[280px] shadow-[2px_4px_15px_rgba(71,160,255,0.25)] text-stone-500 leftaside rounded-xl">
+        <aside className="flex flex-col pb-2 bg-white rounded-none h-screen overflow-scroll max-w-[280px] shadow-[2px_4px_15px_rgba(71,160,255,0.25)] text-stone-500 leftaside rounded-xl hide-scroll">
           <UserProfile onClick={() => handleMenuItemClick("User Profile", 0)} />
           <main className="flex overflow-hidden flex-col px-2.5 pt-2.5 pb-7 mt-15 w-full text-sm leading-6 bg-white rounded-xl">
             {renderMenuContent()}

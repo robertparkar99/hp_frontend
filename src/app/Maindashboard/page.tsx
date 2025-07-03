@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
     <Header />
     {/* test starts here  */}
-    <div className="contentDiv w-full max-w-[1445px] max-md:max-w-full">
+    <div className="contentDiv h-[80vh] w-full max-w-[1445px] max-md:max-w-full">
       <div className="mainDiv">
         <main style={{ padding: '1rem' }}> <MainScreen /></main>
       </div>

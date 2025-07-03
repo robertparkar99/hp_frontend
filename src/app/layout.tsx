@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />
       </head>
       <body>
-        <main>{children}</main>
+        <main style={{ maxHeight: "100vh", height: "100vh", minHeight: "100vh"}}>{children}</main>
       </body>
     </html>
   </>)
