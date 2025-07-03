@@ -71,7 +71,7 @@ const MainScreen: React.FC = () => {
 
   if (!selectedMenu && !isLoading) {
     return (
-      <main className="flex overflow-hidden flex-col w-auto pt-5 px-10 bg-white rounded-2xl shadow-sm h-[550px] max-md:px-5 max-md:pb-24">
+      <div className="flex overflow-hidden flex-col w-auto pt-5 px-10 bg-white rounded-2xl shadow-sm max-md:px-5 max-md:pb-24 dashboardCard">
         <img
           src="https://cdn.builder.io/api/v1/image/assets/TEMP/e6eab4227e391bd1268df1fb318a60e266703003?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
           alt=""
@@ -80,13 +80,13 @@ const MainScreen: React.FC = () => {
         <div className="self-center mt-4 w-full max-w-[1360px] max-md:max-w-full">
           <StatGrid />
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
     !isLoading ? (
-      <main className="flex overflow-hidden flex-col w-auto pr-2 pl-2 bg-white rounded-2xl shadow-sm pb-6 h-[fit-content] max-md:px-5 max-md:pb-24">
+      <main className="flex overflow-scroll flex-col w-auto pr-2 pl-2 bg-white rounded-2xl shadow-sm pb-6 h-[87vh] hide-scroll max-md:px-5 max-md:pb-24 renderComponent">
         <div className="self-center mt-4 w-full max-w-[1360px] max-md:max-w-full">
           {renderComponent()}
         </div>

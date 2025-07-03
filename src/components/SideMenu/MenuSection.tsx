@@ -18,7 +18,7 @@ export const MenuSection: React.FC<MenuSectionProps> = ({
           {title}
         </h2>
       )}
-      <nav className="flex flex-col gap-8 mt-4">{children}</nav>
+      <nav className="flex flex-col gap-2 mt-4">{children}</nav>
     </section>
   );
 };

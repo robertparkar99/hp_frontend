@@ -27,52 +27,6 @@ export const MenuItem: React.FC<MenuItemProps> = ({
     typeof window !== "undefined" ? (window as any).__currentMainMenu : null
   );
 
-  const allMenuArr = [
-    {
-      mainMenu: "Organizational Details",
-      subMenu: [
-        "Add Organization Detail",
-        "Add Department - Sub Department",
-        "Organization Structure",
-        "Admin and Configuration Module",
-        "Group Wise Right",
-        "Individual right management",
-        "Department/team  /people/project",
-        "Skill and search skill ",
-      ],
-    },
-    {
-      mainMenu: "User Management",
-      subMenu: [
-        "Profile",
-        "Assigned task",
-        "Skills",
-        "Certifications",
-        "Skill Gap Analysis",
-      ],
-    },
-    {
-      mainMenu: "Communication Tool",
-      subMenu: [
-        "Send SMS to User",
-        "Send Notification User",
-        "Send Email User",
-        "Send Email Other User",
-        "Send WhatsApp User",
-      ],
-    },
-    {
-      mainMenu: "Template Management",
-      subMenu: ["Template Management"],
-    },
-    {
-      mainMenu: "Complaint Management",
-      subMenu: ["Complaint Management"],
-    },
-  ];
-
-  const currentMenu = allMenuArr.find((menu) => menu.mainMenu === menuName);
-
   useEffect(() => {
     const elements = document.querySelectorAll(
       ".dropdown-card"
@@ -135,7 +89,7 @@ export const MenuItem: React.FC<MenuItemProps> = ({
   return (
     <>
       <button
-        className={`flex gap-5 justify-between items-left w-full px-2 py-1  ${
+        className={`flex justify-between items-left w-full px-2 py-1  ${
           selectedMainMenu === menuName ? "text-blue-400 font-semibold" : "text-gray-500"
         }`}
         onClick={onClick}
@@ -146,17 +100,13 @@ export const MenuItem: React.FC<MenuItemProps> = ({
         ) : (
           <img
         src={imgIcon || ""}
-        className="object-contain shrink-0 self-stretch my-auto w-[20px] aspect-square"
+        className="object-contain shrink-0 self-stretch w-[20px] aspect-square"
         alt=""
           />
         )}
-        <span className="grow text-left">{text}</span>
+        <span className="grow text-left px-4">{text}</span>
         {showArrow && (
-          <img
-        src="https://cdn.builder.io/api/v1/image/assets/TEMP/a099a1eb6c3436fc6941ce182752301a7ec18919?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-        className="object-contain shrink-0 self-stretch my-auto w-5 aspect-[1.82]"
-        alt=""
-          />
+          <span className="mdi mdi-chevron-down text-2xl"></span>
         )}
       </button>
       <div
@@ -166,21 +116,7 @@ export const MenuItem: React.FC<MenuItemProps> = ({
           display: openSubmenu === menuName ? "block" : "none",
         }}
       >
-        <ul className="max-h-[200px] w-[200px] ml-6 overflow-y-auto">
-          {currentMenu?.subMenu.map((subMenuItem, index) => (
-            <li
-              key={index}
-              onClick={() => handleMenuClick(subMenuItem)}
-              style={{
-                marginBottom: "10px",
-                color: selectedItem === subMenuItem ? "#4B9CD3" : "inherit",
-                cursor: "pointer",
-              }}
-            >
-              {subMenuItem}
-            </li>
-          ))}
-        </ul>
+      
       </div>
     </>
   );

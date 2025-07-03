@@ -74,7 +74,9 @@ body {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none;
 }
-
+.dashboardCard{
+  height: calc(80vh - 20px);
+}
 .custom-oklch-gradient {
   background-image: linear-gradient(
     to right,
