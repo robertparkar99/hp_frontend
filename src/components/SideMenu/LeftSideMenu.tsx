@@ -121,22 +121,14 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
     setActiveParent(parentId);
     // console.log(activeParent);
     // console.log(`Menu item clicked parentId: ${parentId}`);
-    const submenuClass = `.dropdown-card-${parentId}`;
-    const el = document.querySelector(submenuClass) as HTMLElement | null;
+    
 
     // Set global selectionF
     (window as any).__currentMainMenu = menuName;
     window.dispatchEvent(
       new CustomEvent("mainMenuSelected", { detail: menuName })
     );
-
-    if (openSubmenu === parentId) {
-      setOpenSubmenu(null);
-      if (el) el.style.display = "none";
-    } else {
-      setOpenSubmenu(parentId);
-      if (el) el.style.display = "block";
-    }
+    
     try {
       let userData: any = null;
       const item = localStorage.getItem('userData');
@@ -172,6 +164,15 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
               parent_id: item.parent_id,
             }))
           );
+          const submenuClass = `.dropdown-card-${parentId}`;
+          const el = document.querySelector(submenuClass) as HTMLElement | null;
+          if (openSubmenu === parentId) {
+            setOpenSubmenu(null);
+            if (el) el.style.display = "none";
+          } else {
+            setOpenSubmenu(parentId);
+            if (el) el.style.display = "block";
+          }
         } catch (error) {
           console.error("Error fetching menu items:", error);
         }
@@ -182,10 +183,12 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
       console.error("Error fetching submenu array:", error);
     }
   };
+  
   const handleMenuClick = (menu: string, page: string, access: string) => {
     //console.log(`Menu item clicked: ${menu}`);
     const currentSelected = (window as any).__currentMenuItem;
     const isDeselecting = currentSelected === menu;
+    setActiveMenu(menu);
     // console.log("currentSelected", currentSelected);
     // console.log("isDeselecting", isDeselecting);
     if (isDeselecting) {
@@ -244,13 +247,13 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
                   />
                   {activeParent === item.id && (
                     <div
-                      className={`dropdown-card dropdown-card-${item.id}`}
+                      className={`dropdown-card dropdown-card-${item.id} ml-4 shadow-md shadow-blue-400/50 rounded-lg w-[200px]`}
                       style={{
                         fontSize: "12px",
                         display: openSubmenu === item.id ? "block" : "none",
                       }}
                     >
-                      <ul className="w-[200px] ml-6 overflow-y-auto">
+                      <ul className="p-2">
                         {submenuItemArr
                           .filter((subItem) => subItem.parent_id === item.id)
                           .map((subMenuItem) => (
@@ -272,6 +275,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
                                   style={{
                                     marginBottom: "10px",
                                     color: activeMenu === subMenuItem.menu_name ? "#4B9CD3" : "inherit",
+                                    fontWeight:  activeMenu === subMenuItem.menu_name ? 'bold' : '100',
                                     cursor: "pointer",
                                   }}
                                 >
@@ -298,12 +302,11 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
       {isMenuOpen && (
         <aside className="flex flex-col pb-2 bg-white rounded-none h-screen overflow-scroll max-w-[280px] shadow-[2px_4px_15px_rgba(71,160,255,0.25)] text-stone-500 leftaside rounded-xl hide-scroll">
           <UserProfile onClick={() => handleMenuItemClick("User Profile", 0)} />
-          <main className="flex overflow-hidden flex-col px-2.5 pt-2.5 pb-7 mt-15 w-full text-sm leading-6 bg-white rounded-xl">
+          <main className="flex overflow-y-scroll flex-col px-2.5 pt-2.5 pb-7 mt-15 w-full text-sm leading-6 bg-white rounded-xl hide-scroll ">
             {renderMenuContent()}
-          </main>
 
           <MenuSection title="OTHER" className="px-2.5 pb-7 mt-2">
-            <div className="flex flex-col gap-8 mt-4">
+            <div className="flex flex-col gap-2 mt-4">
               <MenuItem
                 imgIcon=""
                 icon="fa fa-sign-out"
@@ -319,9 +322,11 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
                 }}
               />
             </div>
-            <div className="flex gap-6 self-start ml-5">
+            <div className="flex gap-2 self-start ml-5">
             </div>
           </MenuSection>
+          </main>
+
         </aside>
       )}
     </>
