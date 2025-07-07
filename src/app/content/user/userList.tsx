@@ -26,59 +26,40 @@ const MyProfile = () => {
       <div className="flex flex-col md:flex-row gap-6 mb-6">
         {/* Profile Card */}
         <div className="w-full md:w-[600px] bg-white rounded-lg shadow-[0px_4px_4px_0px_rgba(71,160,255,0.45)] border border-[#47a0ff]/40 relative">
-          <div className="titleDiv flex bg-[#47a0ff] px-4 rounded-t-lg h-[calc(var(--spacing) * 22]">
-            <div className="empImg w-[fit-content]" style={{
-              transform: "translate(10px, 30px)",
-            }}>
-              <img
-                src="https://storage.googleapis.com/tempo-public-images/figma-exports%2Fgithub%7C113496956-1745910157090-node-332%3A345-1745910158152.png"
-                alt="Profile picture of Devanshi Modi"
-                className="w-[100px] h-[100px] rounded-full border-3   border-white"
-              />
-            </div>
-            <div className="empName pl-10 mt-4">
-              <h2 className="text-white text-2xl font-bold">Devanshi Modi</h2>
-              <div className="lg:flex md:block sm:block mt-2">
-                <p className="mr-2 text-[#686868]">Designation: Employee</p>
-                <p className="mx-3 text-[#686868]">Department: HR</p>
-              </div>
-            </div>
-            <div className="editButton">
-              <button
-                className="absolute right-4 top-4 w-[30px] h-[30px] p-[2.50px] rounded-full flex justify-center items-center"
-                aria-label="EditProfile"
-                onClick={() => {
-                  const menu = "Dashboard/EditProfile.tsx";
-                  (window as any).__currentMenuItem = menu;
-                  window.dispatchEvent(new CustomEvent("menuSelected", { detail: { menu: menu, pageType: 'page', access: menu } }));
-                }}
-              >
-               <span className="mdi mdi-pencil text-3xl"></span>
-              </button>
-            </div>
+          {/* Header with name and edit button */}
+          <div className="w-full h-auto relative bg-[#47a0ff] rounded-t-lg">
+              <h2 className="absolute items-center">Devanshi Modi</h2>
+            <button
+              className="absolute right-4 top-4 w-[30px] h-[30px] p-[2.50px] bg-white/10 rounded-full flex justify-center items-center"
+              aria-label="EditProfile"
+              onClick={() => {
+                const menu = "Dashboard/EditProfile.tsx";
+                 (window as any).__currentMenuItem = menu;
+      window.dispatchEvent(new CustomEvent("menuSelected", { detail: { menu: menu, pageType: 'page', access: menu } }));
+              }}
+            >
+              <Pencil className="w-5 h-5 text-white" />
+            </button>
           </div>
 
-          <div className="detailDiv lg:flex md:block sm:block pb-6">
-            <div className="leftData pt-10 px-6">
-              <div className="text-[#686868] text-md font-normal font-poppins leading-[30px]">
-                Email ID: 123456789123@gmail.com
-              </div>
-              <div className="text-[#686868] text-md font-normal font-poppins leading-[30px]">
-                Phone Number: 1234567891
-              </div>
-              <div className="text-[#686868] text-md font-normal font-poppins leading-[30px]">
-                Jobrole: UI/UX
-              </div>
-            </div>
-            <div className="rightData pt-10 px-6">
-              <div className="text-[#686868] text-md font-normal font-poppins leading-[30px]">
-                &nbsp;
-              </div>
-              <div className="text-[#686868] text-md font-normal font-poppins leading-[30px]">
-                Employment Type: Full-Time
-              </div>
-            </div>
+          {/* Profile image */}
+          <div className="absolute left-[20px] top-[35px]">
+            <img
+              src="https://storage.googleapis.com/tempo-public-images/figma-exports%2Fgithub%7C113496956-1745910157090-node-332%3A345-1745910158152.png"
+              alt="Profile picture of Devanshi Modi"
+              className="w-[80px] h-[80px] rounded-full border-3   border-white"
+            />
+          </div>
 
+          {/* Contact information */}
+          <div className="absolute left-[30px] top-[130px] text-[#686868] text-sm font-normal font-poppins leading-[30px]">
+            Email ID: 123456789123@gmail.com
+          </div>
+          <div className="absolute left-[30px] top-[150px] text-[#686868] text-sm font-normal font-poppins leading-[30px]">
+            Phone Number: 1234567891    
+          </div>
+          <div className="absolute left-[230px] top-[150px] text-[#686868] text-xs font-normal font-poppins leading-[30px]">
+            Employment Type: Full-Time
           </div>
         </div>
 

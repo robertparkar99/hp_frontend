@@ -1,6 +1,7 @@
 import * as React from "react";
 
 interface UserProfileProps {
+  UserProfileProp:any;
   onClick?: () => void;
 }
 
@@ -34,15 +35,27 @@ export const UserProfile: React.FC<UserProfileProps> = (props) => {
   };
 
   return (
-    <header className="flex gap-10 self-start text-1xl leading-none mt-4">
-      <div className="flex gap-4">
-        <img
-          src="https://cdn.builder.io/api/v1/image/assets/TEMP/6e022c162dc36d40093888ccc1816c6170541029?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-          className="object-contain shrink-0 aspect-square w-[35px]"
-          alt="User avatar"
-          onClick={props.onClick}
-        />
-        <h1 className="my-auto basis-auto">User Profile</h1>
+    <header className="flex gap-6 self-start text-lg leading-none mt-4 p-2" onClick={props.onClick}>
+      <div className="flex gap-2">
+        {props.UserProfileProp.userimage && props.UserProfileProp.userimage != '' ? (
+      <img
+        src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/` + props.UserProfileProp.userimage}
+        alt="User icon"
+        className="object-contain shrink-0 rounded-full w-[40px] h-[40px]"
+      />
+      ) : (
+      <img
+        src="https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
+        alt="User icon"
+        className="object-contain shrink-0 rounded-full w-[40px] h-[40px]"
+      />
+      )}
+        {props.UserProfileProp && props.UserProfileProp.firstName ? (
+          <h1 className="my-auto basis-auto text-[16px]">{props.UserProfileProp.firstName+' '+props.UserProfileProp.lastName}</h1>
+        ) : (
+          <h1 className="my-auto basis-auto">User Profile</h1>
+        )}
+        
       </div>
       <img
         src="https://cdn.builder.io/api/v1/image/assets/TEMP/fc70410ba0ea2c06e3f4eaec6ca41d0ee1299593?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
