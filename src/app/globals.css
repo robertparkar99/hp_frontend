@@ -237,3 +237,61 @@ body {
     right: 0; /* Align to the right of the element */
     max-width: 200px; /* Maximum width before wrapping */
 }
+@keyframes shine {
+  0% {
+    background-position: -200%;
+  }
+  100% {
+    background-position: 200%;
+  }
+}
+.glass-shine {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-25deg);
+  animation: glass-shimmer 3s infinite;
+}
+.glass-shines{
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+   animation: glass-shimmer 3s infinite;
+}
+
+@keyframes glass-shimmer {
+  0% {
+    left: -100%;
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    left: 150%;
+    opacity: 0.6;
+  }
+}
+
+.rotateDiv {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+   animation: rotateDiv 3s ease-out;
+}
+@keyframes rotateDiv {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

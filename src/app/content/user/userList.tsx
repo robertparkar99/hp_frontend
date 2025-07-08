@@ -1,136 +1,220 @@
 "use client";
-import React, { useEffect } from "react";
-import { Pencil } from "lucide-react";
 
-const MyProfile = () => {
-  const skills = [
-    { name: "Labor Law Compliance", color: "#8979ff" },
-    { name: "Recruitment Strategy", color: "#ff928a" },
-    { name: "HRIS Tools (SAP/Workday)", color: "#3bc3de" },
-    { name: "DEI Implementation", color: "#ffae4c" },
-    { name: "Onboarding Workflow", color: "#527ef0" },
-    { name: "Performance Management", color: "#6fd195" },
-    { name: "People Analytics", color: "#8c63da" },
-  ];
+import React from "react";
+import { Check, MoreVertical, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import MyProfile from '../Dashboard/MyProfile';
+
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: "Active" | "Inactive";
+  joinDate: string;
+  profileImage: string;
+}
+
+interface userListProps {
+  employees: Employee[];
+}
+
+const userList: React.FC<userListProps> = ({ employees }) => {
+  const [activeFilter, setActiveFilter] = React.useState<string>("View All");
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const [employeesLists, setEmployeesLists] = React.useState<any[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+  const filters = ["View All", "Admin", "Creator", "General"];
+
+  const [sessionData, setSessionData] = useState({
+    url: "",
+    token: "",
+    orgType: "",
+    subInstituteId: "",
+    userId: "",
+    userProfile: "",
+    syear: "",
+  });
 
   useEffect(() => {
-    (window as any).__currentMainMenu = "EditProfile";
-    window.dispatchEvent(
-      new CustomEvent("mainMenuSelected", { detail: "EditProfile" })
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, syear, } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        orgType: org_type,
+        subInstituteId: sub_institute_id,
+        userId: user_id,
+        userProfile: user_profile_name,
+        syear: syear,
+      });
+    }
+  }, [])
+
+  useEffect(() => {
+    if (sessionData.url && sessionData.token) {
+      fetchInitialData();
+    }
+    // Only run when sessionData is updated with url and token
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionData.url, sessionData.token]);
+
+  const fetchInitialData = async () => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/user/add_user?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_profile_name=${sessionData.userProfile}&syear=${sessionData.syear}`
+      );
+      const data = await res.json();
+      console.log('empData', data.data);
+      setEmployeesLists(data.data || []);
+    } catch (error) {
+      console.error("Failed to fetch initial data:", error);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
-  }, []);
+  };
 
   return (
-    <div className="w-full p-6">
-      {/* Upper section with profile and certificate cards */}
-      <div className="flex flex-col md:flex-row gap-6 mb-6">
-        {/* Profile Card */}
-        <div className="w-full md:w-[600px] bg-white rounded-lg shadow-[0px_4px_4px_0px_rgba(71,160,255,0.45)] border border-[#47a0ff]/40 relative">
-          {/* Header with name and edit button */}
-          <div className="w-full h-auto relative bg-[#47a0ff] rounded-t-lg">
-              <h2 className="absolute items-center">Devanshi Modi</h2>
+    <>
+      {/* Filter and Search Section */}
+      <div className="flex justify-between items-center p-4">
+        <div className="flex space-x-2 bg-[#e5f5ff] px-1 rounded-lg shadow-lg shadow-black-900/50">
+          {filters.map((filter) => (
             <button
-              className="absolute right-4 top-4 w-[30px] h-[30px] p-[2.50px] bg-white/10 rounded-full flex justify-center items-center"
-              aria-label="EditProfile"
-              onClick={() => {
-                const menu = "Dashboard/EditProfile.tsx";
-                 (window as any).__currentMenuItem = menu;
-      window.dispatchEvent(new CustomEvent("menuSelected", { detail: { menu: menu, pageType: 'page', access: menu } }));
-              }}
+              key={filter}
+              onClick={() => setActiveFilter(filter)}
+              className={`px-6 py-2 rounded-lg text-sm transition-colors ${activeFilter === filter
+                  ? "bg-[#9ecfff] text-blue-800 inset-shadow-sm inset-shadow-black-500"
+                  : "text-gray-600 hover:bg-blue-100"
+                }`}
             >
-              <Pencil className="w-5 h-5 text-white" />
+              {filter}
             </button>
-          </div>
-
-          {/* Profile image */}
-          <div className="absolute left-[20px] top-[35px]">
-            <img
-              src="https://storage.googleapis.com/tempo-public-images/figma-exports%2Fgithub%7C113496956-1745910157090-node-332%3A345-1745910158152.png"
-              alt="Profile picture of Devanshi Modi"
-              className="w-[80px] h-[80px] rounded-full border-3   border-white"
-            />
-          </div>
-
-          {/* Contact information */}
-          <div className="absolute left-[30px] top-[130px] text-[#686868] text-sm font-normal font-poppins leading-[30px]">
-            Email ID: 123456789123@gmail.com
-          </div>
-          <div className="absolute left-[30px] top-[150px] text-[#686868] text-sm font-normal font-poppins leading-[30px]">
-            Phone Number: 1234567891    
-          </div>
-          <div className="absolute left-[230px] top-[150px] text-[#686868] text-xs font-normal font-poppins leading-[30px]">
-            Employment Type: Full-Time
-          </div>
+          ))}
         </div>
-
-        {/* Certificate Card */}
-        <div className="w-full md:w-[40%] h-[200px] p-5 bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(245,161,161,0.45)] border border-[#ffd2d2]">
-          <div className="w-full h-full relative">
-            <div className="text-[#393939] text-[24px] font-bold font-inter leading-[30px]">
-              My Certificate
-            </div>
-            <div className="w-full h-[1px] bg-[#393939]/20 mt-2 mb-4"></div>
-            {/* Certificate content would go here */}
-          </div>
+        <div className="relative">
+          {/* <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={18}
+          />
+          <input
+            type="text"
+            placeholder="Search..."
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm"
+          /> */}
         </div>
       </div>
 
-      {/* Lower section with tasks and skills cards */}
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Task Card */}
-        <div className="w-full md:w-[300px] h-[350px] p-5 bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(255,174,76,0.45)] border border-[#ffd570]">
-          <div className="w-full h-full relative">
-            <div className="text-[#393939] text-[28px] font-bold font-inter">
-              My Task
-            </div>
-            <div className="w-full h-[1px] bg-[#393939]/20 mt-2 mb-4"></div>
-            {/* Task content would go here */}
-          </div>
-        </div>
-
-        {/* Skills Card */}
-        <div className="flex-grow h-[350px] p-5 bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(0,165,150,0.45)] border border-[#33afa4]">
-          <div className="h-11 relative w-full">
-            <div className="text-[#393939] text-[28px] font-bold font-inter">
-              My Skills
-            </div>
-            <div className="w-full h-[1px] bg-[#393939]/20 mt-2 mb-4"></div>
-          </div>
-
-          <div className="flex flex-col md:flex-row w-full mt-4">
-            {/* Placeholder for chart */}
-            <div className="w-full md:w-1/2 flex justify-center items-center">
-              <div className="w-[250px] h-[250px] relative">
-                <div className="absolute inset-0 rounded-full bg-gray-100"></div>
-                <div className="absolute inset-0 flex justify-center items-center">
-                  <img
-                    src="/dashboard/image1.png"
-                    alt="Skills chart"
-                    className="w-[250px] h-[200px]"
+      {/* Table */}
+      <div className="w-full overflow-x-auto rounded-lg bg-white shadow-lg shadow-black/40">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-[#9cc4f1]">
+              <th className="text-left px-4 py-3 text-gray-700 font-medium">
+                Full Name
+              </th>
+              <th className="text-left px-4 py-3 text-gray-700 font-medium">
+                Mobile
+              </th>
+              <th className="text-left px-4 py-3 text-gray-700 font-medium">
+                Role
+              </th>
+              <th className="text-left px-4 py-3 text-gray-700 font-medium">
+                Active Status
+              </th>
+              <th className="text-left px-4 py-3 text-gray-700 font-medium">
+                Join Date
+              </th>
+              <th className="w-12"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {employeesLists && employeesLists.map((employee, index) => (
+              <tr
+                key={employee.id}
+                className="bg-[#FFF7F5] border-b border-gray-100 hover:bg-gray-50"
+              >
+                {/* <td className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 text-blue-600"
+                    checked={selectedIds.includes(employee.id)}
+                    onChange={() => toggleSelect(employee.id)}
                   />
-                </div>
-              </div>
-            </div>
+                </td> */}
+                <td className="px-4 py-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-[50px] h-[50px] rounded-full overflow-hidden">
+                      {employee && employee.image && employee.image !== '' ? (
+                        <img
+                          src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/` + employee.image}
+                          alt="Profile picture"
+                          className="w-[50px] h-[50px] rounded-full border-1 border-[#ddd]"
+                        />
+                      ) : (
+                        <img
+                          src="https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
+                          alt="Profile picture"
+                          className="w-[50px] h-[50px] bg-white rounded-full border-1 border-[#ddd]"
+                        />
+                      )}
 
-            {/* Skills legend */}
-            <div className="w-full md:w-1/2 pl-0 md:pl-4 space-y-[10px] mt-4 md:mt-0">
-              {skills.map((skill, index) => (
-                <div key={index} className="flex items-center gap-2">
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-800">
+                        {employee.full_name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {employee.email}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                 <td className="px-4 py-3 text-gray-700">{employee.mobile}</td>
+                <td className="px-4 py-3 text-gray-700">{employee.profile_name}</td>
+                <td className="px-4 py-3">
                   <div
-                    className="w-2.5 h-2.5 rounded-full border border-white"
-                    style={{ backgroundColor: skill.color }}
-                  ></div>
-                  <span className="text-black/70 text-base font-normal font-inter">
-                    {skill.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+                    className={`inline-flex items-center px-3 py-1 rounded-md ${employee.status === "Active"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                      }`}
+                  >
+                    {employee.status}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-gray-700">{employee.join_year}</td>
+                <td className="px-4 py-3">
+      <div className="relative">
+        <button 
+          className="text-gray-400 hover:text-gray-600"
+         onClick={() => {
+                  const menu = "Dashboard/MyProfile.tsx";
+                  (window as any).__currentMenuItem = menu;
+                  window.dispatchEvent(new CustomEvent("menuSelected", { detail: { menu: menu, pageType: 'page', access: menu,pageProps:employee.id } }));
+                }}
+        >
+          <MoreVertical size={20} />
+        </button>
+        
+        {/* Conditionally render MyProfile when this employee is selected */}
+        {selectedEmployee === employee.id && (
+            <MyProfile employeeId={employee.id} />
+        )}
       </div>
-    </div>
+    </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 };
 
-export default MyProfile;
+export default userList;

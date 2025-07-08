@@ -19,7 +19,7 @@ const Login: React.FC = () => {
       const { timestamp } = JSON.parse(userData);
       const now = Date.now();
       // 24 hours = 86400000 ms
-      if (timestamp && now - timestamp < 86400000) {
+      if (timestamp && now - timestamp < 43200000) {
       setLoading(true);
       router.push("/Maindashboard");
       return;
