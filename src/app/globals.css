@@ -269,7 +269,7 @@ body {
 .glass-shines{
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-   animation: glass-shimmer 3s infinite;
+   /* animation: glass-shimmer 3s infinite; */
 }
 
 @keyframes glass-shimmer {
