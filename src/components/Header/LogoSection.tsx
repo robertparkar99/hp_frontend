@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState,useEffect } from "react"
+import { useState,useEffect } from "react";
 import { useRouter } from 'next/navigation';
 
 export const LogoSection: React.FC = () => {

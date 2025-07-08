@@ -1,118 +1,163 @@
 'use client'
 
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus } from 'lucide-react'
-import { useEffect } from 'react'
-// import userProfile from './user profile' // Ensure this file exists in the same directory
-
-
-
-const topRowButtons = [
-  { id: 1, text: 'Personal Information' },
-  { id: 2, text: 'Account & Login Credentials' },
-]
-
-const middleRowButtons = [
-  { id: 1, text: 'Educational & Qualification Details' },
-  { id: 2, text: 'Job & Department Details' },
-  { id: 3, text: 'Employment Lifecycle' },
-  { id: 4, text: 'Leave Management' },
-]
-
-const bottomRowButtons = [
-  { id: 1, text: 'Payroll & Financial Details' },
-  { id: 2, text: 'Academic & Subject Allocation' },
-  { id: 3, text: 'Attendance & Shift Timing' },
-]
+import { useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from "react";
 
 export default function EditProfilePage() {
-    useEffect(() => {
-            (window as any).__currentMainMenu = "Edit Profile";
-            window.dispatchEvent(
-              new CustomEvent("mainMenuSelected", { detail: "Edit Profile" })
-            );
-          }, []);
-  const router = useRouter()
+  const router = useRouter();
 
-  const handleGoBack = () => {
-    router.back()
-  }
+  const [userDetails, setUserDetails] = useState<any>();
+  const [activeTab, setActiveTab] = useState('personal-info');
+
+   const [sessionData, setSessionData] = useState({
+      url: "",
+      token: "",
+      orgType: "",
+      subInstituteId: "",
+      userId: "",
+      userProfile: "",
+      syear: "",
+    });
+  
+    useEffect(() => {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, syear, } = JSON.parse(userData);
+        setSessionData({
+          url: APP_URL,
+          token,
+          orgType: org_type,
+          subInstituteId: sub_institute_id,
+          userId: user_id,
+          userProfile: user_profile_name,
+          syear: syear,
+        });
+      }
+    }, [])
+  
+    useEffect(() => {
+      if (sessionData.url && sessionData.token) {
+        fetchInitialData();
+      }
+  
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sessionData.url, sessionData.token]);
+    const fetchInitialData = async () => {
+      try {
+        const res = await fetch(
+          `${sessionData.url}/user/add_user/${sessionData.userId}/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
+        );
+        const data = await res.json();
+        // console.log(data);
+        setUserDetails(data.data || null);
+      } catch (error) {
+        console.error("Failed to fetch initial data:", error);
+      }
+    };
+
+  const handleGoBack = () => router.back();
+
+  const tabs = [
+    { id: 'personal-info', label: 'Personal Information' },
+    { id: 'upload-docs', label: 'Upload Document' },
+    { id: 'jobrole-skill', label: 'Jobrole Skill' },
+    { id: 'jobrole-tasks', label: 'Jobrole Tasks' },
+    { id: 'responsibility', label: 'Level of Responsibility' },
+    { id: 'skill-rating', label: 'Skill Rating' }
+  ];
 
   return (
-    <div className="w-full bg-white">
-      <div className="max-w-[1180px] mx-auto bg-white rounded-[15px] shadow-[0px_0px_8px_0px_rgba(225,226,229,1.00)] overflow-hidden">
-        {/* Blue header with back button */}
-        <div className="relative bg-[#47A0FF] h-20">
-          <button
-            onClick={handleGoBack}
-            className="absolute top-4 left-4 text-black"
-            aria-label="Go back"
-          >
-            <ArrowLeft size={24} />
-          </button>
-        </div>
+    <div className="w-full bg-white shadow-md">
+      {/* Header Section */}
+      <div className="flex h-[130px] bg-[#ACD4FF] rounded-t-[15px] shadow-md items-center px-4 ">
+        <button onClick={handleGoBack} className="text-black" aria-label="Go back">
+          <ArrowLeft size={24} />
+        </button>
+      </div>
 
-        {/* Profile image positioned overlapping the blue background */}
-        <div className="flex justify-center -mt-16 mb-12 relative z-10">
+      {/* Profile Image and Main Tabs */}
+      <div className="flex justify-center items-end -mt-22 mb-4 gap-24">
+        <button
+          onClick={() => setActiveTab('personal-info')}
+          className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg ${
+            activeTab === 'personal-info' 
+              ? 'bg-[#358788] text-white shadow-[#358788]' 
+              : 'border border-[#007be5] text-[#007be5] bg-white shadow-[#9ccdf7]'
+          }`}
+        >
+          Personal Information
+        </button>
 
-            <Image
-              src="/dashboard/image2.png"
-              alt="Profile"
-              fill
-              className="rounded-full object-cover border-[4px] border-white"
+        <div className="relative">
+          {userDetails && userDetails.image && userDetails.image !== '' ? (
+            <img
+              src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails.image}`}
+              alt="Profile picture"
+              className="w-[150px] h-[150px] rounded-full border-[5px] border-white object-cover actualImage shadow-lg shadow-blue-500/50"
             />
-            <button
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-white border border-gray-300 rounded-full p-1"
-              aria-label="Add profile picture"
-            >
-              <Plus size={20} className="text-[#007be5]" />
-            </button>
-          </div>
+          ) : (
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
+              alt="Profile picture"
+              className="w-[150px] h-[150px] bg-white rounded-full border-[5px] border-white defaultImage shadow-lg shadow-blue-500/50"
+            />
+          )}
         </div>
 
-        {/* Button Rows */}
-        <div className="flex justify-center flex-wrap gap-3 px-2 mb-4">
-          {topRowButtons.map((btn) => (
-            <button
-              key={btn.id}
-              onClick={() => {
-                console.log("Button clicked:", btn.text);
-                const menu = "userProfile";
-                (window as any).__currentMenuItem = menu;
-                window.dispatchEvent(new CustomEvent("menuSelected", { detail: menu }));
-              }}
-              className="px-2 py-1 border border-[#007be5] text-[#007be5] rounded-full bg-white text-sm"
-            >
-              {btn.text}
-            </button>
-          ))}
-        </div>
+        <button
+          onClick={() => setActiveTab('upload-docs')}
+          className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg ${
+            activeTab === 'upload-docs' 
+              ? 'bg-[#358788] text-white shadow-[#358788]' 
+              : 'border border-[#007be5] text-[#007be5] bg-white shadow-[#9ccdf7]'
+          }`}
+        >
+          Upload Document
+        </button>
+      </div>
 
-        <div className="flex justify-center flex-wrap gap-3 px-2 mb-4">
-          {middleRowButtons.map((btn) => (
-            <button
-              key={btn.id}
-              className="px-2 py-1 border border-[#007be5] text-[#007be5] rounded-full bg-white text-sm"
-            >
-              {btn.text}
-            </button>
-          ))}
-        </div>
+      {/* Secondary Tabs */}
+      <div className="flex flex-wrap justify-center gap-4 px-2 mb-4">
+        {tabs.slice(2).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg ${
+              activeTab === tab.id 
+                ? 'bg-[#358788] text-white shadow-[#358788]' 
+                : 'border border-[#007be5] text-[#007be5] bg-white shadow-[#9ccdf7]'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        <div className="flex justify-center flex-wrap gap-4 px-4 mb-6">
-          {bottomRowButtons.map((btn) => (
-            <button
-              key={btn.id}
-              className="px-2 py-1 border border-[#007be5] text-[#007be5] rounded-full bg-white text-sm"
-            >
-              {btn.text}
-            </button>
-          ))}
-        </div>
+      {/* Divider */}
+      <div className="w-full h-[1px] bg-gray-300 my-2" />
 
-        {/* Divider */}
-      <div className="w-full h-[1px] bg-gray-300 mt-2" />
+      {/* Content Sections */}
+      <div className="p-4">
+        {activeTab === 'personal-info' && (
+          <div>Personal Information Content</div>
+        )}
+        {activeTab === 'upload-docs' && (
+          <div>Upload Documents Content</div>
+        )}
+        {activeTab === 'jobrole-skill' && (
+          <div>Jobrole Skill Content</div>
+        )}
+        {activeTab === 'jobrole-tasks' && (
+          <div>Jobrole Tasks Content</div>
+        )}
+        {activeTab === 'responsibility' && (
+          <div>Level of Responsibility Content</div>
+        )}
+        {activeTab === 'skill-rating' && (
+          <div>Skill Rating Content</div>
+        )}
+      </div>
     </div>
   )
 }

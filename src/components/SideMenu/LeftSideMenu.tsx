@@ -26,13 +26,16 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
     subInstituteId: "",
     userId: "",
     userProfile: "",
+       userimage : "",
+      firstName:"",
+      lastName:"",
   });
 
   useEffect(() => {
     setLoading(true);
     const userData = localStorage.getItem("userData");
     if (userData) {
-      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, } = JSON.parse(userData);
+      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, user_image,first_name,last_name } = JSON.parse(userData);
       setSessionData({
         url: APP_URL,
         token,
@@ -40,6 +43,9 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
         subInstituteId: sub_institute_id,
         userId: user_id,
         userProfile: user_profile_name,
+            userimage : user_image,
+            firstName:first_name,
+            lastName:last_name,
       });
     }
   }, []);
@@ -301,8 +307,8 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
     <>
       {isMenuOpen && (
         <aside className="flex flex-col pb-2 bg-white rounded-none h-screen overflow-scroll max-w-[280px] shadow-[2px_4px_15px_rgba(71,160,255,0.25)] text-stone-500 leftaside rounded-xl hide-scroll">
-          <UserProfile onClick={() => handleMenuItemClick("User Profile", 0)} />
-          <main className="flex overflow-y-scroll flex-col px-2.5 pt-2.5 pb-7 mt-15 w-full text-sm leading-6 bg-white rounded-xl hide-scroll ">
+          <UserProfile UserProfileProp={sessionData}  onClick={() => handleMenuItemClick("User Profile", 0)}/>
+          <main className="flex overflow-y-scroll flex-col px-2.5 pt-2.5 pb-7 mt-6 w-full text-sm leading-6 bg-white rounded-xl hide-scroll ">
             {renderMenuContent()}
 
           <MenuSection title="OTHER" className="px-2.5 pb-7 mt-2">

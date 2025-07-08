@@ -74,7 +74,7 @@ body {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none;
 }
-.dashboardCard{
+.dashboardCard {
   height: calc(80vh - 20px);
 }
 .custom-oklch-gradient {
@@ -102,68 +102,196 @@ body {
   }
 }
 
-[data-title]:hover:after {
-    opacity: 1;
-    transition: all 0.1s ease 0.5s;
-    visibility: visible;
+#chart-container {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin: auto;
+    }
+
+    #chart-center-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-weight: bold;
+      font-size: 1.25rem;
+      pointer-events: none;
+    }
+    
+/* [data-title]:hover:after,
+[data-titleHead]:hover:after,
+[data-small]:hover:after {
+  opacity: 1;
+  transition: all 0.1s ease 0.5s;
+  visibility: visible;
 }
+[data-title]:after,
+[data-titleHead]:after,
+[data-small]:after {
+  background-color: #e2fafc;
+  color: black;
+  font-size: 12px;
+  position: absolute;
+  padding: 1px 5px 2px 5px;
+  z-index: 1000;
+  box-shadow: 3px 5px 3px #c0dbf3;
+  opacity: 1;
+  border: 0.8px solid #749bc2;
+  border-radius: 9px;
+  visibility: hidden;
+  width: max-content;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+[data-title]:after {
+  content: attr(data-title);
+  top: 160%;
+  left: 100%;
+  transform: translateY(-50%);
+  max-width: 300px;
+}
+
+[data-titleHead]:after {
+  content: attr(data-titleHead);
+  top: 160%;
+  right: 0;
+  transform: translateY(-50%);
+  max-width: 300px;
+}
+
+[data-small]:after {
+  content: attr(data-small);
+  right: 0;
+  transform: translate(0%, 18%);
+  max-width: 200px;
+}
+
+[data-title],
+[data-titleHead],
+[data-small] {
+  position: relative;
+} */
+
+
+/* Common styles for all tooltip pseudo-elements */
+[data-title]:after,
+[data-titleHead]:after,
+[data-small]:after {
+    background-color: #fff;
+    color: black;
+    font-size: 12px;
+    position: absolute; /* Essential for positioning relative to the parent */
+    padding: 1px 5px 2px 5px;
+    z-index: 1000; /* Ensure tooltip appears above other content */
+    box-shadow: 3px 5px 3px #c0dbf3;
+    border: 0.8px solid #749bc2;
+    border-radius: 9px;
+    opacity: 0; /* Hidden by default */
+    visibility: hidden; /* Hidden by default */
+    width: max-content; /* Auto-adjust width to content */
+    white-space: normal; /* Allow text to wrap */
+    word-wrap: break-word; /* Break long words */
+    transition: opacity 0.1s ease 0.5s, visibility 0.1s ease 0.5s; /* Transition for hover effect */
+}
+
+/* Hover effect for all tooltips */
+[data-title]:hover:after,
+[data-titleHead]:hover:after,
+[data-small]:hover:after {
+    opacity: 1;
+    visibility: visible;
+    /* Transition properties are now moved to the common rule above for smoother effect */
+}
+
+/* Positioning for the base elements (important for relative positioning of :after) */
+[data-title],
+[data-titleHead],
+[data-small] {
+    position: relative; /* Tooltip position relative to this element */
+}
+
+/* Specific positioning and content for data-title */
 [data-title]:after {
     content: attr(data-title);
-    background-color: #e2fafc;
-    color: black;
-    font-size: 12px;
-    position: absolute;
-    padding: 1px 5px 2px 5px;
-    top: 160%;
-    left: 100%;
-    transform: translateY(-50%);
-    z-index: 1000;
-    box-shadow: 3px 5px 3px #c0dbf3;
-    opacity: 1;
-    border: 0.8px solid #749BC2;
-    border-radius: 9px;
-    visibility: hidden;
-
-    /* Width control */
-    max-width: 300px;
-    width: max-content;
-    white-space: normal;
-    word-wrap: break-word;
+    top: calc(100% + 5px); /* Position slightly below the element */
+    left: 0%; /* Align to the left of the element */
+    /* No transform needed if left: 0 and top: calc(100% + 5px) */
+    max-width: 300px; /* Maximum width before wrapping */
 }
 
-[data-title] {
-    position: relative;
-}
-
-[data-titleHead]:hover:after {
-    opacity: 1;
-    transition: all 0.1s ease 0.5s;
-    visibility: visible;
-}
+/* Specific positioning and content for data-titleHead */
 [data-titleHead]:after {
     content: attr(data-titleHead);
-    background-color: #e2fafc;
-    color: black;
-    font-size: 12px;
-    position: absolute;
-    padding: 1px 5px 2px 5px;
-    top: 160%;
-    right: 0;
-    transform: translateY(-50%);
-    z-index: 1000;
-    box-shadow: 3px 5px 3px #c0dbf3;
-    opacity: 1;
-    border: 0.8px solid #749BC2;
-    border-radius: 9px;
-    visibility: hidden;
-
-    /* Width control */
-    max-width: 300px;
-    width: max-content;
-    white-space: normal;
-    word-wrap: break-word;
+    top: calc(100% + 5px); /* Position slightly below the element */
+    right: 0; /* Align to the right of the element */
+    /* No transform needed if right: 0 and top: calc(100% + 5px) */
+    max-width: 300px; /* Maximum width before wrapping */
 }
 
-[data-titleHead] {
-    position: relative;
+/* Specific positioning and content for data-small */
+[data-small]:after {
+    content: attr(data-small);
+    top: calc(100% + 5px); /* Position slightly below the element */
+    right: 0; /* Align to the right of the element */
+    max-width: 200px; /* Maximum width before wrapping */
+}
+@keyframes shine {
+  0% {
+    background-position: -200%;
+  }
+  100% {
+    background-position: 200%;
+  }
+}
+.glass-shine {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-25deg);
+  animation: glass-shimmer 3s infinite;
+}
+.glass-shines{
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+   animation: glass-shimmer 3s infinite;
+}
+
+@keyframes glass-shimmer {
+  0% {
+    left: -100%;
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    left: 150%;
+    opacity: 0.6;
+  }
+}
+
+.rotateDiv {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+   animation: rotateDiv 3s ease-out;
+}
+@keyframes rotateDiv {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
