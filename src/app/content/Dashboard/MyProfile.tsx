@@ -99,7 +99,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
       <div className="flex flex-col md:flex-row gap-6 mb-6">
         {/* Profile Card */}
         <div className="w-full  h-[280px] md:w-[600px] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(71,160,255,0.45)] border border-[#47a0ff]/40 relative">
-          <div className="titleDiv flex bg-[#47a0ff] px-4 rounded-t-[15px] h-[calc(var(--spacing) * 20] glass-shine">
+          <div className="titleDiv flex bg-[#47a0ff] px-4 rounded-t-[15px] h-[calc(var(--spacing) * 20]">
             <div className="empImg w-[fit-content]" style={{
               transform: "translate(10px, 30px)",
             }}>
@@ -142,7 +142,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
            <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-envelope text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"no-wrap"}}>
+                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Email ID: <span className="text-gray-900">
                     {userDetails?.email}
                   </span>
@@ -156,7 +156,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-phone text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"no-wrap"}}>
+                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Phone No.: <span className="text-gray-900">{userDetails?.mobile || 'Not provided'}</span>
                 </span>
               </div>
@@ -165,7 +165,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-calendar text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"no-wrap"}}>
+                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Date of Birth: <span className="text-gray-900">
                     {userDetails?.birthdate
                       ? new Date(userDetails.birthdate).toLocaleDateString("en-GB")
@@ -190,7 +190,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-map-marker text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"no-wrap"}}>
+                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Address: <span className="text-gray-900">
                     {[userDetails?.city, userDetails?.gujarat].filter(Boolean).join(', ') || 'Not provided'}
                   </span>
@@ -203,7 +203,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
         {/* Certificate Card */}
         <div className="w-full h-[280px] md:w-[40%] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(245,161,161,0.45)] border border-[#ffd2d2]">
           <div className="w-full relative">
-            <div className="bg-[#ffd2d2] rounded-t-[15px] p-5 text-[#393939] text-[24px] font-bold font-inter leading-[30px] glass-shine">
+            <div className="bg-[#ffd2d2] rounded-t-[15px] p-5 text-[#393939] text-[24px] font-bold font-inter leading-[30px]">
               My Certificate
             </div>
             {/* Certificate content would go here */}
@@ -243,7 +243,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
         {/* Task Card */}
         <div className="w-full md:w-[300px] h-[350px] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(255,174,76,0.45)] border border-[#ffd570]">
           <div className="w-full h-full relative">
-            <div className="bg-[#ffd570] rounded-t-[15px]  px-5 py-3 text-[#393939] text-[28px] font-bold font-inter glass-shine">
+            <div className="bg-[#ffd570] rounded-t-[15px]  px-5 py-3 text-[#393939] text-[28px] font-bold font-inter">
               My Task
             </div>
             {/* Task content would go here */}
@@ -278,7 +278,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
 
         {/* Skills Card */}
         <div className="flex-grow h-[350px] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(0,165,150,0.45)] border border-[#33afa4]">
-          <div className="relative w-full bg-[#33afa4] rounded-t-[15px] px-5 py-3 glass-shine">
+          <div className="relative w-full bg-[#33afa4] rounded-t-[15px] px-5 py-3">
             <div className="text-[#393939] text-[28px] font-bold font-inter">
               My Skills
             </div>
