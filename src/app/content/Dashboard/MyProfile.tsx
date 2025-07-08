@@ -142,7 +142,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
            <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-envelope text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md">
+                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"no-wrap"}}>
                   Email ID: <span className="text-gray-900">
                     {userDetails?.email}
                   </span>
@@ -156,7 +156,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-phone text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md">
+                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"no-wrap"}}>
                   Phone No.: <span className="text-gray-900">{userDetails?.mobile || 'Not provided'}</span>
                 </span>
               </div>
@@ -165,7 +165,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-calendar text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md">
+                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"no-wrap"}}>
                   Date of Birth: <span className="text-gray-900">
                     {userDetails?.birthdate
                       ? new Date(userDetails.birthdate).toLocaleDateString("en-GB")
@@ -181,7 +181,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-building text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md">
+                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Department: <span className="text-gray-900">{userDetails?.userDepartment || 'Not provided'}</span>
                 </span>
               </div>
@@ -190,7 +190,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-map-marker text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md">
+                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"no-wrap"}}>
                   Address: <span className="text-gray-900">
                     {[userDetails?.city, userDetails?.gujarat].filter(Boolean).join(', ') || 'Not provided'}
                   </span>
