@@ -98,7 +98,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
       {/* Upper section with profile and certificate cards */}
       <div className="flex flex-col md:flex-row gap-6 mb-6">
         {/* Profile Card */}
-        <div className="w-full  h-[280px] md:w-[600px] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(71,160,255,0.45)] border border-[#47a0ff]/40 relative">
+        <div className="h-[280px] md:w-[620px] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(71,160,255,0.45)] border border-[#47a0ff]/40 relative">
           <div className="titleDiv flex bg-[#47a0ff] px-4 rounded-t-[15px] h-[calc(var(--spacing) * 20]">
             <div className="empImg w-[fit-content]" style={{
               transform: "translate(10px, 30px)",
@@ -107,7 +107,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <img
                   src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/` + userDetails.image}
                   alt="Profile picture"
-                  className="w-[100px] h-[100px] rounded-full border-1 border-[#ddd] shadow-lg shadow-blue-500/50"
+                  className="w-[100px] h-[100px] bg-white rounded-full border-1 border-[#ddd] shadow-lg shadow-blue-500/50"
                 />
               ) : (
                 <img

@@ -94,7 +94,7 @@ export default function EditProfilePage() {
             <img
               src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails.image}`}
               alt="Profile picture"
-              className="w-[150px] h-[150px] rounded-full border-[5px] border-white object-cover actualImage shadow-lg shadow-blue-500/50"
+              className="w-[150px] h-[150px] bg-white rounded-full border-[5px] border-white object-cover actualImage shadow-lg shadow-blue-500/50"
             />
           ) : (
             <img
