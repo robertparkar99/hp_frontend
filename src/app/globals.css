@@ -103,22 +103,22 @@ body {
 }
 
 #chart-container {
-      position: relative;
-      width: 220px;
-      height: 220px;
-      margin: auto;
-    }
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: auto;
+}
 
-    #chart-center-text {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-weight: bold;
-      font-size: 1.25rem;
-      pointer-events: none;
-    }
-    
+#chart-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+  font-size: 1.25rem;
+  pointer-events: none;
+}
+
 /* [data-title]:hover:after,
 [data-titleHead]:hover:after,
 [data-small]:hover:after {
@@ -174,68 +174,67 @@ body {
   position: relative;
 } */
 
-
 /* Common styles for all tooltip pseudo-elements */
 [data-title]:after,
 [data-titleHead]:after,
 [data-small]:after {
-    background-color: #fff;
-    color: black;
-    font-size: 12px;
-    position: absolute; /* Essential for positioning relative to the parent */
-    padding: 1px 5px 2px 5px;
-    z-index: 1000; /* Ensure tooltip appears above other content */
-    box-shadow: 3px 5px 3px #c0dbf3;
-    border: 0.8px solid #749bc2;
-    border-radius: 9px;
-    opacity: 0; /* Hidden by default */
-    visibility: hidden; /* Hidden by default */
-    width: max-content; /* Auto-adjust width to content */
-    white-space: normal; /* Allow text to wrap */
-    word-wrap: break-word; /* Break long words */
-    transition: opacity 0.1s ease 0.5s, visibility 0.1s ease 0.5s; /* Transition for hover effect */
+  background-color: #fff;
+  color: black;
+  font-size: 12px;
+  position: absolute; /* Essential for positioning relative to the parent */
+  padding: 1px 5px 2px 5px;
+  z-index: 1000; /* Ensure tooltip appears above other content */
+  box-shadow: 3px 5px 3px #c0dbf3;
+  border: 0.8px solid #749bc2;
+  border-radius: 9px;
+  opacity: 0; /* Hidden by default */
+  visibility: hidden; /* Hidden by default */
+  width: max-content; /* Auto-adjust width to content */
+  white-space: normal; /* Allow text to wrap */
+  word-wrap: break-word; /* Break long words */
+  transition: opacity 0.1s ease 0.5s, visibility 0.1s ease 0.5s; /* Transition for hover effect */
 }
 
 /* Hover effect for all tooltips */
 [data-title]:hover:after,
 [data-titleHead]:hover:after,
 [data-small]:hover:after {
-    opacity: 1;
-    visibility: visible;
-    /* Transition properties are now moved to the common rule above for smoother effect */
+  opacity: 1;
+  visibility: visible;
+  /* Transition properties are now moved to the common rule above for smoother effect */
 }
 
 /* Positioning for the base elements (important for relative positioning of :after) */
 [data-title],
 [data-titleHead],
 [data-small] {
-    position: relative; /* Tooltip position relative to this element */
+  position: relative; /* Tooltip position relative to this element */
 }
 
 /* Specific positioning and content for data-title */
 [data-title]:after {
-    content: attr(data-title);
-    top: calc(100% + 5px); /* Position slightly below the element */
-    left: 0%; /* Align to the left of the element */
-    /* No transform needed if left: 0 and top: calc(100% + 5px) */
-    max-width: 300px; /* Maximum width before wrapping */
+  content: attr(data-title);
+  top: calc(100% + 5px); /* Position slightly below the element */
+  left: 0%; /* Align to the left of the element */
+  /* No transform needed if left: 0 and top: calc(100% + 5px) */
+  max-width: 300px; /* Maximum width before wrapping */
 }
 
 /* Specific positioning and content for data-titleHead */
 [data-titleHead]:after {
-    content: attr(data-titleHead);
-    top: calc(100% + 5px); /* Position slightly below the element */
-    right: 0; /* Align to the right of the element */
-    /* No transform needed if right: 0 and top: calc(100% + 5px) */
-    max-width: 300px; /* Maximum width before wrapping */
+  content: attr(data-titleHead);
+  top: calc(100% + 5px); /* Position slightly below the element */
+  right: 0; /* Align to the right of the element */
+  /* No transform needed if right: 0 and top: calc(100% + 5px) */
+  max-width: 300px; /* Maximum width before wrapping */
 }
 
 /* Specific positioning and content for data-small */
 [data-small]:after {
-    content: attr(data-small);
-    top: calc(100% + 5px); /* Position slightly below the element */
-    right: 0; /* Align to the right of the element */
-    max-width: 200px; /* Maximum width before wrapping */
+  content: attr(data-small);
+  top: calc(100% + 5px); /* Position slightly below the element */
+  right: 0; /* Align to the right of the element */
+  max-width: 200px; /* Maximum width before wrapping */
 }
 @keyframes shine {
   0% {
@@ -251,7 +250,7 @@ body {
 }
 
 .glass-shine::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -266,10 +265,10 @@ body {
   transform: skewX(-25deg);
   animation: glass-shimmer 3s infinite;
 }
-.glass-shines{
+.glass-shines {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-   animation: glass-shimmer 3s infinite;
+  animation: glass-shimmer 3s infinite;
 }
 
 @keyframes glass-shimmer {
@@ -289,102 +288,118 @@ body {
 .rotateDiv {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-   animation: rotateDiv 3s ease-out;
+  animation: rotateDiv 3s ease-out;
 }
 @keyframes rotateDiv {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
-
-.hexagone::before {
-   content:"";
-   display:block;
-   padding-top:86.6%;
-   background:currentColor;
-  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-}
-.hexagon-container {
-  width: 200px;
-  grid-template-columns: repeat(6, 1fr);
-  height: 173px;
-  position: relative;
-}
-
-.hexagon-grid {
+.honeycomb-container {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-gap: 0; /* grid-gap: auto is invalid, replace with actual px/rem value if needed */
-  margin: auto;
-  max-width: 1200px;
-  padding: 20px 0;
+  grid-template-columns: repeat(6, 0fr);
+  gap: 10px;
+  justify-items: center;
+}
+
+/* Stagger every even column */
+.honeycomb-container > div:nth-child(6n + 2),
+.honeycomb-container > div:nth-child(6n + 4),
+.honeycomb-container > div:nth-child(6n + 6),
+.honeycomb-container > div:nth-child(6n + 8),
+.honeycomb-container > div:nth-child(6n + 10) {
+  transform: translateY(60%);
 }
 
 .hexagon-wrapper {
   position: relative;
+  width: 154px;
+  height: 154px;
+  margin-bottom: 20px;
+  filter: drop-shadow(0px 0px 12px #b1b1b1);
+}
+
+.hexagon-inner {
+  --r: 0.1;
+  --a: 60deg;
+  background-color: #007be5;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  width: 200px;
+  aspect-ratio: 1;
+  --_a: (40deg * var(--r));
+  --_r: (50% * cos(30deg) / cos((30deg * (1 - var(--r)))));
+  cursor: pointer;
+  transition: --r 0.5s, --a 0.5s;
+
+  clip-path: shape(
+    from calc(50% + var(--_r) * cos(var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(var(--a) + var(--_a))) with
+      calc(50% + 50% * cos(var(--a))) calc(50% + 50% * sin(var(--a))),
+    line to calc(50% + var(--_r) * cos(60deg + var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(60deg + var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(60deg + var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(60deg + var(--a) + var(--_a))) with
+      calc(50% + 50% * cos(60deg + var(--a)))
+      calc(50% + 50% * sin(60deg + var(--a))),
+    line to calc(50% + var(--_r) * cos(120deg + var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(120deg + var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(120deg + var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(120deg + var(--a) + var(--_a))) with
+      calc(50% + 50% * cos(120deg + var(--a)))
+      calc(50% + 50% * sin(120deg + var(--a))),
+    line to calc(50% + var(--_r) * cos(180deg + var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(180deg + var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(180deg + var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(180deg + var(--a) + var(--_a))) with
+      calc(50% + 50% * cos(180deg + var(--a)))
+      calc(50% + 50% * sin(180deg + var(--a))),
+    line to calc(50% + var(--_r) * cos(240deg + var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(240deg + var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(240deg + var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(240deg + var(--a) + var(--_a))) with
+      calc(50% + 50% * cos(240deg + var(--a)))
+      calc(50% + 50% * sin(240deg + var(--a))),
+    line to calc(50% + var(--_r) * cos(300deg + var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(300deg + var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(300deg + var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(300deg + var(--a) + var(--_a))) with
+      calc(50% + 50% * cos(300deg + var(--a)))
+      calc(50% + 50% * sin(300deg + var(--a)))
+  );
+ 
+}
+
+.hexagon-content {
+  transform: rotate(0deg); /* Counter-rotate the content */
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
   width: 100%;
-  height: 104px;
-  margin: 4px;
-  padding-bottom: 100%;
+  color: white;
 }
 
-/* Staggered layout for better alignment */
-.hexagon-wrapper:nth-child(6n+2) {
-  transform: translateY(50%) translateX(-20%);
-}
-.hexagon-wrapper:nth-child(6n+3) {
-  transform: translateX(-40%);
-}
-.hexagon-wrapper:nth-child(6n+4) {
-  transform: translateY(50%) translateX(-60%);
-}
-.hexagon-wrapper:nth-child(6n+5) {
-  transform: translateX(-80%);
-}
-.hexagon-wrapper:nth-child(6n+6) {
-  transform: translateY(50%) translateX(-100%);
+.hexagon-icon {
+  font-size:1.2rem;
+  position: relative;
+  transform: translate(40px, -28px);
 }
 
-
-/* Responsive hexagon sizes */
-@media (max-width: 1024px) {
-  .hexagon-container {
-    width: 180px;
-    height: 156px;
-  }
+.hexagon-title {
+  width:70%;
+  text-align: center;
+  font-size:0.8rem;
 }
 
-@media (max-width: 768px) {
-  .hexagon-container {
-    width: 150px;
-    height: 130px;
-  }
-}
-
-@media (max-width: 640px) {
-  .hexagon-container {
-    width: 120px;
-    height: 104px;
-  }
-}
-
-@media (max-width: 480px) {
-  .hexagon-container {
-    width: 100px;
-    height: 87px;
-  }
-
-  /* Adjust gaps between hexagons on very small screens */
-  .hexagon-row-1 {
-    margin-bottom: 1rem;
-  }
-
-  .hexagon-row-2,
-  .hexagon-row-3,
-  .hexagon-row-4 {
-    margin-bottom: 1rem;
-  }
-
-  .hexagon-row-5 {
-    margin-bottom: 0;
-  }
+.hexagon-level {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  transform:translate(0px, 20px);
 }
