@@ -138,11 +138,11 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
               </button>
             </div>
           </div>
-          <div className="w-[fit-content] text-[#686868] mx-8 pb-4 mt-10 font-normal font-poppins rounded-full flex">
+          <div className="w-[fit-content] text-[#686868] mx-4 pb-4 mt-10 font-normal font-poppins rounded-full flex">
            <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-envelope text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
+                <span className="text-gray-700 font-medium text-sm bg-blue-50 px-2 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Email ID: <span className="text-gray-900">
                     {userDetails?.email}
                   </span>
@@ -151,12 +151,12 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
           </div>
           <div className="detailDiv lg:flex md:block sm:block pb-6 gap-8">
             {/* Left Data Column */}
-            <div className="leftData pl-8 space-y-4">
+            <div className="leftData pl-4 space-y-4">
               <div className="flex items-center">
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-phone text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
+                <span className="text-gray-700 font-medium text-sm bg-blue-50 px-2 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Phone No.: <span className="text-gray-900">{userDetails?.mobile || 'Not provided'}</span>
                 </span>
               </div>
@@ -165,7 +165,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-calendar text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
+                <span className="text-gray-700 font-medium text-sm bg-blue-50 px-2 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Date of Birth: <span className="text-gray-900">
                     {userDetails?.birthdate
                       ? new Date(userDetails.birthdate).toLocaleDateString("en-GB")
@@ -176,12 +176,12 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
             </div>
 
             {/* Right Data Column */}
-            <div className="rightData pl-6 space-y-4">
+            <div className="rightData pl-2 space-y-4">
               <div className="flex items-center">
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-building text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
+                <span className="text-gray-700 font-medium text-sm bg-blue-50 px-2 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Department: <span className="text-gray-900">{userDetails?.userDepartment || 'Not provided'}</span>
                 </span>
               </div>
@@ -190,7 +190,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-map-marker text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
+                <span className="text-gray-700 font-medium text-sm bg-blue-50 px-2 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Address: <span className="text-gray-900">
                     {[userDetails?.city, userDetails?.gujarat].filter(Boolean).join(', ') || 'Not provided'}
                   </span>
