@@ -194,9 +194,9 @@ const userList: React.FC<userListProps> = ({ employees }) => {
         <button 
           className="text-gray-400 hover:text-gray-600"
          onClick={() => {
-                  const menu = "Dashboard/MyProfile.tsx";
+                  const menu = "Dashboard/JobrolesSkill.tsx";
                   (window as any).__currentMenuItem = menu;
-                  window.dispatchEvent(new CustomEvent("menuSelected", { detail: { menu: menu, pageType: 'page', access: menu,pageProps:employee.id } }));
+                  window.dispatchEvent(new CustomEvent("menuSelected", { detail: { menu: menu, pageType: 'page', access: menu, pageProps: employee.id || null } }));
                 }}
         >
           <MoreVertical size={20} />
