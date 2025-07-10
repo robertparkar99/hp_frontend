@@ -204,7 +204,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
         <div className="w-full h-[280px] md:w-[40%] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(245,161,161,0.45)] border border-[#ffd2d2]">
           <div className="w-full relative">
             <div className="bg-[#ffd2d2] rounded-t-[15px] p-5 text-[#393939] text-[24px] font-bold font-inter leading-[30px]">
-              My Certificate
+             <span className="mdi mdi-certificate-outline"></span> My Certificate
             </div>
             {/* Certificate content would go here */}
             <div className="certicateDiv  p-5 h-[200px] overflow-scroll hide-scroll">
@@ -243,8 +243,8 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
         {/* Task Card */}
         <div className="w-full md:w-[300px] h-[350px] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(255,174,76,0.45)] border border-[#ffd570]">
           <div className="w-full h-full relative">
-            <div className="bg-[#ffd570] rounded-t-[15px]  px-5 py-3 text-[#393939] text-[28px] font-bold font-inter">
-              My Task
+            <div className="bg-[#ffd570] rounded-t-[15px]  px-5 py-3 text-[#393939] text-[24px] font-bold font-inter">
+              <span className="mdi mdi-format-list-checks"></span> My Task
             </div>
             {/* Task content would go here */}
             <div className="taslDiv  px-5 py-3 h-[180px] overflow-scroll hide-scroll">
@@ -279,8 +279,8 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
         {/* Skills Card */}
         <div className="flex-grow h-[350px] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(0,165,150,0.45)] border border-[#33afa4]">
           <div className="relative w-full bg-[#33afa4] rounded-t-[15px] px-5 py-3">
-            <div className="text-[#393939] text-[28px] font-bold font-inter">
-              My Skills
+            <div className="text-[#393939] text-[24px] font-bold font-inter">
+              <span className="mdi mdi-lightbulb-on-outline"></span> My Skills
             </div>
           </div>
 

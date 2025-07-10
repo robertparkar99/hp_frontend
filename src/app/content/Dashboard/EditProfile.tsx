@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from "react";
+import PersonalDetails from '../../../components/users/personalDetails';
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -140,7 +141,8 @@ export default function EditProfilePage() {
       {/* Content Sections */}
       <div className="p-4">
         {activeTab === 'personal-info' && (
-          <div>Personal Information Content</div>
+          // <div>Personal Information Content</div>
+          <PersonalDetails />
         )}
         {activeTab === 'upload-docs' && (
           <div>Upload Documents Content</div>
