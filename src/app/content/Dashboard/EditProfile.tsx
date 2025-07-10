@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from "react";
+import JobRoleSkill from './JobrolesSkill'; // Corrected the import path casing
 import PersonalDetails from '../../../components/users/personalDetails';
 
 export default function EditProfilePage() {
@@ -36,7 +37,7 @@ export default function EditProfilePage() {
         });
       }
     }, [])
-  
+
     useEffect(() => {
       if (sessionData.url && sessionData.token) {
         fetchInitialData();
@@ -71,7 +72,7 @@ export default function EditProfilePage() {
   return (
     <div className="w-full bg-white shadow-md">
       {/* Header Section */}
-      <div className="flex h-[130px] bg-[#ACD4FF] rounded-t-[15px] shadow-md items-center px-4 ">
+      <div className="flex h-[130px] bg-[#ACD4FF] rounded-t-[15px] shadow-md items-center px-4 " >
         <button onClick={handleGoBack} className="text-black" aria-label="Go back">
           <ArrowLeft size={24} />
         </button>
@@ -123,7 +124,10 @@ export default function EditProfilePage() {
         {tabs.slice(2).map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              setActiveTab(tab.id);
+              
+            }}
             className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg ${
               activeTab === tab.id 
                 ? 'bg-[#358788] text-white shadow-[#358788]' 
@@ -148,7 +152,7 @@ export default function EditProfilePage() {
           <div>Upload Documents Content</div>
         )}
         {activeTab === 'jobrole-skill' && (
-          <div>Jobrole Skill Content</div>
+          <JobRoleSkill />
         )}
         {activeTab === 'jobrole-tasks' && (
           <div>Jobrole Tasks Content</div>

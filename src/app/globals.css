@@ -295,3 +295,96 @@ body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.hexagone::before {
+   content:"";
+   display:block;
+   padding-top:86.6%;
+   background:currentColor;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+.hexagon-container {
+  width: 200px;
+  grid-template-columns: repeat(6, 1fr);
+  height: 173px;
+  position: relative;
+}
+
+.hexagon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-gap: 0; /* grid-gap: auto is invalid, replace with actual px/rem value if needed */
+  margin: auto;
+  max-width: 1200px;
+  padding: 20px 0;
+}
+
+.hexagon-wrapper {
+  position: relative;
+  width: 100%;
+  height: 104px;
+  margin: 4px;
+  padding-bottom: 100%;
+}
+
+/* Staggered layout for better alignment */
+.hexagon-wrapper:nth-child(6n+2) {
+  transform: translateY(50%) translateX(-20%);
+}
+.hexagon-wrapper:nth-child(6n+3) {
+  transform: translateX(-40%);
+}
+.hexagon-wrapper:nth-child(6n+4) {
+  transform: translateY(50%) translateX(-60%);
+}
+.hexagon-wrapper:nth-child(6n+5) {
+  transform: translateX(-80%);
+}
+.hexagon-wrapper:nth-child(6n+6) {
+  transform: translateY(50%) translateX(-100%);
+}
+
+
+/* Responsive hexagon sizes */
+@media (max-width: 1024px) {
+  .hexagon-container {
+    width: 180px;
+    height: 156px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hexagon-container {
+    width: 150px;
+    height: 130px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hexagon-container {
+    width: 120px;
+    height: 104px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hexagon-container {
+    width: 100px;
+    height: 87px;
+  }
+
+  /* Adjust gaps between hexagons on very small screens */
+  .hexagon-row-1 {
+    margin-bottom: 1rem;
+  }
+
+  .hexagon-row-2,
+  .hexagon-row-3,
+  .hexagon-row-4 {
+    margin-bottom: 1rem;
+  }
+
+  .hexagon-row-5 {
+    margin-bottom: 0;
+  }
+}
