@@ -138,11 +138,11 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
               </button>
             </div>
           </div>
-          <div className="w-[fit-content] text-[#686868] mx-8 pb-4 mt-10 font-normal font-poppins rounded-full flex">
+          <div className="w-[fit-content] text-[#686868] mx-4 pb-4 mt-10 font-normal font-poppins rounded-full flex">
            <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-envelope text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
+                <span className="text-gray-700 font-medium text-sm bg-blue-50 px-2 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Email ID: <span className="text-gray-900">
                     {userDetails?.email}
                   </span>
@@ -151,12 +151,12 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
           </div>
           <div className="detailDiv lg:flex md:block sm:block pb-6 gap-8">
             {/* Left Data Column */}
-            <div className="leftData pl-8 space-y-4">
+            <div className="leftData pl-4 space-y-4">
               <div className="flex items-center">
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-phone text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
+                <span className="text-gray-700 font-medium text-sm bg-blue-50 px-2 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Phone No.: <span className="text-gray-900">{userDetails?.mobile || 'Not provided'}</span>
                 </span>
               </div>
@@ -165,7 +165,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-calendar text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
+                <span className="text-gray-700 font-medium text-sm bg-blue-50 px-2 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Date of Birth: <span className="text-gray-900">
                     {userDetails?.birthdate
                       ? new Date(userDetails.birthdate).toLocaleDateString("en-GB")
@@ -176,12 +176,12 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
             </div>
 
             {/* Right Data Column */}
-            <div className="rightData pl-6 space-y-4">
+            <div className="rightData pl-2 space-y-4">
               <div className="flex items-center">
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-building text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
+                <span className="text-gray-700 font-medium text-sm bg-blue-50 px-2 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Department: <span className="text-gray-900">{userDetails?.userDepartment || 'Not provided'}</span>
                 </span>
               </div>
@@ -190,7 +190,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
                 <span className="flex items-center justify-center w-8 h-8 mr-3 bg-blue-100 rounded-full shadow-sm">
                   <span className="fa fa-map-marker text-blue-600 text-lg"></span>
                 </span>
-                <span className="text-gray-700 font-medium bg-blue-50 px-3 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
+                <span className="text-gray-700 font-medium text-sm bg-blue-50 px-2 py-1 rounded-md" style={{whiteSpace:"nowrap"}}>
                   Address: <span className="text-gray-900">
                     {[userDetails?.city, userDetails?.gujarat].filter(Boolean).join(', ') || 'Not provided'}
                   </span>
@@ -204,7 +204,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
         <div className="w-full h-[280px] md:w-[40%] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(245,161,161,0.45)] border border-[#ffd2d2]">
           <div className="w-full relative">
             <div className="bg-[#ffd2d2] rounded-t-[15px] p-5 text-[#393939] text-[24px] font-bold font-inter leading-[30px]">
-              My Certificate
+             <span className="mdi mdi-certificate-outline"></span> My Certificate
             </div>
             {/* Certificate content would go here */}
             <div className="certicateDiv  p-5 h-[200px] overflow-scroll hide-scroll">
@@ -243,8 +243,8 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
         {/* Task Card */}
         <div className="w-full md:w-[300px] h-[350px] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(255,174,76,0.45)] border border-[#ffd570]">
           <div className="w-full h-full relative">
-            <div className="bg-[#ffd570] rounded-t-[15px]  px-5 py-3 text-[#393939] text-[28px] font-bold font-inter">
-              My Task
+            <div className="bg-[#ffd570] rounded-t-[15px]  px-5 py-3 text-[#393939] text-[24px] font-bold font-inter">
+              <span className="mdi mdi-format-list-checks"></span> My Task
             </div>
             {/* Task content would go here */}
             <div className="taslDiv  px-5 py-3 h-[180px] overflow-scroll hide-scroll">
@@ -279,8 +279,8 @@ const MyProfile: React.FC<MyProfileProps> = ({ employeeId }) => {
         {/* Skills Card */}
         <div className="flex-grow h-[350px] bg-white rounded-[15px] shadow-[0px_4px_4px_0px_rgba(0,165,150,0.45)] border border-[#33afa4]">
           <div className="relative w-full bg-[#33afa4] rounded-t-[15px] px-5 py-3">
-            <div className="text-[#393939] text-[28px] font-bold font-inter">
-              My Skills
+            <div className="text-[#393939] text-[24px] font-bold font-inter">
+              <span className="mdi mdi-lightbulb-on-outline"></span> My Skills
             </div>
           </div>
 
