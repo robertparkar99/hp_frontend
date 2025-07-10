@@ -3,7 +3,6 @@
 import React from "react";
 import { Check, MoreVertical, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import MyProfile from '../Dashboard/MyProfile';
 
 interface Employee {
   id: string;
@@ -194,7 +193,7 @@ const userList: React.FC<userListProps> = ({ employees }) => {
         <button 
           className="text-gray-400 hover:text-gray-600"
          onClick={() => {
-                  const menu = "Dashboard/JobrolesSkill.tsx";
+                  const menu = "user/usersTabs.tsx";
                   (window as any).__currentMenuItem = menu;
                   window.dispatchEvent(new CustomEvent("menuSelected", { detail: { menu: menu, pageType: 'page', access: menu, pageProps: employee.id || null } }));
                 }}
@@ -202,10 +201,8 @@ const userList: React.FC<userListProps> = ({ employees }) => {
           <MoreVertical size={20} />
         </button>
         
-        {/* Conditionally render MyProfile when this employee is selected */}
-        {selectedEmployee === employee.id && (
-            <MyProfile employeeId={employee.id} />
-        )}
+        {/* Conditionally render jobroleSkills when this employee is selected */}
+       
       </div>
     </td>
               </tr>

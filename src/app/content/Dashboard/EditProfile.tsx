@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from "react";
-import JobRoleSkill from './JobrolesSkill'; // Corrected the import path casing
+import JobRoleSkill from '../../../components/users/jobroleSkill'; // Corrected the import path casing
 import PersonalDetails from '../../../components/users/personalDetails';
 
 export default function EditProfilePage() {
