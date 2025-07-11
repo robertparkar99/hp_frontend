@@ -16,17 +16,17 @@ const Login: React.FC = () => {
   useEffect(() => {
     const userData = localStorage.getItem('userData');
     if (userData) {
-      const { timestamp } = JSON.parse(userData);
-      const now = Date.now();
-      // 24 hours = 86400000 ms
-      if (timestamp && now - timestamp < 43200000) {
+      // const { timestamp } = JSON.parse(userData);
+      // const now = Date.now();
+      // // 24 hours = 86400000 ms
+      // if (timestamp && now - timestamp < 43200000) {
       setLoading(true);
       router.push("/Maindashboard");
       return;
-      } else {
-      // Session expired, remove userData
-      localStorage.removeItem('userData');
-      }
+      // } else {
+      // // Session expired, remove userData
+      // localStorage.removeItem('userData');
+      // }
     }
     else {
       setLoading(false);
