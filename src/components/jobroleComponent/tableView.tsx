@@ -150,9 +150,9 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
         }
     };
 
-    const fetchDepartments = async () => {
+    const fetchDepartments = async (industries: string = '') => {
         try {
-            const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=department&searchWord="departments"`);
+            const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=department&searchWord=${industries}`);
             const data = await res.json();
             setDepartments(data.searchData || []);
         } catch (error) {
@@ -178,6 +178,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
     const fetchIndustriesData = async (industry: string) => {
         setSelectedIndustry(industry);
         fetchData(industry);
+        fetchDepartments(industry);
     }
     const handleSubDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const options = e.target.options;
