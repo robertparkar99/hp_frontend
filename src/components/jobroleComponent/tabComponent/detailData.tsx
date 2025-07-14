@@ -21,6 +21,9 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
     department: '',
     sub_department: "",
     performance_expectation: "",
+    education?: "",
+    training?: "",
+    experience?: "",
   };
 
   const [formData, setFormData] = useState<FormData>({
@@ -29,6 +32,9 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
     department: editData?.department || '',
     sub_department: editData?.sub_department || "",
     performance_expectation: editData?.performance_expectation || "",
+    education: editData?.education || "",
+    training: editData?.training || "",
+    experience: editData?.experience || "",
   });
 
   const [departments, setDepartments] = useState<any[]>([]);
@@ -66,6 +72,10 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
         department: editData?.department || '',
         sub_department: editData?.sub_department || "",
         performance_expectation: editData?.performance_expectation || "",
+        education: editData?.education || "",
+        training: editData?.training || "",
+        experience: editData?.experience || "",
+
       });
     }
 
@@ -154,7 +164,7 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
 
         <div className="flex gap-4">
           <div className="relative z-0 w-full mb-5 group text-left">
-            <label htmlFor="department" className="text-left">Department</label><br />
+            <label htmlFor="department" className="text-left">Jobrole Department</label><br />
             <input
               type="text"
               name="department"
@@ -176,7 +186,7 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
           </div>
 
           <div className="relative z-0 w-full mb-5 group text-left">
-            <label htmlFor="subDepartment" className="text-left">Sub-Department</label><br />
+            <label htmlFor="subDepartment" className="text-left">Jobrole Sub-Department</label><br />
             <input
               type="text"
               name="sub_department"
@@ -240,7 +250,51 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
               value={formData.performance_expectation}
             ></textarea>
           </div>
+           <div className="relative z-0 w-full mb-5 group text-left">
+            <label htmlFor="education" className="text-left">Education</label><br />
+            <input
+              type="text"
+              name="education"
+              className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+              placeholder="Enter Education..."
+              onChange={handleFormChange}
+              value={formData.education}
+            />
+          </div>
+          
+{/* education
+training
+experience */}
+        </div>
 
+          <div className="flex gap-4">
+{/* Description */}
+          
+           <div className="relative z-0 w-full mb-5 group text-left">
+            <label htmlFor="training" className="text-left">Training</label><br />
+            <input
+              type="text"
+              name="training"
+              className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+              placeholder="Enter training..."
+              onChange={handleFormChange}
+              value={formData.training}
+            />
+          </div>
+           <div className="relative z-0 w-full mb-5 group text-left">
+            <label htmlFor="experience" className="text-left">Experience</label><br />
+            <input
+              type="text"
+              name="experience"
+              className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+              placeholder="Enter Eraining..."
+              onChange={handleFormChange}
+              value={formData.experience}
+            />
+          </div>
+{/* education
+training
+experience */}
         </div>
 
         <button type="submit" className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
