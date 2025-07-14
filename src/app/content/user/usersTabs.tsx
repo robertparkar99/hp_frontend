@@ -1,10 +1,15 @@
 'use client'
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Bell, User, Upload, BadgeCheck, ClipboardList, ChartColumnIncreasing, Star, Search, Filter, MoreVertical, ListCheck, ListChecks } from 'lucide-react';
 import { useEffect, useState } from "react";
-import JobRoleSkill from '../../../components/users/jobroleSkill'; // Corrected the import path casing
+import JobRoleSkill from '../../../components/users/jobroleSkill';
+import JobRoleTasks from '../../../components/users/jobroleTask';
+
 import PersonalDetails from '../../../components/users/personalDetails';
+import { Button } from "@/components/ui/button";  // Make sure you have this
+import { cn } from "@/lib/utils";                 // Make sure you have this
+import React from 'react';
 
 export default function EditProfilePage() {
     const router = useRouter();
@@ -25,7 +30,7 @@ export default function EditProfilePage() {
     useEffect(() => {
         const userData = localStorage.getItem("userData");
         if (userData) {
-            const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, syear, } = JSON.parse(userData);
+            const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, syear } = JSON.parse(userData);
             setSessionData({
                 url: APP_URL,
                 token,
@@ -36,22 +41,20 @@ export default function EditProfilePage() {
                 syear: syear,
             });
         }
-    }, [])
+    }, []);
 
     useEffect(() => {
         if (sessionData.url && sessionData.token) {
             fetchInitialData();
         }
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sessionData.url, sessionData.token]);
+
     const fetchInitialData = async () => {
         try {
             const res = await fetch(
                 `${sessionData.url}/user/add_user/${sessionData.userId}/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
             );
             const data = await res.json();
-            // console.log(data);
             setUserDetails(data.data || null);
         } catch (error) {
             console.error("Failed to fetch initial data:", error);
@@ -60,107 +63,104 @@ export default function EditProfilePage() {
 
     const handleGoBack = () => router.back();
 
+    // Tabs: keep ids matching your content rendering logic
     const tabs = [
-        { id: 'personal-info', label: 'Personal Information' },
-        { id: 'upload-docs', label: 'Upload Document' },
-        { id: 'jobrole-skill', label: 'Jobrole Skill' },
-        { id: 'jobrole-tasks', label: 'Jobrole Tasks' },
-        { id: 'responsibility', label: 'Level of Responsibility' },
-        { id: 'skill-rating', label: 'Skill Rating' }
+        { id: 'personal-info', label: 'Personal Information', logo: "assets/User Details Images/Personal Details.png", icon: <User className="mr-2 h-5 w-5 text-slate-700" /> },
+        { id: 'upload-docs', label: 'Upload Document', logo: "assets/User Details Images/Upload Document.jpg", icon: <Upload className="mr-2 h-5 w-5 text-slate-700" /> },
+        { id: 'jobrole-skill', label: 'Jobrole Skill', logo: "https://cdn.builder.io/api/v1/image/assets/TEMP/b61c6f56b46586f24e1f40fd22b5f9c187703d2f?width=287", icon: <BadgeCheck className="mr-2 h-5 w-5 text-slate-700" /> },
+        { id: 'jobrole-tasks', label: 'Jobrole Tasks', logo: "assets/User Details Images/Jobrole Task.png", icon: <ListChecks className="mr-2 h-5 w-5 text-slate-700" /> },
+        { id: 'responsibility', label: 'Level of Responsibility', logo: "assets/User Details Images/Level of Responsibility.png", icon: <ChartColumnIncreasing className="mr-2 h-5 w-5 text-slate-700" /> },
+        { id: 'skill-rating', label: 'Skill Rating', logo: "assets/User Details Images/Skill Rating.jpg", icon: <Star className="mr-2 h-5 w-5 text-slate-700" /> }
     ];
 
+  const [isChecked, setIsChecked] = useState(false);
+
+  const handleCheckboxChange = () => {
+    setIsChecked(!isChecked);
+  };
+
+
     return (
-        <div className="w-full bg-white shadow-md">
-            {/* Header Section */}
-            <div className="flex h-[130px] bg-[#ACD4FF] rounded-t-[15px] shadow-md items-center px-4 " >
-                <button onClick={handleGoBack} className="text-black" aria-label="Go back">
+        <div className="w-full shadow-md">
+            {/* Header Row: Back arrow + Logo + Tabs */}
+            <div className="flex items-center ml-8 py-4">
+                <button onClick={handleGoBack} className="text-black mr-4" aria-label="Go back">
                     <ArrowLeft size={24} />
                 </button>
-            </div>
-
-            {/* Profile Image and Main Tabs */}
-            <div className="flex justify-center items-end -mt-22 mb-4 gap-24">
-                <button
-                    onClick={() => setActiveTab('personal-info')}
-                    className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg ${activeTab === 'personal-info'
-                            ? 'bg-[#358788] text-white shadow-[#358788]'
-                            : 'border border-[#007be5] text-[#007be5] bg-white shadow-[#9ccdf7]'
-                        }`}
-                >
-                    Personal Information
-                </button>
-
-                <div className="relative">
-                    {userDetails && userDetails.image && userDetails.image !== '' ? (
-                        <img
-                            src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails.image}`}
-                            alt="Profile picture"
-                            className="w-[150px] h-[150px] bg-white rounded-full border-[5px] border-white object-cover actualImage shadow-lg shadow-blue-500/50"
-                        />
-                    ) : (
-                        <img
-                            src="https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-                            alt="Profile picture"
-                            className="w-[150px] h-[150px] bg-white rounded-full border-[5px] border-white defaultImage shadow-lg shadow-blue-500/50"
-                        />
-                    )}
+                <div className="flex-shrink-0 mr-2">
+                    <img
+                        src={tabs.find(tab => tab.id === activeTab)?.logo || "default_logo_url"}
+                        alt="Logo"
+                        className="h-12 w-auto sm:h-16 lg:h-18"
+                    />
                 </div>
-
-                <button
-                    onClick={() => setActiveTab('upload-docs')}
-                    className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg ${activeTab === 'upload-docs'
-                            ? 'bg-[#358788] text-white shadow-[#358788]'
-                            : 'border border-[#007be5] text-[#007be5] bg-white shadow-[#9ccdf7]'
-                        }`}
-                >
-                    Upload Document
-                </button>
+                <div className="flex items-center gap-2 px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
+                    {tabs.map((tab) => (
+                        <Button
+                            key={tab.id}
+                            variant="ghost"
+                            onClick={() => setActiveTab(tab.id)}
+                            className={cn(
+                                "rounded-full text-xs sm:text-xs font-semibold whitespace-nowrap transition-all duration-200 min-w-0 flex-shrink-0 flex items-center",
+                                activeTab === tab.id
+                                    ? "bg-emerald-500 text-white [&>svg]:text-white shadow-md hover:bg-emerald-500"
+                                    : " hover:bg-slate-50"
+                            )}
+                        >
+                            {React.cloneElement(tab.icon, {
+                                className: cn(
+                                    "mr-2 h-5 w-5",
+                                    activeTab === tab.id ? "text-white" : "text-slate-700"
+                                )
+                            })}
+                            {tab.label}
+                        </Button>
+                    ))}
+                </div>
             </div>
 
-            {/* Secondary Tabs */}
-            <div className="flex flex-wrap justify-center gap-4 px-2 mb-4">
-                {tabs.slice(2).map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => {
-                            setActiveTab(tab.id);
-
-                        }}
-                        className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg ${activeTab === tab.id
-                                ? 'bg-[#358788] text-white shadow-[#358788]'
-                                : 'border border-[#007be5] text-[#007be5] bg-white shadow-[#9ccdf7]'
-                            }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
+            {/* Controls row under tabs, aligned right */}
+            <div className="flex justify-end items-center gap-6 px-8 py-2">
+                {/* Toggle button */}
+                <label className='flex cursor-pointer select-none items-center'>
+                    <div className='relative'>
+                        <input
+                            type='checkbox'
+                            checked={isChecked}
+                            onChange={handleCheckboxChange}
+                            className='sr-only focus:ring-0 focus:ring-offset-0 focus:outline-none'
+                        />
+                        <div className={`block h-[26px] w-[50px] rounded-full ${isChecked ? 'bg-emerald-500' : 'bg-[#E8EAEA]'}`}></div>
+                        <div className={`dot absolute ${isChecked ? 'left-7' : 'left-1'} top-1 h-[18px] w-[18px] rounded-full bg-white transition`}></div>
+                    </div>
+                </label>
+                {/* Search icon */}
+                <span>
+                    <Search className="h-6 w-6 text-gray-700" />
+                </span>
+                {/* Filter icon */}
+                <span>
+                    <Filter className="h-6 w-6 text-gray-700" />
+                </span>
+                {/* More icon */}
+                <span>
+                    <MoreVertical className="h-6 w-6 text-gray-700" />
+                </span>
             </div>
 
             {/* Divider */}
             <div className="w-full h-[1px] bg-gray-300 my-2" />
 
-            {/* Content Sections */}
+            {/* Content */}
             <div className="p-4">
-                {activeTab === 'personal-info' && (
-                    // <div>Personal Information Content</div>
-                    <PersonalDetails />
-                )}
-                {activeTab === 'upload-docs' && (
-                    <div>Upload Documents Content</div>
-                )}
-                {activeTab === 'jobrole-skill' && (
-                    <JobRoleSkill />
-                )}
-                {activeTab === 'jobrole-tasks' && (
-                    <div>Jobrole Tasks Content</div>
-                )}
-                {activeTab === 'responsibility' && (
-                    <div>Level of Responsibility Content</div>
-                )}
-                {activeTab === 'skill-rating' && (
-                    <div>Skill Rating Content</div>
-                )}
+                {activeTab === 'personal-info' && ''}
+                {activeTab === 'upload-docs' && <div>Upload Documents Content</div>}
+                {activeTab === 'jobrole-skill' && <JobRoleSkill />}
+                {activeTab === 'jobrole-tasks' && <JobRoleTasks />}
+                {activeTab === 'responsibility' && <div>Level of Responsibility Content</div>}
+                {activeTab === 'skill-rating' && <div>Skill Rating Content</div>}
             </div>
+
         </div>
-    )
+    );
 }
