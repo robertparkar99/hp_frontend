@@ -30,8 +30,10 @@ interface JobroleData {
 }
 const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
     // States
+    const [industries, setIndustries] = useState<any[]>([]);
     const [departments, setDepartments] = useState<any[]>([]);
     const [subDepartments, setSubDepartments] = useState<any[]>([]);
+    const [selectedIndustry, setSelectedIndustry] = useState('');
     const [selectedDepartment, setSelectedDepartment] = useState('');
     const [selectedSubDepartments, setSelectedSubDepartments] = useState<string[]>([]);
     const [paginationPerPageVal, setPaginationPerPageVal] = useState(100);
@@ -77,28 +79,39 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
         if (sessionData.url && sessionData.token) {
             fetchData();
             fetchDepartments();
+            fetchIndustries();
         }
     }, [paginationPerPageVal, currentPage, sessionData.url, sessionData.token, refreshKey]);
-
-    async function fetchData(department: string = '', subDepartments: string[] = []) {
+    async function fetchIndustries() {
+        try {
+            const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=industries&searchWord="industries"`);
+            const data = await res.json();
+            setIndustries(data.searchData || []);
+        } catch (error) {
+            console.error("Error fetching departments:", error);
+            alert("Failed to load departments");
+        }
+    }
+    async function fetchData(industry: string = '',department: string = '', subDepartments: string[] = []) {
         setLoading(true);
         const subDeptQuery = subDepartments.length > 0
             ? `&sub_department=${subDepartments.join(',')}`
             : '';
 
         const res = await fetch(
-            `${sessionData.url}/jobrole_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&department=${department}${subDeptQuery}`
+            `${sessionData.url}/jobrole_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&industry=${industry}&department=${department}${subDeptQuery}`
         );
         const data = await res.json();
         if (data) {
             setLoading(false);
         }
         setTableData(data.tableData || []);
+
     }
 
     const handleCloseModel = () => {
         setDialogOpen({ ...dialogOpen, edit: false });
-        fetchData(selectedDepartment, selectedSubDepartments);
+        fetchData(selectedIndustry, selectedDepartment, selectedSubDepartments);
     }
 
 
@@ -128,7 +141,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
 
                 const data = await res.json();
                 alert(data.message);
-                fetchData(selectedDepartment, selectedSubDepartments);
+                fetchData(selectedIndustry,selectedDepartment, selectedSubDepartments);
                 setSelectedJobRole(null);
             } catch (error) {
                 console.error("Error deleting job role:", error);
@@ -146,6 +159,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             console.error("Error fetching departments:", error);
             alert("Failed to load departments");
         }
+
     };
 
     const fetchSubDepartments = async (department: string) => {
@@ -155,13 +169,16 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=sub_department&searchWord=${encodeURIComponent(department)}`);
             const data = await res.json();
             setSubDepartments(data.searchData || []);
-            fetchData(department);
+            fetchData(selectedIndustry,department);
         } catch (error) {
             console.error("Error fetching sub-departments:", error);
             alert("Failed to load sub-departments");
         }
     };
-
+    const fetchIndustriesData = async (industry: string) => {
+        setSelectedIndustry(industry);
+        fetchData(industry);
+    }
     const handleSubDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const options = e.target.options;
         const selectedOptions: string[] = [];
@@ -171,7 +188,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             }
         }
         setSelectedSubDepartments(selectedOptions);
-        fetchData(selectedDepartment, selectedOptions);
+        fetchData(selectedIndustry,selectedDepartment, selectedOptions);
     };
 
     const handleColumnFilter = (column: string, value: string) => {
@@ -329,6 +346,22 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                 <div className="flex justify-center gap-8 py-6 inset-shadow-sm inset-shadow-[#EBF7FF] rounded-lg">
                     {/* Department Select */}
                     <div className="flex flex-col items-center w-[320px]">
+                        <label htmlFor="Department" className="self-start mb-1 px-3">Jobrole Industries</label>
+                        <select
+                            name="industries"
+                            className="rounded-lg p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
+                            onChange={e => fetchIndustriesData(e.target.value)}
+                            value={selectedDepartment}
+                        >
+                            <option value="">Choose a Industries to Filter</option>
+                            {industries.map((dept) => (
+                                <option key={dept} value={dept}>
+                                    {dept}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex flex-col items-center w-[320px]">
                         <label htmlFor="Department" className="self-start mb-1 px-3">Jobrole Department</label>
                         <select
                             name="department"
@@ -346,7 +379,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                     </div>
 
                     {/* Sub-department Multi-Select */}
-                    <div className="flex flex-col items-center w-[320px]">
+                    {/* <div className="flex flex-col items-center w-[320px]">
                         <label htmlFor="subDepartment" className="self-start mb-1 px-3">Jobrole Sub-Department</label>
                         <select
                             name="sub_department"
@@ -363,7 +396,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                                 </option>
                             ))}
                         </select>
-                    </div>
+                    </div> */}
                 </div>
 
                 <hr className='mb-[26px] text-[#ddd] border-2 border-[#449dd5] rounded' />
@@ -482,7 +515,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                     onClose={handleCloseModel}
                     onSuccess={() => {
                         setDialogOpen({ ...dialogOpen, edit: false });
-                        fetchData(selectedDepartment, selectedSubDepartments);
+                        fetchData(selectedIndustry,selectedDepartment, selectedSubDepartments);
                     }}
                 />
             )}
