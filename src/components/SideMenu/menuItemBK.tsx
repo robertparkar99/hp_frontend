@@ -46,7 +46,7 @@ export const MenuItem: React.FC<MenuItemProps> = ({
       try {
         const fetchMenuItems = async () => {
           try {
-            const response = await fetch(`${userData.APP_URL}/table_data?table=tblmenumaster&filters[parent_id]=${storedId}&filters[level]=2`, {
+            const response = await fetch(`${userData.APP_URL}/table_data?table=tblmenumaster&filters[parent_id]=${storedId}&filters[level]=2&filters[status]=1`, {
               method: "GET",
               headers: {
                 "Content-Type": "application/json",
@@ -154,7 +154,7 @@ export const MenuItem: React.FC<MenuItemProps> = ({
     }
       const fetchMenuItems = async () => {
         try {
-          const response = await fetch(`${userData.APP_URL}/table_data?table=tblmenumaster&filters[parent_id]=${parentId}&filters[level]=3`, {
+          const response = await fetch(`${userData.APP_URL}/table_data?table=tblmenumaster&filters[parent_id]=${parentId}&filters[level]=3&filters[status]=1`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
