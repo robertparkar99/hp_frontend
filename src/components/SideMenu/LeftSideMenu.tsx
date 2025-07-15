@@ -73,7 +73,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
               setIsMenuOpen(true);
               setLoading(true);
               try {
-                const response = await fetch(`${userData.APP_URL}/table_data?table=tblmenumaster&filters[parent_id]=${storedId}&filters[level]=2&sort_order=sort_order`, {
+                const response = await fetch(`${userData.APP_URL}/table_data?table=tblmenumaster&filters[parent_id]=${storedId}&filters[level]=2&filters[status]=1&sort_order=sort_order`, {
                   method: "GET",
                   headers: {
                     "Content-Type": "application/json",
@@ -146,7 +146,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
 
       const fetchMenuItems = async () => {
         try {
-          const response = await fetch(`${userData.APP_URL}/table_data?table=tblmenumaster&filters[parent_id]=${parentId}&filters[level]=3&sort_order=sort_order`, {
+          const response = await fetch(`${userData.APP_URL}/table_data?table=tblmenumaster&filters[parent_id]=${parentId}&filters[level]=3&filters[status]=1&sort_order=sort_order`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
