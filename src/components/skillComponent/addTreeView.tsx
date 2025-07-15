@@ -23,9 +23,11 @@ type SkillTree = {
 
 interface AddSkillViewProps {
   userSkillsData: SkillTree;
+   category: string;          // Add this
+  subCategory: string;
 }
 
-const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
+const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData, category, subCategory  }) => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSkill, setSelectedSkill] = useState<number | null>(null);
@@ -68,7 +70,7 @@ const AddSkillView: React.FC<AddSkillViewProps> = ({ userSkillsData }) => {
       const fetchData = async () => {
         try {
           const res = await fetch(
-            `${sessionData.url}/skill_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}`
+            `${sessionData.url}/skill_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&category=${category}&sub_category=${subCategory}`
           );
           const data = await res.json();
           setSkillsData(data.userTree || {});
