@@ -1,11 +1,12 @@
+'use client';
+
 import React, { useEffect, useState, useMemo } from 'react';
 import AddSkillView from '@/components/skillComponent/addTreeView';
-import Loading from "../../../components/utils/loading"; // Import the Loading component
+import Loading from "../../../components/utils/loading";
 import AddDialog from "@/components/skillComponent/addDialouge";
-// import { console } from 'inspector';
 
-interface allSkillData { id: number; category: string; sub_category: string; no_sub_category: string; title: string;description : string; }
-interface userSkillsData { id: number; category: string; sub_category: string; no_sub_category: string; title: string;description : string; }
+interface allSkillData { id: number; category: string; sub_category: string; no_sub_category: string; title: string; description: string; }
+interface userSkillsData { id: number; category: string; sub_category: string; no_sub_category: string; title: string; description: string; }
 interface SkillItem {
   id: number;
   category: string;
@@ -20,6 +21,7 @@ type SkillTree = {
     [subCategory: string]: SkillItem[];
   };
 };
+
 const SkillLibrary = () => {
   const [sessionUrl, setSessionUrl] = useState<string>();
   const [sessionToken, setSessionToken] = useState<string>();
@@ -29,37 +31,18 @@ const SkillLibrary = () => {
   const [sessionUserProfile, setessionUserProfile] = useState<string>();
   const [isLoading, setLoading] = useState(true);
   const [selectedDepartment, setSelectedDepartment] = useState('');
-   const [departments, setDepartments] = useState<any[]>([]);
-    const [subDepartments, setSubDepartments] = useState<any[]>([]);
-    const [userSkillsData, setuserSkillsData] = useState<userSkillsData[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [subDepartments, setSubDepartments] = useState<any[]>([]);
+  const [userSkillsData, setuserSkillsData] = useState<userSkillsData[]>([]);
   const [selectedSubDepartments, setSelectedSubDepartments] = useState<string[]>([]);
-   const [dialogOpen, setDialogOpen] = useState({
-      view: false,
-      add: false,
-      edit: false,
-    });
-  
-  // const transformToTree = (data: allSkillData[] | userSkillsData[]): SkillTree => {
-  //   const tree: SkillTree = {};
+  const [skillTreeData, setSkillTreeData] = useState<SkillTree>({});
+  const [dialogOpen, setDialogOpen] = useState({
+    view: false,
+    add: false,
+    edit: false,
+  });
 
-  //   data.forEach((item) => {
-  //     const category = item.category;
-  //     const subCategory = item.sub_category || 'no_sub_category';
-
-  //     if (!tree[category]) {
-  //       tree[category] = {};
-  //     }
-
-  //     if (!tree[category][subCategory]) {
-  //       tree[category][subCategory] = [];
-  //     }
-
-  //     tree[category][subCategory].push(item);
-  //   });
-
-  //   return tree;
-  // };
-  const transformToTree = (data: allSkillData[] | userSkillsData[]): SkillTree => {
+  const transformToTree = useMemo(() => (data: allSkillData[] | userSkillsData[]): SkillTree => {
     const tree: SkillTree = {};
     if (!Array.isArray(data)) return tree;
     data.forEach((item) => {
@@ -70,7 +53,7 @@ const SkillLibrary = () => {
       tree[category][subCategory].push(item);
     });
     return tree;
-  };
+  }, []);
 
   useEffect(() => {
     const userData = localStorage.getItem('userData');
@@ -86,25 +69,21 @@ const SkillLibrary = () => {
   }, []);
 
   useEffect(() => {
-    if (sessionUrl && sessionToken){
-       fetchData();
-        fetchDepartments();
+    if (sessionUrl && sessionToken) {
+      fetchData();
+      fetchDepartments();
     }
   }, [sessionUrl, sessionToken]);
 
- async function fetchData(department: string | null = '', sub_department: string | null = '') {
-      const res = await fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&department=${department}&sub_department=${sub_department}`);
-      const data = await res.json();
-      console.log('skillData',data)
-      setLoading(false);
-      setuserSkillsData(data.userTree || []);
-    }
-  // const getDepartment = async (industries: string) => {
-  //   if (!industries) return setDepartments([]);
-  //   const res = await fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&industries=${industries}`);
-  //   const data = await res.json();
-  //   setDepartments(data.jobroleSkill || []);
-  // };
+  async function fetchData(department: string | null = '', sub_department: string | null = '') {
+   
+    const res = await fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&category=${department}&sub_category=${sub_department}`);
+    const data = await res.json();
+    console.log('skillData', data);
+    setLoading(false);
+    setuserSkillsData(data.userTree || []);
+    setSkillTreeData(transformToTree(data.userTree || []));
+  }
 
   const getSubDepartment = async (department: string) => {
     if (!department) {
@@ -123,15 +102,10 @@ const SkillLibrary = () => {
     const res = await fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&sub_department=${subdeps}`);
     setSelectedSubDepartments(subdeps);
     const data = await res.json();
-  
   };
 
-
-  // console.log("Selected Sub Departments:", selectedSubDepartments);
   const handleAddClick = async () => {
-    // alert(sessionToken);
     try {
-
       const res = await fetch(`${sessionUrl}/skill_library`, {
         method: 'POST',
         headers: {
@@ -155,18 +129,17 @@ const SkillLibrary = () => {
       const data = await res.json();
       if (data.status_code == 1) {
         alert(data.message);
-        
       } else {
         alert(data.message);
       }
-      // console.log("API response:", data);
     } catch (error) {
       console.error("Error:", error);
     }
   };
- const fetchDepartments = async () => {
+
+  const fetchDepartments = async () => {
     try {
-      const res = await fetch(`${sessionUrl}/search_data?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&searchType=department&searchWord="departments"`);
+      const res = await fetch(`${sessionUrl}/search_data?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&searchType=category&searchWord=departments`);
       const data = await res.json();
       setDepartments(data.searchData || []);
     } catch (error) {
@@ -178,7 +151,7 @@ const SkillLibrary = () => {
   const fetchSubDepartments = async (department: string) => {
     try {
       setSelectedDepartment(department);
-      const res = await fetch(`${sessionUrl}/search_data?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&searchType=sub_department&searchWord=${encodeURIComponent(department)}`);
+      const res = await fetch(`${sessionUrl}/search_data?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&searchType=sub_category&searchWord=${encodeURIComponent(department)}`);
       fetchData(department);
       const data = await res.json();
       setSubDepartments(data.searchData || []);
@@ -189,24 +162,23 @@ const SkillLibrary = () => {
   };
 
   const handleSubDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-     const options = e.target.options;
-     const selectedOptions: string[] = [];
-     for (let i = 0; i < options.length; i++) {
-       if (options[i].selected) {
-         selectedOptions.push(options[i].value);
-       }
-     }
-     setSelectedSubDepartments(selectedOptions);
-     fetchData(selectedDepartment, selectedOptions.join(','));
-   };
-  // In a real application, you'd likely manage the 'open' state using React state (e.g., useState)
-  // For this direct conversion, we'll keep the classes as they are.
+    const options = e.target.options;
+    const selectedOptions: string[] = [];
+    for (let i = 0; i < options.length; i++) {
+      if (options[i].selected) {
+        selectedOptions.push(options[i].value);
+      }
+    }
+    
+    setSelectedSubDepartments(selectedOptions);
+    fetchData(selectedDepartment, selectedOptions.join(','));
+  };
+
   return (
     <>
       {isLoading ? (
         <Loading />
       ) : (
-
         <div className="container mx-auto px-4">
           <div className='flex rounded-lg p-4'>
             <div className="headerMenu">
@@ -217,62 +189,58 @@ const SkillLibrary = () => {
             </div>
           </div>
 
-          {/* add department and sub department wise search 25-06-2025 by uma start */}
-      <div className="flex justify-center gap-8 py-6 inset-shadow-sm inset-shadow-[#EBF7FF] rounded-lg">
-        {/* Department Select */}
-        <div className="flex flex-col items-center w-[320px]">
-          <label htmlFor="Department" className="self-start mb-1 px-3">Skill Department</label>
-          <select
-            name="department"
-            className="rounded-lg p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
-            onChange={e => fetchSubDepartments(e.target.value)}
-          >
-            <option value="">Choose a Department to Filter</option>
-            {departments.map((dept) => (
-              <option key={dept} value={dept}>
-                {dept}
-              </option>
-            ))}
-          </select>
+          <div className="flex justify-center gap-8 py-6 inset-shadow-sm inset-shadow-[#EBF7FF] rounded-lg">
+            <div className="flex flex-col items-center w-[320px]">
+              <label htmlFor="Department" className="self-start mb-1 px-3">Skill Category</label>
+              <select
+                name="department"
+                className="rounded-lg p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
+                onChange={e => fetchSubDepartments(e.target.value)}
+              >
+                <option value="">Choose a Category to Filter</option>
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        </div>
+            <div className="flex flex-col items-center w-[320px]">
+              <label htmlFor="subDepartment" className="self-start mb-1 px-3">Skill Sub-Category</label>
+              <select
+                name="sub_department"
+                className="rounded-lg p-2 resize-y overflow-hidden border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
+                onChange={handleSubDepartmentChange}
+                multiple
+                size={3}
+                value={selectedSubDepartments}
+              >
+                <option value="">Choose a Sub-Category to Filter</option>
+                {subDepartments.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-        {/* Sub-department Select */}
-        <div className="flex flex-col items-center w-[320px]">
-          <label htmlFor="subDepartment" className="self-start mb-1 px-3">Skill Sub-Department</label>
-          <select
-            name="sub_department"
-           className="rounded-lg p-2 resize-y overflow-hidden border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
-           onChange={handleSubDepartmentChange}
-              multiple
-              size={3}
-              value={selectedSubDepartments}
-          >
-            <option value="">Choose a Sub-Department to Filter</option>
-            {subDepartments.map((dept) => (
-              <option key={dept} value={dept}>
-                {dept}
-              </option>
-            ))}
-          </select>
+          <hr className='mb-[26px] text-[#ddd] border-2 border-[#449dd5] rounded' />
         </div>
-      </div>
-
-      <hr className='mb-[26px] text-[#ddd] border-2 border-[#449dd5] rounded' />
-      {/* add department and sub department wise search 25-06-2025 by uma end */}
-        
-        </div>
-        
       )}
-      <AddSkillView userSkillsData={
-                Array.isArray(userSkillsData) ? transformToTree(userSkillsData) : userSkillsData
-              } />
-      {dialogOpen.add  && (
-        <AddDialog skillId={0}
+      <AddSkillView 
+        key={`${selectedDepartment}-${selectedSubDepartments.join(',')}`}
+        userSkillsData={skillTreeData} category={selectedDepartment} subCategory={selectedSubDepartments.join(',')}
+      />
+      {dialogOpen.add && (
+        <AddDialog 
+          skillId={0}
           onClose={() => setDialogOpen({...dialogOpen, add: false})}
           onSuccess={() => {
             setDialogOpen({...dialogOpen, add: false});
-        }}
+            fetchData(selectedDepartment, selectedSubDepartments.join(','));
+          }}
         />
       )}
     </>
