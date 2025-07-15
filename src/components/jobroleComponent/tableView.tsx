@@ -352,7 +352,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                             name="industries"
                             className="rounded-lg p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
                             onChange={e => fetchIndustriesData(e.target.value)}
-                            value={selectedDepartment}
+                            value={selectedIndustry}
                         >
                             <option value="">Choose a Industries to Filter</option>
                             {industries.map((dept) => (
