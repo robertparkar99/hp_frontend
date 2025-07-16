@@ -91,10 +91,10 @@ export default function EditProfilePage() {
                     <img
                         src={tabs.find(tab => tab.id === activeTab)?.logo || "default_logo_url"}
                         alt="Logo"
-                        className="h-12 w-auto sm:h-16 lg:h-18"
+                        className="h-12 w-12 sm:h-10 lg:h-12"
                     />
                 </div>
-                <div className="flex items-center gap-2 px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
+                <div className="flex justify-center px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
                     {tabs.map((tab) => (
                         <Button
                             key={tab.id}
@@ -109,7 +109,7 @@ export default function EditProfilePage() {
                         >
                             {React.cloneElement(tab.icon, {
                                 className: cn(
-                                    "mr-2 h-5 w-5",
+                                    "m-0",
                                     activeTab === tab.id ? "text-white" : "text-slate-700"
                                 )
                             })}
