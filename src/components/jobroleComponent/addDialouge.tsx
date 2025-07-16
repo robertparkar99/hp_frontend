@@ -53,7 +53,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
   const fetchDepartments = async () => {
     try {
-      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=department&searchWord="departments"`);
+      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=department&searchWord=departments`);
       const data = await res.json();
       setDepartments(data.searchData || []);
     } catch (error) {
@@ -150,7 +150,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
             {/* Job Role and Location */}
             <div className="flex gap-4">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="department" className="text-left">Department</label><br />
+                <label htmlFor="department" className="text-left">Jobrole Department</label><br />
                 <input
                   type="text"
                   name="department"
@@ -172,7 +172,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
               </div>
 
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="subDepartment" className="text-left">Sub-Department</label><br />
+                <label htmlFor="subDepartment" className="text-left">Jobrole Sub-Department</label><br />
                 <input
                   type="text"
                   name="sub_department"
