@@ -5,7 +5,6 @@ import { ArrowLeft, Bell, User, Upload, BadgeCheck, ClipboardList, ChartColumnIn
 import { useEffect, useState } from "react";
 import JobRoleSkill from '../../../components/users/jobroleSkill';
 import JobRoleTasks from '../../../components/users/jobroleTask';
-
 import PersonalDetails from '../../../components/users/personalDetails';
 import { Button } from "@/components/ui/button";  // Make sure you have this
 import { cn } from "@/lib/utils";                 // Make sure you have this
@@ -153,8 +152,8 @@ export default function EditProfilePage() {
 
             {/* Content */}
             <div className="p-4">
-                {activeTab === 'personal-info' && ''}
-                {activeTab === 'upload-docs' && <div>Upload Documents Content</div>}
+                {activeTab === 'personal-info' && <PersonalDetails />}
+                {activeTab === 'upload-docs' && <PersonalDetails />}
                 {activeTab === 'jobrole-skill' && <JobRoleSkill />}
                 {activeTab === 'jobrole-tasks' && <JobRoleTasks />}
                 {activeTab === 'responsibility' && <div>Level of Responsibility Content</div>}
