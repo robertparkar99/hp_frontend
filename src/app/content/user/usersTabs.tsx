@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Bell, User, Upload, BadgeCheck, ClipboardList, ChartColumnIncreasing, Star, Search, Filter, MoreVertical, ListCheck, ListChecks } from 'lucide-react';
 import { useEffect, useState } from "react";
+import JobRoleNew from '../../../components/users/jobroleNew';
+
 import JobRoleSkill from '../../../components/users/jobroleSkill';
 import JobRoleTasks from '../../../components/users/jobroleTask';
 
@@ -73,11 +75,11 @@ export default function EditProfilePage() {
         { id: 'skill-rating', label: 'Skill Rating', logo: "assets/User Details Images/Skill Rating.jpg", icon: <Star className="mr-2 h-5 w-5 text-slate-700" /> }
     ];
 
-  const [isChecked, setIsChecked] = useState(false);
+    const [isChecked, setIsChecked] = useState(false);
 
-  const handleCheckboxChange = () => {
-    setIsChecked(!isChecked);
-  };
+    const handleCheckboxChange = () => {
+        setIsChecked(!isChecked);
+    };
 
 
     return (
@@ -154,7 +156,7 @@ export default function EditProfilePage() {
             {/* Content */}
             <div className="p-4">
                 {activeTab === 'personal-info' && ''}
-                {activeTab === 'upload-docs' && <div>Upload Documents Content</div>}
+                {activeTab === 'upload-docs' && <JobRoleNew />}
                 {activeTab === 'jobrole-skill' && <JobRoleSkill />}
                 {activeTab === 'jobrole-tasks' && <JobRoleTasks />}
                 {activeTab === 'responsibility' && <div>Level of Responsibility Content</div>}

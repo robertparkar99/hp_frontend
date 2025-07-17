@@ -43,7 +43,7 @@
 
 body {
   color: black;
-  background-color:#eaf7ff;
+  background-color: #eaf7ff;
   font-family: sans-serif;
 }
 
@@ -52,6 +52,7 @@ body {
   left: 34%;
   height: 950px;
 }
+
 /* added on 11-04-2025 by uma  */
 .contentDiv {
   display: flex;
@@ -60,6 +61,7 @@ body {
 .mainDiv {
   width: 100%;
 }
+
 .historyDiv {
   width: 17%;
 }
@@ -83,6 +85,7 @@ body {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -92,19 +95,22 @@ body {
 .fade-in {
   animation: fadeIn 1s ease-in-out;
 }
+
 .hide-scroll {
-  -ms-overflow-style: none; /* IE and Edge */
+  -ms-overflow-style: none;
+  /* IE and Edge */
   scrollbar-width: none;
 }
+
 .dashboardCard {
   height: calc(80vh - 20px);
 }
+
 .custom-oklch-gradient {
-  background-image: linear-gradient(
-    to right,
-    oklch(83.571% 0.08421 300.858),
-    #bfdbfe
-  ); /* Using oklch for from and a common blue-200 hex for to */
+  background-image: linear-gradient(to right,
+      oklch(83.571% 0.08421 300.858),
+      #bfdbfe);
+  /* Using oklch for from and a common blue-200 hex for to */
 }
 
 @media screen and (max-width: 660px) {
@@ -112,6 +118,7 @@ body {
     margin: 0;
     padding: 0;
   }
+
   .contentDiv {
     display: block;
     flex-direction: column;
@@ -204,18 +211,26 @@ body {
   background-color: #fff;
   color: black;
   font-size: 12px;
-  position: absolute; /* Essential for positioning relative to the parent */
+  position: absolute;
+  /* Essential for positioning relative to the parent */
   padding: 1px 5px 2px 5px;
-  z-index: 1000; /* Ensure tooltip appears above other content */
+  z-index: 1000;
+  /* Ensure tooltip appears above other content */
   box-shadow: 3px 5px 3px #c0dbf3;
   border: 0.8px solid #749bc2;
   border-radius: 9px;
-  opacity: 0; /* Hidden by default */
-  visibility: hidden; /* Hidden by default */
-  width: max-content; /* Auto-adjust width to content */
-  white-space: normal; /* Allow text to wrap */
-  word-wrap: break-word; /* Break long words */
-  transition: opacity 0.1s ease 0.5s, visibility 0.1s ease 0.5s; /* Transition for hover effect */
+  opacity: 0;
+  /* Hidden by default */
+  visibility: hidden;
+  /* Hidden by default */
+  width: max-content;
+  /* Auto-adjust width to content */
+  white-space: normal;
+  /* Allow text to wrap */
+  word-wrap: break-word;
+  /* Break long words */
+  transition: opacity 0.1s ease 0.5s, visibility 0.1s ease 0.5s;
+  /* Transition for hover effect */
 }
 
 /* Hover effect for all tooltips */
@@ -233,7 +248,8 @@ body {
 [data-titleHead],
 [data-small],
 [data-titleBubble] {
-  position: relative; /* Tooltip position relative to this element */
+  position: relative;
+  /* Tooltip position relative to this element */
 }
 
 [data-titleBubble]:after {
@@ -247,31 +263,42 @@ body {
   max-width: 300px;
   /* Maximum width before wrapping */
 }
+
 /* Specific positioning and content for data-title */
 [data-title]:after {
   content: attr(data-title);
-  top: calc(100% + 5px); /* Position slightly below the element */
-  left: 0%; /* Align to the left of the element */
+  top: calc(100% + 5px);
+  /* Position slightly below the element */
+  left: 0%;
+  /* Align to the left of the element */
   /* No transform needed if left: 0 and top: calc(100% + 5px) */
-  max-width: 300px; /* Maximum width before wrapping */
+  max-width: 300px;
+  /* Maximum width before wrapping */
 }
 
 /* Specific positioning and content for data-titleHead */
 [data-titleHead]:after {
   content: attr(data-titleHead);
-  top: calc(100% + 5px); /* Position slightly below the element */
-  right: 0; /* Align to the right of the element */
+  top: calc(100% + 5px);
+  /* Position slightly below the element */
+  right: 0;
+  /* Align to the right of the element */
   /* No transform needed if right: 0 and top: calc(100% + 5px) */
-  max-width: 300px; /* Maximum width before wrapping */
+  max-width: 300px;
+  /* Maximum width before wrapping */
 }
 
 /* Specific positioning and content for data-small */
 [data-small]:after {
   content: attr(data-small);
-  top: calc(100% + 5px); /* Position slightly below the element */
-  right: 0; /* Align to the right of the element */
-  max-width: 200px; /* Maximum width before wrapping */
+  top: calc(100% + 5px);
+  /* Position slightly below the element */
+  right: 0;
+  /* Align to the right of the element */
+  max-width: 200px;
+  /* Maximum width before wrapping */
 }
+
 [data-title2]:after {
   content: attr(data-title2);
   position: absolute;
@@ -307,10 +334,12 @@ body {
   0% {
     background-position: -200%;
   }
+
   100% {
     background-position: 200%;
   }
 }
+
 .glass-shine {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -323,15 +352,14 @@ body {
   left: -100%;
   width: 50%;
   height: 100%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0) 100%);
   transform: skewX(-25deg);
   animation: glass-shimmer 3s infinite;
 }
+
 .glass-shines {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -343,9 +371,11 @@ body {
     left: -100%;
     opacity: 0.6;
   }
+
   50% {
     opacity: 0.9;
   }
+
   100% {
     left: 150%;
     opacity: 0.6;
@@ -357,14 +387,17 @@ body {
   -webkit-backdrop-filter: blur(12px);
   animation: rotateDiv 3s ease-out;
 }
+
 @keyframes rotateDiv {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
+
 .honeycomb-container {
   display: grid;
   grid-template-columns: repeat(6, 0fr);
@@ -373,11 +406,11 @@ body {
 }
 
 /* Stagger every even column */
-.honeycomb-container > div:nth-child(6n + 2),
-.honeycomb-container > div:nth-child(6n + 4),
-.honeycomb-container > div:nth-child(6n + 6),
-.honeycomb-container > div:nth-child(6n + 8),
-.honeycomb-container > div:nth-child(6n + 10) {
+.honeycomb-container>div:nth-child(6n + 2),
+.honeycomb-container>div:nth-child(6n + 4),
+.honeycomb-container>div:nth-child(6n + 6),
+.honeycomb-container>div:nth-child(6n + 8),
+.honeycomb-container>div:nth-child(6n + 10) {
   transform: translateY(60%);
 }
 
@@ -401,47 +434,23 @@ body {
   cursor: pointer;
   transition: --r 0.5s, --a 0.5s;
 
-  clip-path: shape(
-    from calc(50% + var(--_r) * cos(var(--a) - var(--_a)))
-      calc(50% + var(--_r) * sin(var(--a) - var(--_a))),
-    curve to calc(50% + var(--_r) * cos(var(--a) + var(--_a)))
-      calc(50% + var(--_r) * sin(var(--a) + var(--_a))) with
-      calc(50% + 50% * cos(var(--a))) calc(50% + 50% * sin(var(--a))),
-    line to calc(50% + var(--_r) * cos(60deg + var(--a) - var(--_a)))
-      calc(50% + var(--_r) * sin(60deg + var(--a) - var(--_a))),
-    curve to calc(50% + var(--_r) * cos(60deg + var(--a) + var(--_a)))
-      calc(50% + var(--_r) * sin(60deg + var(--a) + var(--_a))) with
-      calc(50% + 50% * cos(60deg + var(--a)))
-      calc(50% + 50% * sin(60deg + var(--a))),
-    line to calc(50% + var(--_r) * cos(120deg + var(--a) - var(--_a)))
-      calc(50% + var(--_r) * sin(120deg + var(--a) - var(--_a))),
-    curve to calc(50% + var(--_r) * cos(120deg + var(--a) + var(--_a)))
-      calc(50% + var(--_r) * sin(120deg + var(--a) + var(--_a))) with
-      calc(50% + 50% * cos(120deg + var(--a)))
-      calc(50% + 50% * sin(120deg + var(--a))),
-    line to calc(50% + var(--_r) * cos(180deg + var(--a) - var(--_a)))
-      calc(50% + var(--_r) * sin(180deg + var(--a) - var(--_a))),
-    curve to calc(50% + var(--_r) * cos(180deg + var(--a) + var(--_a)))
-      calc(50% + var(--_r) * sin(180deg + var(--a) + var(--_a))) with
-      calc(50% + 50% * cos(180deg + var(--a)))
-      calc(50% + 50% * sin(180deg + var(--a))),
-    line to calc(50% + var(--_r) * cos(240deg + var(--a) - var(--_a)))
-      calc(50% + var(--_r) * sin(240deg + var(--a) - var(--_a))),
-    curve to calc(50% + var(--_r) * cos(240deg + var(--a) + var(--_a)))
-      calc(50% + var(--_r) * sin(240deg + var(--a) + var(--_a))) with
-      calc(50% + 50% * cos(240deg + var(--a)))
-      calc(50% + 50% * sin(240deg + var(--a))),
-    line to calc(50% + var(--_r) * cos(300deg + var(--a) - var(--_a)))
-      calc(50% + var(--_r) * sin(300deg + var(--a) - var(--_a))),
-    curve to calc(50% + var(--_r) * cos(300deg + var(--a) + var(--_a)))
-      calc(50% + var(--_r) * sin(300deg + var(--a) + var(--_a))) with
-      calc(50% + 50% * cos(300deg + var(--a)))
-      calc(50% + 50% * sin(300deg + var(--a)))
-  );
+  clip-path: shape(from calc(50% + var(--_r) * cos(var(--a) - var(--_a))) calc(50% + var(--_r) * sin(var(--a) - var(--_a))),
+      curve to calc(50% + var(--_r) * cos(var(--a) + var(--_a))) calc(50% + var(--_r) * sin(var(--a) + var(--_a))) with calc(50% + 50% * cos(var(--a))) calc(50% + 50% * sin(var(--a))),
+      line to calc(50% + var(--_r) * cos(60deg + var(--a) - var(--_a))) calc(50% + var(--_r) * sin(60deg + var(--a) - var(--_a))),
+      curve to calc(50% + var(--_r) * cos(60deg + var(--a) + var(--_a))) calc(50% + var(--_r) * sin(60deg + var(--a) + var(--_a))) with calc(50% + 50% * cos(60deg + var(--a))) calc(50% + 50% * sin(60deg + var(--a))),
+      line to calc(50% + var(--_r) * cos(120deg + var(--a) - var(--_a))) calc(50% + var(--_r) * sin(120deg + var(--a) - var(--_a))),
+      curve to calc(50% + var(--_r) * cos(120deg + var(--a) + var(--_a))) calc(50% + var(--_r) * sin(120deg + var(--a) + var(--_a))) with calc(50% + 50% * cos(120deg + var(--a))) calc(50% + 50% * sin(120deg + var(--a))),
+      line to calc(50% + var(--_r) * cos(180deg + var(--a) - var(--_a))) calc(50% + var(--_r) * sin(180deg + var(--a) - var(--_a))),
+      curve to calc(50% + var(--_r) * cos(180deg + var(--a) + var(--_a))) calc(50% + var(--_r) * sin(180deg + var(--a) + var(--_a))) with calc(50% + 50% * cos(180deg + var(--a))) calc(50% + 50% * sin(180deg + var(--a))),
+      line to calc(50% + var(--_r) * cos(240deg + var(--a) - var(--_a))) calc(50% + var(--_r) * sin(240deg + var(--a) - var(--_a))),
+      curve to calc(50% + var(--_r) * cos(240deg + var(--a) + var(--_a))) calc(50% + var(--_r) * sin(240deg + var(--a) + var(--_a))) with calc(50% + 50% * cos(240deg + var(--a))) calc(50% + 50% * sin(240deg + var(--a))),
+      line to calc(50% + var(--_r) * cos(300deg + var(--a) - var(--_a))) calc(50% + var(--_r) * sin(300deg + var(--a) - var(--_a))),
+      curve to calc(50% + var(--_r) * cos(300deg + var(--a) + var(--_a))) calc(50% + var(--_r) * sin(300deg + var(--a) + var(--_a))) with calc(50% + 50% * cos(300deg + var(--a))) calc(50% + 50% * sin(300deg + var(--a))));
 }
 
 .hexagon-content {
-  transform: rotate(0deg); /* Counter-rotate the content */
+  transform: rotate(0deg);
+  /* Counter-rotate the content */
   margin-top: 15px;
   display: flex;
   flex-direction: column;
@@ -453,21 +462,21 @@ body {
 }
 
 .hexagon-icon {
-  font-size:1.2rem;
+  font-size: 1.2rem;
   position: relative;
   transform: translate(40px, -28px);
 }
 
 .hexagon-title {
-  width:70%;
+  width: 70%;
   text-align: center;
-  font-size:0.8rem;
+  font-size: 0.8rem;
 }
 
 .hexagon-level {
   font-size: 0.8rem;
   opacity: 0.8;
-  transform:translate(0px, 20px);
+  transform: translate(0px, 20px);
 }
 
 /* ---break---  */
@@ -556,4 +565,26 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE 10+ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari */
+}
+
+.hexagon-hover {
+  transform: scale(1.05);
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 0 8px rgba(0, 123, 229, 0.3));
+}
+
+.hexagon-wrapper {
+  transition: all 0.3s ease;
 }
