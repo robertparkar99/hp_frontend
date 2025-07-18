@@ -16,6 +16,9 @@ export default function EditProfilePage() {
     const router = useRouter();
 
     const [userDetails, setUserDetails] = useState<any>();
+    const [userJobroleSkills, SetUserJobroleSkills] = useState<any[]>([]);
+    const [userJobroleTask, setUserJobroleTask] = useState<any[]>([]);
+    const [clickedUser, setClickedUser] = useState<any>();
     const [activeTab, setActiveTab] = useState('personal-info');
 
     const [sessionData, setSessionData] = useState({
@@ -30,7 +33,10 @@ export default function EditProfilePage() {
 
     useEffect(() => {
         const userData = localStorage.getItem("userData");
-        if (userData) {
+        const clickedUser = localStorage.getItem("clickedUser");
+        // alert(clickedUser);
+        if (userData && clickedUser) {
+            setClickedUser(clickedUser);
             const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, syear } = JSON.parse(userData);
             setSessionData({
                 url: APP_URL,
@@ -42,7 +48,7 @@ export default function EditProfilePage() {
                 syear: syear,
             });
         }
-    }, []);
+    }, [clickedUser]);
 
     useEffect(() => {
         if (sessionData.url && sessionData.token) {
@@ -53,9 +59,12 @@ export default function EditProfilePage() {
     const fetchInitialData = async () => {
         try {
             const res = await fetch(
-                `${sessionData.url}/user/add_user/${sessionData.userId}/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
+                `${sessionData.url}/user/add_user/${clickedUser}/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
             );
             const data = await res.json();
+            SetUserJobroleSkills(data.jobroleSkills || []);
+            setUserJobroleTask(data.jobroleTasks || []);
+            // console.log(data);
             setUserDetails(data.data || null);
         } catch (error) {
             console.error("Failed to fetch initial data:", error);
@@ -82,7 +91,7 @@ export default function EditProfilePage() {
 
 
     return (
-        <div className="w-full shadow-md">
+        <div className="w-full">
             {/* Header Row: Back arrow + Logo + Tabs */}
             <div className="flex items-center ml-8 py-4">
                 <button onClick={handleGoBack} className="text-black mr-4" aria-label="Go back">
@@ -155,9 +164,9 @@ export default function EditProfilePage() {
             {/* Content */}
             <div className="p-4">
                 {activeTab === 'personal-info' && <PersonalDetails />}
-                {activeTab === 'upload-docs' && <JobRoleNew />}
-                {activeTab === 'jobrole-skill' && <JobRoleSkill />}
-                {activeTab === 'jobrole-tasks' && <JobRoleTasks />}
+                {activeTab === 'upload-docs' && <JobRoleNew userJobroleSkills={[]} activeSkill={''}/>}
+                {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills}/>}
+                {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
                 {activeTab === 'responsibility' && <div>Level of Responsibility Content</div>}
                 {activeTab === 'skill-rating' && <div>Skill Rating Content</div>}
             </div>

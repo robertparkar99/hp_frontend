@@ -1,6 +1,6 @@
 "use client";
 
-import { Employee } from '@/types/task';
+import { Employee } from './types/task';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
