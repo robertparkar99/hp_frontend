@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { Task, Employee, TaskReply } from '@/types/task';
+import { Task, Employee, TaskReply } from './types/task';
 import { TaskCard } from './TaskCard';
 import { EmployeeCard } from './EmployeeCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
