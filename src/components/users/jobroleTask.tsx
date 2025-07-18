@@ -192,10 +192,17 @@ const CriticalWorkFunctionCard: React.FC<CriticalWorkFunctionCardProps> = ({
           <BubbleItem key={bubble.id} bubble={bubble} position={positions[index]} index={index} />
         ))}
       </div>
+      <hr className="border-[#000000]" />
+      <div className="cardTitle flex">
       <div className="mt-auto text-center">
-        <h2 className="text-xl font-bold text-gray-800 mb-2">{title}</h2>
-        <p className="text-gray-600 text-sm">{description}</p>
+          <img src="/assets/task_management/blubArrow.png" alt={title} />
+        </div>
+        <div className="mt-auto text-left">
+          <h2 className="text-[16px] font-bold text-[#23395B] mb-2">Critical Work Function</h2>
+          <p className="text-[14px] text-gray-600 text-sm">{title}</p>
+        </div>
       </div>
+      
     </div>
   );
 };
@@ -242,7 +249,7 @@ const CriticalWorkFunction: React.FC<UserJobroleTaskProps> = ({
   }, [userJobroleTask]);
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-auto">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {cards.map((card, index) => (
