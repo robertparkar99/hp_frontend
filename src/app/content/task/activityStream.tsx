@@ -43,6 +43,9 @@ interface SessionData {
 
 const ActivityStream = () => {
   const [tasks, setTasks] = useState<any[]>([]);
+  const [todayTaskList, setTodayTaskList] = useState<any[]>([]);
+  const [upcomingTaskList, setUpcomingTaskList] = useState<any[]>([]);
+  const [recentTaskLists, setRecentTaskLists] = useState<any[]>([]);
   const [employees] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -99,6 +102,9 @@ const ActivityStream = () => {
 
       const data = await response.json();
       setTasks(Array.isArray(data.allTask) ? data.allTask : []);
+      setTodayTaskList(data.today.taskAssigned || []);
+      setUpcomingTaskList(data.upcoming.taskAssigned || []);
+      setRecentTaskLists(data.recent.taskAssigned || []);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       setTasks([]);
@@ -137,9 +143,9 @@ const ActivityStream = () => {
     );
   };
 
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      const matchesSearch = 
+  const filteredTodayTasks = useMemo(() => {
+    return todayTaskList.filter(task => {
+      const matchesSearch =
         (task.task_title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
         (task.task_description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
       const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
@@ -147,64 +153,50 @@ const ActivityStream = () => {
 
       return matchesSearch && matchesStatus && matchesEmployee;
     });
-  }, [tasks, searchQuery, filterStatus, selectedEmployee]);
+  }, [todayTaskList, searchQuery, filterStatus, selectedEmployee]);
 
-  const todayTasks = useMemo(() => {
-    return filteredTasks.filter(task => {
-      if (!task.task_date) return false;
-      try {
-        console.log("today Date:", isToday(parseISO(task.task_date)));
+  const filteredUpcomingTasks = useMemo(() => {
+    return upcomingTaskList.filter(task => {
+      const matchesSearch =
+        (task.task_title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+        (task.task_description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+      const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
+      const matchesEmployee = selectedEmployee === 'all' || task.allocatedBy === selectedEmployee;
 
-        return isToday(parseISO(task.task_date));
-      } catch (e) {
-        console.error('Invalid date format for task:', task);
-        return false;
-      }
+      return matchesSearch && matchesStatus && matchesEmployee;
     });
-  }, [filteredTasks]);
+  }, [upcomingTaskList, searchQuery, filterStatus, selectedEmployee]);
 
-  const upcomingTasks = useMemo(() => {
-    return filteredTasks.filter(task => {
-      if (!task.task_date) return false;
-      try {
-        const taskDate = parseISO(task.task_date);
-        console.log("upcoming Date:", taskDate);
-        return isFuture(taskDate) && 
-               isThisWeek(taskDate) && 
-               !isToday(taskDate);
-      } catch (e) {
-        console.error('Invalid date format for task:', task);
-        return false;
-      }
-    });
-  }, [filteredTasks]);
+  const filteredRecentTasks = useMemo(() => {
+    return recentTaskLists.filter(task => {
+      const matchesSearch =
+        (task.task_title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+        (task.task_description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+      const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
+      const matchesEmployee = selectedEmployee === 'all' || task.allocatedBy === selectedEmployee;
 
-  const recentTasks = useMemo(() => {
-    return filteredTasks.filter(task => {
-      if (!task.updatedAt) return false;
-      try {
-        const updatedDate = parseISO(task.updatedAt);
-        console.log("updatedDate Date:", updatedDate);
-        return isPast(updatedDate) && updatedDate >= subDays(new Date(), 7);
-      } catch (e) {
-        console.error('Invalid date format for task:', task);
-        return false;
-      }
+      return matchesSearch && matchesStatus && matchesEmployee;
     });
-  }, [filteredTasks]);
+  }, [recentTaskLists, searchQuery, filterStatus, selectedEmployee]);
 
   const stats = useMemo(() => {
-    const total = filteredTasks.length;
-    const completed = filteredTasks.filter(t => t.status === 'completed').length;
-    const inProgress = filteredTasks.filter(t => t.status === 'in-progress').length;
-    const overdue = filteredTasks.filter(t => t.status === 'overdue').length;
-
-    return { total, completed, inProgress, overdue };
-  }, [filteredTasks]);
+    const allFilteredTasks = [
+      ...filteredTodayTasks,
+      ...filteredUpcomingTasks,
+      ...filteredRecentTasks
+    ];
+    
+    const total = allFilteredTasks.length;
+    const completed = allFilteredTasks.filter(t => t.status === 'COMPLETED').length;
+    const inProgress = allFilteredTasks.filter(t => t.status === 'IN-PROGRESS').length;
+    const pending = allFilteredTasks.filter(t => t.status === 'PENDING').length;
+  
+    return { total, completed, inProgress, pending };
+  }, [filteredTodayTasks, filteredUpcomingTasks, filteredRecentTasks]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <p>Loading tasks...</p>
         </div>
@@ -213,17 +205,17 @@ const ActivityStream = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
-          <p className="text-gray-600">Manage and track task progress across your team</p>
+          <p className="text-gray-600">Track task progress across your team</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="shafow-lg shadow-blue-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -234,7 +226,18 @@ const ActivityStream = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="shafow-lg shadow-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Pending</p>
+                  <p className="text-2xl font-bold text-red-600">{stats.pending}</p>
+                </div>
+                <Clock className="w-8 h-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="shafow-lg shadow-blue-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -245,7 +248,7 @@ const ActivityStream = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="shafow-lg shadow-blue-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -256,24 +259,13 @@ const ActivityStream = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Overdue</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
-                </div>
-                <Clock className="w-8 h-8 text-red-500" />
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Filters */}
-            <Card className="mb-6">
+            <Card className="mb-6 shafow-lg shadow-blue-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Filter className="w-5 h-5" />
@@ -302,10 +294,9 @@ const ActivityStream = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="overdue">Overdue</SelectItem>
+                        <SelectItem value="PENDING">PENDING</SelectItem>
+                        <SelectItem value="IN-PROGRESS">IN-PROGRESS</SelectItem>
+                        <SelectItem value="COMPLETED">COMPLETED</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -318,29 +309,29 @@ const ActivityStream = () => {
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="today" className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Today ({todayTasks.length})
+                  Today ({filteredTodayTasks.length})
                 </TabsTrigger>
                 <TabsTrigger value="upcoming" className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  Upcoming ({upcomingTasks.length})
+                  Upcoming ({filteredUpcomingTasks.length})
                 </TabsTrigger>
                 <TabsTrigger value="recent" className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4" />
-                  Recent ({recentTasks.length})
+                  Recent ({filteredRecentTasks.length})
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="today" className="space-y-4">
-                {todayTasks.length > 0 ? (
-                  // todayTasks.map(task => (
-                  //   <TaskCard
-                  //     key={task.id}
-                  //     task={task}
-                  //     onStatusUpdate={handleStatusUpdate}
-                  //     employees={employees}
-                  //   />
-                  // ))
-                  <h2>today</h2>
+                {filteredTodayTasks.length > 0 ? (
+                  filteredTodayTasks.map((task, index) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      sessionData={sessionData}
+                      onStatusUpdate={handleStatusUpdate}
+                      employees={employees}
+                    />
+                  ))
                 ) : (
                   <Card className="p-8 text-center">
                     <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -351,16 +342,16 @@ const ActivityStream = () => {
               </TabsContent>
 
               <TabsContent value="upcoming" className="space-y-4">
-                {upcomingTasks.length > 0 ? (
-                  // upcomingTasks.map(task => (
-                  //   <TaskCard
-                  //     key={task.id}
-                  //     task={task}
-                  //     onStatusUpdate={handleStatusUpdate}
-                  //     employees={employees}
-                  //   />
-                  // ))
-                  <h2>upcoming</h2>
+                {filteredUpcomingTasks.length > 0 ? (
+                  filteredUpcomingTasks.map((task, index) => (
+                    <TaskCard
+                      key={task.id}
+                      sessionData={sessionData}
+                      task={task}
+                      onStatusUpdate={handleStatusUpdate}
+                      employees={employees}
+                    />
+                  ))
                 ) : (
                   <Card className="p-8 text-center">
                     <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -371,16 +362,16 @@ const ActivityStream = () => {
               </TabsContent>
 
               <TabsContent value="recent" className="space-y-4">
-                {recentTasks.length > 0 ? (
-                  // recentTasks.map(task => (
-                  //   <TaskCard
-                  //     key={task.id}
-                  //     task={task}
-                  //     onStatusUpdate={handleStatusUpdate}
-                  //     employees={employees}
-                  //   />
-                  // ))
-                  <h2>recent</h2>
+                {filteredRecentTasks.length > 0 ? (
+                  filteredRecentTasks.map((task, index) => (
+                    <TaskCard
+                      key={task.id}
+                      sessionData={sessionData}
+                      task={task}
+                      onStatusUpdate={handleStatusUpdate}
+                      employees={employees}
+                    />
+                  ))
                 ) : (
                   <Card className="p-8 text-center">
                     <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
