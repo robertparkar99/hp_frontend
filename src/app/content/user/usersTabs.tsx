@@ -17,6 +17,7 @@ export default function EditProfilePage() {
 
     const [userDetails, setUserDetails] = useState<any>();
     const [userJobroleSkills, SetUserJobroleSkills] = useState<any[]>([]);
+    const [userJobroleTask, setUserJobroleTask] = useState<any[]>([]);
     const [clickedUser, setClickedUser] = useState<any>();
     const [activeTab, setActiveTab] = useState('personal-info');
 
@@ -62,7 +63,8 @@ export default function EditProfilePage() {
             );
             const data = await res.json();
             SetUserJobroleSkills(data.jobroleSkills || []);
-            console.log(data);
+            setUserJobroleTask(data.jobroleTasks || []);
+            // console.log(data);
             setUserDetails(data.data || null);
         } catch (error) {
             console.error("Failed to fetch initial data:", error);
@@ -164,7 +166,7 @@ export default function EditProfilePage() {
                 {activeTab === 'personal-info' && <PersonalDetails />}
                 {activeTab === 'upload-docs' && <JobRoleNew userJobroleSkills={[]} activeSkill={''}/>}
                 {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills}/>}
-                {activeTab === 'jobrole-tasks' && <JobRoleTasks />}
+                {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
                 {activeTab === 'responsibility' && <div>Level of Responsibility Content</div>}
                 {activeTab === 'skill-rating' && <div>Skill Rating Content</div>}
             </div>
