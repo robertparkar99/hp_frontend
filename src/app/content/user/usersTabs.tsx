@@ -7,7 +7,6 @@ import JobRoleNew from '../../../components/users/jobroleNew';
 
 import JobRoleSkill from '../../../components/users/jobroleSkill';
 import JobRoleTasks from '../../../components/users/jobroleTask';
-
 import PersonalDetails from '../../../components/users/personalDetails';
 import { Button } from "@/components/ui/button";  // Make sure you have this
 import { cn } from "@/lib/utils";                 // Make sure you have this
@@ -155,7 +154,7 @@ export default function EditProfilePage() {
 
             {/* Content */}
             <div className="p-4">
-                {activeTab === 'personal-info' && ''}
+                {activeTab === 'personal-info' && <PersonalDetails />}
                 {activeTab === 'upload-docs' && <JobRoleNew />}
                 {activeTab === 'jobrole-skill' && <JobRoleSkill />}
                 {activeTab === 'jobrole-tasks' && <JobRoleTasks />}
