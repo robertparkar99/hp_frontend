@@ -61,7 +61,7 @@ export default function EditProfilePage() {
         setLoading(true);
         try {
             const res = await fetch(
-                `${sessionData.url}/user/add_user/${clickedUser}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
+                `${sessionData.url}/user/add_user/${clickedUser}'/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
             );
             const data = await res.json();
             setLoading(false);
@@ -103,18 +103,21 @@ export default function EditProfilePage() {
                     ) : (
                         <div className="w-full">
                             {/* Header Row: Back arrow + Logo + Tabs */}
-                            <div className="flex items-center ml-8 py-4">
+                            <div className="flex jutsify-between items-center py-4">
+                                <div className="backbutton w-[3%]">
                                 <button onClick={handleGoBack} className="text-black mr-4" aria-label="Go back">
                                     <ArrowLeft size={24} />
                                 </button>
-                                <div className="flex-shrink-0 mr-2">
+                                </div>
+                                
+                                <div className="flex-shrink-0 mr-2 w-[6%]">
                                     <img
                                         src={tabs.find(tab => tab.id === activeTab)?.logo || "default_logo_url"}
                                         alt="Logo"
                                         className="h-12 w-12 sm:h-10 lg:h-12"
                                     />
                                 </div>
-                                <div className="flex justify-center px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
+                                <div className=" w-[91%] flex justify-center px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
                                     {tabs.map((tab) => (
                                         <Button
                                             key={tab.id}
