@@ -7,7 +7,9 @@ const MyProfile: React.FC = () => {
   
 
   return (
-    <></>
+    <>
+    
+    </>
   );
 };
 

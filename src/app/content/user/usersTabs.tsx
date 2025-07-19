@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import JobRoleSkill from '../../../components/users/jobroleSkill';
 import JobRoleTasks from '../../../components/users/jobroleTask';
 import PersonalDetails from '../../../components/users/personalDetails';
+import LevelofResponsibility from '@/components/users/LevelofResponsibility';
 import { Button } from "@/components/ui/button";  // Make sure you have this
 import { cn } from "@/lib/utils";                 // Make sure you have this
 import React from 'react';
@@ -156,7 +157,7 @@ export default function EditProfilePage() {
                 {activeTab === 'upload-docs' && <PersonalDetails />}
                 {activeTab === 'jobrole-skill' && <JobRoleSkill />}
                 {activeTab === 'jobrole-tasks' && <JobRoleTasks />}
-                {activeTab === 'responsibility' && <div>Level of Responsibility Content</div>}
+                {activeTab === 'responsibility' && <LevelofResponsibility />}
                 {activeTab === 'skill-rating' && <div>Skill Rating Content</div>}
             </div>
 

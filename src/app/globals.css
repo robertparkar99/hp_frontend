@@ -557,3 +557,10 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Level of Responsibility */
+
+.arrow-left {
+  clip-path: polygon(15% 0%, 100% 0%, 100% 100%, 15% 100%, 0% 50%);
+}
+
