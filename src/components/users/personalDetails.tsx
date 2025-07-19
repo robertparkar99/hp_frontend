@@ -9,26 +9,26 @@ interface userDetailsprops {
 
 const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
 
-    // New states for table control
-    const [searchTerm, setSearchTerm] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(100);
+  // New states for table control
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(100);
+  const [activeSection, setActiveSection] = useState<'personal' | 'contact' | 'reporting' | 'offdays'>('personal');
+  const [activeTab, setActiveTab] = useState("personal-details");
+  const [toggleState, setToggleState] = useState(false);
 
-    const [activeTab, setActiveTab] = useState("personal-details");
-    const [toggleState, setToggleState] = useState(false);
-
-    return (
+  return (
     <>
-        
+
       {/* Header Section */}
       <div className="header-ajit">
         <div className="header-section">
-          <div className="header-background">
+          <div className="w-full lg:h-[186px] xl:[160px] rounded-[15px] bg-[url('/Header.png')] bg-cover bg-center relative flex items-center px-[25px]">
             <div className="profile-image-container">
               <img
                 src="Ellipse 23.png"
                 alt="Kavya Mehta"
-                className="profile-image"
+                className="lg:w-[180px] -ml-[16px] rounded-full object-cover border-[2px]  border-white"
               />
             </div>
             <div className="header-content">
@@ -42,7 +42,7 @@ const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
       <div className="main-content">
         {/* Sidebar Menu */}
         <div className="sidebar-menu">
-          <div className="menu-item active">
+          <div className={`menu-item ${activeSection === 'personal' ? 'active' : ''}`} onClick={() => setActiveSection('personal')}>
             <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
               <path
                 d="M23.75 26.25V23.75C23.75 22.4239 23.2232 21.1521 22.2855 20.2145C21.3479 19.2768 20.0761 18.75 18.75 18.75H11.25C9.92392 18.75 8.65215 19.2768 7.71447 20.2145C6.77678 21.1521 6.25 22.4239 6.25 23.75V26.25"
@@ -62,7 +62,7 @@ const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
             <span>Personal Details</span>
           </div>
 
-          <div className="menu-item">
+          <div className={`menu-item ${activeSection === 'contact' ? 'active' : ''}`} onClick={() => setActiveSection('contact')}>
             <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
               <path
                 d="M17.29 20.71C17.5482 20.8286 17.839 20.8556 18.1146 20.7868C18.3902 20.718 18.6342 20.5573 18.8063 20.3312L19.25 19.75C19.4829 19.4395 19.7848 19.1875 20.132 19.0139C20.4791 18.8404 20.8619 18.75 21.25 18.75H25C25.663 18.75 26.2989 19.0134 26.7678 19.4822C27.2366 19.9511 27.5 20.587 27.5 21.25V25C27.5 25.663 27.2366 26.2989 26.7678 26.7678C26.2989 27.2366 25.663 27.5 25 27.5C19.0326 27.5 13.3097 25.1295 9.0901 20.9099C4.87053 16.6903 2.5 10.9674 2.5 5C2.5 4.33696 2.76339 3.70107 3.23223 3.23223C3.70107 2.76339 4.33696 2.5 5 2.5H8.75C9.41304 2.5 10.0489 2.76339 10.5178 3.23223C10.9866 3.70107 11.25 4.33696 11.25 5V8.75C11.25 9.13811 11.1596 9.5209 10.9861 9.86803C10.8125 10.2152 10.5605 10.5171 10.25 10.75L9.665 11.1888C9.43552 11.364 9.27377 11.6132 9.20724 11.8942C9.1407 12.1751 9.17348 12.4705 9.3 12.73C11.0084 16.1998 13.818 19.006 17.29 20.71Z"
@@ -162,9 +162,9 @@ const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
             </svg>
             <span><a href="#financialsec">Financial & Statutory info</a></span>
           </div> */}
-          
 
-          <div className="menu-item">
+
+          <div className="menu-item" onClick={() => setActiveSection('reporting')}>
             <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
               <path
                 d="M20 26.25V23.75C20 22.4239 19.4732 21.1521 18.5355 20.2145C17.5979 19.2768 16.3261 18.75 15 18.75H7.5C6.17392 18.75 4.90215 19.2768 3.96447 20.2145C3.02678 21.1521 2.5 22.4239 2.5 23.75V26.25"
@@ -197,7 +197,7 @@ const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
             </svg>
             <span><a href="#reportsec">Reporting & Attendance</a></span>
           </div>
-        <div className="menu-item">
+          <div className="menu-item" onClick={() => setActiveSection('offdays')}>
             <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
               <path
                 d="M18.75 2.5H7.5C6.83696 2.5 6.20107 2.76339 5.73223 3.23223C5.26339 3.70107 5 4.33696 5 5V25C5 25.663 5.26339 26.2989 5.73223 26.7678C6.20107 27.2366 6.83696 27.5 7.5 27.5H22.5C23.163 27.5 23.7989 27.2366 24.2678 26.7678C24.7366 26.2989 25 25.663 25 25V8.75L18.75 2.5Z"
@@ -216,81 +216,314 @@ const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
             </svg>
             <span><a href="#financialsec">Off Day's</a></span>
           </div>
-          </div>
+        </div>
 
         {/* Form Content */}
         <div className="form-content">
-          <h2 className="section-title">Personal information</h2>
+          <h2 className="section-title">
+            {activeSection === 'personal'
+              ? 'Personal Information'
+              : activeSection === 'contact'
+                ? 'Contact Information'
+                : activeSection === 'reporting'
+                  ? 'Reporting & Attendance Information'
+                  : activeSection === 'offdays'
+                    ? "Off Day's Information"
+                    : ''}
+          </h2>
           <div className="title-underline"></div>
-
-          <div className="form-grid">
-            <div className="form-row">
-              <div className="input-field">
-                <input type="text" placeholder="First Name" />
+          {activeSection === 'personal' && (
+            <div className="form-grid">
+              <div className="form-row">
+                <select
+                  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                >
+                  <option value="">Select Suffix</option>
+                  <option value="Mr.">Mr.</option>
+                  <option value="Mrs.">Mrs.</option>
+                  <option value="Ms.">Ms.</option>
+                  <option value="Dr.">Dr.</option>
+                </select>
+                <div className="input-field">
+                  <input type="text" placeholder="First Name" />
+                </div>
+                <div className="input-field">
+                  <input type="text" placeholder="Middle Name" />
+                </div>
+                <div className="input-field">
+                  <input type="text" placeholder="Last Name" />
+                </div>
               </div>
-              <div className="input-field">
-                <input type="text" placeholder="Middle Name" />
+
+              <div className="form-row">
+
+                <div className="input-field">
+                  <input type="text" placeholder="User Name" />
+                </div>
+                <div className="input-field">
+                  <input type="email" placeholder="Email Address" />
+                </div>
+              </div>
+
+              <div className="form-row">
+
+                <div className="input-field">
+                  <input type="tel" placeholder="Mobile Number" />
+                </div>
+                <select
+                  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                >
+                  <option value="">Select Jobrole</option>
+                  <option value="Mr.">Mr.</option>
+                  <option value="Mrs.">Mrs.</option>
+                  <option value="Ms.">Ms.</option>
+                  <option value="Dr.">Dr.</option>
+                </select>
+              </div>
+              <div className="form-row">
+                <select
+                  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                >
+                  <option value="">Level of Responsibility</option>
+                  <option value="Mr.">Mr.</option>
+                  <option value="Mrs.">Mrs.</option>
+                  <option value="Ms.">Ms.</option>
+                  <option value="Dr.">Dr.</option>
+                </select>
+                <div className="flex mb-4 gap-2">
+                  <label className="block text-[#393939] text-[14px] font-normal font-inter mb-2">
+                    Gender
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="male"
+                        className="accent-blue-500"
+                      />
+                      Male
+                    </label>
+                    <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="female"
+                        className="accent-pink-500"
+                      />
+                      Female
+                    </label>
+                  </div>
+                </div>
+
+              </div>
+              <div className="form-row">
+                <select
+                  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                >
+                  <option value="">User Profile</option>
+                  <option value="Admin">Admin</option>
+                  <option value="HR">HR</option>
+                  <option value="Employee">Employee</option>
+                </select>
+                <div className="input-field w-full">
+                  <input type="text" placeholder="Joining Year" />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="input-field w-full">
+                  <input type="password" placeholder="Password" />
+                </div>
+                <div className="input-field w-full">
+                  <input type="date" placeholder="Birthdate" />
+                </div>
+              </div>
+              <div className="form-row">
+                <select
+                  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                >
+                  <option value="">Inactive Status</option>
+                  <option value="Admin">Yes</option>
+                  <option value="HR">No</option>
+                </select>
+                <div className="flex items-center gap-4 w-[70%]">
+                  <label className="text-[#393939] text-[14px] font-normal font-inter min-w-[80px]">
+                    User Image
+                  </label>
+                  <input
+                    type="file"
+                    className="file-input px-4 py-1 rounded-full shadow-[inset_0px_2px_8px_rgba(0,0,0,0.15)] bg-[#f4faff] text-sm text-[#393939]"
+                  />
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="form-row">
-              <div className="input-field">
-                <input type="text" placeholder="Last Name" />
+          {activeSection === 'contact' && (
+            <div className="form-grid">
+              {/* CONTACT & ADDRESS SECTION BASED ON YOUR IMAGE */}
+
+              <div className="form-row">
+                <div className="input-field w-full">
+                  <input type="text" placeholder="user_address" />
+                </div>
+                <div className="input-field w-full">
+                  <input type="text" placeholder="user_city" />
+                </div>
               </div>
-              <div className="input-field">
-                <input type="text" placeholder="User Name" />
+
+              <div className="form-row">
+                <div className="input-field w-full">
+                  <input type="text" placeholder="user_state" />
+                </div>
+                <div className="input-field w-full">
+                  <input type="text" placeholder="user_pincode" />
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="form-row">
-              <div className="input-field">
-                <input type="email" placeholder="Email Address" />
+          {activeSection === 'reporting' && (
+            <div className="form-grid space-y-4">
+              <div className="form-row">
+                <div className="input-field w-full">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">Supervisor / Subordinate</label>
+                  <select className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]">
+                    <option value="">Subordinate</option>
+                  </select>
+                </div>
+                <div className="input-field w-full">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">Employee Name</label>
+                  <select className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]">
+                    <option value="">Select Employee</option>
+                  </select>
+                </div>
+                <div className="input-field w-full">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">Reporting Method</label>
+                  <select className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]">
+                    <option value="">In Direct</option>
+                  </select>
+                </div>
               </div>
-              <div className="input-field">
-                <input type="tel" placeholder="Mobile Number" />
+
+              <h3 className="text-lg font-semibold mt-4">Direct Deposit</h3>
+
+              <div className="form-row">
+                <div className="input-field w-full">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">Bank Name</label>
+                  <input
+                    type="text"
+                    placeholder="Test Bank"
+                    className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                  />
+                </div>
+                <div className="input-field w-full">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">Branch Name</label>
+                  <input
+                    type="text"
+                    placeholder="Main Branch"
+                    className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                  />
+                </div>
+                <div className="input-field w-full">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">Account</label>
+                  <input
+                    type="text"
+                    placeholder="1234567890"
+                    className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="input-field w-full">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">IFSC</label>
+                  <input
+                    type="text"
+                    placeholder="TEST0001234"
+                    className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                  />
+                </div>
+                <div className="input-field w-full">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">Amount</label>
+                  <input
+                    type="text"
+                    placeholder="50000.00"
+                    className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                  />
+                </div>
+                <div className="input-field w-full">
+                  <label className="block mb-1 text-sm font-medium text-gray-700">Transfer Type</label>
+                  <select className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]">
+                    <option value="">In Direct</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+
+          {activeSection === 'offdays' && (
+            <div className="form-grid w-full">
+              {/* ✅ One-line Weekday Checkboxes */}
+              <div className="flex items-center gap-8 mb-6">
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) => (
+                  <label
+                    key={index}
+                    className="flex items-center gap-2 text-sm font-medium text-gray-700"
+                  >
+                    <input type="checkbox" />
+                    {day}
+                  </label>
+                ))}
+              </div>
+
+              {/* In/Out Time Inputs Per Day */}
+              {[
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+              ].map((day, index) => (
+                <div key={index} className="form-row flex flex-col lg:flex-row gap-4 mb-4">
+                  <div className="input-field w-full">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">
+                      {day} In Date
+                    </label>
+                    <input
+                      type="time"
+                      className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                    />
+                  </div>
+                  <div className="input-field w-full">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">
+                      {day} Out Date
+                    </label>
+                    <input
+                      type="time"
+                      className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        <div className="flex justify-center mt-8">
+    <button
+      type="submit"
+      className="px-8 py-2 rounded-full text-white font-medium transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-lg"
+    >
+      Submit
+    </button>
+  </div>
         </div>
       </div>
-      <div id='contactsec' className='ms-80 me-10 p-3 m-3 rounded-lg shadow-xl text-justify border-1'>
-            <h3>Contact & Address</h3>
-            <p>A "Contact Us" section on a website typically includes a form with fields for name, email, and a message, allowing users to directly communicate with the business.
-               Many also provide additional contact methods like phone numbers, email addresses, and physical addresses for those who prefer different communication channels.
-               The goal is to make it easy for visitors to get in touch and receive the information or support they need.
-            </p>
-      </div>
-      <div id='empdetail' className='ms-80 me-10 p-3 m-3 rounded-lg shadow-xl text-justify border-1'>
-            <h3>Employment Details</h3>
-            <p>A "Contact Us" section on a website typically includes a form with fields for name, email, and a message, allowing users to directly communicate with the business.
-               Many also provide additional contact methods like phone numbers, email addresses, and physical addresses for those who prefer different communication channels.
-               The goal is to make it easy for visitors to get in touch and receive the information or support they need.
-            </p>
-      </div>
-      <div id='empstatus' className='ms-80 me-10 p-3 m-3 rounded-lg shadow-xl text-justify border-1'>
-            <h3>Employment Status & History</h3>
-            <p>A "Contact Us" section on a website typically includes a form with fields for name, email, and a message, allowing users to directly communicate with the business.
-               Many also provide additional contact methods like phone numbers, email addresses, and physical addresses for those who prefer different communication channels.
-               The goal is to make it easy for visitors to get in touch and receive the information or support they need.
-            </p>
-      </div>
-      <div id='financialsec' className='ms-80 me-10 p-3 m-3 rounded-lg shadow-xl text-justify border-1'>
-            <h3>Financial & Statutory info</h3>
-            <p>A "Contact Us" section on a website typically includes a form with fields for name, email, and a message, allowing users to directly communicate with the business.
-               Many also provide additional contact methods like phone numbers, email addresses, and physical addresses for those who prefer different communication channels.
-               The goal is to make it easy for visitors to get in touch and receive the information or support they need.
-            </p>
-      </div>
-      <div id='reportsec' className='ms-80 me-10 p-3 m-3 rounded-lg shadow-xl text-justify border-1'>
-            <h3>Reporting & Attendance</h3>
-            <p>A "Contact Us" section on a website typically includes a form with fields for name, email, and a message, allowing users to directly communicate with the business.
-               Many also provide additional contact methods like phone numbers, email addresses, and physical addresses for those who prefer different communication channels.
-               The goal is to make it easy for visitors to get in touch and receive the information or support they need.
-            </p>
-      </div>
-    </>    
-    
-    )
+
+    </>
+
+  )
 };
 
 export default personalDetails;
