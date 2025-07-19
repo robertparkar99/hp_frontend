@@ -11,10 +11,11 @@ import PersonalDetails from '../../../components/users/personalDetails';
 import { Button } from "@/components/ui/button";  // Make sure you have this
 import { cn } from "@/lib/utils";                 // Make sure you have this
 import React from 'react';
+import Loading from "@/components/utils/loading";
 
 export default function EditProfilePage() {
     const router = useRouter();
-
+    const [isLoading, setLoading] = useState(true);
     const [userDetails, setUserDetails] = useState<any>();
     const [userJobroleSkills, SetUserJobroleSkills] = useState<any[]>([]);
     const [userJobroleTask, setUserJobroleTask] = useState<any[]>([]);
@@ -57,11 +58,14 @@ export default function EditProfilePage() {
     }, [sessionData.url, sessionData.token]);
 
     const fetchInitialData = async () => {
+        setLoading(true);
         try {
             const res = await fetch(
-                `${sessionData.url}/user/add_user/${clickedUser}/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
+                `${sessionData.url}/user/add_user/${clickedUser}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
             );
             const data = await res.json();
+            setLoading(false);
+            setUserDetails(data || [])
             SetUserJobroleSkills(data.jobroleSkills || []);
             setUserJobroleTask(data.jobroleTasks || []);
             // console.log(data);
@@ -91,86 +95,95 @@ export default function EditProfilePage() {
 
 
     return (
-        <div className="w-full">
-            {/* Header Row: Back arrow + Logo + Tabs */}
-            <div className="flex items-center ml-8 py-4">
-                <button onClick={handleGoBack} className="text-black mr-4" aria-label="Go back">
-                    <ArrowLeft size={24} />
-                </button>
-                <div className="flex-shrink-0 mr-2">
-                    <img
-                        src={tabs.find(tab => tab.id === activeTab)?.logo || "default_logo_url"}
-                        alt="Logo"
-                        className="h-12 w-12 sm:h-10 lg:h-12"
-                    />
-                </div>
-                <div className="flex justify-center px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
-                    {tabs.map((tab) => (
-                        <Button
-                            key={tab.id}
-                            variant="ghost"
-                            onClick={() => setActiveTab(tab.id)}
-                            className={cn(
-                                "rounded-full text-xs sm:text-xs font-semibold whitespace-nowrap transition-all duration-200 min-w-0 flex-shrink-0 flex items-center",
-                                activeTab === tab.id
-                                    ? "bg-emerald-500 text-white [&>svg]:text-white shadow-md hover:bg-emerald-500"
-                                    : " hover:bg-slate-50"
-                            )}
-                        >
-                            {React.cloneElement(tab.icon, {
-                                className: cn(
-                                    "m-0",
-                                    activeTab === tab.id ? "text-white" : "text-slate-700"
-                                )
-                            })}
-                            {tab.label}
-                        </Button>
-                    ))}
-                </div>
-            </div>
+        <>
+            {
+                isLoading ?
+                    (
+                        <Loading />
+                    ) : (
+                        <div className="w-full">
+                            {/* Header Row: Back arrow + Logo + Tabs */}
+                            <div className="flex items-center ml-8 py-4">
+                                <button onClick={handleGoBack} className="text-black mr-4" aria-label="Go back">
+                                    <ArrowLeft size={24} />
+                                </button>
+                                <div className="flex-shrink-0 mr-2">
+                                    <img
+                                        src={tabs.find(tab => tab.id === activeTab)?.logo || "default_logo_url"}
+                                        alt="Logo"
+                                        className="h-12 w-12 sm:h-10 lg:h-12"
+                                    />
+                                </div>
+                                <div className="flex justify-center px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
+                                    {tabs.map((tab) => (
+                                        <Button
+                                            key={tab.id}
+                                            variant="ghost"
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={cn(
+                                                "rounded-full text-xs sm:text-xs font-semibold whitespace-nowrap transition-all duration-200 min-w-0 flex-shrink-0 flex items-center",
+                                                activeTab === tab.id
+                                                    ? "bg-emerald-500 text-white [&>svg]:text-white shadow-md hover:bg-emerald-500"
+                                                    : " hover:bg-slate-50"
+                                            )}
+                                        >
+                                            {React.cloneElement(tab.icon, {
+                                                className: cn(
+                                                    "m-0",
+                                                    activeTab === tab.id ? "text-white" : "text-slate-700"
+                                                )
+                                            })}
+                                            {tab.label}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
 
-            {/* Controls row under tabs, aligned right */}
-            <div className="flex justify-end items-center gap-6 px-8 py-2">
-                {/* Toggle button */}
-                <label className='flex cursor-pointer select-none items-center'>
-                    <div className='relative'>
-                        <input
-                            type='checkbox'
-                            checked={isChecked}
-                            onChange={handleCheckboxChange}
-                            className='sr-only focus:ring-0 focus:ring-offset-0 focus:outline-none'
-                        />
-                        <div className={`block h-[26px] w-[50px] rounded-full ${isChecked ? 'bg-emerald-500' : 'bg-[#E8EAEA]'}`}></div>
-                        <div className={`dot absolute ${isChecked ? 'left-7' : 'left-1'} top-1 h-[18px] w-[18px] rounded-full bg-white transition`}></div>
-                    </div>
-                </label>
-                {/* Search icon */}
-                <span>
-                    <Search className="h-6 w-6 text-gray-700" />
-                </span>
-                {/* Filter icon */}
-                <span>
-                    <Filter className="h-6 w-6 text-gray-700" />
-                </span>
-                {/* More icon */}
-                <span>
-                    <MoreVertical className="h-6 w-6 text-gray-700" />
-                </span>
-            </div>
+                            {/* Controls row under tabs, aligned right */}
+                            <div className="flex justify-end items-center gap-6 px-8 py-2">
+                                {/* Toggle button */}
+                                <label className='flex cursor-pointer select-none items-center'>
+                                    <div className='relative'>
+                                        <input
+                                            type='checkbox'
+                                            checked={isChecked}
+                                            onChange={handleCheckboxChange}
+                                            className='sr-only focus:ring-0 focus:ring-offset-0 focus:outline-none'
+                                        />
+                                        <div className={`block h-[26px] w-[50px] rounded-full ${isChecked ? 'bg-emerald-500' : 'bg-[#E8EAEA]'}`}></div>
+                                        <div className={`dot absolute ${isChecked ? 'left-7' : 'left-1'} top-1 h-[18px] w-[18px] rounded-full bg-white transition`}></div>
+                                    </div>
+                                </label>
+                                {/* Search icon */}
+                                <span>
+                                    <Search className="h-6 w-6 text-gray-700" />
+                                </span>
+                                {/* Filter icon */}
+                                <span>
+                                    <Filter className="h-6 w-6 text-gray-700" />
+                                </span>
+                                {/* More icon */}
+                                <span>
+                                    <MoreVertical className="h-6 w-6 text-gray-700" />
+                                </span>
+                            </div>
 
-            {/* Divider */}
-            <div className="w-full h-[1px] bg-gray-300 my-2" />
+                            {/* Divider */}
+                            <div className="w-full h-[1px] bg-gray-300 my-2" />
 
-            {/* Content */}
-            <div className="p-4">
-                {activeTab === 'personal-info' && <PersonalDetails />}
-                {activeTab === 'upload-docs' && <JobRoleNew userJobroleSkills={[]} activeSkill={''}/>}
-                {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills}/>}
-                {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
-                {activeTab === 'responsibility' && <div>Level of Responsibility Content</div>}
-                {activeTab === 'skill-rating' && <div>Skill Rating Content</div>}
-            </div>
+                            {/* Content */}
+                            <div className="p-4">
+                                {activeTab === 'personal-info' && <PersonalDetails userDetails={userDetails} />}
+                                {activeTab === 'upload-docs' && <JobRoleNew userJobroleSkills={[]} activeSkill={''} />}
+                                {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills} />}
+                                {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
+                                {activeTab === 'responsibility' && <div>Level of Responsibility Content</div>}
+                                {activeTab === 'skill-rating' && <div>Skill Rating Content</div>}
+                            </div>
 
-        </div>
+                        </div>
+                    )
+            }
+        </>
     );
 }

@@ -3,8 +3,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 // import '@app/content/Dashboard/UserProfile.css';
 import '../../app/content/Dashboard/UserProfile.css';
+interface userDetailsprops {
+  userDetails: any | [];
+}
 
-const personalDetails: React.FC = () => {
+const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
 
     // New states for table control
     const [searchTerm, setSearchTerm] = useState('');
@@ -29,7 +32,7 @@ const personalDetails: React.FC = () => {
               />
             </div>
             <div className="header-content">
-              <h1 className="user-name">Kavya Mehta</h1>
+              <h1 className="user-name">{userDetails?.first_name} {userDetails?.middle_name} {userDetails?.last_name}</h1>
             </div>
           </div>
         </div>
@@ -72,7 +75,7 @@ const personalDetails: React.FC = () => {
             <span><a href="#contactsec">Contact & Address</a></span>
           </div>
 
-          <div className="menu-item">
+          {/* <div className="menu-item">
             <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
               <path
                 d="M15 15H15.0125"
@@ -104,9 +107,9 @@ const personalDetails: React.FC = () => {
               />
             </svg>
             <span><a href="#empdetail">Employment Details</a></span>
-          </div>
+          </div> */}
 
-          <div className="menu-item">
+          {/* <div className="menu-item">
             <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
               <path
                 d="M10 2.5V7.5"
@@ -138,9 +141,9 @@ const personalDetails: React.FC = () => {
               />
             </svg>
             <span><a href="#empstatus">Employment Status & History</a></span>
-          </div>
+          </div> */}
 
-          <div className="menu-item">
+          {/* <div className="menu-item">
             <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
               <path
                 d="M18.75 2.5H7.5C6.83696 2.5 6.20107 2.76339 5.73223 3.23223C5.26339 3.70107 5 4.33696 5 5V25C5 25.663 5.26339 26.2989 5.73223 26.7678C6.20107 27.2366 6.83696 27.5 7.5 27.5H22.5C23.163 27.5 23.7989 27.2366 24.2678 26.7678C24.7366 26.2989 25 25.663 25 25V8.75L18.75 2.5Z"
@@ -158,7 +161,8 @@ const personalDetails: React.FC = () => {
               />
             </svg>
             <span><a href="#financialsec">Financial & Statutory info</a></span>
-          </div>
+          </div> */}
+          
 
           <div className="menu-item">
             <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
@@ -193,7 +197,26 @@ const personalDetails: React.FC = () => {
             </svg>
             <span><a href="#reportsec">Reporting & Attendance</a></span>
           </div>
-        </div>
+        <div className="menu-item">
+            <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
+              <path
+                d="M18.75 2.5H7.5C6.83696 2.5 6.20107 2.76339 5.73223 3.23223C5.26339 3.70107 5 4.33696 5 5V25C5 25.663 5.26339 26.2989 5.73223 26.7678C6.20107 27.2366 6.83696 27.5 7.5 27.5H22.5C23.163 27.5 23.7989 27.2366 24.2678 26.7678C24.7366 26.2989 25 25.663 25 25V8.75L18.75 2.5Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M17.5 2.5V7.5C17.5 8.16304 17.7634 8.79893 18.2322 9.26777C18.7011 9.73661 19.337 10 20 10H25"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span><a href="#financialsec">Off Day's</a></span>
+          </div>
+          </div>
 
         {/* Form Content */}
         <div className="form-content">
