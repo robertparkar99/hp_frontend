@@ -53,6 +53,19 @@ function Sidebar() {
         </div>
     );
 }
+interface Skill {
+    ability: any[];
+    category: string;
+    description: string;
+    jobrole: string;
+    jobrole_skill_id: number;
+    knowledge: any[];
+    proficiency_level: string;
+    skill: string;
+    skill_id: number;
+    sub_category: string;
+    title: string;
+}
 
 export default function Index({ onBack }: { onBack: () => void }) {
     return (

@@ -1,13 +1,25 @@
 'use client';
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+
+interface Task {
+  id: number;
+  critical_work_function: string;
+  task: string;
+  skill?: string;
+  proficiency_level?: string | null;
+}
+
+interface UserJobroleTaskProps {
+  userJobroleTask: Task[];
+}
 
 interface BubbleData {
   id: string;
   text?: string;
-  category?: string;
+  critical_work_function?: string;
 }
 
 interface CriticalWorkFunctionCardProps {
@@ -25,7 +37,10 @@ const calculateBubbleSize = (text?: string): { size: number; fontSize: string } 
   if (!text) return { size: 60, fontSize: "text-xs" };
   const wordCount = text.trim().split(/\s+/).length;
   const charCount = text.length;
-  if (wordCount <= 2 && charCount <= 10) {
+  if (text.length > 30) {
+    // For truncated text, use fixed size
+    return { size: 94, fontSize: "text-xs" };
+  } else if (wordCount <= 2 && charCount <= 10) {
     return { size: 60, fontSize: "text-xs" };
   } else if (wordCount <= 4 && charCount <= 20) {
     return { size: 80, fontSize: "text-sm" };
@@ -46,7 +61,7 @@ const packBubblesCircular = (bubbles: BubbleData[]) => {
 
   const N = bubbleSizes.length;
   if (N === 0) return { bubbleSizes: [], positions: [] };
-  
+
   const containerSize = 280;
   const center = containerSize / 2;
   const positions: { x: number; y: number }[] = [];
@@ -62,35 +77,35 @@ const packBubblesCircular = (bubbles: BubbleData[]) => {
   // Calculate positions for surrounding bubbles
   const centerRadius = bubbleSizes[0].size / 2;
   let currentRadius = centerRadius + bubbleSizes[1].size / 2;
-  
+
   // Distribute bubbles in concentric circles
   let placed = 1;
   while (placed < N) {
     const circumference = 2 * Math.PI * currentRadius;
     const availableBubbles = N - placed;
-    
+
     // Calculate how many bubbles we can fit on this ring
     const averageSize = bubbleSizes.slice(placed).reduce((sum, b) => sum + b.size, 0) / (N - placed);
     const maxBubblesOnRing = Math.floor(circumference / averageSize);
     const bubblesOnThisRing = Math.min(availableBubbles, maxBubblesOnRing || 6);
-    
+
     if (bubblesOnThisRing === 0) {
       currentRadius += averageSize;
       continue;
     }
 
     const angleStep = (2 * Math.PI) / bubblesOnThisRing;
-    
+
     for (let i = 0; i < bubblesOnThisRing && placed < N; i++) {
       const angle = i * angleStep;
       const size = bubbleSizes[placed].size;
       const x = center + Math.cos(angle) * currentRadius - size / 2;
       const y = center + Math.sin(angle) * currentRadius - size / 2;
-      
+
       // Ensure bubble stays within container
       const boundedX = Math.max(0, Math.min(containerSize - size, x));
       const boundedY = Math.max(0, Math.min(containerSize - size, y));
-      
+
       positions.push({ x: boundedX, y: boundedY });
       placed++;
     }
@@ -119,7 +134,7 @@ const BubbleItem: React.FC<{
       controls.start({
         opacity: 1,
         y: 0,
-        transition: { 
+        transition: {
           delay: index * 0.1,
           duration: 0.6,
           ease: [0.16, 1, 0.3, 1]
@@ -149,11 +164,13 @@ const BubbleItem: React.FC<{
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          {bubble.text}
+          {bubble.text && bubble.text.length > 30 ? `${bubble.text.slice(0, 30)}...` : bubble.text}
         </motion.div>
         {/* Tooltip */}
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-white rounded-lg shadow-xl opacity-0 group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out invisible z-10 transform translate-y-2 group-hover:translate-y-0">
-          <p className="text-gray-800 text-sm text-center">{bubble.text}</p>
+          <p className="text-gray-800 text-sm text-center">
+            {bubble.text}
+          </p>
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-white translate-y-full"></div>
         </div>
       </div>
@@ -175,62 +192,64 @@ const CriticalWorkFunctionCard: React.FC<CriticalWorkFunctionCardProps> = ({
           <BubbleItem key={bubble.id} bubble={bubble} position={positions[index]} index={index} />
         ))}
       </div>
+      <hr className="border-[#000000]" />
+      <div className="cardTitle flex">
       <div className="mt-auto text-center">
-        <h2 className="text-xl font-bold text-gray-800 mb-2">{title}</h2>
-        <p className="text-gray-600 text-sm">{description}</p>
+          <img src="/assets/task_management/blubArrow.png" alt={title} />
+        </div>
+        <div className="mt-auto text-left">
+          <h2 className="text-[16px] font-bold text-[#23395B] mb-2">Critical Work Function</h2>
+          <p className="text-[14px] text-gray-600 text-sm">{title}</p>
+        </div>
       </div>
+      
     </div>
   );
 };
 
-const CriticalWorkFunction: React.FC<CriticalWorkFunctionProps> = ({
-  cards = [
+const CriticalWorkFunction: React.FC<UserJobroleTaskProps> = ({
+  userJobroleTask = [
     {
-      title: "Innovation & Strategy",
-      description: "Driving new ideas and strategic solutions",
-      bubbles: [
-        { id: "1", text: "Ideation Ideation Ideation Ideation" },
-        { id: "2", text: "Research" },
-        { id: "3", text: "Prototype" },
-        { id: "4", text: "Testing" },
-        { id: "5", text: "Implement" },
-        { id: "6", text: "Feedback" },
-        { id: "7", text: "Iterate" },
-        { id: "8", text: "Plan Plan Plan Plan" },
-      ],
-    },
-    {
-      title: "Data Analytics",
-      description: "Transforming data into actionable insights",
-      bubbles: [
-        { id: "9", text: "Collect" },
-        { id: "10", text: "Clean" },
-        { id: "11", text: "Analyze" },
-        { id: "12", text: "Visualize" },
-        { id: "13", text: "Report" },
-        { id: "14", text: "Predict" },
-        { id: "15", text: "Optimize" },
-        { id: "16", text: "Model Model Model" },
-      ],
-    },
-    {
-      title: "Agile Development",
-      description: "Flexible and iterative project management",
-      bubbles: [
-        { id: "17", text: "Sprints Sprints Sprints" },
-        { id: "18", text: "Standups" },
-        { id: "19", text: "Backlog" },
-        { id: "20", text: "Retros" },
-        { id: "21", text: "Stories" },
-        { id: "22", text: "Kanban" },
-        { id: "23", text: "Scrum" },
-        { id: "24", text: "CI/CD CI/CD CI/CD" },
-      ],
-    },
-  ],
+      id: 10,
+      critical_work_function: "Manage Operations team",
+      task: "Provide mentoring to all employees and encourage continuous professional development",
+      skill: "Regulatory Compliance",
+      proficiency_level: null
+    }
+  ]
 }) => {
+  const [cards, setCards] = useState<CriticalWorkFunctionCardProps[]>([]);
+
+  useEffect(() => {
+    // Group tasks by critical_work_function
+    const groupedTasks = userJobroleTask.reduce((acc, task) => {
+      const existingGroup = acc.find(group => group.title === task.critical_work_function);
+
+      if (existingGroup) {
+        existingGroup.bubbles?.push({
+          id: task.id.toString(),
+          text: task.task,
+          critical_work_function: task.critical_work_function
+        });
+      } else {
+        acc.push({
+          title: task.critical_work_function,
+          description: `Tasks related to ${task.critical_work_function}`,
+          bubbles: [{
+            id: task.id.toString(),
+            text: task.task,
+            critical_work_function: task.critical_work_function
+          }]
+        });
+      }
+      return acc;
+    }, [] as CriticalWorkFunctionCardProps[]);
+
+    setCards(groupedTasks);
+  }, [userJobroleTask]);
+
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-auto">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {cards.map((card, index) => (

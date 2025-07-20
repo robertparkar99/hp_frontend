@@ -63,7 +63,7 @@ const userList: React.FC<userListProps> = ({ employees }) => {
   const fetchInitialData = async () => {
     try {
       const res = await fetch(
-        `${sessionData.url}/user/add_user?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_profile_name=${sessionData.userProfile}&syear=${sessionData.syear}`
+        `${sessionData.url}/user/add_user?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfile}&syear=${sessionData.syear}`
       );
       const data = await res.json();
       console.log('empData', data.data);
@@ -89,8 +89,8 @@ const userList: React.FC<userListProps> = ({ employees }) => {
               key={filter}
               onClick={() => setActiveFilter(filter)}
               className={`px-6 py-2 rounded-lg text-sm transition-colors ${activeFilter === filter
-                  ? "bg-[#9ecfff] text-blue-800 inset-shadow-sm inset-shadow-black-500"
-                  : "text-gray-600 hover:bg-blue-100"
+                ? "bg-[#9ecfff] text-blue-800 inset-shadow-sm inset-shadow-black-500"
+                : "text-gray-600 hover:bg-blue-100"
                 }`}
             >
               {filter}
@@ -175,13 +175,13 @@ const userList: React.FC<userListProps> = ({ employees }) => {
                     </div>
                   </div>
                 </td>
-                 <td className="px-4 py-3 text-gray-700">{employee.mobile}</td>
+                <td className="px-4 py-3 text-gray-700">{employee.mobile}</td>
                 <td className="px-4 py-3 text-gray-700">{employee.profile_name}</td>
                 <td className="px-4 py-3">
                   <div
                     className={`inline-flex items-center px-3 py-1 rounded-md ${employee.status === "Active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
                       }`}
                   >
                     {employee.status}
@@ -189,22 +189,23 @@ const userList: React.FC<userListProps> = ({ employees }) => {
                 </td>
                 <td className="px-4 py-3 text-gray-700">{employee.join_year}</td>
                 <td className="px-4 py-3">
-      <div className="relative">
-        <button 
-          className="text-gray-400 hover:text-gray-600"
-         onClick={() => {
-                  const menu = "user/usersTabs.tsx";
-                  (window as any).__currentMenuItem = menu;
-                  window.dispatchEvent(new CustomEvent("menuSelected", { detail: { menu: menu, pageType: 'page', access: menu, pageProps: employee.id || null } }));
-                }}
-        >
-          <MoreVertical size={20} />
-        </button>
-        
-        {/* Conditionally render jobroleSkills when this employee is selected */}
-       
-      </div>
-    </td>
+                  <div className="relative">
+                    <button
+                      className="text-gray-400 hover:text-gray-600"
+                      onClick={() => {
+                        localStorage.setItem('clickedUser', employee.id);
+                        const menu = "user/usersTabs.tsx";
+                        (window as any).__currentMenuItem = menu;
+                        window.dispatchEvent(new CustomEvent("menuSelected", { detail: { menu: menu, pageType: 'page', access: menu, pageProps: employee.id || null } }));
+                      }}
+                    >
+                      <MoreVertical size={20} />
+                    </button>
+
+                    {/* Conditionally render jobroleSkills when this employee is selected */}
+
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
