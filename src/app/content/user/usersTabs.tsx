@@ -8,6 +8,7 @@ import JobRoleNew from '../../../components/users/jobroleNew';
 import JobRoleSkill from '../../../components/users/jobroleSkill';
 import JobRoleTasks from '../../../components/users/jobroleTask';
 import PersonalDetails from '../../../components/users/personalDetails';
+import LOR from '../../../components/users/LOR';
 import UploadDoc from '../../../components/users/uploadDoc';
 import { Button } from "@/components/ui/button";  // Make sure you have this
 import { cn } from "@/lib/utils";                 // Make sure you have this
@@ -181,7 +182,7 @@ export default function EditProfilePage() {
                                 {activeTab === 'upload-docs' && <UploadDoc />}
                                 {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills} />}
                                 {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
-                                {activeTab === 'responsibility' && <div>Level of Responsibility Content</div>}
+                                {activeTab === 'responsibility' && <LOR />}
                                 {activeTab === 'skill-rating' && <div>Skill Rating Content</div>}
                             </div>
 
