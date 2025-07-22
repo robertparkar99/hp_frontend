@@ -1,0 +1,44 @@
+import { useMemo } from "react";
+
+const generateSpansAndAlignment = (count: number) => {
+  const spanOptions = [1, 2, 3];
+  const alignments = ["start", "center", "end"];
+  const justifies = ["start", "center", "end"];
+
+  return Array.from({ length: count }, () => ({
+    colSpan: spanOptions[Math.floor(Math.random() * spanOptions.length)],
+    rowSpan: spanOptions[Math.floor(Math.random() * spanOptions.length)],
+    alignItems: alignments[Math.floor(Math.random() * alignments.length)],
+    justifyContent: justifies[Math.floor(Math.random() * justifies.length)],
+  }));
+};
+
+export default function DynamicBentoGrid({ items }: { items: string[] }) {
+  const layoutData = useMemo(() => generateSpansAndAlignment(items.length), [items.length]);
+
+  return (
+    <div className="grid grid-cols-6 auto-rows-[80px] grid-flow-dense gap-3 h-[280px] w-full overflow-hidden">
+      {items.map((text, index) => {
+        const {
+          colSpan,
+          rowSpan,
+          alignItems,
+          justifyContent,
+        } = layoutData[index];
+
+        return (
+          <div
+            key={index}
+            className={`col-span-${colSpan} row-span-${rowSpan} bg-[#007BE5] text-white rounded-xl p-4 flex text-[14px] font-semibold leading-tight text-center overflow-hidden`}
+            style={{
+              alignItems: alignItems,
+              justifyContent: justifyContent,
+            }}
+          >
+            <p className="line-clamp-4 w-full">{text}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
