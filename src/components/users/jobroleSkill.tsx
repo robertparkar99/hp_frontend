@@ -30,7 +30,12 @@ const JobRoleSkills: React.FC<UserJobroleSkillsProps> = ({ userJobroleSkills }) 
         <>
             {activeSkill != '' ?
                 (
-                    <JobroleNew onBack={() => setActiveSkill("")} />
+                    <JobroleNew 
+                    onBack={() => setActiveSkill("")}
+                    knowledge={skillArray.find(skill => skill.skill === activeSkill)?.knowledge || []}
+                    ability={skillArray.find(skill => skill.skill === activeSkill)?.ability || []}
+                    skills={skillArray}
+                />
                 )
                 : (
 

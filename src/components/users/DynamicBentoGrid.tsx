@@ -28,7 +28,7 @@ export default function DynamicBentoGrid({ items }: { items: string[] }) {
   );
 
   return (
-    <div className="grid grid-cols-6 auto-rows-[80px] grid-flow-dense gap-3 h-[280px] w-full overflow-hidden">
+    <div className="grid grid-cols-6 auto-rows-[80px] grid-flow-dense gap-3 h-[280px] w-full overflow-y-auto hide-scrollbar">
       {items.map((text, index) => {
         const {
           colSpan,

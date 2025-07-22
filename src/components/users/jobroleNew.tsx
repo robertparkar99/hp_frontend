@@ -1,4 +1,5 @@
 import React from "react";
+import { useState } from "react";
 import { BentoGrid, BentoItem } from "./BentoGrid";
 import DynamicBentoGrid from "./DynamicBentoGrid";
 import DynamicBentoAbillity from "./DynamicBentoAbillity";
@@ -65,8 +66,14 @@ interface Skill {
     sub_category: string;
     title: string;
 }
-
-export default function Index({ onBack }: { onBack: () => void }) {
+interface JobroleNewProps {
+    onBack: () => void;
+    knowledge: any[];
+    ability: any[];
+    skills: Skill[];
+}
+export default function Index({ onBack, knowledge, ability,skills }: JobroleNewProps) {
+    const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
     return (
         <div className="min-h-screen bg-white">
             {/* Mobile Layout */}
@@ -218,21 +225,22 @@ export default function Index({ onBack }: { onBack: () => void }) {
                             </div>
                             <div className="bg-[#C8C8C8] rounded-[15px] border-[1.5px] border-[rgba(71,160,255,0.25)] shadow-[0px_0px_6px_1px_rgba(0,0,0,0.25)] h-[calc(76vh-120px)] overflow-hidden">
                                 <div className="space-y-px">
-                                    {menuItems.map((item, index) => (
-                                        <div key={index} className="relative">
-                                            <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px]"></div>
-                                            <div className="bg-white h-[36px] flex items-center">
+                                {skills.map((skill, index) => (
+                                        <div key={index} className="relative group" onClick={() => setSelectedSkill(skill)}>
+                                            <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px] transition-all duration-300 group-hover:w-full group-hover:left-0 group-hover:rounded-none"></div>
+                                            <div className="bg-white h-[36px] flex items-center group-hover:bg-[#f0f8ff]">
                                                 <div className="flex items-center justify-between w-full pl-[24px] pr-[8px]">
-                                                    <span className="text-[#393939] text-[12px] truncate" style={{
+                                                    <span className="text-[#393939] text-[12px] truncate group-hover:text-white transition-colors duration-300" style={{
                                                         fontFamily: 'Inter, sans-serif',
                                                     }}>
-                                                        {item}
+                                                         {skill.skill.length > 20 ? `${skill.skill.slice(0, 20)}...` : skill.skill}
                                                     </span>
                                                     <svg
                                                         width="16"
                                                         height="17"
                                                         viewBox="0 0 24 25"
                                                         fill="none"
+                                                        className="group-hover:fill-white transition-colors duration-300"
                                                     >
                                                         <path
                                                             d="M7.84467 21.376C7.55178 21.0831 7.55178 20.6083 7.84467 20.3154L14.5643 13.5957L7.84467 6.87601C7.55178 6.58311 7.55178 6.1083 7.84467 5.8154C8.13756 5.5225 8.61244 5.5225 8.90533 5.8154L16.1553 13.0654C16.4482 13.3583 16.4482 13.8331 16.1553 14.126L8.90533 21.376C8.61244 21.6689 8.13756 21.6689 7.84467 21.376Z"
@@ -278,7 +286,7 @@ export default function Index({ onBack }: { onBack: () => void }) {
                                         <BentoItem>Data analytics and modelling business use cases</BentoItem>
                                     </BentoGrid>
                                 </div> */}
-                                <DynamicBentoGrid items={topics} />
+                                <DynamicBentoGrid items={selectedSkill?.knowledge || knowledge} />
 
                             </div>
 
@@ -297,7 +305,7 @@ export default function Index({ onBack }: { onBack: () => void }) {
                                         className="w-[60px] h-[34px]"
                                     />
                                 </div>
-                                <DynamicBentoAbillity items={topics} />
+                                <DynamicBentoAbillity items={selectedSkill?.ability || ability} />
                             </div>
                         </div>
                     </div>
