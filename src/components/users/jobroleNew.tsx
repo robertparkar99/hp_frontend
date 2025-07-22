@@ -9,8 +9,7 @@ const topics = [
     "Range and application of various types of data models",
     "Statistical modelling techniques",
     "Types of statistical analyses, data models, algorithms and advanced computational methods",
-    "Data analytics and modelling business use cases",
-    "Data analytics and modelling business use cases",
+    "Data analytics and modelling business",
     "Statistical modelling techniques",
 ];
 const menuItems = Array(11).fill("Data Analytics and Com...");
@@ -224,7 +223,9 @@ export default function Index({ onBack }: { onBack: () => void }) {
                                             <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px]"></div>
                                             <div className="bg-white h-[36px] flex items-center">
                                                 <div className="flex items-center justify-between w-full pl-[24px] pr-[8px]">
-                                                    <span className="text-[#393939] text-[12px] font-normal truncate">
+                                                    <span className="text-[#393939] text-[12px] truncate" style={{
+                                                        fontFamily: 'Inter, sans-serif',
+                                                    }}>
                                                         {item}
                                                     </span>
                                                     <svg
@@ -255,7 +256,7 @@ export default function Index({ onBack }: { onBack: () => void }) {
                                         <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
                                             Knowledge:
                                         </h2>
-                                        <div className="w-[125vh] h-[3px] bg-[#686868]"></div>
+                                        <div className="w-[100vh] h-[3px] bg-[#686868]"></div>
                                     </div>
                                     <img
                                         src="https://api.builder.io/api/v1/image/assets/TEMP/96c5e570547156dbec01c64c2b33e42ed2609d23?width=161"
@@ -288,7 +289,7 @@ export default function Index({ onBack }: { onBack: () => void }) {
                                         <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
                                             Ability:
                                         </h2>
-                                        <div className="w-[125vh] h-[3px] bg-[#686868]"></div>
+                                        <div className="w-[100vh] h-[3px] bg-[#686868]"></div>
                                     </div>
                                     <img
                                         src="https://api.builder.io/api/v1/image/assets/TEMP/9244e2a21aa3673a48797299453c941622eefb86?width=200"

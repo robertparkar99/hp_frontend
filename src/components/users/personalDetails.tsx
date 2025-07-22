@@ -23,12 +23,19 @@ const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
       {/* Header Section */}
       <div className="header-ajit">
         <div className="header-section">
-          <div className="w-full lg:h-[186px] xl:[160px] rounded-[15px] bg-[url('/Header.png')] bg-cover bg-center relative flex items-center px-[25px]">
-            <div className="profile-image-container">
+          <div className="lg:w-full lg:h-[186px] xl:w-full rounded-[15px] bg-[url('/Header.png')] bg-cover bg-center relative flex items-center px-[25px]">
+            <div className="lg:flex xl:hidden profile-image-container">
               <img
                 src="Ellipse 23.png"
                 alt="Kavya Mehta"
                 className="lg:w-[180px] -ml-[16px] rounded-full object-cover border-[2px]  border-white"
+              />
+            </div>
+            <div className="xl:flex lg:hidden profile-image-containerxl">
+              <img
+                src="Ellipse 23.png"
+                alt="Kavya Mehta"
+                className="xl:w-[180px]  rounded-full object-cover border-[2px]  border-white"
               />
             </div>
             <div className="header-content">

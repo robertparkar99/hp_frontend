@@ -263,9 +263,16 @@
     margin-left: 33px;
     transform: translateY(-50%);    
     z-index: 2;
-    
 }
 
+.profile-image-containerxl {
+    position: absolute;
+    top: 77%;
+    margin-left: -25px;
+    margin-bottom: 10px;
+    transform: translateY(-50%);
+    z-index: 2;
+}
 .profile-image {
     width: 160px;
     /* height: 160px; */

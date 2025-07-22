@@ -588,3 +588,27 @@ body {
 .hexagon-wrapper {
   transition: all 0.3s ease;
 }
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter_28pt-Bold.woff') format('woff');
+  font-weight:bold;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'InterSemiBold';
+  src: url('/fonts/Inter_28pt-SemiBold.woff') format('woff');
+  font-weight:semibold;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'InterMedium';
+  src: url('/fonts/Inter_18pt-Medium.woff') format('woff');
+  font-weight:medium;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'InterRegular';
+  src: url('/fonts/Inter_18pt-Regular.woff') format('woff');
+  font-style: normal;
+}
