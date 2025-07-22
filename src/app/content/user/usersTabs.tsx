@@ -8,6 +8,7 @@ import JobRoleNew from '../../../components/users/jobroleNew';
 import JobRoleSkill from '../../../components/users/jobroleSkill';
 import JobRoleTasks from '../../../components/users/jobroleTask';
 import PersonalDetails from '../../../components/users/personalDetails';
+import UploadDoc from '../../../components/users/uploadDoc';
 import { Button } from "@/components/ui/button";  // Make sure you have this
 import { cn } from "@/lib/utils";                 // Make sure you have this
 import React from 'react';
@@ -177,7 +178,7 @@ export default function EditProfilePage() {
                             {/* Content */}
                             <div className="p-4">
                                 {activeTab === 'personal-info' && <PersonalDetails userDetails={userDetails} />}
-                                {activeTab === 'upload-docs' && <JobRoleNew userJobroleSkills={[]} activeSkill={''} />}
+                                {activeTab === 'upload-docs' && <UploadDoc />}
                                 {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills} />}
                                 {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
                                 {activeTab === 'responsibility' && <div>Level of Responsibility Content</div>}

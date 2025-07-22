@@ -268,7 +268,7 @@
 
 .profile-image {
     width: 160px;
-    height: 160px;
+    /* height: 160px; */
     border-radius: 50%;
     object-fit: cover;
     border: 9px solid #fff;
@@ -310,6 +310,7 @@
 .main-content {
     display: flex;
     gap: 25px;
+    padding-top: 20px;
     margin: 25px 50px 0;
     min-height: 300px;
 }
@@ -476,7 +477,7 @@
     }
 
     .main-content {
-        margin: 40px 50px 0;
+        margin: 40px 10px 0;
     }
 }
 
