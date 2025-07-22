@@ -21,18 +21,33 @@ const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
     <>
 
       {/* Header Section */}
-      <div className="header-ajit">
+      <div className="header-ajit mb-18">
         <div className="header-section">
-          <div className="w-full lg:h-[186px] xl:[160px] rounded-[15px] bg-[url('/Header.png')] bg-cover bg-center relative flex items-center px-[25px]">
-            <div className="profile-image-container">
-              <img
-                src="Ellipse 23.png"
-                alt="Kavya Mehta"
-                className="lg:w-[180px] -ml-[16px] rounded-full object-cover border-[2px]  border-white"
-              />
+          <div className="h-full bg-[url('/Header.png')] bg-contain bg-no-repeat">
+            <div className="rounded-lg">
+              {/* <img
+                src={`${userDetails?.image}`}
+                alt={`${userDetails?.id}`}
+                className="w-[40px] h-[40px] rounded-full object-cover border-[2px]  border-white"
+              /> */}
+              {userDetails.image && userDetails.image != '' ? (
+                <img
+                  src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/` + userDetails.image}
+                  alt="User icon"
+                  style={{transform:"translate(34%,28%)"}}
+                  className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
+                />
+              ) : (
+                <img
+                  src="https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
+                  alt="User icon"
+                  style={{transform:"translate(34%,28%)"}}
+                  className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
+                />
+              )}
             </div>
-            <div className="header-content">
-              <h1 className="user-name">{userDetails?.first_name} {userDetails?.middle_name} {userDetails?.last_name}</h1>
+            <div className="header-content" style={{transform:"translate(10%,-20%)"}}>
+              <span className="text-2xl font-bold" >{userDetails?.first_name} {userDetails?.middle_name} {userDetails?.last_name}</span>
             </div>
           </div>
         </div>
@@ -510,14 +525,14 @@ const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
               ))}
             </div>
           )}
-        <div className="flex justify-center mt-8">
-    <button
-      type="submit"
-      className="px-8 py-2 rounded-full text-white font-medium transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-lg"
-    >
-      Submit
-    </button>
-  </div>
+          <div className="flex justify-center mt-8">
+            <button
+              type="submit"
+              className="px-8 py-2 rounded-full text-white font-medium transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-lg"
+            >
+              Submit
+            </button>
+          </div>
         </div>
       </div>
 
