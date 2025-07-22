@@ -28,12 +28,12 @@ const JobRoleSkills: React.FC<UserJobroleSkillsProps> = ({ userJobroleSkills }) 
 
     return (
         <>
-            {activeSkill != '' ?
-                (
-                    <JobroleNew onBack={() => setActiveSkill("")} />
-                )
-                : (
-
+            {activeSkill != '' ? 
+            (
+                <JobroleNew userJobroleSkills={userJobroleSkills} activeSkill={activeSkill}/>
+            )
+             : (
+                
                     skillArray.length > 0 ? (
                         <div className="honeycomb-container pb-8">
                             {skillArray.map((skill, index) => (
@@ -53,8 +53,8 @@ const JobRoleSkills: React.FC<UserJobroleSkillsProps> = ({ userJobroleSkills }) 
                     ) : (
                         <p className="text-gray-500">No skills found.</p>
                     )
-
-                )}
+                
+            )}
 
         </>
     );
