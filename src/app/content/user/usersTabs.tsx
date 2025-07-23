@@ -20,7 +20,11 @@ export default function EditProfilePage() {
     const [isLoading, setLoading] = useState(true);
     const [userDetails, setUserDetails] = useState<any>();
     const [userJobroleSkills, SetUserJobroleSkills] = useState<any[]>([]);
+    const [userJobroleLists, SetUserJobroleLists] = useState<any[]>([]);
+    const [userLOR, SetUserLOR] = useState<any[]>([]);
+    const [userProfiles, SetUserProfiles] = useState<any[]>([]);
     const [userJobroleTask, setUserJobroleTask] = useState<any[]>([]);
+    const [userLists,setUserLists] = useState<any[]>([]);
     const [clickedUser, setClickedUser] = useState<any>();
     const [activeTab, setActiveTab] = useState('personal-info');
 
@@ -67,9 +71,12 @@ export default function EditProfilePage() {
             );
             const data = await res.json();
             setLoading(false);
-            setUserDetails(data || [])
             SetUserJobroleSkills(data.jobroleSkills || []);
             setUserJobroleTask(data.jobroleTasks || []);
+            SetUserJobroleLists(data.jobroleList || []);
+            SetUserLOR(data.levelOfResponsbility || []);
+            SetUserProfiles(data.user_profiles || []);
+            setUserLists(data.employees || []);
             // console.log(data);
             setUserDetails(data.data || null);
         } catch (error) {
@@ -178,7 +185,7 @@ export default function EditProfilePage() {
 
                             {/* Content */}
                             <div className="p-4">
-                                {activeTab === 'personal-info' && <PersonalDetails userDetails={userDetails} />}
+                                {activeTab === 'personal-info' && <PersonalDetails userDetails={userDetails} userJobroleLists={userJobroleLists} userLOR={userLOR} userProfiles={userProfiles} userLists={userLists} sessionData={sessionData}/>}
                                 {activeTab === 'upload-docs' && <UploadDoc />}
                                 {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills} />}
                                 {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
