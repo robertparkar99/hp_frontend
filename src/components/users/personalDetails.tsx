@@ -1,28 +1,266 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-// import '@app/content/Dashboard/UserProfile.css';
 import '../../app/content/Dashboard/UserProfile.css';
+import Loading from "../../components/utils/loading";
+
 interface userDetailsprops {
   userDetails: any | [];
+  userJobroleLists: any | [];
+  userLOR: any | [];
+  userProfiles: any | [];
+  userLists: any | [];
+  sessionData: any | [];
 }
+type TabId = 'personal' | 'address' | 'reporting' | 'attendance' | 'deposit';
 
-const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
+const PersonalDetails: React.FC<userDetailsprops> = ({ userDetails, userJobroleLists, userLOR, userProfiles, userLists,sessionData }) => {
+  // Form state
+  const [isLoading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    personal: {
+      name_suffix: userDetails?.name_suffix || '',
+      first_name: userDetails?.first_name || '',
+      middle_name: userDetails?.middle_name || '',
+      last_name: userDetails?.last_name || '',
+      email: userDetails?.email || '',
+      plain_password: userDetails?.plain_password || '',
+      birthdate: userDetails?.birthdate ? new Date(userDetails.birthdate).toISOString().split('T')[0] : '',
+      mobile: userDetails?.mobile || '',
+      jobrole: userDetails?.allocated_standards || '',
+      responsibility_level: userDetails?.subject_ids || '',
+      gender: userDetails?.gender || 'M',
+      user_profile_id: userDetails?.user_profile_id || '',
+      join_year: userDetails?.join_year || '',
+      status: userDetails?.status || '1',
+      image: userDetails?.image || '',
+      imageFile: null as File | null // Add this field to store the file object
+    },
+    address: {
+      user_address: userDetails?.address || '',
+      user_address2: userDetails?.address_2 || '',
+      user_city: userDetails?.city || '',
+      user_state: userDetails?.state || '',
+      user_pincode: userDetails?.pincode || ''
+    },
+    reporting: {
+      subordinate: userDetails?.supervisor_opt || '',
+      employee_name: userDetails?.employee_id || '',
+      reporting_method: userDetails?.reporting_method || '',
+    },
+    attendance: {
+      working_days: userDetails?.working_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      monday_in: userDetails?.monday_in_date || '',
+      monday_out: userDetails?.monday_out_date || '',
+      tuesday_in: userDetails?.tuesday_in_date || '',
+      tuesday_out: userDetails?.tuesday_out_date || '',
+      wednesday_in: userDetails?.wednesday_in_date || '',
+      wednesday_out: userDetails?.wednesday_out_date || '',
+      thursday_in: userDetails?.thursday_in_date || '',
+      thursday_out: userDetails?.thursday_out_date || '',
+      friday_in: userDetails?.friday_in_date || '',
+      friday_out: userDetails?.friday_out_date || '',
+      saturday_in: userDetails?.saturday_in_date || '',
+      saturday_out: userDetails?.saturday_out_date || ''
+    },
+    deposit: {
+      bank_name: userDetails?.bank_name || '',
+      branch_name: userDetails?.branch_name || '',
+      account: userDetails?.account_no || '',
+      ifsc: userDetails?.ifsc_code || '',
+      amount: userDetails?.amount || '',
+      transfer_type: userDetails?.transfer_type || ''
+    }
+  });
 
-  // New states for table control
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(100);
-  const [activeSection, setActiveSection] = useState<'personal' | 'contact' | 'reporting' | 'offdays'>('personal');
-  const [activeTab, setActiveTab] = useState("personal-details");
+  // UI states
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeSection, setActiveSection] = useState<TabId>('personal');
   const [toggleState, setToggleState] = useState(false);
 
-  return (
-    <>
+  const tabs = [
+    {
+      id: 'personal',
+      text: 'Personal Details',
+      href: null,
+      icon: 'mdi mdi-account-outline'
+    },
+    {
+      id: 'address',
+      text: 'Address',
+      href: '#AdressSec',
+      icon: 'mdi mdi-map-marker-outline'
+    },
+    {
+      id: 'reporting',
+      text: 'Reporting',
+      href: '#reportsec',
+      icon: 'mdi mdi-chart-bar'
+    },
+    {
+      id: 'attendance',
+      text: "Attendance",
+      href: '#attendance',
+      icon: 'mdi mdi-table-account'
+    },
+    {
+      id: 'deposit',
+      text: "Direct Deposit",
+      href: '#depositsec',
+      icon: 'mdi mdi-bank-outline'
+    }
+  ];
 
+  const handleTabClick = (id: TabId, href: string | null) => {
+    setActiveSection(id);
+    if (href) {
+      const element = document.getElementById(href.substring(1));
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleInputChange = (section: TabId, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleCheckboxChange = (day: string) => {
+    const currentDays = [...formData.attendance.working_days];
+    const index = currentDays.indexOf(day);
+
+    if (index === -1) {
+      currentDays.push(day);
+    } else {
+      currentDays.splice(index, 1);
+    }
+
+    handleInputChange('attendance', 'working_days', currentDays);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setLoading(true);
+    try {
+      // Prepare the data in the required format
+      const formDataToSend = new FormData();
+      formDataToSend.append('type', 'API');
+      formDataToSend.append('_method', 'PUT');
+      formDataToSend.append('sub_institute_id',sessionData?.subInstituteId || '');
+      formDataToSend.append('user_id',sessionData?.userId || '');
+      formDataToSend.append('_token', sessionData?.token || '');
+      
+      // Personal data
+      formDataToSend.append('name_suffix', formData.personal.name_suffix);
+      formDataToSend.append('first_name', formData.personal.first_name);
+      formDataToSend.append('middle_name', formData.personal.middle_name);
+      formDataToSend.append('last_name', formData.personal.last_name);
+      formDataToSend.append('email', formData.personal.email);
+      formDataToSend.append('mobile', formData.personal.mobile);
+      formDataToSend.append('allocated_standards', formData.personal.jobrole);
+      formDataToSend.append('subject_ids', formData.personal.responsibility_level);
+      formDataToSend.append('gender', formData.personal.gender);
+      formDataToSend.append('user_profile_id', formData.personal.user_profile_id);
+      formDataToSend.append('join_year', formData.personal.join_year);
+      formDataToSend.append('status', formData.personal.status);
+      formDataToSend.append('password', formData.personal.plain_password);
+      formDataToSend.append('birthdate', formData.personal.birthdate);
+      
+      // Only append the image file if it exists (new upload)
+      if (formData.personal.imageFile) {
+        formDataToSend.append('user_image', formData.personal.imageFile);
+      } else if (formData.personal.image) {
+        // If no new file but image URL exists, send the existing image path
+        formDataToSend.append('user_image_path', formData.personal.image);
+      }
+
+      // Address data
+      formDataToSend.append('address', formData.address.user_address);
+      formDataToSend.append('address_2', formData.address.user_address2);
+      formDataToSend.append('city', formData.address.user_city);
+      formDataToSend.append('state', formData.address.user_state);
+      formDataToSend.append('pincode', formData.address.user_pincode);
+
+      // Reporting data
+      formDataToSend.append('supervisor_opt', formData.reporting.subordinate);
+      formDataToSend.append('employee_id', formData.reporting.employee_name);
+      formDataToSend.append('reporting_method', formData.reporting.reporting_method);
+
+      // Attendance data
+      formDataToSend.append('monday', formData.attendance.working_days.includes('Mon') ? '1' : '0');
+      formDataToSend.append('tuesday', formData.attendance.working_days.includes('Tue') ? '1' : '0');
+      formDataToSend.append('wednesday', formData.attendance.working_days.includes('Wed') ? '1' : '0');
+      formDataToSend.append('thursday', formData.attendance.working_days.includes('Thu') ? '1' : '0');
+      formDataToSend.append('friday', formData.attendance.working_days.includes('Fri') ? '1' : '0');
+      formDataToSend.append('saturday', formData.attendance.working_days.includes('Sat') ? '1' : '0');
+      formDataToSend.append('sunday', '0'); // Hardcoded as per your example
+      
+      formDataToSend.append('monday_in_date', formData.attendance.monday_in);
+      formDataToSend.append('monday_out_date', formData.attendance.monday_out);
+      formDataToSend.append('tuesday_in_date', formData.attendance.tuesday_in);
+      formDataToSend.append('tuesday_out_date', formData.attendance.tuesday_out);
+      formDataToSend.append('wednesday_in_date', formData.attendance.wednesday_in);
+      formDataToSend.append('wednesday_out_date', formData.attendance.wednesday_out);
+      formDataToSend.append('thursday_in_date', formData.attendance.thursday_in);
+      formDataToSend.append('thursday_out_date', formData.attendance.thursday_out);
+      formDataToSend.append('friday_in_date', formData.attendance.friday_in);
+      formDataToSend.append('friday_out_date', formData.attendance.friday_out);
+      formDataToSend.append('saturday_in_date', formData.attendance.saturday_in);
+      formDataToSend.append('saturday_out_date', formData.attendance.saturday_out);
+
+      // Deposit data
+      formDataToSend.append('bank_name', formData.deposit.bank_name);
+      formDataToSend.append('branch_name', formData.deposit.branch_name);
+      formDataToSend.append('account_no', formData.deposit.account);
+      formDataToSend.append('ifsc_code', formData.deposit.ifsc);
+      formDataToSend.append('amount', formData.deposit.amount);
+      formDataToSend.append('transfer_type', formData.deposit.transfer_type);
+
+      // Additional fields from your example
+      formDataToSend.append('jobtitle_id', '0');
+      formDataToSend.append('load', '6');
+      formDataToSend.append('department_id', '1');
+      formDataToSend.append('submit', 'Update');
+
+      const response = await fetch(`${sessionData?.url}/user/add_user/${userDetails?.id}`, {
+        method: 'POST', // Using POST with _method=PUT
+        body: formDataToSend,
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user');
+      }
+
+      const result = await response.json();
+      setLoading(false);
+      alert(result.message);
+      
+      console.log('Update successful:', result);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      setLoading(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (<>
+    {isLoading ? (<Loading />) : (
+    <form onSubmit={handleSubmit}>
       {/* Header Section */}
-      <div className="header-ajit">
+      <div className="header-ajit mb-8">
         <div className="header-section">
+<<<<<<< HEAD
           <div className="lg:w-full lg:h-[186px] xl:w-full rounded-[15px] bg-[url('/Header.png')] bg-cover bg-center relative flex items-center px-[25px]">
             <div className="lg:flex xl:hidden profile-image-container">
               <img
@@ -40,497 +278,650 @@ const personalDetails: React.FC<userDetailsprops> = ({ userDetails }) => {
             </div>
             <div className="header-content">
               <h1 className="user-name">{userDetails?.first_name} {userDetails?.middle_name} {userDetails?.last_name}</h1>
+=======
+          <div className="h-full bg-[url('/Header.png')] bg-contain bg-no-repeat">
+            <div className="rounded-lg">
+              {userDetails.image && userDetails.image != '' ? (
+                <img
+                  src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/` + userDetails.image}
+                  alt="User icon"
+                  style={{ transform: "translate(34%,28%)" }}
+                  className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
+                />
+              ) : (
+                <img
+                  src="https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
+                  alt="User icon"
+                  style={{ transform: "translate(34%,28%)" }}
+                  className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
+                />
+              )}
+            </div>
+            <div className="header-content" style={{ transform: "translate(12%,-175%)" }}>
+              <span className="text-2xl font-bold" >{formData.personal.first_name} {formData.personal.middle_name} {formData.personal.last_name}</span>
+            </div>
+            <div className="header-content" style={{ transform: "translate(12%,95%)" }}>
+              <span className="text-[20px]" >{userDetails?.userJobrole}</span>
+>>>>>>> 1fc7561c1208b0bf5f028e047b64dfd70ed833a7
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="main-content">
+      <div className="flex mt-14">
         {/* Sidebar Menu */}
         <div className="sidebar-menu">
-          <div className={`menu-item ${activeSection === 'personal' ? 'active' : ''}`} onClick={() => setActiveSection('personal')}>
-            <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
-              <path
-                d="M23.75 26.25V23.75C23.75 22.4239 23.2232 21.1521 22.2855 20.2145C21.3479 19.2768 20.0761 18.75 18.75 18.75H11.25C9.92392 18.75 8.65215 19.2768 7.71447 20.2145C6.77678 21.1521 6.25 22.4239 6.25 23.75V26.25"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M15 13.75C17.7614 13.75 20 11.5114 20 8.75C20 5.98858 17.7614 3.75 15 3.75C12.2386 3.75 10 5.98858 10 8.75C10 11.5114 12.2386 13.75 15 13.75Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span>Personal Details</span>
-          </div>
-
-          <div className={`menu-item ${activeSection === 'contact' ? 'active' : ''}`} onClick={() => setActiveSection('contact')}>
-            <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
-              <path
-                d="M17.29 20.71C17.5482 20.8286 17.839 20.8556 18.1146 20.7868C18.3902 20.718 18.6342 20.5573 18.8063 20.3312L19.25 19.75C19.4829 19.4395 19.7848 19.1875 20.132 19.0139C20.4791 18.8404 20.8619 18.75 21.25 18.75H25C25.663 18.75 26.2989 19.0134 26.7678 19.4822C27.2366 19.9511 27.5 20.587 27.5 21.25V25C27.5 25.663 27.2366 26.2989 26.7678 26.7678C26.2989 27.2366 25.663 27.5 25 27.5C19.0326 27.5 13.3097 25.1295 9.0901 20.9099C4.87053 16.6903 2.5 10.9674 2.5 5C2.5 4.33696 2.76339 3.70107 3.23223 3.23223C3.70107 2.76339 4.33696 2.5 5 2.5H8.75C9.41304 2.5 10.0489 2.76339 10.5178 3.23223C10.9866 3.70107 11.25 4.33696 11.25 5V8.75C11.25 9.13811 11.1596 9.5209 10.9861 9.86803C10.8125 10.2152 10.5605 10.5171 10.25 10.75L9.665 11.1888C9.43552 11.364 9.27377 11.6132 9.20724 11.8942C9.1407 12.1751 9.17348 12.4705 9.3 12.73C11.0084 16.1998 13.818 19.006 17.29 20.71Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span><a href="#contactsec">Contact & Address</a></span>
-          </div>
-
-          {/* <div className="menu-item">
-            <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
-              <path
-                d="M15 15H15.0125"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M20 7.5V5C20 4.33696 19.7366 3.70107 19.2678 3.23223C18.7989 2.76339 18.163 2.5 17.5 2.5H12.5C11.837 2.5 11.2011 2.76339 10.7322 3.23223C10.2634 3.70107 10 4.33696 10 5V7.5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M27.5 16.25C23.791 18.6987 19.4444 20.0041 15 20.0041C10.5556 20.0041 6.20901 18.6987 2.5 16.25"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M25 7.5H5C3.61929 7.5 2.5 8.61929 2.5 10V22.5C2.5 23.8807 3.61929 25 5 25H25C26.3807 25 27.5 23.8807 27.5 22.5V10C27.5 8.61929 26.3807 7.5 25 7.5Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span><a href="#empdetail">Employment Details</a></span>
-          </div> */}
-
-          {/* <div className="menu-item">
-            <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
-              <path
-                d="M10 2.5V7.5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M20 2.5V7.5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M23.75 5H6.25C4.86929 5 3.75 6.11929 3.75 7.5V25C3.75 26.3807 4.86929 27.5 6.25 27.5H23.75C25.1307 27.5 26.25 26.3807 26.25 25V7.5C26.25 6.11929 25.1307 5 23.75 5Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M3.75 12.5H26.25"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span><a href="#empstatus">Employment Status & History</a></span>
-          </div> */}
-
-          {/* <div className="menu-item">
-            <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
-              <path
-                d="M18.75 2.5H7.5C6.83696 2.5 6.20107 2.76339 5.73223 3.23223C5.26339 3.70107 5 4.33696 5 5V25C5 25.663 5.26339 26.2989 5.73223 26.7678C6.20107 27.2366 6.83696 27.5 7.5 27.5H22.5C23.163 27.5 23.7989 27.2366 24.2678 26.7678C24.7366 26.2989 25 25.663 25 25V8.75L18.75 2.5Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M17.5 2.5V7.5C17.5 8.16304 17.7634 8.79893 18.2322 9.26777C18.7011 9.73661 19.337 10 20 10H25"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span><a href="#financialsec">Financial & Statutory info</a></span>
-          </div> */}
-
-
-          <div className="menu-item" onClick={() => setActiveSection('reporting')}>
-            <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
-              <path
-                d="M20 26.25V23.75C20 22.4239 19.4732 21.1521 18.5355 20.2145C17.5979 19.2768 16.3261 18.75 15 18.75H7.5C6.17392 18.75 4.90215 19.2768 3.96447 20.2145C3.02678 21.1521 2.5 22.4239 2.5 23.75V26.25"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M20 3.91016C21.0722 4.18812 22.0217 4.81424 22.6996 5.69023C23.3775 6.56623 23.7452 7.64252 23.7452 8.75016C23.7452 9.85779 23.3775 10.9341 22.6996 11.8101C22.0217 12.6861 21.0722 13.3122 20 13.5902"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M27.5 26.2501V23.7501C27.4992 22.6423 27.1304 21.5661 26.4517 20.6905C25.773 19.8149 24.8227 19.1896 23.75 18.9126"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M11.25 13.75C14.0114 13.75 16.25 11.5114 16.25 8.75C16.25 5.98858 14.0114 3.75 11.25 3.75C8.48858 3.75 6.25 5.98858 6.25 8.75C6.25 11.5114 8.48858 13.75 11.25 13.75Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span><a href="#reportsec">Reporting & Attendance</a></span>
-          </div>
-          <div className="menu-item" onClick={() => setActiveSection('offdays')}>
-            <svg width="20" height="20" viewBox="0 0 30 30" fill="none">
-              <path
-                d="M18.75 2.5H7.5C6.83696 2.5 6.20107 2.76339 5.73223 3.23223C5.26339 3.70107 5 4.33696 5 5V25C5 25.663 5.26339 26.2989 5.73223 26.7678C6.20107 27.2366 6.83696 27.5 7.5 27.5H22.5C23.163 27.5 23.7989 27.2366 24.2678 26.7678C24.7366 26.2989 25 25.663 25 25V8.75L18.75 2.5Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M17.5 2.5V7.5C17.5 8.16304 17.7634 8.79893 18.2322 9.26777C18.7011 9.73661 19.337 10 20 10H25"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span><a href="#financialsec">Off Day's</a></span>
-          </div>
+          {tabs.map((item) => (
+            <div
+              key={item.id}
+              className={`cursor-pointer transition-colors duration-200 px-3 py-2 border-b-1 border-[1px solid rgba(71, 160, 255, 0.1)] ${activeSection === item.id
+                ? 'bg-[#47a0ff]'
+                : 'bg-white text-gray-600 hover:bg-blue-100'
+                }`}
+              onClick={() => handleTabClick(item.id as TabId, item.href)}
+            >
+              <i className={`${item.icon} ${activeSection === item.id ? 'text-white' : 'text-gray-600'
+                } w-5 h-5 mr-2`}></i>
+              <span className={`${activeSection === item.id ? 'text-white' : 'text-gray-600'
+                }`}>
+                {item.href ? (
+                  <a href={item.href} onClick={(e) => e.preventDefault()}>
+                    {item.text}
+                  </a>
+                ) : (
+                  item.text
+                )}
+              </span>
+            </div>
+          ))}
         </div>
 
-        {/* Form Content */}
-        <div className="form-content">
-          <h2 className="section-title">
-            {activeSection === 'personal'
-              ? 'Personal Information'
-              : activeSection === 'contact'
-                ? 'Contact Information'
-                : activeSection === 'reporting'
-                  ? 'Reporting & Attendance Information'
-                  : activeSection === 'offdays'
-                    ? "Off Day's Information"
-                    : ''}
-          </h2>
-          <div className="title-underline"></div>
-          {activeSection === 'personal' && (
-            <div className="form-grid">
-              <div className="form-row">
-                <select
-                  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
-                >
-                  <option value="">Select Suffix</option>
-                  <option value="Mr.">Mr.</option>
-                  <option value="Mrs.">Mrs.</option>
-                  <option value="Ms.">Ms.</option>
-                  <option value="Dr.">Dr.</option>
-                </select>
-                <div className="input-field">
-                  <input type="text" placeholder="First Name" />
-                </div>
-                <div className="input-field">
-                  <input type="text" placeholder="Middle Name" />
-                </div>
-                <div className="input-field">
-                  <input type="text" placeholder="Last Name" />
-                </div>
-              </div>
+        {/* Content Sections */}
+        <div className="content-area w-full ml-10">
+          {/* Form Content */}
+          <div className="form-content">
+            <h2 className="section-title">
+              {activeSection === 'personal'
+                ? 'Personal Information'
+                : activeSection === 'address'
+                  ? 'Address Information'
+                  : activeSection === 'reporting'
+                    ? 'Reporting & Attendance Information'
+                    : activeSection === 'attendance'
+                      ? "Attendance Information"
+                      : activeSection === 'deposit'
+                        ? "Deposit Information"
+                        : ''}
+            </h2>
+            <div className="title-underline"></div>
 
-              <div className="form-row">
-
-                <div className="input-field">
-                  <input type="text" placeholder="User Name" />
+            {activeSection === 'personal' && (
+              <div className="form-grid">
+                {/* Name Section */}
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Suffix</label>
+                    <select
+                      className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                      value={formData.personal.name_suffix}
+                      onChange={(e) => handleInputChange('personal', 'name_suffix', e.target.value)}
+                    >
+                      <option value="">Select Suffix</option>
+                      {['Mr.', 'Mrs.', 'Ms.', 'Dr.'].map(suffix => (
+                        <option key={suffix} value={suffix}>
+                          {suffix}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">First Name</label>
+                    <input
+                      type="text"
+                      placeholder="First Name"
+                      value={formData.personal.first_name}
+                      onChange={(e) => handleInputChange('personal', 'first_name', e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div className="input-field">
-                  <input type="email" placeholder="Email Address" />
-                </div>
-              </div>
 
-              <div className="form-row">
-
-                <div className="input-field">
-                  <input type="tel" placeholder="Mobile Number" />
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Middle Name</label>
+                    <input
+                      type="text"
+                      placeholder="Middle Name"
+                      value={formData.personal.middle_name}
+                      onChange={(e) => handleInputChange('personal', 'middle_name', e.target.value)}
+                    />
+                  </div>
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Last Name</label>
+                    <input
+                      type="text"
+                      placeholder="Last Name"
+                      value={formData.personal.last_name}
+                      onChange={(e) => handleInputChange('personal', 'last_name', e.target.value)}
+                    />
+                  </div>
                 </div>
-                <select
-                  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
-                >
-                  <option value="">Select Jobrole</option>
-                  <option value="Mr.">Mr.</option>
-                  <option value="Mrs.">Mrs.</option>
-                  <option value="Ms.">Ms.</option>
-                  <option value="Dr.">Dr.</option>
-                </select>
-              </div>
-              <div className="form-row">
-                <select
-                  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
-                >
-                  <option value="">Level of Responsibility</option>
-                  <option value="Mr.">Mr.</option>
-                  <option value="Mrs.">Mrs.</option>
-                  <option value="Ms.">Ms.</option>
-                  <option value="Dr.">Dr.</option>
-                </select>
-                <div className="flex mb-4 gap-2">
-                  <label className="block text-[#393939] text-[14px] font-normal font-inter mb-2">
-                    Gender
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
-                      <input
-                        type="radio"
-                        name="gender"
-                        value="male"
-                        className="accent-blue-500"
-                      />
-                      Male
+
+                {/* Contact Section */}
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Email</label>
+                    <input
+                      type="email"
+                      placeholder="Email Address"
+                      value={formData.personal.email}
+                      onChange={(e) => handleInputChange('personal', 'email', e.target.value)}
+                    />
+                  </div>
+                  <div className="input-field relative">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Password</label>
+                    <input
+                      type={toggleState ? "text" : "password"}
+                      placeholder="Password"
+                      value={formData.personal.plain_password}
+                      onChange={(e) => handleInputChange('personal', 'plain_password', e.target.value)}
+                    />
+                    <i
+                      className={`fa fa-eye${toggleState ? '-slash' : ''} absolute right-3 top-8 cursor-pointer text-gray-500 hover:text-gray-700`}
+                      onClick={() => setToggleState(!toggleState)}
+                    ></i>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Birthdate</label>
+                    <input
+                      type="date"
+                      placeholder="01-01-2000"
+                      value={formData.personal.birthdate}
+                      onChange={(e) => handleInputChange('personal', 'birthdate', e.target.value)}
+                    />
+                  </div>
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Mobile</label>
+                    <input
+                      type="tel"
+                      placeholder="Mobile Number"
+                      value={formData.personal.mobile}
+                      onChange={(e) => handleInputChange('personal', 'mobile', e.target.value)}
+                      pattern="[0-9]{10}"
+                    />
+                  </div>
+                </div>
+
+                {/* Job Section */}
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Job Role</label>
+                    <select
+                      className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                      value={formData.personal.jobrole}
+                      onChange={(e) => handleInputChange('personal', 'jobrole', e.target.value)}
+                    >
+                      <option value="">Select Jobrole</option>
+                      {userJobroleLists.length > 0 ? (
+                        userJobroleLists.map((jobrole: any) => (
+                          <option
+                            key={jobrole.id}
+                            value={jobrole.id}
+                            selected={userDetails?.allocated_standards == jobrole.id}
+                          >
+                            {jobrole.jobrole}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No job roles available</option>
+                      )}
+                    </select>
+                  </div>
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Responsibility Level</label>
+                    <select
+                      className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                      value={formData.personal.responsibility_level}
+                      onChange={(e) => handleInputChange('personal', 'responsibility_level', e.target.value)}
+                    >
+                      <option value="">Level of Responsibility</option>
+                      {userLOR.length > 0 ? (
+                        userLOR.map((level: any) => (
+                          <option
+                            key={level.id}
+                            value={level.id}
+                            selected={userDetails?.subject_ids == level.id}
+                          >
+                            {level.level} {/* Assuming the field is called 'level' */}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No levels available</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Gender Section */}
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block text-[#393939] text-[14px] font-normal font-inter mb-2">
+                      Gender
                     </label>
-                    <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="M"
+                          checked={formData.personal.gender === 'M'}
+                          onChange={() => handleInputChange('personal', 'gender', 'M')}
+                          className="accent-blue-500"
+                        />
+                        Male
+                      </label>
+                      <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="F"
+                          checked={formData.personal.gender === 'F'}
+                          onChange={() => handleInputChange('personal', 'gender', 'F')}
+                          className="accent-pink-500"
+                        />
+                        Female
+                      </label>
+                    </div>
+                  </div>
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">User Profile</label>
+                    <select
+                      className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                      value={formData.personal.user_profile_id}
+                      onChange={(e) => handleInputChange('personal', 'user_profile', e.target.value)}
+                    >
+                      <option value="">User Profile</option>
+                      {userProfiles.length > 0 ? (
+                        userProfiles.map((userProfile: any) => (
+                          <option
+                            key={userProfile.id}
+                            value={userProfile.id}
+                            selected={userDetails?.user_profile_id == userProfile.id}
+                          >
+                            {userProfile.name} {/* Assuming the field is called 'level' */}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No levels available</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Status Section */}
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Joining Year</label>
+                    <input
+                      type="text"
+                      placeholder="Joining Year"
+                      value={formData.personal.join_year}
+                      onChange={(e) => handleInputChange('personal', 'join_year', e.target.value)}
+                    />
+                  </div>
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Inactive Status</label>
+                    <select
+                      className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                      value={formData.personal.status}
+                      onChange={(e) => handleInputChange('personal', 'status', e.target.value)}
+                    >
+                      <option value="">Status</option>
+                      <option value="1"  selected={userDetails?.status == 1}>Active</option>
+                      <option value="0"  selected={userDetails?.status == 0}>In-Active</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Image Upload */}
+                <div className="form-row">
+                  <div className="input-field w-full">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">User Image</label>
+                    <div className="flex items-center gap-4">
                       <input
-                        type="radio"
-                        name="gender"
-                        value="female"
-                        className="accent-pink-500"
+                        type="file"
+                        accept="image/*"
+                        className="file-input px-4 py-1 rounded-full shadow-[inset_0px_2px_8px_rgba(0,0,0,0.15)] bg-[#f4faff] text-sm text-[#393939]"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            const previewUrl = URL.createObjectURL(file);
+                            handleInputChange('personal', 'image', previewUrl);
+                            handleInputChange('personal', 'imageFile', file);
+                          }
+                        }}
                       />
-                      Female
-                    </label>
+
+                      {/* Image Preview */}
+                      {formData.personal.image && (
+                        <div className="relative">
+                          {/* Check if image is a blob URL (new upload) or S3 URL */}
+                          {formData.personal.image.startsWith('blob:') ? (
+                            <img
+                              src={formData.personal.image}
+                              alt="Preview"
+                              className="h-12 w-12 object-cover rounded-full"
+                            />
+                          ) : (
+                            <img
+                              src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${formData.personal.image}`}
+                              alt="Preview"
+                              className="h-12 w-12 object-cover rounded-full"
+                              onError={(e) => {
+                                // If image fails to load (doesn't exist on S3), clear the preview
+                                handleInputChange('personal', 'image', '');
+                              }}
+                            />
+                          )}
+
+                          {/* Remove button */}
+                          <button
+                            type="button"
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                            onClick={() => handleInputChange('personal', 'image', '')}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'address' && (
+              <div className="form-grid">
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Address</label>
+                    <input
+                      type="text"
+                      placeholder="Address"
+                      value={formData.address.user_address}
+                      onChange={(e) => handleInputChange('address', 'user_address', e.target.value)}
+                    />
+                  </div>
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">City</label>
+                    <input
+                      type="text"
+                      placeholder="City"
+                      value={formData.address.user_city}
+                      onChange={(e) => handleInputChange('address', 'user_city', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">State</label>
+                    <input
+                      type="text"
+                      placeholder="State"
+                      value={formData.address.user_state}
+                      onChange={(e) => handleInputChange('address', 'user_state', e.target.value)}
+                    />
+                  </div>
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Pincode</label>
+                    <input
+                      type="text"
+                      placeholder="Pincode"
+                      value={formData.address.user_pincode}
+                      onChange={(e) => handleInputChange('address', 'user_pincode', e.target.value)}
+                    />
+                  </div>
+
+                </div>
+
+                <div className="w-full">
+
+                  <div className="input-field w-full">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Temporary address</label>
+                    <textarea
+                      name="address_2"
+                      id="address_2"
+                      className='w-full'
+                      value={formData.address.user_address2}
+                      onChange={(e) => handleInputChange('address', 'user_address2', e.target.value)}
+                    />
                   </div>
                 </div>
 
               </div>
-              <div className="form-row">
-                <select
-                  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
-                >
-                  <option value="">User Profile</option>
-                  <option value="Admin">Admin</option>
-                  <option value="HR">HR</option>
-                  <option value="Employee">Employee</option>
-                </select>
-                <div className="input-field w-full">
-                  <input type="text" placeholder="Joining Year" />
+            )}
+
+            {activeSection === 'reporting' && (
+              <div className="form-grid">
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Supervisor / Subordinate</label>
+                    <select
+                      className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                      value={formData.reporting.subordinate}
+                      onChange={(e) => handleInputChange('reporting', 'subordinate', e.target.value)}
+                    >
+                      <option value="">Select any one</option>
+                      {[
+                        { value: 'Supervisor', label: 'Supervisor' },
+                        { value: 'Subordinate', label: 'Subordinate' }
+                      ].map(option => (
+                        <option key={option.value} value={option.value} selected={userDetails?.supervisor_opt == option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Employee Name</label>
+                    <select
+                      className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                      value={formData.reporting.employee_name}
+                      onChange={(e) => handleInputChange('reporting', 'employee_name', e.target.value)}
+                    >
+                      <option value="">Select Employee</option>
+                      {userLists.length > 0 ? (
+                        userLists.map((userLists: any) => (
+                          <option
+                            key={userLists.id}
+                            value={userLists.id}
+                            selected={userLists?.employee_id == userLists.id}
+                          >
+                            {userLists.first_name} {userLists.middle_name} {userLists.last_name}{/* Assuming the field is called 'level' */}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No levels available</option>
+                      )}
+                    </select>
+                  </div>
                 </div>
+
+                <div className="form-row">
+                  <div className="input-field">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Reporting Method</label>
+                    <select
+                      className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                      value={formData.reporting.reporting_method}
+                      onChange={(e) => handleInputChange('reporting', 'reporting_method', e.target.value)}
+                    >
+                      <option value="">Select any one</option>
+                      <option value="Direct">Direct</option>
+                      <option value="Indirect">Indirect</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* <h3 className="text-lg font-semibold mt-4">Direct Deposit</h3> */}
+
+
               </div>
-              <div className="form-row">
-                <div className="input-field w-full">
-                  <input type="password" placeholder="Password" />
-                </div>
-                <div className="input-field w-full">
-                  <input type="date" placeholder="Birthdate" />
-                </div>
-              </div>
-              <div className="form-row">
-                <select
-                  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
-                >
-                  <option value="">Inactive Status</option>
-                  <option value="Admin">Yes</option>
-                  <option value="HR">No</option>
-                </select>
-                <div className="flex items-center gap-4 w-[70%]">
-                  <label className="text-[#393939] text-[14px] font-normal font-inter min-w-[80px]">
-                    User Image
-                  </label>
-                  <input
-                    type="file"
-                    className="file-input px-4 py-1 rounded-full shadow-[inset_0px_2px_8px_rgba(0,0,0,0.15)] bg-[#f4faff] text-sm text-[#393939]"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+            )}
 
-          {activeSection === 'contact' && (
-            <div className="form-grid">
-              {/* CONTACT & ADDRESS SECTION BASED ON YOUR IMAGE */}
+            {activeSection === 'attendance' && (
+              <div className="form-grid">
+                <div className="form-row">
+                  <div className="input-field w-full">
+                    <label className="block mb-1 text-sm font-medium text-gray-700">Working Days</label>
+                    <div className="flex items-center gap-8">
+                      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) => (
+                        <label
+                          key={index}
+                          className="flex items-center gap-2 text-sm font-medium text-gray-700"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.attendance.working_days.includes(day)}
+                            onChange={() => handleCheckboxChange(day)}
+                          />
+                          {day}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
-              <div className="form-row">
-                <div className="input-field w-full">
-                  <input type="text" placeholder="user_address" />
-                </div>
-                <div className="input-field w-full">
-                  <input type="text" placeholder="user_city" />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="input-field w-full">
-                  <input type="text" placeholder="user_state" />
-                </div>
-                <div className="input-field w-full">
-                  <input type="text" placeholder="user_pincode" />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeSection === 'reporting' && (
-            <div className="form-grid space-y-4">
-              <div className="form-row">
-                <div className="input-field w-full">
-                  <label className="block mb-1 text-sm font-medium text-gray-700">Supervisor / Subordinate</label>
-                  <select className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]">
-                    <option value="">Subordinate</option>
-                  </select>
-                </div>
-                <div className="input-field w-full">
-                  <label className="block mb-1 text-sm font-medium text-gray-700">Employee Name</label>
-                  <select className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]">
-                    <option value="">Select Employee</option>
-                  </select>
-                </div>
-                <div className="input-field w-full">
-                  <label className="block mb-1 text-sm font-medium text-gray-700">Reporting Method</label>
-                  <select className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]">
-                    <option value="">In Direct</option>
-                  </select>
-                </div>
-              </div>
-
-              <h3 className="text-lg font-semibold mt-4">Direct Deposit</h3>
-
-              <div className="form-row">
-                <div className="input-field w-full">
-                  <label className="block mb-1 text-sm font-medium text-gray-700">Bank Name</label>
-                  <input
-                    type="text"
-                    placeholder="Test Bank"
-                    className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div className="input-field w-full">
-                  <label className="block mb-1 text-sm font-medium text-gray-700">Branch Name</label>
-                  <input
-                    type="text"
-                    placeholder="Main Branch"
-                    className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div className="input-field w-full">
-                  <label className="block mb-1 text-sm font-medium text-gray-700">Account</label>
-                  <input
-                    type="text"
-                    placeholder="1234567890"
-                    className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="input-field w-full">
-                  <label className="block mb-1 text-sm font-medium text-gray-700">IFSC</label>
-                  <input
-                    type="text"
-                    placeholder="TEST0001234"
-                    className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div className="input-field w-full">
-                  <label className="block mb-1 text-sm font-medium text-gray-700">Amount</label>
-                  <input
-                    type="text"
-                    placeholder="50000.00"
-                    className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div className="input-field w-full">
-                  <label className="block mb-1 text-sm font-medium text-gray-700">Transfer Type</label>
-                  <select className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]">
-                    <option value="">In Direct</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
-
-          {activeSection === 'offdays' && (
-            <div className="form-grid w-full">
-              {/* ✅ One-line Weekday Checkboxes */}
-              <div className="flex items-center gap-8 mb-6">
-                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) => (
-                  <label
-                    key={index}
-                    className="flex items-center gap-2 text-sm font-medium text-gray-700"
-                  >
-                    <input type="checkbox" />
-                    {day}
-                  </label>
+                {[
+                  { day: "Monday", inField: "monday_in", outField: "monday_out" },
+                  { day: "Tuesday", inField: "tuesday_in", outField: "tuesday_out" },
+                  { day: "Wednesday", inField: "wednesday_in", outField: "wednesday_out" },
+                  { day: "Thursday", inField: "thursday_in", outField: "thursday_out" },
+                  { day: "Friday", inField: "friday_in", outField: "friday_out" },
+                  { day: "Saturday", inField: "saturday_in", outField: "saturday_out" }
+                ].map((item, index) => (
+                  <div key={index} className="form-row">
+                    <div className="input-field">
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
+                        {item.day} In Time
+                      </label>
+                      <input
+                        type="time"
+                        className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                        value={formData.attendance[item.inField as keyof typeof formData.attendance]}
+                        onChange={(e) => handleInputChange('attendance', item.inField, e.target.value)}
+                      />
+                    </div>
+                    <div className="input-field">
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
+                        {item.day} Out Time
+                      </label>
+                      <input
+                        type="time"
+                        className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                        value={formData.attendance[item.outField as keyof typeof formData.attendance]}
+                        onChange={(e) => handleInputChange('attendance', item.outField, e.target.value)}
+                      />
+                    </div>
+                  </div>
                 ))}
               </div>
+            )}
 
-              {/* In/Out Time Inputs Per Day */}
-              {[
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-              ].map((day, index) => (
-                <div key={index} className="form-row flex flex-col lg:flex-row gap-4 mb-4">
-                  <div className="input-field w-full">
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      {day} In Date
-                    </label>
-                    <input
-                      type="time"
-                      className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
-                    />
-                  </div>
-                  <div className="input-field w-full">
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      {day} Out Date
-                    </label>
-                    <input
-                      type="time"
-                      className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        <div className="flex justify-center mt-8">
-    <button
-      type="submit"
-      className="px-8 py-2 rounded-full text-white font-medium transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-lg"
-    >
-      Submit
-    </button>
+{activeSection === 'deposit' && (
+  <div className="form-grid">
+    <div className="form-row">
+      <div className="input-field">
+        <label className="block mb-1 text-sm font-medium text-gray-700">Bank Name</label>
+        <input
+          type="text"
+          placeholder="Test Bank"
+          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+          value={formData.deposit.bank_name}
+          onChange={(e) => handleInputChange('deposit', 'bank_name', e.target.value)}
+        />
+      </div>
+      <div className="input-field">
+        <label className="block mb-1 text-sm font-medium text-gray-700">Branch Name</label>
+        <input
+          type="text"
+          placeholder="Main Branch"
+          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+          value={formData.deposit.branch_name}
+          onChange={(e) => handleInputChange('deposit', 'branch_name', e.target.value)}
+        />
+      </div>
+    </div>
+
+    <div className="form-row">
+      <div className="input-field">
+        <label className="block mb-1 text-sm font-medium text-gray-700">Account</label>
+        <input
+          type="text"
+          placeholder="1234567890"
+          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+          value={formData.deposit.account}
+          onChange={(e) => handleInputChange('deposit', 'account', e.target.value)}
+        />
+      </div>
+      <div className="input-field">
+        <label className="block mb-1 text-sm font-medium text-gray-700">IFSC</label>
+        <input
+          type="text"
+          placeholder="TEST0001234"
+          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+          value={formData.deposit.ifsc}
+          onChange={(e) => handleInputChange('deposit', 'ifsc', e.target.value)}
+        />
+      </div>
+    </div>
+
+    <div className="form-row">
+      <div className="input-field">
+        <label className="block mb-1 text-sm font-medium text-gray-700">Amount</label>
+        <input
+          type="text"
+          placeholder="50000.00"
+          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+          value={formData.deposit.amount}
+          onChange={(e) => handleInputChange('deposit', 'amount', e.target.value)}
+        />
+      </div>
+      <div className="input-field">
+        <label className="block mb-1 text-sm font-medium text-gray-700">Transfer Type</label>
+        <select
+          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+          value={formData.deposit.transfer_type}
+          onChange={(e) => handleInputChange('deposit', 'transfer_type', e.target.value)}
+        >
+          <option value="">Transfer Type</option>
+          <option value="Indirect">Indirect</option>
+          <option value="Direct">Direct</option>
+        </select>
+      </div>
+    </div>
   </div>
+)}
+
+            <div className="flex justify-center mt-8">
+              <button
+                type="submit"
+                className="px-8 py-2 rounded-full text-white font-medium transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-lg"
+              >
+                {isSubmitting ? 'Updating...' : 'Update'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-
-    </>
-
-  )
+    </form>
+    )}
+    </> )
 };
 
-export default personalDetails;
+export default PersonalDetails;

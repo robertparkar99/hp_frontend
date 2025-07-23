@@ -79,7 +79,7 @@ export const LogoSection: React.FC = () => {
 
       <div className="flex gap-2 border-l-2 border-black-500 px-2">
         {/* <p>{userData?.user_name}</p> */}
-        {userData?.org_logo ? <img src={`https://erp.triz.co.in/admin_dep/images/${userData.org_logo}`} alt="Organization Logo" width="80px" height="680px"/> : <p>{userData?.user_name}</p>}
+        {userData?.org_logo && userData?.org_logo!='' ? <img src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_logo/${userData?.org_logo}`} alt="Organization Logo" width="80px" height="680px"/> : <p>{userData?.user_name}</p>}
       </div>
     </div>
   );
