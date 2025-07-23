@@ -227,13 +227,13 @@ export default function Index({ onBack, knowledge, ability,skills }: JobroleNewP
                                 <div className="space-y-px">
                                 {skills.map((skill, index) => (
                                         <div key={index} className="relative group" onClick={() => setSelectedSkill(skill)}>
-                                            <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px] transition-all duration-300 group-hover:w-full group-hover:left-0 group-hover:rounded-none"></div>
-                                            <div className="bg-white h-[36px] flex items-center group-hover:bg-[#f0f8ff]">
+                                            <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px] transition-all duration-300 group-hover:w-full group-hover:left-0 group-hover:rounded-none opacity-100 group-hover:opacity-0 group-hover:delay-[0ms]"></div>
+                                            <div className="bg-white h-[36px] flex items-center transition-all duration-300 group-hover:bg-[#47A0FF]">
                                                 <div className="flex items-center justify-between w-full pl-[24px] pr-[8px]">
                                                     <span className="text-[#393939] text-[12px] truncate group-hover:text-white transition-colors duration-300" style={{
                                                         fontFamily: 'Inter, sans-serif',
                                                     }}>
-                                                         {skill.skill.length > 20 ? `${skill.skill.slice(0, 20)}...` : skill.skill}
+                                                        {skill.skill.length > 20 ? `${skill.skill.slice(0, 20)}...` : skill.skill}
                                                     </span>
                                                     <svg
                                                         width="16"
