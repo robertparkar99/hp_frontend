@@ -560,8 +560,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({ userDetails, userJobroleL
                       onChange={(e) => handleInputChange('personal', 'status', e.target.value)}
                     >
                       <option value="">Status</option>
-                      <option value="1">Active</option>
-                      <option value="0">In-Active</option>
+                      <option value="1"  selected={userDetails?.status == 1}>Active</option>
+                      <option value="0"  selected={userDetails?.status == 0}>In-Active</option>
                     </select>
                   </div>
                 </div>
