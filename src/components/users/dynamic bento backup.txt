@@ -1,0 +1,104 @@
+import { useMemo } from "react";
+
+const generateSpansAndAlignment = (count: number) => {
+  const spanOptions = [1, 2, 3];
+  const alignments = ["start", "center", "end"];
+  const justifies = ["start", "center", "end"];
+
+  return Array.from({ length: count }, () => ({
+    colSpan: spanOptions[Math.floor(Math.random() * spanOptions.length)],
+    rowSpan: spanOptions[Math.floor(Math.random() * spanOptions.length)],
+    alignItems: alignments[Math.floor(Math.random() * alignments.length)],
+    justifyContent: justifies[Math.floor(Math.random() * justifies.length)],
+  }));
+};
+
+export default function DynamicBentoGrid({ items }: { items: string[] }) {
+  // Only run once per mount
+  const spans = useMemo(() => generateSpansAndAlignment(items.length), [items.length]);
+
+
+  return (
+    <div className="grid grid-cols-6 auto-rows-[80px] grid-flow-dense gap-3 h-[280px] w-full overflow-y-auto hide-scrollbar">
+      {items.map((text, index) => {
+        const {
+          colSpan,
+          rowSpan,
+          alignItems,
+          justifyContent,
+        } = spans[index];
+        return (
+          <div
+            key={index}
+            className={`col-span-${colSpan} row-span-${rowSpan} bg-[#007BE5] text-white rounded-xl p-3 flex items-center justify-center text-[14px] font-bold leading-tight text-center overflow-hidden`}
+            style={{
+              display: "flex",
+              alignItems: alignItems,
+              justifyContent: justifyContent,
+            }}
+          >
+            <p className="line-clamp-3">{text}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+
+       {/* Ability Bento Grid */}
+                                <div className="grid grid-cols-4 gap-3 h-[280px]">
+                                    {/* Box 1 */}
+                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-3">
+                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
+                                            Coding languages for programming of algorithms and signals
+                                        </p>
+                                    </div>
+
+                                    {/* Box 2 */}
+                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 row-span-2">
+                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
+                                            Usage of analytics platforms and tools
+                                        </p>
+                                    </div>
+
+                                    {/* Box 3 */}
+                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 col-span-2 row-span-2">
+                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
+                                            Range and application of various statistical methods and
+                                            algorithms
+                                        </p>
+                                    </div>
+
+                                    {/* Box 4 */}
+                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 row-span-3">
+                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
+                                            Range and application of various types of data models
+                                        </p>
+                                    </div>
+
+                                    {/* Box 5 */}
+                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 row-span-2">
+                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
+                                            Statistical modelling techniques
+                                        </p>
+                                    </div>
+
+                                    {/* Box 6 - Special gradient background */}
+                                    {/* bg-gradient-to-r from-[#1E8C7A] */}
+                                    <div className=" bg-[#007BE5] via-[#0E4037] to-[#082621] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-3 col-span-3">
+                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
+                                            Types of statistical analyses, data models, algorithms and
+                                            advanced computational methods
+                                        </p>
+                                    </div>
+
+                                    {/* Box 7 */}
+                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-3 col-span-2">
+                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
+                                            Data analytics and modelling business use cases
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>

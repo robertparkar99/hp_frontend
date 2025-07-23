@@ -1,5 +1,18 @@
 import React from "react";
-
+import { useState } from "react";
+import { BentoGrid, BentoItem } from "./BentoGrid";
+import DynamicBentoGrid from "./DynamicBentoGrid";
+import DynamicBentoAbillity from "./DynamicBentoAbillity";
+const topics = [
+    "Coding languages for programming of algorithms and signals",
+    "Usage of analytics platforms and tools",
+    "Range and application of various statistical methods and algorithms",
+    "Range and application of various types of data models",
+    "Statistical modelling techniques",
+    "Types of statistical analyses, data models, algorithms and advanced computational methods",
+    "Data analytics and modelling business",
+    "Statistical modelling techniques",
+];
 const menuItems = Array(11).fill("Data Analytics and Com...");
 
 function ChevronIcon() {
@@ -53,12 +66,14 @@ interface Skill {
     sub_category: string;
     title: string;
 }
-
-interface UserJobroleSkillsProps {
-    userJobroleSkills: Skill[];
-    activeSkill : string;
+interface JobroleNewProps {
+    onBack: () => void;
+    knowledge: any[];
+    ability: any[];
+    skills: Skill[];
 }
-export default function Index({ userJobroleSkills, activeSkill }: UserJobroleSkillsProps) {
+export default function Index({ onBack, knowledge, ability,skills }: JobroleNewProps) {
+    const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
     return (
         <div className="min-h-screen bg-white">
             {/* Mobile Layout */}
@@ -190,6 +205,12 @@ export default function Index({ userJobroleSkills, activeSkill }: UserJobroleSki
             {/* Desktop Layout - Compact to fit viewport */}
             <div className="hidden xl:block">
                 <div className="max-w-screen-xl mx-auto p-4 h-screen overflow-y-auto hide-scrollbar">
+                    <button
+                        onClick={onBack}
+                        className="mb-4 text-blue-500 hover:text-blue-700 hover:cursor-pointer"
+                    >
+                        ← Back to Skills
+                    </button>
                     <div className="flex gap-4 h-full">
                         {/* Sidebar */}
                         <div className="w-[200px] flex-shrink-0">
@@ -204,19 +225,22 @@ export default function Index({ userJobroleSkills, activeSkill }: UserJobroleSki
                             </div>
                             <div className="bg-[#C8C8C8] rounded-[15px] border-[1.5px] border-[rgba(71,160,255,0.25)] shadow-[0px_0px_6px_1px_rgba(0,0,0,0.25)] h-[calc(76vh-120px)] overflow-hidden">
                                 <div className="space-y-px">
-                                    {menuItems.map((item, index) => (
-                                        <div key={index} className="relative">
-                                            <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px]"></div>
-                                            <div className="bg-white h-[36px] flex items-center">
+                                {skills.map((skill, index) => (
+                                        <div key={index} className="relative group" onClick={() => setSelectedSkill(skill)}>
+                                            <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px] transition-all duration-300 group-hover:w-full group-hover:left-0 group-hover:rounded-none"></div>
+                                            <div className="bg-white h-[36px] flex items-center group-hover:bg-[#f0f8ff]">
                                                 <div className="flex items-center justify-between w-full pl-[24px] pr-[8px]">
-                                                    <span className="text-[#393939] text-[12px] font-normal truncate">
-                                                        {item}
+                                                    <span className="text-[#393939] text-[12px] truncate group-hover:text-white transition-colors duration-300" style={{
+                                                        fontFamily: 'Inter, sans-serif',
+                                                    }}>
+                                                         {skill.skill.length > 20 ? `${skill.skill.slice(0, 20)}...` : skill.skill}
                                                     </span>
                                                     <svg
                                                         width="16"
                                                         height="17"
                                                         viewBox="0 0 24 25"
                                                         fill="none"
+                                                        className="group-hover:fill-white transition-colors duration-300"
                                                     >
                                                         <path
                                                             d="M7.84467 21.376C7.55178 21.0831 7.55178 20.6083 7.84467 20.3154L14.5643 13.5957L7.84467 6.87601C7.55178 6.58311 7.55178 6.1083 7.84467 5.8154C8.13756 5.5225 8.61244 5.5225 8.90533 5.8154L16.1553 13.0654C16.4482 13.3583 16.4482 13.8331 16.1553 14.126L8.90533 21.376C8.61244 21.6689 8.13756 21.6689 7.84467 21.376Z"
@@ -240,7 +264,7 @@ export default function Index({ userJobroleSkills, activeSkill }: UserJobroleSki
                                         <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
                                             Knowledge:
                                         </h2>
-                                        <div className="w-[125vh] h-[3px] bg-[#686868]"></div>
+                                        <div className="w-[100vh] h-[3px] bg-[#686868]"></div>
                                     </div>
                                     <img
                                         src="https://api.builder.io/api/v1/image/assets/TEMP/96c5e570547156dbec01c64c2b33e42ed2609d23?width=161"
@@ -249,59 +273,21 @@ export default function Index({ userJobroleSkills, activeSkill }: UserJobroleSki
                                     />
                                 </div>
 
-                                {/* Knowledge Bento Grid */}
-                                <div className="grid grid-cols-4 gap-3 h-[280px]">
-                                    {/* Box 1 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-3">
-                                        <p className="text-white font-bold text-[11px] text-center leading-tight">
-                                            Coding languages for programming of algorithms and signals
-                                        </p>
-                                    </div>
+                                {/* <div className="h-[280px] w-full pt-2">
+                                    <BentoGrid>
+                                        <BentoItem>Coding languages for programming of algorithms and signals</BentoItem>
+                                        <BentoItem>Usage of analytics platforms and tools</BentoItem>
+                                        <BentoItem>Range and application of various statistical methods and algorithms</BentoItem>
+                                        <BentoItem>Range and application of various types of data models</BentoItem>
+                                        <BentoItem>Statistical modelling techniques</BentoItem>
+                                        <BentoItem>
+                                            Types of statistical analyses, data models, algorithms and advanced computational methods
+                                        </BentoItem>
+                                        <BentoItem>Data analytics and modelling business use cases</BentoItem>
+                                    </BentoGrid>
+                                </div> */}
+                                <DynamicBentoGrid items={selectedSkill?.knowledge || knowledge} />
 
-                                    {/* Box 2 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 row-span-2">
-                                        <p className="text-white font-bold text-[11px] text-center leading-tight">
-                                            Usage of analytics platforms and tools
-                                        </p>
-                                    </div>
-
-                                    {/* Box 3 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 col-span-2 row-span-2">
-                                        <p className="text-white font-bold text-[11px] text-center leading-tight">
-                                            Range and application of various statistical methods and
-                                            algorithms
-                                        </p>
-                                    </div>
-
-                                    {/* Box 4 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 row-span-3">
-                                        <p className="text-white font-bold text-[11px] text-center leading-tight">
-                                            Range and application of various types of data models
-                                        </p>
-                                    </div>
-
-                                    {/* Box 5 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 row-span-2">
-                                        <p className="text-white font-bold text-[11px] text-center leading-tight">
-                                            Statistical modelling techniques
-                                        </p>
-                                    </div>
-
-                                    {/* Box 6 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-3 col-span-3">
-                                        <p className="text-white font-bold text-[11px] text-center leading-tight">
-                                            Types of statistical analyses, data models, algorithms and
-                                            advanced computational methods
-                                        </p>
-                                    </div>
-
-                                    {/* Box 7 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-3 col-span-2">
-                                        <p className="text-white font-bold text-[11px] text-center leading-tight">
-                                            Data analytics and modelling business use cases
-                                        </p>
-                                    </div>
-                                </div>
                             </div>
 
                             {/* Ability Section */}
@@ -311,7 +297,7 @@ export default function Index({ userJobroleSkills, activeSkill }: UserJobroleSki
                                         <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
                                             Ability:
                                         </h2>
-                                        <div className="w-[125vh] h-[3px] bg-[#686868]"></div>
+                                        <div className="w-[100vh] h-[3px] bg-[#686868]"></div>
                                     </div>
                                     <img
                                         src="https://api.builder.io/api/v1/image/assets/TEMP/9244e2a21aa3673a48797299453c941622eefb86?width=200"
@@ -319,61 +305,7 @@ export default function Index({ userJobroleSkills, activeSkill }: UserJobroleSki
                                         className="w-[60px] h-[34px]"
                                     />
                                 </div>
-
-                                {/* Ability Bento Grid */}
-                                <div className="grid grid-cols-4 gap-3 h-[280px]">
-                                    {/* Box 1 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-3">
-                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
-                                            Coding languages for programming of algorithms and signals
-                                        </p>
-                                    </div>
-
-                                    {/* Box 2 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 row-span-2">
-                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
-                                            Usage of analytics platforms and tools
-                                        </p>
-                                    </div>
-
-                                    {/* Box 3 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 col-span-2 row-span-2">
-                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
-                                            Range and application of various statistical methods and
-                                            algorithms
-                                        </p>
-                                    </div>
-
-                                    {/* Box 4 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 row-span-3">
-                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
-                                            Range and application of various types of data models
-                                        </p>
-                                    </div>
-
-                                    {/* Box 5 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-end justify-center p-3 row-span-2">
-                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
-                                            Statistical modelling techniques
-                                        </p>
-                                    </div>
-
-                                    {/* Box 6 - Special gradient background */}
-                                    {/* bg-gradient-to-r from-[#1E8C7A] */}
-                                    <div className=" bg-[#007BE5] via-[#0E4037] to-[#082621] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-3 col-span-3">
-                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
-                                            Types of statistical analyses, data models, algorithms and
-                                            advanced computational methods
-                                        </p>
-                                    </div>
-
-                                    {/* Box 7 */}
-                                    <div className="bg-[#007BE5] rounded-[12px] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25),0px_2px_2px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-3 col-span-2">
-                                        <p className="text-white font-bold text-[10px] text-center leading-tight">
-                                            Data analytics and modelling business use cases
-                                        </p>
-                                    </div>
-                                </div>
+                                <DynamicBentoAbillity items={selectedSkill?.ability || ability} />
                             </div>
                         </div>
                     </div>
@@ -382,3 +314,49 @@ export default function Index({ userJobroleSkills, activeSkill }: UserJobroleSki
         </div>
     );
 }
+// // First install the bento grid library
+// import { BentoGrid, BentoGridItem } from 'react-bento-grid';
+
+// <div className="h-[280px] w-full">
+//     <BentoGrid
+//         cols={4}
+//         rows={3}
+//         gap={12}
+//         autoRows={true}
+//         className="h-full w-full"
+//     >
+//         {[
+//             {
+//                 title: 'Coding languages',
+//                 description: 'Programming of algorithms and signals',
+//                 className: 'bg-[#007BE5] rounded-[12px]',
+//                 span: 1
+//             },
+//             {
+//                 title: 'Analytics platforms',
+//                 description: 'Usage of analytics tools',
+//                 className: 'bg-[#007BE5] rounded-[12px] row-span-2',
+//                 span: 1
+//             },
+//             // Add all other items with appropriate span configurations
+//         ].map((item, i) => (
+//             <BentoGridItem
+//                 key={i}
+//                 title={item.title}
+//                 description={item.description}
+//                 header={null}
+//                 className={item.className}
+//                 colSpan={item.span}
+//                 rowSpan={item.span}
+//             >
+//                 <p className="text-white font-bold text-[11px] text-center p-3">
+//                     {item.description}
+//                 </p>
+//             </BentoGridItem>
+//         ))}
+//     </BentoGrid>
+// </div>
+
+
+
+
