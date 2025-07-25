@@ -1,201 +1,195 @@
-import { ArrowLeft, Search, Filter, MoreVertical, User, Upload, Shield, CheckSquare, BarChart3, Star } from 'lucide-react';
-import { useState } from 'react';
-
 export default function Index() {
- const [activeSection, setActiveSection] = useState<string>('description');
- 
-
-  const navItems = [
-    { icon: User, label: 'Personal Details', active: false },
-    { icon: Upload, label: 'Upload Document', active: false },
-    { icon: Shield, label: 'Job role Skills', active: false },
-    { icon: CheckSquare, label: 'Job role Task', active: false },
-    { icon: BarChart3, label: 'level of Responsibility', active: true },
-    { icon: Star, label: 'Skill Rating', active: false },
-  ];
-
-  const chevronSections = [
-    {
-      id: 'description',
-      title: 'Description/\nGuidance notes',
-      color: 'blue',
-      bgColor: '#C3E0FF',
-      borderColor: '#6BB2FD'
-    },
-    {
-      id: 'responsibility',
-      title: 'Responsibility Attribute',
-      color: 'orange',
-      bgColor: '#FFC8B8',
-      borderColor: '#FF8360'
-    },
-    {
-      id: 'business',
-      title: 'Business skills /\nBehavioral factors',
-      color: 'teal',
-      bgColor: '#88E9D9',
-      borderColor: '#38C0AA'
-    }
-  ];
-
-  const renderDetailedContent = () => {
-    if (activeSection !== 'description') return null;
-
-    return (
-      <div className="space-y-10 animate-in slide-in-from-right-4 duration-500">
-        {/* Description Section */}
-        <div className="bg-white border-2 border-blue-200 rounded-2xl shadow-lg overflow-hidden">
-          {/* Header */}
-          <div className="bg-blue-500 px-10 py-5">
-            <h2 className="text-white text-3xl font-bold">Description</h2>
-          </div>
-          {/* Content */}
-          <div className="p-2">
-            <p className="text-gray-900 text-xl pl-2 leading-relaxed">
-              Essence of the level: Operates at the highest organizational level, determines overall organizational vision and strategy, and assumes accountability for overall success.
-            </p>
-          </div>
-        </div>
-
-        {/* Guidance Notes Section */}
-        <div className="relative rounded-2xl overflow-hidden shadow-lg">
-          {/* Background with gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-blue-100 to-blue-300"></div>
-          <div className="relative">
-            {/* Header */}
-            <div className="bg-blue-500 px-10 py-5">
-              <h2 className="text-white text-3xl font-bold">Guidance notes</h2>
+  return (
+    <div className="min-h-screen bg-white p-6 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Main Container */}
+        <div className="relative w-full">
+          {/* Level Badge and Title - Same Line on Desktop */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:gap-6 mb-6">
+            <div className="flex justify-start mb-3 lg:mb-0">
+              <div className="flex items-center justify-center px-4 py-1 bg-[#007BE5] border-2 border-[#00559E] rounded-2xl">
+                <span className="text-white font-bold text-lg lg:text-base" style={
+                  {
+                    fontFamily: 'Inter, sans-serif',
+                  }
+                }>Level-7</span>
+              </div>
             </div>
-            {/* Content */}
-            <div className="p-10 relative">
-              <div className="flex items-start gap-8">
-                <div className="flex-1 space-y-6">
-                  <p className="text-gray-700 text-lg leading-relaxed">
-                    Levels represent levels of responsibility in the workplace. Each successive level describes increasing impact, responsibility and accountability. - Autonomy, influence and complexity are generic attributes that indicate the level of responsibility. - Business skills and behavioral factors describe the behaviors required to be effective at each level.
-                  </p>
-                  <p className="text-gray-700 text-lg leading-relaxed">
-                    - The knowledge attribute defines the depth and breadth of understanding required to perform and influence work effectively. Understanding these attributes will help you get the most out of levels. They are critical to understanding and applying the levels described in skill descriptions.
-                  </p>
-                </div>
-                {/* Illustration */}
-                <div className="flex-shrink-0">
-                  <div className="relative">
-                    <div className="w-32 h-32 bg-gradient-to-b from-teal-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
+            <div className="text-left">
+              <h1 className="text-[#23395B] font-bold text-lg lg:text-2xl" style={
+                {
+                  fontFamily: 'Inter, sans-serif',
+                }
+              }>
+                Level of Responsibility: Set strategy, inspire, mobilise
+              </h1>
+            </div>
+          </div>
+
+          {/* Progress Line */}
+          <div className="hidden md:block relative mb-8">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-[#686868] rounded-full"></div>
+              <div className="flex-1 h-0.5 bg-[#686868]"></div>
+              <div className="w-3 h-3 bg-[#686868] rounded-full"></div>
+            </div>
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-[450px_1fr] gap-6 lg:gap-8 relative">
+            {/* Left Side - Navigation Arrows */}
+            <div className="space-y-6 lg:space-y-8">
+              {/* Description/Guidance notes */}
+              <div className="relative">
+                <div className="flex items-center bg-[#C3E0FF] border-2 border-[#6BB2FD] h-16 lg:h-14 relative overflow-hidden"
+                  style={{
+                    clipPath: 'polygon(12px 0%, 100% 0%, 100% 100%, 12px 100%, 0% 50%)',
+                    borderRadius: '12px 10px 10px 12px'
+                  }}>
+                  <div className="ml-12 lg:ml-14 flex-1 pr-3">
+                    <span className="text-[#393939] font-bold text-base lg:text-sm leading-tight" style={
+                      {
+                        fontFamily: 'Inter, sans-serif',
+                      }
+                    }>
+                      Description/<br />Guidance notes
+                    </span>
+                  </div>
+                  <div className="relative mr-2">
+                    <div className="w-12 h-12 lg:w-10 lg:h-10 bg-white rounded-full shadow-lg flex items-center justify-center">
                       <img
-                        src="https://api.builder.io/api/v1/image/assets/TEMP/0d09b8bd96dc24810d8e067b4ad8fe1c6440e16e?width=200"
-                        alt="Guidance illustration"
-                        className="w-20 h-20 object-contain"
+                        src="https://api.builder.io/api/v1/image/assets/TEMP/99356ec313277fe8adcfe73d47f1b723b77e049a?width=91"
+                        alt="Information icon"
+                        className="w-6 h-6 lg:w-5 lg:h-5"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Responsibility Attribute */}
+              <div className="relative">
+                <div className="flex items-center bg-[#FFC8B8] border-2 border-[#FF8360] h-16 lg:h-14 relative overflow-hidden"
+                  style={{
+                    clipPath: 'polygon(12px 0%, 100% 0%, 100% 100%, 12px 100%, 0% 50%)',
+                    borderRadius: '12px 10px 10px 12px'
+                  }}>
+                  <div className="ml-12 lg:ml-14 flex-1 pr-3">
+                    <span className="text-[#393939] font-bold text-base lg:text-sm" style={
+                      {
+                        fontFamily: 'Inter, sans-serif',
+                      }
+                    }>
+                      Responsibility Attribute
+                    </span>
+                  </div>
+                  <div className="relative mr-2">
+                    <div className="w-12 h-12 lg:w-10 lg:h-10 bg-white rounded-full shadow-lg flex items-center justify-center">
+                      <img
+                        src="https://api.builder.io/api/v1/image/assets/TEMP/99356ec313277fe8adcfe73d47f1b723b77e049a?width=91"
+                        alt="Information icon"
+                        className="w-6 h-6 lg:w-5 lg:h-5"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Business skills / Behavioral factors */}
+              <div className="relative">
+                <div className="flex items-center bg-[#88E9D9] border-2 border-[#38C0AA] h-16 lg:h-14 relative overflow-hidden"
+                  style={{
+                    clipPath: 'polygon(12px 0%, 100% 0%, 100% 100%, 12px 100%, 0% 50%)',
+                    borderRadius: '12px 10px 10px 12px'
+                  }}>
+                  <div className="ml-12 lg:ml-14 flex-1 pr-3">
+                    <span className="text-[#393939] font-bold text-base lg:text-sm text-center leading-tight" style={
+                      {
+                        fontFamily: 'Inter, sans-serif',
+                      }
+                    }>
+                      Business skills /<br />Behavioral factors
+                    </span>
+                  </div>
+                  <div className="relative mr-2">
+                    <div className="w-12 h-12 lg:w-10 lg:h-10 bg-white rounded-full shadow-lg flex items-center justify-center">
+                      <img
+                        src="https://api.builder.io/api/v1/image/assets/TEMP/99356ec313277fe8adcfe73d47f1b723b77e049a?width=91"
+                        alt="Information icon"
+                        className="w-6 h-6 lg:w-5 lg:h-5"
                       />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
-      {/* Main Container */}
-      <div className="max-w-7xl mx-auto">
-        {/* Main Card */}
-        <div className=" relative overflow-hidden">
+            {/* Vertical Line - positioned in the gap between columns */}
+            <div className="hidden lg:block absolute left-[450px] top-[-10px] w-1 h-76 bg-[#686868] rounded-xl transform translate-x-3"></div>
 
-          {/* Main Content Area */}
-          <div className="px-4 lg:px-8 pb-6 lg:pb-8">
-            {/* Title and Progress */}
-            <div className="mb-6 lg:mb-8">
-                
-              <h1 className="text-xl lg:text-2xl font-bold text-navy-900 mb-4 text-center leading-tight">
-                Level of Responsibility: Set strategy, inspire, mobilise
-              </h1>
-
-              {/* Progress Line */}
-              <div className="relative max-w-4xl mx-auto">
-                <div className="flex items-center justify-between">
-                  <div className="w-3 h-3 lg:w-4 lg:h-4 bg-gray-500 rounded-full"></div>
-                  <div className="flex-1 h-0.5 bg-gray-500"></div>
-                  <div className="w-3 h-3 lg:w-4 lg:h-4 bg-gray-500 rounded-full"></div>
+            {/* Right Side - Content Sections */}
+            <div className="space-y-4 lg:space-y-6">
+              {/* Description Section */}
+              <div className="bg-white border-2 border-[#BFDEFF] rounded-xl lg:rounded-2xl shadow-lg overflow-hidden">
+                <div className="bg-[#47A0FF] px-4 lg:px-6 py-3 lg:py-4">
+                  <h2 className="text-white font-bold text-xl lg:text-lg" style={
+                    {
+                      fontFamily: 'Inter, sans-serif',
+                    }
+                  }>Description</h2>
+                </div>
+                <div className="p-4 lg:p-6">
+                  <p className="text-black text-base lg:text-sm leading-relaxed" style={
+                    {
+                      fontFamily: 'InterMedium, sans-serif',
+                    }
+                  }>
+                    Essence of the level: Operates at the highest organizational level, determines overall organizational vision and strategy, and assumes accountability for overall success.
+                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Content Sections */}
-            <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8">
-              {/* Left Side - Chevron Sections */}
-              <div className="w-full lg:w-auto lg:flex-shrink-0 space-y-4 lg:space-y-6">
-                {chevronSections.map((section, index) => (
-                  <div key={section.id} className="relative">
-                    <button
-                      onClick={() => setActiveSection(activeSection === section.id ? section.id : section.id)}
-                      className="relative w-full lg:w-80 hover:scale-105 transition-transform duration-200 cursor-pointer"
-                    >
-                      {/* Chevron Shape */}
-                      <svg
-                        className="w-full h-16 lg:h-20 drop-shadow-sm"
-                        viewBox="0 0 445 100"
-                        preserveAspectRatio="none"
-                      >
-                        <path
-                          d="M4.06348 55.5869C0.352637 52.7863 0.352641 47.2137 4.06348 44.4131L59.7129 2.41309C60.9275 1.49641 62.408 1.00008 63.9297 1L437 1C440.866 1 444 4.134 444 8V92C444 95.866 440.866 99 437 99L63.9297 99C62.408 98.9999 60.9275 98.5036 59.7129 97.5869L4.06348 55.5869Z"
-                          fill={section.bgColor}
-                          stroke={section.borderColor}
-                          strokeWidth="2"
-                        />
-                      </svg>
+              <div className="relative max-w-4xl w-full mx-auto bg-white rounded-[20px] shadow-md border border-[#C3E0FF]">
+                {/* Header */}
+                <div className="bg-[#3C9EFF] rounded-t-[20px] px-6 py-4">
+                  <h2 className="text-white text-xl font-bold" style={
+                    {
+                      fontFamily: 'Inter, sans-serif',
+                    }
+                  }>Guidance notes</h2>
+                </div>
 
-                      {/* Text Content */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center">
-                          {section.title.split('\n').map((line, i) => (
-                            <h3 key={i} className="text-xs lg:text-sm font-bold text-gray-800">
-                              {line}
-                            </h3>
-                          ))}
-                        </div>
-                      </div>
+                {/* Body */}
+                <div className="relative p-5 text-[#333] text-black text-sm lg:text-sm leading-relaxed z-10" style={
+                  {
+                    fontFamily: 'InterMedium, sans-serif',
+                  }
+                }>
+                  <p className="mb-3">
+                    Levels represent levels of responsibility in the workplace. Each successive level describes increasing impact, responsibility and accountability.
+                    – Autonomy, influence and complexity are generic attributes that indicate the level of responsibility.
+                    – Business skills and behavioral factors describe the behaviors required to be effective at each level.
+                  </p>
+                  <p className="pr-[96px]">
+                    – The knowledge attribute defines the depth and breadth of understanding required to perform and influence work effectively.
+                    Understanding these attributes will help you get the most out of levels.
+                    They are critical to understanding and applying the levels described in skill descriptions.
+                  </p>
+                </div>
 
-                      {/* Info Icon */}
-                      <div className="absolute right-2 lg:right-4 top-1/2 transform -translate-y-1/2">
-                        <div className="w-6 h-6 lg:w-8 lg:h-8 bg-white rounded-full shadow-lg flex items-center justify-center">
-                          <img
-                            src="https://api.builder.io/api/v1/image/assets/TEMP/ef6e9025c3b14e8fc60bbee6856134ad094d0db9?width=91"
-                            alt="Info"
-                            className="w-3 h-3 lg:w-4 lg:h-4"
-                          />
-                        </div>
-                      </div>
-                    </button>
+                {/* Bottom-right Icon (cut-out style) */}
+                <div className="absolute bottom-[-10.5px] right-[-9px] z-20">
+                  <div className="w-34 h-34 bg-white rounded-full flex items-center justify-center border-4 border-white">
+                    <img
+                      src="/Screenshot 2025-07-26 015219.png"
+                      alt="Guidance Icon"
+                      className="w-104 h-104 object-contain"
+                    />
                   </div>
-                ))}
-              </div>
-
-              {/* Vertical Divider */}
-              <div className="hidden lg:block w-px h-72 bg-gray-400 mx-2"></div>
-
-              {/* Right Side - Content Area */}
-              <div className="w-full lg:flex-1 mt-6 lg:mt-0">
-                <div className="p-4 lg:p-0 min-h-[400px]">
-                  {activeSection ? (
-                    renderDetailedContent()
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center text-gray-500">
-                        <div className="mb-4">
-                          <svg className="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <p className="text-lg font-medium mb-2">Select a section to view details</p>
-                        <p className="text-sm">Click on any of the sections on the left to see detailed information</p>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
+
+
             </div>
           </div>
         </div>
