@@ -1,13 +1,86 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-export default function UploadDocumentPage() {
-  const [documentType, setDocumentType] = useState('');
-  const [title, setTitle] = useState('');
+interface UploadDocType {
+  id: number;
+  document_type: string;
+}
+
+interface SessionDataType {
+  subInstituteId?: string;
+  userId?: string;
+  token?: string;
+  url?: string;
+}
+
+interface UploadedEntry {
+  document_type: string;
+  document_title: string;
+  filename: string;
+}
+
+interface ExistingDoc {
+  document_type_id: number;
+  document_title: string;
+  document_name: string;
+}
+
+interface UploadDocProps {
+  uploadDoc: UploadDocType[];
+  sessionData: SessionDataType;
+  clickedID: string;
+  documentLists: any[];
+}
+
+const UploadDocumentPage: React.FC<UploadDocProps> = ({ uploadDoc, sessionData, clickedID, documentLists }) => {
+  // console.log('documentLists',documentLists);
+  const [documentType, setDocumentType] = useState<string>('');
+  const [title, setTitle] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
+  const [uploadedDocs, setUploadedDocs] = useState<UploadedEntry[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchExistingDocs = async () => {
+      try {
+        setLoadingDocs(true);
+        const res = await fetch(`${sessionData.url}/user/get_user_documents/${clickedID}`, {
+          headers: {
+            'Authorization': `Bearer ${sessionData.token}`,
+          },
+        });
+
+        const data = await res.json();
+        console.log("📥 Existing documents response:", data);
+
+        if (res.ok && Array.isArray(data.data)) {
+          const formattedDocs: UploadedEntry[] = data.data.map((doc: ExistingDoc) => {
+            const typeName = uploadDoc.find((d) => d.id === doc.document_type_id)?.document_type || 'Unknown';
+            return {
+              document_type: typeName,
+              document_title: doc.document_title,
+              filename: doc.document_name,
+            };
+          });
+
+          setUploadedDocs(formattedDocs);
+        } else {
+          console.warn('⚠️ Unexpected response format:', data);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching documents:', error);
+      } finally {
+        setLoadingDocs(false);
+      }
+    };
+
+    if (sessionData?.url && sessionData?.token && clickedID) {
+      fetchExistingDocs();
+    }
+  }, [sessionData, clickedID, uploadDoc]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,13 +91,17 @@ export default function UploadDocumentPage() {
     }
 
     const formData = new FormData();
-    formData.append('documentType', documentType);
-    formData.append('title', title);
-    formData.append('file', file);
+    formData.append('type', 'API');
+    formData.append('sub_institute_id', sessionData?.subInstituteId || '');
+    formData.append('user_id', sessionData?.userId || '');
+    formData.append('_token', sessionData?.token || '');
+    formData.append('document_type_id', documentType);
+    formData.append('document_title', title);
+    formData.append('document', file);
 
     try {
       setUploading(true);
-      const res = await fetch('/api/upload', {
+      const res = await fetch(`${sessionData.url}/user/user_document/${clickedID}`, {
         method: 'POST',
         body: formData,
       });
@@ -32,6 +109,18 @@ export default function UploadDocumentPage() {
       const data = await res.json();
 
       if (res.ok) {
+        const docTypeName =
+          uploadDoc.find((d) => String(d.id) === String(documentType))?.document_type || 'Unknown';
+
+        setUploadedDocs((prev) => [
+          ...prev,
+          {
+            document_type: docTypeName,
+            document_title: title,
+            filename: file.name,
+          },
+        ]);
+
         setMessage('✅ Document uploaded successfully!');
         setDocumentType('');
         setTitle('');
@@ -49,10 +138,9 @@ export default function UploadDocumentPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto bg-white shadow-xl rounded-xl mt-10 border border-gray-200">
       <h2 className="text-xl font-semibold text-gray-800 mb-6">Upload Document</h2>
+
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-
-          {/* Document Type */}
           <div className="flex flex-col">
             <label className="text-sm font-medium text-gray-700 mb-1">Document Type</label>
             <select
@@ -62,13 +150,14 @@ export default function UploadDocumentPage() {
               className="h-[44px] w-full px-4 rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             >
               <option value="">Select</option>
-              <option value="Resume">Resume</option>
-              <option value="Certificate">Certificate</option>
-              <option value="License">License</option>
+              {uploadDoc.map((type) => (
+                <option key={type.id} value={String(type.id)}>
+                  {type.document_type}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* Document Title */}
           <div className="flex flex-col">
             <label className="text-sm font-medium text-gray-700 mb-1">Document Title</label>
             <input
@@ -81,7 +170,6 @@ export default function UploadDocumentPage() {
             />
           </div>
 
-          {/* File Upload */}
           <div className="flex flex-col">
             <label className="text-sm font-medium text-gray-700 mb-1">File</label>
             <input
@@ -94,7 +182,6 @@ export default function UploadDocumentPage() {
           </div>
         </div>
 
-        {/* Submit Button */}
         <div className="flex justify-center pt-2">
           <button
             type="submit"
@@ -105,11 +192,50 @@ export default function UploadDocumentPage() {
           </button>
         </div>
 
-        {/* Status Message */}
-        {message && (
-          <p className="text-center text-sm text-gray-600">{message}</p>
-        )}
+        {message && <p className="text-center text-sm text-gray-600">{message}</p>}
       </form>
+
+      <div className="mt-10">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">Uploaded Documents</h3>
+
+        {loadingDocs ? (
+          <p className="text-sm text-gray-500">Loading documents...</p>
+        ) : documentLists.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm text-left border border-gray-200 shadow-md rounded-md overflow-hidden">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr>
+                  <th className="px-6 py-3 border-b">Document Type</th>
+                  <th className="px-6 py-3 border-b">Title</th>
+                  <th className="px-6 py-3 border-b">Filename</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white">
+                {documentLists.map((doc: any, index: any) => (
+                  <tr key={index} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 border-b">{doc.document_type}</td>
+                    <td className="px-6 py-4 border-b">{doc.document_title}</td>
+                    <td className="px-6 py-4 border-b">
+                      <a
+                        href={`https://s3-triz.fra1.digitaloceanspaces.com/public/hp_staff_document/${doc.file_name}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {doc.document_title}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No documents uploaded yet.</p>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default UploadDocumentPage;

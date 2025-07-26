@@ -8,7 +8,7 @@ import JobRoleNew from '../../../components/users/jobroleNew';
 import JobRoleSkill from '../../../components/users/jobroleSkill';
 import JobRoleTasks from '../../../components/users/jobroleTask';
 import PersonalDetails from '../../../components/users/personalDetails';
-import LOR from '../../../components/users/LOR';
+import LOR from '../../../components/users/NewLOR';
 import UploadDoc from '../../../components/users/uploadDoc';
 import { Button } from "@/components/ui/button";  // Make sure you have this
 import { cn } from "@/lib/utils";                 // Make sure you have this
@@ -24,9 +24,11 @@ export default function EditProfilePage() {
     const [userLOR, SetUserLOR] = useState<any[]>([]);
     const [userProfiles, SetUserProfiles] = useState<any[]>([]);
     const [userJobroleTask, setUserJobroleTask] = useState<any[]>([]);
+    const [documentLists, setDocumentLists] = useState<any[]>([]);
     const [userLists,setUserLists] = useState<any[]>([]);
     const [clickedUser, setClickedUser] = useState<any>();
     const [activeTab, setActiveTab] = useState('personal-info');
+const [uploadDoc, setdocumentTypeLists] = useState<any>();
 
     const [sessionData, setSessionData] = useState({
         url: "",
@@ -79,6 +81,8 @@ export default function EditProfilePage() {
             setUserLists(data.employees || []);
             // console.log(data);
             setUserDetails(data.data || null);
+            setdocumentTypeLists(data.documentTypeLists || []);
+            setDocumentLists(data.documentLists || []);
         } catch (error) {
             console.error("Failed to fetch initial data:", error);
         }
@@ -154,7 +158,7 @@ export default function EditProfilePage() {
                             {/* Controls row under tabs, aligned right */}
                             <div className="flex justify-end items-center gap-6 px-8 py-2">
                                 {/* Toggle button */}
-                                <label className='flex cursor-pointer select-none items-center'>
+                                {/* <label className='flex cursor-pointer select-none items-center'>
                                     <div className='relative'>
                                         <input
                                             type='checkbox'
@@ -165,19 +169,19 @@ export default function EditProfilePage() {
                                         <div className={`block h-[26px] w-[50px] rounded-full ${isChecked ? 'bg-emerald-500' : 'bg-[#E8EAEA]'}`}></div>
                                         <div className={`dot absolute ${isChecked ? 'left-7' : 'left-1'} top-1 h-[18px] w-[18px] rounded-full bg-white transition`}></div>
                                     </div>
-                                </label>
+                                </label> */}
                                 {/* Search icon */}
-                                <span>
+                                {/* <span>
                                     <Search className="h-6 w-6 text-gray-700" />
-                                </span>
+                                </span> */}
                                 {/* Filter icon */}
-                                <span>
+                                {/* <span>
                                     <Filter className="h-6 w-6 text-gray-700" />
-                                </span>
+                                </span> */}
                                 {/* More icon */}
-                                <span>
+                                {/* <span>
                                     <MoreVertical className="h-6 w-6 text-gray-700" />
-                                </span>
+                                </span> */}
                             </div>
 
                             {/* Divider */}
@@ -186,7 +190,7 @@ export default function EditProfilePage() {
                             {/* Content */}
                             <div className="p-4">
                                 {activeTab === 'personal-info' && <PersonalDetails userDetails={userDetails} userJobroleLists={userJobroleLists} userLOR={userLOR} userProfiles={userProfiles} userLists={userLists} sessionData={sessionData}/>}
-                                {activeTab === 'upload-docs' && <UploadDoc />}
+                                {activeTab === 'upload-docs' && <UploadDoc uploadDoc={uploadDoc} sessionData={sessionData} clickedID={clickedUser} documentLists={documentLists} />}
                                 {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills} />}
                                 {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
                                 {activeTab === 'responsibility' && <LOR />}
