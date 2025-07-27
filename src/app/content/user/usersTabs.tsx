@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Bell, User, Upload, BadgeCheck, ClipboardList, ChartColumnIncreasing, Star, Search, Filter, MoreVertical, ListCheck, ListChecks } from 'lucide-react';
 import { useEffect, useState } from "react";
 import JobRoleNew from '../../../components/users/jobroleNew';
-
+import JobRoleSkillsAdd1 from '../../../components/users/jobroleSkilladd1';
 import JobRoleSkill from '../../../components/users/jobroleSkill';
 import JobRoleTasks from '../../../components/users/jobroleTask';
 import PersonalDetails from '../../../components/users/personalDetails';
@@ -194,7 +194,8 @@ const [uploadDoc, setdocumentTypeLists] = useState<any>();
                                 {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills} />}
                                 {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
                                 {activeTab === 'responsibility' && <LOR />}
-                                {activeTab === 'skill-rating' && <div>Skill Rating Content</div>}
+                                {/* {activeTab === 'skill-rating' && <div>Skill Rating Content</div>} */}
+                                {activeTab === 'skill-rating' && <JobRoleSkillsAdd1/>}
                             </div>
 
                         </div>
