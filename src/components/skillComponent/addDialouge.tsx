@@ -68,6 +68,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
       fetchInitialData();
+      fetchDepartments(); // categorires
     }
   }, [sessionData]);
 
@@ -76,16 +77,33 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}`
     );
     const data = await res.json();
-    setCategories(data.skillData || []);
+    // setCategories(data.skillData || []);
     setProficiencyLevels(data.proficiency_levels || []);
   };
-
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=category&searchWord=departments`);
+      const data = await res.json();
+      setCategories(data.searchData || []);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      alert("Failed to load departments");
+    }
+  };
   const getSubDepartment = async (category: string) => {
-    const res = await fetch(
-      `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&category=${category}`
-    );
-    const data = await res.json();
-    setSubCategories(data.skillData || []);
+    // const res = await fetch(
+    //   `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&category=${category}`
+    // );
+    // const data = await res.json();
+    // setSubCategories(data.skillData || []);
+    try {
+      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=sub_category&searchWord=${encodeURIComponent(category)}`);
+      const data = await res.json();
+      setSubCategories(data.searchData || []);
+    } catch (error) {
+      console.error("Error fetching sub-departments:", error);
+      alert("Failed to load sub-departments");
+    }
     setFormData(prev => ({ ...prev, category }));
   };
 
@@ -217,7 +235,11 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                   required
                 >
                   <option value="">Select Category</option>
-                  {categories.map(d => <option key={d.category} value={d.category}>{d.category}</option>)}
+                  {categories.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
                 </select>
               </div>
 
@@ -230,7 +252,11 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                   value={formData.sub_category}
                 >
                   <option value="">Select Sub Category</option>
-                  {subCategories.map(d => <option key={d.sub_category} value={d.sub_category}>{d.sub_category}</option>)}
+                 {subCategories.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
                 </select>
               </div>
             </div>
