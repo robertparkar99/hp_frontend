@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 /* ---break---  */
 @custom-variant dark (&:is(.dark *));
 
