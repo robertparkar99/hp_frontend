@@ -5,7 +5,8 @@ import * as React from "react";
 import { useEffect, useState, Suspense, lazy } from "react";
 import { StatGrid } from "./StatGrid";
 import { useRouter } from "next/navigation";
-import Loading from "../../../components/utils/loading"; // Import the Loading component
+import Loading from "../../../components/utils/loading";
+import { Atom } from "react-loading-indicators" // Import the Loading component
 
 type MenuDetail = {
   menu: string;
@@ -62,8 +63,10 @@ const MainScreen: React.FC = () => {
       return <div>{selectedMenu.menu} component not found (404).</div>;
     }
     return (
-      <Suspense fallback={<div> please wait...
-      </div>}>
+      <Suspense fallback={<div className="flex justify-center items-center h-screen">
+  <Atom color="#525ceaff" size="medium" text="" textColor="" />
+</div>
+}>
         <DynamicComponent />
       </Suspense>
     );
