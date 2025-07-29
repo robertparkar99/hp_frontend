@@ -1,8 +1,31 @@
+'use client';
+
 import React, { useState } from 'react';
 import Input from '../../../../components/ui/Input';
 import Select from '../../../../components/ui/Select';
 import Button from '../../../../components/ui/Button';
 import Icon from '../../../../components/AppIcon';
+
+const industryOptions = [
+  { value: 'technology', label: 'Technology' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'education', label: 'Education' },
+  { value: 'manufacturing', label: 'Manufacturing' },
+  { value: 'retail', label: 'Retail' },
+  { value: 'consulting', label: 'Consulting' },
+  { value: 'other', label: 'Other' },
+];
+
+const employeeCountOptions = [
+  { value: '1-10', label: '1-10 employees' },
+  { value: '11-50', label: '11-50 employees' },
+  { value: '51-200', label: '51-200 employees' },
+  { value: '201-500', label: '201-500 employees' },
+  { value: '501-1000', label: '501-1000 employees' },
+  { value: '1000-5000', label: '1000-5000 employees' },
+  { value: '5000+', label: '5000+ employees' },
+];
 
 const OrganizationInfoForm = ({ onSave, loading = false }) => {
   const [formData, setFormData] = useState({
@@ -18,47 +41,20 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
   });
 
   const [logoPreview, setLogoPreview] = useState(null);
-
-  const industryOptions = [
-    { value: 'technology', label: 'Technology' },
-    { value: 'healthcare', label: 'Healthcare' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'education', label: 'Education' },
-    { value: 'manufacturing', label: 'Manufacturing' },
-    { value: 'retail', label: 'Retail' },
-    { value: 'consulting', label: 'Consulting' },
-    { value: 'other', label: 'Other' }
-  ];
-
-  const employeeCountOptions = [
-    { value: '1-10', label: '1-10 employees' },
-    { value: '11-50', label: '11-50 employees' },
-    { value: '51-200', label: '51-200 employees' },
-    { value: '201-500', label: '201-500 employees' },
-    { value: '501-1000', label: '501-1000 employees' },
-    { value: '1000-5000', label: '1000-5000 employees' },
-    { value: '5000+', label: '5000+ employees' }
-  ];
+  const [sisterFormCount, setSisterFormCount] = useState(0);
+  const [showInputField, setShowInputField] = useState(false);
+  const [sisterCompanies, setSisterCompanies] = useState([]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData(prev => ({
-        ...prev,
-        logo: file
-      }));
-      
+      setFormData(prev => ({ ...prev, logo: file }));
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogoPreview(e.target?.result);
-      };
+      reader.onload = (e) => setLogoPreview(e.target?.result);
       reader.readAsDataURL(file);
     }
   };
@@ -68,128 +64,197 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
     onSave?.(formData);
   };
 
+  const handleSisterCompanyAdd = () => setShowInputField(true);
+
+  const handleSisterCountInput = (e) => {
+  const count = parseInt(e.target.value);
+  if (!isNaN(count)) {
+    if (count >= 1 && count <= 10) {
+      const generated = Array.from({ length: count }, (_, i) => ({
+        name: `Sister Company ${i + 1}`,
+        industry: '',
+        employeeCount: '',
+        website: '',
+        phone: '',
+        email: '',
+        address: '',
+        description: '',
+        logo: null,
+        logoPreview: null
+      }));
+      setSisterFormCount(count);
+      setSisterCompanies(generated);
+    } else {
+      alert("⚠️ Please enter a value between 1 and 10.");
+      setSisterFormCount(0);
+      setSisterCompanies([]);
+    }
+  }
+};
+
+  const handleSisterChange = (index, field, value) => {
+    const updated = [...sisterCompanies];
+    updated[index][field] = value;
+    setSisterCompanies(updated);
+  };
+
+  const handleSisterLogoUpload = (index, file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const updated = [...sisterCompanies];
+      updated[index].logo = file;
+      updated[index].logoPreview = e.target?.result;
+      setSisterCompanies(updated);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
-    <div className="bg-card border border-border rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-foreground">Organization Information</h3>
-        <Icon name="Building2" size={20} className="text-muted-foreground" />
+    <>
+      {/* MAIN FORM */}
+      <div className="bg-card border border-border rounded-lg p-6 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-foreground">Organization Information</h3>
+          <Icon name="Building2" size={20} className="text-muted-foreground" />
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input label="Organization Name" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} required />
+            <Select label="Industry" value={formData.industry} onChange={(value) => handleInputChange('industry', value)} options={industryOptions} required />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Select label="Employee Count" value={formData.employeeCount} onChange={(value) => handleInputChange('employeeCount', value)} options={employeeCountOptions} required />
+            <Input label="Website" type="url" value={formData.website} onChange={(e) => handleInputChange('website', e.target.value)} />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input label="Phone" type="tel" value={formData.phone} onChange={(e) => handleInputChange('phone', e.target.value)} />
+            <Input label="Email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} />
+          </div>
+
+          <div>
+            <Input label="Address" value={formData.address} onChange={(e) => handleInputChange('address', e.target.value)} />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Description</label>
+            <textarea
+              className="w-full h-24 px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Brief description of your organization..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Organization Logo</label>
+            <div className="flex items-center space-x-4">
+              <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                ) : (
+                  <Icon name="Building2" size={24} className="text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1">
+                <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" id="logo-upload" />
+                <label htmlFor="logo-upload" className="inline-flex items-center px-4 py-2 border border-input bg-background rounded-md text-sm font-medium text-foreground hover:bg-muted cursor-pointer">
+                  <Icon name="Upload" size={16} className="mr-2" />
+                  Upload Logo
+                </label>
+                <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 2MB. Recommended: 200x200px</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <Button variant="outline" type="button">Cancel</Button>
+            <Button type="submit" loading={loading}>Save Changes</Button>
+          </div>
+        </form>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            label="Organization Name"
-            value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            required
-          />
-          
-          <Select
-            label="Industry"
-            value={formData.industry}
-            onChange={(value) => handleInputChange('industry', value)}
-            options={industryOptions}
-            required
-          />
-        </div>
+      {/* ADD SISTER COMPANIES */}
+      <div className="mb-6">
+        {!showInputField && (
+          <Button variant="default" onClick={handleSisterCompanyAdd}>
+            Add Sister Concern Company
+          </Button>
+        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Select
-            label="Employee Count"
-            value={formData.employeeCount}
-            onChange={(value) => handleInputChange('employeeCount', value)}
-            options={employeeCountOptions}
-            required
-          />
-          
+        {showInputField && (
           <Input
-            label="Website"
-            type="url"
-            value={formData.website}
-            onChange={(e) => handleInputChange('website', e.target.value)}
+            label="How many Sister Concern Companies?"
+            type="number"
+            min={1}
+            max={10}
+            onChange={handleSisterCountInput}
           />
-        </div>
+        )}
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            label="Phone"
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => handleInputChange('phone', e.target.value)}
-          />
-          
-          <Input
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleInputChange('email', e.target.value)}
-          />
-        </div>
+      {/* SISTER COMPANY FORMS */}
+      {sisterCompanies.map((sister, index) => (
+        <div key={index} className="bg-muted border border-border rounded-lg p-5 mb-6">
+          <h4 className="text-base font-semibold text-foreground mb-4">Sister Concern Company #{index + 1}</h4>
 
-        <div>
-          <Input
-            label="Address"
-            value={formData.address}
-            onChange={(e) => handleInputChange('address', e.target.value)}
-          />
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input label="Company Name" value={sister.name} onChange={(e) => handleSisterChange(index, 'name', e.target.value)} />
+            <Select label="Industry" value={sister.industry} onChange={(value) => handleSisterChange(index, 'industry', value)} options={industryOptions} />
+            <Select label="Employee Count" value={sister.employeeCount} onChange={(value) => handleSisterChange(index, 'employeeCount', value)} options={employeeCountOptions} />
+            <Input label="Website" value={sister.website} onChange={(e) => handleSisterChange(index, 'website', e.target.value)} />
+            <Input label="Email" value={sister.email} onChange={(e) => handleSisterChange(index, 'email', e.target.value)} />
+            <Input label="Phone" value={sister.phone} onChange={(e) => handleSisterChange(index, 'phone', e.target.value)} />
+            <Input label="Address" value={sister.address} onChange={(e) => handleSisterChange(index, 'address', e.target.value)} />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Description
-          </label>
-          <textarea
-            className="w-full h-24 px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
-            placeholder="Brief description of your organization..."
-          />
-        </div>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-foreground mb-2">Description</label>
+            <textarea
+              className="w-full h-24 px-3 py-2 border border-input bg-background rounded-md text-sm"
+              value={sister.description}
+              onChange={(e) => handleSisterChange(index, 'description', e.target.value)}
+              placeholder="Brief description of this company..."
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Organization Logo
-          </label>
-          <div className="flex items-center space-x-4">
-            <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
-              {logoPreview ? (
-                <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
-              ) : (
-                <Icon name="Building2" size={24} className="text-muted-foreground" />
-              )}
-            </div>
-            <div className="flex-1">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
-                id="logo-upload"
-              />
-              <label
-                htmlFor="logo-upload"
-                className="inline-flex items-center px-4 py-2 border border-input bg-background rounded-md text-sm font-medium text-foreground hover:bg-muted transition-micro cursor-pointer"
-              >
-                <Icon name="Upload" size={16} className="mr-2" />
-                Upload Logo
-              </label>
-              <p className="text-xs text-muted-foreground mt-1">
-                PNG, JPG up to 2MB. Recommended: 200x200px
-              </p>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-foreground mb-2">Upload Logo</label>
+            <div className="flex items-center space-x-4">
+              <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
+                {sister.logoPreview ? (
+                  <img src={sister.logoPreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <Icon name="Building2" size={24} className="text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleSisterLogoUpload(index, file);
+                  }}
+                  className="hidden"
+                  id={`logo-upload-${index}`}
+                />
+                <label
+                  htmlFor={`logo-upload-${index}`}
+                  className="inline-flex items-center px-4 py-2 border border-input bg-background rounded-md text-sm font-medium text-foreground hover:bg-muted cursor-pointer"
+                >
+                  <Icon name="Upload" size={16} className="mr-2" />
+                  Upload Logo
+                </label>
+                <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 2MB. Recommended: 200x200px</p>
+              </div>
             </div>
           </div>
         </div>
-
-        <div className="flex justify-end space-x-3">
-          <Button variant="outline" type="button">
-            Cancel
-          </Button>
-          <Button type="submit" loading={loading}>
-            Save Changes
-          </Button>
-        </div>
-      </form>
-    </div>
+      ))}
+    </>
   );
 };
 
