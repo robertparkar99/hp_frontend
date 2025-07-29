@@ -1,6 +1,8 @@
+'use client';
+
 import React, { useState } from 'react';
-import Button from '../../../../components/ui/Button';
-import Input from '../../../../components/ui/Input';
+import {Button} from '@/components/ui/button';
+import {Input } from '../../../../components/ui/input';
 import Icon from '../../../../components/AppIcon';
 
 const DepartmentStructure = ({ onSave, loading = false }) => {
@@ -13,7 +15,12 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
       subdepartments: [
         { id: 11, name: 'Frontend Development', head: 'Sarah Johnson', employees: 12 },
         { id: 12, name: 'Backend Development', head: 'Mike Chen', employees: 15 },
-        { id: 13, name: 'DevOps', head: 'David Wilson', employees: 8 }
+        { id: 13, name: 'DevOps', head: 'David Wilson', employees: 8 },
+        { id: 14, name: 'AI/ML', head: 'Olivia Green', employees: 6 },
+        { id: 15, name: 'Frontend Development', head: 'Sarah Johnson', employees: 12 },
+        { id: 16, name: 'Backend Development', head: 'Mike Chen', employees: 15 },
+        { id: 17, name: 'DevOps', head: 'David Wilson', employees: 8 },
+        { id: 18, name: 'AI/ML', head: 'Olivia Green', employees: 6 }
       ]
     },
     {
@@ -105,13 +112,13 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
             <Input
               label="Department Name"
               value={newDepartment.name}
-              onChange={(e) => setNewDepartment({...newDepartment, name: e.target.value})}
+              onChange={(e) => setNewDepartment({ ...newDepartment, name: e.target.value })}
               placeholder="e.g., Finance"
             />
             <Input
               label="Department Head"
               value={newDepartment.head}
-              onChange={(e) => setNewDepartment({...newDepartment, head: e.target.value})}
+              onChange={(e) => setNewDepartment({ ...newDepartment, head: e.target.value })}
               placeholder="e.g., John Doe"
             />
           </div>
@@ -156,19 +163,23 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
             </div>
 
             {department.subdepartments?.length > 0 && (
-              <div className="pl-6 border-l-2 border-border space-y-2">
-                <h5 className="text-sm font-medium text-muted-foreground">Sub-departments</h5>
-                {department.subdepartments.map((sub) => (
-                  <div key={sub.id} className="flex items-center justify-between p-2 bg-muted rounded">
-                    <div className="flex items-center space-x-2">
-                      <Icon name="Users" size={16} className="text-muted-foreground" />
-                      <span className="text-sm text-foreground">{sub.name}</span>
+              <div className="pl-6 border-l-2 border-border">
+                <h5 className="text-sm font-medium text-muted-foreground mb-2">
+                  Sub-departments
+                </h5>
+                <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                  {department.subdepartments.map((sub) => (
+                    <div key={sub.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                      <div className="flex items-center space-x-2">
+                        <Icon name="Users" size={16} className="text-muted-foreground" />
+                        <span className="text-sm text-foreground">{sub.name}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {sub.head} • {sub.employees} employees
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {sub.head} • {sub.employees} employees
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>

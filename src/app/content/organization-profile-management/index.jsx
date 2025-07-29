@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '@/components/ui/Button';
+import Button from '@/components/ui/button';
 import OrganizationInfoForm from './components/OrganizationInfoForm';
 import DepartmentStructure from './components/DepartmentStructure';
 import SystemConfiguration from './components/SystemConfiguration';
