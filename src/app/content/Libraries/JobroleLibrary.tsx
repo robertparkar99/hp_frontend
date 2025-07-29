@@ -26,7 +26,7 @@ const JobroleLibrary = () => {
   const [sessionUserProfile, setessionUserProfile] = useState<string>();
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [isLoading, setLoading] = useState(true);
- 
+
   const [userSkillsData, setuserSkillsData] = useState<userSkillsData[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedSubDepartments, setSelectedSubDepartments] = useState<string[]>([]);
@@ -56,7 +56,7 @@ const JobroleLibrary = () => {
       const res = await fetch(`${sessionUrl}/jobrole_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}`);
       const data = await res.json();
       setLoading(false);
-   
+
       setuserSkillsData(data.userTree || []);
     }
   }, [sessionUrl, sessionToken]);
@@ -65,15 +65,15 @@ const JobroleLibrary = () => {
   const getSubDepartment = async (department: string) => {
     if (!department) {
       const res = await fetch(`${sessionUrl}/jobrole_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}`);
-    
+
       const data = await res.json();
-  
+
       setuserSkillsData(data.userTree || []);
     }
     else {
       const res = await fetch(`${sessionUrl}/jobrole_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&department=${department}`);
       const data = await res.json();
-      
+
     }
   };
 
@@ -81,7 +81,7 @@ const JobroleLibrary = () => {
     const res = await fetch(`${sessionUrl}/jobrole_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&sub_department=${subdeps}`);
     setSelectedSubDepartments(subdeps);
     const data = await res.json();
- 
+
     setuserSkillsData(data.userTree || []);
   };
 
@@ -145,7 +145,7 @@ const JobroleLibrary = () => {
             </div>
           </div>
 
-          <TableView refreshKey={refreshKey}/>
+          <TableView refreshKey={refreshKey} />
         </div>
       )}
 
