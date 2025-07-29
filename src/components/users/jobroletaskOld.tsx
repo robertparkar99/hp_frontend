@@ -29,11 +29,10 @@ interface CriticalWorkFunctionCardProps {
   iconUrl?: string;
 }
 
-function isOverlapping(
-  pos: { x: number; y: number },
-  size: number,
-  placed: { x: number; y: number; size: number }[]
-): boolean {
+interface CriticalWorkFunctionProps {
+  cards?: CriticalWorkFunctionCardProps[];
+}
+function isOverlapping(pos: { x: number; y: number }, size: number, placed: { x: number; y: number; size: number }[]): boolean {
   for (let p of placed) {
     const dx = p.x - pos.x;
     const dy = p.y - pos.y;
@@ -48,6 +47,7 @@ const calculateBubbleSize = (text?: string): { size: number; fontSize: string } 
   const wordCount = text.trim().split(/\s+/).length;
   const charCount = text.length;
   if (text.length > 30) {
+    // For truncated text, use fixed size
     return { size: 94, fontSize: "text-xs" };
   } else if (wordCount <= 2 && charCount <= 10) {
     return { size: 60, fontSize: "text-xs" };
@@ -59,33 +59,41 @@ const calculateBubbleSize = (text?: string): { size: number; fontSize: string } 
 };
 
 function packBubblesCircular(bubbles: BubbleData[]) {
+  // Calculate sizes
   const bubbleSizes = bubbles.map(bubble => {
     const { size } = calculateBubbleSize(bubble.text);
     return { ...bubble, size };
   });
 
+  // Sort by descending size
   bubbleSizes.sort((a, b) => b.size - a.size);
+
   const N = bubbleSizes.length;
-  const baseSize = 280;
-  const containerSize = baseSize + Math.max(0, (N - 5)) * 40;
+  if (N === 0) return { bubbleSizes: [], positions: [] };
+
+  const containerSize = 280;
   const center = containerSize / 2;
   const positions: { x: number; y: number }[] = [];
 
+  // Place center bubble
   positions.push({
     x: center - bubbleSizes[0].size / 2,
     y: center - bubbleSizes[0].size / 2,
   });
 
-  if (N === 1) return { bubbleSizes, positions, containerSize };
+  if (N === 1) return { bubbleSizes, positions };
 
+  // Calculate positions for surrounding bubbles
   const centerRadius = bubbleSizes[0].size / 2;
-  let currentRadius = centerRadius + bubbleSizes[1].size / 2 + 20;
-  let placed = 1;
+  let currentRadius = centerRadius + bubbleSizes[1].size / 2 + 20; // Increased initial buffer
 
+  let placed = 1;
   while (placed < N) {
     const circumference = 2 * Math.PI * currentRadius;
     const averageSize = bubbleSizes.slice(placed).reduce((sum, b) => sum + b.size, 0) / (N - placed);
-    const maxBubblesOnRing = Math.floor(circumference / (averageSize * 1.3));
+    const maxBubblesOnRing = Math.floor(circumference / (averageSize * 1.3)); // More conservative spacing
+
+    // Dynamic angle adjustment
     const bubblesOnThisRing = Math.min(N - placed, Math.max(6, maxBubblesOnRing));
     const angleStep = (2 * Math.PI) / bubblesOnThisRing;
 
@@ -94,21 +102,16 @@ function packBubblesCircular(bubbles: BubbleData[]) {
       let positionFound = false;
 
       while (!positionFound && attempts < 10) {
-        const angle = i * angleStep + (attempts * 0.1);
+        const angle = i * angleStep + (attempts * 0.1); // Vary angle slightly
         const size = bubbleSizes[placed].size;
         const x = center + Math.cos(angle) * currentRadius - size / 2;
         const y = center + Math.sin(angle) * currentRadius - size / 2;
 
-        if (
-          !isOverlapping(
-            { x, y },
-            size,
-            positions.map((pos, idx) => ({ ...pos, size: bubbleSizes[idx].size }))
-          )
-        ) {
+        if (!isOverlapping({ x, y }, size, positions.map((pos, idx) =>
+          ({ ...pos, size: bubbleSizes[idx].size })))) {
           positions.push({
             x: Math.max(0, Math.min(containerSize - size, x)),
-            y: Math.max(0, Math.min(containerSize - size, y)),
+            y: Math.max(0, Math.min(containerSize - size, y))
           });
           positionFound = true;
           placed++;
@@ -117,10 +120,9 @@ function packBubblesCircular(bubbles: BubbleData[]) {
       }
     }
 
-    currentRadius += bubbleSizes[placed - 1].size + 20;
+    currentRadius += bubbleSizes[placed - 1].size + 20; // Maintain larger buffer
   }
-
-  return { bubbleSizes, positions, containerSize };
+  return { bubbleSizes, positions };
 }
 
 const BubbleItem: React.FC<{
@@ -129,14 +131,21 @@ const BubbleItem: React.FC<{
   index: number;
 }> = ({ bubble, position, index }) => {
   const controls = useAnimation();
-  const [ref, inView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const [ref, inView] = useInView({
+    threshold: 0.1,
+    triggerOnce: true,
+  });
 
   useEffect(() => {
     if (inView) {
       controls.start({
         opacity: 1,
         y: 0,
-        transition: { delay: index * 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+        transition: {
+          delay: index * 0.1,
+          duration: 0.6,
+          ease: [0.16, 1, 0.3, 1]
+        },
       });
     }
   }, [controls, inView, index]);
@@ -164,8 +173,11 @@ const BubbleItem: React.FC<{
         >
           {bubble.text && bubble.text.length > 30 ? `${bubble.text.slice(0, 30)}...` : bubble.text}
         </motion.div>
+        {/* Tooltip */}
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-white rounded-lg shadow-xl opacity-0 group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out invisible z-10 transform translate-y-2 group-hover:translate-y-0">
-          <p className="text-gray-800 text-sm text-center">{bubble.text}</p>
+          <p className="text-gray-800 text-sm text-center">
+            {bubble.text}
+          </p>
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-white translate-y-full"></div>
         </div>
       </div>
@@ -177,58 +189,64 @@ const CriticalWorkFunctionCard: React.FC<CriticalWorkFunctionCardProps> = ({
   bubbles = [],
   title = "Critical Work Function",
   description = "Identify and drive business process improvement and innovation solutions",
-  iconUrl = "/assets/task_management/blubArrow.png",
 }) => {
-  const { bubbleSizes, positions, containerSize } = packBubblesCircular(bubbles);
+  const { bubbleSizes, positions } = packBubblesCircular(bubbles);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-2 w-full flex flex-col items-stretch justify-between">
-      <div
-        className="bubbles-container relative mx-auto mb-4 flex-shrink-0"
-        style={{
-          height: `${containerSize}px`,
-          width: `${containerSize}px`,
-          minHeight: "320px", // adjust this to the max container height expected
-        }}
-      >
+    <div className="bg-white rounded-xl shadow-lg p-2 w-full flex flex-col">
+      <div className="bubbles-container relative h-[280px] w-[280px] mx-auto mb-4">
         {bubbleSizes.map((bubble, index) => (
           <BubbleItem key={bubble.id} bubble={bubble} position={positions[index]} index={index} />
         ))}
       </div>
-      <hr className="mt-auto border-[#000000]" />
+      <hr className="border-[#000000]" />
       <div className="cardTitle flex">
         <div className="mt-auto text-center">
-          <img src={iconUrl} alt={title} />
+          <img src="/assets/task_management/blubArrow.png" alt={title} />
         </div>
         <div className="mt-auto text-left">
           <h2 className="text-[16px] font-bold text-[#23395B] mb-2">Critical Work Function</h2>
           <p className="text-[14px] text-gray-600 text-sm">{title}</p>
         </div>
       </div>
+
     </div>
   );
 };
 
 const CriticalWorkFunction: React.FC<UserJobroleTaskProps> = ({
-  userJobroleTask = [],
+  userJobroleTask = [
+    {
+      id: 10,
+      critical_work_function: "Manage Operations team",
+      task: "Provide mentoring to all employees and encourage continuous professional development",
+      skill: "Regulatory Compliance",
+      proficiency_level: null
+    }
+  ]
 }) => {
   const [cards, setCards] = useState<CriticalWorkFunctionCardProps[]>([]);
 
   useEffect(() => {
+    // Group tasks by critical_work_function
     const groupedTasks = userJobroleTask.reduce((acc, task) => {
       const existingGroup = acc.find(group => group.title === task.critical_work_function);
-      const bubble = {
-        id: task.id.toString(),
-        text: task.task,
-        critical_work_function: task.critical_work_function,
-      };
+
       if (existingGroup) {
-        existingGroup.bubbles?.push(bubble);
+        existingGroup.bubbles?.push({
+          id: task.id.toString(),
+          text: task.task,
+          critical_work_function: task.critical_work_function
+        });
       } else {
         acc.push({
           title: task.critical_work_function,
           description: `Tasks related to ${task.critical_work_function}`,
-          bubbles: [bubble],
+          bubbles: [{
+            id: task.id.toString(),
+            text: task.task,
+            critical_work_function: task.critical_work_function
+          }]
         });
       }
       return acc;
@@ -237,15 +255,10 @@ const CriticalWorkFunction: React.FC<UserJobroleTaskProps> = ({
     setCards(groupedTasks);
   }, [userJobroleTask]);
 
-  const needs2Cols = cards.some(card => (card.bubbles?.length || 0) > 5);
-
   return (
     <div className="min-h-auto">
       <div className="max-w-7xl mx-auto px-4">
-        <div
-          className={`grid grid-cols-1 md:grid-cols-2 ${needs2Cols ? "lg:grid-cols-2" : "lg:grid-cols-3"
-            } gap-4`}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {cards.map((card, index) => (
             <CriticalWorkFunctionCard
               key={index}

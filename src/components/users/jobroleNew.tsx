@@ -75,7 +75,7 @@ interface JobroleNewProps {
 export default function Index({ onBack, knowledge, ability, skills }: JobroleNewProps) {
     const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
     return (
-        <div className="min-h-screen bg-white">
+        <div className="bg-white">
             {/* Mobile Layout */}
             <div className="xl:hidden">
                 <div className="max-w-full mx-auto p-1">
@@ -204,14 +204,14 @@ export default function Index({ onBack, knowledge, ability, skills }: JobroleNew
 
             {/* Desktop Layout - Compact to fit viewport */}
             <div className="hidden xl:block">
-                <div className="max-w-screen-xl mx-auto p-4 h-screen overflow-y-auto hide-scrollbar">
+                <div className="max-w-screen-xl mx-auto overflow-y-auto hide-scrollbar">
                     <button
                         onClick={onBack}
                         className="mb-4 text-blue-500 hover:text-blue-700 hover:cursor-pointer"
                     >
                         ← Back to Skills
                     </button>
-                    <div className="flex gap-4 h-full">
+                    <div className="flex gap-4">
                         {/* Sidebar */}
                         <div className="w-[200px] flex-shrink-0">
                             <div className="mb-4">
@@ -228,11 +228,16 @@ export default function Index({ onBack, knowledge, ability, skills }: JobroleNew
                                     {skills.map((skill, index) => (
                                         <div key={index} className="relative group" onClick={() => setSelectedSkill(skill)}>
                                             <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px] transition-all duration-300 group-hover:w-full group-hover:left-0 group-hover:rounded-none opacity-100 group-hover:opacity-0 group-hover:delay-[0ms]"></div>
-                                            <div className="bg-white h-[36px] flex items-center transition-all duration-300 group-hover:bg-[#47A0FF]">
+                                            <div className={`h-[36px] flex items-center transition-all duration-300 ${skill === selectedSkill
+                                                ? 'bg-[#47A0FF] text-white'
+                                                : 'bg-white group-hover:bg-[#47A0FF] group-hover:text-white'
+                                                }`}>
                                                 <div className="flex items-center justify-between w-full pl-[24px] pr-[8px]">
-                                                    <span className="text-[#393939] text-[12px] truncate group-hover:text-white transition-colors duration-300" style={{
-                                                        fontFamily: 'Inter, sans-serif',
-                                                    }}>
+                                                    <span className={`text-[12px] truncate group-hover:text-white transition-colors duration-300${skill === selectedSkill
+                                                        ? 'text-white'
+                                                        : 'text-[#393939]'}`} style={{
+                                                            fontFamily: 'Inter, sans-serif',
+                                                        }}>
                                                         {skill.skill.length > 20 ? `${skill.skill.slice(0, 20)}...` : skill.skill}
                                                     </span>
                                                     <svg
@@ -310,8 +315,8 @@ export default function Index({ onBack, knowledge, ability, skills }: JobroleNew
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
 // // First install the bento grid library
