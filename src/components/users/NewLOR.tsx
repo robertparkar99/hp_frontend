@@ -263,7 +263,7 @@ The knowledge attribute defines the depth and breadth of understanding required 
 
       {/* BUSINESS SKILLS SECTION */}
       {activeSection === "business" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl px-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl px-4 mt-4">
           {businessCards.map((item, index) => (
             <div
               key={index}

@@ -116,21 +116,21 @@ const [uploadDoc, setdocumentTypeLists] = useState<any>();
                     ) : (
                         <div className="w-full">
                             {/* Header Row: Back arrow + Logo + Tabs */}
-                            <div className="flex jutsify-between items-center py-4">
+                            <div className="flex jutsify-between items-center py-2">
                                 <div className="backbutton w-[3%]">
                                 <button onClick={handleGoBack} className="text-black mr-4" aria-label="Go back">
                                     <ArrowLeft size={24} />
                                 </button>
                                 </div>
                                 
-                                <div className="flex-shrink-0 mr-2 w-[6%]">
+                                <div className="shrink-0 m-10">
                                     <img
                                         src={tabs.find(tab => tab.id === activeTab)?.logo || "default_logo_url"}
                                         alt="Logo"
                                         className="h-12 w-12 sm:h-10 lg:h-12"
                                     />
                                 </div>
-                                <div className=" w-[91%] flex justify-center px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
+                                <div className=" w-[81%] flex justify-center px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
                                     {tabs.map((tab) => (
                                         <Button
                                             key={tab.id}
