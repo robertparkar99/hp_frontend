@@ -8,7 +8,7 @@ const SystemConfiguration = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    standardName: '',
+    departmentName: '',
     assignedTo: '',
     dueDate: '',
     attachment: null,
@@ -37,7 +37,7 @@ const SystemConfiguration = () => {
     setFormData({
       name: '',
       description: '',
-      standardName: '',
+      departmentName: '',
       assignedTo: '',
       dueDate: '',
       attachment: null,
@@ -52,7 +52,7 @@ const SystemConfiguration = () => {
         i + 1,
         item.name,
         item.description,
-        item.standardName,
+        item.departmentName,
         item.assignedTo,
         item.dueDate,
         item.attachment?.name || 'N/A',
@@ -82,7 +82,7 @@ const SystemConfiguration = () => {
     },
     {
       name: 'Standard Name',
-      selector: row => row.standardName,
+      selector: row => row.departmentName,
       sortable: true,
     },
     {
@@ -125,7 +125,7 @@ const SystemConfiguration = () => {
         {[
           { label: 'Name', name: 'name', type: 'text' },
           { label: 'Description', name: 'description', type: 'textarea' },
-          { label: 'Standard Name', name: 'standardName', type: 'text' },
+          { label: 'Department Name', name: 'departmentName', type: 'text' },
         ].map(({ label, name, type }) => (
           <div key={name}>
             <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
