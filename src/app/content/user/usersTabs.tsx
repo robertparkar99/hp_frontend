@@ -25,10 +25,10 @@ export default function EditProfilePage() {
     const [userProfiles, SetUserProfiles] = useState<any[]>([]);
     const [userJobroleTask, setUserJobroleTask] = useState<any[]>([]);
     const [documentLists, setDocumentLists] = useState<any[]>([]);
-    const [userLists,setUserLists] = useState<any[]>([]);
+    const [userLists, setUserLists] = useState<any[]>([]);
     const [clickedUser, setClickedUser] = useState<any>();
     const [activeTab, setActiveTab] = useState('personal-info');
-const [uploadDoc, setdocumentTypeLists] = useState<any>();
+    const [uploadDoc, setdocumentTypeLists] = useState<any>();
 
     const [sessionData, setSessionData] = useState({
         url: "",
@@ -118,11 +118,11 @@ const [uploadDoc, setdocumentTypeLists] = useState<any>();
                             {/* Header Row: Back arrow + Logo + Tabs */}
                             <div className="flex jutsify-between items-center py-4">
                                 <div className="backbutton w-[3%]">
-                                <button onClick={handleGoBack} className="text-black mr-4" aria-label="Go back">
-                                    <ArrowLeft size={24} />
-                                </button>
+                                    <button onClick={handleGoBack} className="text-black mr-4" aria-label="Go back">
+                                        <ArrowLeft size={24} />
+                                    </button>
                                 </div>
-                                
+
                                 <div className="flex-shrink-0 mr-2 w-[6%]">
                                     <img
                                         src={tabs.find(tab => tab.id === activeTab)?.logo || "default_logo_url"}
@@ -189,13 +189,13 @@ const [uploadDoc, setdocumentTypeLists] = useState<any>();
 
                             {/* Content */}
                             <div className="p-4">
-                                {activeTab === 'personal-info' && <PersonalDetails userDetails={userDetails} userJobroleLists={userJobroleLists} userLOR={userLOR} userProfiles={userProfiles} userLists={userLists} sessionData={sessionData}/>}
+                                {activeTab === 'personal-info' && <PersonalDetails userDetails={userDetails} userJobroleLists={userJobroleLists} userLOR={userLOR} userProfiles={userProfiles} userLists={userLists} sessionData={sessionData} />}
                                 {activeTab === 'upload-docs' && <UploadDoc uploadDoc={uploadDoc} sessionData={sessionData} clickedID={clickedUser} documentLists={documentLists} />}
                                 {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills} />}
                                 {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
                                 {activeTab === 'responsibility' && <LOR />}
                                 {/* {activeTab === 'skill-rating' && <div>Skill Rating Content</div>} */}
-                                {activeTab === 'skill-rating' && <JobRoleSkillsAdd1/>}
+                                {activeTab === 'skill-rating' && <JobRoleSkillsAdd1 skills={userJobroleSkills} />}
                             </div>
 
                         </div>
