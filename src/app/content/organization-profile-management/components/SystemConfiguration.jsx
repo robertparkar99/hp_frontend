@@ -1,203 +1,232 @@
-import React, { useState } from 'react';
-import Button from '../../../../components/ui/Button';
-import Input from '../../../../components/ui/Input';
-import Select from '../../../../components/ui/Select';
-import { Checkbox } from '../../../../components/ui/Checkbox';
-import Icon from '../../../../components/AppIcon';
+'use client';
 
-const SystemConfiguration = ({ onSave, loading = false }) => {
-  const [config, setConfig] = useState({
-    skillAssessmentFrequency: 'quarterly',
-    courseCompletionRequirement: 80,
-    reportingPeriod: 'monthly',
-    autoEnrollment: true,
-    skillBadges: true,
-    learningReminders: true,
-    progressTracking: true,
-    managerNotifications: true,
-    skillExpiryPeriod: 12,
-    assessmentRetries: 3,
-    certificateExpiry: 24,
-    defaultCompetencyLevel: 'intermediate'
+import React, { useState } from 'react';
+import DataTable from 'react-data-table-component';
+import { saveAs } from 'file-saver';
+
+const SystemConfiguration = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    standardName: '',
+    assignedTo: '',
+    dueDate: '',
+    attachment: null,
   });
 
-  const frequencyOptions = [
-    { value: 'weekly', label: 'Weekly' },
-    { value: 'monthly', label: 'Monthly' },
-    { value: 'quarterly', label: 'Quarterly' },
-    { value: 'annually', label: 'Annually' }
-  ];
+  const [dataList, setDataList] = useState([]);
+  const [showTable, setShowTable] = useState(false);
+  const [fileName, setFileName] = useState('');
 
-  const competencyLevelOptions = [
-    { value: 'beginner', label: 'Beginner' },
-    { value: 'intermediate', label: 'Intermediate' },
-    { value: 'advanced', label: 'Advanced' },
-    { value: 'expert', label: 'Expert' }
-  ];
-
-  const handleInputChange = (field, value) => {
-    setConfig(prev => ({
+  const handleChange = (field, value) => {
+    setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    setFileName(file?.name || '');
+    handleChange('attachment', file || null);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave?.(config);
+    setDataList(prev => [...prev, formData]);
+    setFormData({
+      name: '',
+      description: '',
+      standardName: '',
+      assignedTo: '',
+      dueDate: '',
+      attachment: null,
+    });
+    setFileName('');
   };
 
+  const exportToCSV = () => {
+    const csv = [
+      ['Sr No.', 'Name', 'Description', 'Standard Name', 'Assigned To', 'Due Date', 'Attachment'],
+      ...dataList.map((item, i) => [
+        i + 1,
+        item.name,
+        item.description,
+        item.standardName,
+        item.assignedTo,
+        item.dueDate,
+        item.attachment?.name || 'N/A',
+      ])
+    ].map(e => e.join(',')).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, 'submitted-data.csv');
+  };
+
+  const columns = [
+    {
+      name: 'Sr No.',
+      selector: (_, index) => index + 1,
+      width: '80px',
+      sortable: true,
+    },
+    {
+      name: 'Name',
+      selector: row => row.name,
+      sortable: true,
+    },
+    {
+      name: 'Description',
+      selector: row => row.description,
+      sortable: true,
+    },
+    {
+      name: 'Standard Name',
+      selector: row => row.standardName,
+      sortable: true,
+    },
+    {
+      name: 'Assigned To',
+      selector: row => row.assignedTo,
+      sortable: true,
+    },
+    {
+      name: 'Due Date',
+      selector: row => row.dueDate,
+      sortable: true,
+    },
+    {
+      name: 'Attachment',
+      selector: row => row.attachment?.name || 'N/A',
+    },
+    {
+      name: 'Actions',
+      cell: (_, index) => (
+        <button
+          className="text-red-600 hover:underline"
+          onClick={() => {
+            const updated = [...dataList];
+            updated.splice(index, 1);
+            setDataList(updated);
+          }}
+        >
+          Delete
+        </button>
+      ),
+    },
+  ];
+
   return (
-    <div className="bg-card border border-border rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-foreground">System Configuration</h3>
-        <Icon name="Settings" size={20} className="text-muted-foreground" />
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Assessment Settings */}
-        <div>
-          <h4 className="text-base font-medium text-foreground mb-4">Assessment Settings</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Select
-              label="Skill Assessment Frequency"
-              value={config.skillAssessmentFrequency}
-              onChange={(value) => handleInputChange('skillAssessmentFrequency', value)}
-              options={frequencyOptions}
-              description="How often should skills be reassessed?"
-            />
-            
-            <Input
-              label="Course Completion Requirement (%)"
-              type="number"
-              value={config.courseCompletionRequirement}
-              onChange={(e) => handleInputChange('courseCompletionRequirement', parseInt(e.target.value))}
-              min="0"
-              max="100"
-              description="Minimum percentage required to complete a course"
-            />
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white shadow border border-gray-200 p-6 rounded-lg"
+      >
+        {[
+          { label: 'Name', name: 'name', type: 'text' },
+          { label: 'Description', name: 'description', type: 'textarea' },
+          { label: 'Standard Name', name: 'standardName', type: 'text' },
+        ].map(({ label, name, type }) => (
+          <div key={name}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+            {type === 'textarea' ? (
+              <textarea
+                value={formData[name]}
+                onChange={e => handleChange(name, e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                required
+              />
+            ) : (
+              <input
+                type="text"
+                value={formData[name]}
+                onChange={e => handleChange(name, e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                required
+              />
+            )}
           </div>
+        ))}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+          <select
+            value={formData.assignedTo}
+            onChange={e => handleChange('assignedTo', e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            required
+          >
+            <option value="">Select User</option>
+            <option value="User A">User A</option>
+            <option value="User B">User B</option>
+            <option value="User C">User C</option>
+          </select>
         </div>
 
-        {/* Reporting Settings */}
         <div>
-          <h4 className="text-base font-medium text-foreground mb-4">Reporting Settings</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Select
-              label="Reporting Period"
-              value={config.reportingPeriod}
-              onChange={(value) => handleInputChange('reportingPeriod', value)}
-              options={frequencyOptions}
-              description="Default reporting period for analytics"
-            />
-            
-            <Select
-              label="Default Competency Level"
-              value={config.defaultCompetencyLevel}
-              onChange={(value) => handleInputChange('defaultCompetencyLevel', value)}
-              options={competencyLevelOptions}
-              description="Default skill level for new employees"
-            />
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+          <input
+            type="date"
+            value={formData.dueDate}
+            onChange={e => handleChange('dueDate', e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            required
+          />
         </div>
 
-        {/* Expiry Settings */}
         <div>
-          <h4 className="text-base font-medium text-foreground mb-4">Expiry & Validity Settings</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Input
-              label="Skill Expiry Period (months)"
-              type="number"
-              value={config.skillExpiryPeriod}
-              onChange={(e) => handleInputChange('skillExpiryPeriod', parseInt(e.target.value))}
-              min="1"
-              description="After how many months should skills be re-assessed?"
-            />
-            
-            <Input
-              label="Assessment Retries"
-              type="number"
-              value={config.assessmentRetries}
-              onChange={(e) => handleInputChange('assessmentRetries', parseInt(e.target.value))}
-              min="1"
-              max="10"
-              description="Maximum number of assessment attempts"
-            />
-            
-            <Input
-              label="Certificate Expiry (months)"
-              type="number"
-              value={config.certificateExpiry}
-              onChange={(e) => handleInputChange('certificateExpiry', parseInt(e.target.value))}
-              min="1"
-              description="Certificate validity period"
-            />
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Attachment</label>
+          <label className="flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-50 transition">
+            <input type="file" className="hidden" onChange={handleFileChange} />
+            <span className="text-gray-600 truncate">{fileName || 'Choose file'}</span>
+          </label>
         </div>
 
-        {/* Feature Toggles */}
-        <div>
-          <h4 className="text-base font-medium text-foreground mb-4">Feature Settings</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  id="autoEnrollment"
-                  checked={config.autoEnrollment}
-                  onChange={(e) => handleInputChange('autoEnrollment', e.target.checked)}
-                />
-                <label htmlFor="autoEnrollment" className="text-sm font-medium text-foreground">
-                  Auto-enrollment for new employees
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  id="skillBadges"
-                  checked={config.skillBadges}
-                  onChange={(e) => handleInputChange('skillBadges', e.target.checked)}
-                />
-                <label htmlFor="skillBadges" className="text-sm font-medium text-foreground">
-                  Enable skill badges
-                </label>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  id="learningReminders"
-                  checked={config.learningReminders}
-                  onChange={(e) => handleInputChange('learningReminders', e.target.checked)}
-                />
-                <label htmlFor="learningReminders" className="text-sm font-medium text-foreground">
-                  Learning reminders & notifications
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  id="progressTracking"
-                  checked={config.progressTracking}
-                  onChange={(e) => handleInputChange('progressTracking', e.target.checked)}
-                />
-                <label htmlFor="progressTracking" className="text-sm font-medium text-foreground">
-                  Progress tracking
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-3 pt-6 border-t border-border">
-          <Button variant="outline">
-            Reset to Defaults
-          </Button>
-          <Button type="submit" loading={loading}>
-            Save Configuration
-          </Button>
+        <div className="col-span-1 md:col-span-3 flex justify-center">
+          <button
+            type="submit"
+            className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition"
+          >
+            Submit
+          </button>
         </div>
       </form>
+
+      <div className="my-6 flex flex-wrap gap-4">
+        <button
+          onClick={() => setShowTable(prev => !prev)}
+          className="bg-cyan-100 text-cyan-700 px-4 py-2 rounded border border-cyan-300 hover:bg-cyan-200"
+        >
+          View Added Data
+        </button>
+        {showTable && (
+          <>
+            <button
+              onClick={exportToCSV}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+            >
+              Print
+            </button>
+          </>
+        )}
+      </div>
+
+      {showTable && (
+        <DataTable
+          columns={columns}
+          data={dataList}
+          pagination
+          striped
+          highlightOnHover
+          responsive
+        />
+      )}
     </div>
   );
 };
