@@ -103,7 +103,7 @@ const LevelResponsibility = () => {
             onClick={() => setActiveSection(tab.key as any)}
             className={`flex-1 flex flex-col items-center justify-center py-4 cursor-pointer transition-all ${
               activeSection === tab.key
-                ? 'border-b-6  bg-[#e4f0ff]'
+                ? 'bg-[#ACD4FF]'
                 : 'hover:bg-[#eef6ff]'
             }`}
           >
@@ -145,27 +145,34 @@ const LevelResponsibility = () => {
       </div>
     </div>
 
-    {/* Description + Guidance Notes */}
-    {activeData && (
-      <div className="flex justify-center items-start gap-8 mt-6 flex-wrap ml-[-50px]">
-        {/* Description Card */}
-        <div className="bg-[#E6F0FF] border-4 border-[#94BEFF] rounded-2xl p-6 w-[480px] shadow-sm">
-          <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Description</h3>
-          <hr className="border border-gray-400 mb-4" />
-          <p className="text-black text-[15px] whitespace-pre-line">{activeData.essence_level}</p>
-        </div>
+{/* Description + Guidance Notes */}
+{activeData && (
+  <div className="flex justify-center items-start gap-8 mt-6 flex-wrap ml-[-50px]">
+    {/* Description Card */}
+    <div
+      className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[480px] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+    >
+      <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Description</h3>
+      <hr className="border border-gray-400 mb-4" />
+      <p className="text-black text-[15px] whitespace-pre-line">
+        {activeData.essence_level}
+      </p>
+    </div>
 
-        {/* Guidance Notes Card with min height */}
-        <div
-          className="bg-[#E6F0FF] border-4 border-[#94BEFF] rounded-2xl p-6 w-[590px] shadow-sm mt-[-120]"
-          style={{ minHeight: '330px' }}
-        >
-          <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Guidance notes</h3>
-          <hr className="border border-gray-400 mb-4" />
-          <p className="text-black text-[15px] whitespace-pre-line">{activeData.guidance_notes}</p>
-        </div>
-      </div>
-    )}
+    {/* Guidance Notes Card */}
+    <div
+      className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[590px] mt-[-120] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+      style={{ minHeight: '330px' }}
+    >
+      <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Guidance notes</h3>
+      <hr className="border border-gray-400 mb-4" />
+      <p className="text-black text-[15px] whitespace-pre-line">
+        {activeData.guidance_notes}
+      </p>
+    </div>
+  </div>
+)}
+
   </>
 )}
 
@@ -175,7 +182,7 @@ const LevelResponsibility = () => {
     {Object.entries(levelAttributes.Attributes).map(([key, attr]: [string, any]) => (
       <div
         key={key}
-        className="p-4 rounded-xl border border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
+        className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
       >
         <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
           {key}
@@ -192,7 +199,7 @@ const LevelResponsibility = () => {
     {Object.entries(levelAttributes.Business_skills).map(([key, attr]: [string, any]) => (
       <div
         key={key}
-        className="p-4 rounded-xl border border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
+        className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
       >
         <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
           {key}
