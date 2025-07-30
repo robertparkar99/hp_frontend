@@ -93,25 +93,35 @@ const LevelResponsibility = () => {
         ))}
       </div>
 
-      {/* TOP TAB SWITCHER */}
-      <div className="w-full max-w-6xl mx-auto">
-        <div className="rounded-2xl border-4 border-blue-400 bg-[#f6faff] shadow-md">
-          <div className="flex flex-col md:flex-row justify-between items-center text-center px-6 py-5 space-y-6 md:space-y-0">
-            {tabs.map((tab) => (
-              <div
-                key={tab.key}
-                onClick={() => setActiveSection(tab.key as any)}
-                className={`flex flex-col items-center space-y-2 px-4 cursor-pointer transition-transform hover:scale-105 ${
-                  activeSection === tab.key ? 'scale-105' : ''
-                }`}
-              >
-                <img src={tab.icon} alt={tab.label} className="w-20 h-20 object-contain" />
-                <h3 className="text-[#1f2e4c] font-semibold text-base md:text-lg">{tab.label}</h3>
-              </div>
-            ))}
+{/* TOP TAB SWITCHER */}
+<div className="w-full max-w-6xl mx-auto">
+  <div className="border-4 border-blue-400 bg-[#f6faff] rounded-2xl shadow-md overflow-hidden">
+    <div className="flex flex-row justify-between items-stretch text-center">
+      {tabs.map((tab, index) => (
+        <React.Fragment key={tab.key}>
+          <div
+            onClick={() => setActiveSection(tab.key as any)}
+            className={`flex-1 flex flex-col items-center justify-center py-4 cursor-pointer transition-all ${
+              activeSection === tab.key
+                ? 'border-b-6  bg-[#e4f0ff]'
+                : 'hover:bg-[#eef6ff]'
+            }`}
+          >
+            <img src={tab.icon} alt={tab.label} className="w-16 h-16 object-contain mb-2" />
+            <h3 className="text-[#1f2e4c] font-semibold text-sm md:text-base">{tab.label}</h3>
           </div>
-        </div>
-      </div>
+
+          {/* Divider line between tabs */}
+          {index < tabs.length - 1 && (
+            <div className="w-[5px] bg-blue-300 h-auto" />
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  </div>
+</div>
+
+
 
       {/* LEVEL BADGE */}
      {activeSection === 'description' && (
