@@ -82,133 +82,131 @@ const LevelResponsibility = () => {
               setActiveLevel(level.level);
               setActiveSection('description');
             }}
-            className={`px-4 py-2 rounded-full font-semibold border shadow transition-all ${
-              activeLevel === level.level
+            className={`px-4 py-2 rounded-full font-semibold border shadow transition-all ${activeLevel === level.level
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'bg-white text-blue-800 border-blue-300 hover:bg-blue-100'
-            }`}
+              }`}
           >
             Level {level.level}
           </button>
         ))}
       </div>
 
-{/* TOP TAB SWITCHER */}
-<div className="w-full max-w-6xl mx-auto">
-  <div className="border-4 border-blue-400 bg-[#f6faff] rounded-2xl shadow-md overflow-hidden">
-    <div className="flex flex-row justify-between items-stretch text-center">
-      {tabs.map((tab, index) => (
-        <React.Fragment key={tab.key}>
-          <div
-            onClick={() => setActiveSection(tab.key as any)}
-            className={`flex-1 flex flex-col items-center justify-center py-4 cursor-pointer transition-all ${
-              activeSection === tab.key
-                ? 'bg-[#ACD4FF]'
-                : 'hover:bg-[#eef6ff]'
-            }`}
-          >
-            <img src={tab.icon} alt={tab.label} className="w-16 h-16 object-contain mb-2" />
-            <h3 className="text-[#1f2e4c] font-semibold text-sm md:text-base">{tab.label}</h3>
-          </div>
+      {/* TOP TAB SWITCHER */}
+      <div className="w-full max-w-6xl mx-auto">
+        <div className="border-4 border-blue-400 bg-[#f6faff] rounded-2xl shadow-md overflow-hidden">
+          <div className="flex flex-row justify-between items-stretch text-center">
+            {tabs.map((tab, index) => (
+              <React.Fragment key={tab.key}>
+                <div
+                  onClick={() => setActiveSection(tab.key as any)}
+                  className={`flex-1 flex flex-col items-center justify-center py-4 cursor-pointer transition-all ${activeSection === tab.key
+                      ? 'bg-[#ACD4FF]'
+                      : 'hover:bg-[#eef6ff]'
+                    }`}
+                >
+                  <img src={tab.icon} alt={tab.label} className="w-16 h-16 object-contain mb-2" />
+                  <h3 className="text-[#1f2e4c] font-semibold text-sm md:text-base">{tab.label}</h3>
+                </div>
 
-          {/* Divider line between tabs */}
-          {index < tabs.length - 1 && (
-            <div className="w-[5px] bg-blue-300 h-auto" />
-          )}
-        </React.Fragment>
-      ))}
-    </div>
-  </div>
-</div>
+                {/* Divider line between tabs */}
+                {index < tabs.length - 1 && (
+                  <div className="w-[5px] bg-blue-300 h-auto" />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
 
 
 
       {/* LEVEL BADGE */}
-     {activeSection === 'description' && (
-  <>
-    {/* Level Badge */}
-    <div className="w-full flex justify-start mt-6 ml-40">
-      <div
-        className="px-8 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-center"
-        style={{
-          background: 'linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)',
-        }}
-      >
-        <div className="flex items-center gap-4">
-          <div className="text-white font-bold text-2xl font-roboto">
-            Level {activeLevel}:
+      {activeSection === 'description' && (
+        <>
+          {/* Level Badge */}
+          <div className="w-full flex justify-start mt-6 ml-40">
+            <div
+              className="px-8 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-center"
+              style={{
+                background: 'linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)',
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="text-white font-bold text-2xl font-roboto">
+                  Level {activeLevel}:
+                </div>
+                <div className="text-white font-bold text-2xl font-roboto">
+                  {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ''}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-white font-bold text-2xl font-roboto">
-            {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ''}
-          </div>
-        </div>
-      </div>
-    </div>
 
-{/* Description + Guidance Notes */}
-{activeData && (
-  <div className="flex justify-center items-start gap-8 mt-6 flex-wrap ml-[-50px]">
-    {/* Description Card */}
-    <div
-      className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[480px] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
-    >
-      <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Description</h3>
-      <hr className="border border-gray-400 mb-4" />
-      <p className="text-black text-[15px] whitespace-pre-line">
-        {activeData.essence_level}
-      </p>
-    </div>
+          {/* Description + Guidance Notes */}
+          {activeData && (
+            <div className="flex justify-center items-start gap-8 mt-6 flex-wrap ml-[-50px]">
+              {/* Description Card */}
+              <div
+                className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[480px] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+              >
+                <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Description</h3>
+                <hr className="border border-gray-400 mb-4" />
+                <p className="text-black text-[15px] whitespace-pre-line">
+                  {activeData.essence_level}
+                </p>
+              </div>
 
-    {/* Guidance Notes Card */}
-    <div
-      className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[590px] mt-[-120] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
-      style={{ minHeight: '330px' }}
-    >
-      <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Guidance notes</h3>
-      <hr className="border border-gray-400 mb-4" />
-      <p className="text-black text-[15px] whitespace-pre-line">
-        {activeData.guidance_notes}
-      </p>
-    </div>
-  </div>
-)}
+              {/* Guidance Notes Card */}
+              <div
+                className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[590px] mt-[-120] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+                style={{ minHeight: '330px' }}
+              >
+                <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Guidance notes</h3>
+                <hr className="border border-gray-400 mb-4" />
+                <p className="text-black text-[15px] whitespace-pre-line">
+                  {activeData.guidance_notes}
+                </p>
+              </div>
+            </div>
+          )}
 
-  </>
-)}
+        </>
+      )}
 
       {/* RESPONSIBILITY ATTRIBUTES SECTION */}
-{activeSection === 'responsibility' && levelAttributes?.Attributes && (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl px-4 mt-2 w-full">
-    {Object.entries(levelAttributes.Attributes).map(([key, attr]: [string, any]) => (
-      <div
-        key={key}
-        className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
-      >
-        <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
-          {key}
-        </h4>
-        <p className="text-sm text-black">{attr.attribute_description}</p>
-      </div>
-    ))}
-  </div>
-)}
+      {activeSection === 'responsibility' && levelAttributes?.Attributes && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl px-4 mt-2 w-full">
+          {Object.entries(levelAttributes.Attributes).map(([key, attr]: [string, any]) => (
+            <div
+              key={key}
+              className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
+            >
+              <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
+                {key}
+              </h4>
+              <p className="text-sm text-black">{attr.attribute_description}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
-{/* BUSINESS SKILLS SECTION */}
-{activeSection === 'business' && levelAttributes?.Business_skills && (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl px-4 mt-2 w-full">
-    {Object.entries(levelAttributes.Business_skills).map(([key, attr]: [string, any]) => (
-      <div
-        key={key}
-        className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
-      >
-        <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
-          {key}
-        </h4>
-        <p className="text-sm text-black">{attr.attribute_description}</p>
-      </div>
-    ))}
-  </div>
-)}
+      {/* BUSINESS SKILLS SECTION */}
+      {activeSection === 'business' && levelAttributes?.Business_skills && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl px-4 mt-2 w-full">
+          {Object.entries(levelAttributes.Business_skills).map(([key, attr]: [string, any]) => (
+            <div
+              key={key}
+              className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
+            >
+              <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
+                {key}
+              </h4>
+              <p className="text-sm text-black">{attr.attribute_description}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
     </div>
   );
