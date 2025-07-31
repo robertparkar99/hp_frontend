@@ -125,7 +125,7 @@ const LevelResponsibility = () => {
       {activeSection === 'description' && (
         <>
           {/* Level Badge */}
-          <div className="w-full flex justify-start mt-6 ml-40">
+          <div className="w-full flex justify-start mt-6 ml-34">
             <div
               className="px-8 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-center"
               style={{
@@ -145,7 +145,7 @@ const LevelResponsibility = () => {
 
           {/* Description + Guidance Notes */}
           {activeData && (
-            <div className="flex justify-center items-start gap-8 mt-6 flex-wrap ml-[-50px]">
+            <div className="flex justify-center items-start gap-8 mt-6 flex-wrap ml-[-52px]">
               {/* Description Card */}
               <div
                 className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[480px] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
