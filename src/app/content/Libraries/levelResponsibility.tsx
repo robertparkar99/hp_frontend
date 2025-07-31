@@ -127,7 +127,7 @@ const LevelResponsibility = () => {
           {/* Level Badge */}
           <div className="w-full flex justify-start mt-6 ml-34">
             <div
-              className="px-8 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-center"
+              className="px-8 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-center ml-[-64px]"
               style={{
                 background: 'linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)',
               }}
