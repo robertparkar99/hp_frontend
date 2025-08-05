@@ -229,6 +229,8 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
   // Define the KnowledgeItem interface to fix the type error
   interface KnowledgeItem {
     classification_item: string;
+    classification_category: string;
+    classification_sub_category: string;
     // Add other properties if needed
     [key: string]: any;
   }
@@ -238,6 +240,8 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
   }
     interface abilityItem {
     classification_item: string;
+    classification_category: string;
+    classification_sub_category: string;
     // Add other properties if needed
     [key: string]: any;
   }
@@ -383,6 +387,11 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                     <p className="text-[12px]">{viewData.sub_category ? viewData.sub_category : '-'}</p>
                   </div>
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Micro Category</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.micro_category ? viewData.micro_category : '-'}</p>
+                  </div>
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                     <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Name</h4>
                     <hr className="text-[#ddd] pt-2" />
                     <p className="text-[12px]">{viewData.title ? viewData.title : '-'}</p>
@@ -445,6 +454,58 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                     <hr className="text-[#ddd] pt-2" />
                     <p className="text-[12px]">{viewData.skill_maps ? viewData.skill_maps : '-'}</p>
                   </div>
+
+
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Status</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.skill_status ? viewData.skill_status : '-'}</p>
+                  </div>
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Importance</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.skill_importance ? viewData.skill_importance : '-'}</p>
+                  </div>
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Legel/Compliance Relevance</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.legal_compliance_relevance ? viewData.legal_compliance_relevance : '-'}</p>
+                  </div>
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill SOP Practice Link</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.sop_practice_link ? viewData.sop_practice_link : '-'}</p>
+                  </div>
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Performance Metrics</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.performance_metrics ? viewData.performance_metrics : '-'}</p>
+                  </div>
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Common Errors Tips</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.common_errors_tips ? viewData.common_errors_tips : '-'}</p>
+                  </div>
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill SME/Help Contacts</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.sme_contacts ? viewData.sme_contacts : '-'}</p>
+                  </div>
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Sub-Skills</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.sub_skills ? viewData.sub_skills : '-'}</p>
+                  </div>
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Workflow/Mindmap</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.skill_flow ? viewData.skill_flow : '-'}</p>
+                  </div>
+                  <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                    <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Tasklist</h4>
+                    <hr className="text-[#ddd] pt-2" />
+                    <p className="text-[12px]">{viewData.tasklist ? viewData.tasklist : '-'}</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -458,6 +519,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                   <div className="cardDetails grid grid-cols-3 gap-6 p-4">
                     {jobroleData.map((jobrole, index) => (
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      <p className="text-[12px]"><span><b>Category : </b></span>{jobrole.jobrole_category ? jobrole.jobrole_category : '-'}</p>
                         <h2 className="text-[14px] h-[48px] text-[#2060E6] font-bold" data-titleHead={jobrole.jobrole ? jobrole.jobrole : '-'}> {jobrole.jobrole
                           ? jobrole.jobrole.slice(0, 50) + (jobrole.jobrole.length > 50 ? "..." : "")
                           : "-"}</h2>
@@ -546,7 +608,14 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                               knowldegeLevel
                                 .find(k => k.proficiency_level === activeKnowledgeTab)
                                 ?.items.map((itemVal: KnowledgeItem, itemIndex: number) => (
-                                  <li className="bg-[#ebe3f3] p-2 rounded-lg mb-4" key={itemIndex}><i className="fa fa-chevron-circle-right mr-1" aria-hidden="true"></i> {itemVal.classification_item}</li>
+                                  <li className="bg-[#ebe3f3] p-2 rounded-lg mb-4" key={itemIndex}>
+                                    <i className="fa fa-chevron-circle-right mr-1" aria-hidden="true"></i>
+                                    <strong>{itemVal.classification_item}</strong>
+                                    <div className="text-sm text-gray-600 ml-5">
+                                      <span className="block">Category: {itemVal.classification_category}</span>
+                                      <span className="block">Sub-Category: {itemVal.classification_sub_category}</span>
+                                    </div>
+                                  </li>
                                 ))
                             ) : (
                               <li className="bg-[#ebe3f3] p-2">No items available</li>
@@ -596,7 +665,14 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                               abilityLevel
                                 .find(k => k.proficiency_level === activeAbilityTab)
                                 ?.items.map((itemVal: abilityItem, itemIndex: number) => (
-                                  <li className="bg-[#ebe3f3] p-2 rounded-lg mb-4" key={itemIndex}><i className="fa fa-chevron-circle-right mr-1" aria-hidden="true"></i> {itemVal.classification_item}</li>
+                                  <li className="bg-[#ebe3f3] p-2 rounded-lg mb-4" key={itemIndex}>
+                                    <i className="fa fa-chevron-circle-right mr-1" aria-hidden="true"></i>
+                                    <strong>{itemVal.classification_item}</strong>
+                                    <div className="text-sm text-gray-600 ml-5">
+                                      <span className="block">Category: {itemVal.classification_category}</span>
+                                      <span className="block">Sub-Category: {itemVal.classification_sub_category}</span>
+                                    </div>
+                                  </li>
                                 ))
                             ) : (
                               <li className="bg-[#ebe3f3] p-2">No items available</li>
