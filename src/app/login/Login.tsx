@@ -93,9 +93,8 @@ const Login: React.FC = () => {
 
   return (
     <>
-      {isLoading && (<Loading />)}
-
-      <main className="flex overflow-hidden flex-col bg-blue-400 h-screen max-md:h-auto" id="mainDiv">
+      {isLoading ? (<Loading />) : (
+        <main className="flex overflow-hidden flex-col bg-blue-400 h-screen max-md:h-auto" id="mainDiv">
         <section className="flex gap-5 max-md:flex-col">
           <article className="w-[200vh] max-md:ml-0 max-md:w-full flex items-end max-md:hidden max-sm:hidden">
             <img
@@ -183,6 +182,9 @@ const Login: React.FC = () => {
           </article>
         </section>
       </main>
+      )}
+
+      
     </>
   );
 };
