@@ -26,16 +26,16 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
     subInstituteId: "",
     userId: "",
     userProfile: "",
-       userimage : "",
-      firstName:"",
-      lastName:"",
+    userimage: "",
+    firstName: "",
+    lastName: "",
   });
 
   useEffect(() => {
     setLoading(true);
     const userData = localStorage.getItem("userData");
     if (userData) {
-      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, user_image,first_name,last_name } = JSON.parse(userData);
+      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, user_image, first_name, last_name } = JSON.parse(userData);
       setSessionData({
         url: APP_URL,
         token,
@@ -43,9 +43,9 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
         subInstituteId: sub_institute_id,
         userId: user_id,
         userProfile: user_profile_name,
-            userimage : user_image,
-            firstName:first_name,
-            lastName:last_name,
+        userimage: user_image,
+        firstName: first_name,
+        lastName: last_name,
       });
     }
   }, []);
@@ -127,14 +127,14 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
     setActiveParent(parentId);
     // console.log(activeParent);
     // console.log(`Menu item clicked parentId: ${parentId}`);
-    
+
 
     // Set global selectionF
     (window as any).__currentMainMenu = menuName;
     window.dispatchEvent(
       new CustomEvent("mainMenuSelected", { detail: menuName })
     );
-    
+
     try {
       let userData: any = null;
       const item = localStorage.getItem('userData');
@@ -189,7 +189,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
       console.error("Error fetching submenu array:", error);
     }
   };
-  
+
   const handleMenuClick = (menu: string, page: string, access: string) => {
     //console.log(`Menu item clicked: ${menu}`);
     const currentSelected = (window as any).__currentMenuItem;
@@ -265,7 +265,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
                           .map((subMenuItem) => (
                             <li key={subMenuItem.id}>
                               {/* <span className={subMenuItem.icon} style={{ fontSize: "20px"}}></span> */}
-                              {subMenuItem.page_type === "link" ? (
+                              {subMenuItem.page_type === "link" && subMenuItem.menu_name !== 'Competency Framework' ? (
                                 <a href={subMenuItem.access_link} target="_blank" rel="noopener noreferrer">
                                   {subMenuItem.menu_name}
                                 </a>
@@ -276,12 +276,19 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
                               ) : (
                                 <span
                                   onClick={() =>
-                                    handleMenuClick(subMenuItem.menu_name, subMenuItem.page_type, subMenuItem.access_link)
+                                    handleMenuClick(
+                                      subMenuItem.menu_name,
+                                      subMenuItem.page_type,
+                                      subMenuItem.menu_name === 'Competency Framework'
+                                        ? 'skill-taxonomy/page.tsx'
+
+                                        : subMenuItem.access_link
+                                    )
                                   }
                                   style={{
                                     marginBottom: "10px",
                                     color: activeMenu === subMenuItem.menu_name ? "#4B9CD3" : "inherit",
-                                    fontWeight:  activeMenu === subMenuItem.menu_name ? 'bold' : '100',
+                                    fontWeight: activeMenu === subMenuItem.menu_name ? 'bold' : '100',
                                     cursor: "pointer",
                                   }}
                                 >
@@ -307,30 +314,30 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({ activeMenuId }) => {
     <>
       {isMenuOpen && (
         <aside className="flex flex-col pb-2 bg-white rounded-none h-screen overflow-scroll max-w-[280px] shadow-[2px_4px_15px_rgba(71,160,255,0.25)] text-stone-500 leftaside rounded-xl hide-scroll">
-          <UserProfile UserProfileProp={sessionData}  onClick={() => handleMenuItemClick("User Profile", 0)}/>
+          <UserProfile UserProfileProp={sessionData} onClick={() => handleMenuItemClick("User Profile", 0)} />
           <main className="flex overflow-y-scroll flex-col px-2.5 pt-2.5 pb-7 mt-6 w-full text-sm leading-6 bg-white rounded-xl hide-scroll ">
             {renderMenuContent()}
 
-          <MenuSection title="OTHER" className="px-2.5 pb-7 mt-2">
-            <div className="flex flex-col gap-2 mt-4">
-              <MenuItem
-                imgIcon=""
-                icon="fa fa-sign-out"
-                text="Logout"
-                menuName="Logout"
-                showArrow={false}
-                onClick={() => {
-                  // Clear all local storage
-                  localStorage.clear();
+            <MenuSection title="OTHER" className="px-2.5 pb-7 mt-2">
+              <div className="flex flex-col gap-2 mt-4">
+                <MenuItem
+                  imgIcon=""
+                  icon="fa fa-sign-out"
+                  text="Logout"
+                  menuName="Logout"
+                  showArrow={false}
+                  onClick={() => {
+                    // Clear all local storage
+                    localStorage.clear();
 
-                  // Redirect to '/'
-                  window.location.href = "/";
-                }}
-              />
-            </div>
-            <div className="flex gap-2 self-start ml-5">
-            </div>
-          </MenuSection>
+                    // Redirect to '/'
+                    window.location.href = "/";
+                  }}
+                />
+              </div>
+              <div className="flex gap-2 self-start ml-5">
+              </div>
+            </MenuSection>
           </main>
 
         </aside>
