@@ -41,9 +41,20 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
   });
 
   const [logoPreview, setLogoPreview] = useState(null);
-  const [sisterFormCount, setSisterFormCount] = useState(0);
-  const [showInputField, setShowInputField] = useState(false);
-  const [sisterCompanies, setSisterCompanies] = useState([]);
+  const [sisterCompanies, setSisterCompanies] = useState([
+    {
+      name: 'Sister Company 1',
+      industry: '',
+      employeeCount: '',
+      website: '',
+      phone: '',
+      email: '',
+      address: '',
+      description: '',
+      logo: null,
+      logoPreview: null
+    }
+  ]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -61,17 +72,14 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave?.(formData);
+    onSave?.({...formData, sisterCompanies});
   };
 
-  const handleSisterCompanyAdd = () => setShowInputField(true);
-
-  const handleSisterCountInput = (e) => {
-  const count = parseInt(e.target.value);
-  if (!isNaN(count)) {
-    if (count >= 1 && count <= 10) {
-      const generated = Array.from({ length: count }, (_, i) => ({
-        name: `Sister Company ${i + 1}`,
+  const addSisterCompany = () => {
+    setSisterCompanies(prev => [
+      ...prev,
+      {
+        name: `Sister Company ${prev.length + 1}`,
         industry: '',
         employeeCount: '',
         website: '',
@@ -81,16 +89,15 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         description: '',
         logo: null,
         logoPreview: null
-      }));
-      setSisterFormCount(count);
-      setSisterCompanies(generated);
-    } else {
-      alert("⚠️ Please enter a value between 1 and 10.");
-      setSisterFormCount(0);
-      setSisterCompanies([]);
+      }
+    ]);
+  };
+
+  const removeSisterCompany = (index) => {
+    if (sisterCompanies.length > 1) {
+      setSisterCompanies(prev => prev.filter((_, i) => i !== index));
     }
-  }
-};
+  };
 
   const handleSisterChange = (index, field, value) => {
     const updated = [...sisterCompanies];
@@ -110,7 +117,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
   };
 
   return (
-    <>
+    <form onSubmit={handleSubmit}>
       {/* MAIN FORM */}
       <div className="bg-card border border-border rounded-lg p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
@@ -118,7 +125,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
           <Icon name="Building2" size={20} className="text-muted-foreground" />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input label="Organization Name" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} required />
             <Select label="Industry" value={formData.industry} onChange={(value) => handleInputChange('industry', value)} options={industryOptions} required />
@@ -168,37 +175,39 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
               </div>
             </div>
           </div>
-
-          <div className="flex justify-end space-x-3">
-            <Button variant="outline" type="button">Cancel</Button>
-            <Button type="submit" loading={loading}>Save Changes</Button>
-          </div>
-        </form>
-      </div>
-
-      {/* ADD SISTER COMPANIES */}
-      <div className="mb-6">
-        {!showInputField && (
-          <Button variant="default" onClick={handleSisterCompanyAdd}>
-            Add Sister Concern Company
-          </Button>
-        )}
-
-        {showInputField && (
-          <Input
-            label="How many Sister Concern Companies?"
-            type="number"
-            min={1}
-            max={10}
-            onChange={handleSisterCountInput}
-          />
-        )}
+        </div>
       </div>
 
       {/* SISTER COMPANY FORMS */}
       {sisterCompanies.map((sister, index) => (
-        <div key={index} className="bg-muted border border-border rounded-lg p-5 mb-6">
-          <h4 className="text-base font-semibold text-foreground mb-4">Sister Concern Company #{index + 1}</h4>
+        <div key={index} className="bg-muted border border-border rounded-lg p-5 mb-6 relative">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-base font-semibold text-foreground">Sister Concern Company #{index + 1}</h4>
+            <div className="flex space-x-2">
+              {/* Always show plus button on first form */}
+              {index === 0 && (
+                <button 
+                  type="button" 
+                  onClick={addSisterCompany}
+                  className="p-1 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  title="Add another sister company"
+                >
+                  <Icon name="Plus" size={16} />
+                </button>
+              )}
+              {/* Show minus button on all forms except first */}
+              {index !== 0 && (
+                <button 
+                  type="button" 
+                  onClick={() => removeSisterCompany(index)}
+                  className="p-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  title="Remove this sister company"
+                >
+                  <Icon name="Minus" size={16} />
+                </button>
+              )}
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input label="Company Name" value={sister.name} onChange={(e) => handleSisterChange(index, 'name', e.target.value)} />
@@ -254,7 +263,13 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
           </div>
         </div>
       ))}
-    </>
+
+      {/* ACTION BUTTONS AT THE BOTTOM */}
+      <div className="flex justify-end space-x-3 mt-6">
+        <Button variant="outline" type="button">Cancel</Button>
+        <Button type="submit" loading={loading}>Save Changes</Button>
+      </div>
+    </form>
   );
 };
 
