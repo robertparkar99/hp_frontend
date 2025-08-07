@@ -154,8 +154,8 @@ const EditDialog: React.FC<EditDialogProps> = ({
       component: <ApplicationData editData={editData} />,
     },
     {
-      id: "attributes",
-      name: "Skill Attributes",
+      id: "attitude",
+      name: "Skill Attitude",
       component: <AttributesData editData={editData} />,
     },
     {
