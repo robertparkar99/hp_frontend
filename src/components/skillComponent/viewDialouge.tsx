@@ -151,7 +151,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
       images: "assets/skill_images/application.png",
     },
     {
-      title: "Skill Attributes",
+      title: "Skill Attitude",
       iconClass: "mdi mdi-send",
       images: "assets/skill_images/image 1.png",
     },
@@ -756,7 +756,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
             {activeCardIndex === 6 && (
               <div className="bg-white p-4 rounded-lg">
                 <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill ATTRIBUTES</b></h2>
+                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill ATTITUDE</b></h2>
                 </div>
                  {applicationLevel.length > 0 ? (
                   <>

@@ -235,7 +235,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     {
       name: (
         <div>
-          <div>Attributes Type</div>
+          <div>Attitude Type</div>
           <input
             type="text"
             placeholder="Search..."
@@ -331,7 +331,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
             <div className="relative z-0 w-full group text-left">
               <label htmlFor={`application_type-${index}`} className="text-left">
-                Attributes Type
+                Attitude Type
               </label>
               <br />
              <input
