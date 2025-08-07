@@ -8,6 +8,8 @@ import ProficiencyLevelData from "./tabComponent/proficiencyData";
 import KnowledgeAbilityData from "./tabComponent/knowledgeData";
 import ApplicationData from "./tabComponent/applicationData";
 import AbilityData from "./tabComponent/AbilityData";
+import AttributesData from "./tabComponent/Attributes";
+import BehaviourData from "./tabComponent/Behaviour";
 
 const Detail = ({ skillId }: { skillId: number }) => (
   <div className="p-4 bg-gray-50 rounded-md">
@@ -151,6 +153,16 @@ const EditDialog: React.FC<EditDialogProps> = ({
       name: "Skill Applications",
       component: <ApplicationData editData={editData} />,
     },
+    {
+      id: "attributes",
+      name: "Skill Attributes",
+      component: <AttributesData editData={editData} />,
+    },
+    {
+      id: "behaviour",
+      name: "Skill Behaviour",
+      component: <BehaviourData editData={editData} />,
+    },
   ];
 
   return (
@@ -191,13 +203,14 @@ const EditDialog: React.FC<EditDialogProps> = ({
           </div>
           </div>
         {/* Tab Navigation */}
-        <div className="w-[100%] custom-oklch-gradient my-2 p-4 text-center rounded-lg gap-4">
+        <div className="w-[100%] custom-oklch-gradient my-2 p-4 text-center rounded-lg gap-2">
           {tabs.map((tab,index) => (
             <span
               key={index}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                m-2 px-2 py-2 rounded-lg text-md font-semibold transition-all duration-300
+                m-2  py-2 rounded-lg text-sm
+                 font-semibold transition-all duration-300
                 ${
                   activeTab === tab.id
                     ? "bg-blue-600 text-white shadow-lg transform scale-105"

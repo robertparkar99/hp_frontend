@@ -150,6 +150,16 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
       iconClass: "mdi mdi-send",
       images: "assets/skill_images/application.png",
     },
+    {
+      title: "Skill Attributes",
+      iconClass: "mdi mdi-send",
+      images: "assets/skill_images/image 1.png",
+    },
+    {
+      title: "Skill Behaviour",
+      iconClass: "mdi mdi-send",
+      images: "assets/skill_images/behaviour.png",
+    },
   ];
   const exportPDF = async () => {
     try {
@@ -337,7 +347,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                 {/* Card Title */}
                 <div className="flex flex-col items-center justify-center w-full">
                   <img
-                    src={`${sessionUrl}/${card.images}`}
+                    src={`/${card.images}`} // image from public folder of nextJs
                     alt={card.title}
                     className="w-[80px] group-hover:opacity-[10] z-[20]"  // Added margin-bottom to create space
                   />
@@ -618,6 +628,112 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
               <div className="bg-white p-4 rounded-lg">
                 <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                   <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill APPLICATION</b></h2>
+                </div>
+                 {applicationLevel.length > 0 ? (
+                  <>
+                    <div className="flex justify-center mt-4 flex-wrap gap-2">
+                      {applicationLevel.map((applicationValue, index) => (
+                        <button
+                          key={`AbilityTab-${index}`}
+                          onClick={() => setActiveApplicationTab(applicationValue.proficiency_level)}
+                          className={`px-3 py-1 text-lg font-bold mr-6 rounded-md border shadow-lg shadow-blue-300/30 transition ${activeApplicationTab === applicationValue.proficiency_level
+                              ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
+                              : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
+                            }`}
+                        >
+                          {applicationValue.proficiency_level}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="w-full mt-6 p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
+
+                      {applicationLevel.find(k => k.proficiency_level === activeApplicationTab) ? (
+                        
+                        <div>
+
+                          <ul className="space-y-1">
+                            {applicationLevel
+                              .find(k => k.proficiency_level === activeApplicationTab)
+                              ?.items?.length > 0 ? (
+                              applicationLevel
+                                .find(k => k.proficiency_level === activeApplicationTab)
+                                ?.items.map((itemVal: applicationItem, itemIndex: number) => (
+                                  <li className="bg-[#ebe3f3] p-2 rounded-lg mb-4" key={itemIndex}><i className="fa fa-chevron-circle-right mr-1" aria-hidden="true"></i>{itemVal.application}</li>
+                                ))
+                            ) : (
+                              <li className="bg-[#ebe3f3] p-2">No items available</li>
+                            )}
+                          </ul>
+                        </div>
+                      ) : (
+                        // Fallback if no matching tab is found (shouldn't happen if state is managed correctly)
+                        <div className="text-gray-400 italic">Select a proficiency level</div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center text-gray-500 text-sm mt-4">No Data Found</div>
+                )}
+              </div>
+            )}
+            {activeCardIndex === 6 && (
+              <div className="bg-white p-4 rounded-lg">
+                <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
+                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill ATTRIBUTES</b></h2>
+                </div>
+                 {applicationLevel.length > 0 ? (
+                  <>
+                    <div className="flex justify-center mt-4 flex-wrap gap-2">
+                      {applicationLevel.map((applicationValue, index) => (
+                        <button
+                          key={`AbilityTab-${index}`}
+                          onClick={() => setActiveApplicationTab(applicationValue.proficiency_level)}
+                          className={`px-3 py-1 text-lg font-bold mr-6 rounded-md border shadow-lg shadow-blue-300/30 transition ${activeApplicationTab === applicationValue.proficiency_level
+                              ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
+                              : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
+                            }`}
+                        >
+                          {applicationValue.proficiency_level}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="w-full mt-6 p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
+
+                      {applicationLevel.find(k => k.proficiency_level === activeApplicationTab) ? (
+                        
+                        <div>
+
+                          <ul className="space-y-1">
+                            {applicationLevel
+                              .find(k => k.proficiency_level === activeApplicationTab)
+                              ?.items?.length > 0 ? (
+                              applicationLevel
+                                .find(k => k.proficiency_level === activeApplicationTab)
+                                ?.items.map((itemVal: applicationItem, itemIndex: number) => (
+                                  <li className="bg-[#ebe3f3] p-2 rounded-lg mb-4" key={itemIndex}><i className="fa fa-chevron-circle-right mr-1" aria-hidden="true"></i>{itemVal.application}</li>
+                                ))
+                            ) : (
+                              <li className="bg-[#ebe3f3] p-2">No items available</li>
+                            )}
+                          </ul>
+                        </div>
+                      ) : (
+                        // Fallback if no matching tab is found (shouldn't happen if state is managed correctly)
+                        <div className="text-gray-400 italic">Select a proficiency level</div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center text-gray-500 text-sm mt-4">No Data Found</div>
+                )}
+              </div>
+            )}
+            {activeCardIndex === 7 && (
+              <div className="bg-white p-4 rounded-lg">
+                <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
+                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill BEHAVIOUR</b></h2>
                 </div>
                  {applicationLevel.length > 0 ? (
                   <>
