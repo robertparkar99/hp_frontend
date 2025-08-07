@@ -35,6 +35,8 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
   const [applicationLevel, setApplicationLevel] = useState<any[]>([]);
   const [abilityData, setAbililtyData] = useState<any[]>([]);
   const [applicationData, setApplicationData] = useState<any[]>([]);
+  const [attitudeData, setAttitudeData] = useState<any[]>([]);
+  const [behaviourData, setBehaviourData] = useState<any[]>([]);
 
   const [dialogOpen, setDialogOpen] = useState({
     view: false,
@@ -77,13 +79,16 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
         setKnowlegeLevel(data.userViewKnowledge || []);
         setAbilityLevel(data.userViewAbility || []);
         setApplicationLevel(data.userViewApplication || []);
-         if (data.userViewKnowledge.length > 0) {
+        setAttitudeData(data.userAttitudeData || []);
+        setBehaviourData(data.userBehaviourData || []);
+
+        if (data.userViewKnowledge.length > 0) {
           setActiveKnowledgeTab(data.userViewKnowledge[0].proficiency_level);
         }
-           if (data.userViewAbility.length > 0) {
+        if (data.userViewAbility.length > 0) {
           setActiveAbilityTab(data.userViewAbility[0].proficiency_level);
         }
-           if (data.userViewApplication.length > 0) {
+        if (data.userViewApplication.length > 0) {
           setActiveApplicationTab(data.userViewApplication[0].proficiency_level);
         }
         // console.log('setKnowldegeData',data.userKnowledgeData);
@@ -115,47 +120,55 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
       fetchData();
     }
 
-   
+
   }, [sessionUrl, sessionToken]);
 
   if (!viewData) return null;
   const cardData = [
     {
+      id: 0,
       title: "Skill Details",
       iconClass: "mdi mdi-information-slab-circle",
       images: "assets/skill_images/book.png",
     },
     {
+      id: 1,
       title: "Skill Jobrole",
       iconClass: "mdi mdi-account-hard-hat",
       images: "assets/skill_images/jobrole.png",
     },
     {
+      id: 2,
       title: "Skill Proficiency Level",
       iconClass: "mdi mdi-arrow-up-box",
       images: "assets/skill_images/proficiency.png",
     },
     {
+      id: 3,
       title: "Skill Knowledge",
       iconClass: "mdi mdi-head-snowflake",
       images: "assets/skill_images/knowledge.png",
     },
     {
+      id: 4,
       title: "Skill Ability",
       iconClass: "mdi mdi-alpha-a-box",
       images: "assets/skill_images/ability.png",
     },
     {
+      id: 5,
       title: "Skill Application",
       iconClass: "mdi mdi-send",
       images: "assets/skill_images/application.png",
     },
     {
+      id: 6,
       title: "Skill Attitude",
       iconClass: "mdi mdi-send",
       images: "assets/skill_images/image 1.png",
     },
     {
+      id: 7,
       title: "Skill Behaviour",
       iconClass: "mdi mdi-send",
       images: "assets/skill_images/behaviour.png",
@@ -248,7 +261,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
     proficiency_level: number | string;
     items: KnowledgeItem[];
   }
-    interface abilityItem {
+  interface abilityItem {
     classification_item: string;
     classification_category: string;
     classification_sub_category: string;
@@ -259,17 +272,17 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
     proficiency_level: number | string;
     items: abilityItem[];
   }
-  
-    interface applicationItem {
+
+  interface applicationItem {
     application: string;
-    proficiency_level:  number | string;
+    proficiency_level: number | string;
     // Add other properties if needed
     [key: string]: any;
   }
   interface applicationLevel {
     proficiency_level: number | string;
     items: applicationItem[];
-  } 
+  }
   function empty(arr: any[]) {
     return !Array.isArray(arr) || arr.length === 0;
   }
@@ -346,7 +359,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
               <div
                 key={`card` + index} // Using index as key is okay if items don't change order or get added/removed often.
                 className="flex relative mx-auto w-[250px] h-[120px] bg-white shadow-[5px_5px_60px_rgb(235,235,235),-5px_-5px_60px_rgb(237,237,237)] rounded-[15px] transition-all duration-[2s] items-center justify-center cursor-pointer group overflow-hidden"
-                onClick={() => handleCardClick(index)}
+                onClick={() => handleCardClick(card.id)}
               >
                 {/* Card Title */}
                 <div className="flex flex-col items-center justify-center w-full">
@@ -383,7 +396,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
             {activeCardIndex === 0 && (
               <div className="bg-white p-4 rounded-lg">
                 <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill DETAILS</b></h2>
+                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL DETAILS</b></h2>
                 </div>
                 <div className="cardDetails grid grid-cols-3 gap-6 p-4">
                   <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
@@ -529,7 +542,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                   <div className="cardDetails grid grid-cols-3 gap-6 p-4">
                     {jobroleData.map((jobrole, index) => (
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                      <p className="text-[12px]"><span><b>Category : </b></span>{jobrole.jobrole_category ? jobrole.jobrole_category : '-'}</p>
+                        <p className="text-[12px]"><span><b>Category : </b></span>{jobrole.jobrole_category ? jobrole.jobrole_category : '-'}</p>
                         <h2 className="text-[14px] h-[48px] text-[#2060E6] font-bold" data-titleHead={jobrole.jobrole ? jobrole.jobrole : '-'}> {jobrole.jobrole
                           ? jobrole.jobrole.slice(0, 50) + (jobrole.jobrole.length > 50 ? "..." : "")
                           : "-"}</h2>
@@ -553,7 +566,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
             {activeCardIndex === 2 && (
               <div className="bg-white p-4 rounded-lg">
                 <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill PROFICIENCY LEVEL</b></h2>
+                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL PROFICIENCY LEVEL</b></h2>
                 </div>
                 {proficiencyLevel && proficiencyLevel.length > 0 ? (
                   <div className="cardDetails grid grid-cols-3 gap-6 p-4">
@@ -588,7 +601,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
             {activeCardIndex === 3 && (
               <div className="bg-white p-4 rounded-lg">
                 <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill KNOWLEDGE</b></h2>
+                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL KNOWLEDGE</b></h2>
                 </div>
 
                 {knowldegeLevel.length > 0 ? (
@@ -599,8 +612,8 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                           key={`knowledgeTab-${index}`}
                           onClick={() => setActiveKnowledgeTab(knowldegeValue.proficiency_level)}
                           className={`px-3 py-1 text-lg font-bold rounded-md mr-6 border shadow-lg shadow-blue-300/30 transition ${activeKnowledgeTab === knowldegeValue.proficiency_level
-                              ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
-                              : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
+                            ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
+                            : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
                             }`}
                         >
                           {knowldegeValue.proficiency_level}
@@ -646,7 +659,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
             {activeCardIndex === 4 && (
               <div className="bg-white p-4 rounded-lg">
                 <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill ABILITY</b></h2>
+                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL ABILITY</b></h2>
                 </div>
                 {abilityLevel.length > 0 ? (
                   <>
@@ -656,8 +669,8 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                           key={`AbilityTab-${index}`}
                           onClick={() => setActiveAbilityTab(abilityValue.proficiency_level)}
                           className={`px-3 py-1 text-lg font-bold rounded-md mr-6 border shadow-lg shadow-blue-300/30 transition ${activeAbilityTab === abilityValue.proficiency_level
-                              ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
-                              : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
+                            ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
+                            : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
                             }`}
                         >
                           {abilityValue.proficiency_level}
@@ -703,9 +716,9 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
             {activeCardIndex === 5 && (
               <div className="bg-white p-4 rounded-lg">
                 <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill APPLICATION</b></h2>
+                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL APPLICATION</b></h2>
                 </div>
-                 {applicationLevel.length > 0 ? (
+                {applicationLevel.length > 0 ? (
                   <>
                     <div className="flex justify-center mt-4 flex-wrap gap-2">
                       {applicationLevel.map((applicationValue, index) => (
@@ -713,8 +726,8 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                           key={`AbilityTab-${index}`}
                           onClick={() => setActiveApplicationTab(applicationValue.proficiency_level)}
                           className={`px-3 py-1 text-lg font-bold mr-6 rounded-md border shadow-lg shadow-blue-300/30 transition ${activeApplicationTab === applicationValue.proficiency_level
-                              ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
-                              : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
+                            ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
+                            : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
                             }`}
                         >
                           {applicationValue.proficiency_level}
@@ -725,7 +738,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                     <div className="w-full mt-6 p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
 
                       {applicationLevel.find(k => k.proficiency_level === activeApplicationTab) ? (
-                        
+
                         <div>
 
                           <ul className="space-y-1">
@@ -756,104 +769,41 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
             {activeCardIndex === 6 && (
               <div className="bg-white p-4 rounded-lg">
                 <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill ATTITUDE</b></h2>
+                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL ATTITUDE</b></h2>
                 </div>
-                 {applicationLevel.length > 0 ? (
-                  <>
-                    <div className="flex justify-center mt-4 flex-wrap gap-2">
-                      {applicationLevel.map((applicationValue, index) => (
-                        <button
-                          key={`AbilityTab-${index}`}
-                          onClick={() => setActiveApplicationTab(applicationValue.proficiency_level)}
-                          className={`px-3 py-1 text-lg font-bold mr-6 rounded-md border shadow-lg shadow-blue-300/30 transition ${activeApplicationTab === applicationValue.proficiency_level
-                              ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
-                              : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
-                            }`}
-                        >
-                          {applicationValue.proficiency_level}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="w-full mt-6 p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
-
-                      {applicationLevel.find(k => k.proficiency_level === activeApplicationTab) ? (
-                        
-                        <div>
-
-                          <ul className="space-y-1">
-                            {applicationLevel
-                              .find(k => k.proficiency_level === activeApplicationTab)
-                              ?.items?.length > 0 ? (
-                              applicationLevel
-                                .find(k => k.proficiency_level === activeApplicationTab)
-                                ?.items.map((itemVal: applicationItem, itemIndex: number) => (
-                                  <li className="bg-[#ebe3f3] p-2 rounded-lg mb-4" key={itemIndex}><i className="fa fa-chevron-circle-right mr-1" aria-hidden="true"></i>{itemVal.application}</li>
-                                ))
-                            ) : (
-                              <li className="bg-[#ebe3f3] p-2">No items available</li>
-                            )}
-                          </ul>
-                        </div>
-                      ) : (
-                        // Fallback if no matching tab is found (shouldn't happen if state is managed correctly)
-                        <div className="text-gray-400 italic">Select a proficiency level</div>
-                      )}
-                    </div>
-                  </>
+                {attitudeData && attitudeData.length > 0 ? (
+                  <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                    {attitudeData.map((attitutde, index) => (
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h2 className="text-[14px] pb-3 text-[#2060E6] font-bold"> {attitutde.classification_item ? attitutde.classification_item : '-'}</h2>
+                        <hr className="text-[#ddd] pt-2" />
+                        <p className="text-[12px]"><span><b>Category : </b></span>{attitutde.classification_category ? attitutde.classification_category : '-'}</p>
+                        <p className="text-[12px]"><span><b>Sub Category : </b></span>{attitutde.classification_sub_category ? attitutde.classification_sub_category : '-'}</p>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div className="text-center text-gray-500 text-sm mt-4">No Data Found</div>
                 )}
+
               </div>
             )}
             {activeCardIndex === 7 && (
               <div className="bg-white p-4 rounded-lg">
                 <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>Skill BEHAVIOUR</b></h2>
+                  <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL BEHAVIOUR</b></h2>
                 </div>
-                 {applicationLevel.length > 0 ? (
-                  <>
-                    <div className="flex justify-center mt-4 flex-wrap gap-2">
-                      {applicationLevel.map((applicationValue, index) => (
-                        <button
-                          key={`AbilityTab-${index}`}
-                          onClick={() => setActiveApplicationTab(applicationValue.proficiency_level)}
-                          className={`px-3 py-1 text-lg font-bold mr-6 rounded-md border shadow-lg shadow-blue-300/30 transition ${activeApplicationTab === applicationValue.proficiency_level
-                              ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
-                              : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
-                            }`}
-                        >
-                          {applicationValue.proficiency_level}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="w-full mt-6 p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
-
-                      {applicationLevel.find(k => k.proficiency_level === activeApplicationTab) ? (
-                        
-                        <div>
-
-                          <ul className="space-y-1">
-                            {applicationLevel
-                              .find(k => k.proficiency_level === activeApplicationTab)
-                              ?.items?.length > 0 ? (
-                              applicationLevel
-                                .find(k => k.proficiency_level === activeApplicationTab)
-                                ?.items.map((itemVal: applicationItem, itemIndex: number) => (
-                                  <li className="bg-[#ebe3f3] p-2 rounded-lg mb-4" key={itemIndex}><i className="fa fa-chevron-circle-right mr-1" aria-hidden="true"></i>{itemVal.application}</li>
-                                ))
-                            ) : (
-                              <li className="bg-[#ebe3f3] p-2">No items available</li>
-                            )}
-                          </ul>
-                        </div>
-                      ) : (
-                        // Fallback if no matching tab is found (shouldn't happen if state is managed correctly)
-                        <div className="text-gray-400 italic">Select a proficiency level</div>
-                      )}
-                    </div>
-                  </>
+                {behaviourData && behaviourData.length > 0 ? (
+                  <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                    {behaviourData.map((behaviour, index) => (
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h2 className="text-[14px] pb-3 text-[#2060E6] font-bold"> {behaviour.classification_item ? behaviour.classification_item : '-'}</h2>
+                        <hr className="text-[#ddd] pt-2" />
+                        <p className="text-[12px]"><span><b>Category : </b></span>{behaviour.classification_category ? behaviour.classification_category : '-'}</p>
+                        <p className="text-[12px]"><span><b>Sub Category : </b></span>{behaviour.classification_sub_category ? behaviour.classification_sub_category : '-'}</p>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div className="text-center text-gray-500 text-sm mt-4">No Data Found</div>
                 )}

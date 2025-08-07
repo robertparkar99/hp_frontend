@@ -153,16 +153,16 @@ const EditDialog: React.FC<EditDialogProps> = ({
       name: "Skill Applications",
       component: <ApplicationData editData={editData} />,
     },
-    {
-      id: "attitude",
-      name: "Skill Attitude",
-      component: <AttributesData editData={editData} />,
-    },
-    {
-      id: "behaviour",
-      name: "Skill Behaviour",
-      component: <BehaviourData editData={editData} />,
-    },
+    // {
+    //   id: "attitude",
+    //   name: "Skill Attitude",
+    //   component: <AttributesData editData={editData} />,
+    // },
+    // {
+    //   id: "behaviour",
+    //   name: "Skill Behaviour",
+    //   component: <BehaviourData editData={editData} />,
+    // },
   ];
 
   return (
@@ -203,13 +203,12 @@ const EditDialog: React.FC<EditDialogProps> = ({
           </div>
           </div>
         {/* Tab Navigation */}
-        <div className="w-[100%] custom-oklch-gradient my-2 p-4 text-center rounded-lg gap-2">
+        <div className="w-[100%] flex flex-wrap justify-center custom-oklch-gradient my-2 p-4 text-center rounded-lg gap-2">
           {tabs.map((tab,index) => (
             <span
               key={index}
               onClick={() => setActiveTab(tab.id)}
-              className={`
-                m-2  py-2 rounded-lg text-sm
+              className={`p-2 rounded-lg text-sm
                  font-semibold transition-all duration-300
                 ${
                   activeTab === tab.id
