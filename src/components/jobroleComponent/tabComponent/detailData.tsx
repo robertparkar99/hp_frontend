@@ -21,6 +21,7 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
     department: '',
     sub_department: "",
     performance_expectation: "",
+    jobrole_category: "",
     education?: "",
     training?: "",
     experience?: "",
@@ -31,6 +32,7 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
     description: editData?.description || "",
     department: editData?.department || '',
     sub_department: editData?.sub_department || "",
+    jobrole_category: editData?.jobrole_category || "",
     performance_expectation: editData?.performance_expectation || "",
     education: editData?.education || "",
     training: editData?.training || "",
@@ -71,6 +73,7 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
         description: editData?.description || "",
         department: editData?.department || '',
         sub_department: editData?.sub_department || "",
+        jobrole_category: editData?.jobrole_category || "",
         performance_expectation: editData?.performance_expectation || "",
         education: editData?.education || "",
         training: editData?.training || "",
@@ -186,6 +189,18 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
           </div>
 
           <div className="relative z-0 w-full mb-5 group text-left">
+            <label htmlFor="jobrole_category" className="text-left">Jobrole Category</label><br />
+            <input
+              type="text"
+              name="jobrole_category"
+              className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+              placeholder="Enter Jobrole Category..."
+              onChange={handleFormChange}
+              value={formData.jobrole_category}
+            />
+          </div>
+{/*
+          <div className="relative z-0 w-full mb-5 group text-left">
             <label htmlFor="subDepartment" className="text-left">Jobrole Sub-Department</label><br />
             <input
               type="text"
@@ -204,7 +219,7 @@ const DetailData: React.FC<Props> = ({ editData, onClose, onSuccess }) => {
               ))}
             </datalist>
           </div>
-
+*/}
         </div>
 
         {/* Job Role and Location */}
