@@ -4,6 +4,7 @@ import { Button } from '../../../../../components/ui/button';
 import { Input } from '../../../../../components/ui/input';
 import Select from '../../../../../components/ui/Select';
 import { Checkbox } from '../../../../../components/ui/checkbox';
+import SearchFilters from '../../../../../components/searchfileds/SearchFilters';
 
 const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -34,6 +35,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSearch = () => {
+    console.log('Searching with filters:', formData);
+    // Add your search logic here
+  };
+
   const handleSave = () => {
     console.log('Saving Exam:', formData);
     onSave(formData);
@@ -58,20 +64,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-150px)] space-y-6">
           
           {/* Search Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Select label="Search Section" value={formData.searchSection} onChange={v => handleChange('searchSection', v)} options={[]} />
-            <Select label="Search Standard" value={formData.searchStandard} onChange={v => handleChange('searchStandard', v)} options={[]} />
-            <Select label="Select Subject" value={formData.subject} onChange={v => handleChange('subject', v)} options={[]} />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Input label="Search By Chapter" value={formData.searchByChapter} onChange={e => handleChange('searchByChapter', e.target.value)} />
-            <Input label="Search By Topic" value={formData.searchByTopic} onChange={e => handleChange('searchByTopic', e.target.value)} />
-            <Input label="Search By Mapping Type" value={formData.searchByMappingType} onChange={e => handleChange('searchByMappingType', e.target.value)} />
-            <Input label="Search By Mapping Value" value={formData.searchByMappingValue} onChange={e => handleChange('searchByMappingValue', e.target.value)} />
-          </div>
-
-          <Button variant="default">Search</Button>
+          <SearchFilters
+            formData={formData}
+            onFormChange={handleChange}
+            onSearch={handleSearch}
+          />
 
           {/* Exam Details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -84,7 +81,10 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
             <Input type="date" label="Open Date" value={formData.openDate} onChange={e => handleChange('openDate', e.target.value)} />
             <Input type="date" label="Close Date" value={formData.closeDate} onChange={e => handleChange('closeDate', e.target.value)} />
             <div className="flex items-center space-x-2">
-              <Checkbox checked={formData.enableTimeLimit} onChange={e => handleChange('enableTimeLimit', e.target.checked)} />
+              <Checkbox
+                checked={formData.enableTimeLimit}
+                onCheckedChange={(checked) => handleChange('enableTimeLimit', checked)}
+              />
               <span>Enable Time Limit</span>
             </div>
           </div>
@@ -106,10 +106,34 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
 
           {/* Checkboxes */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Checkbox label="Shuffle Question" checked={formData.shuffleQuestions} onChange={e => handleChange('shuffleQuestions', e.target.checked)} />
-            <Checkbox label="Show Feedback" checked={formData.showFeedback} onChange={e => handleChange('showFeedback', e.target.checked)} />
-            <Checkbox label="Show" checked={formData.show} onChange={e => handleChange('show', e.target.checked)} />
-            <Checkbox label="Show Right Answer after Result" checked={formData.showRightAnswerAfterResult} onChange={e => handleChange('showRightAnswerAfterResult', e.target.checked)} />
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={formData.shuffleQuestions}
+                onCheckedChange={(checked) => handleChange('shuffleQuestions', checked)}
+              />
+              <span>Shuffle Question</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={formData.showFeedback}
+                onCheckedChange={(checked) => handleChange('showFeedback', checked)}
+              />
+              <span>Show Feedback</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={formData.show}
+                onCheckedChange={(checked) => handleChange('show', checked)}
+              />
+              <span>Show</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={formData.showRightAnswerAfterResult}
+                onCheckedChange={(checked) => handleChange('showRightAnswerAfterResult', checked)}
+              />
+              <span>Show Right Answer after Result</span>
+            </div>
           </div>
 
           {/* Totals */}
