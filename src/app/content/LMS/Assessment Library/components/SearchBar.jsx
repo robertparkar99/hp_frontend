@@ -54,10 +54,9 @@ const SearchBar = ({ searchQuery, onSearchChange, onToggleFilters, isMobile }) =
         <Button
           variant="outline"
           onClick={onToggleFilters}
-          iconName="Filter"
-          iconPosition="left"
           className="flex-shrink-0"
         >
+          <Icon name="Filter" size={16} className="mr-2" />
           Filters
         </Button>
       )}
