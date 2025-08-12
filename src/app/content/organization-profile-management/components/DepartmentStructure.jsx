@@ -113,7 +113,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
       );
 
       // API call to persist
-      const res = await fetch(`${sessionData.url}/update_department`, {
+      const res = await fetch(`${sessionData.url}/add_department`, {
         method: 'POST', // change to PUT if needed
         headers: {
           'Content-Type': 'application/json',
