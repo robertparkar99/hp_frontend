@@ -228,13 +228,13 @@ const EmployeeTable = ({
                           } w-48 bg-popover border border-border rounded-md shadow-modal z-300`}
                       >
                         <div className="py-2">
-                          <button
+                          {/* <button
                             onClick={() => handleViewProfileMenu(employee)}
                             className="w-full px-4 py-2 text-left text-sm text-popover-foreground hover:bg-muted transition-smooth flex items-center space-x-2"
                           >
                             <Icon name="Eye" size={16} />
                             <span>View Profile</span>
-                          </button>
+                          </button> */}
                           <button
                             onClick={() => handleEditEmployeeMenu(employee)}
                             className="w-full px-4 py-2 text-left text-sm text-popover-foreground hover:bg-muted transition-smooth flex items-center space-x-2"
