@@ -466,7 +466,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
               />
             </div>
 
-            <div className="relative z-0 w-full group text-left">
+            {/* <div className="relative z-0 w-full group text-left">
               <label htmlFor={`proficiency_type-${index}`} className="block mb-2">
                 Proficiency Type
               </label>
@@ -483,9 +483,9 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
                 <option value="Business Skills">Business Skills</option>
                 <option value="Knowledge">Knowledge</option>
               </select>
-            </div>
+            </div> */}
 
-            <div className="relative z-0 w-full group text-left">
+            {/* <div className="relative z-0 w-full group text-left">
               <label htmlFor={`type_description-${index}`} className="block mb-2">
                 Type Description
               </label>
@@ -498,7 +498,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
                 value={level.type_description || ""}
                 onChange={(e) => handleProficiencyLevelChange(index, e)}
               />
-            </div>
+            </div> */}
 
             <div className="flex items-center justify-end">
               {proficiencyLevels.length > 1 && (
