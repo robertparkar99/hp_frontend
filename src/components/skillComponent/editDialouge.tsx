@@ -148,21 +148,22 @@ const EditDialog: React.FC<EditDialogProps> = ({
       name: "Skill Ability",
       component: <AbilityData editData={editData} />,
     },
+  
     {
+      id: "attitude",
+      name: "Skill Attitude",
+      component: <AttributesData editData={editData} />,
+    },
+    {
+      id: "behaviour",
+      name: "Skill Behaviour",
+      component: <BehaviourData editData={editData} />,
+    },
+      {
       id: "applications",
       name: "Skill Applications",
       component: <ApplicationData editData={editData} />,
     },
-    // {
-    //   id: "attitude",
-    //   name: "Skill Attitude",
-    //   component: <AttributesData editData={editData} />,
-    // },
-    // {
-    //   id: "behaviour",
-    //   name: "Skill Behaviour",
-    //   component: <BehaviourData editData={editData} />,
-    // },
   ];
 
   return (
