@@ -38,12 +38,11 @@ const SearchAndFilters = ({
   ];
 
   const locationOptions = [
-    { value: '', label: 'All Locations' },
-    { value: 'New York', label: 'New York' },
-    { value: 'San Francisco', label: 'San Francisco' },
-    { value: 'London', label: 'London' },
-    { value: 'Toronto', label: 'Toronto' },
-    { value: 'Remote', label: 'Remote' }
+    { value: '', label: 'All Role' },
+    { value: 'Employee', label: 'Employee' },
+    { value: 'Admin', label: 'Admin' },
+    { value: 'HR', label: 'HR' },
+
   ];
 
   const skillOptions = [
@@ -137,8 +136,7 @@ const SearchAndFilters = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 border-t border-border pt-4">
           {renderSelect('Department', departmentOptions, filters.department || '', 'department')}
           {renderSelect('Job Role', jobRoleOptions, filters.jobRole || '', 'jobRole')}
-          {renderSelect('Location', locationOptions, filters.location || '', 'location')}
-          {renderSelect('Skill', skillOptions, filters.skill || '', 'skill')}
+          {renderSelect('Role', locationOptions, filters.location || '', 'Role')}
           {renderSelect('Status', statusOptions, filters.status || '', 'status')}
         </div>
       )}
