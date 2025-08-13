@@ -1,26 +1,36 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 import DataTable from "react-data-table-component";
 
+// Dynamic imports (SSR disabled)
 const ExcelExportButton = dynamic(
-  () => import('../../exportButtons/excelExportButton').then(mod => mod.ExcelExportButton),
+  () =>
+    import("../../exportButtons/excelExportButton").then(
+      (mod) => mod.ExcelExportButton
+    ),
   { ssr: false }
 );
-
 const PdfExportButton = dynamic(
-  () => import('../../exportButtons/PdfExportButton').then(mod => mod.PdfExportButton),
+  () =>
+    import("../../exportButtons/PdfExportButton").then(
+      (mod) => mod.PdfExportButton
+    ),
   { ssr: false }
 );
-
 const PrintButton = dynamic(
-  () => import('../../exportButtons/printExportButton').then(mod => mod.PrintButton),
+  () =>
+    import("../../exportButtons/printExportButton").then(
+      (mod) => mod.PrintButton
+    ),
   { ssr: false }
 );
 
 type Props = { editData: any };
 
-// Define the type for the data displayed in the table
-type Submittedability = {
+// Type for table display data
+type SubmittedAbility = {
   id: number;
   proficiency_level?: string;
   classification_item?: string;
@@ -32,18 +42,20 @@ type Submittedability = {
   updated_at?: string;
 };
 
-// Define a type for a single ability/ability entry
-// MODIFIED: Made proficiency_level and classification_item optional
-type abilityAbilityEntry = {
+// Type for form entry
+type AbilityEntry = {
   id?: number;
   proficiency_level?: string;
+  classification_category?: string;
+  classification_sub_category?: string;
   classification_item?: string;
-  category?: string;
-  sub_category?: string;
-  skillTitle?: string;
-  created_by_user?: string;
-  created_at?: string;
-  updated_at?: string;
+};
+
+const EMPTY_ENTRY: AbilityEntry = {
+  proficiency_level: "",
+  classification_category: "",
+  classification_sub_category: "",
+  classification_item: "",
 };
 
 const AbilityData: React.FC<Props> = ({ editData }) => {
@@ -55,23 +67,30 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     userId: "",
     userProfile: "",
   });
+
   const [proficiencyLevel, setProficiencyLevel] = useState<any[]>([]);
-  const [submittedData, setSubmittedData] = useState<Submittedability[]>([]);
+  const [submittedData, setSubmittedData] = useState<SubmittedAbility[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
-    {}
-  );
-
-  // State to hold an array of ability/ability entries
-  const [abilityAbilities, setabilityAbilities] = useState<abilityAbilityEntry[]>([
-    { proficiency_level: "", classification_item: "" }, // Start with one empty row
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [subCategoryOptions, setSubCategoryOptions] = useState<string[]>([]);
+  const [abilityAbilities, setAbilityAbilities] = useState<AbilityEntry[]>([
+    { ...EMPTY_ENTRY },
   ]);
 
+  // Load user session data from localStorage
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
-      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name, } = JSON.parse(userData);
+      const {
+        APP_URL,
+        token,
+        org_type,
+        sub_institute_id,
+        user_id,
+        user_profile_name,
+      } = JSON.parse(userData);
       setSessionData({
         url: APP_URL,
         token,
@@ -83,42 +102,112 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     }
   }, []);
 
+  // Fetch initial data once session is ready
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
       fetchInitialData();
     }
   }, [sessionData]);
 
-  const fetchInitialData = async () => {
-    const res = await fetch(`${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=ability`);
+  // Fetch static lists
+  useEffect(() => {
+    fetchCategoryData();
+    fetchProficiencyLevels();
+  }, []);
+
+  const fetchProficiencyLevels = async () => {
+    try {
+      const res = await fetch(
+        `https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=3&group_by=proficiency_level`
+      );
+      const data = await res.json();
+      const levels = Array.from(
+        new Set(
+          data.map((item: any) => item.proficiency_level).filter(Boolean)
+        )
+      ).map((level) => ({ proficiency_level: level }));
+      setProficiencyLevel(levels);
+    } catch (error) {
+      console.error("Error fetching proficiency levels:", error);
+    }
+  };
+
+  const fetchCategoryData = async () => {
+    try {
+      const res = await fetch(
+        `https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=3&filters[classification]=ability`
+      );
+      const data = await res.json();
+      setCategoryOptions(
+        Array.from(
+          new Set(
+            data.map((item: any) => item.classification_category).filter(Boolean)
+          )
+        )
+      );
+      setSubCategoryOptions(
+        Array.from(
+          new Set(
+            data
+              .map((item: any) => item.classification_sub_category)
+              .filter(Boolean)
+          )
+        )
+      );
+    } catch (error) {
+      console.error("Error fetching category data:", error);
+    }
+  };
+
+    const fetchInitialData = async () => {
+    // const res = await fetch(
+    //   `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=knowledge`
+    // );
+    const res = await fetch(`https://hp.triz.co.in/skill_library/create?type=API&token=929|fRP90F3cElCvyigHxpTytEJ5GPUr4ZJddh80PTxl205798a3&sub_institute_id=3&org_type=Healthcare&skill_id=2524&formType=ability`);
     const data = await res.json();
-    setProficiencyLevel(data.grouped_proficiency_levels || []);
     setSubmittedData(data.userabilityData || []);
   };
 
   const handleAddRow = () => {
-    setabilityAbilities([...abilityAbilities, { proficiency_level: "", classification_item: "" }]);
+    setAbilityAbilities((prev) => [...prev, { ...EMPTY_ENTRY }]);
   };
+  // const fetchInitialData = async () => {
+  //   try {
+  //     // const res = await fetch(
+  //     //   `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=ability`
+  //     // );
+  //       const res = await fetch(`https://hp.triz.co.in/skill_library/create?type=API&token=929|fRP90F3cElCvyigHxpTytEJ5GPUr4ZJddh80PTxl205798a3&sub_institute_id=3&org_type=Healthcare&skill_id=2524&formType=ability`);
+  //     const data = await res.json();
+  //     setSubmittedData(data.userabilityData || []);
+  //   } catch (error) {
+  //     console.error("Error fetching initial data:", error);
+  //   }
+  // };
+
+  // const handleAddRow = () => {
+  //   setAbilityAbilities((prev) => [...prev, { ...EMPTY_ENTRY }]);
+  // };
 
   const handleRemoveRow = (index: number) => {
-    const updatedabilityAbilities = abilityAbilities.filter((_, i) => i !== index);
-    setabilityAbilities(updatedabilityAbilities);
+    setAbilityAbilities((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleInputChange = (
     index: number,
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
-    const updatedabilityAbilities = abilityAbilities.map((item, i) =>
-      i === index ? { ...item, [name]: value } : item
+    setAbilityAbilities((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [name]: value } : item))
     );
-    setabilityAbilities(updatedabilityAbilities);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     const payload = {
       type: "API",
       method_field: "PUT",
@@ -131,58 +220,67 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
       formType: "ability",
     };
 
-    console.log("Submitting payload:", payload);
-
     try {
-      const res = await fetch(`${sessionData.url}/skill_library/${editData?.id || 0}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.token}`,
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `${sessionData.url}/skill_library/${editData?.id || 0}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sessionData.token}`,
+            Accept: "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const data = await res.json();
       alert(data.message);
-      setabilityAbilities([{ proficiency_level: "", classification_item: "" }]);
-      setSubmittedData([]);
+      setAbilityAbilities([{ ...EMPTY_ENTRY }]);
       setSubmittedData(data.userabilityData || []);
       setEditingId(null);
-      setLoading(false);
     } catch (error) {
       console.error("Error submitting form:", error);
       alert("Error submitting form");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEdit = (row: abilityAbilityEntry) => {
+  const handleEdit = (row: AbilityEntry) => {
     setEditingId(row?.id || null);
-    setabilityAbilities([{ proficiency_level: row.proficiency_level, classification_item: row.classification_item }]);
+    setAbilityAbilities([
+      {
+        proficiency_level: row.proficiency_level || "",
+        classification_category: row.classification_category || "",
+        classification_sub_category: row.classification_sub_category || "",
+        classification_item: row.classification_item || "",
+      },
+    ]);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this job role?")) {
-      try {
-        const res = await fetch(
-          `${sessionData.url}/skill_library/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=ability`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${sessionData.token}`,
-            },
-          }
-        );
+    if (!window.confirm("Are you sure you want to delete this job role?"))
+      return;
 
-        const data = await res.json();
-        alert(data.message);
-        fetchInitialData();
-      } catch (error) {
-        console.error("Error deleting job role:", error);
-        alert("Error deleting job role");
-      }
+    try {
+      const res = await fetch(
+        `${sessionData.url}/skill_library/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=ability`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      alert(data.message);
+      fetchInitialData();
+    } catch (error) {
+      console.error("Error deleting job role:", error);
+      alert("Error deleting job role");
     }
   };
 
@@ -193,16 +291,15 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     }));
   };
 
-  const filteredData = submittedData.filter((item) => {
-    return Object.entries(columnFilters).every(([column, filterValue]) => {
+  const filteredData = submittedData.filter((item) =>
+    Object.entries(columnFilters).every(([column, filterValue]) => {
       if (!filterValue) return true;
-
       const columnValue = String(
-        item[column as keyof Submittedability] || "" // Use Submittedability for filtering
+        item[column as keyof SubmittedAbility] || ""
       ).toLowerCase();
       return columnValue.includes(filterValue.toLowerCase());
-    });
-  });
+    })
+  );
 
   const columns = [
     {
@@ -212,36 +309,81 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("proficiency_level", e.target.value)}
+            onChange={(e) =>
+              handleColumnFilter("proficiency_level", e.target.value)
+            }
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: abilityAbilityEntry) => row.proficiency_level ?? "",
+      selector: (row: AbilityEntry) => row.proficiency_level ?? "",
       sortable: true,
       wrap: true,
     },
+   
     {
+      name: "Skill Category",
+      selector: (row: AbilityEntry) =>
+        row.classification_category
+          ? row.classification_category.length > 100
+            ? `${row.classification_category.substring(0, 100)}...`
+            : row.classification_category
+          : "N/A",
+      sortable: true,
+      wrap: true,
+      cell: (row: AbilityEntry) => (
+        <span title={row.classification_category || "N/A"}>
+          {row.classification_category
+            ? row.classification_category.length > 100
+              ? `${row.classification_category.substring(0, 100)}...`
+              : row.classification_category
+            : "N/A"}
+        </span>
+      ),
+    },
+      {
+      name: "Skill Sub_Category",
+      selector: (row: AbilityEntry) =>
+        row.classification_sub_category
+          ? row.classification_sub_category.length > 100
+            ? `${row.classification_sub_category.substring(0, 100)}...`
+            : row.classification_sub_category
+          : "N/A",
+      sortable: true,
+      wrap: true,
+      cell: (row: AbilityEntry) => (
+        <span title={row.classification_sub_category || "N/A"}>
+          {row.classification_sub_category
+            ? row.classification_sub_category.length > 100
+              ? `${row.classification_sub_category.substring(0, 100)}...`
+              : row.classification_sub_category
+            : "N/A"}
+        </span>
+      ),
+    },
+     {
       name: (
         <div>
-          <div>Skill Abilitys</div>
+          <div>Skill Abilities</div>
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("classification_item", e.target.value)}
+            onChange={(e) =>
+              handleColumnFilter("classification_item", e.target.value)
+            }
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: abilityAbilityEntry) =>
+      selector: (row: AbilityEntry) =>
         row.classification_item
-          ? (row.classification_item.length > 100
+          ? row.classification_item.length > 100
             ? `${row.classification_item.substring(0, 100)}...`
-            : row.classification_item)
+            : row.classification_item
           : "N/A",
       sortable: true,
       wrap: true,
-      cell: (row: abilityAbilityEntry) => (
+      cell: (row: AbilityEntry) => (
         <span title={row.classification_item || "N/A"}>
           {row.classification_item
             ? row.classification_item.length > 100
@@ -253,7 +395,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     },
     {
       name: "Actions",
-      cell: (row: abilityAbilityEntry) => (
+      cell: (row: AbilityEntry) => (
         <div className="flex space-x-2">
           <button
             onClick={() => handleEdit(row)}
@@ -270,7 +412,6 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       ignoreRowClick: true,
-      // allowOverflow: true,
       button: true,
     },
   ];
@@ -294,132 +435,171 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     },
   };
 
-  return (<>
-    <div className="w-[100%]">
-      <form className="w-[100%]" onSubmit={handleSubmit}>
-        {abilityAbilities.map((entry, index) => (
-          <div key={index} className="grid md:grid-cols-3 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-4 rounded-lg mt-2">
-            <div className="relative z-0 w-full group text-left">
-              <label htmlFor={`proficiency_level-${index}`} className="text-left">
-                Skill Proficiency Level
-              </label>
-              <br />
-              <select
-                name="proficiency_level"
-                id={`proficiency_level-${index}`}
-                className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black"
-                value={entry.proficiency_level || ""} // Handle undefined for select
-                onChange={(e) => handleInputChange(index, e)}
-                required
-              >
-                <option value="">Select Proficiency Level</option>
-                {proficiencyLevel.map(d => <option key={d.proficiency_level} value={d.proficiency_level}>{d.proficiency_level}</option>)}
-
-              </select>
-            </div>
-
-            <div className="relative z-0 w-full group text-left">
-              <label htmlFor={`classification_item-${index}`} className="text-left">
-                Skill Ability
-              </label>
-              <br />
-              <textarea
-                name="classification_item"
-                id={`classification_item-${index}`}
-                rows={2}
-                className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
-                placeholder="Describe specific items..."
-                value={entry.classification_item || ""} // Handle undefined for textarea
-                onChange={(e) => handleInputChange(index, e)}
-              ></textarea>
-            </div>
-
-            <div className="flex items-center mt-2 md:mt-0">
-              {abilityAbilities.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => handleRemoveRow(index)}
-                  className="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded-full mt-6 ml-2"
+  return (
+    <>
+      <div className="w-full">
+        <form className="w-full" onSubmit={handleSubmit}>
+          {abilityAbilities.map((entry, index) => (
+            <div
+              key={index}
+              className="grid md:grid-cols-3 md:gap-6 bg-white border-b border-gray-300 shadow-xl p-4 rounded-lg mt-2"
+            >
+              {/* Proficiency Level */}
+              <div className="relative z-0 w-full group text-left">
+                <label htmlFor={`proficiency_level-${index}`}>
+                  Skill Proficiency Level
+                </label>
+                <select
+                  name="proficiency_level"
+                  id={`proficiency_level-${index}`}
+                  className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-blue-100 h-[38px] bg-white text-black"
+                  value={entry.proficiency_level || ""}
+                  onChange={(e) => handleInputChange(index, e)}
+                  required
                 >
-                  -
-                </button>
-              )}
-              {index === abilityAbilities.length - 1 && (
-                <button
-                  type="button"
-                  onClick={handleAddRow}
-                  className="bg-transparent hover:bg-green-500 text-green-700 font-semibold hover:text-white py-2 px-4 border border-green-500 hover:border-transparent rounded-full mt-6 ml-2"
-                >+
-                </button>
-              )}
+                  <option value="">Select Proficiency Level</option>
+                  {proficiencyLevel.map((d) => (
+                    <option
+                      key={d.proficiency_level}
+                      value={d.proficiency_level}
+                    >
+                      {d.proficiency_level}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Category */}
+              <div className="relative z-0 w-full group text-left">
+                <label>Skill Category</label>
+                <select
+                  name="classification_category"
+                  value={entry.classification_category || ""}
+                  onChange={(e) => handleInputChange(index, e)}
+                  className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-blue-100 h-[38px] bg-white text-black"
+                >
+                  <option value="">Select Category</option>
+                  {categoryOptions.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sub Category */}
+              <div className="relative z-0 w-full group text-left">
+                <label>Skill Sub Category</label>
+                <select
+                  name="classification_sub_category"
+                  value={entry.classification_sub_category || ""}
+                  onChange={(e) => handleInputChange(index, e)}
+                  className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-blue-100 h-[38px] bg-white text-black"
+                >
+                  <option value="">Select Sub Category</option>
+                  {subCategoryOptions.map((sub) => (
+                    <option key={sub} value={sub}>
+                      {sub}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Ability Textarea */}
+              <div className="relative z-0 w-full group text-left md:col-span-3">
+                <label htmlFor={`classification_item-${index}`}>
+                  Skill Ability
+                </label>
+                <textarea
+                  name="classification_item"
+                  id={`classification_item-${index}`}
+                  rows={2}
+                  className="w-full block p-2 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
+                  placeholder="Describe specific items..."
+                  value={entry.classification_item || ""}
+                  onChange={(e) => handleInputChange(index, e)}
+                ></textarea>
+              </div>
+
+              {/* Add / Remove buttons */}
+              <div className="flex items-center mt-2 md:mt-0">
+                {abilityAbilities.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveRow(index)}
+                    className="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded-full mt-6 ml-2"
+                  >
+                    -
+                  </button>
+                )}
+                {index === abilityAbilities.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={handleAddRow}
+                    className="bg-transparent hover:bg-green-500 text-green-700 font-semibold hover:text-white py-2 px-4 border border-green-500 hover:border-transparent rounded-full mt-6 ml-2"
+                  >
+                    +
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        <button
-          type="submit"
-          className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2"
-        >
-          {loading ? "Submitting..." : editingId ? "Update" : "Submit"}
-        </button>
-      </form>
-    </div>
-    <div className="w-[100%]">{
-      submittedData.length > 0 &&
-      <div className="mt-8 bg-white p-4 rounded-lg shadow-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Ability</h2>
-          <div className="space-x-2">
-            <PrintButton
-              data={submittedData}
-              title="Job Roles Report"
-              excludedFields={["id", "internal_id"]}
-              buttonText={
-                <>
-                  <span className="mdi mdi-printer-outline"></span>
-                </>
-              }
-            />
-            <ExcelExportButton
-              sheets={[{ data: submittedData, sheetName: "Submissions" }]}
-              fileName="Skills Jobrole"
-              onClick={() => console.log("Export initiated")}
-              buttonText={
-                <>
-                  <span className="mdi mdi-file-excel"></span>
-                </>
-              }
-            />
-
-            <PdfExportButton
-              data={submittedData}
-              fileName="Skills Jobrole"
-              onClick={() => console.log("PDF export initiated")}
-              buttonText={
-                <>
-                  <span className="mdi mdi-file-pdf-box"></span>
-                </>
-              }
-            />
-          </div>
-        </div>
-
-        <DataTable
-          columns={columns}
-          data={filteredData}
-          pagination
-          highlightOnHover
-          responsive
-          striped
-          paginationPerPage={100}
-          paginationRowsPerPageOptions={[100, 500, 1000]}
-          customStyles={customStyles}
-          progressPending={loading}
-          noDataComponent={<div className="p-4">No records found</div>}
-        />
+          <button
+            type="submit"
+            className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 mt-2"
+          >
+            {loading ? "Submitting..." : editingId ? "Update" : "Submit"}
+          </button>
+        </form>
       </div>
-    }</div>
-  </>);
+
+      {/* Table Section */}
+      <div className="w-full">
+        {submittedData.length > 0 && (
+          <div className="mt-8 bg-white p-4 rounded-lg shadow-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Ability</h2>
+              <div className="space-x-2">
+                <PrintButton
+                  data={submittedData}
+                  title="Job Roles Report"
+                  excludedFields={["id", "internal_id"]}
+                  buttonText={<span className="mdi mdi-printer-outline"></span>}
+                />
+                <ExcelExportButton
+                  sheets={[{ data: submittedData, sheetName: "Submissions" }]}
+                  fileName="Skills Jobrole"
+                  onClick={() => console.log("Export initiated")}
+                  buttonText={<span className="mdi mdi-file-excel"></span>}
+                />
+                <PdfExportButton
+                  data={submittedData}
+                  fileName="Skills Jobrole"
+                  onClick={() => console.log("PDF export initiated")}
+                  buttonText={<span className="mdi mdi-file-pdf-box"></span>}
+                />
+              </div>
+            </div>
+
+            <DataTable
+              columns={columns}
+              data={filteredData}
+              pagination
+              highlightOnHover
+              responsive
+              striped
+              paginationPerPage={100}
+              paginationRowsPerPageOptions={[100, 500, 1000]}
+              customStyles={customStyles}
+              progressPending={loading}
+              noDataComponent={<div className="p-4">No records found</div>}
+            />
+          </div>
+        )}
+      </div>
+    </>
+  );
 };
 
 export default AbilityData;
