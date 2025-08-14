@@ -276,7 +276,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
       <div className="bg-card border border-border rounded-lg p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-foreground">Organization Information</h3>
-          <Icon name="Building2" size={20} className="text-muted-foreground" />
+          {/* <Icon name="Building2" size={20} className="text-muted-foreground" /> */}
         </div>
 
         <div className="space-y-6">
@@ -411,7 +411,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
 
       {/* SISTER COMPANY FORMS */}
       {sisterCompanies.map((sister, index) => (
-        <div key={index} className="bg-muted border border-border rounded-lg p-5 mb-6 relative">
+        <div key={index} className="border border-border rounded-lg p-5 mb-6 relative">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-base font-semibold text-foreground">
               {displayValue(sister.legal_name, `Sister Concern Company #${index + 1}`)}
@@ -536,7 +536,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         </div>
       ))}
 
-      <div className="mt-6">
+      <div className="mt-6 transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-500">
         <Button type="submit" disabled={loading}>
           {loading ? 'Saving...' : 'Save Organization Info'}
         </Button>
