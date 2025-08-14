@@ -617,7 +617,7 @@ const PrintButton = dynamic(
 type ProficiencyLevel = {
   id?: number;
   proficiency_level: string;
-  description: string;
+  proficiency_description: string;
   proficiency_type?: string;
   type_description?: string;
   skill_id?: number | null;
@@ -633,7 +633,7 @@ type ProficiencyLevel = {
 type SubmittedProficiency = {
   id: number;
   proficiency_level: string;
-  description: string;
+  proficiency_description: string;
   proficiency_type?: string;
   type_description?: string;
   created_by?: string;
@@ -665,7 +665,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
 
   const defaultProficiencyLevel = {
     proficiency_level: "",
-    description: "",
+    proficiency_description: "",
     proficiency_type: "Autonomy",
     type_description: ""
   };
@@ -717,7 +717,9 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
   const transformData = (item: ProficiencyLevel): SubmittedProficiency => ({
     id: item.id || 0,
     proficiency_level: item.proficiency_level,
-    description: item.description,
+    proficiency_description: item.proficiency_description?.trim() ||
+    item.proficiency_description?.trim() ||
+    "",
     proficiency_type: item.proficiency_type,
     type_description: item.type_description,
     created_by: item.created_by || undefined,
@@ -778,7 +780,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
 
   const validateForm = () => {
     for (const level of proficiencyLevels) {
-      if (!level.proficiency_level.trim() || !level.description.trim()) {
+      if (!level.proficiency_level.trim() || !level.proficiency_description.trim()) {
         return false;
       }
     }
@@ -800,7 +802,7 @@ const ProficiencyLevelData: React.FC<{ editData: any }> = ({ editData }) => {
       type: "API",
       method_field: "PUT",
       proficiency_level: proficiencyLevels.map(level => level.proficiency_level),
-      description: proficiencyLevels.map(level => level.description),
+      description: proficiencyLevels.map(level => level.proficiency_description),
       proficiency_type: proficiencyLevels.map(level => level.proficiency_type),
       type_description: proficiencyLevels.map(level => level.type_description),
       token: sessionData.token,
@@ -914,19 +916,19 @@ const filteredData = submittedData
         </div>
       ),
       selector: (row: SubmittedProficiency) =>
-        row.description
-          ? (row.description.length > 100
-            ? `${row.description.substring(0, 100)}...`
-            : row.description)
+        row.proficiency_description
+          ? (row.proficiency_description.length > 100
+            ? `${row.proficiency_description.substring(0, 100)}...`
+            : row.proficiency_description)
           : "N/A",
       sortable: true,
       wrap: true,
       cell: (row: SubmittedProficiency) => (
-        <span title={row.description || "N/A"}>
-          {row.description
-            ? row.description.length > 100
-              ? `${row.description.substring(0, 100)}...`
-              : row.description
+        <span title={row.proficiency_description || "N/A"}>
+          {row.proficiency_description
+            ? row.proficiency_description.length > 100
+              ? `${row.proficiency_description.substring(0, 100)}...`
+              : row.proficiency_description
             : "N/A"}
         </span>
       ),
@@ -941,7 +943,7 @@ const filteredData = submittedData
                 setEditingId(row.id);
                 setProficiencyLevels([{
                   proficiency_level: row.proficiency_level,
-                  description: row.description,
+                  proficiency_description: row.proficiency_description,
                   proficiency_type: row.proficiency_type || defaultProficiencyLevel.proficiency_type,
                   type_description: row.type_description || ""
                 }]);
@@ -1058,7 +1060,7 @@ const filteredData = submittedData
                 rows={2}
                 className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
                 placeholder="Describe this proficiency level..."
-                value={level.description}
+                value={level.proficiency_description}
                 onChange={(e) => handleProficiencyLevelChange(index, e)}
                 required
               />
