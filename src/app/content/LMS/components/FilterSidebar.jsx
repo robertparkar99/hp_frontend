@@ -1,14 +1,15 @@
+'use client';
 import React, { useState } from 'react';
 import Icon from '@/components/AppIcon';
-import {Button} from '../../../../components/ui/button';
+import { Button } from '../../../../components/ui/button';
 import { Checkbox } from '../../../../components/ui/checkbox';
 
 const FilterSidebar = ({ filters, onFilterChange, onClearAll }) => {
   const [expandedSections, setExpandedSections] = useState(['contentType', 'categories', 'skillLevel']);
 
   const toggleSection = (sectionId) => {
-    setExpandedSections(prev => 
-      prev.includes(sectionId) 
+    setExpandedSections(prev =>
+      prev.includes(sectionId)
         ? prev.filter(id => id !== sectionId)
         : [...prev, sectionId]
     );
@@ -50,7 +51,7 @@ const FilterSidebar = ({ filters, onFilterChange, onClearAll }) => {
 
   const FilterSection = ({ title, sectionId, items, filterKey }) => {
     const isExpanded = expandedSections.includes(sectionId);
-    
+
     return (
       <div className="border-b border-border pb-4 mb-4">
         <Button
@@ -59,29 +60,30 @@ const FilterSidebar = ({ filters, onFilterChange, onClearAll }) => {
           onClick={() => toggleSection(sectionId)}
         >
           <span>{title}</span>
-          <Icon 
-            name="ChevronDown" 
-            size={16} 
+          <Icon
+            name="ChevronDown"
+            size={16}
             className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
           />
         </Button>
-        
+
         {isExpanded && (
           <div className="mt-3 space-y-2">
             {items.map(item => (
               <div key={item.id} className="flex items-center justify-between">
-                <Checkbox
-                  label={item.label}
-                  checked={filters[filterKey]?.includes(item.id) || false}
-                  onChange={(e) => {
-                    const currentValues = filters[filterKey] || [];
-                    const newValues = e.target.checked
-                      ? [...currentValues, item.id]
-                      : currentValues.filter(id => id !== item.id);
-                    onFilterChange(filterKey, newValues);
-                  }}
-                  className="flex-1"
-                />
+                <label className="flex items-center flex-1 gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={filters[filterKey]?.includes(item.id) || false}
+                    onCheckedChange={(checked) => {
+                      const currentValues = filters[filterKey] || [];
+                      const newValues = checked
+                        ? [...currentValues, item.id]
+                        : currentValues.filter(id => id !== item.id);
+                      onFilterChange(filterKey, newValues);
+                    }}
+                  />
+                  <span className="text-sm text-foreground">{item.label || 'Unnamed'}</span>
+                </label>
                 <span className="text-xs text-muted-foreground ml-2">
                   {item.count}
                 </span>
@@ -114,40 +116,11 @@ const FilterSidebar = ({ filters, onFilterChange, onClearAll }) => {
       </div>
 
       <div className="space-y-0">
-        <FilterSection
-          title="Content Type"
-          sectionId="contentType"
-          items={contentTypes}
-          filterKey="contentType"
-        />
-        
-        <FilterSection
-          title="Categories"
-          sectionId="categories"
-          items={categories}
-          filterKey="categories"
-        />
-        
-        <FilterSection
-          title="Skill Level"
-          sectionId="skillLevel"  
-          items={skillLevels}
-          filterKey="skillLevel"
-        />
-        
-        <FilterSection
-          title="Duration"
-          sectionId="duration"
-          items={durations}
-          filterKey="duration"
-        />
-        
-        <FilterSection
-          title="Completion Status"
-          sectionId="completionStatus"
-          items={completionStatus}
-          filterKey="completionStatus"
-        />
+        <FilterSection title="Content Type" sectionId="contentType" items={contentTypes} filterKey="contentType" />
+        <FilterSection title="Categories" sectionId="categories" items={categories} filterKey="categories" />
+        <FilterSection title="Skill Level" sectionId="skillLevel" items={skillLevels} filterKey="skillLevel" />
+        <FilterSection title="Duration" sectionId="duration" items={durations} filterKey="duration" />
+        <FilterSection title="Completion Status" sectionId="completionStatus" items={completionStatus} filterKey="completionStatus" />
       </div>
 
       {/* Quick Actions */}
