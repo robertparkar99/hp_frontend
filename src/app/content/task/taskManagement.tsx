@@ -251,7 +251,7 @@ const TaskManagement = () => {
 
             const response = await fetch(`${sessionData.url}/task?type=API&token=${sessionData.token}` +
                 `&sub_institute_id=${sessionData.subInstituteId}` +
-                `&org_type=${sessionData.orgType}&syear=${sessionData.syear}&formType=single`, {
+                `&org_type=${sessionData.orgType}&syear=${sessionData.syear}&user_id=${sessionData.userId}&formType=single`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${sessionData.token}`,
@@ -293,7 +293,7 @@ const TaskManagement = () => {
 
     return (
         <div className="mainDiv">
-            <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-18 p-10">
+            <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-18 p-2">
                 {/* Left Card */}
                 <div className="pt-1 rounded-lg bg-gradient-to-r from-[#47A0FF] to-[#38C0AA] h-[fit-content]">
                     <div className="bg-[#FAFAFA] border-2 border-[#D0E7FF] rounded-lg shadow-md p-6">
