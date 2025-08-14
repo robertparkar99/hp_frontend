@@ -348,7 +348,7 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
     {
       name:(
         <div>
-          <div>SKill Category</div>
+          <div>Knowledge Category</div>
           <input
             type="text"
             placeholder="Search..."
@@ -380,7 +380,7 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
     {
       name:(
         <div>
-          <div>SKill Sub Category</div>
+          <div>Knowledge Sub Category</div>
           <input
             type="text"
             placeholder="Search..."
@@ -519,7 +519,7 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
 
               {/* Category */}
               <div className="relative z-0 w-full group text-left">
-                <label>Skill Category</label>
+                <label>Knowledge Category</label>
                 <select
                   name="classification_category"
                   value={entry.classification_category || ""}
@@ -537,7 +537,7 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
 
               {/* Sub Category */}
               <div className="relative z-0 w-full group text-left">
-                <label>Skill Sub Category</label>
+                <label>Knowledge Sub Category</label>
                 <select
                   name="classification_sub_category"
                   value={entry.classification_sub_category || ""}

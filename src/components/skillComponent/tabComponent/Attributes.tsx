@@ -966,7 +966,7 @@ const AttitudeData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Skill Category</div>
+          <div>Attitude Category</div>
           <input
             type="text"
             placeholder="Search..."
@@ -998,7 +998,7 @@ const AttitudeData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Skill Sub Category</div>
+          <div>Attitude Sub Category</div>
           <input
             type="text"
             placeholder="Search..."
@@ -1112,7 +1112,7 @@ const AttitudeData: React.FC<Props> = ({ editData }) => {
             >
               {/* Category */}
               <div className="relative z-0 w-full group text-left">
-                <label>Skill Category</label>
+                <label>Attitude Category</label>
                 <select
                   name="classification_category"
                   value={entry.classification_category || ""}
@@ -1130,7 +1130,7 @@ const AttitudeData: React.FC<Props> = ({ editData }) => {
 
               {/* Sub Category */}
               <div className="relative z-0 w-full group text-left">
-                <label>Skill Sub Category</label>
+                <label>Attitude Sub Category</label>
                 <select
                   name="classification_sub_category"
                   value={entry.classification_sub_category || ""}

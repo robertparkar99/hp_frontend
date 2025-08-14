@@ -894,7 +894,7 @@ const BehaviourData: React.FC<Props> = ({ editData }) => {
     {
       name: (
         <div>
-          <div>Skill Category</div>
+          <div>Behaviour Category</div>
           <input
             type="text"
             placeholder="Search..."
@@ -926,7 +926,7 @@ const BehaviourData: React.FC<Props> = ({ editData }) => {
     {
       name: (
               <div>
-                <div> Skill Sub Category</div>
+                <div> Behaviour Sub Category</div>
                 <input
                   type="text"
                   placeholder="Search..."
@@ -1039,7 +1039,7 @@ const BehaviourData: React.FC<Props> = ({ editData }) => {
               className="grid md:grid-cols-4 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-4 rounded-lg mt-2"
             >
               <div className="relative z-0 w-full group text-left">
-                <label>Category</label>
+                <label>Behaviour Category</label>
                 <select
                   name="classification_category"
                   value={entry.classification_category || ""}
@@ -1056,7 +1056,7 @@ const BehaviourData: React.FC<Props> = ({ editData }) => {
               </div>
 
               <div className="relative z-0 w-full group text-left">
-                <label>Sub Category</label>
+                <label>Behaviour Sub Category</label>
                 <select
                   name="classification_sub_category"
                   value={entry.classification_sub_category || ""}
