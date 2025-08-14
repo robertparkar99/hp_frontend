@@ -9,6 +9,7 @@ import EmployeeProfileModal from './components/EmployeeProfileModal';
 import PaginationControls from './components/PaginationControls';
 
 const EmployeeDirectory = () => {
+  const [sessionData, setSessionData] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('table');
@@ -27,27 +28,36 @@ const EmployeeDirectory = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [error, setError] = useState(null);
-   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Load session data once from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('userData');
+    if (stored) {
+      try {
+        setSessionData(JSON.parse(stored));
+      } catch (err) {
+        console.error('Failed to parse session data:', err);
+      }
+    }
+  }, []);
+
+  // Build API URL from session data
+  const apiUrl = useMemo(() => {
+    if (!sessionData) return null;
+    const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name } = sessionData;
+    if (!APP_URL || !token || !user_id) return null;
+    return `${APP_URL}/user/add_user?type=API&token=${token}&sub_institute_id=${sub_institute_id || 1}&org_type=${encodeURIComponent(org_type || 'Financial Services')}&user_id=${user_id}&user_profile_name=${encodeURIComponent(user_profile_name || 'Admin')}&syear=2025`;
+  }, [sessionData]);
 
   const fetchEmployees = useCallback(async () => {
+    if (!apiUrl) return;
+
     let isMounted = true;
     setLoading(true);
     setError(null);
 
     try {
-      const userData = localStorage.getItem('userData');
-      if (!userData) {
-        throw new Error('Missing userData in localStorage');
-      }
-
-      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name } = JSON.parse(userData);
-
-      if (!APP_URL || !token || !user_id) {
-        throw new Error('Missing required session data');
-      }
-
-      const apiUrl = `${APP_URL}/user/add_user?type=API&token=${token}&sub_institute_id=${sub_institute_id || 1}&org_type=${encodeURIComponent(org_type || 'Financial Services')}&user_id=${user_id}&user_profile_name=${encodeURIComponent(user_profile_name || 'Admin')}&syear=2025`;
-
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -84,10 +94,9 @@ const EmployeeDirectory = () => {
         skills: item.skills || [],
       }));
 
-      if (isMounted) {
-        setEmployees(transformed);
-        setLoading(false);
-      }
+      setEmployees(transformed);
+      setLoading(false);
+
     } catch (err) {
       if (isMounted) {
         console.error('Error fetching employees:', err);
@@ -99,16 +108,14 @@ const EmployeeDirectory = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [apiUrl]);
 
+  // Fetch employees only when apiUrl is ready
   useEffect(() => {
-    const abortController = new AbortController();
-    fetchEmployees();
-
-    return () => {
-      abortController.abort();
-    };
-  }, [fetchEmployees]);
+    if (apiUrl) {
+      fetchEmployees();
+    }
+  }, [apiUrl, fetchEmployees]);
 
   const filteredEmployees = useMemo(() => {
     return employees.filter((employee) => {
@@ -299,6 +306,7 @@ const EmployeeDirectory = () => {
             <div className="xl:hidden">
               <StatsSidebar
                 stats={stats}
+                sessionData={sessionData}
                 selectedCount={selectedEmployees.length}
                 onBulkAssignTask={handleBulkAssignTask}
                 onBulkExport={handleBulkExport}
@@ -309,7 +317,8 @@ const EmployeeDirectory = () => {
             <div className="xl:col-span-3 space-y-6">
               <SearchAndFilters
                 searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
+                sessionData={sessionData}
+                onSearchChange={handleSearchChange}
                 filters={filters}
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearFilters}
@@ -395,6 +404,7 @@ const EmployeeDirectory = () => {
             <div className="hidden xl:block">
               <StatsSidebar
                 stats={stats}
+                sessionData={sessionData}
                 selectedCount={selectedEmployees.length}
                 onBulkAssignTask={handleBulkAssignTask}
                 onBulkExport={handleBulkExport}
