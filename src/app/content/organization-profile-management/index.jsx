@@ -13,8 +13,8 @@ const OrganizationProfileManagement = () => {
     { id: 'info', label: 'Organization Info', icon: 'Building2' },
     { id: 'structure', label: 'Department Structure', icon: 'Users' },
     { id: 'config', label: 'Compliance Management', icon: 'Settings' },
-    { id: 'audit', label: 'Organization Handbook', icon: 'FileText' },
-    { id: 'disciplinary', label: 'Disciplinary Management', icon: 'FileText' }
+    // { id: 'audit', label: 'Organization Handbook', icon: 'FileText' },
+    // { id: 'disciplinary', label: 'Disciplinary Management', icon: 'FileText' }
   ];
 
   const handleSave = async (data) => {
@@ -70,7 +70,7 @@ const OrganizationProfileManagement = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-micro border-b-2 ${
                     activeTab === tab.id
-                      ? 'border-primary text-primary bg-primary/5' :'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      ? 'border-blue-400 text-blue-400 bg-primary/5' :'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   }`}
                 >
                   <span className="text-base">{tab.label}</span>
