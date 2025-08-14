@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/content/user/AddUserModal.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/content/user/AddUserModal.tsx", "src/components/skillComponent/skillComponentV1/components/SkillModal.tsx"],
   "exclude": ["node_modules"]
 }
