@@ -74,6 +74,7 @@ const EmployeeTable = ({
   };
 
   const handleEditEmployeeMenu = (employee) => {
+    localStorage.setItem('clickedUser', employee.id);
     triggerMenuNavigation(employee.id, 'user/usersTabs.tsx');
   };
 
