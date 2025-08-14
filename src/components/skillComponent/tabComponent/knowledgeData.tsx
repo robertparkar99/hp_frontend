@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -87,6 +85,7 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
     },
   ]);
 
+  // Load session data from localStorage
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
@@ -109,24 +108,29 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
     }
   }, []);
 
+  // Fetch initial data after session is ready
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
       fetchInitialData();
+      fetchCategoryData();
+      fetchProficiencyLevels();
     }
   }, [sessionData]);
 
-  useEffect(() => {
-    fetchCategoryData();
-    fetchProficiencyLevels();
-  }, []);
-
+  // Fetch Proficiency Levels using session
   const fetchProficiencyLevels = async () => {
     try {
       const res = await fetch(
-        `https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=3&group_by=proficiency_level`
+        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&group_by=proficiency_level`,
+
+        {
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+            Accept: "application/json",
+          },
+        }
       );
       const data = await res.json();
-      // Filter out null values
       const levels = Array.from(
         new Set(
           data.map((item: any) => item.proficiency_level).filter(Boolean)
@@ -138,10 +142,20 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
     }
   };
 
+  // Fetch Category Data using session
   const fetchCategoryData = async () => {
     try {
       const res = await fetch(
-        `https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=3&filters[classification]=knowledge`
+            `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=knowledge`,
+
+
+
+        {
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+            Accept: "application/json",
+          },
+        }
       );
       const data = await res.json();
       const categories = Array.from(
@@ -161,13 +175,23 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
     }
   };
 
+  // Fetch initial submitted data using session
   const fetchInitialData = async () => {
-    // const res = await fetch(
-    //   `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=knowledge`
-    // );
-    const res = await fetch(`https://hp.triz.co.in/skill_library/create?type=API&token=929|fRP90F3cElCvyigHxpTytEJ5GPUr4ZJddh80PTxl205798a3&sub_institute_id=3&org_type=Healthcare&skill_id=2524&formType=knowledge`);
-    const data = await res.json();
-    setSubmittedData(data.userKnowledgeData || []);
+    try {
+      const res = await fetch(`${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=knowledge`,
+
+        {
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+      const data = await res.json();
+      setSubmittedData(data.userKnowledgeData || []);
+    } catch (error) {
+      console.error("Error fetching initial data:", error);
+    }
   };
 
   const handleAddRow = () => {
@@ -270,6 +294,7 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
             method: "DELETE",
             headers: {
               Authorization: `Bearer ${sessionData.token}`,
+              Accept: "application/json",
             },
           }
         );
@@ -320,8 +345,20 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
       sortable: true,
       wrap: true,
     },
-     {
-      name: "Skill Category",
+    {
+      name:(
+        <div>
+          <div>SKill Category</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) =>
+              handleColumnFilter("classification_category", e.target.value)
+            }
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
       selector: (row: KnowledgeAbilityEntry) =>
         row.classification_category
           ? row.classification_category.length > 100
@@ -340,8 +377,20 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
         </span>
       ),
     },
-      {
-      name: "Skill Sub_Category",
+    {
+      name:(
+        <div>
+          <div>SKill Sub Category</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) =>
+              handleColumnFilter("classification_sub_category", e.target.value)
+            }
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
       selector: (row: KnowledgeAbilityEntry) =>
         row.classification_sub_category
           ? row.classification_sub_category.length > 100
@@ -361,7 +410,19 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
       ),
     },
     {
-      name: "Skill Knowledges",
+      name: (
+        <div>
+          <div>SKill Knowledges</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) =>
+              handleColumnFilter("classification_item", e.target.value)
+            }
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
       selector: (row: KnowledgeAbilityEntry) =>
         row.classification_item
           ? row.classification_item.length > 100
@@ -543,6 +604,7 @@ const KnowledgeAbilityData: React.FC<Props> = ({ editData }) => {
       </div>
 
       {/* Submitted Data Table */}
+          {/* Submitted Data Table */}
       <div className="w-full">
         {submittedData.length > 0 && (
           <div className="mt-8 bg-white p-4 rounded-lg shadow-lg">

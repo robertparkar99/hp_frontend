@@ -106,19 +106,22 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
       fetchInitialData();
+      fetchCategoryData();
+      fetchProficiencyLevels();
     }
   }, [sessionData]);
 
-  // Fetch static lists
-  useEffect(() => {
-    fetchCategoryData();
-    fetchProficiencyLevels();
-  }, []);
-
+  // ✅ Using session for proficiency levels
   const fetchProficiencyLevels = async () => {
     try {
       const res = await fetch(
-        `https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=3&group_by=proficiency_level`
+        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&group_by=proficiency_level`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+            Accept: "application/json",
+          },
+        }
       );
       const data = await res.json();
       const levels = Array.from(
@@ -132,61 +135,60 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     }
   };
 
+  // ✅ Using session for category/subcategory
   const fetchCategoryData = async () => {
     try {
       const res = await fetch(
-        `https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=3&filters[classification]=ability`
+        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=ability`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+            Accept: "application/json",
+          },
+        }
       );
       const data = await res.json();
-      setCategoryOptions(
-        Array.from(
-          new Set(
-            data.map((item: any) => item.classification_category).filter(Boolean)
-          )
+      const categories = Array.from(
+        new Set(
+          data.map((item: any) => item.classification_category).filter(Boolean)
         )
-      );
-      setSubCategoryOptions(
-        Array.from(
-          new Set(
-            data
-              .map((item: any) => item.classification_sub_category)
-              .filter(Boolean)
-          )
+      ) as string[];
+      const subCategories = Array.from(
+        new Set(
+          data
+            .map((item: any) => item.classification_sub_category)
+            .filter(Boolean)
         )
-      );
+      ) as string[];
+      setCategoryOptions(categories);
+      setSubCategoryOptions(subCategories);
     } catch (error) {
       console.error("Error fetching category data:", error);
     }
   };
 
-    const fetchInitialData = async () => {
-    // const res = await fetch(
-    //   `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=knowledge`
-    // );
-    const res = await fetch(`https://hp.triz.co.in/skill_library/create?type=API&token=929|fRP90F3cElCvyigHxpTytEJ5GPUr4ZJddh80PTxl205798a3&sub_institute_id=3&org_type=Healthcare&skill_id=2524&formType=ability`);
-    const data = await res.json();
-    setSubmittedData(data.userabilityData || []);
+  // ✅ Using session for initial data
+  const fetchInitialData = async () => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=ability`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+      const data = await res.json();
+      setSubmittedData(data.userabilityData || []);
+    } catch (error) {
+      console.error("Error fetching initial data:", error);
+    }
   };
 
   const handleAddRow = () => {
     setAbilityAbilities((prev) => [...prev, { ...EMPTY_ENTRY }]);
   };
-  // const fetchInitialData = async () => {
-  //   try {
-  //     // const res = await fetch(
-  //     //   `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&skill_id=${editData?.id}&formType=ability`
-  //     // );
-  //       const res = await fetch(`https://hp.triz.co.in/skill_library/create?type=API&token=929|fRP90F3cElCvyigHxpTytEJ5GPUr4ZJddh80PTxl205798a3&sub_institute_id=3&org_type=Healthcare&skill_id=2524&formType=ability`);
-  //     const data = await res.json();
-  //     setSubmittedData(data.userabilityData || []);
-  //   } catch (error) {
-  //     console.error("Error fetching initial data:", error);
-  //   }
-  // };
-
-  // const handleAddRow = () => {
-  //   setAbilityAbilities((prev) => [...prev, { ...EMPTY_ENTRY }]);
-  // };
 
   const handleRemoveRow = (index: number) => {
     setAbilityAbilities((prev) => prev.filter((_, i) => i !== index));
@@ -204,6 +206,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     );
   };
 
+  // ✅ Using session for submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -260,6 +263,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // ✅ Using session for delete
   const handleDelete = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete this job role?"))
       return;
@@ -320,48 +324,55 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
       sortable: true,
       wrap: true,
     },
-   
     {
-      name: "Skill Category",
+      name:  (
+        <div>
+          <div>Skill Category</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) =>
+              handleColumnFilter("classification_category", e.target.value)
+            }
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
       selector: (row: AbilityEntry) =>
-        row.classification_category
-          ? row.classification_category.length > 100
-            ? `${row.classification_category.substring(0, 100)}...`
-            : row.classification_category
-          : "N/A",
+        row.classification_category || "N/A",
       sortable: true,
       wrap: true,
       cell: (row: AbilityEntry) => (
         <span title={row.classification_category || "N/A"}>
-          {row.classification_category
-            ? row.classification_category.length > 100
-              ? `${row.classification_category.substring(0, 100)}...`
-              : row.classification_category
-            : "N/A"}
+          {row.classification_category || "N/A"}
         </span>
       ),
     },
-      {
-      name: "Skill Sub_Category",
+    {
+      name:  (
+        <div>
+          <div> Skill Sub Category</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) =>
+              handleColumnFilter("classification_sub_category", e.target.value)
+            }
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
       selector: (row: AbilityEntry) =>
-        row.classification_sub_category
-          ? row.classification_sub_category.length > 100
-            ? `${row.classification_sub_category.substring(0, 100)}...`
-            : row.classification_sub_category
-          : "N/A",
+        row.classification_sub_category || "N/A",
       sortable: true,
       wrap: true,
       cell: (row: AbilityEntry) => (
         <span title={row.classification_sub_category || "N/A"}>
-          {row.classification_sub_category
-            ? row.classification_sub_category.length > 100
-              ? `${row.classification_sub_category.substring(0, 100)}...`
-              : row.classification_sub_category
-            : "N/A"}
+          {row.classification_sub_category || "N/A"}
         </span>
       ),
     },
-     {
+    {
       name: (
         <div>
           <div>Skill Abilities</div>
@@ -376,20 +387,12 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       selector: (row: AbilityEntry) =>
-        row.classification_item
-          ? row.classification_item.length > 100
-            ? `${row.classification_item.substring(0, 100)}...`
-            : row.classification_item
-          : "N/A",
+        row.classification_item || "N/A",
       sortable: true,
       wrap: true,
       cell: (row: AbilityEntry) => (
         <span title={row.classification_item || "N/A"}>
-          {row.classification_item
-            ? row.classification_item.length > 100
-              ? `${row.classification_item.substring(0, 100)}...`
-              : row.classification_item
-            : "N/A"}
+          {row.classification_item || "N/A"}
         </span>
       ),
     },
@@ -437,6 +440,7 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
 
   return (
     <>
+      {/* Form Section */}
       <div className="w-full">
         <form className="w-full" onSubmit={handleSubmit}>
           {abilityAbilities.map((entry, index) => (
@@ -446,16 +450,13 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
             >
               {/* Proficiency Level */}
               <div className="relative z-0 w-full group text-left">
-                <label htmlFor={`proficiency_level-${index}`}>
-                  Skill Proficiency Level
-                </label>
+                <label>Skill Proficiency Level</label>
                 <select
                   name="proficiency_level"
-                  id={`proficiency_level-${index}`}
-                  className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-blue-100 h-[38px] bg-white text-black"
                   value={entry.proficiency_level || ""}
                   onChange={(e) => handleInputChange(index, e)}
                   required
+                  className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-blue-100 h-[38px] bg-white text-black"
                 >
                   <option value="">Select Proficiency Level</option>
                   {proficiencyLevel.map((d) => (
@@ -505,23 +506,20 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
                 </select>
               </div>
 
-              {/* Ability Textarea */}
-              <div className="relative z-0 w-full group text-left md:col-span-3">
-                <label htmlFor={`classification_item-${index}`}>
-                  Skill Ability
-                </label>
+              {/* Ability */}
+              <div className="relative z-0 w-full group text-left">
+                <label>Skill Ability</label>
                 <textarea
                   name="classification_item"
-                  id={`classification_item-${index}`}
                   rows={2}
-                  className="w-full block p-2 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
-                  placeholder="Describe specific items..."
                   value={entry.classification_item || ""}
                   onChange={(e) => handleInputChange(index, e)}
-                ></textarea>
+                  placeholder="Describe specific items..."
+                  className="w-full p-2 border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
+                />
               </div>
 
-              {/* Add / Remove buttons */}
+              {/* Add/Remove Buttons */}
               <div className="flex items-center mt-2 md:mt-0">
                 {abilityAbilities.length > 1 && (
                   <button
@@ -570,19 +568,16 @@ const AbilityData: React.FC<Props> = ({ editData }) => {
                 <ExcelExportButton
                   sheets={[{ data: submittedData, sheetName: "Submissions" }]}
                   fileName="Skills Jobrole"
-                  onClick={() => console.log("Export initiated")}
                   buttonText={<span className="mdi mdi-file-excel"></span>}
                 />
                 <PdfExportButton
                   data={submittedData}
                   fileName="Skills Jobrole"
-                  onClick={() => console.log("PDF export initiated")}
                   buttonText={<span className="mdi mdi-file-pdf-box"></span>}
                 />
               </div>
             </div>
-
-            <DataTable
+<DataTable
               columns={columns}
               data={filteredData}
               pagination
