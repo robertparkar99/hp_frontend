@@ -34,7 +34,7 @@ const EmployeeTable = ({
     switch (status) {
       case 'Active':
         return 'bg-success';
-      case 'Away':
+      case 'Inactive':
         return 'bg-warning';
       case 'Offline':
         return 'bg-muted';
@@ -168,8 +168,14 @@ const EmployeeTable = ({
                   <div className="flex items-center space-x-3">
                     <div className="relative flex-shrink-0">
                       <Image
-                        src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}`}
-                        alt={employee.full_name}
+                        src={
+                          employee.image && employee.image.trim()
+                            ? employee.image.startsWith('http')
+                              ? employee.image // already a full URL, use as-is
+                              : `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}`
+                            : 'https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39'
+                        }
+                        alt={employee.full_name || 'Employee'}
                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
                       />
                       <div

@@ -1,18 +1,29 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../../components/AppIcon';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
 
-const SearchAndFilters = ({ 
-  searchTerm, 
-  onSearchChange, 
-  filters, 
-  onFilterChange, 
+const SearchAndFilters = ({
+  searchTerm,
+  onSearchChange,
+  filters,
+  onFilterChange,
   onClearFilters,
-  onExport
+  onExport,
+  sessionData
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Job Roles from API
+  const [jobRoleOptions, setJobRoleOptions] = useState([
+    { value: '', label: 'All Job Roles' }
+  ]);
+
+  // Roles (user_profiles) from API
+  const [roleOptions, setRoleOptions] = useState([
+    { value: '', label: 'All Roles' }
+  ]);
 
   const departmentOptions = [
     { value: '', label: 'All Departments' },
@@ -25,44 +36,81 @@ const SearchAndFilters = ({
     { value: 'Design', label: 'Design' }
   ];
 
-  const jobRoleOptions = [
-    { value: '', label: 'All Job Roles' },
-    { value: 'Senior Software Engineer', label: 'Senior Software Engineer' },
-    { value: 'Marketing Manager', label: 'Marketing Manager' },
-    { value: 'Sales Representative', label: 'Sales Representative' },
-    { value: 'HR Specialist', label: 'HR Specialist' },
-    { value: 'Financial Analyst', label: 'Financial Analyst' },
-    { value: 'Operations Manager', label: 'Operations Manager' },
-    { value: 'UX Designer', label: 'UX Designer' },
-    { value: 'Data Scientist', label: 'Data Scientist' }
-  ];
-
-  const locationOptions = [
-    { value: '', label: 'All Role' },
-    { value: 'Employee', label: 'Employee' },
-    { value: 'Admin', label: 'Admin' },
-    { value: 'HR', label: 'HR' },
-
-  ];
-
-  const skillOptions = [
-    { value: '', label: 'All Skills' },
-    { value: 'JavaScript', label: 'JavaScript' },
-    { value: 'React', label: 'React' },
-    { value: 'Python', label: 'Python' },
-    { value: 'Project Management', label: 'Project Management' },
-    { value: 'Data Analysis', label: 'Data Analysis' },
-    { value: 'Digital Marketing', label: 'Digital Marketing' },
-    { value: 'UI/UX Design', label: 'UI/UX Design' }
-  ];
-
   const statusOptions = [
     { value: '', label: 'All Status' },
     { value: 'Active', label: 'Active' },
-    { value: 'Away', label: 'Away' },
+    { value: 'Inactive', label: 'In Active' },
     { value: 'Offline', label: 'Offline' }
   ];
 
+  // 🔹 Fetch Job Roles
+  useEffect(() => {
+    if (!sessionData?.APP_URL || !sessionData?.token || !sessionData?.user_id) return;
+
+    const fetchJobRoles = async () => {
+      try {
+        const url = `${sessionData.APP_URL}/user/add_user?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id || 1}&org_type=${encodeURIComponent(sessionData.org_type || '')}&user_id=${sessionData.user_id}&user_profile_name=${encodeURIComponent(sessionData.user_profile_name || '')}&syear=2025`;
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Error fetching job roles: ${res.status}`);
+
+        const data = await res.json();
+
+        if (Array.isArray(data.jobroleList)) {
+          setJobRoleOptions([
+            { value: '', label: 'All Job Roles' },
+            ...data.jobroleList
+              .filter(role => role?.jobrole)
+              .map(role => ({
+                value: role.jobrole,
+                label: role.jobrole
+              }))
+          ]);
+        } else {
+          console.warn('Unexpected Job Role API format:', data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch job roles:', error);
+      }
+    };
+
+    fetchJobRoles();
+  }, [sessionData]);
+
+  // 🔹 Fetch Roles (user_profiles)
+  useEffect(() => {
+    if (!sessionData?.APP_URL || !sessionData?.token) return;
+
+    const fetchRoles = async () => {
+      try {
+        const url = `${sessionData.APP_URL}/user/add_user?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id || 1}&org_type=${encodeURIComponent(sessionData.org_type || '')}&user_id=${sessionData.user_id}&user_profile_name=${encodeURIComponent(sessionData.user_profile_name || '')}&syear=2025`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Error fetching roles: ${res.status}`);
+
+        const data = await res.json();
+
+        if (Array.isArray(data.user_profiles)) {
+          setRoleOptions([
+            { value: '', label: 'All Roles' },
+            ...data.user_profiles
+              .filter(role => role?.name)
+              .map(role => ({
+                value: role.name,
+                label: role.name
+              }))
+          ]);
+        } else {
+          console.warn('Unexpected Roles API format:', data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch roles:', error);
+      }
+    };
+
+    fetchRoles();
+  }, [sessionData]);
+
+  // 🔹 Helpers
   const getActiveFiltersCount = () => {
     return Object.values(filters).filter(value => value && value !== '').length;
   };
@@ -75,11 +123,10 @@ const SearchAndFilters = ({
     const optionMaps = {
       department: departmentOptions,
       jobRole: jobRoleOptions,
-      location: locationOptions,
-      skill: skillOptions,
+      location: roleOptions,
       status: statusOptions
     };
-    
+
     const options = optionMaps[key];
     const option = options?.find(opt => opt.value === value);
     return option?.label || value;
@@ -93,9 +140,13 @@ const SearchAndFilters = ({
         onChange={e => onFilterChange(keyName, e.target.value)}
         className="border border-border rounded px-3 py-2"
       >
-        {options.map(opt => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
+        {options
+          .filter(opt => opt && opt.value != null)
+          .map((opt, index) => (
+            <option key={index} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
       </select>
     </div>
   );
@@ -131,12 +182,12 @@ const SearchAndFilters = ({
         </div>
       </div>
 
-      {/* Advanced Filters under search bar */}
+      {/* Advanced Filters */}
       {showAdvancedFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 border-t border-border pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 border-t border-border pt-4">
           {renderSelect('Department', departmentOptions, filters.department || '', 'department')}
           {renderSelect('Job Role', jobRoleOptions, filters.jobRole || '', 'jobRole')}
-          {renderSelect('Role', locationOptions, filters.location || '', 'Role')}
+          {renderSelect('Role', roleOptions, filters.location || '', 'location')}
           {renderSelect('Status', statusOptions, filters.status || '', 'status')}
         </div>
       )}
