@@ -1,9 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import Icon from '../../../../components/AppIcon';
-import {Button} from '../../../../components/ui/button';
-import {Input} from '../../../../components/ui/input';
-import {Select} from '../../../../components/ui/select';
+import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
 
 const SearchAndFilters = ({ 
   searchTerm, 
@@ -39,12 +38,11 @@ const SearchAndFilters = ({
   ];
 
   const locationOptions = [
-    { value: '', label: 'All Locations' },
-    { value: 'New York', label: 'New York' },
-    { value: 'San Francisco', label: 'San Francisco' },
-    { value: 'London', label: 'London' },
-    { value: 'Toronto', label: 'Toronto' },
-    { value: 'Remote', label: 'Remote' }
+    { value: '', label: 'All Role' },
+    { value: 'Employee', label: 'Employee' },
+    { value: 'Admin', label: 'Admin' },
+    { value: 'HR', label: 'HR' },
+
   ];
 
   const skillOptions = [
@@ -87,87 +85,69 @@ const SearchAndFilters = ({
     return option?.label || value;
   };
 
+  const renderSelect = (label, options, value, keyName) => (
+    <div className="flex flex-col">
+      <label className="mb-1 text-sm font-medium">{label}</label>
+      <select
+        value={value}
+        onChange={e => onFilterChange(keyName, e.target.value)}
+        className="border border-border rounded px-3 py-2"
+      >
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+
   return (
     <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-      {/* Search Bar */}
-      <div className="flex items-center space-x-4">
-        <div className="flex-1">
-          <Input
-            type="search"
-            placeholder="Search employees by name, email, or skills..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full"
-          />
+      {/* Search Bar and Buttons */}
+      <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0">
+        <Input
+          type="search"
+          placeholder="Search employees by name, email, or skills..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="flex-1"
+        />
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            iconName="Filter"
+            iconPosition="left"
+          >
+            Filters {getActiveFiltersCount() > 0 && `(${getActiveFiltersCount()})`}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onExport}
+            iconName="Download"
+            iconPosition="left"
+          >
+            Export
+          </Button>
         </div>
-        
-        <Button
-          variant="outline"
-          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          iconName="Filter"
-          iconPosition="left"
-        >
-          Filters {getActiveFiltersCount() > 0 && `(${getActiveFiltersCount()})`}
-        </Button>
-        
-        <Button
-          variant="outline"
-          onClick={onExport}
-          iconName="Download"
-          iconPosition="left"
-        >
-          Export
-        </Button>
       </div>
 
-      {/* Advanced Filters */}
+      {/* Advanced Filters under search bar */}
       {showAdvancedFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 pt-4 border-t border-border">
-          <Select
-            label="Department"
-            options={departmentOptions}
-            value={filters.department || ''}
-            onChange={(value) => onFilterChange('department', value)}
-          />
-          
-          <Select
-            label="Job Role"
-            options={jobRoleOptions}
-            value={filters.jobRole || ''}
-            onChange={(value) => onFilterChange('jobRole', value)}
-          />
-          
-          <Select
-            label="Location"
-            options={locationOptions}
-            value={filters.location || ''}
-            onChange={(value) => onFilterChange('location', value)}
-          />
-          
-          <Select
-            label="Skill"
-            options={skillOptions}
-            value={filters.skill || ''}
-            onChange={(value) => onFilterChange('skill', value)}
-          />
-          
-          <Select
-            label="Status"
-            options={statusOptions}
-            value={filters.status || ''}
-            onChange={(value) => onFilterChange('status', value)}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 border-t border-border pt-4">
+          {renderSelect('Department', departmentOptions, filters.department || '', 'department')}
+          {renderSelect('Job Role', jobRoleOptions, filters.jobRole || '', 'jobRole')}
+          {renderSelect('Role', locationOptions, filters.location || '', 'Role')}
+          {renderSelect('Status', statusOptions, filters.status || '', 'status')}
         </div>
       )}
 
       {/* Active Filters */}
       {getActiveFiltersCount() > 0 && (
-        <div className="flex items-center space-x-2 pt-2">
+        <div className="flex items-center space-x-2 pt-2 flex-wrap">
           <span className="text-sm font-medium text-foreground">Active filters:</span>
           <div className="flex flex-wrap gap-2">
             {Object.entries(filters).map(([key, value]) => {
               if (!value || value === '') return null;
-              
               return (
                 <div
                   key={key}

@@ -27,6 +27,7 @@ const EmployeeDirectory = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [error, setError] = useState(null);
+   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const fetchEmployees = useCallback(async () => {
     let isMounted = true;
@@ -40,7 +41,7 @@ const EmployeeDirectory = () => {
       }
 
       const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name } = JSON.parse(userData);
-      
+
       if (!APP_URL || !token || !user_id) {
         throw new Error('Missing required session data');
       }
@@ -51,7 +52,7 @@ const EmployeeDirectory = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
 
       if (!isMounted) return;
@@ -59,10 +60,10 @@ const EmployeeDirectory = () => {
       const raw = Array.isArray(data)
         ? data
         : Array.isArray(data?.data)
-        ? data.data
-        : data
-        ? [data]
-        : [];
+          ? data.data
+          : data
+            ? [data]
+            : [];
 
       const transformed = raw.map((item, idx) => ({
         id: idx + 1,
@@ -71,7 +72,7 @@ const EmployeeDirectory = () => {
         mobile: item.mobile || 'N/A',
         jobRole: item.designation || 'N/A',
         address: item.address || 'N/A',
-        image: item.image?.trim() 
+        image: item.image?.trim()
           ? item.image
           : `https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39`,
         department: item.department || 'N/A',
@@ -308,11 +309,13 @@ const EmployeeDirectory = () => {
             <div className="xl:col-span-3 space-y-6">
               <SearchAndFilters
                 searchTerm={searchTerm}
-                onSearchChange={handleSearchChange}
+                onSearchChange={setSearchTerm}
                 filters={filters}
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearFilters}
                 onExport={handleExport}
+                showAdvancedFilters={showAdvancedFilters}
+                setShowAdvancedFilters={setShowAdvancedFilters}
               />
 
               {!loading && (
@@ -326,9 +329,8 @@ const EmployeeDirectory = () => {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => setViewMode('table')}
-                      className={`p-2 rounded-md transition-smooth ${
-                        viewMode === 'table' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`p-2 rounded-md transition-smooth ${viewMode === 'table' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
@@ -336,9 +338,8 @@ const EmployeeDirectory = () => {
                     </button>
                     <button
                       onClick={() => setViewMode('cards')}
-                      className={`p-2 rounded-md transition-smooth ${
-                        viewMode === 'cards' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`p-2 rounded-md transition-smooth ${viewMode === 'cards' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -412,7 +413,7 @@ const EmployeeDirectory = () => {
         onEdit={handleEdit}
       />
 
-      <QuickActionMenu />
+      {/* <QuickActionMenu /> */}
     </div>
   );
 };

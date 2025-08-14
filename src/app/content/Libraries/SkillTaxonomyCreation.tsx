@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Loading from "@/components/utils/loading";
 
-const AbilityTaxonomy = () => {
+const AddCategory = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setLoading] = useState(true);
 
@@ -59,44 +59,13 @@ const AbilityTaxonomy = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      // Fetch categories
-      const catRes = await fetch(
-        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=knowledge&group_by=classification_category`
+      const res = await fetch(
+        `${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=skillTaxonomy&searchWord=skillTaxonomy`
       );
-      let categoriesData = await catRes.json();
-
-      if (categoriesData && !Array.isArray(categoriesData) && categoriesData.data) {
-        categoriesData = categoriesData.data;
-      }
-      if (!Array.isArray(categoriesData)) categoriesData = [];
-
-      // Fetch subcategories for each category
-      const categoriesWithSubs = await Promise.all(
-        categoriesData.map(async (cat: any) => {
-          const subRes = await fetch(
-            `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=knowledge&filters[classification_category]=${encodeURIComponent(cat.classification_category)}&group_by=classification_sub_category`
-          );
-
-          let subData = await subRes.json();
-          if (subData && !Array.isArray(subData) && subData.data) {
-            subData = subData.data;
-          }
-          if (!Array.isArray(subData)) subData = [];
-
-          return {
-            category_name: cat.classification_category,
-            total: cat.total || 0,
-            subcategory: subData.map((sub: any) => ({
-              subCategory_name: sub.classification_sub_category,
-              total: sub.total || 0,
-            })),
-          };
-        })
-      );
-
-      setCategories(categoriesWithSubs);
+      const data = await res.json();
+      setCategories(data);
     } catch (err) {
-      console.error("Error fetching categories/subcategories:", err);
+      console.error("Error fetching categories:", err);
     } finally {
       setLoading(false);
     }
@@ -114,22 +83,21 @@ const AbilityTaxonomy = () => {
       formData.append("sub_institute_id", sessionData.subInstituteId);
       formData.append("token", sessionData.token);
       formData.append("user_id", sessionData.userId);
-      formData.append("attribute", "knowledge,ability,attitude,behaviour");
 
       if (isEdit && editingCategory) {
         formData.append("formType", "edit category");
-        formData.append("classification_category", newCategoryName);
-        formData.append("old_classification_category", editingCategory.category_name);
+        formData.append("category", newCategoryName);
+        formData.append("old_category", editingCategory.category_name);
         if (newSubCategoryName.trim()) {
-          formData.append("classification_sub_category", newSubCategoryName);
+          formData.append("sub_category", newSubCategoryName);
         }
       } else {
         formData.append("formType", "add category");
-        formData.append("classification_category", newCategoryName);
+        formData.append("category", newCategoryName);
       }
 
       const res = await fetch(
-        `${sessionData.url}/skill_library/attributes_taxonomy`,
+        `${sessionData.url}/skill_library/add_category`,
         {
           method: "POST",
           body: formData,
@@ -172,14 +140,13 @@ const AbilityTaxonomy = () => {
       formData.append("sub_institute_id", sessionData.subInstituteId);
       formData.append("token", sessionData.token);
       formData.append("user_id", sessionData.userId);
-      formData.append("attribute", "knowledge,ability,attitude,behaviour");
       formData.append("formType", "edit sub_category");
-      formData.append("classification_category", editingSubCategory.category_name);
-      formData.append("old_classification_sub_category", oldSubCategoryName);
-      formData.append("classification_sub_category", newSubCategoryName);
+      formData.append("category", editingSubCategory.category_name);
+      formData.append("old_sub_category", oldSubCategoryName);
+      formData.append("sub_category", newSubCategoryName);
 
       const res = await fetch(
-        `${sessionData.url}/skill_library/attributes_taxonomy`,
+        `${sessionData.url}/skill_library/add_category`,
         {
           method: "POST",
           body: formData,
@@ -215,7 +182,7 @@ const AbilityTaxonomy = () => {
       ) : (
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold">Ability Taxonomy</h3>
+            <h3 className="text-lg font-semibold">Skill Taxonomy</h3>
             <Button
               variant="outline"
               size="sm"
@@ -231,6 +198,7 @@ const AbilityTaxonomy = () => {
             </Button>
           </div>
 
+          {/* Add Category Form */}
           {showAddForm && (
             <div className="mb-6 p-4 bg-muted rounded-lg border">
               <h4 className="text-sm font-medium mb-3">Add Category</h4>
@@ -256,9 +224,11 @@ const AbilityTaxonomy = () => {
             </div>
           )}
 
+          {/* Category List */}
           <div className="space-y-4">
             {categories.map((cat, i) => (
               <React.Fragment key={i}>
+                {/* Edit Category Form Inline */}
                 {editingCategory?.category_name === cat.category_name && (
                   <div className="mb-6 p-4 bg-muted rounded-lg border">
                     <h4 className="text-sm font-medium mb-3">Edit Category</h4>
@@ -291,12 +261,13 @@ const AbilityTaxonomy = () => {
                   </div>
                 )}
 
+                {/* Category Card */}
                 <div className="border p-4 rounded-lg">
                   <div className="flex justify-between mb-2">
                     <div>
                       <h4 className="font-medium">{cat.category_name}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {cat.total} Ability
+                        {cat.total} Skills
                       </p>
                     </div>
                     <span
@@ -310,7 +281,7 @@ const AbilityTaxonomy = () => {
                       {cat.subcategory.map((sub: any, si: number) => (
                         <div key={si}>
                           {editingSubCategory?.category_name === cat.category_name &&
-                            oldSubCategoryName === sub.subCategory_name ? (
+                          oldSubCategoryName === sub.subCategory_name ? (
                             <div className="flex gap-2 p-2 bg-muted rounded">
                               <Input
                                 placeholder="Edit Subcategory"
@@ -338,7 +309,7 @@ const AbilityTaxonomy = () => {
                             >
                               <span>{sub.subCategory_name}</span>
                               <span className="text-xs text-muted-foreground">
-                                {sub.total} Ability
+                                {sub.total} Skills
                               </span>
                             </div>
                           )}
@@ -366,4 +337,4 @@ const AbilityTaxonomy = () => {
   );
 };
 
-export default AbilityTaxonomy;
+export default AddCategory;
