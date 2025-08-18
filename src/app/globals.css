@@ -190,6 +190,7 @@ body {
   word-wrap: break-word;
 }
 
+
 [data-title]:after {
   content: attr(data-title);
   top: 160%;
@@ -218,6 +219,7 @@ body {
 [data-small] {
   position: relative;
 } */
+
 
 /* Common styles for all tooltip pseudo-elements */
 [data-title]:after,
