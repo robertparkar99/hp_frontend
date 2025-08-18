@@ -202,7 +202,7 @@ export default function Index({ SelLOR }: SelLORProps) {
         key={index}
         className="relative"
         style={{
-          width: "550px",
+          width: "500px",
           height: "300px", // 👈 fixed equal height
           borderRadius: "18px",
           overflow: "hidden", // prevent outer expansion

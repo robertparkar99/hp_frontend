@@ -152,7 +152,7 @@ const LevelResponsibility = () => {
               <div
                 className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
                 style={{
-                  width: "550px",
+                  width: "500px",
                   height: "300px",
                   background:
                     "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
@@ -181,7 +181,7 @@ const LevelResponsibility = () => {
               <div
                 className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
                 style={{
-                  width: "550px",
+                  width: "500px",
                   height: "300px",
                   textAlign: 'justify',
                   background:
