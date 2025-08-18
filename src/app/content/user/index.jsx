@@ -75,8 +75,8 @@ const EmployeeDirectory = () => {
             ? [data]
             : [];
 
-      const transformed = raw.map((item, idx) => ({
-        id: idx + 1,
+      const transformed = raw.map((item) => ({
+        id: item.id || 0,
         full_name: item.full_name || 'N/A',
         email: item.email || 'N/A',
         mobile: item.mobile || 'N/A',
