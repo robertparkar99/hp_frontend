@@ -118,42 +118,65 @@ export default function EditProfilePage() {
                     ) : (
                         <div className="w-full">
                             {/* Header Row: Back arrow + Logo + Tabs */}
-                            <div className="flex jutsify-between gap-6 items-center py-2 ">
-                                <div className="backbuttonx flex">
-                                    <button onClick={handleGoBack} className="text-black mr-4" aria-label="Go back">
-                                        <ArrowLeft size={24} />
-                                    </button>
-                                      <img
-                                        src={tabs.find(tab => tab.id === activeTab)?.logo || "default_logo_url"}
-                                        alt="Logo"
-                                        className="h-14 w-14 sm:h-10 lg:h-14"
-                                    />
-                                </div>
-                               
-                                <div className="flex justify-center px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
-                                    {tabs.map((tab) => (
-                                        <Button
-                                            key={tab.id}
-                                            variant="ghost"
-                                            onClick={() => setActiveTab(tab.id)}
-                                            className={cn(
-                                                "rounded-full text-xs sm:text-xs font-semibold whitespace-nowrap transition-all duration-200 min-w-0 flex-shrink-0 flex items-center",
-                                                activeTab === tab.id
-                                                    ? "bg-emerald-500 text-white [&>svg]:text-white shadow-md hover:bg-emerald-500"
-                                                    : " hover:bg-slate-50"
-                                            )}
-                                        >
-                                            {React.cloneElement(tab.icon, {
-                                                className: cn(
-                                                    "m-0",
-                                                    activeTab === tab.id ? "text-white" : "text-slate-700"
-                                                )
-                                            })}
-                                            {tab.label}
-                                        </Button>
-                                    ))}
-                                </div>
-                            </div>
+                           <div className="flex justify-between gap-6 items-center py-2 w-full">
+  {/* Back Button + Logo */}
+  <div className="backbuttonx flex items-center gap-3">
+    <button
+      onClick={handleGoBack}
+      className="text-black"
+      aria-label="Go back"
+    >
+      <ArrowLeft size={24} />
+    </button>
+    <img
+      src={tabs.find(tab => tab.id === activeTab)?.logo || "default_logo_url"}
+      alt="Logo"
+      className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14"
+    />
+  </div>
+
+  {/* Tabs */}
+  <div
+    className="
+      flex 
+      overflow-x-auto 
+      lg:overflow-visible 
+      px-2 py-2 
+      rounded-full 
+      border-2 border-blue-100 
+      bg-gradient-to-r from-white via-white to-teal-100 
+      shadow-lg 
+      flex-wrap
+      w-auto
+      lg:w-full
+      lg:justify-center
+      gap-2
+    "
+  >
+    {tabs.map((tab) => (
+      <Button
+        key={tab.id}
+        variant="ghost"
+        onClick={() => setActiveTab(tab.id)}
+        className={cn(
+          "rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 min-w-0 flex-shrink-0 flex items-center px-3 py-1",
+          activeTab === tab.id
+            ? "bg-emerald-500 text-white [&>svg]:text-white shadow-md hover:bg-emerald-500"
+            : "hover:bg-slate-50"
+        )}
+      >
+        {React.cloneElement(tab.icon, {
+          className: cn(
+            "mr-1",
+            activeTab === tab.id ? "text-white" : "text-slate-700"
+          )
+        })}
+        {tab.label}
+      </Button>
+    ))}
+  </div>
+</div>
+
 
                             {/* Controls row under tabs, aligned right */}
                             <div className="flex justify-end items-center gap-6 px-8 py-2">
