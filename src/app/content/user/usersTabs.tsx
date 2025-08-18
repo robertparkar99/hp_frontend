@@ -22,6 +22,7 @@ export default function EditProfilePage() {
     const [userJobroleSkills, SetUserJobroleSkills] = useState<any[]>([]);
     const [userJobroleLists, SetUserJobroleLists] = useState<any[]>([]);
     const [userLOR, SetUserLOR] = useState<any[]>([]);
+    const [SelLORs, setSelLOR] = useState<any[]>([]);
     const [userProfiles, SetUserProfiles] = useState<any[]>([]);
     const [userJobroleTask, setUserJobroleTask] = useState<any[]>([]);
     const [documentLists, setDocumentLists] = useState<any[]>([]);
@@ -77,6 +78,7 @@ export default function EditProfilePage() {
             setUserJobroleTask(data.jobroleTasks || []);
             SetUserJobroleLists(data.jobroleList || []);
             SetUserLOR(data.levelOfResponsbility || []);
+            setSelLOR(data.userLevelOfResponsibility || []);
             SetUserProfiles(data.user_profiles || []);
             setUserLists(data.employees || []);
             // console.log(data);
@@ -116,21 +118,19 @@ export default function EditProfilePage() {
                     ) : (
                         <div className="w-full">
                             {/* Header Row: Back arrow + Logo + Tabs */}
-                            <div className="flex jutsify-between items-center py-2">
-                                <div className="backbutton w-[3%]">
+                            <div className="flex jutsify-between gap-6 items-center py-2 ">
+                                <div className="backbuttonx flex">
                                     <button onClick={handleGoBack} className="text-black mr-4" aria-label="Go back">
                                         <ArrowLeft size={24} />
                                     </button>
-                                </div>
-                                
-                                <div className="shrink-0 m-10">
-                                    <img
+                                      <img
                                         src={tabs.find(tab => tab.id === activeTab)?.logo || "default_logo_url"}
                                         alt="Logo"
-                                        className="h-12 w-12 sm:h-10 lg:h-12"
+                                        className="h-14 w-14 sm:h-10 lg:h-14"
                                     />
                                 </div>
-                                <div className=" w-[81%] flex justify-center px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
+                               
+                                <div className="flex justify-center px-2 py-2 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg flex-wrap">
                                     {tabs.map((tab) => (
                                         <Button
                                             key={tab.id}
@@ -193,7 +193,7 @@ export default function EditProfilePage() {
                                 {activeTab === 'upload-docs' && <UploadDoc uploadDoc={uploadDoc} sessionData={sessionData} clickedID={clickedUser} documentLists={documentLists} />}
                                 {activeTab === 'jobrole-skill' && <JobRoleSkill userJobroleSkills={userJobroleSkills} />}
                                 {activeTab === 'jobrole-tasks' && <JobRoleTasks userJobroleTask={userJobroleTask} />}
-                                {activeTab === 'responsibility' && <LOR />}
+                                {activeTab === "responsibility" && <LOR SelLOR={SelLORs} />}
                                 {/* {activeTab === 'skill-rating' && <div>Skill Rating Content</div>} */}
                                 {activeTab === 'skill-rating' && <JobRoleSkillsAdd1 skills={userJobroleSkills} />}
                             </div>

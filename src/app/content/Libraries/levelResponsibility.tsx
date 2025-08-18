@@ -148,7 +148,9 @@ const LevelResponsibility = () => {
             <div className="flex justify-center items-start gap-8 mt-6 flex-wrap ml-[-52px]">
               {/* Description Card */}
               <div
-                className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[480px] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+                className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[430px] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+                style={{background:
+                      "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",}}
               >
                 <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Description</h3>
                 <hr className="border border-gray-400 mb-4" />
@@ -159,13 +161,14 @@ const LevelResponsibility = () => {
 
               {/* Guidance Notes Card */}
               <div
-                className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[590px] mt-[-120] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
-                style={{ minHeight: '330px' }}
+                className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[450px] mt-[-120] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+                style={{ minHeight: '330px',background:
+                      "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)", }}
               >
                 <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Guidance notes</h3>
                 <hr className="border border-gray-400 mb-4" />
                 <p className="text-black text-[15px] whitespace-pre-line">
-                  {activeData.guidance_notes}
+                  {activeData.attribute_guidance_notes}
                 </p>
               </div>
             </div>

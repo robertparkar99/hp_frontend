@@ -1,6 +1,24 @@
 import React, { useState } from "react";
 
-export default function Index() {
+// Define proper types for your data
+interface AttributeItem {
+  attribute_name?: string;
+  attribute_overall_description?: string;
+}
+
+interface LorData {
+  level?: string;
+  essence_level?: string;
+  guidance_note?: string;
+  Attributes?: Record<string, AttributeItem>;
+  Business_skills?: Record<string, AttributeItem>;
+}
+
+export interface SelLORProps {
+  SelLOR?: LorData | {};
+}
+
+export default function Index({ SelLOR }: SelLORProps) {
   const [activeSection, setActiveSection] = useState("description");
 
   const sections = [
@@ -27,90 +45,18 @@ export default function Index() {
     },
   ];
 
+  const dataLor: LorData = SelLOR || {};
+
   const descriptionCards = [
     {
       title: "Description",
-      text: `Essence of the level: Operates at the highest organizational level, determines overall organizational vision and strategy, and assumes accountability for overall success.`,
+      text: dataLor?.essence_level,
     },
     {
       title: "Guidance notes",
-      text: `Levels represent levels of responsibility in the workplace. Each successive level describes increasing impact, responsibility and accountability. Autonomy, influence and complexity are generic attributes that indicate the level of responsibility.
-
-Business skills and behavioral factors describe the behaviors required to be effective at each level.
-
-The knowledge attribute defines the depth and breadth of understanding required to perform and influence work effectively. Understanding these attributes will help you get the most out of levels. They are critical to understanding and applying the levels described in skill descriptions.`,
+      text: dataLor?.guidance_note,
     },
-  ];
-
-  const responsibilityCards = [
-    {
-      title: "Autonomy",
-      text: `Defines and leads the organisation's vision and strategy within over-arching business objectives. Is fully accountable for actions taken and decisions made, both by self and others to whom responsibilities have been assigned. Delegates authority and responsibility for strategic business objectives.`,
-    },
-    {
-      title: "Influence",
-      text: `Directs, influences and inspires the strategic direction and development of the organisation. Has an extensive leadership level of contact with internal colleagues and external contacts. Authorises the appointment of required resources.`,
-    },
-    {
-      title: "Complexity",
-      text: `Performs extensive strategic leadership in delivering business value through vision, governance and executive management.`,
-    },
-    {
-      title: "Knowledge",
-      text: `Applies strategic and broad-based knowledge to shape organisational strategy, anticipate future industry trends, and prepare the organisation to adapt and lead.`,
-    },
-  ];
-
-  const businessCards = [
-    {
-      title: "Collaboration",
-      text: "Drives collaboration, engaging with leadership stakeholders ensuring alignment to corporate vision and strategy. Builds strong, influential relationships with customers, partners and industry leaders.",
-    },
-    {
-      title: "Communication",
-      text: "Communicates to audiences at all levels within own organisation and engages with industry. Presents compelling arguments and ideas authoritatively and convincingly to achieve business objectives.",
-    },
-    {
-      title: "Improvement mindset",
-      text: "Defines and communicates the organisational approach to continuous improvement. Cultivates a culture of ongoing enhancement. Evaluates the impact of improvement initiatives on organisational success.",
-    },
-    {
-      title: "Creativity",
-      text: "Champions creativity and innovation in driving strategy development to enable business opportunities.",
-    },
-    {
-      title: "Decision-making",
-      text: "Uses judgement in making decisions critical to the organisational strategic direction and success. Escalates when business executive management input is required through established governance structures.",
-    },
-    {
-      title: "Digital mindset",
-      text: "Leads the development of the organisation’s digital culture and the transformational vision...",
-    },
-    {
-      title: "Leadership",
-      text: "Leads strategic management. Applies the highest level of leadership to the formulation and implementation of strategy.",
-    },
-    {
-      title: "Learning and development",
-      text: "Inspires a learning culture to align with business objectives. Maintains strategic insight into emerging industry landscapes.",
-    },
-    {
-      title: "Planning",
-      text: "Plans and leads at the highest level of authority over all aspects of a significant area of work.",
-    },
-    {
-      title: "Problem-solving",
-      text: "Manages inter-relationships between impacted parties and strategic imperatives.",
-    },
-    {
-      title: "Adaptability",
-      text: "Champions organisational agility and resilience. Embeds adaptability into organisational culture and strategic planning.",
-    },
-    {
-      title: "Security, privacy and ethics",
-      text: "Provides clear direction and strategic leadership for embedding compliance, organisational culture, and working practices.",
-    },
-  ];
+  ].filter((card) => card.text && card.text.trim() !== ""); // ✅ filter out empty
 
   return (
     <div className="w-full flex flex-col items-center space-y-8 px-4 py-8">
@@ -158,7 +104,7 @@ The knowledge attribute defines the depth and breadth of understanding required 
             }}
           >
             <span className="text-white font-bold text-3xl font-roboto">
-              Level: 4
+              Level: {dataLor?.level}
             </span>
           </div>
         )}
@@ -166,117 +112,130 @@ The knowledge attribute defines the depth and breadth of understanding required 
 
       {/* DESCRIPTION SECTION */}
       {activeSection === "description" && (
-        <div className="flex justify-center items-start gap-8 mt-6 flex-wrap ml-[-35px]">
-          {descriptionCards.map((card, index) => {
-            const cardHeight = index === 1 ? "415px" : "284px";
-            const marginTop = index === 1 ? "-123px" : "0px";
-            const cardWidth = index === 1 ? "590px" : "480px";
-
-            return (
-              <div
-                key={index}
-                className="relative"
-                style={{
-                  width: cardWidth,
-                  height: cardHeight,
-                  borderRadius: "18px",
-                  marginTop,
-                }}
-              >
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    borderRadius: "16px",
-                    border: "4px solid #94BEFF",
-                    background:
-                      "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
-                  }}
-                />
-                <h3
-                  style={{
-                    position: "absolute",
-                    top: "30px",
-                    left: "50px",
-                    fontSize: "28px",
-                    fontWeight: "700",
-                    fontFamily: "Inter, sans-serif",
-                    color: "#0043CE",
-                    opacity: 0.8,
-                  }}
-                >
-                  {card.title}
-                </h3>
-                <svg
-                  style={{
-                    position: "absolute",
-                    top: "73px",
-                    left: "34px",
-                    width: cardWidth === "590px" ? "500px" : "430px",
-                    height: "12px",
-                  }}
-                  viewBox="0 0 550 12"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M0.666667 6C0.666667 8.94552 3.05448 11.3333 6 11.3333C8.94552 11.3333 11.3333 8.94552 11.3333 6C11.3333 3.05448 8.94552 0.666667 6 0.666667C3.05448 0.666667 0.666667 3.05448 0.666667 6ZM540 7C540.552 7 541 6.55228 541 6C541 5.44772 540.552 5 540 5V7ZM6 6V7H540V6V5H6V6Z"
-                    fill="#A1A1A1"
-                  />
-                </svg>
-                <p
-                  style={{
-                    position: "absolute",
-                    top: "99px",
-                    left: "50px",
-                    width: cardWidth === "590px" ? "470px" : "400px",
-                    fontSize: "15px",
-                    fontFamily: "Inter, sans-serif",
-                    color: "#000",
-                    whiteSpace: "pre-line",
-                  }}
-                >
-                  {card.text}
-                </p>
-              </div>
-            );
-          })}
+  <div className="flex justify-between items-start gap-8 mt-6">
+    {descriptionCards.map((card, index) => {
+      const marginTop = index === 1 ? "-123px" : "0px";
+      const wordCount = card.text?.split(/\s+/).length || 0;
+      const isLong = false;//  wordCount > 500;
+      
+      return (
+        <div
+          key={index}
+          className="relative"
+          style={{
+            width: "480px",
+            height:  isLong ? "490px" : "fit-content", // 👈 height condition
+            borderRadius: "18px",
+            marginTop,
+            overflow: isLong ? "scroll" : "visible", // clip inner, scroll only text
+          }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              borderRadius: "16px",
+              border: "4px solid #94BEFF",
+              background:
+                "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+              backdropFilter: "blur(2px)",
+            }}
+          />
+          <h3
+            style={{
+              position: "relative",
+              marginTop: "30px",
+              marginLeft: "50px",
+              fontSize: "28px",
+              fontWeight: "700",
+              fontFamily: "Inter, sans-serif",
+              color: "#0043CE",
+              opacity: 0.8,
+            }}
+          >
+            {card.title}
+          </h3>
+          <svg
+            style={{
+              position: "relative",
+              marginTop: "20px",
+              marginLeft: "34px",
+              width: "430px",
+              height: "12px",
+            }}
+            viewBox="0 0 550 12"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M0.666667 6C0.666667 8.94552 3.05448 11.3333 6 11.3333C8.94552 11.3333 11.3333 8.94552 11.3333 6C11.3333 3.05448 8.94552 0.666667 6 0.666667C3.05448 0.666667 0.666667 3.05448 0.666667 6ZM540 7C540.552 7 541 6.55228 541 6C541 5.44772 540.552 5 540 5V7ZM6 6V7H540V6V5H6V6Z"
+              fill="#A1A1A1"
+            />
+          </svg>
+          <p
+            style={{
+              position: "relative",
+              marginTop: "20px",
+              marginLeft: "50px",
+              marginBottom: "30px",
+              width: "400px",
+              fontSize: "15px",
+              fontFamily: "Inter, sans-serif",
+              color: "#000",
+              whiteSpace: "pre-line",
+              maxHeight: isLong ? "400px" : "none", // 👈 ensure scrolling text area fits inside
+              overflowY: isLong ? "auto" : "visible", // 👈 enable scroll only for long text
+              paddingRight: isLong ? "10px" : "0px", // avoid scrollbar overlap
+            }}
+          >
+            {card.text}
+          </p>
         </div>
-      )}
+      );
+    })}
+  </div>
+)}
+
 
       {/* RESPONSIBILITY SECTION */}
       {activeSection === "responsibility" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl px-4 mt-4">
-          {responsibilityCards.map((item, index) => (
-            <div
-              key={index}
-              className="bg-white border-2 border-blue-200 p-6 rounded-xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 duration-300"
-            >
-              <h3 className="inline-block bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-md mb-3 text-base">
-                {item.title}
-              </h3>
-              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                {item.text}
-              </p>
-            </div>
-          ))}
+          {dataLor?.Attributes &&
+            Object.entries(dataLor.Attributes)
+              .filter(([_, item]) => item?.attribute_overall_description?.trim()) // ✅ filter empty
+              .map(([key, item]: [string, AttributeItem]) => (
+                <div
+                  key={key}
+                  className="bg-white border-2 border-blue-200 p-6 rounded-xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 duration-300"
+                >
+                  <h3 className="inline-block bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-md mb-3 text-base">
+                    {item.attribute_name || key}
+                  </h3>
+                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                    {item.attribute_overall_description}
+                  </p>
+                </div>
+              ))}
         </div>
       )}
 
       {/* BUSINESS SKILLS SECTION */}
       {activeSection === "business" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl px-4 mt-4">
-          {businessCards.map((item, index) => (
-            <div
-              key={index}
-              className="bg-white border-2 border-blue-200 p-6 rounded-xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 duration-300"
-            >
-              <h3 className="inline-block bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-md mb-3 text-base">
-                {item.title}
-              </h3>
-              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                {item.text}
-              </p>
-            </div>
-          ))}
+          {dataLor?.Business_skills &&
+            Object.entries(dataLor.Business_skills)
+              .filter(([_, item]) => item?.attribute_overall_description?.trim()) // ✅ filter empty
+              .map(([key, item]: [string, AttributeItem]) => (
+                <div
+                  key={key}
+                  className="bg-white border-2 border-blue-200 p-6 rounded-xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 duration-300"
+                >
+                  <h3 className="inline-block bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-md mb-3 text-base">
+                    {item.attribute_name || key}
+                  </h3>
+                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                    {item.attribute_overall_description}
+                  </p>
+                </div>
+              ))}
         </div>
       )}
     </div>
