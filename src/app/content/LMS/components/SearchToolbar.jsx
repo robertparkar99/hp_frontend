@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Icon from '../../../../components/AppIcon';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
-import { Select } from '../../../../components/ui/select';
+import { Select } from '@/components/ui/select';
 import { Checkbox } from '../../../../components/ui/checkbox';
 
 const SearchToolbar = ({
@@ -22,7 +22,6 @@ const SearchToolbar = ({
   const advancedRef = useRef(null);
   const moreFilterRef = useRef(null);
 
-  // State for More Filters
   const [moreFilters, setMoreFilters] = useState({
     department: 'all',
     instructor: '',
@@ -30,7 +29,6 @@ const SearchToolbar = ({
     language: 'en',
   });
 
-  // Options for dropdowns
   const departmentOptions = [
     { value: 'all', label: 'All Departments' },
     { value: 'engineering', label: 'Engineering' },
@@ -108,46 +106,45 @@ const SearchToolbar = ({
     },
   ];
 
+  // ✅ Fixed checkbox render with label text
   const renderFilterGroup = (title, key, options) => (
     <div key={key} className="flex flex-col gap-2">
       <h4 className="font-medium text-foreground">{title}</h4>
       {options.map((item) => (
         <div key={item.id} className="flex items-center space-x-2">
           <Checkbox
-            label={item.label}
             checked={filters[key]?.includes(item.id) || false}
-            onChange={(e) => {
+            onCheckedChange={(checked) => {
               const current = filters[key] || [];
-              const updated = e.target.checked
+              const updated = checked
                 ? [...current, item.id]
                 : current.filter((id) => id !== item.id);
               onFilterChange(key, updated);
             }}
           />
+          <span className="text-sm text-foreground">{item.label}</span>
         </div>
       ))}
     </div>
   );
 
-  // Handlers for More Filters
   const handleDepartmentChange = (selected) => {
-    setMoreFilters(prev => ({ ...prev, department: selected.value }));
+    setMoreFilters((prev) => ({ ...prev, department: selected.value }));
   };
 
   const handleInstructorChange = (e) => {
-    setMoreFilters(prev => ({ ...prev, instructor: e.target.value }));
+    setMoreFilters((prev) => ({ ...prev, instructor: e.target.value }));
   };
 
   const handleDateAddedChange = (selected) => {
-    setMoreFilters(prev => ({ ...prev, dateAdded: selected.value }));
+    setMoreFilters((prev) => ({ ...prev, dateAdded: selected.value }));
   };
 
   const handleLanguageChange = (selected) => {
-    setMoreFilters(prev => ({ ...prev, language: selected.value }));
+    setMoreFilters((prev) => ({ ...prev, language: selected.value }));
   };
 
   const applyMoreFilters = () => {
-    // Here you would implement the actual filtering logic
     console.log('Applying filters:', moreFilters);
     setShowMoreFilters(false);
   };
@@ -161,9 +158,8 @@ const SearchToolbar = ({
     });
   };
 
-  // Get current selected option for each dropdown
   const getSelectedOption = (value, options) => {
-    return options.find(option => option.value === value) || options[0];
+    return options.find((option) => option.value === value) || options[0];
   };
 
   useEffect(() => {
@@ -215,7 +211,6 @@ const SearchToolbar = ({
         <div className="flex items-center space-x-4">
           {/* Filters Dropdown */}
           <div className="flex items-center gap-3 relative">
-            {/* Filters Button with Dropdown */}
             <div className="relative" ref={advancedRef}>
               <Button
                 variant="outline"
@@ -235,7 +230,6 @@ const SearchToolbar = ({
                   {filtersList.map((section) =>
                     renderFilterGroup(section.title, section.key, section.options)
                   )}
-
                   <div className="flex items-center justify-between">
                     <Button variant="outline" size="sm" onClick={() => setIsAdvancedOpen(false)}>
                       Close
@@ -253,7 +247,7 @@ const SearchToolbar = ({
               )}
             </div>
 
-            {/* More Filters Dropdown */}
+            {/* More Filters */}
             <div className="relative" ref={moreFilterRef}>
               <div className="min-w-[160px]">
                 <Button
@@ -288,8 +282,8 @@ const SearchToolbar = ({
                       <label className="block text-sm font-medium text-foreground mb-1">
                         Instructor
                       </label>
-                      <Input 
-                        type="text" 
+                      <Input
+                        type="text"
                         placeholder="Search by instructor name"
                         value={moreFilters.instructor}
                         onChange={handleInstructorChange}
@@ -319,8 +313,8 @@ const SearchToolbar = ({
                     </div>
 
                     <div className="flex justify-end gap-2 pt-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           resetMoreFilters();
@@ -329,11 +323,7 @@ const SearchToolbar = ({
                       >
                         Cancel
                       </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        onClick={applyMoreFilters}
-                      >
+                      <Button variant="default" size="sm" onClick={applyMoreFilters}>
                         Apply
                       </Button>
                     </div>
@@ -353,7 +343,7 @@ const SearchToolbar = ({
             >
               <Icon name="Grid3X3" size={16} />
             </Button>
-            <Button 
+            <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('list')}

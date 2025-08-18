@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/content/user/AddUserModal.tsx", "src/components/skillComponent/skillComponentV1/components/SkillModal.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/content/user/AddUserModal.jsx", "src/app/content/Libraries/knowledgeTax.jsx", "src/app/content/Libraries/BehaviourTaxo.jsx", "src/app/content/Libraries/AbilityTaxo.jsx", "src/app/content/Libraries/AttitudeTaxo.jsx"],
   "exclude": ["node_modules"]
 }

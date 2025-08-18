@@ -13,8 +13,8 @@ const OrganizationProfileManagement = () => {
     { id: 'info', label: 'Organization Info', icon: 'Building2' },
     { id: 'structure', label: 'Department Structure', icon: 'Users' },
     { id: 'config', label: 'Compliance Management', icon: 'Settings' },
-    { id: 'audit', label: 'Organization Handbook', icon: 'FileText' },
-    { id: 'disciplinary', label: 'Disciplinary Management', icon: 'FileText' }
+    // { id: 'audit', label: 'Organization Handbook', icon: 'FileText' },
+    // { id: 'disciplinary', label: 'Disciplinary Management', icon: 'FileText' }
   ];
 
   const handleSave = async (data) => {
@@ -52,10 +52,10 @@ const OrganizationProfileManagement = () => {
       <div>
         <main className="p-6">
           {/* Header Section */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Organization Profile Management</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-2xl font-bold text-foreground">Organization Profile Management</h1>
+              <p className="text-sm text-muted-foreground mt-1">
                 Manage your organization's information, Department structure.
               </p>
             </div>
@@ -68,9 +68,9 @@ const OrganizationProfileManagement = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-6 py-4 text-sm font-medium transition-micro border-b-2 ${
+                  className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-micro border-b-2 ${
                     activeTab === tab.id
-                      ? 'border-primary text-primary bg-primary/5' :'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      ? 'border-blue-400 text-blue-400 bg-primary/5' :'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   }`}
                 >
                   <span className="text-base">{tab.label}</span>

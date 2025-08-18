@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
 import { saveAs } from 'file-saver';
 
@@ -17,32 +17,135 @@ const SystemConfiguration = () => {
   const [dataList, setDataList] = useState([]);
   const [showTable, setShowTable] = useState(false);
   const [fileName, setFileName] = useState('');
+  const [userOptions, setUserOptions] = useState([]);
+  const [sessionData, setSessionData] = useState({});
+
+  useEffect(() => {
+  // Fetch user list fruseEffect(() => {
+      if (typeof window !== 'undefined') {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          const { APP_URL, token, sub_institute_id,user_id,syear } = JSON.parse(userData);
+          setSessionData({ url: APP_URL, token, sub_institute_id,user_id,syear });
+        }
+      }
+    }, []);
+  
+    useEffect(() => {
+      if (sessionData.url && sessionData.token) {
+        fetchUsers();
+      }
+    }, [sessionData.url, sessionData.token]);
+    // om API (tbluser)
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`
+        );
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setUserOptions(
+            data.map((user) => {
+              let displayName = `${user.first_name || ''} ${user.middle_name || ''} ${user.last_name || ''}`.trim();
+              if (!displayName) {
+                displayName = user.user_name || '';
+              }
+              return {
+                id: user.id,
+                name: displayName,
+              };
+            })
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+    
+
+  // Fetch master_compliance data from API
+  const fetchComplianceData = async () => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/table_data?table=master_compliance&filters[sub_institute_id]=${sessionData.sub_institute_id}`
+      );
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setDataList(data);
+      }
+    } catch (error) {
+      console.error('Error fetching compliance data:', error);
+    }
+  };
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0] || null;
     setFileName(file?.name || '');
-    handleChange('attachment', file || null);
+    handleChange('attachment', file);
   };
 
-  const handleSubmit = (e) => {
+  // Submit form to backend API with file upload
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setDataList(prev => [...prev, formData]);
-    setFormData({
-      name: '',
-      description: '',
-      departmentName: '',
-      assignedTo: '',
-      dueDate: '',
-      attachment: null,
-    });
-    setFileName('');
+
+    try {
+      const formPayload = new FormData();
+      formPayload.append('type', 'API');
+      formPayload.append('formName', 'compliance_library');
+      formPayload.append('user_id', sessionData.user_id); // Replace with actual logged-in user ID if needed
+      formPayload.append('syear', sessionData.syear); // Could be dynamic if needed
+      formPayload.append('sub_institute_id', sessionData.sub_institute_id);
+      formPayload.append('name', formData.name);
+      formPayload.append('description', formData.description);
+      formPayload.append('standard_name', formData.departmentName);
+      formPayload.append('assigned_to', formData.assignedTo);
+      formPayload.append('duedate', formData.dueDate);
+      if (formData.attachment) {
+        formPayload.append('attachment', formData.attachment);
+      }
+
+      // const res = await fetch(`${sessionData.url}/settings/institute_detail`, {
+      //   method: 'POST',
+      //   // headers: {
+      //   //   'Accept': 'application/json',
+      //   //   'Content-Type': 'application/json', // Not needed for FormData
+      //   // },
+      //   body: formPayload,
+      // });
+      const res = await fetch(`${sessionData.url}/settings/institute_detail`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${sessionData.token}` },
+        body: formPayload,
+      });
+
+      const result = await res.json();
+      console.log('API Response:', result);
+
+      if (res.ok) {
+        alert(result.message || 'Data submitted successfully');
+        setFormData({
+          name: '',
+          description: '',
+          departmentName: '',
+          assignedTo: '',
+          dueDate: '',
+          attachment: null,
+        });
+        setFileName('');
+      } else {
+        alert('Error submitting data');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('An error occurred while submitting data.');
+    }
   };
 
   const exportToCSV = () => {
@@ -52,68 +155,32 @@ const SystemConfiguration = () => {
         i + 1,
         item.name,
         item.description,
-        item.departmentName,
-        item.assignedTo,
-        item.dueDate,
-        item.attachment?.name || 'N/A',
-      ])
-    ].map(e => e.join(',')).join('\n');
+        item.department_name || item.departmentName,
+        userOptions.find((u) => u.id.toString() === (item.assigned_to || item.assignedTo)?.toString())?.name || '',
+        item.due_date || item.dueDate,
+        item.attachment?.name || item.attachment || 'N/A',
+      ]),
+    ]
+      .map((e) => e.join(','))
+      .join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, 'submitted-data.csv');
   };
 
   const columns = [
-    {
-      name: 'Sr No.',
-      selector: (_, index) => index + 1,
-      width: '80px',
-      sortable: true,
-    },
-    {
-      name: 'Name',
-      selector: row => row.name,
-      sortable: true,
-    },
-    {
-      name: 'Description',
-      selector: row => row.description,
-      sortable: true,
-    },
-    {
-      name: 'Standard Name',
-      selector: row => row.departmentName,
-      sortable: true,
-    },
+    { name: 'Sr No.', selector: (_, index) => index + 1, width: '80px', sortable: true },
+    { name: 'Name', selector: (row) => row.name, sortable: true },
+    { name: 'Description', selector: (row) => row.description, sortable: true },
+    { name: 'Standard Name', selector: (row) => row.department_name || row.departmentName, sortable: true },
     {
       name: 'Assigned To',
-      selector: row => row.assignedTo,
+      selector: (row) =>
+        userOptions.find((u) => u.id.toString() === (row.assigned_to || row.assignedTo)?.toString())?.name || '',
       sortable: true,
     },
-    {
-      name: 'Due Date',
-      selector: row => row.dueDate,
-      sortable: true,
-    },
-    {
-      name: 'Attachment',
-      selector: row => row.attachment?.name || 'N/A',
-    },
-    {
-      name: 'Actions',
-      cell: (_, index) => (
-        <button
-          className="text-red-600 hover:underline"
-          onClick={() => {
-            const updated = [...dataList];
-            updated.splice(index, 1);
-            setDataList(updated);
-          }}
-        >
-          Delete
-        </button>
-      ),
-    },
+    { name: 'Due Date', selector: (row) => row.due_date || row.dueDate, sortable: true },
+    { name: 'Attachment', selector: (row) => row.attachment?.name || row.attachment || 'N/A' },
   ];
 
   return (
@@ -132,7 +199,7 @@ const SystemConfiguration = () => {
             {type === 'textarea' ? (
               <textarea
                 value={formData[name]}
-                onChange={e => handleChange(name, e.target.value)}
+                onChange={(e) => handleChange(name, e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 required
               />
@@ -140,7 +207,7 @@ const SystemConfiguration = () => {
               <input
                 type="text"
                 value={formData[name]}
-                onChange={e => handleChange(name, e.target.value)}
+                onChange={(e) => handleChange(name, e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 required
               />
@@ -152,14 +219,16 @@ const SystemConfiguration = () => {
           <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
           <select
             value={formData.assignedTo}
-            onChange={e => handleChange('assignedTo', e.target.value)}
+            onChange={(e) => handleChange('assignedTo', e.target.value)}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             required
           >
             <option value="">Select User</option>
-            <option value="User A">User A</option>
-            <option value="User B">User B</option>
-            <option value="User C">User C</option>
+            {userOptions.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -168,7 +237,7 @@ const SystemConfiguration = () => {
           <input
             type="date"
             value={formData.dueDate}
-            onChange={e => handleChange('dueDate', e.target.value)}
+            onChange={(e) => handleChange('dueDate', e.target.value)}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             required
           />
@@ -194,7 +263,10 @@ const SystemConfiguration = () => {
 
       <div className="my-6 flex flex-wrap gap-4">
         <button
-          onClick={() => setShowTable(prev => !prev)}
+          onClick={() => {
+            fetchComplianceData();
+            setShowTable((prev) => !prev);
+          }}
           className="bg-cyan-100 text-cyan-700 px-4 py-2 rounded border border-cyan-300 hover:bg-cyan-200"
         >
           View Added Data
