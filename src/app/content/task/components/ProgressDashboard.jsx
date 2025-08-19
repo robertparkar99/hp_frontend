@@ -367,11 +367,11 @@ const ProgressDashboard = () => {
             <thead className="bg-muted/30">
               <tr>
                 <th className="text-left p-4 text-sm font-medium text-foreground">Task</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground">Assigned To</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground">Due Date</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground">Status</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground">Priority</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground">Approve Status</th>
+                <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Assigned To</th>
+                <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Due Date</th>
+                <th className="text-left p-4 text-sm font-medium text-foreground"style={{ whiteSpace: 'nowrap' }}>Progress</th>
+                <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Task Type</th>
+                <th className="text-left p-4 text-sm font-medium text-foreground"style={{ whiteSpace: 'nowrap' }}>Approve Status</th>
                 <th className="text-left p-4 text-sm font-medium text-foreground">Actions</th>
               </tr>
             </thead>
