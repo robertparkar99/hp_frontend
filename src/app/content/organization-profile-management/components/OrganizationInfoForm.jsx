@@ -536,7 +536,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         </div>
       ))}
 
-      <div className="mt-6 transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-500">
+      <div className="mt-6 transition duration-300 ease-in-out">
         <Button type="submit" disabled={loading}>
           {loading ? 'Saving...' : 'Save Organization Info'}
         </Button>
