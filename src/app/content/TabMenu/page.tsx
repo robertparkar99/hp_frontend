@@ -10,12 +10,12 @@ import AbilityTaxonomy from "../Libraries/AbilityTaxo";
 import BehaviourTaxonomy from "../Libraries/BehaviourTaxo";
 
 interface TabsMenuProps {
-  tabs: string[];
+  tabs?: string[]; // optional now to avoid undefined.map error
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-const TabsMenu: React.FC<TabsMenuProps> = ({ tabs, activeTab, onTabChange }) => {
+const TabsMenu: React.FC<TabsMenuProps> = ({ tabs = [], activeTab, onTabChange }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [openPage, setOpenPage] = useState<string | null>(null);
 
@@ -124,8 +124,7 @@ const TabsMenu: React.FC<TabsMenuProps> = ({ tabs, activeTab, onTabChange }) => 
 
       {/* Render selected taxonomy pages inline */}
       {openPage === "SkillTaxonomy" && (
-        <SkillTaxonomyCreation
-        />
+        <SkillTaxonomyCreation />
       )}
 
       {openPage === "JobroleTaxonomy" && (
