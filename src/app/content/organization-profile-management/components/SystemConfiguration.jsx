@@ -378,6 +378,31 @@ const SystemConfiguration = () => {
     }
   };
 
+  const handleDeleteClick = async (id) => {
+    if (!id) return;
+
+    if (window.confirm("Are you sure you want to delete this Data?")) {
+      try {
+        const res = await fetch(
+          `${sessionData.url}/settings/institute_detail/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}&formName=complaince_library`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${sessionData.token}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+        alert(data.message);
+        fetchComplianceData();
+      } catch (error) {
+        console.error("Error deleting data:", error);
+        alert("Error deleting data:", error);
+      }
+    }
+  }
+
   useEffect(() => {
     if (sessionData.url && sessionData.sub_institute_id) {
       fetchComplianceData();
@@ -429,7 +454,7 @@ const SystemConfiguration = () => {
     try {
       const formPayload = new FormData();
       formPayload.append('type', 'API');
-      formPayload.append('formName', 'compliance_library');
+      formPayload.append('formName', 'complaince_library');
       formPayload.append('user_id', sessionData.user_id);
       formPayload.append('syear', sessionData.syear);
       formPayload.append('sub_institute_id', sessionData.sub_institute_id);
@@ -447,14 +472,17 @@ const SystemConfiguration = () => {
       });
 
       const result = await res.json();
-      if (res.ok) {
-        alert(result.message || 'Data submitted successfully');
+      if (!res.ok) {
+        throw new Error(result.message || 'Something went wrong');
+        alert(result.message || 'Something went wrong');
+      } else {
+        alert(result.message || 'Something went wrong');
+        console.log('API Response:', result);
         setFormData({ name: '', description: '', departmentName: '', assignedTo: '', dueDate: '', attachment: null });
         setFileName('');
         fetchComplianceData();
-      } else {
-        alert('Error submitting data');
       }
+
     } catch (error) {
       console.error('Error submitting form:', error);
       alert('An error occurred while submitting data.');
@@ -495,6 +523,7 @@ const SystemConfiguration = () => {
       selector: (row) => row.srno,
       width: '100px',
       sortable: true,
+      wrap: true,
     },
     {
       name: (
@@ -506,7 +535,8 @@ const SystemConfiguration = () => {
         </div>
       ),
       selector: (row) => row.name,
-      sortable: true
+      sortable: true,
+      wrap: true,
     },
     {
       name: (
@@ -518,7 +548,8 @@ const SystemConfiguration = () => {
         </div>
       ),
       selector: (row) => row.description,
-      sortable: true
+      sortable: true,
+      wrap: true,
     },
     {
       name: (
@@ -530,7 +561,8 @@ const SystemConfiguration = () => {
         </div>
       ),
       selector: (row) => row.department_name || row.departmentName,
-      sortable: true
+      sortable: true,
+      wrap: true,
     },
     {
       name: (
@@ -544,6 +576,7 @@ const SystemConfiguration = () => {
       selector: (row) =>
         userOptions.find((u) => u.id.toString() === (row.assigned_to || row.assignedTo)?.toString())?.name || '',
       sortable: true,
+      wrap: true,
     },
     {
       name: (
@@ -555,7 +588,8 @@ const SystemConfiguration = () => {
         </div>
       ),
       selector: (row) => row.due_date || row.dueDate,
-      sortable: true
+      sortable: true,
+      wrap: true,
     },
     {
       name: (
@@ -567,7 +601,8 @@ const SystemConfiguration = () => {
         </div>
       ),
       selector: (row) => row.attachment,
-      sortable: true
+      sortable: true,
+      wrap: true,
     },
     {
       name: "Actions", selector: (row) => (
@@ -588,14 +623,37 @@ const SystemConfiguration = () => {
       ),
       ignoreRowClick: true,
       button: true,
+      wrap: true,
     },
   ];
 
-
+  const customStyles = {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
+      },
+    },
+    cells: {
+      style: {
+        fontSize: "13px",
+        textAlign: "left",
+      },
+    },
+    table: {
+      style: {
+        borderRadius: "20px",
+        overflow: "hidden",
+      },
+    },
+  };
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Form */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white shadow border border-gray-200 p-6 rounded-lg">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white shadow border border-gray-200 p-6 rounded-lg mb-10">
         {[
           { label: 'Name', name: 'name', type: 'text' },
           { label: 'Description', name: 'description', type: 'textarea' },
@@ -659,14 +717,14 @@ const SystemConfiguration = () => {
         </div>
 
         <div className="col-span-1 md:col-span-3 flex justify-center">
-          <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition">
+          <button type="submit" className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60">
             Submit
           </button>
         </div>
       </form>
 
       {/* Action Buttons */}
-      <div className="my-6 w-full flex justify-end gap-2 mb-4">
+      {/* <div className="my-6 w-full flex justify-end gap-2 mb-4">
         <button onClick={() => window.print()} className="w-10 h-10 flex items-center justify-center bg-blue-600 rounded hover:bg-blue-700 transition">
           <span className="mdi mdi-printer text-white text-lg"></span>
         </button>
@@ -676,23 +734,14 @@ const SystemConfiguration = () => {
         <button onClick={exportToCSV} className="w-10 h-10 flex items-center justify-center bg-blue-600 rounded hover:bg-blue-700 transition">
           <span className="text-white font-bold">PDF</span>
         </button>
-      </div>
+      </div> */}
 
-      {/* Table */}
-      {/* <DataTable 
-        columns={columns} 
-        data={filteredData.length > 0 ? filteredData : dataList} 
-        pagination 
-        striped 
-        highlightOnHover 
-        responsive 
-      /> */}
-      {/* Table */}
       <DataTable
         columns={columns}
         data={(filteredData.length > 0 ? filteredData : dataList).length > 0
           ? (filteredData.length > 0 ? filteredData : dataList)
           : [{}]}  // 👈 blank row show
+        customStyles={customStyles}
         pagination
         striped
         highlightOnHover
