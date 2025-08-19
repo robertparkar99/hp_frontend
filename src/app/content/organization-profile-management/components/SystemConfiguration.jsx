@@ -30,7 +30,7 @@
 //         }
 //       }
 //     }, []);
-  
+
 //     useEffect(() => {
 //       if (sessionData.url && sessionData.token) {
 //         fetchUsers();
@@ -61,7 +61,7 @@
 //         console.error('Error fetching users:', error);
 //       }
 //     };
-    
+
 
 //   // Fetch master_compliance data from API
 //   const fetchComplianceData = async () => {
@@ -483,7 +483,7 @@ const SystemConfiguration = () => {
 
   // 🔹 Table columns with search inputs
   const columns = [
-    { 
+    {
       name: (
         <div>
           <div>Sr No.</div>
@@ -496,48 +496,48 @@ const SystemConfiguration = () => {
       width: '100px',
       sortable: true,
     },
-    { 
+    {
       name: (
         <div>
           <div>Name</div>
-          <input type="text" placeholder="Search..." 
-            onChange={(e) => handleColumnFilter("name", e.target.value)} 
+          <input type="text" placeholder="Search..."
+            onChange={(e) => handleColumnFilter("name", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }} />
         </div>
       ),
       selector: (row) => row.name,
-      sortable: true 
+      sortable: true
     },
-    { 
+    {
       name: (
         <div>
           <div>Description</div>
-          <input type="text" placeholder="Search..." 
-            onChange={(e) => handleColumnFilter("description", e.target.value)} 
+          <input type="text" placeholder="Search..."
+            onChange={(e) => handleColumnFilter("description", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }} />
         </div>
       ),
       selector: (row) => row.description,
-      sortable: true 
+      sortable: true
     },
-    { 
+    {
       name: (
         <div>
           <div>Standard Name</div>
-          <input type="text" placeholder="Search..." 
-            onChange={(e) => handleColumnFilter("department_name", e.target.value)} 
+          <input type="text" placeholder="Search..."
+            onChange={(e) => handleColumnFilter("department_name", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }} />
         </div>
       ),
       selector: (row) => row.department_name || row.departmentName,
-      sortable: true 
+      sortable: true
     },
     {
       name: (
         <div>
           <div>Assigned To</div>
-          <input type="text" placeholder="Search..." 
-            onChange={(e) => handleColumnFilter("assigned_to", e.target.value)} 
+          <input type="text" placeholder="Search..."
+            onChange={(e) => handleColumnFilter("assigned_to", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }} />
         </div>
       ),
@@ -545,50 +545,50 @@ const SystemConfiguration = () => {
         userOptions.find((u) => u.id.toString() === (row.assigned_to || row.assignedTo)?.toString())?.name || '',
       sortable: true,
     },
-    { 
+    {
       name: (
         <div>
           <div>Due Date</div>
-          <input type="text" placeholder="Search..." 
-            onChange={(e) => handleColumnFilter("due_date", e.target.value)} 
+          <input type="text" placeholder="Search..."
+            onChange={(e) => handleColumnFilter("due_date", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }} />
         </div>
       ),
       selector: (row) => row.due_date || row.dueDate,
-      sortable: true 
+      sortable: true
     },
-    { 
+    {
       name: (
         <div>
           <div>Attachment</div>
-          <input type="text" placeholder="Search..." 
-            onChange={(e) => handleColumnFilter("attachment", e.target.value)} 
+          <input type="text" placeholder="Search..."
+            onChange={(e) => handleColumnFilter("attachment", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }} />
         </div>
-      ), 
+      ),
       selector: (row) => row.attachment,
       sortable: true
     },
     {
-       name: "Actions", selector: (row) => (
-         <div className="flex space-x-2">
-           <button
-             onClick={() => row.id && handleEditClick(row.id)}
-             className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
-           >
-             <span className="mdi mdi-pencil" data-titleHead="Edit Jobrole"></span>
-           </button>
-           <button
-             onClick={() => row.id && handleDeleteClick(row.id)}
-             className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
-           >
-             <span className="mdi mdi-trash-can" data-titleHead="Delete Jobrole"></span>
-           </button>
-         </div>
-       ),
-       ignoreRowClick: true,
-       button: true,
-     },
+      name: "Actions", selector: (row) => (
+        <div className="flex space-x-2">
+          <button
+            onClick={() => row.id && handleEditClick(row.id)}
+            className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
+          >
+            <span className="mdi mdi-pencil" data-titleHead="Edit Jobrole"></span>
+          </button>
+          <button
+            onClick={() => row.id && handleDeleteClick(row.id)}
+            className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
+          >
+            <span className="mdi mdi-trash-can" data-titleHead="Delete Jobrole"></span>
+          </button>
+        </div>
+      ),
+      ignoreRowClick: true,
+      button: true,
+    },
   ];
 
 
@@ -679,14 +679,28 @@ const SystemConfiguration = () => {
       </div>
 
       {/* Table */}
-      <DataTable 
+      {/* <DataTable 
         columns={columns} 
         data={filteredData.length > 0 ? filteredData : dataList} 
         pagination 
         striped 
         highlightOnHover 
         responsive 
+      /> */}
+      {/* Table */}
+      <DataTable
+        columns={columns}
+        data={(filteredData.length > 0 ? filteredData : dataList).length > 0
+          ? (filteredData.length > 0 ? filteredData : dataList)
+          : [{}]}  // 👈 blank row show
+        pagination
+        striped
+        highlightOnHover
+        responsive
+        noDataComponent={null}  // 👈 remove default "No records"
+        persistTableHead        // 👈 keep headers always
       />
+
     </div>
   );
 };
