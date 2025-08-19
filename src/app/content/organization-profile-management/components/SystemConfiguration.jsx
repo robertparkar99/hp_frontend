@@ -735,21 +735,22 @@ const SystemConfiguration = () => {
           <span className="text-white font-bold">PDF</span>
         </button>
       </div> */}
-
-      <DataTable
-        columns={columns}
-        data={(filteredData.length > 0 ? filteredData : dataList).length > 0
-          ? (filteredData.length > 0 ? filteredData : dataList)
-          : [{}]}  // 👈 blank row show
-        customStyles={customStyles}
-        pagination
-        striped
-        highlightOnHover
-        responsive
-        noDataComponent={null}  // 👈 remove default "No records"
-        persistTableHead        // 👈 keep headers always
-      />
-
+      {filteredData.length > 0 && (
+        <DataTable
+              columns={columns}
+              data={(filteredData.length > 0 ? filteredData : dataList).length > 0
+                ? (filteredData.length > 0 ? filteredData : dataList)
+                : [{}]}  // 👈 blank row show
+              customStyles={customStyles}
+              pagination
+              striped
+              highlightOnHover
+              responsive
+              noDataComponent={null}  // 👈 remove default "No records"
+              persistTableHead        // 👈 keep headers always
+            />
+      )}
+      
     </div>
   );
 };
