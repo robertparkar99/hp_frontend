@@ -25,17 +25,10 @@ export default function AddUserModal({
   isOpen,
   setIsOpen,
   sessionData,
-<<<<<<< HEAD
-  userJobroleLists = [],
-  userLOR = [],
-  userProfiles = [],
-  userLists = [],
-=======
   userJobroleLists,
   userLOR,
   userProfiles: initialUserProfiles = [],
   userLists,
->>>>>>> 0db58d31b1f932ff7abfe6939a50caa3d94d92ee
 }) {
 
   const [formData, setFormData] = useState({
@@ -420,25 +413,11 @@ export default function AddUserModal({
                     <SelectValue placeholder="Select Profile" />
                   </SelectTrigger>
                   <SelectContent>
-<<<<<<< HEAD
-                    {userProfiles.length > 0 ? (
-                      userProfiles.map((profile) => (
-                        <SelectItem key={profile.id} value={profile.id}>
-                          {profile.name || profile.profile_name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem disabled value="no-profiles">
-                        No profiles found
-                      </SelectItem>
-                    )}
-=======
                     {fetchedUserProfiles.map((profile) => (
                       <SelectItem key={profile.id} value={String(profile.id)}>
                         {profile.profile_name || profile.name || profile.full_name || "Unnamed"}
                       </SelectItem>
                     ))}
->>>>>>> 0db58d31b1f932ff7abfe6939a50caa3d94d92ee
                   </SelectContent>
                 </Select>
               </div>
