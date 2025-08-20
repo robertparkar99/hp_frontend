@@ -104,8 +104,8 @@ const ProgressDashboard = () => {
 
   const taskTypeOptions = [
     { value: 'daily task', label: 'Daily Task' },
-    { value: 'weekly', label: 'Weekly' },
-    { value: 'monthly', label: 'Monthly' },
+    { value: 'weekly task', label: 'Weekly Task' },
+    { value: 'monthly task', label: 'Monthly Task' },
   ];
 
   const statusEditOptions = [
@@ -127,9 +127,9 @@ const ProgressDashboard = () => {
         : timeFilter === 'day'
           ? task.task_type.toLowerCase() === 'daily task'
           : timeFilter === 'week'
-            ? task.task_type.toLowerCase() === 'weekly'
+            ? task.task_type.toLowerCase() === 'weekly task'
             : timeFilter === 'month'
-              ? task.task_type.toLowerCase() === 'monthly'
+              ? task.task_type.toLowerCase() === 'monthly task'
               : true;
 
       const matchesStatus = statusFilter === 'all' || task.status.toUpperCase() === statusFilter;
@@ -206,8 +206,8 @@ const ProgressDashboard = () => {
   const getPriorityColor = (priority) => {
     switch (priority.toLowerCase()) {
       case 'daily task': return 'text-primary';
-      case 'weekly': return 'text-warning';
-      case 'monthly': return 'text-success';
+      case 'weekly task': return 'text-warning';
+      case 'monthly task': return 'text-success';
       default: return 'text-muted-foreground';
     }
   };
@@ -627,7 +627,13 @@ const ProgressDashboard = () => {
                     )}
                   </div>
                 </div>
-                <div></div>
+                <div>
+                <Input
+                    label="Repeat Once in every "
+                    value={currentTask.repeat_days}
+                    onChange={(e) => handleInputChange('repeat_days', e.target.value)}
+                  />
+                </div>
               </div>
 
               <DialogFooter>
