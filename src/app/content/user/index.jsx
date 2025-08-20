@@ -9,7 +9,7 @@ import EmployeeProfileModal from './components/EmployeeProfileModal';
 import PaginationControls from './components/PaginationControls';
 
 const EmployeeDirectory = () => {
-  const [sessionData, setSessionData] = useState(null);
+  const [sessionData, setSessionData] = useState({});
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('table');
@@ -28,16 +28,18 @@ const EmployeeDirectory = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [error, setError] = useState(null);
+  const [userJobroleLists, setUserJobroleLists] = useState([]);
+  const [userLists, setUserLists] = useState([]);
+  const [userLOR, setUserLOR] = useState([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Load session data once from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('userData');
-    if (stored) {
-      try {
-        setSessionData(JSON.parse(stored));
-      } catch (err) {
-        console.error('Failed to parse session data:', err);
+useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const { APP_URL, token, sub_institute_id, org_type,user_id,user_profile_name,syear } = JSON.parse(userData);
+        setSessionData({ APP_URL, token, sub_institute_id,org_type, user_id,user_profile_name,syear});
       }
     }
   }, []);
@@ -49,6 +51,29 @@ const EmployeeDirectory = () => {
     if (!APP_URL || !token || !user_id) return null;
     return `${APP_URL}/user/add_user?type=API&token=${token}&sub_institute_id=${sub_institute_id || 1}&org_type=${encodeURIComponent(org_type || 'Financial Services')}&user_id=${user_id}&user_profile_name=${encodeURIComponent(user_profile_name || 'Admin')}&syear=2025`;
   }, [sessionData]);
+
+  useEffect(() => {
+  if (sessionData.APP_URL && sessionData.token) {
+    fetchAllData();
+  }
+}, [sessionData.APP_URL, sessionData.token]);
+
+  const fetchAllData = async () => {
+    try {
+      const response = await fetch(
+        `${sessionData.APP_URL}/user/add_user?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id || 1}&org_type=${encodeURIComponent(sessionData.org_type || 'Financial Services')}&user_id=${sessionData.user_id}&user_profile_name=${encodeURIComponent(sessionData.user_profile_name || 'Admin')}&syear=${sessionData.syear}`
+      );
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      setUserJobroleLists(data.jobroleList || []);
+      setUserLOR(data.levelOfResponsibility || data.levelOfResponsbility || []);
+      setUserLists(data.data || []);
+      // console.log('User Job Role Lists:', data.jobroleList || []);
+
+    } catch (err) {
+      console.error('Error fetching industries:', err);
+    }
+  };
 
   const fetchEmployees = useCallback(async () => {
     if (!apiUrl) return;
@@ -307,6 +332,9 @@ const EmployeeDirectory = () => {
               <StatsSidebar
                 stats={stats}
                 sessionData={sessionData}
+                userJobroleLists={userJobroleLists}
+                userLOR={userLOR}
+                userLists={userLists}
                 selectedCount={selectedEmployees.length}
                 onBulkAssignTask={handleBulkAssignTask}
                 onBulkExport={handleBulkExport}
@@ -380,7 +408,7 @@ const EmployeeDirectory = () => {
                   {paginatedEmployees.map((employee) => (
                     <EmployeeCard
                       key={employee.id}
-                      employee={employee}
+                      employee={employee} x
                       onViewProfile={handleViewProfile}
                       onAssignTask={handleAssignTask}
                       onEdit={handleEdit}
@@ -405,6 +433,9 @@ const EmployeeDirectory = () => {
               <StatsSidebar
                 stats={stats}
                 sessionData={sessionData}
+                userJobroleLists={userJobroleLists}
+                userLOR={userLOR}
+                userLists={userLists}
                 selectedCount={selectedEmployees.length}
                 onBulkAssignTask={handleBulkAssignTask}
                 onBulkExport={handleBulkExport}
