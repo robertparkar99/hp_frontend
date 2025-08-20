@@ -17,13 +17,13 @@ const StatsSidebar = ({
   selectedCount,
   onBulkSkillAssessment,
   sessionData,
-  userJobroleLists = [],
+  userJobroleLists = [], // Add this prop
   userLOR = [],
   userProfiles = [],
   userLists = [],
 }) => {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
-
+  
   return (
     <div className="space-y-6">
       {/* Add User Modal */}
@@ -32,7 +32,7 @@ const StatsSidebar = ({
           isOpen={isAddUserModalOpen}
           setIsOpen={setIsAddUserModalOpen}
           sessionData={sessionData}
-          userJobroleLists={userJobroleLists}
+          userJobroleLists={userJobroleLists} // Pass the prop here
           userLOR={userLOR}
           userProfiles={userProfiles}
           userLists={userLists}
