@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,12 +25,46 @@ export default function AddUserModal({
   isOpen,
   setIsOpen,
   sessionData,
-  userJobroleLists = [],
-  userLOR = [],
-  userProfiles = [],
-  userLists = [],
+  userJobroleLists,
+  userLOR,
+  userProfiles: initialUserProfiles = [],
+  userLists,
 }) {
-    console.log('Session Data:', sessionData);
+
+  const [fetchedUserProfiles, setFetchedUserProfiles] = useState(initialUserProfiles);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+
+  useEffect(() => {
+    if (!sessionData?.APP_URL) return;
+
+    const fetchProfiles = async () => {
+      setLoadingProfiles(true);
+      try {
+        const response = await fetch(
+          `${sessionData.APP_URL}/table_data?table=tbluserprofilemaster&filters[sub_institute_id]=${sessionData.sub_institute_id || 1
+          }&filters[status]=1`,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch profiles");
+
+        const result = await response.json();
+
+        // ✅ Your API already returns an array of objects
+        setFetchedUserProfiles(result || []);
+      } catch (error) {
+        console.error("Error fetching user profiles:", error);
+        setFetchedUserProfiles([]);
+      } finally {
+        setLoadingProfiles(false);
+      }
+    };
+
+    fetchProfiles();
+  }, [sessionData]);
 
   const [formData, setFormData] = useState({
     personal: {
@@ -227,9 +261,7 @@ export default function AddUserModal({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-4xl overflow-y-auto max-h-[95vh]">
-        <DialogHeader>
-          <DialogTitle>Add New User</DialogTitle>
-        </DialogHeader>
+
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Personal Information */}
@@ -355,7 +387,7 @@ export default function AddUserModal({
                   </SelectTrigger>
                   <SelectContent>
                     {userJobroleLists.map((jobrole) => (
-                      <SelectItem key={jobrole.id} value={jobrole.id}>
+                      <SelectItem key={jobrole.id} value={String(jobrole.id)}>
                         {jobrole.name || jobrole.jobrole} {/* safe fallback */}
                       </SelectItem>
                     ))}
@@ -376,7 +408,7 @@ export default function AddUserModal({
                   </SelectTrigger>
                   <SelectContent>
                     {userLOR.map((level) => (
-                      <SelectItem key={level.id} value={level.id}>
+                      <SelectItem key={level.id} value={String(level.id)}>
                         {level.level}
                       </SelectItem>
                     ))}
@@ -416,17 +448,11 @@ export default function AddUserModal({
                     <SelectValue placeholder="Select Profile" />
                   </SelectTrigger>
                   <SelectContent>
-                    {userProfiles.length > 0 ? (
-                      userProfiles.map((profile) => (
-                        <SelectItem key={profile.id} value={profile.id}>
-                          {profile.name || profile.profile_name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem disabled value="no-profiles">
-                        No profiles found
+                    {fetchedUserProfiles.map((profile) => (
+                      <SelectItem key={profile.id} value={String(profile.id)}>
+                        {profile.profile_name || profile.name || profile.full_name || "Unnamed"}
                       </SelectItem>
-                    )}
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -581,8 +607,8 @@ export default function AddUserModal({
                   </SelectTrigger>
                   <SelectContent>
                     {userLists.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {`${user.first_name} ${user.last_name}`}
+                      <SelectItem key={user.id} value={String(user.id)}>
+                        {user.full_name || `${user.first_name} ${user.last_name}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
