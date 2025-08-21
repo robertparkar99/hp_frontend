@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// CreateAssessmentModal.jsx
+import React, { useEffect, useState } from 'react';
 import Icon from '../../../../../components/AppIcon';
 import { Button } from '../../../../../components/ui/button';
 import { Input } from '../../../../../components/ui/input';
@@ -7,11 +8,12 @@ import { Checkbox } from '../../../../../components/ui/checkbox';
 import SearchFilters from '../../../../../components/searchfileds/SearchFilters';
 
 const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
+  const [sessionData, setSessionData] = useState({});
   const [formData, setFormData] = useState({
     searchSection: '',
     searchStandard: '',
     subject: '',
-    searchByChapter: '',
+    searchByChapter: [],
     searchByTopic: '',
     searchByMappingType: '',
     searchByMappingValue: '',
@@ -31,19 +33,219 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
     totalMarks: ''
   });
 
+  const [searchResults, setSearchResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+        setSessionData({ url: APP_URL, token, sub_institute_id });
+      }
+    }
+  }, []);
+
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSearch = () => {
-    console.log('Searching with filters:', formData);
-    // Add your search logic here
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      let sub_institute_id = '';
+      try {
+        if (typeof window !== 'undefined') {
+          const userData = localStorage.getItem('userData');
+          if (userData) {
+            const parsedData = JSON.parse(userData);
+            sub_institute_id = parsedData.sub_institute_id || '';
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+
+      const params = new URLSearchParams();
+      params.append('type', 'API');
+      params.append('action', 'Search');
+      params.append('syear', new Date().getFullYear());
+
+      if (sub_institute_id) params.append('sub_institute_id', sub_institute_id);
+      if (formData.searchSection) params.append('grade', formData.searchSection);
+      if (formData.searchStandard) params.append('standard', formData.searchStandard);
+      if (formData.subject) params.append('subject', formData.subject);
+
+      if (formData.searchByChapter && formData.searchByChapter.length > 0) {
+        formData.searchByChapter.forEach((chapterId, index) => {
+          params.append(`search_chapter[${index}]`, chapterId);
+        });
+      }
+
+      if (formData.searchByTopic) params.append('search_topic', formData.searchByTopic);
+      if (formData.searchByMappingType) params.append('search_mapping_type', formData.searchByMappingType);
+      if (formData.searchByMappingValue) params.append('search_mapping_value', formData.searchByMappingValue);
+
+      const apiUrl = `${sessionData.url}/question_paper/search_question?${params.toString()}`;
+      console.log('API URL:', apiUrl);
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch questions: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('API response:', data);
+
+      // Add selected property to each question
+      const questionsWithSelection = Array.isArray(data?.questionData)
+        ? data.questionData.map(q => ({ ...q, selected: false }))
+        : [];
+
+      setSearchResults(questionsWithSelection);
+    } catch (error) {
+      console.error('Error searching questions:', error);
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSave = () => {
-    console.log('Saving Exam:', formData);
-    onSave(formData);
-    onClose();
+  const saveExamData = async (examData) => {
+    try {
+      setSaving(true);
+
+      // Get user data from localStorage
+      let user_id = '';
+      let sub_institute_id = '';
+      try {
+        if (typeof window !== 'undefined') {
+          const userData = localStorage.getItem('userData');
+          if (userData) {
+            const parsedData = JSON.parse(userData);
+            user_id = parsedData.user_id || '';
+            sub_institute_id = parsedData.sub_institute_id || '';
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+
+      // Prepare the data for the API
+      const payload = {
+        type: 'API',
+        action: 'Store',
+        user_id: user_id || '',
+        created_by: user_id || '',
+        sub_institute_id: sub_institute_id || '',
+        syear: new Date().getFullYear(),
+        grade: examData.searchSection || '',
+        standard: examData.searchStandard || '',
+        subject: examData.subject || '',
+        paper_name: examData.examName || '',
+        paper_desc: examData.examDescription || '',
+        attempt_allowed: examData.attemptAllowed || '1',
+        open_date: examData.openDate || new Date().toISOString().split('T')[0],
+        close_date: examData.closeDate || new Date().toISOString().split('T')[0],
+        timelimit_enable: examData.enableTimeLimit ? 1 : 0,
+        time_allowed: examData.allowedTime || '60',
+        exam_type: examData.examType || 'online',
+        shuffle_question: examData.shuffleQuestions ? 1 : 0,
+        show_feedback: examData.showFeedback ? 1 : 0,
+        show_hide: examData.show ? 1 : 0,
+        result_show_ans: examData.showRightAnswerAfterResult ? 1 : 0,
+        total_ques: examData.totalQuestions || '0',
+        total_marks: examData.totalMarks || '0',
+        question_ids: examData.selectedQuestions.map(q => q.question_id || q.id || ''),
+      };
+
+      console.log('Saving exam data:', payload);
+
+      const response = await fetch(`${sessionData.url}/lms/question_paper/storeData`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save exam: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Exam save response:', result);
+
+      if (result.status === 'success') {
+        alert(result.message || 'Exam created successfully!');
+        return true;
+      } else {
+        alert(result.message || 'Failed to create exam.');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error saving exam:', error);
+      alert('Failed to create exam. Please try again.');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    // required fields validation
+    const requiredFields = [
+      { key: "examName", label: "Exam Name / Paper Name" },
+      { key: "examDescription", label: "Exam Description / Paper Description" },
+      { key: "attemptAllowed", label: "Attempt Allowed" },
+      { key: "openDate", label: "Open Date" },
+      { key: "closeDate", label: "Close Date" },
+      { key: "allowedTime", label: "Allowed Time (mins)" },
+      { key: "totalQuestions", label: "Total Question" },
+      { key: "totalMarks", label: "Total Marks" },
+    ];
+
+    for (let field of requiredFields) {
+      if (!formData[field.key] || formData[field.key].toString().trim() === "") {
+        alert(`${field.label} is required.`);
+        return;
+      }
+    }
+
+    // check at least one question selected
+    const selectedQuestions = searchResults.filter(r => r.selected);
+    if (selectedQuestions.length === 0) {
+      alert("Please select at least one question.");
+      return;
+    }
+
+    // check if selected questions have valid answers
+    const invalidQuestions = selectedQuestions.filter(
+      q => !q.correct_answer ||
+        q.correct_answer.toString().trim() === "" ||
+        q.correct_answer.toString().trim() === "-" ||
+        q.correct_answer.toString().trim() === "N/A"
+    );
+
+    if (invalidQuestions.length > 0) {
+      alert("Please mapped answer first.");
+      return;
+    }
+
+    // Save the exam data
+    const success = await saveExamData({ ...formData, selectedQuestions });
+
+    if (success) {
+      console.log('Exam saved successfully');
+      if (onSave) onSave({ ...formData, selectedQuestions });
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
@@ -51,7 +253,6 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
   return (
     <div className="fixed inset-0 bg-black/50 z-modal flex items-center justify-center p-4">
       <div className="bg-background rounded-lg shadow-modal w-full max-w-5xl max-h-[90vh] overflow-hidden">
-        
         {/* Header */}
         <div className="p-6 border-b border-border flex justify-between items-center">
           <h2 className="text-xl font-semibold">Create New Exam</h2>
@@ -61,36 +262,60 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-150px)] space-y-6">
-          
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-150px)] space-y-6 ">
           {/* Search Filters */}
           <SearchFilters
             formData={formData}
             onFormChange={handleChange}
             onSearch={handleSearch}
+            showSearchButton={true}
           />
 
           {/* Exam Details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input label="Exam Name / Paper Name *" value={formData.examName} onChange={e => handleChange('examName', e.target.value)} />
-            <Input label="Exam Description / Paper Description *" value={formData.examDescription} onChange={e => handleChange('examDescription', e.target.value)} />
-            <Select label="Attempt Allowed *" value={formData.attemptAllowed} onChange={v => handleChange('attemptAllowed', v)} options={[]} />
+            <div>
+              <label className="block text-sm font-medium mb-1">Exam Name / Paper Name <span className="text-red-500">*</span></label>
+              <Input value={formData.examName} onChange={e => handleChange('examName', e.target.value)} />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Exam Description / Paper Description <span className="text-red-500">*</span></label>
+              <Input value={formData.examDescription} onChange={e => handleChange('examDescription', e.target.value)} />
+            </div>
+
+            <Select
+              label="Attempt Allowed *"
+              value={formData.attemptAllowed}
+              onChange={v => handleChange("attemptAllowed", v)}
+              options={[...Array(10)].map((_, i) => ({
+                value: String(i + 1),
+                label: String(i + 1),
+              }))}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input type="date" label="Open Date" value={formData.openDate} onChange={e => handleChange('openDate', e.target.value)} />
-            <Input type="date" label="Close Date" value={formData.closeDate} onChange={e => handleChange('closeDate', e.target.value)} />
+            <div>
+              <label className="block text-sm font-medium mb-1">Open Date <span className="text-red-500">*</span></label>
+              <Input type="date" value={formData.openDate} onChange={e => handleChange("openDate", e.target.value)} />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Close Date <span className="text-red-500">*</span></label>
+              <Input type="date" value={formData.closeDate} onChange={e => handleChange("closeDate", e.target.value)} />
+            </div>
+
             <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={formData.enableTimeLimit}
-                onCheckedChange={(checked) => handleChange('enableTimeLimit', checked)}
-              />
+              <Checkbox checked={formData.enableTimeLimit} onCheckedChange={checked => handleChange('enableTimeLimit', checked)} />
               <span>Enable Time Limit</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input type="number" label="Allowed Time (mins) *" value={formData.allowedTime} onChange={e => handleChange('allowedTime', e.target.value)} />
+            <div>
+              <label className="block text-sm font-medium mb-1">Allowed Time (mins) <span className="text-red-500">*</span></label>
+              <Input type="number" value={formData.allowedTime} onChange={e => handleChange("allowedTime", e.target.value)} />
+            </div>
             <div>
               <label className="block mb-1">Exam Type</label>
               <div className="flex items-center space-x-4">
@@ -107,48 +332,112 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
           {/* Checkboxes */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={formData.shuffleQuestions}
-                onCheckedChange={(checked) => handleChange('shuffleQuestions', checked)}
-              />
+              <Checkbox checked={formData.shuffleQuestions} onCheckedChange={checked => handleChange('shuffleQuestions', checked)} />
               <span>Shuffle Question</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={formData.showFeedback}
-                onCheckedChange={(checked) => handleChange('showFeedback', checked)}
-              />
+              <Checkbox checked={formData.showFeedback} onCheckedChange={checked => handleChange('showFeedback', checked)} />
               <span>Show Feedback</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={formData.show}
-                onCheckedChange={(checked) => handleChange('show', checked)}
-              />
+              <Checkbox checked={formData.show} onCheckedChange={checked => handleChange('show', checked)} />
               <span>Show</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={formData.showRightAnswerAfterResult}
-                onCheckedChange={(checked) => handleChange('showRightAnswerAfterResult', checked)}
-              />
+              <Checkbox checked={formData.showRightAnswerAfterResult} onCheckedChange={checked => handleChange('showRightAnswerAfterResult', checked)} />
               <span>Show Right Answer after Result</span>
             </div>
           </div>
 
           {/* Totals */}
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Total Question" value={formData.totalQuestions} onChange={e => handleChange('totalQuestions', e.target.value)} />
-            <Input label="Total Marks" value={formData.totalMarks} onChange={e => handleChange('totalMarks', e.target.value)} />
+            <div>
+              <label className="block text-sm font-medium mb-1">Total Question <span className='text-red-500'>*</span></label>
+              <Input value={formData.totalQuestions} onChange={e => handleChange('totalQuestions', e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Total Marks <span className='text-red-500'>*</span></label>
+              <Input value={formData.totalMarks} onChange={e => handleChange('totalMarks', e.target.value)} />
+            </div>
           </div>
+
+          {/* Search Results Table */}
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : searchResults.length > 0 ? (
+            <div className="mt-6">
+              <h3 className="text-lg font-medium mb-4">Search Results</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-border">
+                  <thead>
+                    <tr className="bg-muted">
+                      <th className="border border-border p-2 text-center w-12 whitespace-nowrap">
+                        <Checkbox
+                          checked={searchResults.length > 0 && searchResults.every(r => r.selected)}
+                          onCheckedChange={checked => {
+                            setSearchResults(prev => prev.map(r => ({ ...r, selected: !!checked })));
+                          }}
+                        />
+                      </th>
+                      <th className="border border-border p-2 text-left whitespace-normal break-words w-[300px]">Question</th>
+                      <th className="border border-border p-2 text-left whitespace-nowrap">Chapter</th>
+                      <th className="border border-border p-2 text-left whitespace-nowrap">Chapter No</th>
+                      <th className="border border-border p-2 text-left whitespace-nowrap">Topic</th>
+                      <th className="border border-border p-2 text-left whitespace-nowrap">Question Type</th>
+                      <th className="border border-border p-2 text-left whitespace-nowrap">Correct Answer</th>
+                      <th className="border border-border p-2 text-left whitespace-nowrap">Marks</th>
+                      <th className="border border-border p-2 text-left whitespace-nowrap">Mappings</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {searchResults.map((result, index) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
+                        <td className="border border-border p-2 text-center whitespace-nowrap">
+                          <Checkbox
+                            checked={!!result.selected}
+                            onCheckedChange={checked => {
+                              setSearchResults(prev =>
+                                prev.map((r, i) => (i === index ? { ...r, selected: !!checked } : r))
+                              );
+                            }}
+                          />
+                        </td>
+                        <td className="border border-border p-2 whitespace-normal break-words w-[300px]">{result.question_title || 'N/A'}</td>
+                        <td className="border border-border p-2 whitespace-nowrap">{result.chapter_name || 'N/A'}</td>
+                        <td className="border border-border p-2 whitespace-nowrap">{result.sort_order || index + 1}</td>
+                        <td className="border border-border p-2 whitespace-nowrap">{result.topic_name || 'N/A'}</td>
+                        <td className="border border-border p-2 whitespace-nowrap">{result.question_type || 'N/A'}</td>
+                        <td className="border border-border p-2 whitespace-nowrap">
+                          {result.correct_answer || 'N/A'}
+                          {result.selected && (
+                            !result.correct_answer ||
+                            result.correct_answer.toString().trim() === "" ||
+                            result.correct_answer.toString().trim() === "-" ||
+                            result.correct_answer.toString().trim() === "N/A"
+                          ) && (
+                              <span className="text-red-500 ml-1">*</span>
+                            )}
+                        </td>
+                        <td className="border border-border p-2 whitespace-nowrap">{result.points || 'N/A'}</td>
+                        <td className="border border-border p-2 whitespace-nowrap">{result.mapping_type || 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-border flex justify-end space-x-3">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave}>
-            <Icon name="Save" size={16} className="mr-2" />
-            Save
+        <div className="p-6 border-t border-border flex justify-end space-x-3 mt-[-10px]">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button className='bg-black' onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save Exam"}
           </Button>
         </div>
       </div>
