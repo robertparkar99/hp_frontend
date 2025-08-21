@@ -188,7 +188,7 @@ export default function EditProfilePage() {
             </div>
 
             {/* Tabs */}
-            {/* <div
+            <div
               className="
       flex 
       overflow-x-auto 
@@ -226,45 +226,7 @@ export default function EditProfilePage() {
                   {tab.label}
                 </Button>
               ))}
-            </div> */}
-            <div
-  className="
-    flex 
-    overflow-x-auto 
-    lg:overflow-visible 
-    px-1 py-1 
-    rounded-full 
-    border-2 border-blue-100 
-    bg-gradient-to-r from-white via-white to-teal-100 
-    shadow-lg 
-    w-full
-    justify-start
-    lg:justify-center
-    gap-2
-  "
->
-  {tabs.map((tab) => (
-    <Button
-      key={tab.id}
-      variant="ghost"
-      onClick={() => setActiveTab(tab.id)}
-      className={cn(
-        "rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 flex items-center px-2 sm:px-3 py-1 sm:py-1.5 min-w-fit",
-        activeTab === tab.id
-          ? "bg-emerald-500 text-white [&>svg]:text-white shadow-md hover:bg-emerald-500"
-          : "hover:bg-slate-50"
-      )}
-    >
-      {React.cloneElement(tab.icon, {
-        className: cn(
-          "mr-1 text-xs sm:text-base",
-          activeTab === tab.id ? "text-white" : "text-slate-700"
-        ),
-      })}
-      <span className="truncate">{tab.label}</span>
-    </Button>
-  ))}
-</div>
+            </div>
           </div>
 
           {/* Controls row under tabs, aligned right */}

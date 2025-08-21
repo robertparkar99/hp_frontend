@@ -348,7 +348,6 @@ const SystemConfiguration = () => {
       selector: (row) => row.srno,
       width: "100px",
       sortable: true,
-      wrap: true,
     },
     {
       name: (
@@ -363,8 +362,7 @@ const SystemConfiguration = () => {
         </div>
       ),
       selector: (row) => row.name,
-      sortable: true,
-      wrap: true,
+      sortable: true
     },
     {
       name: (
@@ -379,8 +377,7 @@ const SystemConfiguration = () => {
         </div>
       ),
       selector: (row) => row.description,
-      sortable: true,
-      wrap: true,
+      sortable: true
     },
     {
       name: (
@@ -412,7 +409,6 @@ const SystemConfiguration = () => {
       ),
       selector: (row) => row.assigned_to_name || "",
       sortable: true,
-      wrap: true,
     },
     {
       name: (
@@ -480,7 +476,6 @@ const SystemConfiguration = () => {
       ),
       ignoreRowClick: true,
       button: true,
-      wrap: true,
     },
   ];
 
