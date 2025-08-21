@@ -1,4 +1,4 @@
-// components/filters/SearchFilters.jsx
+// SearchFilters.jsx
 import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -39,7 +39,7 @@ const SearchFilters = ({
     searchSection: '',
     searchStandard: '',
     subject: '',
-    searchByChapter: '',
+    searchByChapter: [],
     searchByTopic: '',
     searchByMappingType: '',
     searchByMappingValue: ''
@@ -57,6 +57,7 @@ const SearchFilters = ({
   const [loadingChapters, setLoadingChapters] = useState(false);
 
   const handleChange = (field, value) => {
+    // if multiple, value may already be an array from <Select>
     onFormChange(field, value);
   };
 
@@ -354,6 +355,7 @@ const SearchFilters = ({
           value={mergedForm.searchByChapter}
           onChange={(val) => handleChange('searchByChapter', val)}
           options={chapters}
+          multiple
           disabled={loadingChapters}
         />
       </div>
