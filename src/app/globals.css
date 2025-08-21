@@ -62,6 +62,9 @@ body {
 {
   color :#f59e0b;
 }
+.text-danger{
+  color:red;
+}
 .bg-success{
   background : rgba(16, 185, 129, 1);
 }

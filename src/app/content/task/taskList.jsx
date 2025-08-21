@@ -71,7 +71,7 @@ const TaskAssignment = () => {
             </div>
 
             {/* View Tabs */}
-            <div className="flex space-x-1 bg-muted/30 p-1 rounded-lg w-fit">
+            <div className="flex space-x-1 bg-[#EFF4FF] p-1 rounded-lg w-fit">
               {views.map((view) => (
                 <button
                   key={view.id}
@@ -79,7 +79,7 @@ const TaskAssignment = () => {
                   className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md transition-smooth ${
                     activeView === view.id
                       ? 'bg-card text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-[##EAF7FF]'
                   }`}
                 >
                   <Icon name={view.icon} size={16} />
