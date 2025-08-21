@@ -1,7 +1,6 @@
+"use client";
 
-'use client';
 import React, { useState, useEffect } from "react";
-
 import {
   Dialog,
   DialogContent,
@@ -31,6 +30,41 @@ export default function AddUserModal({
   userProfiles: initialUserProfiles = [],
   userLists,
 }) {
+
+  const [fetchedUserProfiles, setFetchedUserProfiles] = useState(initialUserProfiles);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+
+  useEffect(() => {
+    if (!sessionData?.APP_URL) return;
+
+    const fetchProfiles = async () => {
+      setLoadingProfiles(true);
+      try {
+        const response = await fetch(
+          `${sessionData.APP_URL}/table_data?table=tbluserprofilemaster&filters[sub_institute_id]=${sessionData.sub_institute_id || 1
+          }&filters[status]=1`,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch profiles");
+
+        const result = await response.json();
+
+        // ✅ Your API already returns an array of objects
+        setFetchedUserProfiles(result || []);
+      } catch (error) {
+        console.error("Error fetching user profiles:", error);
+        setFetchedUserProfiles([]);
+      } finally {
+        setLoadingProfiles(false);
+      }
+    };
+
+    fetchProfiles();
+  }, [sessionData]);
 
   const [formData, setFormData] = useState({
     personal: {
