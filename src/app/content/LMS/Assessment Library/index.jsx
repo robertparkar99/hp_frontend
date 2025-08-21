@@ -262,7 +262,7 @@ const AssessmentLibrary = () => {
 
             <Button 
               onClick={() => {
-                console.log("Opening Create Assessment Modal");
+                //console.log("Opening Create Assessment Modal");
                 setShowCreateModal(true);
               }}
               className="flex items-center gap-2"
