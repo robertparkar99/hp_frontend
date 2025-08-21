@@ -393,6 +393,7 @@ export function TaskActivityStream() {
                 {recentTasks.length > 0 ? (
                   recentTasks.map(task => (
                     <TaskCard
+                      sessionData={null} // Add missing required prop
                       key={task.id}
                       task={task}
                       onStatusUpdate={handleStatusUpdate}
