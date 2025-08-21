@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -218,30 +217,6 @@ const SystemConfiguration = () => {
   };
 
   // ✅ Delete record
-  // const handleDeleteClick = async (id) => {
-  //   if (!id) return;
-  //   if (window.confirm("Are you sure you want to delete this record?")) {
-
-  //   try {
-  //     const res = await fetch(
-  //       `${sessionData.url}/settings/discliplinary_management/${id}`,
-  //       {
-  //         method: "DELETE",
-  //         headers: {
-  //           Authorization: `Bearer ${sessionData.token}`,
-  //         },
-  //       }
-  //     );
-
-  //     const data = await res.json();
-  //     alert(data.message);
-  //     fetchComplianceData();
-  //   } catch (error) {
-  //     console.error("Error deleting data:", error);
-  //     alert("Error deleting data");
-  //   }
-  // }
-  // };
   const handleDeleteClick = async (id) => {
     if (!id) return;
 
@@ -307,7 +282,6 @@ const SystemConfiguration = () => {
       const payload = {
         type: "API",
         token: sessionData.token,
-        // formName: "incident_report",
         sub_institute_id: sessionData.sub_institute_id,
         department_id: editFormData.departmentId,
         employee_id: editFormData.employeeId,
@@ -348,7 +322,6 @@ const SystemConfiguration = () => {
   };
 
   const handleEditChange = (field, value) => {
-    // alert(field+'='+value);
     setEditFormData((prev) => ({ ...prev, [field]: value }));
 
     // If department changes, fetch employees for that department
@@ -405,9 +378,7 @@ const SystemConfiguration = () => {
       const payload = {
         type: 'API',
         token: sessionData.token,
-        // formName: 'incident_report',
         user_id: sessionData.user_id,
-        // syear: sessionData.syear,
         sub_institute_id: sessionData.sub_institute_id,
         department_id: formData.departmentId,
         employee_id: formData.employeeId,
@@ -623,7 +594,7 @@ const SystemConfiguration = () => {
           />
         </div>
       ),
-      selector: row => row.reported_by || row.user_id,
+      selector: row => row.reported_by_name || row.user_id,
       sortable: true
     },
     {
@@ -641,21 +612,21 @@ const SystemConfiguration = () => {
       selector: row => row.date_of_report || row.created_date,
       sortable: true
     },
-    {
-      name: (
-        <div>
-          <div>Sub Institute ID</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("sub_institute_id", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: row => row.sub_institute_id,
-      sortable: true
-    },
+    // {
+    //   name: (
+    //     <div>
+    //       <div>Sub Institute ID</div>
+    //       <input
+    //         type="text"
+    //         placeholder="Search..."
+    //         onChange={(e) => handleColumnFilter("sub_institute_id", e.target.value)}
+    //         style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+    //       />
+    //     </div>
+    //   ),
+    //   selector: row => row.sub_institute_id,
+    //   sortable: true
+    // },
     {
       name: "Actions",
       cell: (row) => (
@@ -773,7 +744,7 @@ const SystemConfiguration = () => {
             onChange={(e) => handleChange('misconductType', e.target.value)}
             className="w-full border border-gray-300 rounded-md px-3 py-2"
             required
-          >
+            >
             <option value="">Select Type</option>
             <option value="Late Arrival">Late Arrival</option>
             <option value="Absenteeism">Absenteeism</option>
@@ -854,56 +825,54 @@ const SystemConfiguration = () => {
       </form>
 
       {/* Data Table */}
-      {filteredData.length > 0 && (
-        <div className="mt-2">
-          <div className="flex justify-between items-center mb-4 py-4">
-            <div className="space-x-4">
-              {/* Pagination controls if needed */}
-            </div>
-            <div className="flex space-x-2">
-              <PrintButton
-                data={filteredData}
-                title="Incident Reports"
-                excludedFields={["id"]}
-                buttonText={
-                  <>
-                    <span className="mdi mdi-printer-outline"></span>
-                  </>
-                }
-              />
-              <ExcelExportButton
-                sheets={[{ data: filteredData, sheetName: "Incident Reports" }]}
-                fileName="incident_reports"
-                buttonText={
-                  <>
-                    <span className="mdi mdi-file-excel"></span>
-                  </>
-                }
-              />
-              <PdfExportButton
-                data={filteredData}
-                fileName="incident_reports"
-                buttonText={
-                  <>
-                    <span className="mdi mdi-file-pdf-box"></span>
-                  </>
-                }
-              />
-            </div>
+      <div className="mt-2">
+        <div className="flex justify-between items-center mb-4 py-4">
+          <div className="space-x-4">
+            {/* Pagination controls if needed */}
           </div>
-
-          <DataTable
-            columns={columns}
-            data={filteredData.length > 0 ? filteredData : [{}]}
-            customStyles={customStyles}
-            pagination
-            highlightOnHover
-            responsive
-            noDataComponent={<div className="p-4 text-center">No data available</div>}
-            persistTableHead
-          />
+          <div className="flex space-x-2">
+            <PrintButton
+              data={filteredData.length > 0 ? filteredData : dataList}
+              title="Incident Reports"
+              excludedFields={["id"]}
+              buttonText={
+                <>
+                  <span className="mdi mdi-printer-outline"></span>
+                </>
+              }
+            />
+            <ExcelExportButton
+              sheets={[{ data: filteredData.length > 0 ? filteredData : dataList, sheetName: "Incident Reports" }]}
+              fileName="incident_reports"
+              buttonText={
+                <>
+                  <span className="mdi mdi-file-excel"></span>
+                </>
+              }
+            />
+            <PdfExportButton
+              data={filteredData.length > 0 ? filteredData : dataList}
+              fileName="incident_reports"
+              buttonText={
+                <>
+                  <span className="mdi mdi-file-pdf-box"></span>
+                </>
+              }
+            />
+          </div>
         </div>
-      )}
+
+        <DataTable
+          columns={columns}
+          data={filteredData.length > 0 ? filteredData : dataList}
+          customStyles={customStyles}
+          pagination
+          highlightOnHover
+          responsive
+          noDataComponent={<div className="p-4 text-center">No data available</div>}
+          persistTableHead
+        />
+      </div>
 
       {/* Edit Dialog - Now matches the original form structure */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
@@ -1018,11 +987,6 @@ const SystemConfiguration = () => {
                   ))}
                 </select>
               </div>
-
-
-
-
-
 
               {/* Action Taken */}
               <div>
