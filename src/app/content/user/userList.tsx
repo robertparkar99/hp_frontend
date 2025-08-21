@@ -119,12 +119,9 @@ const UserList: React.FC<UserListProps> = ({ employees }) => {
         }}
         userJobroleLists={userJobroleLists}
         userLOR={userLOR}
-        //userProfiles={userProfiles}
+        userProfiles={userProfiles}
         userLists={employeesLists}
       />
-
-
-      
 
       <div className="flex justify-between items-center p-4">
         <div className="flex space-x-2 bg-[#e5f5ff] px-1 rounded-lg shadow-lg shadow-black-900/50">

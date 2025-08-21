@@ -4,7 +4,6 @@ import OrganizationInfoForm from './components/OrganizationInfoForm';
 import DepartmentStructure from './components/DepartmentStructure';
 import SystemConfiguration from './components/SystemConfiguration';
 import AuditTrail from './components/AuditTrail';
-import DisciplinaryManagement from './components/DisciplinaryManagement'
 
 const OrganizationProfileManagement = () => {
   const [activeTab, setActiveTab] = useState('info');
@@ -15,7 +14,7 @@ const OrganizationProfileManagement = () => {
     { id: 'structure', label: 'Department Structure', icon: 'Users' },
     { id: 'config', label: 'Compliance Management', icon: 'Settings' },
     // { id: 'audit', label: 'Organization Handbook', icon: 'FileText' },
-    { id: 'disciplinary', label: 'Disciplinary Management', icon: 'FileText' }
+    // { id: 'disciplinary', label: 'Disciplinary Management', icon: 'FileText' }
   ];
 
   const handleSave = async (data) => {
@@ -43,8 +42,6 @@ const OrganizationProfileManagement = () => {
         return <SystemConfiguration onSave={handleSave} loading={loading} />;
       case 'audit':
         return <AuditTrail />;
-        case 'disciplinary':
-          return <DisciplinaryManagement onSave={handleSave} loading={loading}/>
       default:
         return <OrganizationInfoForm onSave={handleSave} loading={loading} />;
     }
