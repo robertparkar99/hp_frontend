@@ -1,8 +1,7 @@
 'use client';
 import { React, useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Popover } from '@headlessui/react';
 import { useMediaQuery } from 'react-responsive';
+import { Popover } from '@headlessui/react';
 import AssessmentCard from './components/AssessmentCard';
 import FilterPanel from './components/FilterPanel';
 import AssessmentPreviewModal from './components/AssessmentPreviewModal';
@@ -12,9 +11,9 @@ import DeadlineNotification from './components/DeadlineNotification';
 import Icon from '../../../../components/AppIcon';
 import { Button } from '../../../../components/ui/button';
 import CreateAssessmentModal from './components/CreateAssessmentModal';
+import SkillAssessment from '@/components/skill-assessment'; // ✅ Import your component
 
 const AssessmentLibrary = () => {
-  const router = useRouter();
   const isDesktop = useMediaQuery({ minWidth: 1024 });
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -25,6 +24,8 @@ const AssessmentLibrary = () => {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [dismissedNotifications, setDismissedNotifications] = useState(new Set());
 
+  const [activeAssessment, setActiveAssessment] = useState(null); // ✅ new state
+
   const [filters, setFilters] = useState({
     category: 'all',
     difficulty: 'all',
@@ -33,10 +34,6 @@ const AssessmentLibrary = () => {
     showUrgentOnly: false,
     showAvailableOnly: false,
   });
-
-  useEffect(() => {
-    console.log("Create Assessment Modal State:", showCreateModal);
-  }, [showCreateModal]);
 
   const mockAssessments = [
     {
@@ -159,39 +156,22 @@ const AssessmentLibrary = () => {
     let filtered = mockAssessments.filter((assessment) => {
       const q = searchQuery.toLowerCase();
       if (searchQuery && !assessment.title.toLowerCase().includes(q)) return false;
-      
-      // Safely handle category filter
-      if (filters.category !== 'all') {
-        const assessmentCategory = assessment.category?.toLowerCase() || '';
-        if (assessmentCategory !== filters.category) return false;
-      }
-      
-      // Safely handle difficulty filter
-      if (filters.difficulty !== 'all') {
-        const assessmentDifficulty = assessment.difficulty?.toLowerCase() || '';
-        if (assessmentDifficulty !== filters.difficulty) return false;
-      }
-      
-      // Safely handle status filter
-      if (filters.status !== 'all') {
-        const assessmentStatus = assessment.status?.toLowerCase() || '';
-        if (assessmentStatus !== filters.status) return false;
-      }
-      
+
+      if (filters.category !== 'all' && assessment.category?.toLowerCase() !== filters.category) return false;
+      if (filters.difficulty !== 'all' && assessment.difficulty?.toLowerCase() !== filters.difficulty) return false;
+      if (filters.status !== 'all' && assessment.status?.toLowerCase() !== filters.status) return false;
+
       return true;
     });
 
     filtered.sort((a, b) => {
       if (filters.sortBy === 'deadline') {
-        const dateA = a.deadline ? new Date(a.deadline) : new Date(0);
-        const dateB = b.deadline ? new Date(b.deadline) : new Date(0);
-        return dateA - dateB;
+        return new Date(a.deadline) - new Date(b.deadline);
       }
       if (filters.sortBy === 'difficulty') {
         const order = { easy: 1, medium: 2, hard: 3 };
-        const aDiff = a.difficulty?.toLowerCase() || 'medium';
-        const bDiff = b.difficulty?.toLowerCase() || 'medium';
-        return order[aDiff] - order[bDiff];
+        return order[a.difficulty?.toLowerCase() || 'medium'] -
+          order[b.difficulty?.toLowerCase() || 'medium'];
       }
       return 0;
     });
@@ -217,8 +197,9 @@ const AssessmentLibrary = () => {
     });
   }, [dismissedNotifications]);
 
+  // ✅ Instead of router.push, just swap UI
   const handleStartAssessment = (assessment) => {
-    router.push('/quiz-attempt', { state: { assessment } });
+    setActiveAssessment(assessment);
   };
 
   const handleViewDetails = (assessment) => {
@@ -231,24 +212,12 @@ const AssessmentLibrary = () => {
     setShowCreateModal(false);
   };
 
+  if (activeAssessment) {
+    return <SkillAssessment assessment={activeAssessment} />; // ✅ Direct render
+  }
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background relative">
-      {/* Mobile Sidebar Drawer */}
-      {!isDesktop && isSidebarOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black bg-opacity-40" onClick={() => setIsSidebarOpen(false)} />
-          <div className="relative w-64 bg-white dark:bg-background h-full shadow-lg z-50 p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Menu</h2>
-              <button onClick={() => setIsSidebarOpen(false)} className="text-muted-foreground text-xl">
-                ×
-              </button>
-            </div>
-            {/* Sidebar content would go here */}
-          </div>
-        </div>
-      )}
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <main className="flex-1 min-h-screen pt-10 px-4 sm:px-6 lg:px-8">
@@ -261,10 +230,7 @@ const AssessmentLibrary = () => {
             </div>
 
             <Button 
-              onClick={() => {
-                //console.log("Opening Create Assessment Modal");
-                setShowCreateModal(true);
-              }}
+              onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2"
             >
               <Icon name="Plus" size={16} />
@@ -349,17 +315,6 @@ const AssessmentLibrary = () => {
           )}
         </main>
       </div>
-
-      {/* Mobile Filter Panel */}
-      {!isDesktop && (
-        <FilterPanel
-          filters={filters}
-          onFiltersChange={setFilters}
-          isOpen={isFilterPanelOpen}
-          onClose={() => setIsFilterPanelOpen(false)}
-          isMobile={true}
-        />
-      )}
 
       {/* Preview Modal */}
       <AssessmentPreviewModal
