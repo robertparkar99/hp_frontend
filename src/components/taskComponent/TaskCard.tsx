@@ -263,6 +263,7 @@ export function TaskCard({ task,sessionData, onStatusUpdate, employees }: TaskCa
             }
           }} 
           className="flex-1"
+          disabled={!task.id}
         >
           <Send className="w-4 h-4 mr-2" />
           Send Reply
