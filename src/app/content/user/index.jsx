@@ -29,6 +29,7 @@ const EmployeeDirectory = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [error, setError] = useState(null);
   const [userJobroleLists, setUserJobroleLists] = useState([]);
+  const [userDepartmentLists, setUserDepartmentLists] = useState([]);
   const [userLists, setUserLists] = useState([]);
   const [userLOR, setUserLOR] = useState([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -68,6 +69,7 @@ useEffect(() => {
       setUserJobroleLists(data.jobroleList || []);
       setUserLOR(data.levelOfResponsibility || data.levelOfResponsbility || []);
       setUserLists(data.data || []);
+      setUserDepartmentLists(data.departments || []);
       // console.log('User Job Role Lists:', data.jobroleList || []);
 
     } catch (err) {
@@ -334,6 +336,7 @@ useEffect(() => {
                 sessionData={sessionData}
                 userJobroleLists={userJobroleLists}
                 userLOR={userLOR}
+                userDepartmentLists={userDepartmentLists}
                 userLists={userLists}
                 selectedCount={selectedEmployees.length}
                 onBulkAssignTask={handleBulkAssignTask}
@@ -436,6 +439,7 @@ useEffect(() => {
                 userJobroleLists={userJobroleLists}
                 userLOR={userLOR}
                 userLists={userLists}
+                userDepartmentLists={userDepartmentLists}
                 selectedCount={selectedEmployees.length}
                 onBulkAssignTask={handleBulkAssignTask}
                 onBulkExport={handleBulkExport}

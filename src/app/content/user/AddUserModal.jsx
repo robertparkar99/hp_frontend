@@ -26,6 +26,7 @@ export default function AddUserModal({
   setIsOpen,
   sessionData,
   userJobroleLists,
+  userDepartmentLists,
   userLOR,
   userProfiles: initialUserProfiles = [],
   userLists,
@@ -76,6 +77,7 @@ export default function AddUserModal({
       plain_password: "",
       birthdate: "",
       mobile: "",
+      department: "",
       jobrole: "",
       responsibility_level: "",
       gender: "M",
@@ -180,6 +182,7 @@ export default function AddUserModal({
       formDataToSend.append("password", formData.personal.plain_password);
       formDataToSend.append("birthdate", formData.personal.birthdate);
       formDataToSend.append("mobile", formData.personal.mobile);
+      formDataToSend.append("department_id", formData.personal.department);
       formDataToSend.append("allocated_standards", formData.personal.jobrole);
       formDataToSend.append("subject_ids", formData.personal.responsibility_level);
       formDataToSend.append("gender", formData.personal.gender);
@@ -291,7 +294,7 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>First Name *</Label>
+                <Label>First Name <span className="text-red-500">*</span></Label>
                 <Input
                   placeholder="Enter First Name"
                   value={formData.personal.first_name}
@@ -314,7 +317,7 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>Last Name *</Label>
+                <Label>Last Name <span className="text-red-500">*</span></Label>
                 <Input
                   placeholder="Enter Last Name"
                   value={formData.personal.last_name}
@@ -326,7 +329,7 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>Email *</Label>
+                <Label>Email <span className="text-red-500">*</span></Label>
                 <Input
                   type="email"
                   placeholder="example@domain.com"
@@ -339,7 +342,7 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>Password *</Label>
+                <Label>Password <span className="text-red-500">*</span></Label>
                 <Input
                   type="password"
                   placeholder="Password"
@@ -363,7 +366,7 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>Mobile *</Label>
+                <Label>Mobile <span className="text-red-500">*</span></Label>
                 <Input
                   placeholder="Mobile Number"
                   value={formData.personal.mobile}
@@ -372,6 +375,26 @@ export default function AddUserModal({
                   }
                   required
                 />
+              </div>
+              <div>
+                <Label>Department <span className="text-red-500">*</span></Label>
+                <Select
+                  value={formData.personal.department}
+                  onValueChange={(val) =>
+                    handleInputChange("personal", "department", val)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userDepartmentLists.map((department) => (
+                      <SelectItem key={department.id} value={String(department.id)}>
+                        {department.name || department.department} {/* safe fallback */}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -486,7 +509,7 @@ export default function AddUserModal({
                 </Select>
               </div>
 
-              <div className="col-span-2">
+              <div>
                 <Label>User Image</Label>
                 <Input
                   type="file"

@@ -21,6 +21,7 @@ const StatsSidebar = ({
   userLOR = [],
   userProfiles = [],
   userLists = [],
+  userDepartmentLists = [], // Add this prop for departments
 }) => {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   
@@ -34,6 +35,7 @@ const StatsSidebar = ({
           sessionData={sessionData}
           userJobroleLists={userJobroleLists} // Pass the prop here
           userLOR={userLOR}
+          userDepartmentLists={userDepartmentLists} // Pass the prop here
           userProfiles={userProfiles}
           userLists={userLists}
         />
