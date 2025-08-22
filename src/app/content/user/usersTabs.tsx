@@ -38,6 +38,7 @@ export default function EditProfilePage() {
   const [userLOR, SetUserLOR] = useState<any[]>([]);
   const [SelLORs, setSelLOR] = useState<any[]>([]);
   const [userProfiles, SetUserProfiles] = useState<any[]>([]);
+  const [userdepartment, setUserdepartment] = useState<any[]>([]);
   const [userJobroleTask, setUserJobroleTask] = useState<any[]>([]);
   const [documentLists, setDocumentLists] = useState<any[]>([]);
   const [userLists, setUserLists] = useState<any[]>([]);
@@ -98,6 +99,7 @@ export default function EditProfilePage() {
       setLoading(false);
       SetUserJobroleSkills(data.jobroleSkills || []);
       setUserJobroleTask(data.jobroleTasks || []);
+      setUserdepartment(data.departments || []);
       SetUserJobroleLists(data.jobroleList || []);
       SetUserLOR(data.levelOfResponsbility || []);
       setSelLOR(data.userLevelOfResponsibility || []);
@@ -304,6 +306,7 @@ export default function EditProfilePage() {
             {activeTab === "personal-info" && (
               <PersonalDetails
                 userDetails={userDetails}
+                userdepartment={userdepartment}
                 userJobroleLists={userJobroleLists}
                 userLOR={userLOR}
                 userProfiles={userProfiles}
