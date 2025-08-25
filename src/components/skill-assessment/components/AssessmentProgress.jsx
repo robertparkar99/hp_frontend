@@ -1,22 +1,28 @@
-import React from 'react';
-import Icon from '../../../components/AppIcon';
-import ProgressIndicator from '../../../components/ui/ProgressIndicator';
+import React from "react";
+import Icon from "../../../components/AppIcon";
+import ProgressIndicator from "../../../components/ui/ProgressIndicator";
 
-const AssessmentProgress = ({ 
-  currentSection, 
-  totalSections, 
-  completedQuestions, 
+const AssessmentProgress = ({
+  currentQuestionIndex,
   totalQuestions,
-  sections,
-  onSectionClick 
+  completedQuestions,
+  onQuestionClick,
+  answers = {},     // ✅ safe default to avoid undefined
+  questions = [],   // ✅ safe default to avoid undefined
+  totalMarks,
+  totalTime,
+  timeLeft
 }) => {
-  const overallProgress = (completedQuestions / totalQuestions) * 100;
-  
+  const overallProgress =
+    totalQuestions > 0 ? (completedQuestions / totalQuestions) * 100 : 0;
+
   return (
-    <div className="bg-card border border-border rounded-lg p-6 sticky top-24">
+    <div className="bg-card border border-border rounded-lg p-6 sticky">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-foreground mb-2">Assessment Progress</h3>
-        <ProgressIndicator 
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          Assessment Progress
+        </h3>
+        <ProgressIndicator
           progress={overallProgress}
           size="lg"
           variant="circular"
@@ -27,63 +33,95 @@ const AssessmentProgress = ({
       </div>
 
       <div className="space-y-4">
+        {/* Summary */}
         <div className="text-sm text-muted-foreground">
           <div className="flex justify-between mb-1">
             <span>Questions Completed</span>
-            <span>{completedQuestions}/{totalQuestions}</span>
+            <span>
+              {completedQuestions}/{totalQuestions}
+            </span>
           </div>
           <div className="flex justify-between">
-            <span>Current Section</span>
-            <span>{currentSection}/{totalSections}</span>
+            <span>Current Question</span>
+            <span>{currentQuestionIndex + 1}</span>
           </div>
         </div>
 
+        {/* ✅ Marks + Timer Info */}
+        <div className="border-t border-border pt-4 text-sm text-muted-foreground">
+          <p>
+            Total Marks:{" "}
+            <span className="font-medium text-foreground">{totalMarks}</span>
+          </p>
+          <p>
+            Total Time:{" "}
+            <span className="font-medium text-foreground">{totalTime} mins</span>
+          </p>
+          <p>
+            Time Left:{" "}
+            <span className="font-semibold text-destructive">{timeLeft}</span>
+          </p>
+        </div>
+
+        {/* Questions List */}
         <div className="border-t border-border pt-4">
-          <h4 className="text-sm font-medium text-foreground mb-3">Sections</h4>
+          <h4 className="text-sm font-medium text-foreground mb-3">
+            Questions
+          </h4>
           <div className="space-y-2">
-            {sections.map((section, index) => (
-              <button
-                key={section.id}
-                onClick={() => onSectionClick(section.id)}
-                className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-smooth ${
-                  index + 1 === currentSection
-                    ? 'bg-primary/10 border border-primary/20'
-                    : section.completed
-                    ? 'bg-success/10 border border-success/20 hover:bg-success/15' :'bg-muted hover:bg-muted/80'
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                    section.completed
-                      ? 'bg-success text-white'
-                      : index + 1 === currentSection
-                      ? 'bg-primary text-white' :'bg-muted-foreground/20 text-muted-foreground'
-                  }`}>
-                    {section.completed ? (
-                      <Icon name="Check" size={12} />
-                    ) : (
-                      index + 1
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{section.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {section.completedQuestions}/{section.totalQuestions} questions
-                    </p>
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {Math.round((section.completedQuestions / section.totalQuestions) * 100)}%
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+            {Array.isArray(questions) && questions.length > 0 ? (
+              questions.map((q, index) => {
+                const isAnswered = !!answers[q.id];
+                const isActive = index === currentQuestionIndex;
 
-        <div className="border-t border-border pt-4">
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <Icon name="Clock" size={16} />
-            <span>Estimated time remaining: {Math.ceil((totalQuestions - completedQuestions) * 1.5)} min</span>
+                // ❌ Prevent skipping if current question not answered
+                const canNavigate =
+                  isActive || answers[questions[currentQuestionIndex]?.id];
+
+                return (
+                  <button
+                    key={q.id}
+                    onClick={() => canNavigate && onQuestionClick(index)}
+                    disabled={!canNavigate}
+                    className={`w-full flex items-start gap-3 p-3 rounded-lg text-left transition-smooth
+                      ${
+                        isActive
+                          ? "bg-primary/10 border border-primary/20"
+                          : isAnswered
+                          ? "bg-success/10 border border-success/20 hover:bg-success/15"
+                          : "bg-muted hover:bg-muted/80"
+                      }
+                      ${!canNavigate ? "opacity-50 cursor-not-allowed" : ""}
+                    `}
+                  >
+                    {/* Number / check icon */}
+                    <div
+                      className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium
+                        ${
+                          isAnswered
+                            ? "bg-success text-white"
+                            : isActive
+                            ? "bg-primary text-white"
+                            : "bg-muted-foreground/20 text-muted-foreground"
+                        }`}
+                    >
+                      {isAnswered ? <Icon name="Check" size={12} /> : index + 1}
+                    </div>
+
+                    {/* Question title */}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground line-clamp-1">
+                        {q.title}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No questions loaded
+              </p>
+            )}
           </div>
         </div>
       </div>

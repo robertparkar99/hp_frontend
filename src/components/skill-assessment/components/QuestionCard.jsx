@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
-import {Button} from '../../ui/button';
+import { Button } from '../../ui/button';
 import { Checkbox } from '../../ui/checkbox';
 
 const QuestionCard = ({ 
-  question, 
+  question = {},   // ✅ safe default to avoid undefined
   onAnswer, 
   onNext, 
   onPrevious, 
   isFirst, 
   isLast,
-  currentAnswer 
+  currentAnswer,
+  totalMarks,
+  totalTime,
+  timeLeft
 }) => {
   const [selectedAnswer, setSelectedAnswer] = useState(currentAnswer || '');
   const [selectedAnswers, setSelectedAnswers] = useState(currentAnswer || []);
@@ -47,14 +50,18 @@ const QuestionCard = ({
                 onClick={() => handleSingleAnswer(option.value)}
                 className={`w-full p-4 text-left rounded-lg border transition-smooth ${
                   selectedAnswer === option.value
-                    ? 'border-primary bg-primary/5 text-primary' :'border-border hover:border-primary/50 hover:bg-muted/50'
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    selectedAnswer === option.value
-                      ? 'border-primary bg-primary' :'border-muted-foreground/30'
-                  }`}>
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedAnswer === option.value
+                        ? 'border-primary bg-primary'
+                        : 'border-muted-foreground/30'
+                    }`}
+                  >
                     {selectedAnswer === option.value && (
                       <div className="w-2 h-2 rounded-full bg-white" />
                     )}
@@ -62,7 +69,9 @@ const QuestionCard = ({
                   <div className="flex-1">
                     <p className="font-medium text-foreground">{option.label}</p>
                     {option.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {option.description}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -75,14 +84,25 @@ const QuestionCard = ({
         return (
           <div className="space-y-3">
             {question.options.map((option, index) => (
-              <div key={index} className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-smooth">
+              <label
+                key={index}
+                className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-smooth"
+              >
                 <Checkbox
-                  label={option.label}
-                  description={option.description}
                   checked={selectedAnswers.includes(option.value)}
-                  onChange={(e) => handleMultipleAnswer(option.value, e.target.checked)}
+                  onCheckedChange={(checked) =>
+                    handleMultipleAnswer(option.value, checked)
+                  }
                 />
-              </div>
+                <div>
+                  <p className="font-medium text-foreground">{option.label}</p>
+                  {option.description && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {option.description}
+                    </p>
+                  )}
+                </div>
+              </label>
             ))}
           </div>
         );
@@ -101,7 +121,8 @@ const QuestionCard = ({
                   onClick={() => handleRatingAnswer(rating)}
                   className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-semibold transition-smooth ${
                     selectedAnswer === rating
-                      ? 'border-primary bg-primary text-white' :'border-muted-foreground/30 hover:border-primary/50 text-muted-foreground hover:text-primary'
+                      ? 'border-primary bg-primary text-white'
+                      : 'border-muted-foreground/30 hover:border-primary/50 text-muted-foreground hover:text-primary'
                   }`}
                 >
                   {rating}
@@ -130,21 +151,27 @@ const QuestionCard = ({
                   onClick={() => handleSingleAnswer(option.value)}
                   className={`w-full p-4 text-left rounded-lg border transition-smooth ${
                     selectedAnswer === option.value
-                      ? 'border-primary bg-primary/5 text-primary' :'border-border hover:border-primary/50 hover:bg-muted/50'
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
                   }`}
                 >
                   <div className="flex items-start space-x-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
-                      selectedAnswer === option.value
-                        ? 'border-primary bg-primary' :'border-muted-foreground/30'
-                    }`}>
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                        selectedAnswer === option.value
+                          ? 'border-primary bg-primary'
+                          : 'border-muted-foreground/30'
+                      }`}
+                    >
                       {selectedAnswer === option.value && (
                         <div className="w-2 h-2 rounded-full bg-white" />
                       )}
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-foreground">{option.label}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {option.description}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -160,9 +187,10 @@ const QuestionCard = ({
 
   return (
     <div className="bg-card border border-border rounded-lg p-8">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
+      {/* ✅ Header with Question Info + Timer */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <div className="flex items-center space-x-3 mb-2">
             <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
               <Icon name={question.skillIcon} size={16} className="text-primary" />
             </div>
@@ -175,16 +203,26 @@ const QuestionCard = ({
             Question {question.questionNumber} of {question.totalQuestions}
           </div>
         </div>
-        
-        <h2 className="text-xl font-semibold text-foreground mb-4">{question.title}</h2>
-        
-        {question.description && (
-          <p className="text-muted-foreground mb-6">{question.description}</p>
-        )}
+
+        {/* ✅ Timer Info */}
+        <div className="text-right text-sm">
+          <p className="text-primary font-medium">Total Marks : {totalMarks}</p>
+          <p className="text-muted-foreground">(Total {totalTime} mins)</p>
+          <p className="text-foreground mt-1">Time Left:</p>
+          <p className="font-semibold text-destructive">{timeLeft}</p>
+        </div>
       </div>
 
+      {/* Question Title */}
+      <h2 className="text-xl font-semibold text-foreground mb-4">{question.title}</h2>
+      {question.description && (
+        <p className="text-muted-foreground mb-6">{question.description}</p>
+      )}
+
+      {/* Question Body */}
       {renderQuestionContent()}
 
+      {/* Footer */}
       <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
         <Button
           variant="outline"
@@ -197,22 +235,17 @@ const QuestionCard = ({
         </Button>
 
         <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            iconName="Save"
-            iconPosition="left"
-          >
+          <Button variant="ghost" iconName="Save" iconPosition="left">
             Save Progress
           </Button>
-          
           <Button
             variant="default"
             onClick={onNext}
-            iconName={isLast ? "CheckCircle" : "ChevronRight"}
+            iconName={isLast ? 'CheckCircle' : 'ChevronRight'}
             iconPosition="right"
             disabled={!selectedAnswer && selectedAnswers.length === 0}
           >
-            {isLast ? "Complete Assessment" : "Next Question"}
+            {isLast ? 'Complete Assessment' : 'Next Question'}
           </Button>
         </div>
       </div>
