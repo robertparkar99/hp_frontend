@@ -34,10 +34,8 @@ function MenuRow({ menu, path, level, onPermissionChange, parentPermissions }: M
   };
 
   const handleParentToggle = (type: keyof Permission, checked: boolean) => {
-    // Update current menu permission
     onPermissionChange(path, type, checked);
-    
-    // Update all children recursively
+
     if (menu.children) {
       const toggleChildren = (children: MenuPermission[], currentPath: number[]) => {
         children.forEach((child, index) => {
@@ -76,6 +74,17 @@ function MenuRow({ menu, path, level, onPermissionChange, parentPermissions }: M
             {menu.name}
           </div>
         </td>
+
+        {/* ✅ View Column */}
+        <td className="px-4 py-4 text-center">
+          <Switch
+            checked={menu.permissions.view}
+            onCheckedChange={(checked) => handleParentToggle("view", checked)}
+            aria-label={`${menu.name} - View Permission`}
+            className={getLevelColor()}
+          />
+        </td>
+
         <td className="px-4 py-4 text-center">
           <Switch
             checked={menu.permissions.add}
@@ -101,7 +110,7 @@ function MenuRow({ menu, path, level, onPermissionChange, parentPermissions }: M
           />
         </td>
       </tr>
-      
+
       {hasChildren && isExpanded && menu.children!.map((child, childIndex) => (
         <MenuRow
           key={child.name}
@@ -117,6 +126,7 @@ function MenuRow({ menu, path, level, onPermissionChange, parentPermissions }: M
 }
 
 export function HierarchicalPermissionsTable({ permissions, onPermissionChange }: HierarchicalPermissionsTableProps) {
+  const [masterView, setMasterView] = useState(false);
   const [masterAdd, setMasterAdd] = useState(false);
   const [masterEdit, setMasterEdit] = useState(false);
   const [masterDelete, setMasterDelete] = useState(false);
@@ -132,7 +142,10 @@ export function HierarchicalPermissionsTable({ permissions, onPermissionChange }
   };
 
   const handleMasterToggle = (type: keyof Permission, value: boolean) => {
-    if (type === "add") {
+    if (type === "view") {
+      setMasterView(value);
+      toggleAll(permissions, "view", value);
+    } else if (type === "add") {
       setMasterAdd(value);
       toggleAll(permissions, "add", value);
     } else if (type === "edit") {
@@ -153,8 +166,22 @@ export function HierarchicalPermissionsTable({ permissions, onPermissionChange }
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
                 Menu Name
               </th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground">
-                <div className="flex items-center justify-end gap-2">
+
+              {/* ✅ View Header */}
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
+                <div className="flex items-center justify-center gap-2">
+                  <span>View</span>
+                  <Switch
+                    checked={masterView}
+                    onCheckedChange={(checked) => handleMasterToggle("view", checked)}
+                    aria-label="Toggle all View permissions"
+                    className="data-[state=checked]:bg-[#385F7B]"
+                  />
+                </div>
+              </th>
+
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
+                <div className="flex items-center justify-center gap-2">
                   <span>Add</span>
                   <Switch
                     checked={masterAdd}
@@ -164,8 +191,8 @@ export function HierarchicalPermissionsTable({ permissions, onPermissionChange }
                   />
                 </div>
               </th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground">
-                <div className="flex items-center justify-end gap-2">
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
+                <div className="flex items-center justify-center gap-2">
                   <span>Edit</span>
                   <Switch
                     checked={masterEdit}
@@ -175,8 +202,8 @@ export function HierarchicalPermissionsTable({ permissions, onPermissionChange }
                   />
                 </div>
               </th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground">
-                <div className="flex items-center justify-end gap-2">
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
+                <div className="flex items-center justify-center gap-2">
                   <span>Delete</span>
                   <Switch
                     checked={masterDelete}
@@ -188,6 +215,7 @@ export function HierarchicalPermissionsTable({ permissions, onPermissionChange }
               </th>
             </tr>
           </thead>
+
           <tbody>
             {permissions.map((menu, menuIndex) => (
               <MenuRow

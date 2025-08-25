@@ -4,31 +4,36 @@ import { useState } from "react";
 
 interface PermissionsTableProps {
   permissions: MenuPermission[];
-  onPermissionChange: (menuIndex: number, permissionType: keyof Permission, value: boolean) => void;
+  onPermissionChange: (
+    menuIndex: number,
+    permissionType: keyof Permission,
+    value: boolean
+  ) => void;
 }
 
-export function PermissionsTable({ permissions, onPermissionChange }: PermissionsTableProps) {
+export function PermissionsTable({
+  permissions,
+  onPermissionChange,
+}: PermissionsTableProps) {
   const [masterAdd, setMasterAdd] = useState(false);
   const [masterEdit, setMasterEdit] = useState(false);
   const [masterDelete, setMasterDelete] = useState(false);
+  const [masterView, setMasterView] = useState(false);
 
   const handleMasterToggle = (type: keyof Permission, value: boolean) => {
     if (type === "add") {
       setMasterAdd(value);
-      permissions.forEach((_, index) => {
-        onPermissionChange(index, "add", value);
-      });
     } else if (type === "edit") {
       setMasterEdit(value);
-      permissions.forEach((_, index) => {
-        onPermissionChange(index, "edit", value);
-      });
     } else if (type === "delete") {
       setMasterDelete(value);
-      permissions.forEach((_, index) => {
-        onPermissionChange(index, "delete", value);
-      });
+    } else if (type === "view") {
+      setMasterView(value);
     }
+
+    permissions.forEach((_, index) => {
+      onPermissionChange(index, type, value);
+    });
   };
 
   return (
@@ -40,34 +45,56 @@ export function PermissionsTable({ permissions, onPermissionChange }: Permission
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
                 Menu Name
               </th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground">
-                <div className="flex items-center justify-end gap-2">
+
+              {/* View column */}
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
+                <div className="flex items-center justify-center gap-2">
+                  <span>View</span>
+                  <Switch
+                    checked={masterView}
+                    onCheckedChange={(checked) =>
+                      handleMasterToggle("view", checked)
+                    }
+                    aria-label="Toggle all View permissions"
+                    className="data-[state=checked]:bg-[#2B6CB0]"
+                  />
+                </div>
+              </th>
+
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
+                <div className="flex items-center justify-center gap-2">
                   <span>Add</span>
                   <Switch
                     checked={masterAdd}
-                    onCheckedChange={(checked) => handleMasterToggle("add", checked)}
+                    onCheckedChange={(checked) =>
+                      handleMasterToggle("add", checked)
+                    }
                     aria-label="Toggle all Add permissions"
                     className="data-[state=checked]:bg-[#324F7B]"
                   />
                 </div>
               </th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground">
-                <div className="flex items-center justify-end gap-2">
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
+                <div className="flex items-center justify-center gap-2">
                   <span>Edit</span>
                   <Switch
                     checked={masterEdit}
-                    onCheckedChange={(checked) => handleMasterToggle("edit", checked)}
+                    onCheckedChange={(checked) =>
+                      handleMasterToggle("edit", checked)
+                    }
                     aria-label="Toggle all Edit permissions"
                     className="data-[state=checked]:bg-[#6B3779]"
                   />
                 </div>
               </th>
-              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground">
-                <div className="flex items-center justify-end gap-2">
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
+                <div className="flex items-center justify-center gap-2">
                   <span>Delete</span>
                   <Switch
                     checked={masterDelete}
-                    onCheckedChange={(checked) => handleMasterToggle("delete", checked)}
+                    onCheckedChange={(checked) =>
+                      handleMasterToggle("delete", checked)
+                    }
                     aria-label="Toggle all Delete permissions"
                     className="data-[state=checked]:bg-[#D391B0]"
                   />
@@ -84,6 +111,19 @@ export function PermissionsTable({ permissions, onPermissionChange }: Permission
                 <td className="px-6 py-4 text-sm font-medium text-foreground">
                   {menu.name}
                 </td>
+
+                {/* View switch */}
+                <td className="px-4 py-4 text-center">
+                  <Switch
+                    checked={menu.permissions.view}
+                    onCheckedChange={(checked) =>
+                      onPermissionChange(menuIndex, "view", checked)
+                    }
+                    aria-label={`${menu.name} - View Permission`}
+                    className="data-[state=checked]:bg-[#2B6CB0]"
+                  />
+                </td>
+
                 <td className="px-4 py-4 text-center">
                   <Switch
                     checked={menu.permissions.add}

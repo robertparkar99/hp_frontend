@@ -10,6 +10,7 @@ export type Role = "Admin" | "HR" | "Employee";
 
 export interface Permission {
   add: boolean;
+  view: boolean;
   edit: boolean;
   delete: boolean;
 }
@@ -24,66 +25,66 @@ const defaultPermissions: Record<Role, MenuPermission[]> = {
   Admin: [
     {
       name: "Organization",
-      permissions: { add: true, edit: true, delete: true },
+      permissions: { add: true, view: true, edit: true, delete: true },
       children: [
         {
           name: "Department Structure",
-          permissions: { add: true, edit: true, delete: true },
+          permissions: { add: true, view: true, edit: true, delete: true },
           children: [
-            { name: "Team Details", permissions: { add: true, edit: true, delete: true } },
-            { name: "Roles & Designations", permissions: { add: true, edit: true, delete: true } }
+            { name: "Team Details", permissions: { add: true, view: true, edit: true, delete: true } },
+            { name: "Roles & Designations", permissions: { add: true, view: true, edit: true, delete: true } }
           ]
         },
         {
           name: "Policies & Information",
-          permissions: { add: true, edit: true, delete: true },
+          permissions: { add: true, view: true, edit: true, delete: true },
           children: [
-            { name: "Leave Policy", permissions: { add: true, edit: true, delete: true } },
-            { name: "Code of Conduct", permissions: { add: true, edit: true, delete: true } }
+            { name: "Leave Policy", permissions: { add: true, view: true, edit: true, delete: true } },
+            { name: "Code of Conduct", permissions: { add: true, view: true, edit: true, delete: true } }
           ]
         }
       ]
     },
     {
       name: "User Management",
-      permissions: { add: true, edit: true, delete: true },
+      permissions: { add: true, view: true, edit: true, delete: true },
       children: [
         {
           name: "Access Rights",
-          permissions: { add: true, edit: true, delete: true },
+          permissions: { add: true, view: true, edit: true, delete: true },
           children: [
-            { name: "Admin Rights", permissions: { add: true, edit: true, delete: true } },
-            { name: "Employee Rights", permissions: { add: true, edit: true, delete: true } }
+            { name: "Admin Rights", permissions: { add: true, view: true, edit: true, delete: true } },
+            { name: "Employee Rights", permissions: { add: true, view: true, edit: true, delete: true } }
           ]
         },
         {
           name: "Profiles",
-          permissions: { add: true, edit: true, delete: true },
+          permissions: { add: true, view: true, edit: true, delete: true },
           children: [
-            { name: "Personal Information", permissions: { add: true, edit: true, delete: true } },
-            { name: "Job Information", permissions: { add: true, edit: true, delete: true } }
+            { name: "Personal Information", permissions: { add: true, view: true, edit: true, delete: true } },
+            { name: "Job Information", permissions: { add: true, view: true, edit: true, delete: true } }
           ]
         }
       ]
     },
     {
       name: "System Settings",
-      permissions: { add: true, edit: true, delete: true },
+      permissions: { add: true, view: true, edit: true, delete: true },
       children: [
         {
           name: "Authentication",
-          permissions: { add: true, edit: true, delete: true },
+          permissions: { add: true, view: true, edit: true, delete: true },
           children: [
-            { name: "Login Page", permissions: { add: true, edit: true, delete: true } },
-            { name: "Forgot Password", permissions: { add: true, edit: true, delete: true } }
+            { name: "Login Page", permissions: { add: true, view: true, edit: true, delete: true } },
+            { name: "Forgot Password", permissions: { add: true, view: true, edit: true, delete: true } }
           ]
         },
         {
           name: "Modules",
-          permissions: { add: true, edit: true, delete: true },
+          permissions: { add: true, view: true, edit: true, delete: true },
           children: [
-            { name: "Right Module Pages", permissions: { add: true, edit: true, delete: true } },
-            { name: "Feature Settings", permissions: { add: true, edit: true, delete: true } }
+            { name: "Right Module Pages", permissions: { add: true, view: true, edit: true, delete: true } },
+            { name: "Feature Settings", permissions: { add: true, view: true, edit: true, delete: true } }
           ]
         }
       ]
@@ -92,66 +93,66 @@ const defaultPermissions: Record<Role, MenuPermission[]> = {
   HR: [
     {
       name: "Organization",
-      permissions: { add: false, edit: true, delete: false },
+      permissions: { add: false, view: true, edit: true, delete: false },
       children: [
         {
           name: "Department Structure",
-          permissions: { add: true, edit: true, delete: false },
+          permissions: { add: true, view: true, edit: true, delete: false },
           children: [
-            { name: "Team Details", permissions: { add: true, edit: true, delete: false } },
-            { name: "Roles & Designations", permissions: { add: true, edit: true, delete: false } }
+            { name: "Team Details", permissions: { add: true, view: true, edit: true, delete: false } },
+            { name: "Roles & Designations", permissions: { add: true, view: true, edit: true, delete: false } }
           ]
         },
         {
           name: "Policies & Information",
-          permissions: { add: false, edit: true, delete: false },
+          permissions: { add: false, view: true, edit: true, delete: false },
           children: [
-            { name: "Leave Policy", permissions: { add: false, edit: true, delete: false } },
-            { name: "Code of Conduct", permissions: { add: false, edit: true, delete: false } }
+            { name: "Leave Policy", permissions: { add: false, view: true, edit: true, delete: false } },
+            { name: "Code of Conduct", permissions: { add: false, view: true, edit: true, delete: false } }
           ]
         }
       ]
     },
     {
       name: "User Management",
-      permissions: { add: true, edit: true, delete: false },
+      permissions: { add: true, view: true, edit: true, delete: false },
       children: [
         {
           name: "Access Rights",
-          permissions: { add: false, edit: false, delete: false },
+          permissions: { add: false, view: true, edit: false, delete: false },
           children: [
-            { name: "Admin Rights", permissions: { add: false, edit: false, delete: false } },
-            { name: "Employee Rights", permissions: { add: false, edit: true, delete: false } }
+            { name: "Admin Rights", permissions: { add: false, view: true, edit: false, delete: false } },
+            { name: "Employee Rights", permissions: { add: false, view: true, edit: true, delete: false } }
           ]
         },
         {
           name: "Profiles",
-          permissions: { add: true, edit: true, delete: false },
+          permissions: { add: true, view: true, edit: true, delete: false },
           children: [
-            { name: "Personal Information", permissions: { add: true, edit: true, delete: false } },
-            { name: "Job Information", permissions: { add: true, edit: true, delete: false } }
+            { name: "Personal Information", permissions: { add: true, view: true, edit: true, delete: false } },
+            { name: "Job Information", permissions: { add: true, view: true, edit: true, delete: false } }
           ]
         }
       ]
     },
     {
       name: "System Settings",
-      permissions: { add: false, edit: false, delete: false },
+      permissions: { add: false, view: true, edit: false, delete: false },
       children: [
         {
           name: "Authentication",
-          permissions: { add: false, edit: false, delete: false },
+          permissions: { add: false, view: true, edit: false, delete: false },
           children: [
-            { name: "Login Page", permissions: { add: false, edit: false, delete: false } },
-            { name: "Forgot Password", permissions: { add: false, edit: false, delete: false } }
+            { name: "Login Page", permissions: { add: false, view: true, edit: false, delete: false } },
+            { name: "Forgot Password", permissions: { add: false, view: true, edit: false, delete: false } }
           ]
         },
         {
           name: "Modules",
-          permissions: { add: false, edit: true, delete: false },
+          permissions: { add: false, view: true, edit: true, delete: false },
           children: [
-            { name: "Right Module Pages", permissions: { add: false, edit: true, delete: false } },
-            { name: "Feature Settings", permissions: { add: false, edit: false, delete: false } }
+            { name: "Right Module Pages", permissions: { add: false, view: true, edit: true, delete: false } },
+            { name: "Feature Settings", permissions: { add: false, view: true, edit: false, delete: false } }
           ]
         }
       ]
@@ -160,66 +161,66 @@ const defaultPermissions: Record<Role, MenuPermission[]> = {
   Employee: [
     {
       name: "Organization",
-      permissions: { add: false, edit: false, delete: false },
+      permissions: { add: false, view: true, edit: false, delete: false },
       children: [
         {
           name: "Department Structure",
-          permissions: { add: false, edit: false, delete: false },
+          permissions: { add: false, view: true, edit: false, delete: false },
           children: [
-            { name: "Team Details", permissions: { add: false, edit: false, delete: false } },
-            { name: "Roles & Designations", permissions: { add: false, edit: false, delete: false } }
+            { name: "Team Details", permissions: { add: false, view: true, edit: false, delete: false } },
+            { name: "Roles & Designations", permissions: { add: false, view: true, edit: false, delete: false } }
           ]
         },
         {
           name: "Policies & Information",
-          permissions: { add: false, edit: false, delete: false },
+          permissions: { add: false, view: true, edit: false, delete: false },
           children: [
-            { name: "Leave Policy", permissions: { add: false, edit: false, delete: false } },
-            { name: "Code of Conduct", permissions: { add: false, edit: false, delete: false } }
+            { name: "Leave Policy", permissions: { add: false, view: true, edit: false, delete: false } },
+            { name: "Code of Conduct", permissions: { add: false, view: true, edit: false, delete: false } }
           ]
         }
       ]
     },
     {
       name: "User Management",
-      permissions: { add: false, edit: false, delete: false },
+      permissions: { add: false, view: true, edit: false, delete: false },
       children: [
         {
           name: "Access Rights",
-          permissions: { add: false, edit: false, delete: false },
+          permissions: { add: false, view: true, edit: false, delete: false },
           children: [
-            { name: "Admin Rights", permissions: { add: false, edit: false, delete: false } },
-            { name: "Employee Rights", permissions: { add: false, edit: false, delete: false } }
+            { name: "Admin Rights", permissions: { add: false, view: true, edit: false, delete: false } },
+            { name: "Employee Rights", permissions: { add: false, view: true, edit: false, delete: false } }
           ]
         },
         {
           name: "Profiles",
-          permissions: { add: false, edit: true, delete: false },
+          permissions: { add: false, view: true, edit: true, delete: false },
           children: [
-            { name: "Personal Information", permissions: { add: false, edit: true, delete: false } },
-            { name: "Job Information", permissions: { add: false, edit: false, delete: false } }
+            { name: "Personal Information", permissions: { add: false, view: true, edit: true, delete: false } },
+            { name: "Job Information", permissions: { add: false, view: true, edit: false, delete: false } }
           ]
         }
       ]
     },
     {
       name: "System Settings",
-      permissions: { add: false, edit: false, delete: false },
+      permissions: { add: false, view: true, edit: false, delete: false },
       children: [
         {
           name: "Authentication",
-          permissions: { add: false, edit: false, delete: false },
+          permissions: { add: false, view: true, edit: false, delete: false },
           children: [
-            { name: "Login Page", permissions: { add: false, edit: false, delete: false } },
-            { name: "Forgot Password", permissions: { add: false, edit: false, delete: false } }
+            { name: "Login Page", permissions: { add: false, view: true, edit: false, delete: false } },
+            { name: "Forgot Password", permissions: { add: false, view: true, edit: false, delete: false } }
           ]
         },
         {
           name: "Modules",
-          permissions: { add: false, edit: false, delete: false },
+          permissions: { add: false, view: true, edit: false, delete: false },
           children: [
-            { name: "Right Module Pages", permissions: { add: false, edit: false, delete: false } },
-            { name: "Feature Settings", permissions: { add: false, edit: false, delete: false } }
+            { name: "Right Module Pages", permissions: { add: false, view: true, edit: false, delete: false } },
+            { name: "Feature Settings", permissions: { add: false, view: true, edit: false, delete: false } }
           ]
         }
       ]
