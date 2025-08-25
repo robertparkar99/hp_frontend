@@ -1,6 +1,6 @@
 import React from 'react';
 import Icon from '../../../../../components/AppIcon';
-import { Button} from '../../../../../components/ui/button';
+import { Button } from '../../../../../components/ui/button';
 
 const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
   const getDifficultyColor = (difficulty) => {
@@ -63,7 +63,7 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
           </div>
         </div>
         <div className="flex items-center space-x-2 ml-4">
-  <Button
+          {/* <Button
     variant="ghost"
     size="icon"
     onClick={() => onViewDetails(assessment)}
@@ -74,14 +74,14 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
       size={20}
       className="text-black" // stays black, no hover color change
     />
-  </Button>
+  </Button> */}
 
-  <Icon
-    name={statusInfo.icon}
-    size={20}
-    className={statusInfo.color} // whatever status color you want
-  />
-</div>
+          <Icon
+            name={statusInfo.icon}
+            size={20}
+            className={statusInfo.color} // whatever status color you want
+          />
+        </div>
       </div>
 
       {/* Assessment Details */}
@@ -93,7 +93,7 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
           </div>
           <div className="flex items-center space-x-1">
             <Icon name="Clock" size={16} />
-            <span>{assessment.timeLimit} mins</span>
+            <span>{assessment.duration} mins</span>
           </div>
         </div>
 
@@ -134,7 +134,7 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
             <span>Due: {new Date(assessment.deadline).toLocaleDateString()}</span>
             {isDeadlineUrgent && (
               <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-md">
-                Urgent
+                Closed
               </span>
             )}
           </div>
@@ -147,12 +147,11 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
           variant="default"
           fullWidth
           onClick={() => onStartAssessment(assessment)}
-          disabled={assessment.status === 'In Progress' && !assessment.canResume}
+        disabled={assessment.status === 'Closed'}
+
         >
-          {assessment.status === 'Not Attempted' && 'Start Assessment'}
-          {assessment.status === 'In Progress' && 'Continue Assessment'}
-          {assessment.status === 'Completed' && 'Retake Assessment'}
-          {assessment.status === 'Failed' && 'Retry Assessment'}
+          {assessment.status !== 'Closed' && 'Start Assessment'}
+          {assessment.status === 'Closed' && 'Closed Assessment'}
         </Button>
       </div>
     </div>
