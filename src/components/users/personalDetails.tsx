@@ -1205,21 +1205,17 @@ const PersonalDetails: React.FC<userDetailsprops> = ({ userDetails, userdepartme
           <div className="header-section">
             <div className="h-full bg-[url('/Header.png')] bg-contain bg-no-repeat">
               <div className="rounded-lg">
-                {userDetails.image && userDetails.image != '' ? (
-                  <img
-                    src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/` + userDetails.image}
-                    alt="User icon"
-                    style={{ transform: "translate(34%,28%)" }}
-                    className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
-                  />
-                ) : (
-                  <img
-                    src="https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"
-                    alt="User icon"
-                    style={{ transform: "translate(34%,28%)" }}
-                    className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
-                  />
-                )}
+              <img
+  src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails.image}`}
+  alt="User icon"
+  style={{ transform: "translate(34%,28%)" }}
+  className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
+  onError={(e) => {
+    e.currentTarget.src =
+      "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
+  }}
+/>
+
               </div>
               <div className="header-content" style={{ transform: "translate(12%,-175%)" }}>
                 <span className="text-2xl font-bold" >{formData.personal.first_name} {formData.personal.middle_name} {formData.personal.last_name}</span>
