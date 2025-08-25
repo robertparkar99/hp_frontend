@@ -3,7 +3,6 @@ import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { pathToFileURL } from "url";
 
 export const LogoSection: React.FC = () => {
   const router = useRouter();
@@ -45,7 +44,15 @@ export const LogoSection: React.FC = () => {
     e.stopPropagation();
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPos({ top: rect.bottom + 6, left: rect.left });
+      const dropdownWidth = 192; // Tailwind w-48 = 12rem = 192px
+      let left = rect.left;
+
+      // ✅ Adjust so dropdown doesn’t overflow on the right side
+      if (left + dropdownWidth > window.innerWidth) {
+        left = rect.right - dropdownWidth;
+      }
+
+      setDropdownPos({ top: rect.bottom + 6, left });
     }
     setIsDropdownOpen((prev) => !prev);
   };
@@ -57,11 +64,12 @@ export const LogoSection: React.FC = () => {
 
   const handleMenuClick = (path: string) => {
     setIsDropdownOpen(false);
-    //router.push(path);
-    // alert(`Navigating to ${path}`);
     (window as any).__currentMenuItem = path;
-      window.dispatchEvent(new CustomEvent("menuSelected", { detail: { menu: path, pageType: "page", access: path } }));
-
+    window.dispatchEvent(
+      new CustomEvent("menuSelected", {
+        detail: { menu: path, pageType: "page", access: path },
+      })
+    );
   };
 
   const menuItems = [{ label: "Groupwise Rights", path: "groupWiseRights/page.tsx" }];
@@ -128,7 +136,7 @@ export const LogoSection: React.FC = () => {
               style={{
                 position: "absolute",
                 top: dropdownPos.top,
-                left: "1300px"
+                left: dropdownPos.left,
               }}
               className="bg-white shadow-lg rounded-md border border-gray-200 w-48"
             >
@@ -137,7 +145,7 @@ export const LogoSection: React.FC = () => {
                   <li
                     key={idx}
                     onClick={() => handleMenuClick(item.path)}
-                    className="px-4 left-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700"
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700"
                   >
                     {item.label}
                   </li>
