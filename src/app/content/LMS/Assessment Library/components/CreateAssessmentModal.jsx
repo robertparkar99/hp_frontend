@@ -47,6 +47,21 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
     }
   }, []);
 
+  // 🔥 Auto update totals when selection changes
+  useEffect(() => {
+    const selectedQuestions = searchResults.filter(q => q.selected);
+    const totalQuestions = selectedQuestions.length;
+    const totalMarks = selectedQuestions.reduce(
+      (sum, q) => sum + (parseFloat(q.points) || 0),
+      0
+    );
+
+    setFormData(prev => ({
+      ...prev,
+      totalQuestions: String(totalQuestions),
+      totalMarks: String(totalMarks),
+    }));
+  }, [searchResults]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -103,7 +118,6 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
       const data = await response.json();
       console.log('API response:', data);
 
-      // Add selected property to each question
       const questionsWithSelection = Array.isArray(data?.questionData)
         ? data.questionData.map(q => ({ ...q, selected: false }))
         : [];
@@ -121,7 +135,6 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
     try {
       setSaving(true);
 
-      // Get user data from localStorage
       let user_id = '';
       let sub_institute_id = '';
       try {
@@ -137,7 +150,6 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
         console.error('Error parsing user data:', error);
       }
 
-      // Prepare the data for the API
       const payload = {
         type: 'API',
         action: 'Store',
@@ -199,7 +211,6 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
   };
 
   const handleSave = async () => {
-    // required fields validation
     const requiredFields = [
       { key: "examName", label: "Exam Name / Paper Name" },
       { key: "examDescription", label: "Exam Description / Paper Description" },
@@ -218,14 +229,12 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
       }
     }
 
-    // check at least one question selected
     const selectedQuestions = searchResults.filter(r => r.selected);
     if (selectedQuestions.length === 0) {
       alert("Please select at least one question.");
       return;
     }
 
-    // check if selected questions have valid answers
     const invalidQuestions = selectedQuestions.filter(
       q => !q.correct_answer ||
         q.correct_answer.toString().trim() === "" ||
@@ -238,7 +247,6 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
       return;
     }
 
-    // Save the exam data
     const success = await saveExamData({ ...formData, selectedQuestions });
 
     if (success) {
@@ -262,7 +270,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-150px)] space-y-6 ">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-150px)] space-y-6">
           {/* Search Filters */}
           <SearchFilters
             formData={formData}
@@ -287,10 +295,13 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
               label="Attempt Allowed *"
               value={formData.attemptAllowed}
               onChange={v => handleChange("attemptAllowed", v)}
-              options={[...Array(10)].map((_, i) => ({
-                value: String(i + 1),
-                label: String(i + 1),
-              }))}
+              options={[
+                { value: "Unlimited", label: "Unlimited" },
+                ...Array.from({ length: 10 }, (_, i) => ({
+                  value: String(i + 1),
+                  label: String(i + 1),
+                })),
+              ]}
             />
           </div>
 
@@ -353,11 +364,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Total Question <span className='text-red-500'>*</span></label>
-              <Input value={formData.totalQuestions} onChange={e => handleChange('totalQuestions', e.target.value)} />
+              <Input value={formData.totalQuestions} readOnly />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Total Marks <span className='text-red-500'>*</span></label>
-              <Input value={formData.totalMarks} onChange={e => handleChange('totalMarks', e.target.value)} />
+              <Input value={formData.totalMarks} readOnly />
             </div>
           </div>
 
