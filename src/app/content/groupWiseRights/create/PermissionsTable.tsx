@@ -19,6 +19,7 @@ export function PermissionsTable({
   const [masterEdit, setMasterEdit] = useState(false);
   const [masterDelete, setMasterDelete] = useState(false);
   const [masterView, setMasterView] = useState(false);
+  const [masterDashboard, setMasterDashboard] = useState(false);
 
   const handleMasterToggle = (type: keyof Permission, value: boolean) => {
     if (type === "add") {
@@ -29,6 +30,8 @@ export function PermissionsTable({
       setMasterDelete(value);
     } else if (type === "view") {
       setMasterView(value);
+    } else if (type === "dashboard") {
+      setMasterDashboard(value);
     }
 
     permissions.forEach((_, index) => {
@@ -61,6 +64,7 @@ export function PermissionsTable({
                 </div>
               </th>
 
+              {/* Add column */}
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
                 <div className="flex items-center justify-center gap-2">
                   <span>Add</span>
@@ -74,6 +78,8 @@ export function PermissionsTable({
                   />
                 </div>
               </th>
+
+              {/* Edit column */}
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
                 <div className="flex items-center justify-center gap-2">
                   <span>Edit</span>
@@ -87,6 +93,8 @@ export function PermissionsTable({
                   />
                 </div>
               </th>
+
+              {/* Delete column */}
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
                 <div className="flex items-center justify-center gap-2">
                   <span>Delete</span>
@@ -97,6 +105,21 @@ export function PermissionsTable({
                     }
                     aria-label="Toggle all Delete permissions"
                     className="data-[state=checked]:bg-[#D391B0]"
+                  />
+                </div>
+              </th>
+
+              {/* Dashboard column */}
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
+                <div className="flex items-center justify-center gap-2">
+                  <span>Dashboard</span>
+                  <Switch
+                    checked={masterDashboard}
+                    onCheckedChange={(checked) =>
+                      handleMasterToggle("dashboard", checked)
+                    }
+                    aria-label="Toggle all Dashboard permissions"
+                    className="data-[state=checked]:bg-[#7B4F32]"
                   />
                 </div>
               </th>
@@ -124,6 +147,7 @@ export function PermissionsTable({
                   />
                 </td>
 
+                {/* Add switch */}
                 <td className="px-4 py-4 text-center">
                   <Switch
                     checked={menu.permissions.add}
@@ -134,6 +158,8 @@ export function PermissionsTable({
                     className="data-[state=checked]:bg-[#324F7B]"
                   />
                 </td>
+
+                {/* Edit switch */}
                 <td className="px-4 py-4 text-center">
                   <Switch
                     checked={menu.permissions.edit}
@@ -144,6 +170,8 @@ export function PermissionsTable({
                     className="data-[state=checked]:bg-[#6B3779]"
                   />
                 </td>
+
+                {/* Delete switch */}
                 <td className="px-4 py-4 text-center">
                   <Switch
                     checked={menu.permissions.delete}
@@ -152,6 +180,18 @@ export function PermissionsTable({
                     }
                     aria-label={`${menu.name} - Delete Permission`}
                     className="data-[state=checked]:bg-[#D391B0]"
+                  />
+                </td>
+
+                {/* Dashboard switch */}
+                <td className="px-4 py-4 text-center">
+                  <Switch
+                    checked={menu.permissions.dashboard}
+                    onCheckedChange={(checked) =>
+                      onPermissionChange(menuIndex, "dashboard", checked)
+                    }
+                    aria-label={`${menu.name} - Dashboard Permission`}
+                    className="data-[state=checked]:bg-[#7B4F32]"
                   />
                 </td>
               </tr>
