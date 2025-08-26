@@ -1,374 +1,328 @@
-import React, { useState, useEffect } from 'react';
-import AssessmentHeader from './components/AssessmentHeader';
-import AssessmentProgress from './components/AssessmentProgress';
-import QuestionCard from './components/QuestionCard';
-import ContextualHelp from './components/ContextualHelp';
-import AssessmentComplete from './components/AssessmentComplete';
+"use client";
+import React, { useState, useEffect } from "react";
+import AssessmentProgress from "./components/AssessmentProgress";
+import QuestionCard from "./components/QuestionCard";
+import AssessmentComplete from "./components/AssessmentComplete";
 
-const SkillAssessment = () => {
-  const [isStarted, setIsStarted] = useState(true);
+const SkillAssessment = ({ assessment }) => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [currentSection, setCurrentSection] = useState(1);
+  const [assessmentData, setAssessmentData] = useState({
+    id: "",
+    questions: [],
+    sections: [],
+    totalMarks: 0,
+    totalTime: 0,
+    active_exam: "no",
+  });
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sessionData, setSessionData] = useState({
+    url: "",
+    token: "",
+    subInstituteId: "",
+    orgType: "",
+    userId: "",
+  });
 
-  // Mock assessment data
-  const assessmentData = {
-    sections: [
-      {
-        id: 'frontend',
-        name: 'Frontend Development',
-        icon: 'Monitor',
-        totalQuestions: 15,
-        completedQuestions: 0,
-        completed: false,
-        definition: `Frontend development involves creating the user-facing part of web applications using HTML, CSS, JavaScript, and modern frameworks like React, Angular, or Vue.js.`,
-        examples: `Common applications include:\n• Building responsive web interfaces\n• Implementing interactive user experiences\n• Optimizing web performance\n• Ensuring cross-browser compatibility\n• Mobile-first design approaches`,
-        relatedSkills: ['HTML/CSS', 'JavaScript', 'React', 'UI/UX Design', 'Responsive Design']
-      },
-      {
-        id: 'backend',
-        name: 'Backend Development',
-        icon: 'Server',
-        totalQuestions: 15,
-        completedQuestions: 0,
-        completed: false,
-        definition: `Backend development focuses on server-side logic, databases, APIs, and system architecture that powers web applications.`,
-        examples: `Common applications include:\n• Building REST APIs and GraphQL endpoints\n• Database design and optimization\n• Server configuration and deployment\n• Authentication and security implementation\n• Microservices architecture`,
-        relatedSkills: ['Node.js', 'Python', 'SQL', 'API Design', 'Cloud Services']
-      },
-      {
-        id: 'database',
-        name: 'Database Management',
-        icon: 'Database',
-        totalQuestions: 15,
-        completedQuestions: 0,
-        completed: false,
-        definition: `Database management involves designing, implementing, and maintaining database systems for efficient data storage and retrieval.`,
-        examples: `Common applications include:\n• SQL query optimization\n• Database schema design\n• Data modeling and normalization\n• Backup and recovery strategies\n• Performance tuning`,
-        relatedSkills: ['SQL', 'NoSQL', 'Data Modeling', 'Query Optimization', 'Database Security']
-      },
-      {
-        id: 'devops',
-        name: 'DevOps & Deployment',
-        icon: 'GitBranch',
-        totalQuestions: 15,
-        completedQuestions: 0,
-        completed: false,
-        definition: `DevOps practices focus on automating and streamlining the software development lifecycle through continuous integration and deployment.`,
-        examples: `Common applications include:\n• CI/CD pipeline setup\n• Container orchestration with Docker/Kubernetes\n• Infrastructure as Code\n• Monitoring and logging\n• Cloud platform management`,
-        relatedSkills: ['Docker', 'Kubernetes', 'AWS/Azure', 'Jenkins', 'Terraform']
-      },
-      {
-        id: 'testing',
-        name: 'Testing & Quality Assurance',
-        icon: 'CheckCircle',
-        totalQuestions: 15,
-        completedQuestions: 0,
-        completed: false,
-        definition: `Testing and QA involves ensuring software quality through various testing methodologies and automated testing frameworks.`,
-        examples: `Common applications include:\n• Unit and integration testing\n• Test-driven development (TDD)\n• Automated testing frameworks\n• Performance testing\n• Security testing`,
-        relatedSkills: ['Jest', 'Selenium', 'Test Automation', 'Performance Testing', 'Security Testing']
-      },
-      {
-        id: 'project-management',
-        name: 'Project Management',
-        icon: 'Users',
-        totalQuestions: 15,
-        completedQuestions: 0,
-        completed: false,
-        definition: `Project management involves planning, executing, and delivering software projects using various methodologies and tools.`,
-        examples: `Common applications include:\n• Agile/Scrum methodology\n• Sprint planning and retrospectives\n• Stakeholder communication\n• Risk management\n• Team coordination`,
-        relatedSkills: ['Agile', 'Scrum', 'Kanban', 'Risk Management', 'Team Leadership']
-      },
-      {
-        id: 'soft-skills',
-        name: 'Communication & Leadership',
-        icon: 'MessageSquare',
-        totalQuestions: 15,
-        completedQuestions: 0,
-        completed: false,
-        definition: `Communication and leadership skills are essential for effective collaboration and career advancement in technology roles.`,
-        examples: `Common applications include:\n• Technical documentation\n• Code reviews and mentoring\n• Client presentations\n• Team leadership\n• Cross-functional collaboration`,
-        relatedSkills: ['Technical Writing', 'Mentoring', 'Presentation Skills', 'Team Leadership', 'Conflict Resolution']
-      },
-      {
-        id: 'emerging-tech',
-        name: 'Emerging Technologies',
-        icon: 'Zap',
-        totalQuestions: 15,
-        completedQuestions: 0,
-        completed: false,
-        definition: `Emerging technologies encompass cutting-edge developments in AI, machine learning, blockchain, and other innovative fields.`,
-        examples: `Common applications include:\n• Machine learning model development\n• AI integration in applications\n• Blockchain development\n• IoT solutions\n• Cloud-native architectures`,
-        relatedSkills: ['Machine Learning', 'AI/ML', 'Blockchain', 'IoT', 'Cloud Computing']
-      }
-    ],
-    questions: [
-      // Frontend Development Questions
-      {
-        id: 1,
-        sectionId: 'frontend',
-        skillCategory: 'Frontend Development',
-        skillName: 'React Development',
-        skillIcon: 'Monitor',
-        questionNumber: 1,
-        totalQuestions: 120,
-        type: 'multiple-choice',
-        title: 'What is the primary purpose of React hooks?',
-        description: 'Consider the fundamental concept and benefits of React hooks in functional components.',
-        options: [
-          {
-            value: 'state-logic',
-            label: 'To use state and lifecycle features in functional components',
-            description: 'Hooks allow functional components to have state and lifecycle methods'
-          },
-          {
-            value: 'performance',
-            label: 'To improve application performance',
-            description: 'While hooks can help with performance, this is not their primary purpose'
-          },
-          {
-            value: 'styling',
-            label: 'To handle component styling',
-            description: 'Hooks are not specifically designed for styling purposes'
-          },
-          {
-            value: 'routing',
-            label: 'To manage application routing',
-            description: 'Routing is handled by separate libraries, not hooks directly'
-          }
-        ]
-      },
-      {
-        id: 2,
-        sectionId: 'frontend',
-        skillCategory: 'Frontend Development',
-        skillName: 'CSS & Responsive Design',
-        skillIcon: 'Monitor',
-        questionNumber: 2,
-        totalQuestions: 120,
-        type: 'rating',
-        title: 'Rate your proficiency in creating responsive web layouts using CSS Grid and Flexbox',
-        description: 'Consider your ability to create complex, responsive layouts that work across different screen sizes.',
-        ratingLabels: {
-          low: 'Basic understanding',
-          high: 'Expert level'
-        }
-      },
-      {
-        id: 3,
-        sectionId: 'frontend',
-        skillCategory: 'Frontend Development',
-        skillName: 'JavaScript ES6+',
-        skillIcon: 'Monitor',
-        questionNumber: 3,
-        totalQuestions: 120,
-        type: 'multiple-select',
-        title: 'Which ES6+ features do you regularly use in your development work?',
-        description: 'Select all the modern JavaScript features you are comfortable using.',
-        options: [
-          {
-            value: 'arrow-functions',
-            label: 'Arrow Functions',
-            description: 'Concise function syntax with lexical this binding'
-          },
-          {
-            value: 'destructuring',
-            label: 'Destructuring Assignment',
-            description: 'Extracting values from arrays and objects'
-          },
-          {
-            value: 'async-await',
-            label: 'Async/Await',
-            description: 'Modern asynchronous programming syntax'
-          },
-          {
-            value: 'modules',
-            label: 'ES6 Modules',
-            description: 'Import/export module system'
-          },
-          {
-            value: 'template-literals',
-            label: 'Template Literals',
-            description: 'String interpolation with backticks'
-          },
-          {
-            value: 'spread-operator',
-            label: 'Spread Operator',
-            description: 'Expanding arrays and objects'
-          }
-        ]
-      },
-      // Backend Development Questions
-      {
-        id: 4,
-        sectionId: 'backend',
-        skillCategory: 'Backend Development',
-        skillName: 'API Development',
-        skillIcon: 'Server',
-        questionNumber: 4,
-        totalQuestions: 120,
-        type: 'scenario',
-        title: 'You need to design a RESTful API for a user management system. What approach would you take?',
-        scenario: `Your team is building a user management system that needs to handle user registration, authentication, profile updates, and user deletion. The API will be consumed by both web and mobile applications, and needs to be scalable and secure.`,
-        options: [
-          {
-            value: 'rest-standard',
-            label: 'Follow REST conventions with proper HTTP methods',
-            description: 'Use GET, POST, PUT, DELETE with appropriate status codes and resource naming'
-          },
-          {
-            value: 'single-endpoint',
-            label: 'Create a single endpoint that handles all operations',
-            description: 'Use one URL with different parameters to determine the operation'
-          },
-          {
-            value: 'graphql-only',
-            label: 'Use GraphQL instead of REST',
-            description: 'Implement a GraphQL API for more flexible data fetching'
-          },
-          {
-            value: 'custom-protocol',
-            label: 'Design a custom protocol specific to the application',
-            description: 'Create a proprietary API structure tailored to specific needs'
-          }
-        ]
-      },
-      {
-        id: 5,
-        sectionId: 'backend',
-        skillCategory: 'Backend Development',
-        skillName: 'Node.js Development',
-        skillIcon: 'Server',
-        questionNumber: 5,
-        totalQuestions: 120,
-        type: 'rating',
-        title: 'Rate your experience with Node.js and Express.js for building server-side applications',
-        description: 'Consider your ability to build scalable backend services, handle middleware, and manage asynchronous operations.'
-      }
-    ]
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  // 👉 Helper: format JS Date to MySQL DATETIME (YYYY-MM-DD HH:MM:SS)
+  const toMySQLDateTime = (date = new Date()) => {
+    const pad = (n) => String(n).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    const mm = pad(date.getMonth() + 1);
+    const dd = pad(date.getDate());
+    const hh = pad(date.getHours());
+    const mi = pad(date.getMinutes());
+    const ss = pad(date.getSeconds());
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
   };
 
-  const totalQuestions = assessmentData.questions.length;
-  const completedQuestions = Object.keys(answers).length;
-  const totalSections = assessmentData.sections.length;
-
-  // Update section completion status
+  // ✅ Load session info
   useEffect(() => {
-    assessmentData.sections.forEach(section => {
-      const sectionQuestions = assessmentData.questions.filter(q => q.sectionId === section.id);
-      const sectionAnswers = sectionQuestions.filter(q => answers[q.id]);
-      section.completedQuestions = sectionAnswers.length;
-      section.completed = sectionAnswers.length === sectionQuestions.length;
-    });
-  }, [answers]);
+    if (typeof window !== "undefined") {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        const userId = parsed.userId || parsed.user_id || parsed.id || "";
 
-  const handleStartAssessment = () => {
-    setIsStarted(true);
+        setSessionData({
+          url: parsed.APP_URL || "http://127.0.0.1:8000",
+          token: parsed.token || "",
+          subInstituteId: parsed.sub_institute_id || "",
+          orgType: parsed.orgType || "",
+          userId: userId,
+        });
+
+        setAssessmentData((prev) => ({
+          ...prev,
+          id: assessment?.id || parsed.questionpaper_id || "",
+        }));
+      }
+    }
+  }, [assessment]);
+
+  // ✅ Fetch assessment data
+  useEffect(() => {
+    const fetchAssessmentData = async () => {
+      if (!sessionData.url || !sessionData.subInstituteId || !assessmentData.id) {
+        return;
+      }
+
+      try {
+        const apiUrl = `${sessionData.url}/lms/online_exam?type=API&questionpaper_id=${assessmentData.id}&sub_institute_id=${sessionData.subInstituteId}`;
+
+        const response = await fetch(apiUrl, {
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+            Accept: "application/json",
+          },
+        });
+        const data = await response.json();
+
+        if (!data?.questionpaper_data?.id) {
+          setLoading(false);
+          return;
+        }
+
+        const paperId = data.questionpaper_data.id;
+
+        // ✅ Map Questions
+        const mappedQuestions = data.question_arr.map((q, index) => {
+          const options =
+            data.answer_arr[q.id]?.map((a) => ({
+              value: a.id,
+              label: a.answer,
+              description: a.feedback,
+              isCorrect: a.correct_answer === 1,
+            })) || [];
+
+          return {
+            id: q.id,
+            sectionId: "default",
+            skillCategory: "Exam",
+            skillName: data.questionpaper_data.paper_name,
+            skillIcon: "HelpCircle",
+            questionNumber: index + 1,
+            totalQuestions: data.questionpaper_data.total_ques,
+            type: q.multiple_answer === 1 ? "multiple-select" : "multiple-choice",
+            title: q.question_title,
+            description: q.description,
+            hint: q.hint_text,
+            marks: q.marks || 1,
+            options,
+          };
+        });
+
+        const totalMarks = data.questionpaper_data.total_marks || 0;
+        const totalTime = data.questionpaper_data.time_allowed || 60;
+        const examStatus = data.questionpaper_data.active_exam || "no";
+
+        setAssessmentData({
+          id: paperId,
+          questions: mappedQuestions,
+          sections: [
+            {
+              id: paperId,
+              name: data.questionpaper_data.paper_name,
+              icon: "FileQuestion",
+              totalQuestions: mappedQuestions.length,
+              completedQuestions: 0,
+              completed: false,
+              definition: data.questionpaper_data.paper_desc,
+              relatedSkills: [],
+            },
+          ],
+          totalMarks,
+          totalTime,
+          active_exam: examStatus,
+        });
+
+        const savedTime = localStorage.getItem(`timeLeft_${paperId}`);
+        if (savedTime && !isNaN(savedTime)) {
+          setTimeLeft(parseInt(savedTime, 10));
+        } else {
+          setTimeLeft(totalTime * 60);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error("🚨 Error fetching assessment:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchAssessmentData();
+  }, [sessionData, assessmentData.id]);
+
+  // ✅ Timer
+  useEffect(() => {
+    if (isCompleted || timeLeft === null) return;
+    if (timeLeft <= 0 && timeLeft !== assessmentData.totalTime * 60) {
+      handleSubmitAssessment().then(() => setIsCompleted(true));
+      localStorage.removeItem(`timeLeft_${assessmentData.id}`);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        const newVal = prev - 1;
+        if (newVal <= 0) {
+          clearInterval(timer);
+          handleSubmitAssessment().then(() => setIsCompleted(true));
+          localStorage.removeItem(`timeLeft_${assessmentData.id}`);
+          return 0;
+        }
+        localStorage.setItem(`timeLeft_${assessmentData.id}`, newVal);
+        return newVal;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, isCompleted, assessmentData.id, assessmentData.totalTime]);
+
+  // ✅ Format time
+  const formatTime = (seconds) => {
+    if (seconds === null) return "--:--";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const handlePauseAssessment = () => {
-    // Save progress and show pause confirmation
-    console.log('Assessment paused. Progress saved.');
-  };
+  const handleAnswer = (questionId, selectedAnswer) => {
+    const question = assessmentData.questions.find((q) => q.id === questionId);
+    if (!question) return;
 
-  const handleAnswer = (questionId, answer) => {
-    setAnswers(prev => ({
+    const correctOption = question.options.find((o) => o.isCorrect);
+    const correctAnswer = correctOption ? correctOption.value : "";
+
+    setAnswers((prev) => ({
       ...prev,
-      [questionId]: answer
+      [questionId]: {
+        selected: selectedAnswer,
+        correct: correctAnswer,
+      },
     }));
   };
 
-  const handleNextQuestion = () => {
+  const getDisplayAnswer = (storedAnswer) => {
+    if (!storedAnswer) return null;
+    return storedAnswer.selected;
+  };
+
+  // ✅ Submit API — formats start time for MySQL
+  const handleSubmitAssessment = async () => {
+    try {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+
+      const formData = new FormData();
+      formData.append("type", "API");
+      // 🔑 FIX: send MySQL DATETIME, not ISO
+      formData.append("hid_session_quiz", toMySQLDateTime(new Date()));
+      formData.append("questionpaper_time", String(assessmentData.totalTime));
+      formData.append("questionpaper_id", String(assessmentData.id));
+      formData.append("sub_institute_id", String(sessionData.subInstituteId));
+      formData.append("user_id", String(sessionData.userId));
+
+      Object.entries(answers).forEach(([questionId, data]) => {
+        const selected = data.selected;
+        const correct = data.correct;
+
+        if (Array.isArray(selected)) {
+          selected.forEach((val, idx) =>
+            formData.append(
+              `answer_multiple[${questionId}][${idx}]`,
+              `${val}##${correct === val ? 1 : 0}`
+            )
+          );
+        } else {
+          formData.append(
+            `answer_single[${questionId}]`,
+            `${selected}##${correct === selected ? 1 : 0}`
+          );
+        }
+      });
+
+      const response = await fetch(`${sessionData.url}/lms/online_exam`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${sessionData.token}`,
+          Accept: "application/json",
+          // NOTE: don't set Content-Type manually for FormData; the browser will add the boundary
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        throw new Error(`Submit failed (${response.status}) ${text}`);
+      }
+
+      const result = await response.json().catch(() => ({}));
+      console.log("✅ Submitted:", result);
+      return result;
+    } catch (error) {
+      console.error("❌ Submission error:", error);
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const totalQuestions = assessmentData?.questions?.length || 0;
+  const completedQuestions = Object.keys(answers).length;
+
+  const handleNextQuestion = async () => {
     if (currentQuestionIndex < totalQuestions - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      setCurrentQuestionIndex((prev) => prev + 1);
       updateCurrentSection();
     } else {
-      // Complete assessment
+      // ✅ Last question → submit immediately
+      await handleSubmitAssessment();
       setIsCompleted(true);
     }
   };
 
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+      setCurrentQuestionIndex((prev) => prev - 1);
       updateCurrentSection();
     }
   };
 
   const updateCurrentSection = () => {
+    if (!assessmentData.questions[currentQuestionIndex]) return;
     const currentQuestion = assessmentData.questions[currentQuestionIndex];
-    const sectionIndex = assessmentData.sections.findIndex(s => s.id === currentQuestion.sectionId);
+    const sectionIndex = assessmentData.sections.findIndex(
+      (s) => s.id === currentQuestion.sectionId
+    );
     setCurrentSection(sectionIndex + 1);
   };
 
-  const handleSectionClick = (sectionId) => {
-    const firstQuestionIndex = assessmentData.questions.findIndex(q => q.sectionId === sectionId);
-    if (firstQuestionIndex !== -1) {
-      setCurrentQuestionIndex(firstQuestionIndex);
-      updateCurrentSection();
-    }
-  };
-
-  const handleViewResults = () => {
-    // Navigate to detailed results page
-    window.location.href = '/my-learning-dashboard';
-  };
-
-  const handleRetakeAssessment = () => {
-    setIsStarted(false);
-    setIsCompleted(false);
-    setCurrentQuestionIndex(0);
-    setAnswers({});
-    setCurrentSection(1);
-  };
-
-  const getCurrentSkill = () => {
-    if (!isStarted || isCompleted) return null;
-    const currentQuestion = assessmentData.questions[currentQuestionIndex];
-    return assessmentData.sections.find(s => s.id === currentQuestion.sectionId);
-  };
-
-  const getCurrentQuestion = () => {
-    if (!isStarted || isCompleted) return null;
-    return assessmentData.questions[currentQuestionIndex];
-  };
-
-  // Mock results data for completion screen
-  const mockResults = {
-    totalQuestions: 120,
-    totalSkills: 8,
-    strongSkills: 3,
-    developingSkills: 5,
-    recommendedCourses: 12,
-    skillScores: [
-      { name: 'Frontend Development', category: 'Technical', icon: 'Monitor', score: 85 },
-      { name: 'Backend Development', category: 'Technical', icon: 'Server', score: 72 },
-      { name: 'Database Management', category: 'Technical', icon: 'Database', score: 68 },
-      { name: 'DevOps & Deployment', category: 'Technical', icon: 'GitBranch', score: 45 },
-      { name: 'Testing & QA', category: 'Technical', icon: 'CheckCircle', score: 78 },
-      { name: 'Project Management', category: 'Soft Skills', icon: 'Users', score: 82 },
-      { name: 'Communication', category: 'Soft Skills', icon: 'MessageSquare', score: 88 },
-      { name: 'Emerging Technologies', category: 'Technical', icon: 'Zap', score: 35 }
-    ],
-    topRecommendations: [
-      'Advanced DevOps Practices',
-      'Machine Learning Fundamentals',
-      'Cloud Architecture Patterns',
-      'Advanced Database Optimization'
-    ]
-  };
+  if (loading) return <p className="text-center py-8">Loading assessment...</p>;
+  if (!assessmentData?.questions?.length)
+    return <p className="text-center py-8 text-red-500">No questions found</p>;
 
   if (isCompleted) {
     return (
-      <div className="">
+      <div>
         <main className="pt-16 pb-24 md:pb-8">
           <div className="container mx-auto px-6 py-8">
-            <AssessmentComplete 
-              results={mockResults}
-              onViewResults={handleViewResults}
-              onRetakeAssessment={handleRetakeAssessment}
+            <AssessmentComplete
+              questions={assessmentData.questions}
+              answers={answers}
+              onRetakeAssessment={() => {
+                setIsCompleted(false);
+                setCurrentQuestionIndex(0);
+                setAnswers({});
+                setCurrentSection(1);
+                setTimeLeft(assessmentData.totalTime * 60);
+                localStorage.removeItem(`timeLeft_${assessmentData.id}`);
+              }}
             />
           </div>
         </main>
@@ -378,42 +332,49 @@ const SkillAssessment = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="">
-        <div className="container mx-auto px-6 py-8">
-            <div className="grid lg:grid-cols-12 gap-8">
-              {/* Left Sidebar - Progress */}
-              <div className="lg:col-span-4">
-                <AssessmentProgress 
-                  currentSection={currentSection}
-                  totalSections={totalSections}
-                  completedQuestions={completedQuestions}
-                  totalQuestions={totalQuestions}
-                  sections={assessmentData.sections}
-                  onSectionClick={handleSectionClick}
-                />
-              </div>
-
-              {/* Main Content - Question */}
-              <div className="lg:col-span-8">
-                <QuestionCard 
-                  question={getCurrentQuestion()}
-                  onAnswer={(answer) => handleAnswer(getCurrentQuestion().id, answer)}
-                  onNext={handleNextQuestion}
-                  onPrevious={handlePreviousQuestion}
-                  isFirst={currentQuestionIndex === 0}
-                  isLast={currentQuestionIndex === totalQuestions - 1}
-                  currentAnswer={answers[getCurrentQuestion()?.id]}
-                />
-              </div>
-
-              {/* Right Sidebar - Contextual Help */}
-              {/* <div className="lg:col-span-3">
-                <ContextualHelp 
-                  currentSkill={getCurrentSkill()}
-                  currentQuestion={getCurrentQuestion()}
-                />
-              </div> */}
+      <main>
+        <div className="container mx-auto">
+          <div className="grid lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-4">
+              <AssessmentProgress
+                currentQuestionIndex={currentQuestionIndex}
+                totalQuestions={totalQuestions}
+                completedQuestions={completedQuestions}
+                answers={Object.fromEntries(
+                  Object.entries(answers).map(([qid, val]) => [
+                    qid,
+                    getDisplayAnswer(val),
+                  ])
+                )}
+                questions={assessmentData.questions}
+                onQuestionClick={(index) => setCurrentQuestionIndex(index)}
+                totalMarks={assessmentData.totalMarks}
+                totalTime={assessmentData.totalTime}
+                timeLeft={formatTime(timeLeft)}
+              />
             </div>
+            <div className="lg:col-span-8">
+              <QuestionCard
+                question={assessmentData.questions[currentQuestionIndex]}
+                onAnswer={(answer) =>
+                  handleAnswer(
+                    assessmentData.questions[currentQuestionIndex].id,
+                    answer
+                  )
+                }
+                onNext={handleNextQuestion}
+                onPrevious={handlePreviousQuestion}
+                isFirst={currentQuestionIndex === 0}
+                isLast={currentQuestionIndex === totalQuestions - 1}
+                currentAnswer={getDisplayAnswer(
+                  answers[assessmentData.questions[currentQuestionIndex]?.id]
+                )}
+                totalMarks={assessmentData.totalMarks}
+                totalTime={assessmentData.totalTime}
+                timeLeft={formatTime(timeLeft)}
+              />
+            </div>
+          </div>
         </div>
       </main>
     </div>
