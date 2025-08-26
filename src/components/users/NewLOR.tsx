@@ -8,6 +8,7 @@ interface AttributeItem {
 
 interface LorData {
   level?: string;
+  guiding_phrase?: string;
   essence_level?: string;
   guidance_note?: string;
   Attributes?: Record<string, AttributeItem>;
@@ -104,7 +105,7 @@ export default function Index({ SelLOR }: SelLORProps) {
             }}
           >
             <span className="text-white font-bold text-3xl font-roboto">
-              Level: {dataLor?.level}
+              Level {dataLor?.level}: {dataLor?.guiding_phrase}
             </span>
           </div>
         )}
@@ -225,8 +226,7 @@ export default function Index({ SelLOR }: SelLORProps) {
         <h3
           style={{
             position: "relative",
-            marginTop: "30px",
-            marginLeft: "50px",
+            margin: "30px 0px 0px 20px",
             fontSize: "28px",
             fontWeight: "700",
             fontFamily: "Inter, sans-serif",
@@ -241,9 +241,9 @@ export default function Index({ SelLOR }: SelLORProps) {
         <svg
           style={{
             position: "relative",
-            marginTop: "20px",
-            marginLeft: "34px",
-            width: "500px",
+            marginTop: "10px",
+            marginLeft: "22px",
+            width: "460px",
             height: "12px",
           }}
           viewBox="0 0 550 12"
@@ -259,11 +259,8 @@ export default function Index({ SelLOR }: SelLORProps) {
         <div
           style={{
             position: "relative",
-            marginTop: "20px",
-            marginLeft: "50px",
-            marginRight: "30px",
-            marginBottom: "30px",
-            width: "450px",
+            margin: "20px",
+            width: "460px",
             height: "150px", // 👈 area for scroll
             fontSize: "15px",
             fontFamily: "Inter, sans-serif",

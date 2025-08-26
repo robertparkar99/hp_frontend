@@ -12,6 +12,7 @@ interface userDetailsprops {
   userProfiles: any | [];
   userLists: any | [];
   sessionData: any | [];
+  onUpdate?: () => void;
 }
 type TabId = "personal" | "address" | "reporting" | "attendance" | "deposit";
 
@@ -23,6 +24,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
   userProfiles,
   userLists,
   sessionData,
+  onUpdate,
 }) => {
   // Form state
   const [isLoading, setLoading] = useState(false);
@@ -44,7 +46,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
       gender: userDetails?.gender || "M",
       user_profile_id: userDetails?.user_profile_id || "",
       join_year: userDetails?.join_year || "",
-      status: userDetails?.status || "1",
+      status: userDetails?.status,
       image: userDetails?.image || "",
       imageFile: null as File | null, // Add this field to store the file object
     },
@@ -314,7 +316,9 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
       const result = await response.json();
       setLoading(false);
       alert(result.message);
-
+      if (onUpdate) {
+        onUpdate();
+      }
       console.log("Update successful:", result);
     } catch (error) {
       console.error("Error updating user:", error);
@@ -815,10 +819,14 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         >
                           <option value="">Status</option>
-                          <option value="1" selected={userDetails?.status == 1}>
+                          <option 
+                            value="1" 
+                          >
                             Active
                           </option>
-                          <option value="0" selected={userDetails?.status == 0}>
+                          <option 
+                            value="0"
+                          >
                             In-Active
                           </option>
                         </select>
