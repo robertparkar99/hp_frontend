@@ -423,10 +423,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                                 <br />
                                 <span className="text-sm">Total records : {filteredData.length}</span> */}
                             </div>
-
-                            {/* Right side - Export buttons */}
-                            <div className="flex space-x-2">
-                                <div className="flex flex-col items-center w-[320px]">
+                            <div className="w-[320px] mr-auto">
                                     {/* <label htmlFor="Department" className="self-start mb-1 px-3">Jobrole Department</label> */}
                                     <select
                                         name="department"
@@ -442,6 +439,10 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                                         ))}
                                     </select>
                                 </div>
+
+                            {/* Right side - Export buttons */}
+                            <div className="flex space-x-2">
+
 
                                 <button
                                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center"
