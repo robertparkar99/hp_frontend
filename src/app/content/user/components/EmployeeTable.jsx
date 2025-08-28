@@ -152,6 +152,15 @@ const EmployeeTable = ({
                   <Icon name={getSortIcon('mobile')} size={14} />
                 </button>
               </th>
+              <th className="text-left px-3 lg:px-4 py-3 hidden lg:table-cell">
+                <button
+                  onClick={() => handleSort('department_name')}
+                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
+                >
+                  <span>Department</span>
+                  <Icon name={getSortIcon('department_name')} size={14} />
+                </button>
+              </th>
               <th className="text-left px-3 lg:px-4 py-3 hidden xl:table-cell">
                 <button
                   onClick={() => handleSort('profile')}
@@ -202,7 +211,9 @@ const EmployeeTable = ({
                 <td className="px-3 lg:px-4 py-4 hidden lg:table-cell">
                   <span className="text-sm text-foreground">{employee.mobile}</span>
                 </td>
-
+                <td className="px-3 lg:px-4 py-4 hidden lg:table-cell">
+                  <span className="text-sm text-foreground">{employee.department_name}</span>
+                </td>
                 <td className="px-3 lg:px-4 py-4 hidden xl:table-cell">
                   <span className="text-sm text-foreground">{employee.profile_name}</span>
                 </td>

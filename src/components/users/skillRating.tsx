@@ -27,6 +27,13 @@ interface JobroleSkilladd1Props {
   skills: Skill[];
 }
 
+interface ValidationState {
+  knowledge: Record<string, string>; // attribute: "yes" or "no"
+  ability: Record<string, string>;
+  behaviour: Record<string, string>;
+  attitude: Record<string, string>;
+}
+
 export default function Index({ skills }: JobroleSkilladd1Props) {
   const [currentSkillIndex, setCurrentSkillIndex] = useState(0);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(
@@ -38,8 +45,15 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
   const [opacity, setOpacity] = useState(1);
   const [showDetails, setShowDetails] = useState(false);
   const [SkillLevels, setSkillLevels] = useState([]);
+  const [selectedSkillLevel, setSelectedSkillLevel] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [validationState, setValidationState] = useState<ValidationState>({
+    knowledge: {},
+    ability: {},
+    behaviour: {},
+    attitude: {}
+  });
 
   const [attrArray, setAttrArray] = useState([
     { title: "knowledge", icon: "mdi-library" },
@@ -90,6 +104,9 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
       if (response.ok) {
         const data = await response.json();
         setSkillLevels(data);
+        if (data.length > 0) {
+          setSelectedSkillLevel(data[0]?.proficiency_level || "");
+        }
       }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -98,40 +115,102 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
 
   const handleValidation = (
     type: "knowledge" | "ability" | "behaviour" | "attitude",
-    index: number,
+    attribute: string,
     isValid: boolean
   ) => {
-    // Update validation logic here
+    setValidationState(prev => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        [attribute]: isValid ? "yes" : "no"
+      }
+    }));
+    
     setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    setTimeout(() => setShowSuccess(false), 1000);
   };
 
-  const handleValidationNew = (isValid: boolean) => {
-    if (isProcessing) return;
+  const moveToNextSkill = () => {
+    if (currentSkillIndex < skills.length - 1) {
+      const nextIndex = currentSkillIndex + 1;
+      setCurrentSkillIndex(nextIndex);
+      setSelectedSkill(skills[nextIndex]);
+      // Reset validation state for new skill
+      setValidationState({
+        knowledge: {},
+        ability: {},
+        behaviour: {},
+        attitude: {}
+      });
+    } else {
+      // Last skill completed
+      // You can add any completion logic here
+    }
     
+    // Reset the image and processing state
+    setSelectedImage("/image 16.png");
+    setIsProcessing(false);
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedSkill || !selectedSkillLevel) {
+      alert("Please select a skill level");
+      return;
+    }
+
     setIsProcessing(true);
     setOpacity(0);
     
     setTimeout(() => {
-      setSelectedImage(isValid ? "/Illustration.png" : "/image 16.png");
+      setSelectedImage("/Illustration.png");
       setOpacity(1);
-      
-      // After 3 seconds, move to the next skill
-      setTimeout(() => {
-        if (currentSkillIndex < skills.length - 1) {
-          const nextIndex = currentSkillIndex + 1;
-          setCurrentSkillIndex(nextIndex);
-          setSelectedSkill(skills[nextIndex]);
-        } else {
-          // Last skill completed
-          // You can add any completion logic here
-        }
-        
-        // Reset the image and processing state
-        setSelectedImage("/image 16.png");
-        setIsProcessing(false);
-      }, 3000);
     }, 300);
+
+    try {
+      const formData = {
+        skill_id: selectedSkill.skill_id,
+        skill_level: selectedSkillLevel,
+        knowledge: validationState.knowledge,
+        ability: validationState.ability,
+        behaviour: validationState.behaviour,
+        attitude: validationState.attitude,
+        userId: sessionData.userId,
+        sub_institute_id: sessionData.subInstituteId
+      };
+
+      console.log("Submitting data:", formData);
+
+      const response = await fetch(`${sessionData.url}/matrix/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${sessionData.token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Submission successful:", result);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        
+        // Move to next skill after successful API response
+        moveToNextSkill();
+      } else {
+        console.error("Submission failed:", response.statusText);
+        alert("Failed to save skill assessment");
+        // Reset processing state on failure
+        setIsProcessing(false);
+        setSelectedImage("/image 16.png");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("Error submitting form");
+      // Reset processing state on error
+      setIsProcessing(false);
+      setSelectedImage("/image 16.png");
+    }
   };
 
   return (
@@ -157,6 +236,13 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                     onClick={() => {
                       setSelectedSkill(skill);
                       setCurrentSkillIndex(index);
+                      // Reset validation state when changing skill
+                      setValidationState({
+                        knowledge: {},
+                        ability: {},
+                        behaviour: {},
+                        attitude: {}
+                      });
                     }}
                   >
                     <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px] transition-all duration-300 group-hover:w-full group-hover:left-0 group-hover:rounded-none opacity-100 group-hover:opacity-0 group-hover:delay-[0ms]"></div>
@@ -223,7 +309,6 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                 {/* Illustration */}
                 <div className="flex justify-center mb-12">
                   <div className="w-80 h-80 bg-gradient-to-br from-blue-50 to-purple-50 rounded-full flex items-center justify-center relative overflow-hidden">
-                    {/* Karate person illustration using SVG */}
                     <img
                       src={selectedImage}
                       alt="Validation Illustration"
@@ -233,10 +318,14 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                   </div>
                 </div>
 
-                {/* Yes/No Buttons */}
+                {/* Skill Level Selection */}
                 <div className="flex justify-center gap-6">
                   <div className="dropdownDiv">
-                    <select className="w-80 h-10 rounded-full shadow-lg border border-gray-200 hover:shadow-xl transition-shadow pl-2">
+                    <select 
+                      className="w-80 h-10 rounded-full shadow-lg border border-gray-200 hover:shadow-xl transition-shadow pl-2"
+                      value={selectedSkillLevel}
+                      onChange={(e) => setSelectedSkillLevel(e.target.value)}
+                    >
                       {SkillLevels.length > 0 &&
                         SkillLevels.map((val: any, key) => (
                           <option
@@ -249,37 +338,37 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                         ))}
                     </select>
                   </div>
-                  <button
-                    className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60"
-                    onClick={() => handleValidationNew(true)}
-                    title="Click for next"
-                    disabled={isProcessing}
-                  >
-                    {currentSkillIndex === skills.length - 1 ? "Complete" : "Next"}
-                  </button>
                 </div>
               </div>
 
-              <div className="text-left">
-                <div className="flex items-center mb-4">
-                  <span className="mr-2">
-                    Want to rate your skill in detail ?
-                  </span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      onChange={(e) => {
-                        setShowDetails(e.target.checked);
-                      }}
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+              {!showDetails && (
+                <div className="text-left mt-2">
+                  <div className="flex items-center mb-4">
+                    <span className="mr-2">
+                      Want to rate your skill in detail ?
+                    </span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        onChange={(e) => {
+                          setShowDetails(e.target.checked);
+                        }}
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                    <button
+                      className="mx-4 px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60"
+                      onClick={handleSubmit}
+                      title="Click to submit"
+                      disabled={isProcessing}
+                    >
+                      {currentSkillIndex === skills.length - 1 ? "Complete" : "Next"}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-
-            {/* Right Panel */}
           </div>
           {showSuccess && (
             <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg">
@@ -404,11 +493,10 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
           </DialogContent>
         </Dialog>
 
-        {showDetails !== false && (
+        {showDetails && (
           <div className="my-6 p-2">
             {selectedSkill && (
               <div className="flex flex-wrap gap-3">
-                {/* Blue accent bar */}
                 {attrArray.map((attr, key) => (
                   <div
                     key={key}
@@ -444,11 +532,15 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                                           | "ability"
                                           | "behaviour"
                                           | "attitude",
-                                        index,
+                                        item, // Use the actual attribute text as key
                                         true
                                       )
                                     }
-                                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                                    className={`px-3 py-1 rounded hover:bg-green-600 ${
+                                      validationState[attr?.title as keyof ValidationState]?.[item] === "yes"
+                                        ? "bg-green-600 text-white"
+                                        : "bg-green-500 text-white"
+                                    }`}
                                   >
                                     Yes
                                   </button>
@@ -460,11 +552,15 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                                           | "ability"
                                           | "behaviour"
                                           | "attitude",
-                                        index,
+                                        item, // Use the actual attribute text as key
                                         false
                                       )
                                     }
-                                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                    className={`px-3 py-1 rounded hover:bg-red-600 ${
+                                      validationState[attr?.title as keyof ValidationState]?.[item] === "no"
+                                        ? "bg-red-600 text-white"
+                                        : "bg-red-500 text-white"
+                                    }`}
                                   >
                                     No
                                   </button>
@@ -478,6 +574,32 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                 ))}
               </div>
             )}
+            
+            {/* Next button moved to the end when showDetails is true */}
+            <div className="flex items-center justify-end mt-4">
+              <span className="mr-2">
+                Want to rate your skill in detail ?
+              </span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={showDetails}
+                  onChange={(e) => {
+                    setShowDetails(e.target.checked);
+                  }}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+              <button
+                className="mx-4 px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60"
+                onClick={handleSubmit}
+                title="Click to submit"
+                disabled={isProcessing}
+              >
+                {currentSkillIndex === skills.length - 1 ? "Complete" : "Next"}
+              </button>
+            </div>
           </div>
         )}
       </div>
