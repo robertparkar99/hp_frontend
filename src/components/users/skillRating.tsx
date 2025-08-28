@@ -1,4 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface Skill {
   ability: any[];
@@ -21,16 +28,76 @@ interface JobroleSkilladd1Props {
 }
 
 export default function Index({ skills }: JobroleSkilladd1Props) {
+  const [currentSkillIndex, setCurrentSkillIndex] = useState(0);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(
     skills.length > 0 ? skills[0] : null
   );
+  const [sessionData, setSessionData] = useState<Record<string, unknown>>({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedImage, setSelectedImage] = useState("/image 16.png");
   const [opacity, setOpacity] = useState(1);
   const [showDetails, setShowDetails] = useState(false);
+  const [SkillLevels, setSkillLevels] = useState([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const [attrArray, setAttrArray] = useState([
+    { title: "knowledge", icon: "mdi-library" },
+    { title: "ability", icon: "mdi-hand-okay" },
+    { title: "behaviour", icon: "mdi-account-child" },
+    { title: "attitude", icon: "mdi-emoticon" },
+  ]);
+
+  // Load user session data from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const {
+        APP_URL,
+        token,
+        org_type,
+        sub_institute_id,
+        user_id,
+        user_profile_name,
+      } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        orgType: org_type,
+        subInstituteId: sub_institute_id,
+        userId: user_id,
+        userProfile: user_profile_name,
+      });
+    }
+  }, []);
+
+  // Fetch initial data once session is ready
+  useEffect(() => {
+    if (sessionData.url && sessionData.token) {
+      fetchInitialData(); // get data from skill level rate
+    }
+  }, [sessionData]);
+  
+  // get data from skill level rate
+  const fetchInitialData = async () => {
+    try {
+      const response = await fetch(
+        `${sessionData.url}/table_data?table=s_proficiency_levels&filters[sub_institute_id]=${sessionData.subInstituteId}`,
+        {
+          method: "GET",
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setSkillLevels(data);
+      }
+    } catch (error) {
+      console.error("Error fetching initial data:", error);
+    }
+  };
 
   const handleValidation = (
-    type: "knowledge" | "ability"| "behaviour" | "attitude",
+    type: "knowledge" | "ability" | "behaviour" | "attitude",
     index: number,
     isValid: boolean
   ) => {
@@ -40,10 +107,30 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
   };
 
   const handleValidationNew = (isValid: boolean) => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
     setOpacity(0);
+    
     setTimeout(() => {
       setSelectedImage(isValid ? "/Illustration.png" : "/image 16.png");
       setOpacity(1);
+      
+      // After 3 seconds, move to the next skill
+      setTimeout(() => {
+        if (currentSkillIndex < skills.length - 1) {
+          const nextIndex = currentSkillIndex + 1;
+          setCurrentSkillIndex(nextIndex);
+          setSelectedSkill(skills[nextIndex]);
+        } else {
+          // Last skill completed
+          // You can add any completion logic here
+        }
+        
+        // Reset the image and processing state
+        setSelectedImage("/image 16.png");
+        setIsProcessing(false);
+      }, 3000);
     }, 300);
   };
 
@@ -69,13 +156,13 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                     className="relative group"
                     onClick={() => {
                       setSelectedSkill(skill);
-                      console.log('sel skill',skill);
+                      setCurrentSkillIndex(index);
                     }}
                   >
                     <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px] transition-all duration-300 group-hover:w-full group-hover:left-0 group-hover:rounded-none opacity-100 group-hover:opacity-0 group-hover:delay-[0ms]"></div>
                     <div
                       className={`h-[36px] flex items-center transition-all duration-300 ${
-                        skill === selectedSkill
+                        skill.skill_id === selectedSkill?.skill_id
                           ? "bg-[#47A0FF] text-white"
                           : "bg-white group-hover:bg-[#47A0FF] group-hover:text-white"
                       } mb-1`}
@@ -83,7 +170,7 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                       <div className="flex items-center justify-between w-full pl-[24px] pr-[8px]">
                         <span
                           className={` text-[12px] truncate group-hover:text-white transition-colors duration-300 ${
-                            skill === selectedSkill
+                            skill.skill_id === selectedSkill?.skill_id
                               ? "text-white"
                               : "text-[#393939]"
                           }`}
@@ -115,14 +202,24 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
             </div>
 
             {/* Center Panel */}
-            <div className="flex-1 min-h-[472px] flex flex-col justify-between">
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <h1
-                  className="text-[#393939] font-bold text-xl md:text-[14px] text-center mb-12 leading-tight"
-                  style={{ fontFamily: "Inter, sans-serif" }}
-                >
-                  Are you proficient in {selectedSkill?.skill || "this skill"}?
-                </h1>
+            <div className="w-full flex-1 min-h-[472px] flex flex-col justify-between">
+              <div className="w-full bg-white rounded-2xl p-4 shadow-sm">
+                <div className="w-full flex justify-between gap-20">
+                  <h1
+                    className="text-[#393939] text-center font-bold text-xl md:text-[14px] text-center mb-12 leading-tight"
+                    style={{ fontFamily: "Inter, sans-serif" }}
+                  >
+                    Are you proficient in {selectedSkill?.skill || "this skill"}?
+                  </h1>
+                  <h1>
+                    <span
+                      className="mdi mdi-information-variant-circle text-2xl"
+                       title="Skill Detail"
+                      onClick={() => setIsEditModalOpen(true)}
+                    ></span>
+                  </h1>
+                </div>
+
                 {/* Illustration */}
                 <div className="flex justify-center mb-12">
                   <div className="w-80 h-80 bg-gradient-to-br from-blue-50 to-purple-50 rounded-full flex items-center justify-center relative overflow-hidden">
@@ -137,32 +234,28 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                 </div>
 
                 {/* Yes/No Buttons */}
-                <div className="flex justify-center gap-12">
+                <div className="flex justify-center gap-6">
+                  <div className="dropdownDiv">
+                    <select className="w-80 h-10 rounded-full shadow-lg border border-gray-200 hover:shadow-xl transition-shadow pl-2">
+                      {SkillLevels.length > 0 &&
+                        SkillLevels.map((val: any, key) => (
+                          <option
+                            key={key}
+                            value={val?.proficiency_level}
+                            title={val?.description}
+                          >
+                            {val?.proficiency_level}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                   <button
-                    className="w-20 h-10 bg-white rounded-full shadow-lg border border-gray-200 hover:shadow-xl transition-shadow"
+                    className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60"
                     onClick={() => handleValidationNew(true)}
+                    title="Click for next"
+                    disabled={isProcessing}
                   >
-                    <span
-                      className="text-[#C1C1C1] font-bold text-xl"
-                      style={{
-                        fontFamily: "Inter, sans-serif",
-                      }}
-                    >
-                      Yes
-                    </span>
-                  </button>
-                  <button
-                    className="w-20 h-10 bg-white rounded-full shadow-lg border border-gray-200 hover:shadow-xl transition-shadow"
-                    onClick={() => handleValidationNew(false)}
-                  >
-                    <span
-                      className="text-[#C1C1C1] font-bold text-xl"
-                      style={{
-                        fontFamily: "Inter, sans-serif",
-                      }}
-                    >
-                      No
-                    </span>
+                    {currentSkillIndex === skills.length - 1 ? "Complete" : "Next"}
                   </button>
                 </div>
               </div>
@@ -178,7 +271,6 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                       className="sr-only peer"
                       onChange={(e) => {
                         setShowDetails(e.target.checked);
-                        // alert(showDetails);
                       }}
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -195,124 +287,197 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
             </div>
           )}
         </div>
+
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto hide-scroll">
+            <DialogHeader>
+              <DialogTitle>
+                <span className="mdi mdi-brain"></span> {selectedSkill?.skill}{" "}
+              </DialogTitle>
+            </DialogHeader>
+            <hr className="m-0 mx-2" />
+            <div className="helloDiv">
+              {selectedSkill ? (
+                <div className="w-full">
+                  <div className="flex gap-4 px-4">
+                    <div className="w-1/4 bg-[#eaf7ff] shadow-lg shadow-blue-300/50 p-2 rounded-md">
+                      <span className="mdi mdi-briefcase"></span>&nbsp;&nbsp;{" "}
+                      <label htmlFor="Skill Jobrole" className="text-bold">
+                        Skill Jobrole
+                      </label>
+                      <hr className="border-[#aaaaaa] my-2" />
+                      {selectedSkill?.jobrole}
+                    </div>
+                    <div className="w-1/4 bg-[#eaf7ff] shadow-lg shadow-blue-300/50 p-2 rounded-md">
+                      <span className="mdi mdi-tag-multiple"></span>&nbsp;&nbsp;{" "}
+                      <label htmlFor="Skill Category" className="text-bold">
+                        Skill Category
+                      </label>
+                      <hr className="border-[#aaaaaa] my-2" />
+                      {selectedSkill?.category}
+                    </div>
+                    <div className="w-1/4 bg-[#eaf7ff] shadow-lg shadow-blue-300/50 p-2 rounded-md">
+                      <span className="mdi mdi-tag"></span>&nbsp;&nbsp;{" "}
+                      <label htmlFor="Skill Sub-Category" className="text-bold">
+                        Skill Sub-Category
+                      </label>
+                      <hr className="border-[#aaaaaa] my-2" />
+                      {selectedSkill?.sub_category}
+                    </div>
+                    <div className="w-1/4 bg-[#eaf7ff] shadow-lg shadow-blue-300/50 p-2 rounded-md">
+                      <span className="mdi mdi-chart-bar"></span>&nbsp;&nbsp;{" "}
+                      <label
+                        htmlFor="Skill Proficiency Level"
+                        className="text-bold"
+                      >
+                        Skill Proficiency Level
+                      </label>
+                      <hr className="border-[#aaaaaa] my-2" />
+                      {selectedSkill?.proficiency_level}
+                    </div>
+                  </div>
+
+                  <div className="descriptionDiv px-4 mt-4">
+                    <div className="w-full bg-[#eaf7f2] shadow-lg shadow-green-200/50 p-2 rounded-md">
+                      <span className="mdi mdi-information-variant-circle"></span>
+                      &nbsp;&nbsp;
+                      <label htmlFor="Skill Description" className="text-bold">
+                        Skill Description
+                      </label>
+                      <hr className="border-[#aaaaaa] my-2" />
+                      {selectedSkill?.description}
+                    </div>
+                  </div>
+
+                  <div className="attributeParts flex gap-4 px-4 mt-4">
+                    {attrArray.map((attr, key) => (
+                      <div
+                        key={key}
+                        className="w-full bg-blue-100 w-1/4 flex rounded-2xl shadow-blue-300/50 shadow-lg relative p-2"
+                      >
+                        <div className="py-2 w-full">
+                          <div className="space-y-6">
+                            <h4 className="font-semibold mb-2">
+                              <span
+                                className={`mdi ${attr?.icon} text-xl`}
+                              ></span>{" "}
+                              {attr?.title.charAt(0).toUpperCase() +
+                                attr?.title.slice(1)}
+                              :
+                            </h4>
+                            <hr className="mx-0 mb-2 border-[#000000]" />
+                            <div className="w-full h-[calc(50vh-0px)] overflow-y-auto hide-scrollbar">
+                              {(selectedSkill[
+                                attr?.title as keyof Skill
+                              ] as any[]) &&
+                                (
+                                  selectedSkill[
+                                    attr?.title as keyof Skill
+                                  ] as any[]
+                                ).map((item: any, index: number) => (
+                                  <div
+                                    key={index}
+                                    className="w-full bg-[white] p-2 rounded-lg mb-2"
+                                  >
+                                    <p className="text-sm">{item}</p>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p>No Skill details Found</p>
+              )}
+            </div>
+            <DialogFooter>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+              >
+                Close
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {showDetails !== false && (
           <div className="my-6 p-2">
-            {selectedSkill && ( <div className="flex flex-wrap gap-2">
-              <div className="w-full xl:w-[220px] flex bg-white rounded-2xl shadow-sm relative p-2">
+            {selectedSkill && (
+              <div className="flex flex-wrap gap-3">
                 {/* Blue accent bar */}
-
-                <div className="py-4">
-                  <div className="space-y-6">
-                    <h4 className="font-semibold mb-2">Knowledge:</h4>
-                    <div className="h-[calc(38vh-0px)] overflow-y-auto hide-scrollbar">
-                      {selectedSkill.knowledge.map((item, index) => ( 
-                        <div
-                          key={index}
-                          className="bg-blue-100 p-2 rounded mb-2"
-                        >
-                          <p className="text-sm">{item}</p>
-                          <div className="flex gap-2 mt-2">
-                            <button
-                              onClick={() =>
-                                handleValidation("knowledge", index, true)
-                              }
-                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                            >
-                              Yes
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleValidation("knowledge", index, false)
-                              }
-                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                            >
-                              No
-                            </button>
-                          </div>
+                {attrArray.map((attr, key) => (
+                  <div
+                    key={key}
+                    className="w-full xl:w-[230px] flex bg-white rounded-2xl shadow-sm relative p-2"
+                  >
+                    <div className="py-2 w-full">
+                      <div className="space-y-6">
+                        <h4 className="font-semibold mb-2">
+                          <span className={`mdi ${attr?.icon} text-xl`}></span>{" "}
+                          {attr?.title.charAt(0).toUpperCase() +
+                            attr?.title.slice(1)}
+                          :
+                        </h4>
+                        <hr className="mx-0 mb-2" />
+                        <div className="w-full h-[calc(40vh-0px)] overflow-y-auto hide-scrollbar">
+                          {(selectedSkill[
+                            attr?.title as keyof Skill
+                          ] as any[]) &&
+                            (
+                              selectedSkill[attr?.title as keyof Skill] as any[]
+                            ).map((item: any, index: number) => (
+                              <div
+                                key={index}
+                                className="w-full bg-blue-100 p-2 rounded mb-2"
+                              >
+                                <p className="text-sm">{item}</p>
+                                <div className="flex gap-2 mt-2">
+                                  <button
+                                    onClick={() =>
+                                      handleValidation(
+                                        attr?.title as
+                                          | "knowledge"
+                                          | "ability"
+                                          | "behaviour"
+                                          | "attitude",
+                                        index,
+                                        true
+                                      )
+                                    }
+                                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                                  >
+                                    Yes
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleValidation(
+                                        attr?.title as
+                                          | "knowledge"
+                                          | "ability"
+                                          | "behaviour"
+                                          | "attitude",
+                                        index,
+                                        false
+                                      )
+                                    }
+                                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                  >
+                                    No
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
                         </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            
-              <div className="w-full xl:w-[280px] bg-white rounded-2xl shadow-sm relative">
-                {/* Blue accent bar */}
-
-                <div className="pl-8 pr-4 py-4">
-                  <div className="space-y-6">
-                    <h4 className="font-semibold mb-2">Ability:</h4>
-                    <div className="h-[calc(38vh-0px)] overflow-y-auto hide-scrollbar">
-                      {selectedSkill.ability.map((item, index) => (
-                        <div
-                          key={index}
-                          className="bg-blue-100 p-2 rounded mb-2"
-                        >
-                          <p className="text-sm">{item}</p>
-                          <div className="flex gap-2 mt-2">
-                            <button
-                              onClick={() =>
-                                handleValidation("ability", index, true)
-                              }
-                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                            >
-                              Yes
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleValidation("ability", index, false)
-                              }
-                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                            >
-                              No
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="w-full xl:w-[280px] bg-white rounded-2xl shadow-sm relative">
-                {/* Blue accent bar */}
-
-                <div className="pl-8 pr-4 py-4">
-                  <div className="space-y-6">
-                    <h4 className="font-semibold mb-2">Attitude:</h4>
-                    <div className="h-[calc(38vh-0px)] overflow-y-auto hide-scrollbar">
-                      {selectedSkill.attitude && selectedSkill.attitude.map((item, index) => (
-                        <div
-                          key={index}
-                          className="bg-blue-100 p-2 rounded mb-2"
-                        >
-                          <p className="text-sm">{item}</p>
-                          <div className="flex gap-2 mt-2">
-                            <button
-                              onClick={() =>
-                                handleValidation("attitude", index, true)
-                              }
-                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                            >
-                              Yes
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleValidation("attitude", index, false)
-                              }
-                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                            >
-                              No
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              </div> )}
+            )}
           </div>
         )}
       </div>

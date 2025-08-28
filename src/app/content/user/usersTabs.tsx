@@ -34,6 +34,7 @@ export default function EditProfilePage() {
   const [isLoading, setLoading] = useState(true);
   const [userDetails, setUserDetails] = useState<any>();
   const [userJobroleSkills, SetUserJobroleSkills] = useState<any[]>([]);
+  const [userRatingSkills, SetUserRatingSkills] = useState<any[]>([]);
   const [userJobroleLists, SetUserJobroleLists] = useState<any[]>([]);
   const [userLOR, SetUserLOR] = useState<any[]>([]);
   const [SelLORs, setSelLOR] = useState<any[]>([]);
@@ -98,6 +99,7 @@ export default function EditProfilePage() {
       const data = await res.json();
       setLoading(false);
       SetUserJobroleSkills(data.jobroleSkills || []);
+      SetUserRatingSkills(data.skills || []);
       setUserJobroleTask(data.jobroleTasks || []);
       setUserdepartment(data.departments || []);
       SetUserJobroleLists(data.jobroleList || []);
@@ -332,7 +334,7 @@ export default function EditProfilePage() {
             {activeTab === "responsibility" && <LOR SelLOR={SelLORs} />}
             {/* {activeTab === 'skill-rating' && <div>Skill Rating Content</div>} */}
             {activeTab === "skill-rating" && (
-              <Skillrating skills={userJobroleSkills} />
+              <Skillrating skills={userRatingSkills} />
             )}
           </div>
         </div>
