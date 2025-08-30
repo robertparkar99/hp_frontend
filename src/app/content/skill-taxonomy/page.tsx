@@ -1,3 +1,12 @@
+// import React from 'react';
+// const Index = () => (
+//     <iframe
+//         src="https://collapsible-d3-tree.vercel.app/"
+//         style={{ width: '100%', height: '500%', border: 'none' }}
+//         title="Skill Taxonomy Viewer"
+//     />
+// );
+// export default Index;
 'use client';
 import { useEffect, useState } from 'react';
 
@@ -13,7 +22,7 @@ export default function SkillTaxonomyPage() {
     }, []);
 
     return (
-        <div className="w-full">
+        <div className="w-full h-full">
             {subInstituteId && (
                 <iframe
                     src={`https://collapsible-d3-tree.vercel.app/?sub_institute_id=${subInstituteId}`}
