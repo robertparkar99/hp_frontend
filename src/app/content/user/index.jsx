@@ -107,12 +107,12 @@ useEffect(() => {
         full_name: item.full_name || 'N/A',
         email: item.email || 'N/A',
         mobile: item.mobile || 'N/A',
+        department_name: item.department_name || 'N/A',
         jobRole: item.designation || 'N/A',
         address: item.address || 'N/A',
         image: item.image?.trim()
           ? item.image
           : `https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39`,
-        department: item.department || 'N/A',
         occupation: item.occupation || 'N/A',
         status: item.status || 'Active',
         lastActivity: item.last_activity || 'Unknown',

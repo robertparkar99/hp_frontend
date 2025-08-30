@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import JobRoleNew from "../../../components/users/jobroleNew";
-import JobRoleSkillsAdd1 from "../../../components/users/jobroleSkilladd1";
+import Skillrating from "../../../components/users/skillRating";
 import JobRoleSkill from "../../../components/users/jobroleSkill";
 import JobRoleTasks from "../../../components/users/jobroleTask";
 import PersonalDetails from "../../../components/users/personalDetails";
@@ -34,6 +34,7 @@ export default function EditProfilePage() {
   const [isLoading, setLoading] = useState(true);
   const [userDetails, setUserDetails] = useState<any>();
   const [userJobroleSkills, SetUserJobroleSkills] = useState<any[]>([]);
+  const [userRatingSkills, SetUserRatingSkills] = useState<any[]>([]);
   const [userJobroleLists, SetUserJobroleLists] = useState<any[]>([]);
   const [userLOR, SetUserLOR] = useState<any[]>([]);
   const [SelLORs, setSelLOR] = useState<any[]>([]);
@@ -93,11 +94,12 @@ export default function EditProfilePage() {
     setLoading(true);
     try {
       const res = await fetch(
-        `${sessionData.url}/user/add_user/${clickedUser}'/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
+        `${sessionData.url}/user/add_user/${clickedUser}/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
       );
       const data = await res.json();
       setLoading(false);
       SetUserJobroleSkills(data.jobroleSkills || []);
+      SetUserRatingSkills(data.skills || []);
       setUserJobroleTask(data.jobroleTasks || []);
       setUserdepartment(data.departments || []);
       SetUserJobroleLists(data.jobroleList || []);
@@ -312,6 +314,7 @@ export default function EditProfilePage() {
                 userProfiles={userProfiles}
                 userLists={userLists}
                 sessionData={sessionData}
+                onUpdate={fetchInitialData}
               />
             )}
             {activeTab === "upload-docs" && (
@@ -331,7 +334,7 @@ export default function EditProfilePage() {
             {activeTab === "responsibility" && <LOR SelLOR={SelLORs} />}
             {/* {activeTab === 'skill-rating' && <div>Skill Rating Content</div>} */}
             {activeTab === "skill-rating" && (
-              <JobRoleSkillsAdd1 skills={userJobroleSkills} />
+              <Skillrating skills={userRatingSkills} />
             )}
           </div>
         </div>
