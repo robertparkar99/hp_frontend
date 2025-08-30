@@ -1,3 +1,4 @@
+// old skill rating file
 import React, { useState } from 'react';
 
 interface Skill {
