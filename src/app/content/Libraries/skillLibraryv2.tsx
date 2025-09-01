@@ -12,6 +12,8 @@ import KnowledgeTax from "../Libraries/knowledgeTax";
 import AttitudeTaxonomy from "../Libraries/AttitudeTaxo";
 import AbilityTaxonomy from "../Libraries/AbilityTaxo";
 import BehaviourTaxonomy from "../Libraries/BehaviourTaxo";
+import KnowledgeLibrary from "../Knowledge_library/page";
+import Behaviour from "../Behaviour-library/page";
 
 // ✅ Loader Component
 const Loader = () => (
@@ -92,10 +94,10 @@ const SkillLibrary = () => {
           <>
             {activeTab === "Skill Library" && <DynamicSkill />}
             {activeTab === "Jobrole Library" && <DynamicJobrole />}
-            {activeTab === "Knowledge" && <h1 className="text-center">Coming soon</h1>}
+            {activeTab === "Knowledge" && <KnowledgeLibrary />}
             {activeTab === "Ability" && <h1 className="text-center">Coming soon</h1>}
             {activeTab === "Attitude" && <h1 className="text-center">Coming soon</h1>}
-            {activeTab === "Behaviour" && <h1 className="text-center">Coming soon</h1>}
+            {activeTab === "Behaviour" && <Behaviour />}
           </>
         )}
       </Suspense>
