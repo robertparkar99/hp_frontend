@@ -1,3 +1,4 @@
+// old skill rating file
 import React, { useState } from 'react';
 
 interface Skill {
@@ -19,15 +20,17 @@ interface JobroleSkilladd1Props {
 }
 
 export default function Index({ skills }: JobroleSkilladd1Props) {
-    const [selectedSkill, setSelectedSkill] = useState<Skill>(skills[0]);
+    const [selectedSkill, setSelectedSkill] = useState<Skill | null>(skills.length > 0 ? skills[0] : null);
     const [showSuccess, setShowSuccess] = useState(false);
     const [selectedImage, setSelectedImage] = useState('/image 16.png');
     const [opacity, setOpacity] = useState(1);
+    
     const handleValidation = (type: 'knowledge' | 'ability', index: number, isValid: boolean) => {
         // Update validation logic here
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
     };
+    
     const handleValidationNew = (isValid: boolean) => {
         setOpacity(0);
         setTimeout(() => {
@@ -35,6 +38,7 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
             setOpacity(1);
         }, 300);
     };
+    
     return (
         <>
             <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -111,71 +115,72 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                             </div>
                         </div>
 
-                        <div className="w-full xl:w-[280px] bg-white rounded-l-2xl xl:rounded-l-none xl:rounded-r-2xl border-l-4 border-[#47A0FF] shadow-sm relative">
-                            {/* Blue accent bar */}
-                            <div className="absolute left-0 top-0 w-4 h-full bg-[#47A0FF] rounded-l-2xl xl:rounded-l-none"></div>
+                        {/* Right Panel */}
+                        {selectedSkill && (
+                            <div className="w-full xl:w-[280px] bg-white rounded-l-2xl xl:rounded-l-none xl:rounded-r-2xl border-l-4 border-[#47A0FF] shadow-sm relative">
+                                {/* Blue accent bar */}
+                                <div className="absolute left-0 top-0 w-4 h-full bg-[#47A0FF] rounded-l-2xl xl:rounded-l-none"></div>
 
-                            <div className="pl-8 pr-4 py-4">
-                                <h3 className="text-sm font-bold mb-4">{selectedSkill.skill} Validation</h3>
+                                <div className="pl-8 pr-4 py-4">
+                                    <h3 className="text-sm font-bold mb-4">{selectedSkill.skill} Validation</h3>
 
-                                <div className="space-y-6">
-                                    <h4 className="font-semibold mb-2">Knowledge:</h4>
-                                    <div className="h-[calc(38vh-0px)] overflow-y-auto hide-scrollbar">
-
-                                        {selectedSkill.knowledge.map((item, index) => (
-                                            <div key={index} className="bg-blue-100 p-2 rounded mb-2">
-                                                <p className="text-sm">{item}</p>
-                                                <div className="flex gap-2 mt-2">
-                                                    <button
-                                                        onClick={() => handleValidation('knowledge', index, true)}
-                                                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                                                    >
-                                                        Yes
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleValidation('knowledge', index, false)}
-                                                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                                                    >
-                                                        No
-                                                    </button>
+                                    <div className="space-y-6">
+                                        <h4 className="font-semibold mb-2">Knowledge:</h4>
+                                        <div className="h-[calc(38vh-0px)] overflow-y-auto hide-scrollbar">
+                                            {selectedSkill.knowledge.map((item, index) => (
+                                                <div key={index} className="bg-blue-100 p-2 rounded mb-2">
+                                                    <p className="text-sm">{item}</p>
+                                                    <div className="flex gap-2 mt-2">
+                                                        <button
+                                                            onClick={() => handleValidation('knowledge', index, true)}
+                                                            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                                                        >
+                                                            Yes
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleValidation('knowledge', index, false)}
+                                                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                                        >
+                                                            No
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <h4 className="font-semibold mb-2">Ability:</h4>
-                                    <div className="h-[calc(38vh-0px)] overflow-y-auto hide-scrollbar">
-
-                                        {selectedSkill.ability.map((item, index) => (
-                                            <div key={index} className="bg-blue-100 p-2 rounded mb-2">
-                                                <p className="text-sm">{item}</p>
-                                                <div className="flex gap-2 mt-2">
-                                                    <button
-                                                        onClick={() => handleValidation('ability', index, true)}
-                                                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                                                    >
-                                                        Yes
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleValidation('ability', index, false)}
-                                                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                                                    >
-                                                        No
-                                                    </button>
+                                            ))}
+                                        </div>
+                                        <h4 className="font-semibold mb-2">Ability:</h4>
+                                        <div className="h-[calc(38vh-0px)] overflow-y-auto hide-scrollbar">
+                                            {selectedSkill.ability.map((item, index) => (
+                                                <div key={index} className="bg-blue-100 p-2 rounded mb-2">
+                                                    <p className="text-sm">{item}</p>
+                                                    <div className="flex gap-2 mt-2">
+                                                        <button
+                                                            onClick={() => handleValidation('ability', index, true)}
+                                                            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                                                        >
+                                                            Yes
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleValidation('ability', index, false)}
+                                                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                                        >
+                                                            No
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                     {showSuccess && (
                         <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg">
                             Skill updated successfully!
                         </div>
                     )}
-                </div >
-            </div >
+                </div>
+            </div>
         </>
     );
 }

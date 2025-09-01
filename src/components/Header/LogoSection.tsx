@@ -1,34 +1,91 @@
+"use client";
 import * as React from "react";
-import { useState,useEffect } from "react";
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 
 export const LogoSection: React.FC = () => {
   const router = useRouter();
   const [userData, setUserData] = useState<any | null>(null);
-  
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number }>({
+    top: 0,
+    left: 0,
+  });
+
   useEffect(() => {
-    const userData = localStorage.getItem('userData');
-    if (userData !== null) {
-      setUserData(JSON.parse(userData));
+    setMounted(true);
+    const storedData = localStorage.getItem("userData");
+    if (storedData) {
+      setUserData(JSON.parse(storedData));
+    } else {
+      router.push("/");
     }
-    if (!userData) {
-      router.push('/');
-    }
-    // console.log(JSON.parse(localStorage.getItem('userData')).org_logo);
+  }, [router]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !buttonRef.current?.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const toggleDropdown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownWidth = 192; // Tailwind w-48 = 12rem = 192px
+      let left = rect.left;
+
+      // ✅ Adjust so dropdown doesn’t overflow on the right side
+      if (left + dropdownWidth > window.innerWidth) {
+        left = rect.right - dropdownWidth;
+      }
+
+      setDropdownPos({ top: rect.bottom + 6, left });
+    }
+    setIsDropdownOpen((prev) => !prev);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("userData");
+    router.push("/");
+  };
+
+  const handleMenuClick = (path: string) => {
+    setIsDropdownOpen(false);
+    (window as any).__currentMenuItem = path;
+    window.dispatchEvent(
+      new CustomEvent("menuSelected", {
+        detail: { menu: path, pageType: "page", access: path },
+      })
+    );
+  };
+
+  const menuItems = [{ label: "Groupwise Rights", path: "groupWiseRights/page.tsx" }];
+
   return (
-    <div className="flex">
+    <div className="flex relative z-50 items-center">
+      {/* icons */}
       <div className="iconDivs flex gap-4 items-center">
-        <div className="searchIcon">
+        {/* search icon */}
+        <div className="searchIcon cursor-pointer">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             stroke="#3B3B3B"
-            width="16"
-            height="16"
-            className="w-6 h-6 text-black flex"
+            className="w-6 h-6 text-black"
           >
             <path
               strokeLinecap="round"
@@ -38,7 +95,9 @@ export const LogoSection: React.FC = () => {
             />
           </svg>
         </div>
-        <div className="settingIcon">
+
+        {/* setting icon with dropdown */}
+        <div ref={buttonRef} onClick={toggleDropdown} className="cursor-pointer">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -50,17 +109,60 @@ export const LogoSection: React.FC = () => {
             className="w-6 h-6 text-black"
           >
             <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 
-      1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51
-      1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 
-      1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2h.09a1.65 1.65 0 0 0 1.51-1 
-      1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9
-      a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 
-      1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9
-      a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 
+              2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 
+              1.51V21a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-.09a1.65 1.65 0 
+              0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 
+              1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 
+              1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2v-1a2 2 0 0 
+              1 2-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 
+              0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 
+              1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 
+              2 0 0 1 2-2h1a2 2 0 0 1 2 2v.09a1.65 1.65 
+              0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 
+              2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 
+              0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 
+              1H21a2 2 0 0 1 2 2v1a2 2 0 0 1-2 
+              2h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
         </div>
-        <div className="notificationIcon pr-[10]">
+
+        {/* dropdown rendered via portal */}
+        {mounted &&
+          isDropdownOpen &&
+          createPortal(
+            <div
+              ref={dropdownRef}
+              style={{
+                position: "absolute",
+                top: dropdownPos.top,
+                left: dropdownPos.left,
+              }}
+              className="bg-white shadow-lg rounded-md border border-gray-200 w-48"
+            >
+              <ul className="py-1">
+                {menuItems.map((item, idx) => (
+                  <li
+                    key={idx}
+                    onClick={() => handleMenuClick(item.path)}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700"
+                  >
+                    {item.label}
+                  </li>
+                ))}
+                <li
+                  className="px-4 py-2 hover:bg-red-50 cursor-pointer text-sm text-red-500 border-t border-gray-100"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </li>
+              </ul>
+            </div>,
+            document.body
+          )}
+
+        {/* notification icon */}
+        <div className="notificationIcon cursor-pointer">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -77,9 +179,17 @@ export const LogoSection: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex gap-2 border-l-2 border-black-500 px-2">
-        {/* <p>{userData?.user_name}</p> */}
-        {userData?.org_logo && userData?.org_logo!='' ? <img src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_logo/${userData?.org_logo}`} alt="Organization Logo" width="80px" height="680px"/> : <p>{userData?.user_name}</p>}
+      {/* user info */}
+      <div className="flex gap-2 border-l-2 border-gray-200 pl-2 ml-2">
+        {userData?.org_logo && userData?.org_logo !== "" ? (
+          <img
+            src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_logo/${userData?.org_logo}`}
+            alt="Organization Logo"
+            className="h-8 w-auto"
+          />
+        ) : (
+          <p className="text-sm font-medium">{userData?.user_name}</p>
+        )}
       </div>
     </div>
   );

@@ -15,8 +15,10 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: rgba(30, 64, 175, 1);
   --primary-foreground: oklch(0.985 0 0);
+  --success: rgba(16, 185, 129, 1);
+  --success-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -53,7 +55,23 @@ body {
   left: 34%;
   height: 950px;
 }
+.text-success {
+  color: rgba(16, 185, 129, 1);
+}
+.text-warning
+{
+  color :#f59e0b;
+}
+.text-danger{
+  color:red;
+}
+.bg-success{
+  background : rgba(16, 185, 129, 1);
+}
 
+.bg-warning{
+  background : #f59e0b;
+}
 /* added on 11-04-2025 by uma  */
 .contentDiv {
   display: flex;
@@ -175,6 +193,7 @@ body {
   word-wrap: break-word;
 }
 
+
 [data-title]:after {
   content: attr(data-title);
   top: 160%;
@@ -203,6 +222,7 @@ body {
 [data-small] {
   position: relative;
 } */
+
 
 /* Common styles for all tooltip pseudo-elements */
 [data-title]:after,

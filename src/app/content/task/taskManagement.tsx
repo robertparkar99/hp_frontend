@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, ChangeEvent, DragEvent, FormEvent } from "react";
+import React, { useEffect, useState, useRef, ChangeEvent, FormEvent } from "react";
 
 interface SessionData {
     url: string;
@@ -44,7 +44,6 @@ const TaskManagement = () => {
     });
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [isDragOver, setIsDragOver] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -59,6 +58,8 @@ const TaskManagement = () => {
     const [ObserverList, setObserverList] = useState<any[]>([]);
     const [selObserver, setSelObserver] = useState<string>('');
     const [taskType, setTaskType] = useState<string>(''); // 'daily', 'weekly', 'monthly'
+    const [repeatDays, setRepeatDays] = useState<string>('');
+    const [repeatUntil, setRepeatUntil] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -170,35 +171,6 @@ const TaskManagement = () => {
         }
     };
 
-    const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragOver(false);
-
-        const droppedFile = e.dataTransfer.files[0];
-        if (droppedFile) {
-            setFile(droppedFile);
-            // Create a preview URL and revoke the previous one if it exists
-            if (previewUrl) {
-                URL.revokeObjectURL(previewUrl);
-            }
-            const objectUrl = URL.createObjectURL(droppedFile);
-            setPreviewUrl(objectUrl);
-        }
-    };
-
-    const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragOver(true);
-    };
-
-    const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragOver(false);
-    };
-
     const handleClick = () => {
         if (inputRef.current) {
             inputRef.current.click();
@@ -244,6 +216,8 @@ const TaskManagement = () => {
             formData.append('KRA', (document.getElementById('kras') as HTMLInputElement).value);
             formData.append('KPA', (document.getElementById('kpis') as HTMLInputElement).value);
             formData.append('selType', taskType);
+            formData.append('repeat_days', repeatDays);
+            formData.append('repeat_until', repeatUntil);
 
             if (file) {
                 formData.append('TASK_ATTACHMENT', file);
@@ -251,7 +225,7 @@ const TaskManagement = () => {
 
             const response = await fetch(`${sessionData.url}/task?type=API&token=${sessionData.token}` +
                 `&sub_institute_id=${sessionData.subInstituteId}` +
-                `&org_type=${sessionData.orgType}&syear=${sessionData.syear}&formType=single`, {
+                `&org_type=${sessionData.orgType}&syear=${sessionData.syear}&user_id=${sessionData.userId}&formType=single`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${sessionData.token}`,
@@ -260,7 +234,7 @@ const TaskManagement = () => {
             });
 
             const result = await response.json();
-            console.log('Result:', result);
+            // console.log('Result:', result);
             if (response.ok) {
                 alert('Task created successfully!');
                 // Reset form
@@ -270,6 +244,8 @@ const TaskManagement = () => {
                 setSelSkill([]);
                 setSelObserver('');
                 setTaskType('');
+                setRepeatDays('');
+                setRepeatUntil('');
                 setFile(null);
                 setPreviewUrl(null);
                 (document.getElementById('task_description') as HTMLTextAreaElement).value = '';
@@ -293,296 +269,327 @@ const TaskManagement = () => {
 
     return (
         <div className="mainDiv">
-            <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-18 p-10">
-                {/* Left Card */}
-                <div className="pt-1 rounded-lg bg-gradient-to-r from-[#47A0FF] to-[#38C0AA] h-[fit-content]">
-                    <div className="bg-[#FAFAFA] border-2 border-[#D0E7FF] rounded-lg shadow-md p-6">
-                        <div className="flex items-center mb-4 space-x-3">
-                            <div className="bg-[#00AF93] p-2 rounded-full">
-                                <img src="\assets\task_management\rightside.png" alt="leftImg" className="h-[30px]" />
-                            </div>
-                            <h2 className="font-bold text-gray-800 text-lg">Organization &amp; Context</h2>
+            <div className="max-w-6xl mx-auto">
+                <div className="rounded-lg h-[fit-content] mb-6">
+                    <div className="px-2">
+                        <div>
+                            <h2 className="text-2xl font-semibold text-foreground">Task Assignment</h2>
+                            <p className="text-muted-foreground">Track and monitor task assignment progress</p>
                         </div>
-                        <hr className="mb-6 border-gray-300" />
+                        <hr className="my-6" />
+                        {/* Single Form with 3 columns per row */}
+                        <form className="space-y-6" onSubmit={handleSubmit} ref={formRef}>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Job Role */}
+                                <div>
+                                    <label htmlFor="jobRole" className="block mb-1 text-sm text-gray-900">Job role <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
+                                    </label>
+                                    <select
+                                        id="jobRole"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                                        value={selJobrole}
+                                        onChange={(e) => {
+                                            const selectedJobRole = e.target.value;
+                                            setSelJobrole(selectedJobRole);
+                                            getEmployeeList(selectedJobRole);
+                                        }}
+                                        required
+                                    >
+                                        <option value="">Select Job Role</option>
+                                        {jobroleList.map((jobrole, index) => (
+                                            <option key={index} value={jobrole.allocated_standards}>
+                                                {jobrole.jobrole}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                        {/* Form Fields */}
-                        <form className="space-y-6 px-2" onSubmit={handleSubmit} ref={formRef}>
-                            <div>
-                                <label htmlFor="jobRole" className="block mb-1 text-sm text-gray-900">Job role</label>
-                                <select
-                                    id="jobRole"
-                                    className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
-                                    value={selJobrole}
-                                    onChange={(e) => {
-                                        const selectedJobRole = e.target.value;
-                                        setSelJobrole(selectedJobRole);
-                                        getEmployeeList(selectedJobRole);
-                                    }}
-                                    required
-                                >
-                                    <option value="">Select Job Role</option>
-                                    {jobroleList.map((jobrole, index) => (
-                                        <option key={index} value={jobrole.allocated_standards}>
-                                            {jobrole.jobrole}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                {/* Assign To */}
+                                <div>
+                                    <label htmlFor="assignTo" className="block mb-1 text-sm text-gray-900">Assign To <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
+                                    <select
+                                        id="assignTo"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                                        value={selEmployee}
+                                        onChange={(e) => {
+                                            const userId = e.target.value;
+                                            setSelEmployee(userId);
+                                            fetchEmployeeDetails(userId);
+                                        }}
+                                        required
+                                    >
+                                        <option value="">Select Employee</option>
+                                        {employeeList.map((empList, index) => (
+                                            <option key={index} value={empList.id}>
+                                                {empList?.first_name} {empList?.middle_name} {empList?.last_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                            <div>
-                                <label htmlFor="assignTo" className="block mb-1 text-sm text-gray-900">Assign To</label>
-                                <select
-                                    id="assignTo"
-                                    className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
-                                    value={selEmployee}
-                                    onChange={(e) => {
-                                        const userId = e.target.value;
-                                        setSelEmployee(userId);
-                                        fetchEmployeeDetails(userId);
-                                    }}
-                                    required
-                                >
-                                    <option value="">Select Employee</option>
-                                    {employeeList.map((empList, index) => (
-                                        <option key={index} value={empList.id}>
-                                            {empList?.first_name} {empList?.middle_name} {empList?.last_name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label htmlFor="taskTitle" className="block mb-1 text-sm text-gray-900">Task Title</label>
-                                <input
-                                    id="taskTitle"
-                                    list="taskList"
-                                    className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
-                                    value={selTask}
-                                    onChange={(e) => setSelTask(e.target.value)}
-                                    placeholder="Type or select a task"
-                                    required
-                                />
-                                <datalist id="taskList">
-                                    {taskList.map((task, index) => (
-                                        <option key={index} value={task.task}>
-                                            {task.task}
-                                        </option>
-                                    ))}
-                                </datalist>
-                            </div>
-
-                            <div>
-                                <label htmlFor="taskTitle" className="block mb-1 text-sm text-gray-900">Task Description</label>
-                                <textarea
-                                    name="description"
-                                    id="task_description"
-                                    rows={6}
-                                    className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
-                                    placeholder="Add Task Description.."
-                                ></textarea>
-                            </div>
-
-                            {/* File Upload with Preview */}
-                            <div className="space-y-2">
-                                <label className="block text-sm text-gray-900">Attachments</label>
-                                <div
-                                    className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}
-                                    onDrop={handleDrop}
-                                    onDragOver={handleDragOver}
-                                    onDragLeave={handleDragLeave}
-                                    onClick={handleClick}
-                                >
+                                {/* Task Title */}
+                                <div>
+                                    <label htmlFor="taskTitle" className="block mb-1 text-sm text-gray-900">Task Title <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
                                     <input
-                                        type="file"
-                                        ref={inputRef}
-                                        onChange={handleFileChange}
-                                        className="hidden"
+                                        id="taskTitle"
+                                        list="taskList"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                                        value={selTask}
+                                        onChange={(e) => setSelTask(e.target.value)}
+                                        placeholder="Type or select a task"
+                                        required
                                     />
-                                    {previewUrl ? (
-                                        <div className="relative">
-                                            {file?.type.startsWith('image/') ? (
-                                                <img src={previewUrl} alt="Preview" className="max-h-40 mx-auto mb-2 rounded" />
-                                            ) : (
-                                                <div className="flex items-center justify-center h-40 bg-gray-100 rounded mb-2">
-                                                    <span className="text-gray-500">
-                                                        {file?.name} ({file?.type})
-                                                    </span>
-                                                </div>
-                                            )}
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    removeFile();
-                                                }}
-                                                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                                            >
-                                                ×
-                                            </button>
-                                            <p className="text-sm text-gray-600 truncate">{file?.name}</p>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="flex flex-col items-center justify-center space-y-2">
-                                                <svg className="w-8 h-14 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                                                </svg>
-                                                <p className="text-sm text-gray-600">
-                                                    <span className="font-semibold text-blue-600">Click to upload</span> or drag and drop
-                                                </p>
-                                                <p className="text-xs text-gray-500">Supports: JPG, PNG, PDF, DOCX (Max 5MB)</p>
-                                            </div>
-                                        </>
-                                    )}
+                                    <datalist id="taskList">
+                                        {taskList.map((task, index) => (
+                                            <option key={index} value={task.task}>
+                                                {task.task}
+                                            </option>
+                                        ))}
+                                    </datalist>
                                 </div>
                             </div>
-                        </form>
-                    </div>
-                </div>
 
-                {/* Right Card */}
-                <div className="pt-1 rounded-lg bg-gradient-to-r from-[#47A0FF] to-[#38C0AA] h-[fit-content]">
-                    <div className="bg-[#FAFAFA] border-2 border-[#D0E7FF] rounded-lg shadow-md p-6">
-                        <div className="flex items-center mb-4 space-x-3">
-                            <div className="bg-[#00AF93] p-2 rounded-full">
-                                <img src="\assets\task_management\rightside.png" alt="rightImg" className="h-[30px]" />
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                                {/* Task Description - Full width */}
+                                <div>
+                                    <label htmlFor="taskTitle" className="block mb-1 text-sm text-gray-900">Task Description</label>
+                                    <textarea
+                                        name="description"
+                                        id="task_description"
+                                        rows={3}
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                                        placeholder="Add Task Description.."
+                                    ></textarea>
+                                </div>
+                                {/* Repeat Days */}
+                                <div>
+                                    <label htmlFor="days" className="block mb-1 text-sm text-gray-900">Repeat Once in every <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
+                                    <select
+                                        id="days"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                                        value={repeatDays}
+                                        onChange={(e) => setRepeatDays(e.target.value)}
+                                    >
+                                        <option value="">Select Days</option>
+                                        {Array.from({ length: 14 }, (_, i) => i + 1).map((day) => (
+                                            <option key={day} value={day}>
+                                                {day} {day === 1 ? 'day' : 'days'}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Repeat Until */}
+                                <div>
+                                    <label htmlFor="Date" className="block mb-1 text-sm text-gray-900">Repeat until <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
+                                    <input
+                                        id="Date"
+                                        type="date"
+                                        placeholder="Type Repeat until Date"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                                        value={repeatUntil}
+                                        onChange={(e) => setRepeatUntil(e.target.value)}
+                                    />
+                                </div>
+
+
                             </div>
-                            <h2 className="font-bold text-gray-800 text-lg">Details &amp; Configuration</h2>
-                        </div>
-                        <hr className="mb-6 border-gray-300" />
 
-                        {/* Form Fields */}
-                        <form className="space-y-6 px-2" onSubmit={handleSubmit}>
-                            <div>
-                                <label htmlFor="skillsRequired" className="block mb-1 text-sm text-gray-900">Skills Required</label>
-                                <select
-                                    id="skillsRequired"
-                                    className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none resize"
-                                    multiple
-                                    value={selSkill}
-                                    onChange={(e) => {
-                                        const options = e.target.options;
-                                        const selectedValues: string[] = [];
-                                        for (let i = 0; i < options.length; i++) {
-                                            if (options[i].selected) {
-                                                selectedValues.push(options[i].value);
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Skills Required */}
+                                <div>
+                                    <label htmlFor="skillsRequired" className="block mb-1 text-sm text-gray-900">Skills Required</label>
+                                    <select
+                                        id="skillsRequired"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none resize"
+                                        multiple
+                                        value={selSkill}
+                                        onChange={(e) => {
+                                            const options = e.target.options;
+                                            const selectedValues: string[] = [];
+                                            for (let i = 0; i < options.length; i++) {
+                                                if (options[i].selected) {
+                                                    selectedValues.push(options[i].value);
+                                                }
                                             }
-                                        }
-                                        setSelSkill(selectedValues);
-                                    }}
-                                >
-                                    <option value="">Select Required Skills</option>
-                                    {skillList.map((skill, index) => (
-                                        <option key={index} value={skill.title}>
-                                            {skill.title}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                            setSelSkill(selectedValues);
+                                        }}
+                                    >
+                                        <option value="">Select Required Skills</option>
+                                        {skillList.map((skill, index) => (
+                                            <option key={index} value={skill.title}>
+                                                {skill.title}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {/* Observer */}
+                                <div>
+                                    <label htmlFor="observer" className="block mb-1 text-sm text-gray-900">Observer <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
+                                    <select
+                                        id="observer"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                                        value={selObserver}
+                                        onChange={(e) => setSelObserver(e.target.value)}
+                                    >
+                                        <option value="">Select Observer</option>
+                                        {ObserverList.map((observer, index) => (
+                                            <option key={index} value={observer.id}>
+                                                {observer.first_name} {observer.middle_name} {observer.last_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                            <div>
-                                <label htmlFor="observer" className="block mb-1 text-sm text-gray-900">Observer</label>
-                                <select
-                                    id="observer"
-                                    className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
-                                    value={selObserver}
-                                    onChange={(e) => setSelObserver(e.target.value)}
-                                >
-                                    <option value="">Select Observer</option>
-                                    {ObserverList.map((observer, index) => (
-                                        <option key={index} value={observer.id}>
-                                            {observer.first_name} {observer.middle_name} {observer.last_name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                {/* KRAs */}
+                                <div>
+                                    <label htmlFor="kras" className="block mb-1 text-sm text-gray-900">Key Result Areas (KRAs)</label>
+                                    <input
+                                        id="kras"
+                                        type="text"
+                                        placeholder="Type KRAS"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                                    />
+                                </div>
 
-                            <div>
-                                <label htmlFor="kpis" className="block mb-1 text-sm text-gray-900">Monitoring Points</label>
-                                <textarea
-                                    name="observation_point"
-                                    id="observation_point"
-                                    className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
-                                    placeholder="Add monitoring points.."
-                                ></textarea>
-                            </div>
 
-                            <div>
-                                <label htmlFor="kras" className="block mb-1 text-sm text-gray-900">Key Result Areas (KRAs)</label>
-                                <input
-                                    id="kras"
-                                    type="text"
-                                    placeholder="Type KRAS"
-                                    className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
-                                />
                             </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* KPIs */}
+                                <div>
+                                    <label htmlFor="kpis" className="block mb-1 text-sm text-gray-900">Performance Indicators (KPIs)</label>
+                                    <input
+                                        id="kpis"
+                                        type="text"
+                                        placeholder="Type KPIS"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                                    />
+                                </div>
+                                {/* Monitoring Points - Full width */}
+                                <div>
+                                    <label htmlFor="kpis" className="block mb-1 text-sm text-gray-900">Monitoring Points</label>
+                                    <textarea
+                                        name="observation_point"
+                                        id="observation_point"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                                        placeholder="Add monitoring points.."
+                                    ></textarea>
+                                </div>
 
-                            <div>
-                                <label htmlFor="kpis" className="block mb-1 text-sm text-gray-900">Performance Indicators (KPIs)</label>
-                                <input
-                                    id="kpis"
-                                    type="text"
-                                    placeholder="Type KPIS"
-                                    className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
-                                />
+                                {/* File Upload with Preview */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm text-gray-900">Attachment</label>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex flex-col">
+                                            <button
+                                                type="button"
+                                                onClick={handleClick}
+                                                className="px-4 py-2 text-sm text-gray border-1 border-[#ddd] rounded-md hover:bg-blue-600 transition-colors"
+                                            >
+                                                Select File
+                                            </button>
+                                            <input
+                                                type="file"
+                                                ref={inputRef}
+                                                onChange={handleFileChange}
+                                                className="hidden"
+                                            />
+                                            {file && (
+                                                <span className="text-sm text-gray-600 mt-1 truncate max-w-[150px]">
+                                                    {file.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                        
+                                        {previewUrl && (
+                                            <div className="relative">
+                                                {file?.type.startsWith('image/') ? (
+                                                    <img 
+                                                        src={previewUrl} 
+                                                        alt="Preview" 
+                                                        className="w-[100px] h-[100px] object-cover rounded border border-gray-300" 
+                                                    />
+                                                ) : (
+                                                    <div className="w-[100px] h-[100px] bg-gray-100 rounded border border-gray-300 flex items-center justify-center">
+                                                        <span className="text-gray-500 text-xs text-center p-1">
+                                                            {file?.name} ({file?.type})
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={removeFile}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">Supports: JPG, PNG, PDF, DOCX (Max 5MB)</p>
+                                </div>
                             </div>
-
-                            {/* Priority Buttons */}
-                            <div className="flex space-x-4 mt-6 justify-around">
-                                <button
-                                    type="button"
-                                    className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'Daily Task' ? 'border-blue-600 text-blue-700 bg-[#eaf7ff]' : 'border-blue-400 text-blue-700 bg-white'}`}
-                                    onClick={() => handleTaskTypeSelect('Daily Task')}
-                                >
-                                    <span className="w-4 h-4 bg-blue-600 rounded-full mb-1"></span>
-                                    <span className="font-semibold text-sm">Daily</span>
-                                    <span className="text-xs text-gray-500">Task</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'weekly' ? 'border-yellow-600 text-yellow-700 bg-[#FEF6E9]' : 'border-yellow-400 text-yellow-700 bg-white'}`}
-                                    onClick={() => handleTaskTypeSelect('weekly')}
-                                >
-                                    <span className="w-4 h-4 bg-yellow-500 rounded-full mb-1"></span>
-                                    <span className="font-semibold text-sm">Weekly</span>
-                                    <span className="text-xs text-gray-500">Task</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'monthly' ? 'border-teal-600 text-teal-700 bg-[#EBF9F4]' : 'border-teal-400 text-teal-700 bg-white'}`}
-                                    onClick={() => handleTaskTypeSelect('monthly')}
-                                >
-                                    <span className="w-4 h-4 bg-teal-500 rounded-full mb-1"></span>
-                                    <span className="font-semibold text-sm">Monthly</span>
-                                    <span className="text-xs text-gray-500">Task</span>
-                                </button>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Task Type Buttons */}
+                                <div>
+                                    <label htmlFor="task_type" className="block mb-1 text-sm text-gray-900">Task Type <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
+                                    <div className="flex space-x-4 mt-2 justify-around">
+                                        <button
+                                            type="button"
+                                            className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'daily task' ? 'border-blue-600 text-blue-700 bg-[#eaf7ff]' : 'border-blue-400 text-blue-700 bg-white'}`}
+                                            onClick={() => handleTaskTypeSelect('daily task')}
+                                        >
+                                            <span className="w-4 h-4 bg-blue-600 rounded-full mb-1"></span>
+                                            <span className="font-semibold text-sm">Daily</span>
+                                            <span className="text-xs text-gray-500">Task</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'weekly task' ? 'border-yellow-600 text-yellow-700 bg-[#FEF6E9]' : 'border-yellow-400 text-yellow-700 bg-white'}`}
+                                            onClick={() => handleTaskTypeSelect('weekly task')}
+                                        >
+                                            <span className="w-4 h-4 bg-yellow-500 rounded-full mb-1"></span>
+                                            <span className="font-semibold text-sm">Weekly</span>
+                                            <span className="text-xs text-gray-500">Task</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'monthly task' ? 'border-teal-600 text-teal-700 bg-[#EBF9F4]' : 'border-teal-400 text-teal-700 bg-white'}`}
+                                            onClick={() => handleTaskTypeSelect('monthly task')}
+                                        >
+                                            <span className="w-4 h-4 bg-teal-500 rounded-full mb-1"></span>
+                                            <span className="font-semibold text-sm">Monthly</span>
+                                            <span className="text-xs text-gray-500">Task</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-
                             {/* Hidden input for task type */}
                             <input type="hidden" name="task_type" value={taskType} />
+
+                            {/* Submit Button */}
+                            <div className="flex justify-center mt-8">
+                                <button
+                                    type="submit"
+                                    className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? (
+                                        <span className="flex items-center justify-center">
+                                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 极速 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Submitting...
+                                        </span>
+                                    ) : 'Submit'}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
-            </div>
-
-            {/* Submit Button - Centered between forms */}
-            <div className="flex justify-center mt-6 mb-10">
-                <button
-                    type="submit"
-                    onClick={(e) => formRef.current?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
-                    className="w-[200px] bg-[#00AF93] text-white py-3 px-6 rounded-md font-medium hover:bg-[#008D75] transition disabled:opacity-50"
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? (
-                        <span className="flex items-center justify-center">
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Submitting...
-                        </span>
-                    ) : 'Submit'}
-                </button>
             </div>
         </div>
     );

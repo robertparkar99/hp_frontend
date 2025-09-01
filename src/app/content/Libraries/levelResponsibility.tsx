@@ -83,8 +83,8 @@ const LevelResponsibility = () => {
               setActiveSection('description');
             }}
             className={`px-4 py-2 rounded-full font-semibold border shadow transition-all ${activeLevel === level.level
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-white text-blue-800 border-blue-300 hover:bg-blue-100'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-white text-blue-800 border-blue-300 hover:bg-blue-100'
               }`}
           >
             Level {level.level}
@@ -101,8 +101,8 @@ const LevelResponsibility = () => {
                 <div
                   onClick={() => setActiveSection(tab.key as any)}
                   className={`flex-1 flex flex-col items-center justify-center py-4 cursor-pointer transition-all ${activeSection === tab.key
-                      ? 'bg-[#ACD4FF]'
-                      : 'hover:bg-[#eef6ff]'
+                    ? 'bg-[#ACD4FF]'
+                    : 'hover:bg-[#eef6ff]'
                     }`}
                 >
                   <img src={tab.icon} alt={tab.label} className="w-16 h-16 object-contain mb-2" />
@@ -125,51 +125,92 @@ const LevelResponsibility = () => {
       {activeSection === 'description' && (
         <>
           {/* Level Badge */}
-          <div className="w-full flex justify-start mt-6 ml-34">
-            <div
-              className="px-8 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-center ml-[-64px]"
-              style={{
-                background: 'linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)',
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <div className="text-white font-bold text-2xl font-roboto">
-                  Level {activeLevel}:
-                </div>
-                <div className="text-white font-bold text-2xl font-roboto">
-                  {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ''}
-                </div>
-              </div>
-            </div>
-          </div>
+   <div className="w-full flex justify-start mt-6">
+  <div
+    className="px-6 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-left"
+    style={{
+      background:
+        "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
+    }}
+  >
+    <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 lg:gap-4">
+      <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
+        Level {activeLevel}:
+      </div>
+      <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
+        {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ""}
+      </div>
+    </div>
+  </div>
+</div>
+
 
           {/* Description + Guidance Notes */}
           {activeData && (
-            <div className="flex justify-center items-start gap-8 mt-6 flex-wrap ml-[-52px]">
+            <div className="flex justify-center items-start gap-8 mt-6 flex-wrap">
               {/* Description Card */}
               <div
-                className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[480px] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+                className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+                style={{
+                  width: "500px",
+                  height: "300px",
+                  background:
+                    "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+                }}
               >
-                <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Description</h3>
+                <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">
+                  Description
+                </h3>
                 <hr className="border border-gray-400 mb-4" />
-                <p className="text-black text-[15px] whitespace-pre-line">
-                  {activeData.essence_level}
-                </p>
+                {/* Scrollable area */}
+                <div
+                  style={{
+                    width: "450px",
+                    height: "150px",
+                    overflowY: "auto",
+                    paddingRight: "8px",
+                  }}
+                >
+                  <p className="text-black text-[15px] whitespace-pre-line">
+                    {activeData.essence_level}
+                  </p>
+                </div>
               </div>
 
               {/* Guidance Notes Card */}
               <div
-                className="border-4 border-[#94BEFF] rounded-2xl p-6 w-[590px] mt-[-120] shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
-                style={{ minHeight: '330px' }}
+                className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+                style={{
+                  width: "500px",
+                  height: "300px",
+                  textAlign: 'justify',
+                  background:
+                    "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+                }}
               >
-                <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">Guidance notes</h3>
+                <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">
+                  Guidance Notes
+                </h3>
                 <hr className="border border-gray-400 mb-4" />
-                <p className="text-black text-[15px] whitespace-pre-line">
-                  {activeData.guidance_notes}
-                </p>
+                {/* Scrollable area */}
+                <div
+                  style={{
+                    width: "450px",
+                    height: "150px",
+                    overflowY: "auto",
+                    paddingRight: "8px",
+                  }}
+                  className="hide-scrollbar" // 👈 custom class to hide scrollbar
+                >
+                  <p className="text-black text-[15px] whitespace-pre-line">
+                    {activeData.attribute_guidance_notes}
+
+                  </p>
+                </div>
               </div>
             </div>
           )}
+
 
         </>
       )}

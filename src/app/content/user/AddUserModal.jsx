@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,33 +21,52 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 
-interface SessionData {
-  url: string;
-  subInstituteId: string;
-  userId: string;
-  token: string;
-}
-
-interface AddUserModalProps {
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  sessionData: SessionData;
-  userJobroleLists?: any[];
-  userLOR?: any[];
-  userProfiles?: any[];
-  userLists?: any[];
-}
-
-export default function AddUserModal({ 
-  isOpen, 
-  setIsOpen, 
+export default function AddUserModal({
+  isOpen,
+  setIsOpen,
   sessionData,
-  userJobroleLists = [],
-  userLOR = [],
-  userProfiles = [],
-  userLists = []
-}: AddUserModalProps) {
-  // Form state
+  userJobroleLists,
+  userDepartmentLists,
+  userLOR,
+  userProfiles: initialUserProfiles = [],
+  userLists,
+}) {
+
+  const [fetchedUserProfiles, setFetchedUserProfiles] = useState(initialUserProfiles);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+
+  useEffect(() => {
+    if (!sessionData?.APP_URL) return;
+
+    const fetchProfiles = async () => {
+      setLoadingProfiles(true);
+      try {
+        const response = await fetch(
+          `${sessionData.APP_URL}/table_data?table=tbluserprofilemaster&filters[sub_institute_id]=${sessionData.sub_institute_id || 1
+          }&filters[status]=1`,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch profiles");
+
+        const result = await response.json();
+
+        // ✅ Your API already returns an array of objects
+        setFetchedUserProfiles(result || []);
+      } catch (error) {
+        console.error("Error fetching user profiles:", error);
+        setFetchedUserProfiles([]);
+      } finally {
+        setLoadingProfiles(false);
+      }
+    };
+
+    fetchProfiles();
+  }, [sessionData]);
+
   const [formData, setFormData] = useState({
     personal: {
       name_suffix: "",
@@ -58,13 +77,14 @@ export default function AddUserModal({
       plain_password: "",
       birthdate: "",
       mobile: "",
+      department: "",
       jobrole: "",
       responsibility_level: "",
       gender: "M",
       user_profile_id: "",
       join_year: "",
       status: "1",
-      imageFile: null as File | null,
+      imageFile: null,
       imagePreview: "",
       image: "",
     },
@@ -107,11 +127,7 @@ export default function AddUserModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (
-    section: keyof typeof formData,
-    field: string,
-    value: any
-  ) => {
+  const handleInputChange = (section, field, value) => {
     setFormData((prev) => ({
       ...prev,
       [section]: {
@@ -121,7 +137,7 @@ export default function AddUserModal({
     }));
   };
 
-  const handleCheckboxChange = (day: string) => {
+  const handleCheckboxChange = (day) => {
     const currentDays = [...formData.attendance.working_days];
     const index = currentDays.indexOf(day);
 
@@ -134,7 +150,7 @@ export default function AddUserModal({
     handleInputChange("attendance", "working_days", currentDays);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0] || null;
     if (file) {
       handleInputChange("personal", "imageFile", file);
@@ -143,137 +159,112 @@ export default function AddUserModal({
     }
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  try {
-    const formDataToSend = new FormData();
+    try {
+      const formDataToSend = new FormData();
 
-    // === Required session data ===
-    formDataToSend.append("type", "API");
-    formDataToSend.append("sub_institute_id", sessionData.subInstituteId || "");
-    formDataToSend.append("user_id", sessionData.userId || "");
-    formDataToSend.append("_token", sessionData.token || "");
+      formDataToSend.append("type", "API");
+      formDataToSend.append("sub_institute_id", sessionData.sub_institute_id || "");
+      formDataToSend.append("user_id", sessionData.user_id || "");
+      formDataToSend.append("_token", sessionData.token || "");
+      formDataToSend.append("created_by", sessionData.user_id || "");
 
-    // === Mandatory fields for backend ===
-    // formDataToSend.append(
-    //   "user_name",
-    //   `${formData.personal.first_name} ${formData.personal.last_name}`.trim()
-    // );
-    formDataToSend.append("created_by", sessionData.userId || "");
+      formDataToSend.append("name_suffix", formData.personal.name_suffix);
+      formDataToSend.append("user_name", formData.personal.first_name); // required
+      formDataToSend.append("first_name", formData.personal.first_name);
 
-    // === Personal Data ===
-    formDataToSend.append("name_suffix", formData.personal.name_suffix);
-    formDataToSend.append("first_name", formData.personal.first_name);
-    formDataToSend.append("middle_name", formData.personal.middle_name);
-    formDataToSend.append("last_name", formData.personal.last_name);
-    formDataToSend.append("email", formData.personal.email);
-    formDataToSend.append("password", formData.personal.plain_password);
-    formDataToSend.append("birthdate", formData.personal.birthdate);
-    formDataToSend.append("mobile", formData.personal.mobile);
-    formDataToSend.append("allocated_standards", formData.personal.jobrole);
-    formDataToSend.append(
-      "subject_ids",
-      formData.personal.responsibility_level
-    );
-    formDataToSend.append("gender", formData.personal.gender);
-    formDataToSend.append(
-      "user_profile_id",
-      formData.personal.user_profile_id
-    );
-    formDataToSend.append("join_year", formData.personal.join_year);
-    formDataToSend.append("status", formData.personal.status);
+      formDataToSend.append("middle_name", formData.personal.middle_name);
+      formDataToSend.append("last_name", formData.personal.last_name);
+      formDataToSend.append("email", formData.personal.email);
+      formDataToSend.append("password", formData.personal.plain_password);
+      formDataToSend.append("birthdate", formData.personal.birthdate);
+      formDataToSend.append("mobile", formData.personal.mobile);
+      formDataToSend.append("department_id", formData.personal.department);
+      formDataToSend.append("allocated_standards", formData.personal.jobrole);
+      formDataToSend.append("subject_ids", formData.personal.responsibility_level);
+      formDataToSend.append("gender", formData.personal.gender);
+      formDataToSend.append("user_profile_id", formData.personal.user_profile_id); // required
+      formDataToSend.append("join_year", formData.personal.join_year);
+      formDataToSend.append("status", formData.personal.status);
 
-    // === Image Handling ===
-    if (formData.personal.imageFile) {
-      formDataToSend.append("user_image", formData.personal.imageFile);
-    } else if (formData.personal.image) {
-      formDataToSend.append("user_image_path", formData.personal.image);
-    }
-
-    // === Address ===
-    formDataToSend.append("address", formData.address.user_address);
-    formDataToSend.append("address_2", formData.address.user_address2);
-    formDataToSend.append("city", formData.address.user_city);
-    formDataToSend.append("state", formData.address.user_state);
-    formDataToSend.append("pincode", formData.address.user_pincode);
-
-    // === Reporting ===
-    formDataToSend.append("supervisor_opt", formData.reporting.subordinate);
-    formDataToSend.append("employee_id", formData.reporting.employee_name);
-    formDataToSend.append(
-      "reporting_method",
-      formData.reporting.reporting_method
-    );
-
-    // === Attendance ===
-    formDataToSend.append('monday', formData.attendance.working_days.includes('Mon') ? '1' : '0');
-    formDataToSend.append('tuesday', formData.attendance.working_days.includes('Tue') ? '1' : '0');
-    formDataToSend.append('wednesday', formData.attendance.working_days.includes('Wed') ? '1' : '0');
-    formDataToSend.append('thursday', formData.attendance.working_days.includes('Thu') ? '1' : '0');
-    formDataToSend.append('friday', formData.attendance.working_days.includes('Fri') ? '1' : '0');
-    formDataToSend.append('saturday', formData.attendance.working_days.includes('Sat') ? '1' : '0');
-    formDataToSend.append("sunday", "0");
-
-    formDataToSend.append('monday_in_date', formData.attendance.monday_in);
-      formDataToSend.append('monday_out_date', formData.attendance.monday_out);
-      formDataToSend.append('tuesday_in_date', formData.attendance.tuesday_in);
-      formDataToSend.append('tuesday_out_date', formData.attendance.tuesday_out);
-      formDataToSend.append('wednesday_in_date', formData.attendance.wednesday_in);
-      formDataToSend.append('wednesday_out_date', formData.attendance.wednesday_out);
-      formDataToSend.append('thursday_in_date', formData.attendance.thursday_in);
-      formDataToSend.append('thursday_out_date', formData.attendance.thursday_out);
-      formDataToSend.append('friday_in_date', formData.attendance.friday_in);
-      formDataToSend.append('friday_out_date', formData.attendance.friday_out);
-      formDataToSend.append('saturday_in_date', formData.attendance.saturday_in);
-      formDataToSend.append('saturday_out_date', formData.attendance.saturday_out);
-
-    // === Deposit ===
-    formDataToSend.append("bank_name", formData.deposit.bank_name);
-    formDataToSend.append("branch_name", formData.deposit.branch_name);
-    formDataToSend.append("account_no", formData.deposit.account);
-    formDataToSend.append("ifsc_code", formData.deposit.ifsc);
-    formDataToSend.append("amount", formData.deposit.amount);
-    formDataToSend.append("transfer_type", formData.deposit.transfer_type);
-
-    // === Static Fields ===
-    formDataToSend.append("jobtitle_id", "0");
-    formDataToSend.append("load", "6");
-    formDataToSend.append("department_id", "1");
-    formDataToSend.append("submit", "Update");
-
-    // === API Call ===
-    const response = await fetch(
-      `${sessionData.url}/user/add_user?token=${sessionData.token}`,
-      {
-        method: "POST", // create mode
-        body: formDataToSend,
-        headers: {
-          Accept: "application/json",
-        },
+      if (formData.personal.imageFile) {
+        formDataToSend.append("user_image", formData.personal.imageFile);
+      } else if (formData.personal.image) {
+        formDataToSend.append("user_image_path", formData.personal.image);
       }
-    );
 
-    if (!response.ok) throw new Error("Failed to add user");
+      formDataToSend.append("address", formData.address.user_address);
+      formDataToSend.append("address_2", formData.address.user_address2);
+      formDataToSend.append("city", formData.address.user_city);
+      formDataToSend.append("state", formData.address.user_state);
+      formDataToSend.append("pincode", formData.address.user_pincode);
 
-    const result = await response.json();
-    alert(result.message || "User added successfully!");
-    setIsOpen(false);
-  } catch (error) {
-    console.error("Error adding user:", error);
-    alert("Failed to add user. Please try again.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      formDataToSend.append("supervisor_opt", formData.reporting.subordinate);
+      formDataToSend.append("employee_id", formData.reporting.employee_name);
+      formDataToSend.append("reporting_method", formData.reporting.reporting_method);
+
+      formDataToSend.append("monday", formData.attendance.working_days.includes("Mon") ? "1" : "0");
+      formDataToSend.append("tuesday", formData.attendance.working_days.includes("Tue") ? "1" : "0");
+      formDataToSend.append("wednesday", formData.attendance.working_days.includes("Wed") ? "1" : "0");
+      formDataToSend.append("thursday", formData.attendance.working_days.includes("Thu") ? "1" : "0");
+      formDataToSend.append("friday", formData.attendance.working_days.includes("Fri") ? "1" : "0");
+      formDataToSend.append("saturday", formData.attendance.working_days.includes("Sat") ? "1" : "0");
+      formDataToSend.append("sunday", "0");
+
+      formDataToSend.append("monday_in_date", formData.attendance.monday_in);
+      formDataToSend.append("monday_out_date", formData.attendance.monday_out);
+      formDataToSend.append("tuesday_in_date", formData.attendance.tuesday_in);
+      formDataToSend.append("tuesday_out_date", formData.attendance.tuesday_out);
+      formDataToSend.append("wednesday_in_date", formData.attendance.wednesday_in);
+      formDataToSend.append("wednesday_out_date", formData.attendance.wednesday_out);
+      formDataToSend.append("thursday_in_date", formData.attendance.thursday_in);
+      formDataToSend.append("thursday_out_date", formData.attendance.thursday_out);
+      formDataToSend.append("friday_in_date", formData.attendance.friday_in);
+      formDataToSend.append("friday_out_date", formData.attendance.friday_out);
+      formDataToSend.append("saturday_in_date", formData.attendance.saturday_in);
+      formDataToSend.append("saturday_out_date", formData.attendance.saturday_out);
+
+      formDataToSend.append("bank_name", formData.deposit.bank_name);
+      formDataToSend.append("branch_name", formData.deposit.branch_name);
+      formDataToSend.append("account_no", formData.deposit.account);
+      formDataToSend.append("ifsc_code", formData.deposit.ifsc);
+      formDataToSend.append("amount", formData.deposit.amount);
+      formDataToSend.append("transfer_type", formData.deposit.transfer_type);
+
+      formDataToSend.append("jobtitle_id", "0");
+      formDataToSend.append("load", "6");
+      formDataToSend.append("department_id", "1");
+      formDataToSend.append("submit", "Update");
+
+      const response = await fetch(
+        `${sessionData.APP_URL}/user/add_user?token=${sessionData.token}`,
+        {
+          method: "POST",
+          body: formDataToSend,
+          headers: { Accept: "application/json" },
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to add user");
+
+      const result = await response.json();
+      alert(result.message || "User added successfully!");
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error adding user:", error);
+      alert("Failed to add user. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-4xl overflow-y-auto max-h-[95vh]">
-        <DialogHeader>
-          <DialogTitle>Add New User</DialogTitle>
-        </DialogHeader>
+
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Personal Information */}
@@ -303,7 +294,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <div>
-                <Label>First Name *</Label>
+                <Label>First Name <span className="text-red-500">*</span></Label>
                 <Input
                   placeholder="Enter First Name"
                   value={formData.personal.first_name}
@@ -326,7 +317,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <div>
-                <Label>Last Name *</Label>
+                <Label>Last Name <span className="text-red-500">*</span></Label>
                 <Input
                   placeholder="Enter Last Name"
                   value={formData.personal.last_name}
@@ -338,7 +329,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <div>
-                <Label>Email *</Label>
+                <Label>Email <span className="text-red-500">*</span></Label>
                 <Input
                   type="email"
                   placeholder="example@domain.com"
@@ -351,7 +342,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <div>
-                <Label>Password *</Label>
+                <Label>Password <span className="text-red-500">*</span></Label>
                 <Input
                   type="password"
                   placeholder="Password"
@@ -375,7 +366,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <div>
-                <Label>Mobile *</Label>
+                <Label>Mobile <span className="text-red-500">*</span></Label>
                 <Input
                   placeholder="Mobile Number"
                   value={formData.personal.mobile}
@@ -384,6 +375,26 @@ const handleSubmit = async (e: React.FormEvent) => {
                   }
                   required
                 />
+              </div>
+              <div>
+                <Label>Department <span className="text-red-500">*</span></Label>
+                <Select
+                  value={formData.personal.department}
+                  onValueChange={(val) =>
+                    handleInputChange("personal", "department", val)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userDepartmentLists.map((department) => (
+                      <SelectItem key={department.id} value={String(department.id)}>
+                        {department.name || department.department} {/* safe fallback */}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -398,12 +409,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <SelectValue placeholder="Select Jobrole" />
                   </SelectTrigger>
                   <SelectContent>
-  {userJobroleLists.map((jobrole) => (
-    <SelectItem key={jobrole.id} value={jobrole.id}>
-      {jobrole.name || jobrole.jobrole} {/* safe fallback */}
-    </SelectItem>
-  ))}
-</SelectContent>
+                    {userJobroleLists.map((jobrole) => (
+                      <SelectItem key={jobrole.id} value={String(jobrole.id)}>
+                        {jobrole.name || jobrole.jobrole} {/* safe fallback */}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
 
@@ -420,7 +431,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </SelectTrigger>
                   <SelectContent>
                     {userLOR.map((level) => (
-                      <SelectItem key={level.id} value={level.id}>
+                      <SelectItem key={level.id} value={String(level.id)}>
                         {level.level}
                       </SelectItem>
                     ))}
@@ -449,31 +460,25 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <div>
-  <Label>User Profile</Label>
-  <Select
-    value={formData.personal.user_profile_id}
-    onValueChange={(val) =>
-      handleInputChange("personal", "user_profile_id", val)
-    }
-  >
-    <SelectTrigger>
-      <SelectValue placeholder="Select Profile" />
-    </SelectTrigger>
-    <SelectContent>
-      {userProfiles.length > 0 ? (
-        userProfiles.map((profile) => (
-          <SelectItem key={profile.id} value={profile.id}>
-            {profile.name || profile.profile_name}
-          </SelectItem>
-        ))
-      ) : (
-        <SelectItem disabled value="no-profiles">
-          No profiles found
-        </SelectItem>
-      )}
-    </SelectContent>
-  </Select>
-</div>
+                <Label>User Profile</Label>
+                <Select
+                  value={formData.personal.user_profile_id}
+                  onValueChange={(val) =>
+                    handleInputChange("personal", "user_profile_id", val)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Profile" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fetchedUserProfiles.map((profile) => (
+                      <SelectItem key={profile.id} value={String(profile.id)}>
+                        {profile.profile_name || profile.name || profile.full_name || "Unnamed"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label>Joining Year</Label>
                 <Input
@@ -504,12 +509,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </Select>
               </div>
 
-              <div className="col-span-2">
+              <div>
                 <Label>User Image</Label>
-                <Input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleFileChange} 
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
                   className="max-w-xs"
                 />
                 {formData.personal.imagePreview && (
@@ -625,8 +630,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </SelectTrigger>
                   <SelectContent>
                     {userLists.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {`${user.first_name} ${user.last_name}`}
+                      <SelectItem key={user.id} value={String(user.id)}>
+                        {user.full_name || `${user.first_name} ${user.last_name}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -658,7 +663,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             <h2 className="text-lg font-semibold mb-4 border-b pb-2">
               Attendance Information
             </h2>
-            
+
             <div className="mb-4">
               <Label>Working Days</Label>
               <div className="flex flex-wrap gap-4 mt-2">
@@ -689,7 +694,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <Label>{item.day} In Time</Label>
                     <Input
                       type="time"
-                      value={formData.attendance[item.in as keyof typeof formData.attendance]}
                       onChange={(e) =>
                         handleInputChange("attendance", item.in, e.target.value)
                       }
@@ -699,7 +703,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <Label>{item.day} Out Time</Label>
                     <Input
                       type="time"
-                      value={formData.attendance[item.out as keyof typeof formData.attendance]}
                       onChange={(e) =>
                         handleInputChange("attendance", item.out, e.target.value)
                       }

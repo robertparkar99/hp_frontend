@@ -1,211 +1,400 @@
-import React, { useState } from 'react';
-import Icon from '../../../components/AppIcon';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+import FilterSidebar from './components/FilterSidebar';
+import SearchToolbar from './components/SearchToolbar';
+import CourseGrid from './components/CourseGrid';
+import RecommendationSidebar from './components/RecommendationSidebar';
+import Icon from '@/components/AppIcon';
 import {Button} from '../../../components/ui/button';
+// If you have a Breadcrumb component, import it here:
+import Breadcrumb from '../../../components/ui/BreadcrumbNavigation';
 
-type Department = 'engineering' | 'marketing';
+type Course = {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail: string;
+  contentType: string;
+  category: string;
+  difficulty: string;
+  duration: string;
+  rating: number;
+  enrolledCount: number;
+  progress: number;
+  instructor: string;
+  isNew: boolean;
+  isMandatory: boolean;
+};
 
-interface CompetencyHeatMapProps {
-  selectedDepartment: Department;
-  onDepartmentChange: (department: Department) => void;
-}
+type Filters = {
+  contentType: string[];
+  categories: string[];
+  skillLevel: string[];
+  duration: string[];
+  completionStatus: string[];
+};
 
-const CompetencyHeatMap: React.FC<CompetencyHeatMapProps> = ({ selectedDepartment, onDepartmentChange }) => {
-  const [selectedMetric, setSelectedMetric] = useState('proficiency');
+const LearningCatalog: React.FC = () => {
+  const router = useRouter();
 
-  // Mock competency data
-  const competencyData: Record<Department, {
-    employees: string[];
-    skills: string[];
-    data: number[][];
-  }> = {
-    'engineering': {
-      employees: ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Wilson', 'David Brown'],
-      skills: ['JavaScript', 'React', 'Node.js', 'Python', 'SQL', 'AWS', 'Docker', 'Git'],
-      data: [
-        [85, 90, 75, 70, 80, 65, 70, 95], // John Doe
-        [92, 88, 85, 80, 90, 75, 80, 90], // Jane Smith
-        [78, 82, 90, 85, 75, 80, 85, 88], // Mike Johnson
-        [88, 85, 70, 75, 85, 70, 75, 92], // Sarah Wilson
-        [82, 80, 88, 90, 78, 85, 90, 85]  // David Brown
-      ]
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('relevance');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [filters, setFilters] = useState<Filters>({
+    contentType: [],
+    categories: [],
+    skillLevel: [],
+    duration: [],
+    completionStatus: [],
+  });
+
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+
+  const mockCourses: Course[] = [
+    {
+      id: 1,
+      title: 'Advanced Leadership Strategies',
+      description: 'Master essential leadership skills for today\'s teams.',
+      thumbnail: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop',
+      contentType: 'video',
+      category: 'leadership',
+      difficulty: 'advanced',
+      duration: '4h 30m',
+      rating: 4.8,
+      enrolledCount: 1247,
+      progress: 0,
+      instructor: 'Sarah Johnson',
+      isNew: true,
+      isMandatory: false,
     },
-    'marketing': {
-      employees: ['Alice Cooper', 'Bob Martin', 'Carol Davis', 'Dan Wilson', 'Eva Garcia'],
-      skills: ['SEO', 'Content Marketing', 'Social Media', 'Analytics', 'Design', 'Email Marketing', 'PPC', 'Strategy'],
-      data: [
-        [90, 85, 88, 82, 75, 80, 70, 85], // Alice Cooper
-        [75, 90, 92, 85, 70, 85, 88, 80], // Bob Martin
-        [82, 78, 95, 80, 85, 75, 65, 88], // Carol Davis
-        [88, 82, 85, 90, 80, 88, 85, 92], // Dan Wilson
-        [85, 88, 80, 85, 90, 82, 78, 85]  // Eva Garcia
-      ]
+    {
+      id: 2,
+      title: 'Data Privacy and GDPR Compliance',
+      description: 'Learn to comply with data protection regulations.',
+      thumbnail: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=300&fit=crop',
+      contentType: 'mixed',
+      category: 'compliance',
+      difficulty: 'intermediate',
+      duration: '2h 15m',
+      rating: 4.6,
+      enrolledCount: 892,
+      progress: 45,
+      instructor: 'Michael Chen',
+      isNew: false,
+      isMandatory: true,
+    },
+    {
+      id: 3,
+      title: 'Remote Team Communication',
+      description: 'Build trust and collaboration in remote teams.',
+      thumbnail: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&h=300&fit=crop',
+      contentType: 'ppt',
+      category: 'soft-skills',
+      difficulty: 'beginner',
+      duration: '1h 45m',
+      rating: 4.7,
+      enrolledCount: 654,
+      progress: 100,
+      instructor: 'Emily Rodriguez',
+      isNew: false,
+      isMandatory: false,
+    },
+     {
+      id: 4,
+      title: "Python for Data Analysis and Visualization",
+      description: "Master Python programming for data science applications, including pandas, matplotlib, and advanced statistical analysis techniques.",
+      thumbnail: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=400&h=300&fit=crop",
+      contentType: "video",
+      category: "technical",
+      difficulty: "intermediate",
+      duration: "6h 20m",
+      rating: 4.9,
+      enrolledCount: 1456,
+      progress: 25,
+      instructor: "David Kim",
+      isNew: true,
+      isMandatory: false
+    },
+    {
+      id: 5,
+      title: "Financial Planning and Budget Management",
+      description: "Develop essential financial literacy skills for personal and professional budget management, investment planning, and risk assessment.",
+      thumbnail: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
+      contentType: "mixed",
+      category: "finance",
+      difficulty: "beginner",
+      duration: "3h 10m",
+      rating: 4.5,
+      enrolledCount: 423,
+      progress: 0,
+      instructor: "Lisa Thompson",
+      isNew: false,
+      isMandatory: false
+    },
+    {
+      id: 6,
+      title: "Digital Marketing Fundamentals",
+      description: "Comprehensive introduction to digital marketing strategies, including SEO, social media marketing, content creation, and analytics.",
+      thumbnail: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop",
+      contentType: "video",
+      category: "sales",
+      difficulty: "beginner",
+      duration: "4h 50m",
+      rating: 4.4,
+      enrolledCount: 789,
+      progress: 0,
+      instructor: "Alex Martinez",
+      isNew: false,
+      isMandatory: false
+    },
+    {
+      id: 7,
+      title: "Cybersecurity Awareness Training",
+      description: "Essential cybersecurity knowledge for all employees, covering threat identification, password security, and incident response procedures.",
+      thumbnail: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=300&fit=crop",
+      contentType: "ppt",
+      category: "compliance",
+      difficulty: "beginner",
+      duration: "1h 30m",
+      rating: 4.3,
+      enrolledCount: 2156,
+      progress: 0,
+      instructor: "Robert Wilson",
+      isNew: false,
+      isMandatory: true
+    },
+    {
+      id: 8,
+      title: "Project Management with Agile Methodologies",
+      description: "Learn agile project management principles, scrum framework implementation, and tools for managing complex projects efficiently.",
+      thumbnail: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop",
+      contentType: "mixed",
+      category: "leadership",
+      difficulty: "advanced",
+      duration: "5h 15m",
+      rating: 4.7,
+      enrolledCount: 934,
+      progress: 60,
+      instructor: "Jennifer Davis",
+      isNew: true,
+      isMandatory: false
+    },
+    {
+      id: 9,
+      title: "Machine Learning Basics for Business Professionals",
+      description: "Non-technical introduction to machine learning concepts, applications in business, and how to leverage AI for competitive advantage.",
+      thumbnail: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=300&fit=crop",
+      contentType: "video",
+      category: "technical",
+      difficulty: "intermediate",
+      duration: "3h 40m",
+      rating: 4.8,
+      enrolledCount: 567,
+      progress: 0,
+      instructor: "Dr. Amanda Foster",
+      isNew: true,
+      isMandatory: false
     }
-  };
-
-  const currentData = competencyData[selectedDepartment] || competencyData['engineering'];
-
-  const getHeatMapColor = (value: number) => {
-    if (value >= 90) return 'bg-green-500';
-    if (value >= 80) return 'bg-green-400';
-    if (value >= 70) return 'bg-yellow-400';
-    if (value >= 60) return 'bg-orange-400';
-    return 'bg-red-400';
-  };
-
-  const getHeatMapIntensity = (value: number) => {
-    const intensity = Math.min(value / 100, 1);
-    return {
-      backgroundColor: `rgba(30, 77, 183, ${intensity})`,
-      color: intensity > 0.5 ? 'white' : 'var(--color-foreground)'
-    };
-  };
-
-  const departments = [
-    { value: 'engineering', label: 'Engineering', icon: 'Code' },
-    { value: 'marketing', label: 'Marketing', icon: 'Megaphone' },
-    { value: 'sales', label: 'Sales', icon: 'TrendingUp' },
-    { value: 'hr', label: 'Human Resources', icon: 'Users' }
   ];
 
+  const getDurationMinutes = (duration: string): number => {
+    const match = duration.match(/(\d+)h\s*(\d+)m/);
+    if (match) return parseInt(match[1]) * 60 + parseInt(match[2]);
+    const hourMatch = duration.match(/(\d+)h/);
+    if (hourMatch) return parseInt(hourMatch[1]) * 60;
+    const minMatch = duration.match(/(\d+)m/);
+    if (minMatch) return parseInt(minMatch[1]);
+    return 0;
+  };
+
+  const getFilteredCourses = (): Course[] => {
+    let filtered = [...mockCourses];
+
+    if (searchQuery) {
+      filtered = filtered.filter(course =>
+        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.instructor.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (filters.contentType.length > 0) {
+      filtered = filtered.filter(course =>
+        filters.contentType.includes(course.contentType)
+      );
+    }
+
+    if (filters.categories.length > 0) {
+      filtered = filtered.filter(course =>
+        filters.categories.includes(course.category)
+      );
+    }
+
+    if (filters.skillLevel.length > 0) {
+      filtered = filtered.filter(course =>
+        filters.skillLevel.includes(course.difficulty)
+      );
+    }
+
+    if (filters.completionStatus.length > 0) {
+      filtered = filtered.filter(course => {
+        if (filters.completionStatus.includes('completed') && course.progress === 100) return true;
+        if (filters.completionStatus.includes('in-progress') && course.progress > 0 && course.progress < 100) return true;
+        if (filters.completionStatus.includes('not-started') && course.progress === 0) return true;
+        return false;
+      });
+    }
+
+    switch (sortBy) {
+      case 'newest':
+        filtered.sort((a, b) => Number(b.isNew) - Number(a.isNew));
+        break;
+      case 'popular':
+        filtered.sort((a, b) => b.enrolledCount - a.enrolledCount);
+        break;
+      case 'rating':
+        filtered.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'duration-asc':
+        filtered.sort((a, b) => getDurationMinutes(a.duration) - getDurationMinutes(b.duration));
+        break;
+      case 'duration-desc':
+        filtered.sort((a, b) => getDurationMinutes(b.duration) - getDurationMinutes(a.duration));
+        break;
+      case 'alphabetical':
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      default:
+        filtered.sort((a, b) => {
+          if (a.isMandatory !== b.isMandatory) return Number(b.isMandatory) - Number(a.isMandatory);
+          if (a.isNew !== b.isNew) return Number(b.isNew) - Number(a.isNew);
+          return b.rating - a.rating;
+        });
+    }
+
+    return filtered;
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    setTimeout(() => {
+      setCourses(getFilteredCourses());
+      setLoading(false);
+    }, 500);
+  }, [searchQuery, sortBy, filters]);
+
+  const handleFilterChange = (key: keyof Filters, values: string[]) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: values,
+    }));
+  };
+
+  const handleClearAllFilters = () => {
+    setFilters({
+      contentType: [],
+      categories: [],
+      skillLevel: [],
+      duration: [],
+      completionStatus: [],
+    });
+    setSearchQuery('');
+  };
+
+  const handleEnroll = (courseId: number) => {
+    console.log(`Enrolling in course ${courseId}`);
+  };
+
+  const handleViewDetails = (courseId: number) => {
+    router.push(`/course-details?id=${courseId}`);
+  };
+
+  const handleLoadMore = async () => {
+    return new Promise<void>(resolve => {
+      setTimeout(() => {
+        setHasMore(false);
+        resolve();
+      }, 1000);
+    });
+  };
+
   return (
-    <div className="bg-card border border-border rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-            <Icon name="Grid3X3" size={20} className="text-warning" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Skill Matrix </h3>
-            <p className="text-sm text-text-secondary">Team skill proficiency visualization</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <select
-            value={selectedDepartment}
-            onChange={(e) => onDepartmentChange(e.target.value as Department)}
-            className="px-3 py-2 border border-border rounded-md text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {departments.map(dept => (
-              <option key={dept.value} value={dept.value}>{dept.label}</option>
-            ))}
-          </select>
-          <Button
-            variant="outline"
-            size="sm"
-          >
-            <Icon name="Download" size={16} className="mr-2" />
-            Export
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <main className="">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* <Breadcrumb /> */}
 
-      <div className="overflow-x-auto">
-        <div className="min-w-full">
-          {/* Header */}
-          <div className="grid grid-cols-9 gap-1 mb-2">
-            <div className="p-2 text-sm font-medium text-foreground">Employee</div>
-            {currentData.skills.map((skill, index) => (
-              <div key={index} className="p-2 text-xs font-medium text-center text-foreground bg-muted rounded">
-                {skill}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Learning Catalog</h1>
+              <p className="text-muted-foreground mt-2">
+                Discover and enroll in courses to advance your skills and career
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              className="lg:hidden"
+              onClick={() => setIsFilterDrawerOpen(true)}
+            >
+              <Icon name="Filter" size={16} className="mr-2" />
+              Filters
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {isFilterVisible && (
+              <div className="lg:col-span-3 hidden lg:block">
+                <FilterSidebar
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  onClearAll={handleClearAllFilters}
+                />
               </div>
-            ))}
-          </div>
+            )}
 
-          {/* Heat Map Grid */}
-          {currentData.employees.map((employee, empIndex) => (
-            <div key={empIndex} className="grid grid-cols-9 gap-1 mb-1">
-              <div className="p-3 text-sm font-medium text-foreground bg-muted rounded flex items-center">
-                <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center mr-2">
-                  <span className="text-xs text-white font-medium">
-                    {employee.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
-                <span className="truncate">{employee}</span>
-              </div>
-              {currentData.data[empIndex].map((value, skillIndex) => (
-                <div
-                  key={skillIndex}
-                  className="p-3 text-xs font-medium text-center rounded cursor-pointer hover:scale-105 transition-transform"
-                  style={getHeatMapIntensity(value)}
-                  title={`${employee} - ${currentData.skills[skillIndex]}: ${value}%`}
-                >
-                  {value}%
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
+            <div className={isFilterVisible ? 'lg:col-span-6' : 'lg:col-span-9'}>
+              <SearchToolbar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                // sortBy={sortBy}
+                // onSortChange={setSortBy}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                resultsCount={courses.length}
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onClearAll={handleClearAllFilters}
+                // onToggleFilter={() => setIsFilterVisible(prev => !prev)}
+              />
 
-      {/* Legend */}
-      <div className="mt-6 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <span className="text-sm font-medium text-foreground">Proficiency Level:</span>
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-1">
-              <div className="w-4 h-4 bg-red-400 rounded"></div>
-              <span className="text-xs text-text-secondary">&lt;60%</span>
+              <CourseGrid
+                courses={courses}
+                viewMode={viewMode}
+                loading={loading}
+                onEnroll={handleEnroll}
+                onViewDetails={handleViewDetails}
+                onLoadMore={handleLoadMore}
+                hasMore={hasMore}
+              />
             </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-4 h-4 bg-orange-400 rounded"></div>
-              <span className="text-xs text-text-secondary">60-69%</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-4 h-4 bg-yellow-400 rounded"></div>
-              <span className="text-xs text-text-secondary">70-79%</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-4 h-4 bg-green-400 rounded"></div>
-              <span className="text-xs text-text-secondary">80-89%</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-4 h-4 bg-green-500 rounded"></div>
-              <span className="text-xs text-text-secondary">90%+</span>
-            </div>
-          </div>
-        </div>
-        <div className="text-sm text-text-secondary">
-          Last updated: {new Date().toLocaleDateString()}
-        </div>
-      </div>
 
-      {/* Quick Stats */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-muted rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <Icon name="TrendingUp" size={16} className="text-success" />
-            <span className="text-sm font-medium text-foreground">Top Performer</span>
+            <div className="lg:col-span-3 hidden lg:block">
+              <RecommendationSidebar />
+            </div>
           </div>
-          <p className="text-lg font-bold text-success">Jane Smith</p>
-          <p className="text-xs text-text-secondary">87% avg proficiency</p>
         </div>
-        <div className="bg-muted rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <Icon name="Target" size={16} className="text-primary" />
-            <span className="text-sm font-medium text-foreground">Strongest Skill</span>
-          </div>
-          <p className="text-lg font-bold text-primary">React</p>
-          <p className="text-xs text-text-secondary">87% team average</p>
-        </div>
-        <div className="bg-muted rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <Icon name="AlertTriangle" size={16} className="text-warning" />
-            <span className="text-sm font-medium text-foreground">Needs Focus</span>
-          </div>
-          <p className="text-lg font-bold text-warning">AWS</p>
-          <p className="text-xs text-text-secondary">75% team average</p>
-        </div>
-        <div className="bg-muted rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <Icon name="Users" size={16} className="text-accent" />
-            <span className="text-sm font-medium text-foreground">Team Size</span>
-          </div>
-          <p className="text-lg font-bold text-accent">{currentData.employees.length}</p>
-          <p className="text-xs text-text-secondary">Active members</p>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
 
-export default CompetencyHeatMap;
+export default LearningCatalog;

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import EditDialog from "./editDialouge";
 import dynamic from 'next/dynamic';
 import DataTable from "react-data-table-component";
+import AddDialog from "@/components/jobroleComponent/addDialouge";
 
 const ExcelExportButton = dynamic(
     () => import('../exportButtons/excelExportButton').then(mod => mod.ExcelExportButton),
@@ -45,6 +46,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
     const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
         {}
     );
+
     const [dialogOpen, setDialogOpen] = useState({
         view: false,
         add: false,
@@ -92,7 +94,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             alert("Failed to load departments");
         }
     }
-    async function fetchData(industry: string = '',department: string = '', subDepartments: string[] = []) {
+    async function fetchData(industry: string = '', department: string = '', subDepartments: string[] = []) {
         setLoading(true);
         const subDeptQuery = subDepartments.length > 0
             ? `&sub_department=${subDepartments.join(',')}`
@@ -141,7 +143,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
 
                 const data = await res.json();
                 alert(data.message);
-                fetchData(selectedIndustry,selectedDepartment, selectedSubDepartments);
+                fetchData(selectedIndustry, selectedDepartment, selectedSubDepartments);
                 setSelectedJobRole(null);
             } catch (error) {
                 console.error("Error deleting job role:", error);
@@ -169,7 +171,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=sub_department&searchWord=${encodeURIComponent(department)}`);
             const data = await res.json();
             setSubDepartments(data.searchData || []);
-            fetchData(selectedIndustry,department);
+            fetchData(selectedIndustry, department);
         } catch (error) {
             console.error("Error fetching sub-departments:", error);
             alert("Failed to load sub-departments");
@@ -189,7 +191,7 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
             }
         }
         setSelectedSubDepartments(selectedOptions);
-        fetchData(selectedIndustry,selectedDepartment, selectedOptions);
+        fetchData(selectedIndustry, selectedDepartment, selectedOptions);
     };
 
     const handleColumnFilter = (column: string, value: string) => {
@@ -342,11 +344,11 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
 
     return (
         <>
-            <div className='relative bg-[#fff] mx-6 rounded-lg'>
-                {/* Department and Sub-department Filters */}
-                <div className="flex justify-center gap-8 py-6 inset-shadow-sm inset-shadow-[#EBF7FF] rounded-lg">
-                    {/* Department Select */}
-                    <div className="flex flex-col items-center w-[320px]">
+            {/* <div className='relative bg-[#fff] mx-6 rounded-lg'> */}
+            {/* Department and Sub-department Filters */}
+            {/* <div className="flex justify-center gap-8 py-6 inset-shadow-sm inset-shadow-[#EBF7FF] rounded-lg"> */}
+            {/* Department Select */}
+            {/* <div className="flex flex-col items-center w-[320px]">
                         <label htmlFor="Department" className="self-start mb-1 px-3">Jobrole Industries</label>
                         <select
                             name="industries"
@@ -377,10 +379,10 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                                 </option>
                             ))}
                         </select>
-                    </div>
+                    </div> */}
 
-                    {/* Sub-department Multi-Select */}
-                    {/* <div className="flex flex-col items-center w-[320px]">
+            {/* Sub-department Multi-Select */}
+            {/* <div className="flex flex-col items-center w-[320px]">
                         <label htmlFor="subDepartment" className="self-start mb-1 px-3">Jobrole Sub-Department</label>
                         <select
                             name="sub_department"
@@ -398,10 +400,10 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                             ))}
                         </select>
                     </div> */}
-                </div>
+            {/* </div> */}
 
-                <hr className='mb-[26px] text-[#ddd] border-2 border-[#449dd5] rounded' />
-            </div>
+            {/* <hr className='mb-[26px] text-[#ddd] border-2 border-[#449dd5] rounded' /> */}
+            {/* </div> */}
             <div className="w-[100%]">
                 {tableData.length > 0 && (
                     <div className="mt-2 bg-white px-4 rounded-lg shadow-lg">
@@ -421,9 +423,34 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                                 <br />
                                 <span className="text-sm">Total records : {filteredData.length}</span> */}
                             </div>
+                            <div className="w-[320px] mr-auto">
+                                    {/* <label htmlFor="Department" className="self-start mb-1 px-3">Jobrole Department</label> */}
+                                    <select
+                                        name="department"
+                                        className="rounded-lg p-2 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
+                                        onChange={e => fetchSubDepartments(e.target.value)}
+                                        value={selectedDepartment}
+                                    >
+                                        <option value="">Choose a Department to Filter</option>
+                                        {departments.map((dept) => (
+                                            <option key={dept} value={dept}>
+                                                {dept}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
                             {/* Right side - Export buttons */}
                             <div className="flex space-x-2">
+
+
+                                <button
+                                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center"
+                                    onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
+                                    data-titleHead="Add New Jobrole"
+                                >
+                                    +
+                                </button>
                                 <PrintButton
                                     data={tableData}
                                     title="Job Roles Report"
@@ -516,7 +543,16 @@ const TableView: React.FC<TableViewProps> = ({ refreshKey }) => {
                     onClose={handleCloseModel}
                     onSuccess={() => {
                         setDialogOpen({ ...dialogOpen, edit: false });
-                        fetchData(selectedIndustry,selectedDepartment, selectedSubDepartments);
+                        fetchData(selectedIndustry, selectedDepartment, selectedSubDepartments);
+                    }}
+                />
+            )}
+
+            {dialogOpen.add && (
+                <AddDialog skillId={null}
+                    onClose={() => setDialogOpen({ ...dialogOpen, add: false })}
+                    onSuccess={() => {
+                        setDialogOpen({ ...dialogOpen, add: false });
                     }}
                 />
             )}
