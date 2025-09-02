@@ -110,31 +110,37 @@ export default function Index() {
 
   // Update subcategories when category changes
   useEffect(() => {
-    if (!selectedCategory) return;
+  if (!selectedCategory) {
+    setSubCategories([]);
+    setSelectedSubCategory(null); // ✅ reset subcategory
+    return;
+  }
 
-    const fetchSubCats = async () => {
-      try {
-        const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude&filters[classification_category]=${selectedCategory}`,
-          { cache: "no-store" }
-        );
-        const data: CardData[] = await res.json();
+  const fetchSubCats = async () => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude&filters[classification_category]=${selectedCategory}`,
+        { cache: "no-store" }
+      );
+      const data: CardData[] = await res.json();
 
-        const subs = [
-          ...new Set(
-            data
-              .map((item) => item.classification_sub_category)
-              .filter((s) => typeof s === "string")
-          ),
-        ];
-        setSubCategories(subs);
-      } catch (err) {
-        console.error("Error fetching subcategories:", err);
-      }
-    };
+      const subs = [
+        ...new Set(
+          data
+            .map((item) => item.classification_sub_category)
+            .filter((s) => typeof s === "string")
+        ),
+      ];
 
-    fetchSubCats();
-  }, [selectedCategory, sessionData.sub_institute_id]);
+      setSubCategories(subs);
+      setSelectedSubCategory(null); // ✅ clear old subcategory selection
+    } catch (err) {
+      console.error("Error fetching subcategories:", err);
+    }
+  };
+
+  fetchSubCats();
+}, [selectedCategory, sessionData.sub_institute_id]);
 
   // Fetch cards when any filter changes
   useEffect(() => {
