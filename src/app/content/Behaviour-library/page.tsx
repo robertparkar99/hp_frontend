@@ -1,10 +1,23 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 interface KnowledgeItem {
   proficiency_level: string | null;
 }
+
+type Skill = {
+  id: number;
+  proficiency_level: string | null;
+};
 
 interface BehaviourItem {
   id: number;
@@ -15,48 +28,58 @@ interface BehaviourItem {
 }
 
 const BehaviourGrid = () => {
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [selectedLevel, setSelectedLevel] = useState("");
+  const [loadingOptions, setLoadingOptions] = useState(true);
   const [dropdownOptions, setDropdownOptions] = useState<
     { value: string; label: string }[]
   >([]);
   const [cardData, setCardData] = useState<BehaviourItem[]>([]);
+  interface SessionData {
+    url?: string;
+    token?: string;
+    sub_institute_id?: string;
+    org_type?: string;
+  }
+  
+  const [sessionData, setSessionData] = useState<SessionData>({});
 
+
+  useEffect(() => {
+      if (typeof window !== 'undefined') {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          const { APP_URL, token, sub_institute_id,org_type } = JSON.parse(userData);
+          setSessionData({ url: APP_URL, token, sub_institute_id,org_type });
+        }
+      }
+    }, []);
   // Fetch dropdown options (knowledge API)
   useEffect(() => {
-    async function fetchDropdownOptions() {
+  if (!sessionData.sub_institute_id) return; // ✅ wait until we have it
+
+  const fetchSkills = async () => {
+    try {
       const res = await fetch(
-        "https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=3&filters[classification]=behaviour&group_by=proficiency_level",
+        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour&group_by=proficiency_level`,
         { cache: "no-store" }
       );
-      let result = await res.json();
+      const data = await res.json();
 
-      // Ensure it's an array
-      if (!Array.isArray(result)) {
-        console.error("Dropdown API returned non-array:", result);
-        result = [];
-      }
-
-      const uniqueLevels = Array.from(
-        new Set(
-          result
-            .map((item: KnowledgeItem) => item.proficiency_level)
-            .filter((lvl: string | null): lvl is string => lvl !== null && lvl.trim() !== "")
-        )
+      const filtered = data.filter(
+        (item: Skill) => item.proficiency_level !== null
       );
 
-      const options = [
-        { value: "", label: "Select Proficiency Level" },
-        ...uniqueLevels.map((lvl) => ({
-          value: String(lvl),
-          label: `${lvl}`,
-        })),
-      ];
-
-      setDropdownOptions(options);
+      setSkills(filtered);
+    } catch (err) {
+      console.error("Error fetching skills:", err);
+    } finally {
+      setLoadingOptions(false);
     }
+  };
 
-    fetchDropdownOptions();
-  }, []);
+  fetchSkills();
+}, [sessionData.sub_institute_id]);
 
   // Fetch card data (behaviour API)
   useEffect(() => {
@@ -64,7 +87,7 @@ const BehaviourGrid = () => {
 
     async function fetchCardData() {
       const res = await fetch(
-        `https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=3&filters[classification]=behaviour&filters[proficiency_level]=${selectedLevel}&order_by[id]=desc&group_by=classification_item`,
+        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour&filters[proficiency_level]=${selectedLevel}&order_by[id]=desc&group_by=classification_item`,
         { cache: "no-store" }
       );
       let result = await res.json();
@@ -84,27 +107,28 @@ const BehaviourGrid = () => {
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
       {/* Dropdown */}
-      <div className="max-w-6xl mx-auto mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <label
-            htmlFor="proficiency-select"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Select Proficiency Level:
-          </label>
-          <select
-            id="proficiency-select"
-            value={selectedLevel}
-            onChange={(e) => setSelectedLevel(e.target.value)}
-            className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-          >
-            {dropdownOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="flex justify-end">
+        <Select onValueChange={(value) => setSelectedLevel(value)}>
+          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+            <SelectValue placeholder="Filter by Proficiency" />
+          </SelectTrigger>
+          <SelectContent>
+            {loadingOptions ? (
+              <SelectItem value="loading" disabled>
+                Loading...
+              </SelectItem>
+            ) : (
+              skills.map((skill) => (
+                <SelectItem
+                  key={skill.id}
+                  value={skill.proficiency_level as string}
+                >
+                  {skill.proficiency_level}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Cards */}
