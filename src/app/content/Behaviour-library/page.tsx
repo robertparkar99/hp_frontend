@@ -28,6 +28,7 @@ const BehaviourGrid = () => {
 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [cardData, setCardData] = useState<BehaviourItem[]>([]);
+  const [allData, setAllData] = useState<BehaviourItem[]>([]); // ✅ keep full dataset for filtering subcategories
 
   interface SessionData {
     url?: string;
@@ -61,6 +62,8 @@ const BehaviourGrid = () => {
         );
         const data: BehaviourItem[] = await res.json();
 
+        setAllData(data); // ✅ store full dataset for local filtering
+
         // ✅ Deduplicate proficiency levels
         const skillLevels = [
           ...new Set(
@@ -78,14 +81,6 @@ const BehaviourGrid = () => {
             .filter((cat) => typeof cat === "string")
         );
         setCategories([...categorySet]);
-
-        // ✅ Deduplicate subcategories
-        const subCatSet = new Set(
-          data
-            .map((item) => item.classification_sub_category)
-            .filter((sub) => typeof sub === "string")
-        );
-        setSubCategories([...subCatSet]);
       } catch (err) {
         console.error("Error fetching dropdown data:", err);
       } finally {
@@ -95,6 +90,26 @@ const BehaviourGrid = () => {
 
     fetchDropdowns();
   }, [sessionData.sub_institute_id]);
+
+  // ✅ Update subcategories whenever category changes
+  useEffect(() => {
+    if (!selectedCategory) {
+      setSubCategories([]);
+      setSelectedSubCategory(""); // ✅ reset
+      return;
+    }
+
+    const filteredSubs = [
+      ...new Set(
+        allData
+          .filter((item) => item.classification_category === selectedCategory)
+          .map((item) => item.classification_sub_category)
+      ),
+    ];
+
+    setSubCategories(filteredSubs);
+    setSelectedSubCategory(""); // ✅ reset old subcategory
+  }, [selectedCategory, allData]);
 
   // Fetch card data (behaviour API)
   useEffect(() => {
@@ -176,6 +191,7 @@ const BehaviourGrid = () => {
         <Select
           onValueChange={(value) => setSelectedSubCategory(value)}
           disabled={subCategories.length === 0}
+          value={selectedSubCategory || undefined} // ✅ keep controlled
         >
           <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
             <SelectValue placeholder="Filter by Sub Category" />
