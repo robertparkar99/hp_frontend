@@ -74,27 +74,33 @@ export default function Index() {
     }, [sessionData.sub_institute_id]);
 
     // 2. Fetch cards when proficiency_level changes
+    useEffect(() => {
+        if (!selectedLevel || !sessionData.sub_institute_id) return;
+
     const fetchCards = async () => {
-    setLoadingCards(true);
-    try {
-        const res = await fetch(
-            `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude&filters[proficiency_level]=${selectedLevel}&order_by[id]=desc&group_by=classification_item`,
-            { cache: "no-store" }
-        );
+        setLoadingCards(true);
+        try {
+            const res = await fetch(
+                `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude&filters[proficiency_level]=${selectedLevel}&order_by[id]=desc&group_by=classification_item`,
+                { cache: "no-store" }
+            );
 
-        const data = await res.json();
+            const data = await res.json();
 
-        // ✅ Ensure it's always an array
-        const normalized = Array.isArray(data) ? data : data?.data || [];
+            // ✅ Ensure it's always an array
+            const normalized = Array.isArray(data) ? data : data?.data || [];
 
-        setCards(normalized);
-    } catch (err) {
-        console.error("Error fetching cards:", err);
-        setCards([]); // fallback to empty array
-    } finally {
-        setLoadingCards(false);
-    }
-};
+            setCards(normalized);
+        } catch (err) {
+            console.error("Error fetching cards:", err);
+            setCards([]); // fallback to empty array
+        } finally {
+            setLoadingCards(false);
+        }
+    };
+
+        fetchCards();
+    }, [selectedLevel, sessionData.sub_institute_id, sessionData.url]);
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4">
