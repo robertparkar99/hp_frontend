@@ -31,9 +31,7 @@ const BehaviourGrid = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [selectedLevel, setSelectedLevel] = useState("");
   const [loadingOptions, setLoadingOptions] = useState(true);
-  const [dropdownOptions, setDropdownOptions] = useState<
-    { value: string; label: string }[]
-  >([]);
+
   const [cardData, setCardData] = useState<BehaviourItem[]>([]);
   interface SessionData {
     url?: string;
@@ -107,7 +105,7 @@ const BehaviourGrid = () => {
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
       {/* Dropdown */}
-      <div className="flex justify-end">
+      <div className="flex justify-end mb-2">
         <Select onValueChange={(value) => setSelectedLevel(value)}>
           <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
             <SelectValue placeholder="Filter by Proficiency" />
@@ -132,7 +130,7 @@ const BehaviourGrid = () => {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">
         {cardData.length === 0 ? (
           <p className="text-gray-500 col-span-full text-center">
             No data found for this level
