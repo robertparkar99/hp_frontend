@@ -9,16 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-
-interface KnowledgeItem {
-  proficiency_level: string | null;
-}
-
-type Skill = {
-  id: number;
-  proficiency_level: string | null;
-};
-
 interface BehaviourItem {
   id: number;
   proficiency_level: string | null;
@@ -28,84 +18,121 @@ interface BehaviourItem {
 }
 
 const BehaviourGrid = () => {
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [selectedLevel, setSelectedLevel] = useState("");
-  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [skills, setSkills] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [subCategories, setSubCategories] = useState<string[]>([]);
 
+  const [selectedLevel, setSelectedLevel] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState("");
+
+  const [loadingOptions, setLoadingOptions] = useState(true);
   const [cardData, setCardData] = useState<BehaviourItem[]>([]);
+
   interface SessionData {
     url?: string;
     token?: string;
     sub_institute_id?: string;
     org_type?: string;
   }
-  
   const [sessionData, setSessionData] = useState<SessionData>({});
 
-
+  // Load session data from localStorage
   useEffect(() => {
-      if (typeof window !== 'undefined') {
-        const userData = localStorage.getItem('userData');
-        if (userData) {
-          const { APP_URL, token, sub_institute_id,org_type } = JSON.parse(userData);
-          setSessionData({ url: APP_URL, token, sub_institute_id,org_type });
-        }
+    if (typeof window !== "undefined") {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        const { APP_URL, token, sub_institute_id, org_type } =
+          JSON.parse(userData);
+        setSessionData({ url: APP_URL, token, sub_institute_id, org_type });
       }
-    }, []);
-  // Fetch dropdown options (knowledge API)
-  useEffect(() => {
-  if (!sessionData.sub_institute_id) return; // ✅ wait until we have it
-
-  const fetchSkills = async () => {
-    try {
-      const res = await fetch(
-        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour&group_by=proficiency_level`,
-        { cache: "no-store" }
-      );
-      const data = await res.json();
-
-      const filtered = data.filter(
-        (item: Skill) => item.proficiency_level !== null
-      );
-
-      setSkills(filtered);
-    } catch (err) {
-      console.error("Error fetching skills:", err);
-    } finally {
-      setLoadingOptions(false);
     }
-  };
+  }, []);
 
-  fetchSkills();
-}, [sessionData.sub_institute_id]);
+  // Fetch unique skills, categories, subcategories for dropdowns
+  useEffect(() => {
+    if (!sessionData.sub_institute_id) return;
+
+    const fetchDropdowns = async () => {
+      try {
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour`,
+          { cache: "no-store" }
+        );
+        const data: BehaviourItem[] = await res.json();
+
+        // ✅ Deduplicate proficiency levels
+        const skillLevels = [
+          ...new Set(
+            data
+              .filter((item) => typeof item.proficiency_level === "string")
+              .map((item) => item.proficiency_level as string)
+          ),
+        ];
+        setSkills(skillLevels);
+
+        // ✅ Deduplicate categories
+        const categorySet = new Set(
+          data
+            .map((item) => item.classification_category)
+            .filter((cat) => typeof cat === "string")
+        );
+        setCategories([...categorySet]);
+
+        // ✅ Deduplicate subcategories
+        const subCatSet = new Set(
+          data
+            .map((item) => item.classification_sub_category)
+            .filter((sub) => typeof sub === "string")
+        );
+        setSubCategories([...subCatSet]);
+      } catch (err) {
+        console.error("Error fetching dropdown data:", err);
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    fetchDropdowns();
+  }, [sessionData.sub_institute_id]);
 
   // Fetch card data (behaviour API)
   useEffect(() => {
-    if (!selectedLevel) return;
+    if (!selectedLevel && !selectedCategory && !selectedSubCategory) return;
 
     async function fetchCardData() {
-      const res = await fetch(
-        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour&filters[proficiency_level]=${selectedLevel}&order_by[id]=desc&group_by=classification_item`,
-        { cache: "no-store" }
-      );
+      let query = `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour`;
+
+      if (selectedLevel) {
+        query += `&filters[proficiency_level]=${selectedLevel}`;
+      }
+      if (selectedCategory) {
+        query += `&filters[classification_category]=${selectedCategory}`;
+      }
+      if (selectedSubCategory) {
+        query += `&filters[classification_sub_category]=${selectedSubCategory}`;
+      }
+
+      query += "&order_by[id]=desc&group_by=classification_item";
+
+      const res = await fetch(query, { cache: "no-store" });
       let result = await res.json();
 
-      // Ensure it's an array
       if (!Array.isArray(result)) {
         console.error("Card API returned non-array:", result);
         result = [];
       }
-
       setCardData(result);
     }
 
     fetchCardData();
-  }, [selectedLevel]);
+  }, [selectedLevel, selectedCategory, selectedSubCategory]);
 
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
-      {/* Dropdown */}
-      <div className="flex justify-end mb-2">
+      {/* Dropdowns */}
+      <div className="flex flex-col sm:flex-row justify-end gap-3 mb-4">
+        {/* Proficiency Dropdown */}
         <Select onValueChange={(value) => setSelectedLevel(value)}>
           <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
             <SelectValue placeholder="Filter by Proficiency" />
@@ -116,12 +143,52 @@ const BehaviourGrid = () => {
                 Loading...
               </SelectItem>
             ) : (
-              skills.map((skill) => (
-                <SelectItem
-                  key={skill.id}
-                  value={skill.proficiency_level as string}
-                >
-                  {skill.proficiency_level}
+              skills.map((level, idx) => (
+                <SelectItem key={idx} value={level}>
+                  {level}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
+
+        {/* Category Dropdown */}
+        <Select onValueChange={(value) => setSelectedCategory(value)}>
+          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+            <SelectValue placeholder="Filter by Category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.length === 0 ? (
+              <SelectItem value="loading" disabled>
+                No Categories
+              </SelectItem>
+            ) : (
+              categories.map((cat, idx) => (
+                <SelectItem key={idx} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
+
+        {/* Sub Category Dropdown */}
+        <Select
+          onValueChange={(value) => setSelectedSubCategory(value)}
+          disabled={subCategories.length === 0}
+        >
+          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+            <SelectValue placeholder="Filter by Sub Category" />
+          </SelectTrigger>
+          <SelectContent>
+            {subCategories.length === 0 ? (
+              <SelectItem value="loading" disabled>
+                No Sub Categories
+              </SelectItem>
+            ) : (
+              subCategories.map((sub, idx) => (
+                <SelectItem key={idx} value={sub}>
+                  {sub}
                 </SelectItem>
               ))
             )}
@@ -133,7 +200,7 @@ const BehaviourGrid = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">
         {cardData.length === 0 ? (
           <p className="text-gray-500 col-span-full text-center">
-            No data found for this level
+            No data found for this filter
           </p>
         ) : (
           cardData.map((card) => (
