@@ -26,9 +26,15 @@ interface SessionData {
   org_type?: string;
 }
 
+// 🔹 Utility to safely extract array from API response
+const safeArray = (data: any): ApiItem[] => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+};
+
 export default function Page() {
   const [items, setItems] = useState<ApiItem[]>([]);
-  const [filteredItems, setFilteredItems] = useState<ApiItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Dropdown states
@@ -64,10 +70,11 @@ export default function Page() {
     const fetchDropdowns = async () => {
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude`,
+          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=ability`,
           { cache: "no-store" }
         );
-        const data: ApiItem[] = await res.json();
+        const json = await res.json();
+        const data = safeArray(json);
 
         setSkills(
           [...new Set(data.map((item) => item.proficiency_level))].filter(
@@ -104,14 +111,18 @@ export default function Page() {
     const fetchSubCats = async () => {
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude&filters[classification_category]=${selectedCategory}`,
+          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=ability&filters[classification_category]=${selectedCategory}`,
           { cache: "no-store" }
         );
-        const data: ApiItem[] = await res.json();
+        const json = await res.json();
+        const data = safeArray(json);
+
         setSubCategories(
-          [...new Set(data.map((item) => item.classification_sub_category))].filter(
-            Boolean
-          )
+          [
+            ...new Set(
+              data.map((item) => item.classification_sub_category)
+            ),
+          ].filter(Boolean)
         );
         setSelectedSubCategory(null);
       } catch (err) {
@@ -122,17 +133,31 @@ export default function Page() {
     fetchSubCats();
   }, [selectedCategory, sessionData]);
 
-  // Fetch main items
+  // Fetch triangles with filters applied
   useEffect(() => {
-    const fetchData = async () => {
+    if (!sessionData.sub_institute_id || !sessionData.url) return;
+
+    const fetchTriangles = async () => {
       try {
-        const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=ability&order_by[id]=desc`,
-          { cache: "no-store" }
-        );
-        const data: ApiItem[] = await res.json();
+        setLoading(true);
+
+        let url = `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=ability&order_by[id]=desc`;
+
+        if (selectedLevel) {
+          url += `&filters[proficiency_level]=${selectedLevel}`;
+        }
+        if (selectedCategory) {
+          url += `&filters[classification_category]=${selectedCategory}`;
+        }
+        if (selectedSubCategory) {
+          url += `&filters[classification_sub_category]=${selectedSubCategory}`;
+        }
+
+        const res = await fetch(url, { cache: "no-store" });
+        const json = await res.json();
+        const data = safeArray(json);
+
         setItems(data);
-        setFilteredItems(data);
       } catch (err) {
         console.error("Error fetching triangles:", err);
       } finally {
@@ -140,25 +165,8 @@ export default function Page() {
       }
     };
 
-    fetchData();
-  }, []);
-
-  // Apply filters
-  useEffect(() => {
-    let updated = [...items];
-    if (selectedLevel) {
-      updated = updated.filter((i) => i.proficiency_level === selectedLevel);
-    }
-    if (selectedCategory) {
-      updated = updated.filter((i) => i.classification_category === selectedCategory);
-    }
-    if (selectedSubCategory) {
-      updated = updated.filter(
-        (i) => i.classification_sub_category === selectedSubCategory
-      );
-    }
-    setFilteredItems(updated);
-  }, [items, selectedLevel, selectedCategory, selectedSubCategory]);
+    fetchTriangles();
+  }, [sessionData, selectedLevel, selectedCategory, selectedSubCategory]);
 
   if (loading) {
     return (
@@ -174,12 +182,12 @@ export default function Page() {
       arr.slice(i * size, i * size + size)
     );
 
-  const rows = chunk(filteredItems, 5);
+  const rows = chunk(items, 5);
 
   return (
     <div className="flex flex-col items-center gap-8 p-10">
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row justify-right gap-3">
+      <div className="flex flex-col sm:flex-row justify-end gap-3">
         {/* Proficiency */}
         <Select onValueChange={(value) => setSelectedLevel(value)}>
           <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
