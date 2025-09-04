@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import "./triangle.css"; // custom CSS
 import { Atom } from "react-loading-indicators";
+import { Funnel } from "lucide-react"; // ✅ filter icon
 
 type ApiItem = {
   id: number;
@@ -50,6 +51,7 @@ export default function Page() {
 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [sessionData, setSessionData] = useState<SessionData>({});
+  const [showFilters, setShowFilters] = useState(false);
 
   // Get session data
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function Page() {
     const fetchDropdowns = async () => {
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=ability&order_by[column]=proficiency_level&order_by[direction]=asc&group_by=proficiency_level `,
+          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=ability&order_by[column]=proficiency_level&order_by[direction]=asc&group_by=proficiency_level`,
           { cache: "no-store" }
         );
         const json = await res.json();
@@ -185,94 +187,115 @@ export default function Page() {
   const rows = chunk(items, 5);
 
   return (
-    <div className="flex flex-col items-center gap-8 p-10">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row justify-end gap-3">
-        {/* Proficiency */}
-        <Select onValueChange={(value) => setSelectedLevel(value)}>
-          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-            <SelectValue placeholder="Filter by Proficiency" />
-          </SelectTrigger>
-          <SelectContent>
-            {loadingOptions ? (
-              <SelectItem value="loading" disabled>
-                Loading...
-              </SelectItem>
-            ) : (
-              skills.map((level, idx) => (
-                <SelectItem key={idx} value={level}>
-                  {level}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
-
-        {/* Category */}
-        <Select onValueChange={(value) => setSelectedCategory(value)}>
-          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-            <SelectValue placeholder="Filter by Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.length === 0 ? (
-              <SelectItem value="loading" disabled>
-                No Categories
-              </SelectItem>
-            ) : (
-              categories.map((cat, idx) => (
-                <SelectItem key={idx} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
-
-        {/* Sub Category */}
-        <Select
-          onValueChange={(value) => setSelectedSubCategory(value)}
-          disabled={!selectedCategory}
+    <div className="flex flex-col gap-8 p-2 pl-10">
+      {/* 🔽 Filter Toggle Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowFilters((prev) => !prev)}
+          className="p-2 rounded-md hover:bg-gray-100"
+          aria-label="Toggle Filters"
         >
-          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-            <SelectValue placeholder="Filter by Sub Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {subCategories.length === 0 ? (
-              <SelectItem value="loading" disabled>
-                No Sub Categories
-              </SelectItem>
-            ) : (
-              subCategories.map((sub, idx) => (
-                <SelectItem key={idx} value={sub}>
-                  {sub}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
+          <Funnel className="w-5 h-5" />
+        </button>
       </div>
 
-      {/* Triangles Grid */}
-      {rows.length > 0 ? (
-        rows.map((row, rowIndex) => (
-          <div key={rowIndex} className="flex gap-6 mt-23">
-            {row.map((item, colIndex) => {
-              const shouldRotate =
-                rowIndex % 2 === 0 ? colIndex % 2 === 1 : colIndex % 2 === 0;
+      {/* Filters - aligned to top right */}
+      {showFilters && (
+        <div className="flex justify-end w-full gap-3">
+          {/* Category */}
+          <Select
+            value={selectedCategory ?? ""}
+            onValueChange={(value) => setSelectedCategory(value)}
+          >
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.length === 0 ? (
+                <SelectItem value="loading" disabled>
+                  No Categories
+                </SelectItem>
+              ) : (
+                categories.map((cat, idx) => (
+                  <SelectItem key={idx} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
 
-              return (
-                <Triangle
-                  key={item.id}
-                  text={item.classification_item}
-                  rotate={shouldRotate}
-                />
-              );
-            })}
-          </div>
-        ))
-      ) : (
-        <p className="text-gray-500">No items match your filters.</p>
+          {/* Sub Category */}
+          <Select
+            value={selectedSubCategory ?? ""}
+            onValueChange={(value) => setSelectedSubCategory(value)}
+            disabled={!selectedCategory}
+          >
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Sub Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {subCategories.length === 0 ? (
+                <SelectItem value="loading" disabled>
+                  No Sub Categories
+                </SelectItem>
+              ) : (
+                subCategories.map((sub, idx) => (
+                  <SelectItem key={idx} value={sub}>
+                    {sub}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+
+          {/* Proficiency Level */}
+          <Select
+            value={selectedLevel ?? ""}
+            onValueChange={(value) => setSelectedLevel(value)}
+          >
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Proficiency" />
+            </SelectTrigger>
+            <SelectContent>
+              {loadingOptions ? (
+                <SelectItem value="loading" disabled>
+                  Loading...
+                </SelectItem>
+              ) : (
+                skills.map((level, idx) => (
+                  <SelectItem key={idx} value={level}>
+                    {level}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
       )}
+      {/* Triangles Grid */}
+      <div className="flex flex-col items-center gap-8">
+        {rows.length > 0 ? (
+          rows.map((row, rowIndex) => (
+            <div key={rowIndex} className="flex gap-6 mt-23">
+              {row.map((item, colIndex) => {
+                const shouldRotate =
+                  rowIndex % 2 === 0 ? colIndex % 2 === 1 : colIndex % 2 === 0;
+
+                return (
+                  <Triangle
+                    key={item.id}
+                    text={item.classification_item}
+                    rotate={shouldRotate}
+                  />
+                );
+              })}
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-500">No items match your filters.</p>
+        )}
+      </div>
     </div>
   );
 }
