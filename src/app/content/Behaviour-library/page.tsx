@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Funnel } from "lucide-react"; // ✅ filter icon
 
 interface BehaviourItem {
   id: number;
@@ -28,7 +29,8 @@ const BehaviourGrid = () => {
 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [cardData, setCardData] = useState<BehaviourItem[]>([]);
-  const [allData, setAllData] = useState<BehaviourItem[]>([]); // ✅ keep full dataset for filtering subcategories
+  const [allData, setAllData] = useState<BehaviourItem[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   interface SessionData {
     url?: string;
@@ -62,7 +64,7 @@ const BehaviourGrid = () => {
         );
         const data: BehaviourItem[] = await res.json();
 
-        setAllData(data); // ✅ store full dataset for local filtering
+        setAllData(data);
 
         // ✅ Deduplicate proficiency levels
         const skillLevels = [
@@ -95,7 +97,7 @@ const BehaviourGrid = () => {
   useEffect(() => {
     if (!selectedCategory) {
       setSubCategories([]);
-      setSelectedSubCategory(""); // ✅ reset
+      setSelectedSubCategory("");
       return;
     }
 
@@ -108,12 +110,12 @@ const BehaviourGrid = () => {
     ];
 
     setSubCategories(filteredSubs);
-    setSelectedSubCategory(""); // ✅ reset old subcategory
+    setSelectedSubCategory("");
   }, [selectedCategory, allData]);
 
-  // Fetch card data (behaviour API)
+  // ✅ Fetch card data (initial + filters)
   useEffect(() => {
-    if (!selectedLevel && !selectedCategory && !selectedSubCategory) return;
+    if (!sessionData.sub_institute_id) return;
 
     async function fetchCardData() {
       let query = `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour`;
@@ -130,49 +132,63 @@ const BehaviourGrid = () => {
 
       query += "&order_by[id]=desc&group_by=classification_item";
 
-      const res = await fetch(query, { cache: "no-store" });
-      let result = await res.json();
+      try {
+        const res = await fetch(query, { cache: "no-store" });
+        let result = await res.json();
 
-      if (!Array.isArray(result)) {
-        console.error("Card API returned non-array:", result);
-        result = [];
+        if (!Array.isArray(result)) {
+          console.error("Card API returned non-array:", result);
+          result = [];
+        }
+        setCardData(result);
+      } catch (err) {
+        console.error("Error fetching card data:", err);
+        setCardData([]);
       }
-      setCardData(result);
     }
 
     fetchCardData();
-  }, [selectedLevel, selectedCategory, selectedSubCategory]);
+  }, [
+    selectedLevel,
+    selectedCategory,
+    selectedSubCategory,
+    sessionData.sub_institute_id,
+  ]);
 
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
+      {/* 🔽 Filter Toggle Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowFilters((prev) => !prev)}
+                className="p-2"
+              >
+                <Funnel />
+              </button>
+            </div>
       {/* Dropdowns */}
+      {showFilters && (
       <div className="flex flex-col sm:flex-row justify-end gap-3 mb-4">
-        {/* Proficiency Dropdown */}
-        <Select onValueChange={(value) => setSelectedLevel(value)}>
-          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-            <SelectValue placeholder="Filter by Proficiency" />
-          </SelectTrigger>
-          <SelectContent>
-            {loadingOptions ? (
-              <SelectItem value="loading" disabled>
-                Loading...
-              </SelectItem>
-            ) : (
-              skills.map((level, idx) => (
-                <SelectItem key={idx} value={level}>
-                  {level}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
-
         {/* Category Dropdown */}
-        <Select onValueChange={(value) => setSelectedCategory(value)}>
+        <Select
+          value={selectedCategory || "all"}
+          onValueChange={(value) => {
+            if (value === "all") {
+              setSelectedCategory("");
+              setSelectedSubCategory("");
+              setSelectedLevel("");
+            } else {
+              setSelectedCategory(value);
+              setSelectedSubCategory("");
+              setSelectedLevel("");
+            }
+          }}
+        >
           <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
             <SelectValue placeholder="Filter by Category" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">Filter by Category</SelectItem>
             {categories.length === 0 ? (
               <SelectItem value="loading" disabled>
                 No Categories
@@ -189,14 +205,23 @@ const BehaviourGrid = () => {
 
         {/* Sub Category Dropdown */}
         <Select
-          onValueChange={(value) => setSelectedSubCategory(value)}
+          value={selectedSubCategory || "all"}
+          onValueChange={(value) => {
+            if (value === "all") {
+              setSelectedSubCategory("");
+              setSelectedLevel("");
+            } else {
+              setSelectedSubCategory(value);
+              setSelectedLevel("");
+            }
+          }}
           disabled={subCategories.length === 0}
-          value={selectedSubCategory || undefined} // ✅ keep controlled
         >
           <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
             <SelectValue placeholder="Filter by Sub Category" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">Filter by Sub Category</SelectItem>
             {subCategories.length === 0 ? (
               <SelectItem value="loading" disabled>
                 No Sub Categories
@@ -210,7 +235,38 @@ const BehaviourGrid = () => {
             )}
           </SelectContent>
         </Select>
+
+        {/* Proficiency Dropdown */}
+        <Select
+          value={selectedLevel || "all"}
+          onValueChange={(value) => {
+            if (value === "all") {
+              setSelectedLevel("");
+            } else {
+              setSelectedLevel(value);
+            }
+          }}
+        >
+          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+            <SelectValue placeholder="Filter by Proficiency Level" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Filter by Proficiency Level</SelectItem>
+            {loadingOptions ? (
+              <SelectItem value="loading" disabled>
+                Loading...
+              </SelectItem>
+            ) : (
+              skills.map((level, idx) => (
+                <SelectItem key={idx} value={level}>
+                  {level}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
       </div>
+      )}
 
       {/* Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">
@@ -224,7 +280,11 @@ const BehaviourGrid = () => {
               key={card.id}
               className="bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200 min-h-[180px]"
             >
-              <h3 className="text-blue-800 font-bold text-[16px] mb-3">
+              {/* ✅ Title truncated + tooltip */}
+              <h3
+                className="text-blue-800 font-bold text-[16px] mb-3 truncate"
+                title={card.classification_item}
+              >
                 {card.classification_item}
               </h3>
 

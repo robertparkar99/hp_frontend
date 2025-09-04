@@ -2,14 +2,19 @@
 
 import React, { useEffect, useState } from "react";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
-import EditDialog from "@/components/skillComponent/editDialouge"; // ✅ Import EditDialog
+import EditDialog from "@/components/skillComponent/editDialouge";
 import { FiEdit } from "react-icons/fi";
-import { Trash2 } from "lucide-react";
+import { Trash2, Funnel  } from "lucide-react";
+ // ✅ filter icon
 
 type Skill = {
   id: number;
   title: string;
   description?: string;
+  department?: string;
+  category?: string;
+  sub_category?: string;
+  proficiency_level?: string;
 };
 
 type SubCategory = {
@@ -24,10 +29,17 @@ type Category = {
 
 export default function Page() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [userSkills, setUserSkills] = useState<Skill[]>([]);
+
+  // Filters
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSkillId, setSelectedSkillId] = useState<number | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [selectedProficiency, setSelectedProficiency] = useState<string | null>(null);
+
+  const [selectedSkillId, setSelectedSkillId] = useState<number | null>(null);
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
+
   const [sessionData, setSessionData] = useState({
     url: "",
     token: "",
@@ -35,12 +47,15 @@ export default function Page() {
     orgType: "",
     userId: "",
   });
+
   const [dialogOpen, setDialogOpen] = useState({
     view: false,
     add: false,
     edit: false,
   });
+
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showFilters, setShowFilters] = useState(false); // ✅ toggle state
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -66,6 +81,7 @@ export default function Page() {
         const data = await res.json();
 
         const userTree = data?.userTree || {};
+        const userSkillsArr: Skill[] = data?.userSkills || [];
 
         const parsedCategories: Category[] = Object.entries(userTree).map(
           ([categoryName, subCatObj]) => {
@@ -76,6 +92,10 @@ export default function Page() {
                 id: s.id,
                 title: s.title,
                 description: s.description,
+                department: s.department,
+                category: s.category,
+                sub_category: s.sub_category,
+                proficiency_level: s.proficiency_level,
               }));
               return { name: subName, skills };
             });
@@ -85,6 +105,7 @@ export default function Page() {
         );
 
         setCategories(parsedCategories);
+        setUserSkills(userSkillsArr);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -98,22 +119,17 @@ export default function Page() {
   // Delete handler
   const handleDelete = async (skillId: number) => {
     if (!skillId) return;
-
     if (window.confirm("Are you sure you want to delete this job role?")) {
       try {
         const res = await fetch(
           `${sessionData.url}/skill_library/${skillId}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=user`,
           {
             method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${sessionData.token}`,
-            },
+            headers: { Authorization: `Bearer ${sessionData.token}` },
           }
         );
-
         const data = await res.json();
         alert(data.message);
-
         setRefreshKey((prev) => prev + 1);
         setSelectedSkillId(null);
       } catch (error) {
@@ -130,95 +146,167 @@ export default function Page() {
     setDialogOpen({ ...dialogOpen, edit: true });
   };
 
+  // Dropdown options
+  const departmentOptions = Array.from(new Set(userSkills.map((s) => s.department))).filter(
+    (dept): dept is string => typeof dept === "string"
+  );
+
+  const proficiencyOptions = Array.from(
+    new Set(userSkills.map((s) => s.proficiency_level))
+  )
+    .filter(Boolean)
+    .map((lvl) => Number(lvl))
+    .sort((a, b) => a - b)
+    .map(String);
+
   // Decide hexagon items
   let hexagonItems: { id?: number; title: string; subtitle?: string; skillObj?: Skill }[] = [];
-  if (!selectedCategory && !selectedSubcategory) {
-    hexagonItems = categories.map((cat) => ({ title: cat.name }));
-  } else if (selectedCategory && !selectedSubcategory) {
-    const category = categories.find((c) => c.name === selectedCategory);
-    hexagonItems = category?.subcategories.map((sub) => ({ title: sub.name })) || [];
-  } else if (selectedCategory && selectedSubcategory) {
-    const category = categories.find((c) => c.name === selectedCategory);
-    const sub = category?.subcategories.find((s) => s.name === selectedSubcategory);
+
+  if (!selectedDepartment) {
+    hexagonItems = departmentOptions.map((dept) => ({ title: dept }));
+  } else if (selectedDepartment && !selectedCategory) {
+    const categoriesForDept = Array.from(
+      new Set(userSkills.filter((s) => s.department === selectedDepartment).map((s) => s.category))
+    ).filter(Boolean);
+    hexagonItems = categoriesForDept.map((cat) => ({ title: cat! }));
+  } else if (selectedDepartment && selectedCategory && !selectedSubcategory) {
+    const subcategoriesForCat = Array.from(
+      new Set(
+        userSkills
+          .filter((s) => s.department === selectedDepartment && s.category === selectedCategory)
+          .map((s) => s.sub_category)
+      )
+    ).filter(Boolean);
+    hexagonItems = subcategoriesForCat.map((sub) => ({ title: sub! }));
+  } else if (selectedDepartment && selectedCategory && selectedSubcategory) {
     hexagonItems =
-      sub?.skills.map((skill) => ({
-        id: skill.id,
-        title: skill.title,
-        subtitle: skill.description,
-        skillObj: skill,
-      })) || [];
+      userSkills
+        .filter(
+          (s) =>
+            s.department === selectedDepartment &&
+            s.category === selectedCategory &&
+            s.sub_category === selectedSubcategory &&
+            (!selectedProficiency || s.proficiency_level === selectedProficiency)
+        )
+        .map((skill) => ({
+          id: skill.id,
+          title: skill.title,
+          subtitle: skill.description,
+          skillObj: skill,
+        })) || [];
   }
 
   return (
-    <main className="flex bg-gray-50 gap-6 p-8 min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-2/6 bg-white h-full border border-gray-300 rounded-lg shadow-sm p-4">
-        <h2 className="text-gray-800 font-semibold mb-2">Skill Taxonomy</h2>
-        <hr className="mb-6 border-gray-300" />
+    <main className="flex  gap-6 pr-8 min-h-screen flex-col">
+      {/* 🔽 Filter Toggle Button */}
+      <div className="flex justify-end ">
+        <button
+          onClick={() => setShowFilters((prev) => !prev)}
+          className="p-2"
+        >
+          <Funnel />
+        </button>
+      </div>
 
-        <div className="relative">
-          <div className="absolute left-[16px] top-5 bottom-0 w-[2px] bg-blue-300"></div>
-
-          <ul className="space-y-4 relative">
-            {categories.map((cat, idx) => (
-              <li key={idx}>
-                <button
-                  onClick={() => {
-                    setSelectedCategory(selectedCategory === cat.name ? null : cat.name);
-                    setSelectedSubcategory(null);
-                    setActiveSkill(null);
-                  }}
-                  className="flex items-center w-full text-left"
-                >
-                  <div
-                    className={`w-8 h-8 rounded-full flex-shrink-0 relative z-10 ${selectedCategory === cat.name ? "bg-blue-400" : "bg-gray-200"
-                      }`}
-                  ></div>
-                  <span
-                    className={`ml-4 ${selectedCategory === cat.name ? "text-black font-bold" : "text-gray-800"
-                      }`}
-                  >
-                    {cat.name}
-                  </span>
-                </button>
-
-                {selectedCategory === cat.name && (
-                  <ul className="ml-12 mt-3 space-y-3">
-                    {cat.subcategories.map((sub, sIdx) => (
-                      <li key={sIdx}>
-                        <button
-                          onClick={() => {
-                            setSelectedSubcategory(selectedSubcategory === sub.name ? null : sub.name);
-                            setActiveSkill(null);
-                          }}
-                          className={`w-full text-left ${selectedSubcategory === sub.name
-                              ? "text-black font-bold"
-                              : "text-gray-600"
-                            } hover:text-black`}
-                        >
-                          {sub.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
+      {/* 🔽 Filters Section - only visible if showFilters is true */}
+      {showFilters && (
+        <div className="flex justify-end gap-4 mb-4 flex-wrap">
+          {/* Department Filter */}
+          <select
+            value={selectedDepartment || ""}
+            onChange={(e) => {
+              setSelectedDepartment(e.target.value || null);
+              setSelectedCategory(null);
+              setSelectedSubcategory(null);
+            }}
+            className="border border-gray-300 rounded-2xl px-3 py-2 bg-white shadow-sm w-60"
+          >
+            <option value="">Filter by Department</option>
+            {departmentOptions.map((dept, idx) => (
+              <option key={idx} value={dept}>
+                {dept}
+              </option>
             ))}
-          </ul>
-        </div>
-      </aside>
+          </select>
 
-      {/* Honeycomb */}
-      <section className="w-4/6 h-screen overflow-y-auto scrollbar-hide">
-        <div className="honeycomb-container-skill flex flex-wrap gap-6 justify-center pb-8">
+          {/* Category Filter */}
+          <select
+            value={selectedCategory || ""}
+            onChange={(e) => {
+              setSelectedCategory(e.target.value || null);
+              setSelectedSubcategory(null);
+            }}
+            className="border border-gray-300 rounded-2xl px-3 py-2 bg-white shadow-sm w-60"
+            disabled={!selectedDepartment}
+          >
+            <option value="">Filter by Category</option>
+            {selectedDepartment &&
+              Array.from(
+                new Set(
+                  userSkills.filter((s) => s.department === selectedDepartment).map((s) => s.category)
+                )
+              ).map((cat, idx) => (
+                <option key={idx} value={cat || ""}>
+                  {cat}
+                </option>
+              ))}
+          </select>
+
+          {/* Subcategory Filter */}
+          <select
+            value={selectedSubcategory || ""}
+            onChange={(e) => setSelectedSubcategory(e.target.value || null)}
+            className="border border-gray-300 rounded-2xl px-3 py-2 bg-white shadow-sm w-60"
+            disabled={!selectedCategory}
+          >
+            <option value="">Filter by Sub Category</option>
+            {selectedDepartment &&
+              selectedCategory &&
+              Array.from(
+                new Set(
+                  userSkills
+                    .filter(
+                      (s) =>
+                        s.department === selectedDepartment && s.category === selectedCategory
+                    )
+                    .map((s) => s.sub_category)
+                )
+              ).map((sub, idx) => (
+                <option key={idx} value={sub || ""}>
+                  {sub}
+                </option>
+              ))}
+          </select>
+
+          {/* Proficiency Level Filter */}
+          <select
+            value={selectedProficiency || ""}
+            onChange={(e) => setSelectedProficiency(e.target.value || null)}
+            className="border border-gray-300 rounded-2xl px-3 py-2 bg-white shadow-sm w-60"
+          >
+            <option value="">Filter by Proficiency Level</option>
+            {proficiencyOptions.map((lvl, idx) => (
+              <option key={idx} value={lvl}>
+                {lvl}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Honeycomb Section */}
+      <section className="w-full h-screen overflow-y-auto scrollbar-hide">
+        <div className="honeycomb-container-skill flex flex-wrap gap-6 justify-center pb-4">
           {hexagonItems.map((item, index) => (
             <div
               key={index}
               className="hexagon-wrapper-skill relative cursor-pointer"
               onClick={() => {
-                if (!selectedCategory) {
+                if (!selectedDepartment) {
+                  setSelectedDepartment(item.title);
+                } else if (selectedDepartment && !selectedCategory) {
                   setSelectedCategory(item.title);
-                } else if (selectedCategory && !selectedSubcategory) {
+                } else if (selectedDepartment && selectedCategory && !selectedSubcategory) {
                   setSelectedSubcategory(item.title);
                 } else if (item.skillObj) {
                   setActiveSkill(item.skillObj);
@@ -229,7 +317,6 @@ export default function Page() {
             >
               <div className="hexagon-inner-skill">
                 <div className="hexagon-content-skill bg-[#9FD0FF] flex flex-col items-center justify-center relative">
-                  {/* Title */}
                   <p
                     className="hexagon-title-skill text-black font-inter text-center"
                     title={item.subtitle}
@@ -237,7 +324,6 @@ export default function Page() {
                     {item.title}
                   </p>
 
-                  {/* Edit + Delete buttons */}
                   {item.skillObj && (
                     <div className="flex gap-3 mt-2">
                       <button
@@ -249,7 +335,6 @@ export default function Page() {
                       >
                         <FiEdit className="w-4 h-4" />
                       </button>
-
                       <button
                         className="text-gray-500"
                         onClick={(e) => {
@@ -277,13 +362,11 @@ export default function Page() {
             setDialogOpen({ ...dialogOpen, view: false });
             setSelectedSkillId(null);
           }}
-          onSuccess={() => {
-            setDialogOpen({ ...dialogOpen, add: false });
-          }}
+          onSuccess={() => setDialogOpen({ ...dialogOpen, add: false })}
         />
       )}
 
-      {/* ✅ Edit Dialog */}
+      {/* Edit Dialog */}
       {dialogOpen.edit && activeSkill && (
         <EditDialog
           skillId={activeSkill.id}
