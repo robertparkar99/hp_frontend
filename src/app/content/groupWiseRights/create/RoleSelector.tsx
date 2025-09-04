@@ -1,14 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Role } from "./RightsManagement";
 
 interface RoleSelectorProps {
-  selectedRole: Role;
-  onRoleChange: (role: Role) => void;
+  roles: string[];
+  selectedRole: string;
+  onRoleChange: (role: string) => void;
 }
 
-const roles: Role[] = ["Admin", "HR", "Employee"];
-
-const getRoleColors = (role: Role, isSelected: boolean) => {
+const getRoleColors = (role: string, isSelected: boolean) => {
   if (isSelected) {
     switch (role) {
       case "Admin":
@@ -17,13 +15,15 @@ const getRoleColors = (role: Role, isSelected: boolean) => {
         return "bg-hr text-hr-foreground border-hr";
       case "Employee":
         return "bg-employee text-employee-foreground border-employee";
+      default:
+        return "bg-primary text-primary-foreground border-primary";
     }
   }
   
   return "bg-background text-foreground border-border hover:bg-muted";
 };
 
-export function RoleSelector({ selectedRole, onRoleChange }: RoleSelectorProps) {
+export function RoleSelector({ roles, selectedRole, onRoleChange }: RoleSelectorProps) {
   return (
     <div className="flex items-center space-x-1">
       <span className="text-sm font-medium text-foreground mr-4">Role:</span>
