@@ -377,6 +377,39 @@ import {
 } from 'recharts';
 import { ChevronDown, User, TrendingUp, AlertTriangle } from 'lucide-react';
 
+const KASBA_DATA = [
+    { jobrole_category: "Technical/Operational", dimension: "Skill", value: 20 },
+    { jobrole_category: "Technical/Operational", dimension: "Knowledge", value: 25 },
+    { jobrole_category: "Technical/Operational", dimension: "Ability", value: 30 },
+    { jobrole_category: "Technical/Operational", dimension: "Attitude", value: 15 },
+    { jobrole_category: "Technical/Operational", dimension: "Behavior", value: 10 },
+
+    { jobrole_category: "Customer-Facing", dimension: "Skill", value: 25 },
+    { jobrole_category: "Customer-Facing", dimension: "Knowledge", value: 15 },
+    { jobrole_category: "Customer-Facing", dimension: "Ability", value: 20 },
+    { jobrole_category: "Customer-Facing", dimension: "Attitude", value: 20 },
+    { jobrole_category: "Customer-Facing", dimension: "Behavior", value: 20 },
+
+    { jobrole_category: "Managerial", dimension: "Skill", value: 15 },
+    { jobrole_category: "Managerial", dimension: "Knowledge", value: 20 },
+    { jobrole_category: "Managerial", dimension: "Ability", value: 25 },
+    { jobrole_category: "Managerial", dimension: "Attitude", value: 25 },
+    { jobrole_category: "Managerial", dimension: "Behavior", value: 15 },
+
+    { jobrole_category: "Creative/Strategic", dimension: "Skill", value: 20 },
+    { jobrole_category: "Creative/Strategic", dimension: "Knowledge", value: 10 },
+    { jobrole_category: "Creative/Strategic", dimension: "Ability", value: 25 },
+    { jobrole_category: "Creative/Strategic", dimension: "Attitude", value: 30 },
+    { jobrole_category: "Creative/Strategic", dimension: "Behavior", value: 15 },
+
+    { jobrole_category: "Compliance-Heavy", dimension: "Skill", value: 15 },
+    { jobrole_category: "Compliance-Heavy", dimension: "Knowledge", value: 35 },
+    { jobrole_category: "Compliance-Heavy", dimension: "Ability", value: 25 },
+    { jobrole_category: "Compliance-Heavy", dimension: "Attitude", value: 15 },
+    { jobrole_category: "Compliance-Heavy", dimension: "Behavior", value: 10 },
+];
+
+
 // Types
 interface SkillData {
     classification: any;
@@ -458,96 +491,31 @@ function App() {
     useEffect(() => {
         if (data.length === 0) return;
 
-        console.log('Sample data items:', data.slice(0, 3)); // Debug log to see actual structure
-        console.log('All unique skills_category values:', [...new Set(data.map(item => item.skills_category))]);
+        // Get all unique jobrole_category values from API
+        const categories = [...new Set(data.map((item) => item.jobrole_category))];
 
         const processed: ProcessedData = {};
-
-        // Group by jobrole_category
-        const groupedByCategory = data.reduce((acc, item) => {
-            const category = item.jobrole_category;
-            if (!acc[category]) {
-                acc[category] = [];
-            }
-            acc[category].push(item);
-            return acc;
-        }, {} as { [key: string]: SkillData[] });
-
-        console.log('Grouped by category:', groupedByCategory); // Debug log
-
-        Object.entries(groupedByCategory).forEach(([category, items]) => {
-            const dimensionTotals: { [key: string]: number } = {
-                Skill: 0,
-                Knowledge: 0,
-                Ability: 0,
-                Attitude: 0,
-                Behavior: 0,
-            };
-
-            items.forEach((item) => {
-                const classification = item.classification?.toLowerCase().trim();
-
-                const dimensionMap: { [key: string]: string } = {
-                    skill: 'Skill',
-                    skills: 'Skill',
-                    knowledge: 'Knowledge',
-                    ability: 'Ability',
-                    abilities: 'Ability',
-                    attitude: 'Attitude',
-                    attitudes: 'Attitude',
-                    behavior: 'Behavior',
-                    behaviour: 'Behavior',
-                };
-
-                const mapped = classification ? dimensionMap[classification] : null;
-
-                if (mapped) {
-                    // Count frequency (since weightage not provided in API)
-                    dimensionTotals[mapped] += 1;
-                }
-            });
-
-            console.log('Dimension totals for', category, ':', dimensionTotals);
-
-            // Build radar data
-            const radarData: RadarDataPoint[] = Object.keys(dimensionTotals).map(
-                (dimension) => ({
-                    dimension,
-                    value: dimensionTotals[dimension] || 0,
-                })
-            );
-
-            // Normalize to percentage
-            const total = radarData.reduce((sum, item) => sum + item.value, 0);
-            if (total > 0) {
-                radarData.forEach((item) => {
-                    item.value = Math.round((item.value / total) * 100);
-                });
-            }
+        categories.forEach((category) => {
+            const radarData = KASBA_DATA.filter(d => d.jobrole_category === category)
+                .map(d => ({ dimension: d.dimension, value: d.value }));
 
             processed[category] = radarData;
         });
 
-        console.log('Processed data:', processed);
-
         setProcessedData(processed);
 
-        // Set first category as default
-        const categories = Object.keys(processed);
+        // Default selection
         if (categories.length > 0 && !selectedCategory) {
             setSelectedCategory(categories[0]);
         }
 
-        // Generate demo employee data for comparison
+        // Generate employee data (with random variation)
         const employeeDemo: { [category: string]: EmployeeRadarDataPoint[] } = {};
         Object.entries(processed).forEach(([category, requiredData]) => {
-            employeeDemo[category] = requiredData.map((item) => ({
+            employeeDemo[category] = requiredData.map(item => ({
                 dimension: item.dimension,
                 required: item.value,
-                current: Math.max(
-                    0,
-                    item.value + Math.floor(Math.random() * 40) - 20
-                ), // Random variation ±20
+                current: Math.max(0, item.value + Math.floor(Math.random() * 40) - 20)
             }));
         });
         setEmployeeData(employeeDemo);
