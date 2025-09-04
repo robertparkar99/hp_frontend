@@ -365,7 +365,7 @@
 
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import {
     RadarChart,
     Radar,
@@ -375,6 +375,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from 'recharts';
+import { Atom } from "react-loading-indicators"
 import { ChevronDown, User, TrendingUp, AlertTriangle } from 'lucide-react';
 
 const KASBA_DATA = [
@@ -558,18 +559,18 @@ function App() {
     };
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-xl p-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-gray-600 mt-4 text-center">Loading skill data...</p>
-                </div>
+            <Suspense fallback={<div className="flex justify-center items-center h-screen">
+                <Atom color="#525ceaff" size="medium" text="" textColor="" />
             </div>
+            }>
+
+            </Suspense>
         );
     }
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+            <div className="min-h-screen  flex items-center justify-center p-4">
                 <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
                     <div className="text-red-500 text-xl mb-2">⚠️</div>
                     <p className="text-gray-800 font-medium">{error}</p>
@@ -589,7 +590,7 @@ function App() {
     const currentEmployeeData = employeeData[selectedCategory] || [];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="min-h-screen  p-4">
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-8">
@@ -701,16 +702,16 @@ function App() {
                 </div>
 
                 {/* Employee Analysis Section */}
-                <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                {/* <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
                     <div className="flex items-center mb-6">
                         <User className="h-6 w-6 text-indigo-600 mr-3" />
                         <h3 className="text-2xl font-bold text-gray-800">Employee Analysis</h3>
                     </div>
 
                     {currentEmployeeData.length > 0 ? (
-                        <div className="grid lg:grid-cols-2 gap-8">
-                            {/* Employee vs Required Radar Chart */}
-                            <div>
+                        <div className="grid lg:grid-cols-2 gap-8"> */}
+                {/* Employee vs Required Radar Chart */}
+                {/* <div>
                                 <h4 className="text-lg font-semibold text-gray-700 mb-4 text-center">
                                     Current vs Required Skills
                                 </h4>
@@ -749,10 +750,10 @@ function App() {
                                             <Tooltip content={<EmployeeTooltip />} />
                                         </RadarChart>
                                     </ResponsiveContainer>
-                                </div>
+                                </div> */}
 
-                                {/* Legend */}
-                                <div className="flex justify-center space-x-6 mt-4">
+                {/* Legend */}
+                {/* <div className="flex justify-center space-x-6 mt-4">
                                     <div className="flex items-center">
                                         <div className="w-3 h-3 bg-blue-600 rounded-full mr-2"></div>
                                         <span className="text-sm text-gray-600">Required</span>
@@ -762,10 +763,10 @@ function App() {
                                         <span className="text-sm text-gray-600">Current Level</span>
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
 
-                            {/* Skill Gap Analysis */}
-                            <div>
+                {/* Skill Gap Analysis */}
+                {/* <div>
                                 <h4 className="text-lg font-semibold text-gray-700 mb-4">Skill Gap Analysis</h4>
                                 <div className="space-y-3">
                                     {currentEmployeeData.map((item) => {
@@ -797,10 +798,10 @@ function App() {
                                                         <div className="w-2 h-2 bg-green-600 rounded-full mr-2"></div>
                                                         <span className="text-gray-600">Current: {item.current}%</span>
                                                     </div>
-                                                </div>
+                                                </div> */}
 
-                                                {/* Progress Bar */}
-                                                <div className="mt-3">
+                {/* Progress Bar */}
+                {/* <div className="mt-3">
                                                     <div className="flex justify-between text-xs text-gray-500 mb-1">
                                                         <span>Progress</span>
                                                         <span>{Math.round((item.current / item.required) * 100)}%</span>
@@ -817,10 +818,10 @@ function App() {
                                             </div>
                                         );
                                     })}
-                                </div>
+                                </div> */}
 
-                                {/* Overall Assessment */}
-                                <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-200">
+                {/* Overall Assessment */}
+                {/* <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-200">
                                     <h5 className="font-semibold text-indigo-800 mb-2">Overall Assessment</h5>
                                     <p className="text-sm text-indigo-700">
                                         {(() => {
@@ -842,10 +843,10 @@ function App() {
                             <p className="text-gray-500">No employee data available for analysis</p>
                         </div>
                     )}
-                </div>
+                </div> */}
 
                 {/* Stats Card */}
-                <div className="bg-white rounded-2xl shadow-xl p-6">
+                {/* <div className="bg-white rounded-2xl shadow-xl p-6">
                     <h3 className="text-xl font-bold text-gray-800 mb-4">Statistics</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="text-center p-4 bg-blue-50 rounded-lg">
@@ -865,7 +866,7 @@ function App() {
                             <p className="text-sm text-gray-600">Normalized</p>
                         </div>
                     </div>
-                </div>
+                </div> */}
             </div>
         </div>
     );
