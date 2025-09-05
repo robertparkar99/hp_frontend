@@ -16,6 +16,7 @@ import KnowledgeLibrary from "../Knowledge_library/page";
 import Behaviour from "../Behaviour-library/page";
 import Attitude from "../Attitude-library/page";
 import Ability from "../ability-library/page";
+import Jobrole from "../Jobrole-library/page";
 // ✅ Loader Component
 const Loader = () => (
   <div className="flex justify-center items-center h-screen">
@@ -94,7 +95,7 @@ const SkillLibrary = () => {
         ) : (
           <>
             {activeTab === "Skill Library" && <DynamicSkill />}
-            {activeTab === "Jobrole Library" && <DynamicJobrole />}
+            {activeTab === "Jobrole Library" && <Jobrole />}
             {activeTab === "Knowledge" && <KnowledgeLibrary />}
             {activeTab === "Ability" && <Ability/>}
             {activeTab === "Attitude" && <Attitude />}
