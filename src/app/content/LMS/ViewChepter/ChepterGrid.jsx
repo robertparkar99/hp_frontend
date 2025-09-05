@@ -1,17 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import CourseCard from './CourseCard';
-import Icon from '@/components/AppIcon';
-import {Button} from '../../../../components/ui/button';
+import React, { useState } from "react";
+import ChepterCard from "./ChepterCard";
+import Icon from "@/components/AppIcon";
+import { Button } from "../../../../components/ui/button";
 
-const CourseGrid = ({ 
-  courses, 
-  viewMode, 
-  loading, 
-  onEnroll, 
+const ChepterGrid = ({
+  courses,
+  loading,
+  onEnroll,
   onViewDetails,
   onLoadMore,
   hasMore,
-    onEditCourse, 
+  onEditCourse,
+  onDeleteCourse,
+  sessionInfo,
+  courseDisplayName,
+  standardName
+
 }) => {
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -21,58 +25,38 @@ const CourseGrid = ({
     setLoadingMore(false);
   };
 
-  // Skeleton loader component
-  const SkeletonCard = ({ viewMode }) => (
-    <div className={`animate-pulse ${viewMode === 'list' ? 'mb-4' : ''}`}>
-      {viewMode === 'list' ? (
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="flex items-start space-x-4">
-            <div className="w-24 h-16 bg-muted rounded-md flex-shrink-0" />
-            <div className="flex-1">
-              <div className="h-5 bg-muted rounded w-3/4 mb-2" />
-              <div className="h-4 bg-muted rounded w-full mb-2" />
-              <div className="h-4 bg-muted rounded w-2/3 mb-3" />
-              <div className="flex items-center justify-between">
-                <div className="flex space-x-4">
-                  <div className="h-4 bg-muted rounded w-16" />
-                  <div className="h-4 bg-muted rounded w-20" />
-                  <div className="h-4 bg-muted rounded w-12" />
-                </div>
-                <div className="flex space-x-2">
-                  <div className="h-8 bg-muted rounded w-20" />
-                  <div className="h-8 bg-muted rounded w-16" />
-                </div>
+  // ✅ Skeleton loader for LIST view only
+  const SkeletonCard = () => (
+    <div className="animate-pulse mb-4">
+      <div className="bg-card border border-border rounded-lg p-4">
+        <div className="flex items-start space-x-4">
+          <div className="w-24 h-16 bg-muted rounded-md flex-shrink-0" />
+          <div className="flex-1">
+            <div className="h-5 bg-muted rounded w-3/4 mb-2" />
+            <div className="h-4 bg-muted rounded w-full mb-2" />
+            <div className="h-4 bg-muted rounded w-2/3 mb-3" />
+            <div className="flex items-center justify-between">
+              <div className="flex space-x-4">
+                <div className="h-4 bg-muted rounded w-16" />
+                <div className="h-4 bg-muted rounded w-20" />
+                <div className="h-4 bg-muted rounded w-12" />
+              </div>
+              <div className="flex space-x-2">
+                <div className="h-8 bg-muted rounded w-20" />
+                <div className="h-8 bg-muted rounded w-16" />
               </div>
             </div>
           </div>
         </div>
-      ) : (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="w-full h-48 bg-muted" />
-          <div className="p-4">
-            <div className="h-5 bg-muted rounded w-3/4 mb-2" />
-            <div className="h-4 bg-muted rounded w-full mb-2" />
-            <div className="h-4 bg-muted rounded w-2/3 mb-4" />
-            <div className="flex justify-between mb-4">
-              <div className="h-4 bg-muted rounded w-16" />
-              <div className="h-4 bg-muted rounded w-12" />
-              <div className="h-4 bg-muted rounded w-14" />
-            </div>
-            <div className="flex space-x-2">
-              <div className="h-8 bg-muted rounded flex-1" />
-              <div className="h-8 bg-muted rounded flex-1" />
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 
   if (loading) {
     return (
-      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' : 'space-y-4'}>
+      <div className="space-y-4">
         {Array.from({ length: 6 }).map((_, index) => (
-          <SkeletonCard key={index} viewMode={viewMode} />
+          <SkeletonCard key={index} />
         ))}
       </div>
     );
@@ -106,17 +90,21 @@ const CourseGrid = ({
 
   return (
     <div>
-      {/* Course Grid/List */}
-      <div className={viewMode === 'grid' ?'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' :'space-y-4'
-      }>
-        {courses.map(course => (
-          <CourseCard
+      {/* ✅ Always list view */}
+      <div className="space-y-4">
+        {courses.map((course) => (
+          <ChepterCard
             key={course.id}
             course={course}
-            viewMode={viewMode}
+            viewMode="list"
             onEnroll={onEnroll}
             onViewDetails={onViewDetails}
             onEditCourse={onEditCourse}
+            onDeleteCourse={onDeleteCourse}
+            sessionInfo={sessionInfo}
+          contents={course.contents}   // ✅ Pass chapter contents directly
+          courseDisplayName={courseDisplayName}  // ✅ Pass course display name
+          standardName={standardName}
           />
         ))}
       </div>
@@ -127,7 +115,6 @@ const CourseGrid = ({
           <Button
             variant="outline"
             onClick={handleLoadMore}
-            loading={loadingMore}
             disabled={loadingMore}
           >
             {loadingMore ? (
@@ -153,4 +140,4 @@ const CourseGrid = ({
   );
 };
 
-export default CourseGrid;
+export default ChepterGrid;
