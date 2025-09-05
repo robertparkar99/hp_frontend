@@ -214,7 +214,7 @@ export default function Page() {
 
       {/* 🔽 Filters Section */}
       {showFilters && (
-        <div className="flex justify-end gap-4 mb-4 flex-wrap">
+        <div className="flex justify-end gap-4  flex-wrap">
           {/* Department Filter */}
           <Select
             value={selectedDepartment || "all"}
@@ -342,7 +342,7 @@ export default function Page() {
       )}
 
       {/* Honeycomb Section with Loader */}
-      <section className="w-full h-screen overflow-y-auto scrollbar-hide flex items-center justify-center">
+      <section className="w-full h-screen overflow-y-auto scrollbar-hide flex items-start justify-center">
         {loading ? (
           <Suspense fallback={<div className="flex justify-center items-center h-screen">
             <Atom color="#525ceaff" size="medium" text="" textColor="" />
