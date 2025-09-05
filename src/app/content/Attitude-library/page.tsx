@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import {
   Select,
   SelectContent,
@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Funnel } from "lucide-react"; // ✅ filter icon
+import { Atom } from "react-loading-indicators";
 
 type Skill = {
   id: number;
@@ -274,7 +275,11 @@ export default function Index() {
 
         {/* Cards Grid */}
         {loadingCards ? (
-          <p className="text-center text-gray-600">Loading cards...</p>
+          <Suspense fallback={<div className="flex justify-center items-center h-screen">
+                        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+                      </div>
+                      }>
+                      </Suspense>
         ) : cards.length === 0 ? (
           <p className="text-center text-gray-600">
             {selectedLevel || selectedCategory || selectedSubCategory

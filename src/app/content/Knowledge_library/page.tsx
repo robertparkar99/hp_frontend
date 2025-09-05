@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense} from "react";
 import { Funnel } from "lucide-react"; // filter icon
 import {
   Select,
@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Atom } from "react-loading-indicators";
 
 interface SkillItem {
   id: number;
@@ -219,7 +220,11 @@ const Honeycomb: React.FC = () => {
       <div className="flex pl-40">
         <div className="relative">
           {isLoading ? (
-            <p className="text-gray-500 text-sm">Loading...</p>
+            <Suspense fallback={<div className="flex justify-center items-center h-screen">
+                                    <Atom color="#525ceaff" size="medium" text="" textColor="" />
+                                  </div>
+                                  }>
+                                  </Suspense>
           ) : filteredData.length === 0 ? (
             <p className="text-gray-500 text-sm">No skills found</p>
           ) : (

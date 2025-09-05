@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Funnel } from "lucide-react"; // ✅ filter icon
+import { Funnel } from "lucide-react";
+import { Atom } from "react-loading-indicators";
 
 interface BehaviourItem {
   id: number;
@@ -28,6 +29,7 @@ const BehaviourGrid = () => {
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
 
   const [loadingOptions, setLoadingOptions] = useState(true);
+  const [loadingCards, setLoadingCards] = useState(true); // ✅ new loading state
   const [cardData, setCardData] = useState<BehaviourItem[]>([]);
   const [allData, setAllData] = useState<BehaviourItem[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -119,6 +121,8 @@ const BehaviourGrid = () => {
     if (!sessionData.sub_institute_id) return;
 
     async function fetchCardData() {
+      setLoadingCards(true); // start loading
+
       let query = `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour`;
 
       if (selectedLevel) {
@@ -145,6 +149,8 @@ const BehaviourGrid = () => {
       } catch (err) {
         console.error("Error fetching card data:", err);
         setCardData([]);
+      } finally {
+        setLoadingCards(false); // stop loading
       }
     }
 
@@ -167,6 +173,7 @@ const BehaviourGrid = () => {
           <Funnel />
         </button>
       </div>
+
       {/* Dropdowns */}
       {showFilters && (
         <div className="flex flex-col sm:flex-row justify-end gap-3 mb-4">
@@ -269,51 +276,56 @@ const BehaviourGrid = () => {
         </div>
       )}
 
-      {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">
-        {cardData.length === 0 ? (
-          <p className="text-gray-500 col-span-full text-center">
-            No data found for this filter
-          </p>
-        ) : (
-          cardData.map((card) => (
-            <div
-              key={card.id}
-              className="bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200 min-h-[180px]"
-            >
-              {/* ✅ Title truncated + tooltip */}
-              <h3
-                className="text-blue-800 font-bold text-[16px] mb-3 truncate"
-                title={card.classification_item}
+      {/* ✅ Show loader instead of "No data" until fetch completes */}
+      {loadingCards ? (
+        <div className="flex justify-center items-center h-screen">
+          <Atom color="#525ceaff" size="medium" text="" textColor="" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">
+          {cardData.length === 0 ? (
+            <p className="text-gray-500 col-span-full text-center">
+              No data found for this filter
+            </p>
+          ) : (
+            cardData.map((card) => (
+              <div
+                key={card.id}
+                className="bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200 min-h-[180px]"
               >
-                {card.classification_item}
-              </h3>
+                <h3
+                  className="text-blue-800 font-bold text-[16px] mb-3 truncate"
+                  title={card.classification_item}
+                >
+                  {card.classification_item}
+                </h3>
 
-              <div className="border-t border-gray-400 mb-3"></div>
+                <div className="border-t border-gray-400 mb-3"></div>
 
-              <div className="space-y-2">
-                <div>
-                  <span className="text-blue-800 font-semibold text-sm">
-                    Category :{" "}
-                  </span>
-                  <span className="text-gray-700 text-sm">
-                    {card.classification_category}
-                  </span>
-                </div>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-blue-800 font-semibold text-sm">
+                      Category :{" "}
+                    </span>
+                    <span className="text-gray-700 text-sm">
+                      {card.classification_category}
+                    </span>
+                  </div>
 
-                <div>
-                  <span className="text-blue-800 font-semibold text-sm">
-                    Sub Category :{" "}
-                  </span>
-                  <span className="text-gray-700 text-sm">
-                    {card.classification_sub_category}
-                  </span>
+                  <div>
+                    <span className="text-blue-800 font-semibold text-sm">
+                      Sub Category :{" "}
+                    </span>
+                    <span className="text-gray-700 text-sm">
+                      {card.classification_sub_category}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 };

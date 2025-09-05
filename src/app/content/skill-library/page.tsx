@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense} from "react";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import { FiEdit } from "react-icons/fi";
@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Atom } from "react-loading-indicators";
 
 type Skill = {
   id: number;
@@ -36,6 +37,7 @@ type Category = {
 export default function Page() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [userSkills, setUserSkills] = useState<Skill[]>([]);
+  const [loading, setLoading] = useState(true); // ✅ loader state
 
   // Filters
   const [selectedDepartment, setSelectedDepartment] = useState<string | undefined>(undefined);
@@ -80,6 +82,8 @@ export default function Page() {
   // Fetch API Data
   useEffect(() => {
     async function fetchData() {
+      if (!sessionData.url) return;
+      setLoading(true); // ✅ start loading
       try {
         const res = await fetch(
           `${sessionData.url}/skill_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&category=&sub_category=`
@@ -114,12 +118,12 @@ export default function Page() {
         setUserSkills(userSkillsArr);
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false); // ✅ stop loading
       }
     }
 
-    if (sessionData.url) {
-      fetchData();
-    }
+    fetchData();
   }, [sessionData, refreshKey]);
 
   // Delete handler
@@ -208,7 +212,7 @@ export default function Page() {
         </button>
       </div>
 
-      {/* 🔽 Filters Section - only visible if showFilters is true */}
+      {/* 🔽 Filters Section */}
       {showFilters && (
         <div className="flex justify-end gap-4 mb-4 flex-wrap">
           {/* Department Filter */}
@@ -334,65 +338,74 @@ export default function Page() {
               ))}
             </SelectContent>
           </Select>
-
-
         </div>
       )}
 
-      {/* Honeycomb Section */}
-      <section className="w-full h-screen overflow-y-auto scrollbar-hide">
-        <div className="honeycomb-container-skill  flex flex-wrap gap-6 justify-center pb-4 ">
-          {hexagonItems.map((item, index) => (
-            <div
-              key={index}
-              className="hexagon-wrapper-skill relative cursor-pointer"
-              onClick={() => {
-                if (!selectedDepartment && departmentOptions.includes(item.title)) {
-                  setSelectedDepartment(item.title);
-                } else if (!selectedCategory && categoryOptions.includes(item.title)) {
-                  setSelectedCategory(item.title);
-                } else if (!selectedSubcategory && item.title) {
-                  setSelectedSubcategory(item.title);
-                } else if (item.skillObj) {
-                  setActiveSkill(item.skillObj);
-                  setSelectedSkillId(item.skillObj.id);
-                  setDialogOpen({ ...dialogOpen, view: true });
-                }
-              }}
-            >
-              <div className="hexagon-inner-skill">
-                <div className="hexagon-content-skill bg-[#9FD0FF] flex flex-col items-center justify-center relative">
-                  <p className="hexagon-title-skill text-black font-inter text-center" title={item.subtitle}>
-                    {item.title}
-                  </p>
+      {/* Honeycomb Section with Loader */}
+      <section className="w-full h-screen overflow-y-auto scrollbar-hide flex items-center justify-center">
+        {loading ? (
+          <Suspense fallback={<div className="flex justify-center items-center h-screen">
+            <Atom color="#525ceaff" size="medium" text="" textColor="" />
+          </div>
+          }>
+          </Suspense>
+        ) : (
+          <div className="honeycomb-container-skill flex flex-wrap gap-6 justify-center pb-4">
+            {hexagonItems.map((item, index) => (
+              <div
+                key={index}
+                className="hexagon-wrapper-skill relative cursor-pointer"
+                onClick={() => {
+                  if (!selectedDepartment && departmentOptions.includes(item.title)) {
+                    setSelectedDepartment(item.title);
+                  } else if (!selectedCategory && categoryOptions.includes(item.title)) {
+                    setSelectedCategory(item.title);
+                  } else if (!selectedSubcategory && item.title) {
+                    setSelectedSubcategory(item.title);
+                  } else if (item.skillObj) {
+                    setActiveSkill(item.skillObj);
+                    setSelectedSkillId(item.skillObj.id);
+                    setDialogOpen({ ...dialogOpen, view: true });
+                  }
+                }}
+              >
+                <div className="hexagon-inner-skill">
+                  <div className="hexagon-content-skill bg-[#9FD0FF] flex flex-col items-center justify-center relative">
+                    <p
+                      className="hexagon-title-skill text-black font-inter text-center"
+                      title={item.subtitle}
+                    >
+                      {item.title}
+                    </p>
 
-                  {item.skillObj && (
-                    <div className="flex gap-3 mt-2">
-                      <button
-                        className="text-gray-500"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(item.skillObj!);
-                        }}
-                      >
-                        <FiEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        className="text-gray-500"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(item.skillObj!.id);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
+                    {item.skillObj && (
+                      <div className="flex gap-3 mt-2">
+                        <button
+                          className="text-gray-500"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(item.skillObj!);
+                          }}
+                        >
+                          <FiEdit className="w-4 h-4" />
+                        </button>
+                        <button
+                          className="text-gray-500"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item.skillObj!.id);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* View Dialog */}
