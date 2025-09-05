@@ -78,7 +78,8 @@ export default function Index() {
               .map((item: any) => item.proficiency_level)
               .filter((lvl) => typeof lvl === "string")
           ),
-        ];
+        ].sort((a, b) => a.localeCompare(b));
+
         setSkills(levels);
 
         // ✅ Deduplicate categories
@@ -184,7 +185,7 @@ export default function Index() {
   ]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       {/* 🔽 Filter Toggle Button */}
       <div className="flex justify-end">
         <button
