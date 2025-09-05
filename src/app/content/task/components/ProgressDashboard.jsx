@@ -15,6 +15,8 @@ const ProgressDashboard = () => {
   const [sessionData, setSessionData] = useState({});
   const [timeFilter, setTimeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [jobroleFilter, setJobroleFilter] = useState('all');
   const [allData, setAllData] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -91,7 +93,7 @@ const ProgressDashboard = () => {
   const timeOptions = [
     { value: 'all', label: 'All Types' },
     { value: 'High', label: 'High' },
-    { value: 'Medium', label: 'Medium' },
+    {value: 'Medium', label: 'Medium' },
     { value: 'Low', label: 'Low' },
   ];
 
@@ -101,6 +103,23 @@ const ProgressDashboard = () => {
     { value: 'IN-PROGRESS', label: 'IN-PROGRESS' },
     { value: 'COMPLETED', label: 'COMPLETED' },
   ];
+
+  // Get unique departments and job roles for filter options
+  const departmentOptions = useMemo(() => {
+    const departments = [...new Set(allData.map(task => task.department).filter(Boolean))];
+    return [
+      { value: 'all', label: 'All Departments' },
+      ...departments.map(dept => ({ value: dept, label: dept }))
+    ];
+  }, [allData]);
+
+  const jobroleOptions = useMemo(() => {
+    const jobroles = [...new Set(allData.map(task => task.jobrole).filter(Boolean))];
+    return [
+      { value: 'all', label: 'All Job Roles' },
+      ...jobroles.map(jobrole => ({ value: jobrole, label: jobrole }))
+    ];
+  }, [allData]);
 
   const taskTypeOptions = [
     { value: 'High', label: 'High' },
@@ -134,9 +153,13 @@ const ProgressDashboard = () => {
 
       const matchesStatus = statusFilter === 'all' || task.status.toUpperCase() === statusFilter;
 
-      return matchesTime && matchesStatus;
+      const matchesDepartment = departmentFilter === 'all' || task.department === departmentFilter;
+
+      const matchesJobrole = jobroleFilter === 'all' || task.jobrole === jobroleFilter;
+
+      return matchesTime && matchesStatus && matchesDepartment && matchesJobrole;
     });
-  }, [allData, timeFilter, statusFilter]);
+  }, [allData, timeFilter, statusFilter, departmentFilter, jobroleFilter]);
 
   const stats = useMemo(() => {
     const total = filteredData.length;
@@ -316,6 +339,20 @@ const ProgressDashboard = () => {
 
         <div className="flex items-center space-x-3">
           <Select
+            options={departmentOptions}
+            value={departmentFilter}
+            onChange={setDepartmentFilter}
+            className="w-40"
+          />
+
+          <Select
+            options={jobroleOptions}
+            value={jobroleFilter}
+            onChange={setJobroleFilter}
+            className="w-40"
+          />
+
+          <Select
             options={timeOptions}
             value={timeFilter}
             onChange={setTimeFilter}
@@ -368,6 +405,8 @@ const ProgressDashboard = () => {
               <tr>
                 <th className="text-left p-4 text-sm font-medium text-foreground">Task</th>
                 <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Assigned To</th>
+                <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Department</th>
+                <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Jobrole</th>
                 <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Due Date</th>
                 <th className="text-left p-4 text-sm font-medium text-foreground"style={{ whiteSpace: 'nowrap' }}>Progress</th>
                 <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Task Type</th>
@@ -391,6 +430,12 @@ const ProgressDashboard = () => {
                   </td>
                   <td className="p-4">
                     <span className="text-sm text-foreground">{assignment.ALLOCATED_TO}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-sm text-foreground">{assignment.department}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-sm text-foreground">{assignment.jobrole}</span>
                   </td>
                   <td className="p-4">
                     <span className="text-sm text-foreground">{assignment.task_date}</span>
@@ -441,7 +486,7 @@ const ProgressDashboard = () => {
               ))}
               {filteredData.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="p-4 text-center text-muted-foreground">
+                  <td colSpan="9" className="p-4 text-center text-muted-foreground">
                     No tasks found for selected filters.
                   </td>
                 </tr>
