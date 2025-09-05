@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { StatGrid } from "./StatGrid";
+import  StatGrid  from "./StatGrid";
 import { Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 
