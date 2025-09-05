@@ -47,9 +47,9 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null }) {
         searchStandard: "",
         subject: "",
         searchByChapter: "",
-        questionType: "",
+        questionType: "1",
         questionMark: 1,
-        multipleAnswers: false,
+        multipleAnswers: true,
         show: true,
         concept: "",
         subconcept: "",
@@ -693,7 +693,7 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null }) {
                             </div>
 
                             {/* Search Filters */}
-                            <SearchFilters formData={formData} onFormChange={handleChange} showSearchButton={true} />
+                            {/* <SearchFilters formData={formData} onFormChange={handleChange} showSearchButton={true} /> */}
 
                             {/* Question Type */}
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -859,4 +859,4 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null }) {
             </DialogContent>
         </Dialog>
     )
-}
+} 
