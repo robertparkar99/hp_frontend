@@ -8,6 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Funnel } from "lucide-react";
+import { Atom } from "react-loading-indicators";
 
 interface BehaviourItem {
   id: number;
@@ -27,8 +29,10 @@ const BehaviourGrid = () => {
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
 
   const [loadingOptions, setLoadingOptions] = useState(true);
+  const [loadingCards, setLoadingCards] = useState(true); // ✅ new loading state
   const [cardData, setCardData] = useState<BehaviourItem[]>([]);
-  const [allData, setAllData] = useState<BehaviourItem[]>([]); // ✅ keep full dataset for filtering subcategories
+  const [allData, setAllData] = useState<BehaviourItem[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   interface SessionData {
     url?: string;
@@ -62,7 +66,7 @@ const BehaviourGrid = () => {
         );
         const data: BehaviourItem[] = await res.json();
 
-        setAllData(data); // ✅ store full dataset for local filtering
+        setAllData(data);
 
         // ✅ Deduplicate proficiency levels
         const skillLevels = [
@@ -71,7 +75,8 @@ const BehaviourGrid = () => {
               .filter((item) => typeof item.proficiency_level === "string")
               .map((item) => item.proficiency_level as string)
           ),
-        ];
+        ].sort((a, b) => a.localeCompare(b));
+
         setSkills(skillLevels);
 
         // ✅ Deduplicate categories
@@ -95,7 +100,7 @@ const BehaviourGrid = () => {
   useEffect(() => {
     if (!selectedCategory) {
       setSubCategories([]);
-      setSelectedSubCategory(""); // ✅ reset
+      setSelectedSubCategory("");
       return;
     }
 
@@ -108,14 +113,16 @@ const BehaviourGrid = () => {
     ];
 
     setSubCategories(filteredSubs);
-    setSelectedSubCategory(""); // ✅ reset old subcategory
+    setSelectedSubCategory("");
   }, [selectedCategory, allData]);
 
-  // Fetch card data (behaviour API)
+  // ✅ Fetch card data (initial + filters)
   useEffect(() => {
-    if (!selectedLevel && !selectedCategory && !selectedSubCategory) return;
+    if (!sessionData.sub_institute_id) return;
 
     async function fetchCardData() {
+      setLoadingCards(true); // start loading
+
       let query = `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour`;
 
       if (selectedLevel) {
@@ -130,129 +137,195 @@ const BehaviourGrid = () => {
 
       query += "&order_by[id]=desc&group_by=classification_item";
 
-      const res = await fetch(query, { cache: "no-store" });
-      let result = await res.json();
+      try {
+        const res = await fetch(query, { cache: "no-store" });
+        let result = await res.json();
 
-      if (!Array.isArray(result)) {
-        console.error("Card API returned non-array:", result);
-        result = [];
+        if (!Array.isArray(result)) {
+          console.error("Card API returned non-array:", result);
+          result = [];
+        }
+        setCardData(result);
+      } catch (err) {
+        console.error("Error fetching card data:", err);
+        setCardData([]);
+      } finally {
+        setLoadingCards(false); // stop loading
       }
-      setCardData(result);
     }
 
     fetchCardData();
-  }, [selectedLevel, selectedCategory, selectedSubCategory]);
+  }, [
+    selectedLevel,
+    selectedCategory,
+    selectedSubCategory,
+    sessionData.sub_institute_id,
+  ]);
 
   return (
-    <div className="p-4 bg-gray-50 min-h-screen">
-      {/* Dropdowns */}
-      <div className="flex flex-col sm:flex-row justify-end gap-3 mb-4">
-        {/* Proficiency Dropdown */}
-        <Select onValueChange={(value) => setSelectedLevel(value)}>
-          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-            <SelectValue placeholder="Filter by Proficiency" />
-          </SelectTrigger>
-          <SelectContent>
-            {loadingOptions ? (
-              <SelectItem value="loading" disabled>
-                Loading...
-              </SelectItem>
-            ) : (
-              skills.map((level, idx) => (
-                <SelectItem key={idx} value={level}>
-                  {level}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
-
-        {/* Category Dropdown */}
-        <Select onValueChange={(value) => setSelectedCategory(value)}>
-          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-            <SelectValue placeholder="Filter by Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.length === 0 ? (
-              <SelectItem value="loading" disabled>
-                No Categories
-              </SelectItem>
-            ) : (
-              categories.map((cat, idx) => (
-                <SelectItem key={idx} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
-
-        {/* Sub Category Dropdown */}
-        <Select
-          onValueChange={(value) => setSelectedSubCategory(value)}
-          disabled={subCategories.length === 0}
-          value={selectedSubCategory || undefined} // ✅ keep controlled
+    <div className="p-4 min-h-screen">
+      {/* 🔽 Filter Toggle Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowFilters((prev) => !prev)}
+          className="p-2"
         >
-          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-            <SelectValue placeholder="Filter by Sub Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {subCategories.length === 0 ? (
-              <SelectItem value="loading" disabled>
-                No Sub Categories
-              </SelectItem>
-            ) : (
-              subCategories.map((sub, idx) => (
-                <SelectItem key={idx} value={sub}>
-                  {sub}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
+          <Funnel />
+        </button>
       </div>
 
-      {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">
-        {cardData.length === 0 ? (
-          <p className="text-gray-500 col-span-full text-center">
-            No data found for this filter
-          </p>
-        ) : (
-          cardData.map((card) => (
-            <div
-              key={card.id}
-              className="bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200 min-h-[180px]"
-            >
-              <h3 className="text-blue-800 font-bold text-[16px] mb-3">
-                {card.classification_item}
-              </h3>
+      {/* Dropdowns */}
+      {showFilters && (
+        <div className="flex flex-col sm:flex-row justify-end gap-3 mb-4">
+          {/* Category Dropdown */}
+          <Select
+            value={selectedCategory || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedCategory("");
+                setSelectedSubCategory("");
+                setSelectedLevel("");
+              } else {
+                setSelectedCategory(value);
+                setSelectedSubCategory("");
+                setSelectedLevel("");
+              }
+            }}
+          >
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Filter by Category</SelectItem>
+              {categories.length === 0 ? (
+                <SelectItem value="loading" disabled>
+                  No Categories
+                </SelectItem>
+              ) : (
+                categories.map((cat, idx) => (
+                  <SelectItem key={idx} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
 
-              <div className="border-t border-gray-400 mb-3"></div>
+          {/* Sub Category Dropdown */}
+          <Select
+            value={selectedSubCategory || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedSubCategory("");
+                setSelectedLevel("");
+              } else {
+                setSelectedSubCategory(value);
+                setSelectedLevel("");
+              }
+            }}
+            disabled={subCategories.length === 0}
+          >
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Sub Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Filter by Sub Category</SelectItem>
+              {subCategories.length === 0 ? (
+                <SelectItem value="loading" disabled>
+                  No Sub Categories
+                </SelectItem>
+              ) : (
+                subCategories.map((sub, idx) => (
+                  <SelectItem key={idx} value={sub}>
+                    {sub}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
 
-              <div className="space-y-2">
-                <div>
-                  <span className="text-blue-800 font-semibold text-sm">
-                    Category :{" "}
-                  </span>
-                  <span className="text-gray-700 text-sm">
-                    {card.classification_category}
-                  </span>
-                </div>
+          {/* Proficiency Dropdown */}
+          <Select
+            value={selectedLevel || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedLevel("");
+              } else {
+                setSelectedLevel(value);
+              }
+            }}
+          >
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Proficiency Level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Filter by Proficiency Level</SelectItem>
+              {loadingOptions ? (
+                <SelectItem value="loading" disabled>
+                  Loading...
+                </SelectItem>
+              ) : (
+                skills.map((level, idx) => (
+                  <SelectItem key={idx} value={level}>
+                    {level}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
-                <div>
-                  <span className="text-blue-800 font-semibold text-sm">
-                    Sub Category :{" "}
-                  </span>
-                  <span className="text-gray-700 text-sm">
-                    {card.classification_sub_category}
-                  </span>
+      {/* ✅ Show loader instead of "No data" until fetch completes */}
+      {loadingCards ? (
+        <div className="flex justify-center items-center h-screen">
+          <Atom color="#525ceaff" size="medium" text="" textColor="" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">
+          {cardData.length === 0 ? (
+            <p className="text-gray-500 col-span-full text-center">
+              No data found for this filter
+            </p>
+          ) : (
+            cardData.map((card) => (
+              <div
+                key={card.id}
+                className="bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200 min-h-[180px]"
+              >
+                <h3
+                  className="text-blue-800 font-bold text-[16px] mb-3 truncate"
+                  title={card.classification_item}
+                >
+                  {card.classification_item}
+                </h3>
+
+                <div className="border-t border-gray-400 mb-3"></div>
+
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-blue-800 font-semibold text-sm">
+                      Category :{" "}
+                    </span>
+                    <span className="text-gray-700 text-sm">
+                      {card.classification_category}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-blue-800 font-semibold text-sm">
+                      Sub Category :{" "}
+                    </span>
+                    <span className="text-gray-700 text-sm">
+                      {card.classification_sub_category}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 };

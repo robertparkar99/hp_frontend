@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import {
   Select,
   SelectContent,
@@ -8,6 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Funnel } from "lucide-react"; // ✅ filter icon
+import { Atom } from "react-loading-indicators";
 
 type Skill = {
   id: number;
@@ -35,6 +37,7 @@ export default function Index() {
   const [cards, setCards] = useState<CardData[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [loadingCards, setLoadingCards] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   interface SessionData {
     url?: string;
@@ -76,7 +79,8 @@ export default function Index() {
               .map((item: any) => item.proficiency_level)
               .filter((lvl) => typeof lvl === "string")
           ),
-        ];
+        ].sort((a, b) => a.localeCompare(b));
+
         setSkills(levels);
 
         // ✅ Deduplicate categories
@@ -110,37 +114,37 @@ export default function Index() {
 
   // Update subcategories when category changes
   useEffect(() => {
-  if (!selectedCategory) {
-    setSubCategories([]);
-    setSelectedSubCategory(null); // ✅ reset subcategory
-    return;
-  }
-
-  const fetchSubCats = async () => {
-    try {
-      const res = await fetch(
-        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude&filters[classification_category]=${selectedCategory}`,
-        { cache: "no-store" }
-      );
-      const data: CardData[] = await res.json();
-
-      const subs = [
-        ...new Set(
-          data
-            .map((item) => item.classification_sub_category)
-            .filter((s) => typeof s === "string")
-        ),
-      ];
-
-      setSubCategories(subs);
-      setSelectedSubCategory(null); // ✅ clear old subcategory selection
-    } catch (err) {
-      console.error("Error fetching subcategories:", err);
+    if (!selectedCategory) {
+      setSubCategories([]);
+      setSelectedSubCategory(null); // ✅ reset subcategory
+      return;
     }
-  };
 
-  fetchSubCats();
-}, [selectedCategory, sessionData.sub_institute_id]);
+    const fetchSubCats = async () => {
+      try {
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude&filters[classification_category]=${selectedCategory}`,
+          { cache: "no-store" }
+        );
+        const data: CardData[] = await res.json();
+
+        const subs = [
+          ...new Set(
+            data
+              .map((item) => item.classification_sub_category)
+              .filter((s) => typeof s === "string")
+          ),
+        ];
+
+        setSubCategories(subs);
+        setSelectedSubCategory(null); // ✅ clear old subcategory selection
+      } catch (err) {
+        console.error("Error fetching subcategories:", err);
+      }
+    };
+
+    fetchSubCats();
+  }, [selectedCategory, sessionData.sub_institute_id]);
 
   // Fetch cards when any filter changes
   useEffect(() => {
@@ -182,77 +186,100 @@ export default function Index() {
   ]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
+      {/* 🔽 Filter Toggle Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowFilters((prev) => !prev)}
+          className="p-2"
+        >
+          <Funnel />
+        </button>
+      </div>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Dropdown Filters */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3">
-          {/* Proficiency */}
-          <Select onValueChange={(value) => setSelectedLevel(value)}>
-            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-              <SelectValue placeholder="Filter by Proficiency" />
-            </SelectTrigger>
-            <SelectContent>
-              {loadingOptions ? (
-                <SelectItem value="loading" disabled>
-                  Loading...
-                </SelectItem>
-              ) : (
-                skills.map((level, idx) => (
-                  <SelectItem key={idx} value={level}>
-                    {level}
+        {showFilters && (
+          <div className="flex flex-col sm:flex-row justify-end gap-3">
+            {/* Category */}
+            <Select
+              value={selectedCategory ?? ""}
+              onValueChange={(value) => setSelectedCategory(value)}
+            >
+              <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+                <SelectValue placeholder="Filter by Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.length === 0 ? (
+                  <SelectItem value="loading" disabled>
+                    No Categories
                   </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+                ) : (
+                  categories.map((cat, idx) => (
+                    <SelectItem key={idx} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
 
-          {/* Category */}
-          <Select onValueChange={(value) => setSelectedCategory(value)}>
-            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-              <SelectValue placeholder="Filter by Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.length === 0 ? (
-                <SelectItem value="loading" disabled>
-                  No Categories
-                </SelectItem>
-              ) : (
-                categories.map((cat, idx) => (
-                  <SelectItem key={idx} value={cat}>
-                    {cat}
+            {/* Sub Category */}
+            <Select
+              value={selectedSubCategory ?? ""}
+              onValueChange={(value) => setSelectedSubCategory(value)}
+              disabled={!selectedCategory}
+            >
+              <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+                <SelectValue placeholder="Filter by Sub Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {subCategories.length === 0 ? (
+                  <SelectItem value="loading" disabled>
+                    No Sub Categories
                   </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+                ) : (
+                  subCategories.map((sub, idx) => (
+                    <SelectItem key={idx} value={sub}>
+                      {sub}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
 
-          {/* Sub Category */}
-          <Select
-            onValueChange={(value) => setSelectedSubCategory(value)}
-            disabled={!selectedCategory}
-          >
-            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-              <SelectValue placeholder="Filter by Sub Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {subCategories.length === 0 ? (
-                <SelectItem value="loading" disabled>
-                  No Sub Categories
-                </SelectItem>
-              ) : (
-                subCategories.map((sub, idx) => (
-                  <SelectItem key={idx} value={sub}>
-                    {sub}
+            {/* Proficiency Level */}
+            <Select
+              value={selectedLevel ?? ""}
+              onValueChange={(value) => setSelectedLevel(value)}
+            >
+              <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+                <SelectValue placeholder="Filter by Proficiency Level" />
+              </SelectTrigger>
+              <SelectContent>
+                {loadingOptions ? (
+                  <SelectItem value="loading" disabled>
+                    Loading...
                   </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+                ) : (
+                  skills.map((level, idx) => (
+                    <SelectItem key={idx} value={level}>
+                      {level}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
 
         {/* Cards Grid */}
         {loadingCards ? (
-          <p className="text-center text-gray-600">Loading cards...</p>
+          <Suspense fallback={<div className="flex justify-center items-center h-screen">
+                        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+                      </div>
+                      }>
+                      </Suspense>
         ) : cards.length === 0 ? (
           <p className="text-center text-gray-600">
             {selectedLevel || selectedCategory || selectedSubCategory
@@ -261,8 +288,8 @@ export default function Index() {
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {cards.map((card) => {
-              const index = card.id;
+            {cards.map((card, index) => {
+              //const index = card.id;
               const row = Math.floor(index / 4);
               const col = index % 4;
               const isType1 = (row + col) % 2 === 0;

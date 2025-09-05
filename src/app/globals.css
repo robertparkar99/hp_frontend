@@ -16,6 +16,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   --primary: rgba(30, 64, 175, 1);
+  --danger: rgb(230, 27, 27);
   --primary-foreground: oklch(0.985 0 0);
   --success: rgba(16, 185, 129, 1);
   --success-foreground: oklch(0.145 0 0);
@@ -63,7 +64,10 @@ body {
   color :#f59e0b;
 }
 .text-danger{
-  color:red;
+  color:rgb(235, 27, 27);
+}
+.bg-danger{
+  background:rgb(235, 27, 27);
 }
 .bg-success{
   background : rgba(16, 185, 129, 1);
@@ -425,12 +429,7 @@ body {
   gap: 10px;
   justify-items: center;
 }
-.honeycomb-container-skill {
-  display: grid;
-  grid-template-columns: repeat(4, 0fr);
-  gap: 10px;
-  justify-items: center;
-}
+
 /* Stagger every even column */
 .honeycomb-container>div:nth-child(6n + 2),
 .honeycomb-container>div:nth-child(6n + 4),
@@ -440,13 +439,7 @@ body {
   transform: translateY(60%);
 }
 
-.honeycomb-container-skill>div:nth-child(4n + 2),
-.honeycomb-container-skill>div:nth-child(4n + 4),
-.honeycomb-container-skill>div:nth-child(4n + 6),
-.honeycomb-container-skill>div:nth-child(4n + 8),
-.honeycomb-container-skill>div:nth-child(4n + 10) {
-  transform: translateY(60%);
-}
+
 .hexagon-wrapper {
   position: relative;
   width: 154px;
@@ -454,13 +447,7 @@ body {
   margin-bottom: 20px;
   filter: drop-shadow(0px 0px 12px #b1b1b1);
 }
-.hexagon-wrapper-skill {
-  position: relative;
-  width: 154px;
-  height: 154px;
-  margin-bottom: 20px;
-  filter: drop-shadow(0px 0px 12px #b1b1b1);
-}
+
 
 .hexagon-inner {
   --r: 0.1;
@@ -495,31 +482,7 @@ body {
   -ms-overflow-style: none;  /* IE & Edge */
   scrollbar-width: none;     /* Firefox */
 }
-.hexagon-inner-skill {
-  --r: 0.1;
-  --a: 60deg;
-  background-color: #007be5;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-  width: 200px;
-  aspect-ratio: 1;
-  --_a: (40deg * var(--r));
-  --_r: (50% * cos(30deg) / cos((30deg * (1 - var(--r)))));
-  cursor: pointer;
-  transition: --r 0.5s, --a 0.5s;
 
-  clip-path: shape(from calc(50% + var(--_r) * cos(var(--a) - var(--_a))) calc(50% + var(--_r) * sin(var(--a) - var(--_a))),
-      curve to calc(50% + var(--_r) * cos(var(--a) + var(--_a))) calc(50% + var(--_r) * sin(var(--a) + var(--_a))) with calc(50% + 50% * cos(var(--a))) calc(50% + 50% * sin(var(--a))),
-      line to calc(50% + var(--_r) * cos(60deg + var(--a) - var(--_a))) calc(50% + var(--_r) * sin(60deg + var(--a) - var(--_a))),
-      curve to calc(50% + var(--_r) * cos(60deg + var(--a) + var(--_a))) calc(50% + var(--_r) * sin(60deg + var(--a) + var(--_a))) with calc(50% + 50% * cos(60deg + var(--a))) calc(50% + 50% * sin(60deg + var(--a))),
-      line to calc(50% + var(--_r) * cos(120deg + var(--a) - var(--_a))) calc(50% + var(--_r) * sin(120deg + var(--a) - var(--_a))),
-      curve to calc(50% + var(--_r) * cos(120deg + var(--a) + var(--_a))) calc(50% + var(--_r) * sin(120deg + var(--a) + var(--_a))) with calc(50% + 50% * cos(120deg + var(--a))) calc(50% + 50% * sin(120deg + var(--a))),
-      line to calc(50% + var(--_r) * cos(180deg + var(--a) - var(--_a))) calc(50% + var(--_r) * sin(180deg + var(--a) - var(--_a))),
-      curve to calc(50% + var(--_r) * cos(180deg + var(--a) + var(--_a))) calc(50% + var(--_r) * sin(180deg + var(--a) + var(--_a))) with calc(50% + 50% * cos(180deg + var(--a))) calc(50% + 50% * sin(180deg + var(--a))),
-      line to calc(50% + var(--_r) * cos(240deg + var(--a) - var(--_a))) calc(50% + var(--_r) * sin(240deg + var(--a) - var(--_a))),
-      curve to calc(50% + var(--_r) * cos(240deg + var(--a) + var(--_a))) calc(50% + var(--_r) * sin(240deg + var(--a) + var(--_a))) with calc(50% + 50% * cos(240deg + var(--a))) calc(50% + 50% * sin(240deg + var(--a))),
-      line to calc(50% + var(--_r) * cos(300deg + var(--a) - var(--_a))) calc(50% + var(--_r) * sin(300deg + var(--a) - var(--_a))),
-      curve to calc(50% + var(--_r) * cos(300deg + var(--a) + var(--_a))) calc(50% + var(--_r) * sin(300deg + var(--a) + var(--_a))) with calc(50% + 50% * cos(300deg + var(--a))) calc(50% + 50% * sin(300deg + var(--a))));
-}
 
 .hexagon-content {
   transform: rotate(0deg);
@@ -534,21 +497,7 @@ body {
   color: white;
 }
 
-.hexagon-content-skill {
-  transform: rotate(0deg);
-  /* Counter-rotate the content */
-  position: relative;
-  margin-top: 15px;
-  flex-direction: column; /* ✅ stack title and delete button */
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-  color: white;
-}
+
 
 .hexagon-icon {
   font-size: 1.2rem;
@@ -562,17 +511,123 @@ body {
   font-size: 0.8rem;
 }
 
-.hexagon-title-skill {
-  width: 70%;
-  text-align: center;
-  font-size: 0.8rem;
-}
+
 
 .hexagon-level {
   font-size: 0.8rem;
   opacity: 0.8;
   transform: translate(0px, 20px);
 }
+
+.honeycomb-container-skill {
+  display: grid;
+  grid-template-columns: repeat(6, 0fr);
+  gap: 8px;
+  justify-items: center;
+}
+
+.honeycomb-container-skill > div:nth-child(6n + 2),
+.honeycomb-container-skill > div:nth-child(6n + 4),
+.honeycomb-container-skill > div:nth-child(6n + 6),
+.honeycomb-container-skill > div:nth-child(6n + 8),
+.honeycomb-container-skill > div:nth-child(6n + 10) {
+  transform: translateY(60%);
+}
+
+.hexagon-wrapper-skill {
+  position: relative;
+  width: 154px;
+  height: 154px;
+  margin-bottom: 24px;
+  filter: inner-shadow(2px 2px 8px #000000);
+}
+
+.hexagon-inner-skill {
+  --r: 0.1;
+  --a: 60deg;
+  background-color: #007be5;
+  filter: inner-shadow(2 2px 8px rgba(63, 60, 60, 0.3));
+  width: 189px;
+  aspect-ratio: 1;
+  --_a: (40deg * var(--r));
+  --_r: (50% * cos(30deg) / cos((30deg * (1 - var(--r)))));
+  cursor: pointer;
+  transition: --r 0.5s, --a 0.5s;
+
+  clip-path: shape(
+    from calc(50% + var(--_r) * cos(var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(var(--a) + var(--_a)))
+    with calc(50% + 50% * cos(var(--a))) calc(50% + 50% * sin(var(--a))),
+    line to calc(50% + var(--_r) * cos(60deg + var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(60deg + var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(60deg + var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(60deg + var(--a) + var(--_a)))
+    with calc(50% + 50% * cos(60deg + var(--a)))
+      calc(50% + 50% * sin(60deg + var(--a))),
+    line to calc(50% + var(--_r) * cos(120deg + var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(120deg + var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(120deg + var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(120deg + var(--a) + var(--_a)))
+    with calc(50% + 50% * cos(120deg + var(--a)))
+      calc(50% + 50% * sin(120deg + var(--a))),
+    line to calc(50% + var(--_r) * cos(180deg + var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(180deg + var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(180deg + var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(180deg + var(--a) + var(--_a)))
+    with calc(50% + 50% * cos(180deg + var(--a)))
+      calc(50% + 50% * sin(180deg + var(--a))),
+    line to calc(50% + var(--_r) * cos(240deg + var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(240deg + var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(240deg + var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(240deg + var(--a) + var(--_a)))
+    with calc(50% + 50% * cos(240deg + var(--a)))
+      calc(50% + 50% * sin(240deg + var(--a))),
+    line to calc(50% + var(--_r) * cos(300deg + var(--a) - var(--_a)))
+      calc(50% + var(--_r) * sin(300deg + var(--a) - var(--_a))),
+    curve to calc(50% + var(--_r) * cos(300deg + var(--a) + var(--_a)))
+      calc(50% + var(--_r) * sin(300deg + var(--a) + var(--_a)))
+    with calc(50% + 50% * cos(300deg + var(--a)))
+      calc(50% + 50% * sin(300deg + var(--a)))
+  );
+}
+
+.hexagon-content-skill {
+  transform: rotate(0deg); /* Counter-rotate the content */
+  position: relative;
+  margin-top: 10px;
+  flex-direction: column;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  color: white;
+}
+
+.hexagon-title-skill {
+  width: 70%;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+/* 🔽 Extra large screens */
+@media screen and (min-width: 1200px) {
+  .hexagon-wrapper-skill {
+    width: 130px !important;
+    height: 130px !important;
+  }
+
+  .hexagon-inner-skill {
+    width: 160px !important;
+  }
+
+  .hexagon-title-skill {
+    font-size: 0.7rem !important;
+  }
+}
+
 
 /* ---break---  */
 

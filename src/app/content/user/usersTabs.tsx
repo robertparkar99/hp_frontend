@@ -15,6 +15,7 @@ import {
   MoreVertical,
   ListCheck,
   ListChecks,
+  UserRoundSearch,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import JobRoleNew from "../../../components/users/jobroleNew";
@@ -28,6 +29,7 @@ import { Button } from "@/components/ui/button"; // Make sure you have this
 import { cn } from "@/lib/utils"; // Make sure you have this
 import React from "react";
 import Loading from "@/components/utils/loading";
+import Radar from "@/app/Radar/page";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -156,6 +158,12 @@ export default function EditProfilePage() {
       logo: "assets/User Details Images/Skill Rating.jpg",
       icon: <Star className="mr-2 h-5 w-5 text-slate-700" />,
     },
+    {
+      id: "Jobrole-Type",
+      label: "Jobole Category",
+      logo: "assets/User Details Images/Skill Rating.jpg",
+      icon: <UserRoundSearch className="mr-2 h-5 w-5 text-slate-700" />,
+    },
   ];
 
   const [isChecked, setIsChecked] = useState(false);
@@ -181,14 +189,14 @@ export default function EditProfilePage() {
               >
                 <ArrowLeft size={24} />
               </button>
-              <img
+              {/* <img
                 src={
                   tabs.find((tab) => tab.id === activeTab)?.logo ||
                   "default_logo_url"
                 }
                 alt="Logo"
                 className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14"
-              />
+              /> */}
             </div>
 
             {/* Tabs */}
@@ -232,7 +240,7 @@ export default function EditProfilePage() {
               ))}
             </div> */}
             <div
-  className="
+              className="
     flex 
     overflow-x-auto 
     lg:overflow-visible 
@@ -246,29 +254,29 @@ export default function EditProfilePage() {
     lg:justify-center
     gap-2
   "
->
-  {tabs.map((tab) => (
-    <Button
-      key={tab.id}
-      variant="ghost"
-      onClick={() => setActiveTab(tab.id)}
-      className={cn(
-        "rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 flex items-center px-2 sm:px-3 py-1 sm:py-1.5 min-w-fit",
-        activeTab === tab.id
-          ? "bg-emerald-500 text-white [&>svg]:text-white shadow-md hover:bg-emerald-500"
-          : "hover:bg-slate-50"
-      )}
-    >
-      {React.cloneElement(tab.icon, {
-        className: cn(
-          "mr-1 text-xs sm:text-base",
-          activeTab === tab.id ? "text-white" : "text-slate-700"
-        ),
-      })}
-      <span className="truncate">{tab.label}</span>
-    </Button>
-  ))}
-</div>
+            >
+              {tabs.map((tab) => (
+                <Button
+                  key={tab.id}
+                  variant="ghost"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "rounded-full text-xs sm:text-xs font-medium whitespace-nowrap transition-all duration-200 flex items-center px-2 sm:px-3 py-1 sm:py-1.5 min-w-fit",
+                    activeTab === tab.id
+                      ? "bg-emerald-500 text-white [&>svg]:text-white shadow-md hover:bg-emerald-500"
+                      : "hover:bg-slate-50"
+                  )}
+                >
+                  {React.cloneElement(tab.icon, {
+                    className: cn(
+                      "mr-1 text-xs sm:text-base",
+                      activeTab === tab.id ? "text-white" : "text-slate-700"
+                    ),
+                  })}
+                  <span className="truncate">{tab.label}</span>
+                </Button>
+              ))}
+            </div>
           </div>
 
           {/* Controls row under tabs, aligned right */}
@@ -336,6 +344,7 @@ export default function EditProfilePage() {
             {activeTab === "skill-rating" && (
               <Skillrating skills={userRatingSkills} />
             )}
+            {activeTab === "Jobrole-Type" && <Radar />}
           </div>
         </div>
       )}

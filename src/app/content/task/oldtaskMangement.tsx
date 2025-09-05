@@ -554,30 +554,30 @@ const TaskManagement = () => {
                             <div className="flex space-x-4 mt-6 justify-around">
                                 <button
                                     type="button"
-                                    className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'daily task' ? 'border-blue-600 text-blue-700 bg-[#eaf7ff]' : 'border-blue-400 text-blue-700 bg-white'}`}
-                                    onClick={() => handleTaskTypeSelect('daily task')}
+                                    className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'High' ? 'border-blue-600 text-blue-700 bg-[#eaf7ff]' : 'border-blue-400 text-blue-700 bg-white'}`}
+                                    onClick={() => handleTaskTypeSelect('High')}
                                 >
                                     <span className="w-4 h-4 bg-blue-600 rounded-full mb-1"></span>
-                                    <span className="font-semibold text-sm">Daily</span>
-                                    <span className="text-xs text-gray-500">Task</span>
+                                    <span className="font-semibold text-sm">High</span>
+                                    {/* <span className="text-xs text-gray-500">Task</span> */}
                                 </button>
                                 <button
                                     type="button"
-                                    className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'weekly task' ? 'border-yellow-600 text-yellow-700 bg-[#FEF6E9]' : 'border-yellow-400 text-yellow-700 bg-white'}`}
-                                    onClick={() => handleTaskTypeSelect('weekly task')}
+                                    className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'Medium' ? 'border-yellow-600 text-yellow-700 bg-[#FEF6E9]' : 'border-yellow-400 text-yellow-700 bg-white'}`}
+                                    onClick={() => handleTaskTypeSelect('Medium')}
                                 >
                                     <span className="w-4 h-4 bg-yellow-500 rounded-full mb-1"></span>
-                                    <span className="font-semibold text-sm">Weekly</span>
-                                    <span className="text-xs text-gray-500">Task</span>
+                                    <span className="font-semibold text-sm">Medium</span>
+                                    {/* <span className="text-xs text-gray-500">Task</span> */}
                                 </button>
                                 <button
                                     type="button"
-                                    className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'monthly task' ? 'border-teal-600 text-teal-700 bg-[#EBF9F4]' : 'border-teal-400 text-teal-700 bg-white'}`}
-                                    onClick={() => handleTaskTypeSelect('monthly task')}
+                                    className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === 'Low' ? 'border-teal-600 text-teal-700 bg-[#EBF9F4]' : 'border-teal-400 text-teal-700 bg-white'}`}
+                                    onClick={() => handleTaskTypeSelect('Low')}
                                 >
                                     <span className="w-4 h-4 bg-teal-500 rounded-full mb-1"></span>
-                                    <span className="font-semibold text-sm">Monthly</span>
-                                    <span className="text-xs text-gray-500">Task</span>
+                                    <span className="font-semibold text-sm">Low</span>
+                                    {/* <span className="text-xs text-gray-500">Task</span> */}
                                 </button>
                             </div>
 
