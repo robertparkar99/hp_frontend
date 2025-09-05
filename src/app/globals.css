@@ -16,6 +16,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   --primary: rgba(30, 64, 175, 1);
+  --danger: rgb(230, 27, 27);
   --primary-foreground: oklch(0.985 0 0);
   --success: rgba(16, 185, 129, 1);
   --success-foreground: oklch(0.145 0 0);
@@ -63,7 +64,10 @@ body {
   color :#f59e0b;
 }
 .text-danger{
-  color:red;
+  color:rgb(235, 27, 27);
+}
+.bg-danger{
+  background:rgb(235, 27, 27);
 }
 .bg-success{
   background : rgba(16, 185, 129, 1);

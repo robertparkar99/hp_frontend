@@ -90,9 +90,9 @@ const ProgressDashboard = () => {
 
   const timeOptions = [
     { value: 'all', label: 'All Types' },
-    { value: 'day', label: 'Daily' },
-    { value: 'week', label: 'Weekly' },
-    { value: 'month', label: 'Monthly' },
+    { value: 'High', label: 'High' },
+    { value: 'Medium', label: 'Medium' },
+    { value: 'Low', label: 'Low' },
   ];
 
   const statusOptions = [
@@ -103,9 +103,9 @@ const ProgressDashboard = () => {
   ];
 
   const taskTypeOptions = [
-    { value: 'daily task', label: 'Daily Task' },
-    { value: 'weekly task', label: 'Weekly Task' },
-    { value: 'monthly task', label: 'Monthly Task' },
+    { value: 'High', label: 'High' },
+    { value: 'Medium', label: 'Medium' },
+    { value: 'Low', label: 'Low' },
   ];
 
   const statusEditOptions = [
@@ -124,12 +124,12 @@ const ProgressDashboard = () => {
     return allData.filter(task => {
       const matchesTime = timeFilter === 'all'
         ? true
-        : timeFilter === 'day'
-          ? task.task_type.toLowerCase() === 'daily task'
-          : timeFilter === 'week'
-            ? task.task_type.toLowerCase() === 'weekly task'
-            : timeFilter === 'month'
-              ? task.task_type.toLowerCase() === 'monthly task'
+        : timeFilter === 'High'
+          ? task.task_type === 'High'
+          : timeFilter === 'Medium'
+            ? task.task_type === 'Medium'
+            : timeFilter === 'Low'
+              ? task.task_type === 'Low'
               : true;
 
       const matchesStatus = statusFilter === 'all' || task.status.toUpperCase() === statusFilter;
@@ -173,13 +173,13 @@ const ProgressDashboard = () => {
         digit : 'text-warning',
       },
       {
-        label: 'Overdue (Pending)',
+        label: 'Overdue',
         value: pending,
         change: '',
         trend: 'down',
         icon: 'AlertTriangle',
-        color: 'text-error bg-[#e9e9e9]',
-        digit : 'text-error',
+        color: 'text-danger bg-[#e9e9e9]',
+        digit : 'text-danger',
       }
     ];
   }, [filteredData]);
@@ -196,7 +196,7 @@ const ProgressDashboard = () => {
   const getApproveStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'approved': return 'text-success bg-success/10 border-success/20';
-      case 'rejected': return 'text-error bg-error/10 border-error/20';
+      case 'rejected': return 'text-danger bg-error/10 border-error/20';
       case 'pending':
       default:
         return 'text-muted-foreground bg-muted border-border';
@@ -204,10 +204,10 @@ const ProgressDashboard = () => {
   };
 
   const getPriorityColor = (priority) => {
-    switch (priority.toLowerCase()) {
-      case 'daily task': return 'text-primary';
-      case 'weekly task': return 'text-warning';
-      case 'monthly task': return 'text-success';
+    switch (priority) {
+      case 'High': return 'text-danger';
+      case 'Medium': return 'text-warning';
+      case 'Low': return 'text-success';
       default: return 'text-muted-foreground';
     }
   };
@@ -357,9 +357,9 @@ const ProgressDashboard = () => {
         <div className="p-6 border-b border-border">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-foreground">Task Assignments</h3>
-            <Button variant="ghost" size="sm" iconName="MoreHorizontal" iconPosition="left">
+            {/* <Button variant="ghost" size="sm" iconName="MoreHorizontal" iconPosition="left">
               View All
-            </Button>
+            </Button> */}
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -397,7 +397,7 @@ const ProgressDashboard = () => {
                   </td>
                   <td className="p-4">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(assignment.status)}`} style={{ whiteSpace: 'nowrap' }}>
-                      {assignment.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {assignment.status}
                     </span>
                   </td>
                   <td className="p-4">
@@ -410,7 +410,7 @@ const ProgressDashboard = () => {
                   </td>
                   <td className="p-4">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getApproveStatusColor(assignment.approve_status)}`} style={{ whiteSpace: 'nowrap' }}>
-                      {assignment.approve_status ? assignment.approve_status.charAt(0).toUpperCase() + assignment.approve_status.slice(1) : 'Pending'}
+                      {assignment.approve_status ? assignment.approve_status.charAt(0).toUpperCase() + assignment.approve_status.slice(1).toUpperCase() : 'PENDING'}
                     </span>
                   </td>
                   <td className="p-4">
@@ -551,7 +551,7 @@ const ProgressDashboard = () => {
                   <Select
                     label="Task Type"
                     options={taskTypeOptions}
-                    value={currentTask.task_type.toLowerCase()}
+                    value={currentTask.task_type}
                     onChange={(value) => handleInputChange('task_type', value)}
                     required
                   />
@@ -637,11 +637,11 @@ const ProgressDashboard = () => {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                <Button variant="outline" onClick={() => setIsEditModalOpen(false)} className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-gray-500 to-gray-700 hover:from-gray-600 hover:to-gray-800 shadow-md disabled:opacity-60"> 
                   Cancel
                 </Button>
-                <Button type="submit">
-                  Save Changes
+                <Button type="submit" className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60">
+                  Update
                 </Button>
               </DialogFooter>
             </form>
