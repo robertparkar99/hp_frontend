@@ -192,8 +192,7 @@ export default function Page() {
       <div className="flex justify-end">
         <button
           onClick={() => setShowFilters((prev) => !prev)}
-          className="p-2 rounded-md hover:bg-gray-100"
-          aria-label="Toggle Filters"
+          className="p-2"
         >
           <Funnel className="w-5 h-5" />
         </button>

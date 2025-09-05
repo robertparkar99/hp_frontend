@@ -73,7 +73,8 @@ const BehaviourGrid = () => {
               .filter((item) => typeof item.proficiency_level === "string")
               .map((item) => item.proficiency_level as string)
           ),
-        ];
+        ].sort((a, b) => a.localeCompare(b));
+
         setSkills(skillLevels);
 
         // ✅ Deduplicate categories
@@ -156,116 +157,116 @@ const BehaviourGrid = () => {
   ]);
 
   return (
-    <div className="p-4 bg-gray-50 min-h-screen">
+    <div className="p-4 min-h-screen">
       {/* 🔽 Filter Toggle Button */}
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowFilters((prev) => !prev)}
-                className="p-2"
-              >
-                <Funnel />
-              </button>
-            </div>
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowFilters((prev) => !prev)}
+          className="p-2"
+        >
+          <Funnel />
+        </button>
+      </div>
       {/* Dropdowns */}
       {showFilters && (
-      <div className="flex flex-col sm:flex-row justify-end gap-3 mb-4">
-        {/* Category Dropdown */}
-        <Select
-          value={selectedCategory || "all"}
-          onValueChange={(value) => {
-            if (value === "all") {
-              setSelectedCategory("");
-              setSelectedSubCategory("");
-              setSelectedLevel("");
-            } else {
-              setSelectedCategory(value);
-              setSelectedSubCategory("");
-              setSelectedLevel("");
-            }
-          }}
-        >
-          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-            <SelectValue placeholder="Filter by Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Filter by Category</SelectItem>
-            {categories.length === 0 ? (
-              <SelectItem value="loading" disabled>
-                No Categories
-              </SelectItem>
-            ) : (
-              categories.map((cat, idx) => (
-                <SelectItem key={idx} value={cat}>
-                  {cat}
+        <div className="flex flex-col sm:flex-row justify-end gap-3 mb-4">
+          {/* Category Dropdown */}
+          <Select
+            value={selectedCategory || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedCategory("");
+                setSelectedSubCategory("");
+                setSelectedLevel("");
+              } else {
+                setSelectedCategory(value);
+                setSelectedSubCategory("");
+                setSelectedLevel("");
+              }
+            }}
+          >
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Filter by Category</SelectItem>
+              {categories.length === 0 ? (
+                <SelectItem value="loading" disabled>
+                  No Categories
                 </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
+              ) : (
+                categories.map((cat, idx) => (
+                  <SelectItem key={idx} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
 
-        {/* Sub Category Dropdown */}
-        <Select
-          value={selectedSubCategory || "all"}
-          onValueChange={(value) => {
-            if (value === "all") {
-              setSelectedSubCategory("");
-              setSelectedLevel("");
-            } else {
-              setSelectedSubCategory(value);
-              setSelectedLevel("");
-            }
-          }}
-          disabled={subCategories.length === 0}
-        >
-          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-            <SelectValue placeholder="Filter by Sub Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Filter by Sub Category</SelectItem>
-            {subCategories.length === 0 ? (
-              <SelectItem value="loading" disabled>
-                No Sub Categories
-              </SelectItem>
-            ) : (
-              subCategories.map((sub, idx) => (
-                <SelectItem key={idx} value={sub}>
-                  {sub}
+          {/* Sub Category Dropdown */}
+          <Select
+            value={selectedSubCategory || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedSubCategory("");
+                setSelectedLevel("");
+              } else {
+                setSelectedSubCategory(value);
+                setSelectedLevel("");
+              }
+            }}
+            disabled={subCategories.length === 0}
+          >
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Sub Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Filter by Sub Category</SelectItem>
+              {subCategories.length === 0 ? (
+                <SelectItem value="loading" disabled>
+                  No Sub Categories
                 </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
+              ) : (
+                subCategories.map((sub, idx) => (
+                  <SelectItem key={idx} value={sub}>
+                    {sub}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
 
-        {/* Proficiency Dropdown */}
-        <Select
-          value={selectedLevel || "all"}
-          onValueChange={(value) => {
-            if (value === "all") {
-              setSelectedLevel("");
-            } else {
-              setSelectedLevel(value);
-            }
-          }}
-        >
-          <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
-            <SelectValue placeholder="Filter by Proficiency Level" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Filter by Proficiency Level</SelectItem>
-            {loadingOptions ? (
-              <SelectItem value="loading" disabled>
-                Loading...
-              </SelectItem>
-            ) : (
-              skills.map((level, idx) => (
-                <SelectItem key={idx} value={level}>
-                  {level}
+          {/* Proficiency Dropdown */}
+          <Select
+            value={selectedLevel || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedLevel("");
+              } else {
+                setSelectedLevel(value);
+              }
+            }}
+          >
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Proficiency Level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Filter by Proficiency Level</SelectItem>
+              {loadingOptions ? (
+                <SelectItem value="loading" disabled>
+                  Loading...
                 </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
-      </div>
+              ) : (
+                skills.map((level, idx) => (
+                  <SelectItem key={idx} value={level}>
+                    {level}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
       {/* Cards */}

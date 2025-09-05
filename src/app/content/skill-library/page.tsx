@@ -4,8 +4,14 @@ import React, { useEffect, useState } from "react";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import { FiEdit } from "react-icons/fi";
-import { Trash2, Funnel  } from "lucide-react";
- // ✅ filter icon
+import { Trash2, Funnel } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Skill = {
   id: number;
@@ -32,10 +38,10 @@ export default function Page() {
   const [userSkills, setUserSkills] = useState<Skill[]>([]);
 
   // Filters
-  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [selectedProficiency, setSelectedProficiency] = useState<string | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | undefined>(undefined);
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | undefined>(undefined);
+  const [selectedProficiency, setSelectedProficiency] = useState<string | undefined>(undefined);
 
   const [selectedSkillId, setSelectedSkillId] = useState<number | null>(null);
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
@@ -55,7 +61,7 @@ export default function Page() {
   });
 
   const [refreshKey, setRefreshKey] = useState(0);
-  const [showFilters, setShowFilters] = useState(false); // ✅ toggle state
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -151,6 +157,10 @@ export default function Page() {
     (dept): dept is string => typeof dept === "string"
   );
 
+  const categoryOptions = Array.from(new Set(userSkills.map((s) => s.category))).filter(
+    (cat): cat is string => typeof cat === "string"
+  );
+
   const proficiencyOptions = Array.from(
     new Set(userSkills.map((s) => s.proficiency_level))
   )
@@ -162,28 +172,21 @@ export default function Page() {
   // Decide hexagon items
   let hexagonItems: { id?: number; title: string; subtitle?: string; skillObj?: Skill }[] = [];
 
-  if (!selectedDepartment) {
+  if (!selectedDepartment && !selectedCategory) {
     hexagonItems = departmentOptions.map((dept) => ({ title: dept }));
   } else if (selectedDepartment && !selectedCategory) {
-    const categoriesForDept = Array.from(
-      new Set(userSkills.filter((s) => s.department === selectedDepartment).map((s) => s.category))
-    ).filter(Boolean);
-    hexagonItems = categoriesForDept.map((cat) => ({ title: cat! }));
-  } else if (selectedDepartment && selectedCategory && !selectedSubcategory) {
+    hexagonItems = categoryOptions.map((cat) => ({ title: cat }));
+  } else if (selectedCategory && !selectedSubcategory) {
     const subcategoriesForCat = Array.from(
-      new Set(
-        userSkills
-          .filter((s) => s.department === selectedDepartment && s.category === selectedCategory)
-          .map((s) => s.sub_category)
-      )
+      new Set(userSkills.filter((s) => s.category === selectedCategory).map((s) => s.sub_category))
     ).filter(Boolean);
     hexagonItems = subcategoriesForCat.map((sub) => ({ title: sub! }));
-  } else if (selectedDepartment && selectedCategory && selectedSubcategory) {
+  } else if (selectedCategory && selectedSubcategory) {
     hexagonItems =
       userSkills
         .filter(
           (s) =>
-            s.department === selectedDepartment &&
+            (!selectedDepartment || s.department === selectedDepartment) &&
             s.category === selectedCategory &&
             s.sub_category === selectedSubcategory &&
             (!selectedProficiency || s.proficiency_level === selectedProficiency)
@@ -197,13 +200,10 @@ export default function Page() {
   }
 
   return (
-    <main className="flex  gap-6 pr-8 min-h-screen flex-col">
+    <main className="flex gap-6 pr-8 min-h-screen flex-col">
       {/* 🔽 Filter Toggle Button */}
       <div className="flex justify-end ">
-        <button
-          onClick={() => setShowFilters((prev) => !prev)}
-          className="p-2"
-        >
+        <button onClick={() => setShowFilters((prev) => !prev)} className="p-2">
           <Funnel />
         </button>
       </div>
@@ -212,101 +212,146 @@ export default function Page() {
       {showFilters && (
         <div className="flex justify-end gap-4 mb-4 flex-wrap">
           {/* Department Filter */}
-          <select
-            value={selectedDepartment || ""}
-            onChange={(e) => {
-              setSelectedDepartment(e.target.value || null);
-              setSelectedCategory(null);
-              setSelectedSubcategory(null);
+          <Select
+            value={selectedDepartment || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedDepartment(undefined);
+                setSelectedCategory(undefined);
+                setSelectedSubcategory(undefined);
+                setSelectedProficiency(undefined);
+              } else {
+                setSelectedDepartment(value);
+                setSelectedCategory(undefined);
+                setSelectedSubcategory(undefined);
+                setSelectedProficiency(undefined);
+              }
             }}
-            className="border border-gray-300 rounded-2xl px-3 py-2 bg-white shadow-sm w-60"
           >
-            <option value="">Filter by Department</option>
-            {departmentOptions.map((dept, idx) => (
-              <option key={idx} value={dept}>
-                {dept}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Filter by Department</SelectItem>
+              {departmentOptions.length === 0 ? (
+                <SelectItem value="loading" disabled>
+                  No Departments
+                </SelectItem>
+              ) : (
+                departmentOptions.map((dept, idx) => (
+                  <SelectItem key={idx} value={dept}>
+                    {dept}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
 
           {/* Category Filter */}
-          <select
-            value={selectedCategory || ""}
-            onChange={(e) => {
-              setSelectedCategory(e.target.value || null);
-              setSelectedSubcategory(null);
+          <Select
+            value={selectedCategory || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedCategory(undefined);
+                setSelectedSubcategory(undefined);
+              } else {
+                setSelectedCategory(value);
+                setSelectedSubcategory(undefined);
+              }
             }}
-            className="border border-gray-300 rounded-2xl px-3 py-2 bg-white shadow-sm w-60"
-            disabled={!selectedDepartment}
           >
-            <option value="">Filter by Category</option>
-            {selectedDepartment &&
-              Array.from(
-                new Set(
-                  userSkills.filter((s) => s.department === selectedDepartment).map((s) => s.category)
-                )
-              ).map((cat, idx) => (
-                <option key={idx} value={cat || ""}>
-                  {cat}
-                </option>
-              ))}
-          </select>
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Filter by Category</SelectItem>
+              {categoryOptions.length === 0 ? (
+                <SelectItem value="loading" disabled>
+                  No Categories
+                </SelectItem>
+              ) : (
+                categoryOptions.map((cat, idx) => (
+                  <SelectItem key={idx} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
 
           {/* Subcategory Filter */}
-          <select
-            value={selectedSubcategory || ""}
-            onChange={(e) => setSelectedSubcategory(e.target.value || null)}
-            className="border border-gray-300 rounded-2xl px-3 py-2 bg-white shadow-sm w-60"
+          <Select
+            value={selectedSubcategory || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedSubcategory(undefined);
+              } else {
+                setSelectedSubcategory(value);
+              }
+            }}
             disabled={!selectedCategory}
           >
-            <option value="">Filter by Sub Category</option>
-            {selectedDepartment &&
-              selectedCategory &&
-              Array.from(
-                new Set(
-                  userSkills
-                    .filter(
-                      (s) =>
-                        s.department === selectedDepartment && s.category === selectedCategory
-                    )
-                    .map((s) => s.sub_category)
-                )
-              ).map((sub, idx) => (
-                <option key={idx} value={sub || ""}>
-                  {sub}
-                </option>
-              ))}
-          </select>
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Sub Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Filter by Sub Category</SelectItem>
+              {selectedCategory &&
+                Array.from(
+                  new Set(
+                    userSkills
+                      .filter((s) => s.category === selectedCategory)
+                      .map((s) => s.sub_category)
+                  )
+                ).map((sub, idx) => (
+                  <SelectItem key={idx} value={sub || ""}>
+                    {sub}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
 
           {/* Proficiency Level Filter */}
-          <select
-            value={selectedProficiency || ""}
-            onChange={(e) => setSelectedProficiency(e.target.value || null)}
-            className="border border-gray-300 rounded-2xl px-3 py-2 bg-white shadow-sm w-60"
+          <Select
+            value={selectedProficiency || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedProficiency(undefined);
+              } else {
+                setSelectedProficiency(value);
+              }
+            }}
           >
-            <option value="">Filter by Proficiency Level</option>
-            {proficiencyOptions.map((lvl, idx) => (
-              <option key={idx} value={lvl}>
-                {lvl}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+              <SelectValue placeholder="Filter by Proficiency Level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Filter by Proficiency Level</SelectItem>
+              {proficiencyOptions.map((lvl, idx) => (
+                <SelectItem key={idx} value={lvl}>
+                  {lvl}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+
         </div>
       )}
 
       {/* Honeycomb Section */}
       <section className="w-full h-screen overflow-y-auto scrollbar-hide">
-        <div className="honeycomb-container-skill flex flex-wrap gap-6 justify-center pb-4">
+        <div className="honeycomb-container-skill  flex flex-wrap gap-6 justify-center pb-4 ">
           {hexagonItems.map((item, index) => (
             <div
               key={index}
               className="hexagon-wrapper-skill relative cursor-pointer"
               onClick={() => {
-                if (!selectedDepartment) {
+                if (!selectedDepartment && departmentOptions.includes(item.title)) {
                   setSelectedDepartment(item.title);
-                } else if (selectedDepartment && !selectedCategory) {
+                } else if (!selectedCategory && categoryOptions.includes(item.title)) {
                   setSelectedCategory(item.title);
-                } else if (selectedDepartment && selectedCategory && !selectedSubcategory) {
+                } else if (!selectedSubcategory && item.title) {
                   setSelectedSubcategory(item.title);
                 } else if (item.skillObj) {
                   setActiveSkill(item.skillObj);
@@ -317,10 +362,7 @@ export default function Page() {
             >
               <div className="hexagon-inner-skill">
                 <div className="hexagon-content-skill bg-[#9FD0FF] flex flex-col items-center justify-center relative">
-                  <p
-                    className="hexagon-title-skill text-black font-inter text-center"
-                    title={item.subtitle}
-                  >
+                  <p className="hexagon-title-skill text-black font-inter text-center" title={item.subtitle}>
                     {item.title}
                   </p>
 
