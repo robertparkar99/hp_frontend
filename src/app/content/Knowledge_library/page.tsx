@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, Suspense} from "react";
-import { Funnel } from "lucide-react"; // filter icon
+import React, { useState, useEffect } from "react";
+import { Funnel } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Atom } from "react-loading-indicators";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SkillItem {
   id: number;
@@ -134,101 +135,110 @@ const Honeycomb: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col w-full font-sans">
-      {/* 🔽 Filter Toggle Button */}
-      <div className="flex justify-end">
-        <button
-          onClick={() => setShowFilters((prev) => !prev)}
-          className="p-2"
-        >
-          <Funnel />
-        </button>
+    <>
+      {/* 🔽 Funnel & Filters Section */}
+      <div className="flex p-4 justify-end mb-6">
+        <div className="flex items-center gap-4">
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, x: 100 }}   // from right
+                animate={{ opacity: 1, x: 0 }}     // fade in
+                exit={{ opacity: 0, x: 100 }}      // back to right
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="flex flex-col md:flex-row gap-4"
+              >
+                {/* Category Filter */}
+                <Select
+                  value={category || "all"}
+                  onValueChange={(value) => {
+                    if (value === "all") {
+                      setCategory("");
+                      setSubCategory("");
+                    } else {
+                      setCategory(value);
+                      setSubCategory("");
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-56 border rounded-md px-3 py-2 text-sm bg-white shadow">
+                    <SelectValue placeholder="Filter by Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Filter by Category</SelectItem>
+                    {uniqueCategories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Subcategory Filter */}
+                <Select
+                  value={subCategory || "all"}
+                  onValueChange={(value) =>
+                    setSubCategory(value === "all" ? "" : value)
+                  }
+                  disabled={!category}
+                >
+                  <SelectTrigger className="w-56 border rounded-md px-3 py-2 text-sm bg-white shadow disabled:bg-gray-100 disabled:text-gray-400">
+                    <SelectValue placeholder="Filter by Sub Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Filter by Sub Category</SelectItem>
+                    {filteredSubCategories.map((sub) => (
+                      <SelectItem key={sub} value={sub}>
+                        {sub}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Proficiency Filter */}
+                <Select
+                  value={proficiency || "all"}
+                  onValueChange={(value) =>
+                    setProficiency(value === "all" ? "" : value)
+                  }
+                >
+                  <SelectTrigger className="w-56 border rounded-md px-3 py-2 text-sm bg-white shadow">
+                    <SelectValue placeholder="Filter by Proficiency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Filter by Proficiency</SelectItem>
+                    {uniqueProficiency.map((prof) => (
+                      <SelectItem key={prof} value={prof}>
+                        {prof}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Funnel Button */}
+          <button
+            onClick={() => setShowFilters((prev) => !prev)}
+            className="p-3"
+          >
+            <Funnel className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
-      {showFilters && (
-        <div className="flex justify-end gap-4 mb-6 pr-10">
-          {/* Category Filter */}
-          <Select
-            value={category || "all"}
-            onValueChange={(value) => {
-              if (value === "all") {
-                setCategory("");
-                setSubCategory("");
-              } else {
-                setCategory(value);
-                setSubCategory("");
-              }
-            }}
-          >
-            <SelectTrigger className="w-56 border rounded-md px-3 py-2 text-sm bg-white shadow">
-              <SelectValue placeholder="Filter by Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Filter by Category</SelectItem>
-              {uniqueCategories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Subcategory Filter */}
-          <Select
-            value={subCategory || "all"}
-            onValueChange={(value) =>
-              setSubCategory(value === "all" ? "" : value)
-            }
-            disabled={!category}
-          >
-            <SelectTrigger className="w-56 border rounded-md px-3 py-2 text-sm bg-white shadow disabled:bg-gray-100 disabled:text-gray-400">
-              <SelectValue placeholder="Filter by Sub Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Filter by Sub Category</SelectItem>
-              {filteredSubCategories.map((sub) => (
-                <SelectItem key={sub} value={sub}>
-                  {sub}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Proficiency Filter */}
-          <Select
-            value={proficiency || "all"}
-            onValueChange={(value) =>
-              setProficiency(value === "all" ? "" : value)
-            }
-          >
-            <SelectTrigger className="w-56 border rounded-md px-3 py-2 text-sm bg-white shadow">
-              <SelectValue placeholder="Filter by Proficiency" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Filter by Proficiency</SelectItem>
-              {uniqueProficiency.map((prof) => (
-                <SelectItem key={prof} value={prof}>
-                  {prof}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Honeycomb Grid */}
-      <div className="flex pl-40">
-        <div className="relative">
-          {isLoading ? (
-            <Suspense fallback={<div className="flex justify-center items-center h-screen">
-                                    <Atom color="#525ceaff" size="medium" text="" textColor="" />
-                                  </div>
-                                  }>
-                                  </Suspense>
-          ) : filteredData.length === 0 ? (
-            <p className="text-gray-500 text-sm">No skills found</p>
-          ) : (
-            filteredData.map((item, index) => {
+      {/* 🔽 Circles Section */}
+      <div className="relative w-full flex pl-40 justify-center items-center">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-85 pr-40">
+            <Atom color="#525ceaff" size="medium" text="" textColor="" />
+          </div>
+        ) : filteredData.length === 0 ? (
+          <p className="text-gray-500 text-sm">No skills found</p>
+        ) : (
+          <div className="relative w-full h-full">
+            {filteredData.map((item, index) => {
               const row = Math.floor(index / 4);
               const col = index % 4;
 
@@ -251,11 +261,11 @@ const Honeycomb: React.FC = () => {
                   {item.classification_item}
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 };
 
