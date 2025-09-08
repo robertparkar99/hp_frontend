@@ -10,6 +10,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import AddDialog from "@/components/jobroleComponent/addDialouge";
+import { Atom } from "react-loading-indicators" // Import the Loading component
 
 type JobRole = {
     id: number;
@@ -35,12 +36,38 @@ export default function HomePage() {
         add: false,
         edit: false,
     });
+    const [sessionData, setSessionData] = useState({
+        url: "",
+        token: "",
+        subInstituteId: "",
+        orgType: "",
+        userId: "",
+    });
 
+    // ✅ Load session data
     useEffect(() => {
+        const userData = localStorage.getItem("userData");
+        if (userData) {
+            const { APP_URL, token, sub_institute_id, org_type, user_id } =
+                JSON.parse(userData);
+            setSessionData({
+                url: APP_URL,
+                token,
+                subInstituteId: sub_institute_id,
+                orgType: org_type,
+                userId: user_id,
+            });
+        }
+    }, []);
+
+    // ✅ Fetch job roles
+    useEffect(() => {
+        if (!sessionData.url || !sessionData.subInstituteId) return;
+
         const fetchRoles = async () => {
             try {
                 const res = await fetch(
-                    "https://hp.triz.co.in/table_data?table=s_user_jobrole&filters[sub_institute_id]=3"
+                    `${sessionData.url}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.subInstituteId}`
                 );
                 const json = await res.json();
                 console.log("✅ API Response:", json);
@@ -54,10 +81,11 @@ export default function HomePage() {
 
                 setRoles(data);
 
-                // Extract unique departments
+                // ✅ Extract unique departments & sort alphabetically
                 const uniqueDepts = Array.from(
                     new Set(data.map((r) => r.department).filter(Boolean))
-                );
+                ).sort((a, b) => a.localeCompare(b));
+
                 setDepartments(["All Departments", ...uniqueDepts]);
             } catch (error) {
                 console.error("❌ Error fetching roles:", error);
@@ -65,10 +93,11 @@ export default function HomePage() {
                 setLoading(false);
             }
         };
-        fetchRoles();
-    }, []);
 
-    // Filter roles by department
+        fetchRoles();
+    }, [sessionData]);
+
+    // ✅ Filter roles by department
     const filteredRoles =
         selectedDept === "All Departments"
             ? roles
@@ -104,7 +133,7 @@ export default function HomePage() {
                 <button
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center"
                     onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
-                    data-titleHead="Add New Jobrole"
+                    data-titlehead="Add New Jobrole"
                 >
                     +
                 </button>
@@ -123,16 +152,16 @@ export default function HomePage() {
 
             {/* Loader / No Data / Cards */}
             {loading ? (
-                <div className="flex items-center justify-center h-[300px]">
-                    <div className="w-14 h-14 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="flex justify-center items-center h-screen">
+                    <Atom color="#525ceaff" size="medium" text="" textColor="" />
                 </div>
             ) : filteredRoles.length === 0 ? (
-                <div className="text-center text-white">No job roles found.</div>
+                <div className="text-center text-gray-600">No job roles found.</div>
             ) : (
                 <div
                     className="
             grid gap-2.5 min-h-40 w-full
-            sm:grid-cols-6 grid-cols-2 grid-flow-dense text-white
+            sm:grid-cols-6 grid-cols-2 grid-flow-dense
             auto-rows-[110px]
           "
                 >
@@ -142,16 +171,19 @@ export default function HomePage() {
                             <motion.div
                                 key={role.id}
                                 layout
-                                transition={{ layout: { duration: 0.4, ease: "easeInOut" } }}
+                                transition={{
+                                    layout: { duration: 0.4, ease: "easeInOut" },
+                                }}
                                 onClick={() => setSelected(isSelected ? null : role.id)}
                                 className={`relative cursor-pointer 
-                           bg-[#5E9DFF] rounded-[5px] hover:rounded-[20px] 
-                           flex flex-col items-center justify-center text-center p-3
-                           ${isSelected
+                  bg-[#5E9DFF] rounded-[5px] hover:rounded-[20px] 
+                  flex flex-col items-center justify-center text-center p-3
+                  text-white
+                  ${isSelected
                                         ? "sm:col-span-2 sm:row-span-2 col-span-2 row-span-2"
                                         : ""
                                     }
-                          `}
+                `}
                             >
                                 {/* Card Title */}
                                 <motion.span layout className="text-[14px] font-semibold">
@@ -169,7 +201,6 @@ export default function HomePage() {
                                         className="absolute inset-0 z-10 flex items-center justify-center"
                                     >
                                         <div className="bg-white text-black rounded-md border border-gray-300 w-full h-full flex">
-
                                             {/* Left Blue Strip */}
                                             <div className="w-1 bg-[#5E9DFF] rounded-l-md"></div>
 
@@ -188,21 +219,21 @@ export default function HomePage() {
                                                     className="mb-3 line-clamp-3 overflow-hidden text-ellipsis"
                                                     title={role.description}
                                                 >
-                                                    <span className="font-bold">Description:</span> {role.description}
+                                                    <span className="font-bold">Description:</span>{" "}
+                                                    {role.description}
                                                 </p>
 
                                                 {/* Expectation */}
                                                 <p>
-                                                    <span className="font-bold">Performance Expectation:</span>{" "}
+                                                    <span className="font-bold">
+                                                        Performance Expectation:
+                                                    </span>{" "}
                                                     {role.performance_expectation}
                                                 </p>
                                             </div>
                                         </div>
                                     </motion.div>
                                 )}
-
-
-
                             </motion.div>
                         );
                     })}
