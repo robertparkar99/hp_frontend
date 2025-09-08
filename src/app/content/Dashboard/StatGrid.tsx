@@ -677,12 +677,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className={`min-h-screen text-gray-900 p-6 transition-all duration-300 ${
-      isSidebarOpen ? "ml-64" : "ml-0"
+    <div className={`min-h-screen text-gray-900 transition-all duration-300 ${
+      isSidebarOpen ? "ml-60" : "ml-0"
     }`}>
       {/* Header with widget dropdown */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+      {/* <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1> */}
         
         {/* Widget Dropdown */}
         {/* <div className="relative">
@@ -726,7 +726,7 @@ export default function Dashboard() {
             </div>
           )}
         </div> */}
-      </div>
+      {/* </div> */}
 
       <div className="grid grid-cols-12 gap-6">
         {/* Left Section - Adjust column span based on sidebar state */}
