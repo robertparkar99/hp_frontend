@@ -342,7 +342,7 @@ export default function EditProfilePage() {
             {activeTab === "responsibility" && <LOR SelLOR={SelLORs} />}
             {/* {activeTab === 'skill-rating' && <div>Skill Rating Content</div>} */}
             {activeTab === "skill-rating" && (
-              <Skillrating skills={userRatingSkills} />
+              <Skillrating skills={userRatingSkills} clickedUser={clickedUser} />
             )}
             {activeTab === "Jobrole-Type" && <Radar />}
           </div>
