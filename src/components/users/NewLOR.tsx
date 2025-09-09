@@ -100,7 +100,7 @@ export default function Index({ SelLOR }: SelLORProps) {
           activeSection
         ) && (
           <div
-            className="w-120 max-w-xl h-24 md:h-14 rounded-2xl border-4 border-[#A4D0FF] flex items-center justify-start px-6 mt-6 shadow-sm"
+            className="rounded-2xl border-4 border-[#A4D0FF] flex items-center justify-start px-4 py-2 mt-6 shadow-sm"
             style={{
               background:
                 "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
