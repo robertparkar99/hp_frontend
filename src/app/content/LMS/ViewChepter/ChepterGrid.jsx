@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import ChepterCard from "./ChepterCard";
 import Icon from "@/components/AppIcon";
@@ -12,17 +13,22 @@ const ChepterGrid = ({
   hasMore,
   onEditCourse,
   onDeleteCourse,
+  onDeleteContent,
+  onSaveContent,
+  onEditContent,
   sessionInfo,
   courseDisplayName,
-  standardName
-
+  standardName,
+  viewMode = "list" // Added default value for viewMode
 }) => {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const handleLoadMore = async () => {
-    setLoadingMore(true);
-    await onLoadMore();
-    setLoadingMore(false);
+    if (onLoadMore) {
+      setLoadingMore(true);
+      await onLoadMore();
+      setLoadingMore(false);
+    }
   };
 
   // ✅ Skeleton loader for LIST view only
@@ -62,7 +68,7 @@ const ChepterGrid = ({
     );
   }
 
-  if (courses.length === 0) {
+  if (!courses || courses.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
@@ -96,21 +102,24 @@ const ChepterGrid = ({
           <ChepterCard
             key={course.id}
             course={course}
-            viewMode="list"
+            viewMode={viewMode}
             onEnroll={onEnroll}
             onViewDetails={onViewDetails}
             onEditCourse={onEditCourse}
             onDeleteCourse={onDeleteCourse}
+            onDeleteContent={onDeleteContent}
+            onSaveContent={onSaveContent}
+            onEditContent={onEditContent}
             sessionInfo={sessionInfo}
-          contents={course.contents}   // ✅ Pass chapter contents directly
-          courseDisplayName={courseDisplayName}  // ✅ Pass course display name
-          standardName={standardName}
+            contents={course.contents}   // ✅ Pass chapter contents directly
+            courseDisplayName={courseDisplayName}  // ✅ Pass course display name
+            standardName={standardName}
           />
         ))}
       </div>
 
-      {/* Load More Button */}
-      {hasMore && (
+      {/* Load More Button - only show if onLoadMore function is provided */}
+      {hasMore && onLoadMore && (
         <div className="text-center mt-8">
           <Button
             variant="outline"
@@ -134,10 +143,13 @@ const ChepterGrid = ({
 
       {/* Results Summary */}
       <div className="mt-8 pt-6 border-t border-border text-center text-sm text-muted-foreground">
-        Showing {courses.length} of {courses.length + (hasMore ? 50 : 0)} courses
+        Showing {courses.length} courses
+        {hasMore && ` of ${courses.length + 50}`}
       </div>
     </div>
   );
 };
 
 export default ChepterGrid;
+
+

@@ -97,13 +97,13 @@ const handleViewDetails = () => {
                 {course.title}
               </h3>
               <div className="flex items-center space-x-2 flex-shrink-0">
-                <span
+                {/* <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${getContentTypeColor(
                     course.contentType
                   )}`}
                 >
                   {course.contentType.toUpperCase()}
-                </span>
+                </span> */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
@@ -133,7 +133,7 @@ const handleViewDetails = () => {
                 {course.short_name}
               </div>
               <div className="flex items-center">
-                <span className="font-medium mr-1">Subject Type:</span>
+                <span className="font-medium mr-1">Course Type:</span>
                 {course.subject_type}
               </div>
             </div>
@@ -178,7 +178,7 @@ const handleViewDetails = () => {
           />
         </div>
 
-        <div className="absolute top-3 left-3 z-20">
+        {/* <div className="absolute top-3 left-3 z-20">
           <span
             className={`px-2 py-1 rounded-full text-xs font-medium ${getContentTypeColor(
               course.contentType
@@ -191,7 +191,7 @@ const handleViewDetails = () => {
             />
             {course.contentType.toUpperCase()}
           </span>
-        </div>
+        </div> */}
 
         <div className="absolute top-3 right-3 z-30">
           <DropdownMenu>
@@ -240,7 +240,7 @@ const handleViewDetails = () => {
             {course.short_name}
           </div>
           <div className="flex items-center">
-            <span className="font-medium mr-1">Subject Type:</span>
+            <span className="font-medium mr-1">Course Type:</span>
             {course.subject_type}
           </div>
         </div>

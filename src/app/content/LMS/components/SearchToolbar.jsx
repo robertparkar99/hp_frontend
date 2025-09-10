@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -19,90 +21,105 @@ const SearchToolbar = ({
 }) => {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [subjectTypes, setSubjectTypes] = useState([]);
+  const [loading, setLoading] = useState(false);
   const advancedRef = useRef(null);
   const moreFilterRef = useRef(null);
 
-  const [moreFilters, setMoreFilters] = useState({
-    department: 'all',
-    instructor: '',
-    dateAdded: 'any',
-    language: 'en',
+  // Session data
+  const [sessionData, setSessionData] = useState({
+    url: "",
+    token: "",
+    sub_institute_id: "",
+    user_id: "",
+    syear: "",
+    user_profile_name: ""
   });
 
-  const departmentOptions = [
-    { value: 'all', label: 'All Departments' },
-    { value: 'engineering', label: 'Engineering' },
-    { value: 'sales', label: 'Sales' },
-    { value: 'marketing', label: 'Marketing' },
-    { value: 'hr', label: 'Human Resources' },
-    { value: 'finance', label: 'Finance' },
-  ];
+  // Load session info from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, user_id, syear, user_profile_name } =
+        JSON.parse(userData);
 
-  const dateAddedOptions = [
-    { value: 'any', label: 'Any time' },
-    { value: 'week', label: 'Past week' },
-    { value: 'month', label: 'Past month' },
-    { value: 'quarter', label: 'Past 3 months' },
-    { value: 'year', label: 'Past year' },
-  ];
+      setSessionData({
+        url: APP_URL,
+        token,
+        sub_institute_id,
+        user_id,
+        syear: syear || "",
+        user_profile_name: user_profile_name || ""
+      });
+    }
+  }, []);
 
-  const languageOptions = [
-    { value: 'en', label: 'English' },
-    { value: 'es', label: 'Spanish' },
-    { value: 'fr', label: 'French' },
-    { value: 'de', label: 'German' },
-    { value: 'zh', label: 'Chinese' },
-  ];
+  // Fetch filters from API
+  const fetchFilters = async () => {
+    if (!sessionData.sub_institute_id || !sessionData.url) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8000/lms/course_master?type=API&sub_institute_id=1&syear=2025&user_id=1&user_profile_name=admin`
+      );
+      const data = await res.json();
 
+      if (data?.lms_subject) {
+        const allSubjects = Object.values(data.lms_subject).flat();
+
+        // Unique categories
+        const uniqueCategories = Array.from(
+          new Set(allSubjects.map((item) => item.content_category).filter(Boolean))
+        ).map((category) => ({
+          id: category.toLowerCase().replace(/\s+/g, '-'),
+          label: category,
+          count: allSubjects.filter((i) => i.content_category === category).length,
+        }));
+
+        // Unique subject types
+        const uniqueSubjectTypes = Array.from(
+          new Set(allSubjects.map((item) => item.subject_type).filter(Boolean))
+        ).map((type) => ({
+          id: type.toLowerCase().replace(/\s+/g, '-'),
+          label: type,
+          count: allSubjects.filter((i) => i.subject_type === type).length,
+        }));
+
+        setCategories(uniqueCategories);
+        setSubjectTypes(uniqueSubjectTypes);
+      }
+    } catch (err) {
+      console.error('Failed to fetch filters:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (sessionData.sub_institute_id && sessionData.url) {
+      fetchFilters();
+    }
+  }, [sessionData]);
+
+  // Dynamic filters based on API data
   const filtersList = [
-    {
-      title: 'Content Type',
-      key: 'contentType',
-      options: [
-        { id: 'video', label: 'Video Courses' },
-        { id: 'ppt', label: 'PPT/Documents' },
-        { id: 'mixed', label: 'Mixed Content' },
-      ],
-    },
     {
       title: 'Categories',
       key: 'categories',
-      options: [
-        { id: 'leadership', label: 'Leadership & Management' },
-        { id: 'technical', label: 'Technical Skills' },
-        { id: 'compliance', label: 'Compliance & Safety' },
-        { id: 'soft-skills', label: 'Soft Skills' },
-        { id: 'sales', label: 'Sales & Marketing' },
-        { id: 'finance', label: 'Finance & Accounting' },
-      ],
+      options: categories.map(cat => ({
+        id: cat.id,
+        label: `${cat.label} (${cat.count})`
+      }))
     },
     {
-      title: 'Skill Level',
-      key: 'skillLevel',
-      options: [
-        { id: 'beginner', label: 'Beginner' },
-        { id: 'intermediate', label: 'Intermediate' },
-        { id: 'advanced', label: 'Advanced' },
-      ],
-    },
-    {
-      title: 'Duration',
-      key: 'duration',
-      options: [
-        { id: 'short', label: 'Under 1 hour' },
-        { id: 'medium', label: '1-3 hours' },
-        { id: 'long', label: '3-6 hours' },
-        { id: 'extended', label: '6+ hours' },
-      ],
-    },
-    {
-      title: 'Completion Status',
-      key: 'completionStatus',
-      options: [
-        { id: 'not-started', label: 'Not Started' },
-        { id: 'in-progress', label: 'In Progress' },
-        { id: 'completed', label: 'Completed' },
-      ],
+      title: 'Course Types',
+      key: 'subjectTypes',
+      options: subjectTypes.map(type => ({
+        id: type.id,
+        label: `${type.label} (${type.count})`
+      }))
     },
   ];
 
@@ -128,40 +145,6 @@ const SearchToolbar = ({
     </div>
   );
 
-  const handleDepartmentChange = (selected) => {
-    setMoreFilters((prev) => ({ ...prev, department: selected.value }));
-  };
-
-  const handleInstructorChange = (e) => {
-    setMoreFilters((prev) => ({ ...prev, instructor: e.target.value }));
-  };
-
-  const handleDateAddedChange = (selected) => {
-    setMoreFilters((prev) => ({ ...prev, dateAdded: selected.value }));
-  };
-
-  const handleLanguageChange = (selected) => {
-    setMoreFilters((prev) => ({ ...prev, language: selected.value }));
-  };
-
-  const applyMoreFilters = () => {
-    console.log('Applying filters:', moreFilters);
-    setShowMoreFilters(false);
-  };
-
-  const resetMoreFilters = () => {
-    setMoreFilters({
-      department: 'all',
-      instructor: '',
-      dateAdded: 'any',
-      language: 'en',
-    });
-  };
-
-  const getSelectedOption = (value, options) => {
-    return options.find((option) => option.value === value) || options[0];
-  };
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -185,7 +168,7 @@ const SearchToolbar = ({
           <div className="relative">
             <Input
               type="search"
-              placeholder="Search courses, topics, or instructors..."
+              placeholder="Search courses"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-10 pr-10"
@@ -220,114 +203,20 @@ const SearchToolbar = ({
                   setShowMoreFilters(false);
                 }}
                 className={isAdvancedOpen ? 'bg-primary/10 text-primary' : ''}
+                disabled={loading}
               >
                 <Icon name="Filter" size={14} className="mr-2" />
                 Filters
+                {loading && <span className="ml-2">...</span>}
               </Button>
 
               {isAdvancedOpen && (
-                <div className="absolute mt-2 left-0 z-50 w-[360px] bg-background border border-border shadow-lg rounded-md p-4 flex flex-col gap-6">
+                <div className="absolute mt-2 left-0 z-50 w-[360px] bg-background border border-border shadow-lg rounded-md p-4 flex flex-col gap-6 max-h-96 overflow-y-auto">
                   {filtersList.map((section) =>
-                    renderFilterGroup(section.title, section.key, section.options)
+                    section.options.length > 0 ? (
+                      renderFilterGroup(section.title, section.key, section.options)
+                    ) : null
                   )}
-                  <div className="flex items-center justify-between">
-                    <Button variant="outline" size="sm" onClick={() => setIsAdvancedOpen(false)}>
-                      Close
-                    </Button>
-                    <div className="space-x-2">
-                      <Button variant="outline" size="sm" onClick={onClearAll}>
-                        Reset
-                      </Button>
-                      <Button variant="default" size="sm" onClick={() => setIsAdvancedOpen(false)}>
-                        Apply
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* More Filters */}
-            <div className="relative" ref={moreFilterRef}>
-              <div className="min-w-[160px]">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowMoreFilters(!showMoreFilters);
-                    setIsAdvancedOpen(false);
-                  }}
-                  className={showMoreFilters ? 'bg-primary/10 text-primary' : ''}
-                >
-                  <Icon name="Settings" size={14} className="mr-2" />
-                  More Filters
-                </Button>
-              </div>
-
-              {showMoreFilters && (
-                <div className="absolute mt-2 left-0 z-50 w-[360px] bg-background border border-border shadow-lg rounded-md p-4">
-                  <div className="flex flex-col gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Department
-                      </label>
-                      <Select
-                        value={getSelectedOption(moreFilters.department, departmentOptions)}
-                        onChange={handleDepartmentChange}
-                        options={departmentOptions}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Instructor
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="Search by instructor name"
-                        value={moreFilters.instructor}
-                        onChange={handleInstructorChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Date Added
-                      </label>
-                      <Select
-                        value={getSelectedOption(moreFilters.dateAdded, dateAddedOptions)}
-                        onChange={handleDateAddedChange}
-                        options={dateAddedOptions}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Language
-                      </label>
-                      <Select
-                        value={getSelectedOption(moreFilters.language, languageOptions)}
-                        onChange={handleLanguageChange}
-                        options={languageOptions}
-                      />
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          resetMoreFilters();
-                          setShowMoreFilters(false);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button variant="default" size="sm" onClick={applyMoreFilters}>
-                        Apply
-                      </Button>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
@@ -374,15 +263,15 @@ const SearchToolbar = ({
 
         <div className="hidden md:flex items-center space-x-2">
           <span className="text-sm text-muted-foreground mr-2">Quick:</span>
-          {['Leadership', 'Technical', 'Compliance', 'Soft Skills'].map((category) => (
+          {categories.slice(0, 4).map((category) => (
             <Button
-              key={category}
+              key={category.id}
               variant="outline"
               size="sm"
-              onClick={() => onSearchChange(category)}
+              onClick={() => onSearchChange(category.label)}
               className="h-7 px-3 text-xs"
             >
-              {category}
+              {category.label}
             </Button>
           ))}
         </div>

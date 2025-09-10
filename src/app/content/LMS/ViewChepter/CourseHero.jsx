@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useState } from "react"; // ✅ added useEffect
 import Icon from '../../../../components/AppIcon';
 import Image from '../../../../components/AppImage';
 import { Button } from '../../../../components/ui/button';
 
+
+const DEFAULT_IMAGE =
+  'https://erp.triz.co.in/storage/SubStdMapping/SubStdMap_2020-12-29_05-56-03.svg'
 const CourseHero = ({ course, onStartCourse, onContinueCourse }) => {
+
+  const [imgSrc, setImgSrc] = useState(course.thumbnail?.trim() || DEFAULT_IMAGE);
+  const isDefault = imgSrc === DEFAULT_IMAGE;
   // Handle case where course might be null or undefined
   if (!course) {
     return (
@@ -27,10 +33,14 @@ const CourseHero = ({ course, onStartCourse, onContinueCourse }) => {
         {/* Course Thumbnail */}
         <div className="lg:w-1/3 h-48 lg:h-64 overflow-hidden">
           <Image
-            src={course.thumbnail}
+            src={imgSrc}
             alt={course.title}
-            className="w-full h-full object-cover"
-            fallbackSrc="/placeholder.jpg"
+            width={280}
+            height={280}
+            // className="object-cover rounded-md"
+            className="  object-cover"
+            // fallbackSrc="/placeholder.jpg"
+            onError={() => setImgSrc(DEFAULT_IMAGE)}
           />
         </div>
 
@@ -102,36 +112,69 @@ const CourseHero = ({ course, onStartCourse, onContinueCourse }) => {
             )} */}
 
             {/* Modules Count with Icon */}
+            {/* <div className="flex items-center gap-6 mb-6">
+              {/* Modules Count */}
+              {/* <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+                  <Icon name="List" size={18} className="text-accent-foreground" />
+                </div>
+                <div>
+                  <div className="font-medium text-foreground flex items-center gap-1">
+                    Modules
+                    <span className="ml-1 text-xs bg-muted text-foreground px-2 py-0.5 rounded-full">
+                      {totalResources}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Learning Units</p>
+                </div>
+              </div> */}
+
+              {/* Resources Count */}
+              {/* <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Icon name="Download" size={18} />
+                </div>
+                <div>
+                  <div className="font-medium text-foreground flex items-center gap-1">
+                    Resources
+                    <span className="ml-1 text-xs bg-muted text-foreground px-2 py-0.5 rounded-full">
+                      {course.resourcesCount || 0}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Study Materials</p>
+                </div>
+              </div> */}
+            {/* </div> */} 
             <div className="flex items-center gap-6 mb-6">
   {/* Modules Count */}
   <div className="flex items-center gap-3">
-    <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
-      <Icon name="List" size={18} className="text-accent-foreground" />
+    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+      <Icon name="List" size={18} className="text-blue-600" />
     </div>
     <div>
-      <div className="font-medium text-foreground flex items-center gap-1">
+      <div className="font-medium text-blue-800 flex items-center gap-1">
         Modules
-        <span className="ml-1 text-xs bg-muted text-foreground px-2 py-0.5 rounded-full">
+        <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
           {totalResources}
         </span>
       </div>
-      <p className="text-sm text-muted-foreground">Learning Units</p>
+      <p className="text-sm text-blue-600">Learning Units</p>
     </div>
   </div>
 
   {/* Resources Count */}
   <div className="flex items-center gap-3">
-    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-      <Icon name="Download" size={18}  />
+    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+      <Icon name="Download" size={18} className="text-green-600" />
     </div>
     <div>
-      <div className="font-medium text-foreground flex items-center gap-1">
+      <div className="font-medium text-green-800 flex items-center gap-1">
         Resources
-        <span className="ml-1 text-xs bg-muted text-foreground px-2 py-0.5 rounded-full">
-        {course.resourcesCount || 0}
+        <span className="ml-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+          {course.resourcesCount || 0}
         </span>
       </div>
-      <p className="text-sm text-muted-foreground">Study Materials</p>
+      <p className="text-sm text-green-600">Study Materials</p>
     </div>
   </div>
 </div>
