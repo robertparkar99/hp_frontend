@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { MetricCard } from "./MetricCard";
 import { OrganizationTree } from "./OrganizationTree";
 import { RecentActivity } from "./RecentActivity";
+import OrganizationProfileManagement from "@/app/content/organization-profile-management"; // 🔹 import component
 import {
   Users,
   Building2,
@@ -57,7 +58,6 @@ type DashboardData = {
 export function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [sessionData, setSessionData] = useState<{
     url: string;
     token: string;
@@ -65,6 +65,11 @@ export function Dashboard() {
     orgType: string;
     userId: string;
   } | null>(null);
+
+  // 🔹 current view state
+  const [activeView, setActiveView] = useState<"dashboard" | "manageUsers">(
+    "dashboard"
+  );
 
   // 🔹 Load session data from localStorage
   useEffect(() => {
@@ -90,7 +95,7 @@ export function Dashboard() {
   // 🔹 Fetch dashboard when sessionData is ready
   useEffect(() => {
     async function fetchDashboard() {
-      if (!sessionData) return; // wait until session data is ready
+      if (!sessionData) return;
 
       setLoading(true);
       try {
@@ -123,6 +128,11 @@ export function Dashboard() {
         ? item.action_taken.toLowerCase().includes("counseling")
         : false,
     })) || [];
+
+  // 🔹 switch view rendering
+  if (activeView === "manageUsers") {
+    return <OrganizationProfileManagement />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -187,10 +197,16 @@ export function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-20 flex-col gap-2">
+                {/* 🔹 Render component instead of routing */}
+                <Button
+                  variant="outline"
+                  className="h-20 flex-col gap-2"
+                  onClick={() => setActiveView("manageUsers")}
+                >
                   <Users className="h-6 w-6 text-primary" />
                   <span className="text-sm">Manage Users</span>
                 </Button>
+
                 <Button variant="outline" className="h-20 flex-col gap-2">
                   <Building2 className="h-6 w-6 text-primary" />
                   <span className="text-sm">Edit Structure</span>
@@ -210,10 +226,15 @@ export function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AudioLines className="text-primary" />
-                  Diciplinary
+                  Disciplinary
                 </CardTitle>
               </CardHeader>
               <div className="space-y-4 overflow-y-auto h-[280px] pr-2 scrollbar-hide p-4">
+                {departmentOverview.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No recent disciplinary data
+                  </p>
+                )}
                 {departmentOverview.map((dept, index) => (
                   <div
                     key={index}
@@ -233,7 +254,9 @@ export function Dashboard() {
                       >
                         {dept.change}
                       </p>
-                      <p className="text-xs text-muted-foreground">{dept.status}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {dept.status}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -245,3 +268,4 @@ export function Dashboard() {
     </div>
   );
 }
+  
