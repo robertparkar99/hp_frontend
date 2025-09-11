@@ -60,6 +60,8 @@ interface Skill {
     jobrole: string;
     jobrole_skill_id: number;
     knowledge: any[];
+    behaviour: any[];
+    attitude: any[];
     proficiency_level: string;
     skill: string;
     skill_id: number;
@@ -70,9 +72,11 @@ interface JobroleNewProps {
     onBack: () => void;
     knowledge: any[];
     ability: any[];
+    behaviour: any[];
+    attitude: any[];
     skills: Skill[];
 }
-export default function Index({ onBack, knowledge, ability, skills }: JobroleNewProps) {
+export default function Index({ onBack, knowledge, ability,behaviour,attitude, skills }: JobroleNewProps) {
     const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
     return (
         <div className="bg-white">
@@ -197,6 +201,106 @@ export default function Index({ onBack, knowledge, ability, skills }: JobroleNew
                                     </div>
                                 </div>
                             </div>
+
+                            {/* behaviour Section */}
+                            <div>
+                                <div className="mb-1">
+                                    <h2 className="text-[#393939] font-inter text-sm font-bold mb-1">
+                                        behaviour:
+                                    </h2>
+                                    <div className="w-full h-[1px] bg-[#686868]"></div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-1">
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px]">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Coding languages for programming of algorithms and signals
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px]">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Usage of analytics platforms and tools
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px] col-span-2">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Range and application of various statistical methods and
+                                            algorithms
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px]">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Range and application of various types of data models
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px]">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Statistical modelling techniques
+                                        </p>
+                                    </div>
+                                    <div className="bg-gradient-to-r from-[#1E8C7A] via-[#0E4037] to-[#082621] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px] col-span-2">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Types of statistical analyses, data models, algorithms and
+                                            advanced computational methods
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px] col-span-2">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Data analytics and modelling business use cases
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* attitude Section */}
+                            <div>
+                                <div className="mb-1">
+                                    <h2 className="text-[#393939] font-inter text-sm font-bold mb-1">
+                                        attitude:
+                                    </h2>
+                                    <div className="w-full h-[1px] bg-[#686868]"></div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-1">
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px]">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Coding languages for programming of algorithms and signals
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px]">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Usage of analytics platforms and tools
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px] col-span-2">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Range and application of various statistical methods and
+                                            algorithms
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px]">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Range and application of various types of data models
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px]">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Statistical modelling techniques
+                                        </p>
+                                    </div>
+                                    <div className="bg-gradient-to-r from-[#1E8C7A] via-[#0E4037] to-[#082621] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px] col-span-2">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Types of statistical analyses, data models, algorithms and
+                                            advanced computational methods
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#007BE5] rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.25),0px_1px_1px_0px_rgba(195,255,245,0.35)_inset] flex items-center justify-center p-1 h-[40px] col-span-2">
+                                        <p className="text-white font-bold text-[9px] text-center leading-tight">
+                                            Data analytics and modelling business use cases
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -263,19 +367,19 @@ export default function Index({ onBack, knowledge, ability, skills }: JobroleNew
                         {/* Main Content */}
                         <div className="flex-1 space-y-4">
                             {/* Knowledge Section */}
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <div>
+                            <div >
+                                <div className="w-full flex items-center justify-between mb-3">
+                                    <div className="w-full">
                                         <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
                                             Knowledge:
                                         </h2>
-                                        <div className="w-[100vh] h-[3px] bg-[#686868]"></div>
+                                        <div className="w-full h-[3px] bg-[#686868]"></div>
                                     </div>
-                                    <img
+                                    {/* <img
                                         src="https://api.builder.io/api/v1/image/assets/TEMP/96c5e570547156dbec01c64c2b33e42ed2609d23?width=161"
                                         alt=""
                                         className="w-[50px] h-[47px]"
-                                    />
+                                    /> */}
                                 </div>
 
                                 {/* <div className="h-[280px] w-full pt-2">
@@ -293,24 +397,90 @@ export default function Index({ onBack, knowledge, ability, skills }: JobroleNew
                                 </div> */}
                                 <DynamicBentoGrid items={selectedSkill?.knowledge || knowledge} />
 
-                            </div>
+                            </div >
 
                             {/* Ability Section */}
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <div>
+                            <div >
+                                <div className="w-full flex items-center justify-between mb-3">
+                                    <div className="w-full">
                                         <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
                                             Ability:
                                         </h2>
-                                        <div className="w-[100vh] h-[3px] bg-[#686868]"></div>
+                                        <div className="w-full h-[3px] bg-[#686868]"></div>
                                     </div>
-                                    <img
+                                    {/* <img
                                         src="https://api.builder.io/api/v1/image/assets/TEMP/9244e2a21aa3673a48797299453c941622eefb86?width=200"
                                         alt=""
                                         className="w-[60px] h-[34px]"
-                                    />
+                                    /> */}
                                 </div>
                                 <DynamicBentoAbillity items={selectedSkill?.ability || ability} />
+                            </div>
+
+                              {/* behaviour Section */}
+                            <div>
+                                <div className="w-full flex items-center justify-between mb-3">
+                                    <div className="w-full">
+                                        <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
+                                            Behaviour:
+                                        </h2>
+                                        <div className="w-full h-[3px] bg-[#686868]"></div>
+                                    </div>
+                                    {/* <img
+                                        src="https://api.builder.io/api/v1/image/assets/TEMP/96c5e570547156dbec01c64c2b33e42ed2609d23?width=161"
+                                        alt=""
+                                        className="w-[50px] h-[47px]"
+                                    /> */}
+                                </div>
+
+                                {/* <div className="h-[280px] w-full pt-2">
+                                    <BentoGrid>
+                                        <BentoItem>Coding languages for programming of algorithms and signals</BentoItem>
+                                        <BentoItem>Usage of analytics platforms and tools</BentoItem>
+                                        <BentoItem>Range and application of various statistical methods and algorithms</BentoItem>
+                                        <BentoItem>Range and application of various types of data models</BentoItem>
+                                        <BentoItem>Statistical modelling techniques</BentoItem>
+                                        <BentoItem>
+                                            Types of statistical analyses, data models, algorithms and advanced computational methods
+                                        </BentoItem>
+                                        <BentoItem>Data analytics and modelling business use cases</BentoItem>
+                                    </BentoGrid>
+                                </div> */}
+                                <DynamicBentoGrid items={selectedSkill?.behaviour || behaviour} />
+
+                            </div>
+
+                              {/* attitude Section */}
+                            <div >
+                                <div className="w-full flex items-center justify-between mb-3">
+                                    <div className="w-full">
+                                        <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
+                                            Attitude:
+                                        </h2>
+                                        <div className="w-full h-[3px] bg-[#686868]"></div>
+                                    </div>
+                                    {/* <img
+                                        src="https://api.builder.io/api/v1/image/assets/TEMP/96c5e570547156dbec01c64c2b33e42ed2609d23?width=161"
+                                        alt=""
+                                        className="w-[50px] h-[47px]"
+                                    /> */}
+                                </div>
+
+                                {/* <div className="h-[280px] w-full pt-2">
+                                    <BentoGrid>
+                                        <BentoItem>Coding languages for programming of algorithms and signals</BentoItem>
+                                        <BentoItem>Usage of analytics platforms and tools</BentoItem>
+                                        <BentoItem>Range and application of various statistical methods and algorithms</BentoItem>
+                                        <BentoItem>Range and application of various types of data models</BentoItem>
+                                        <BentoItem>Statistical modelling techniques</BentoItem>
+                                        <BentoItem>
+                                            Types of statistical analyses, data models, algorithms and advanced computational methods
+                                        </BentoItem>
+                                        <BentoItem>Data analytics and modelling business use cases</BentoItem>
+                                    </BentoGrid>
+                                </div> */}
+                                <DynamicBentoGrid items={selectedSkill?.attitude || attitude} />
+
                             </div>
                         </div>
                     </div>
