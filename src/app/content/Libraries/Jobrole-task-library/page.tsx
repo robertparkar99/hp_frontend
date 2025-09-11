@@ -450,13 +450,13 @@ const CriticalWorkFunctionGrid = () => {
         >
           <DialogContent className="max-w-4xl max-h-[95vh] bg-[#f1fbff] overflow-y-auto hide-scroll">
             <DialogHeader>
-              <DialogTitle className="border-b-3 pb-2">{viewData?.task}</DialogTitle>
+              <DialogTitle className="border-b-2 pb-2">{viewData?.task}</DialogTitle>
             </DialogHeader>
             <ul>
               <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#6fc7ff] p-2 rounded-full">Critical Work Function</span> <span className="p-1">{viewData?.critical_work_function}</span></li>
-              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#6fc7ff] p-2 rounded-full">Department</span> <span className="p-1">{viewData?.sector}</span></li>
-              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#6fc7ff] p-2 rounded-full">Sector</span>   <span className="p-1">{viewData?.track}</span></li>
-              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#6fc7ff] p-2 rounded-full">Jobrole</span>  <span className="p-1">{viewData?.jobrole}</span></li>
+              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#fcf38d] p-2 rounded-full">Department</span> <span className="p-1">{viewData?.sector}</span></li>
+              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#fcb0b0] p-2 rounded-full">Sector</span>   <span className="p-1">{viewData?.track}</span></li>
+              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#8dd39c] p-2 rounded-full">Jobrole</span>  <span className="p-1">{viewData?.jobrole}</span></li>
             </ul>
           </DialogContent>
         </Dialog>
