@@ -911,6 +911,29 @@ interface Task {
   allocatedBy: string;
   image?: string;
 }
+
+interface Department {
+  id: number;
+  department: string;
+}
+
+// Update the GapAnalysisData interface
+interface GapAnalysisData {
+  title: string;
+  totalLevels: number;
+  currentLevel: number;
+  gap: number;
+  gapText: string;
+  upskillingCandidates: {
+    name: string;
+    role: string;
+    totalSkills: number;
+    skillList: string;
+    image?: string;
+    skillLevel?: string; // Add skill level
+  }[];
+}
+
 interface MySkill {
   jobrole_skill_id: number;
   jobrole: string;
@@ -956,6 +979,8 @@ interface DashboardResponse {
   mySKill?: MySkill[];
   myGrowth?: MyGrowth[];
   current_level: number;
+  departmentList?: Department[];
+  skillHeatmap?: any;
 }
 
 // Interface for skills data in the matrix
@@ -972,6 +997,17 @@ export default function Dashboard() {
   const [weekTasks, setWeekTasks] = useState<Task[]>([]);
   const [mySkills, setMySkills] = useState<MySkill[]>([]);
   const [myGrowth, setMyGrowth] = useState<MyGrowth[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [isGapAnalysisOpen, setIsGapAnalysisOpen] = useState(false);
+  const [selectedGapAnalysis, setSelectedGapAnalysis] = useState<GapAnalysisData | null>(null);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [skillHeatmap, setSkillHeatmap] = useState<any>({});
+  const [selectedCandidateSkills, setSelectedCandidateSkills] = useState<string[]>([]);
+  const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
+  const [expandedEmployeeIndex, setExpandedEmployeeIndex] = useState<number | null>(null);
+  const toggleSkills = (index: number) => {
+    setExpandedEmployeeIndex(expandedEmployeeIndex === index ? null : index);
+  };
 
   const [stats, setStats] = useState({
     totalEmployees: 0,
@@ -996,10 +1032,7 @@ export default function Dashboard() {
     { title: "ability", icon: "mdi-lightbulb-on" },
     { title: "behaviour", icon: "mdi-account-group" },
     { title: "attitude", icon: "mdi-emoticon-happy-outline" },
-
   ];
-
-
 
   const placeholderImage =
     "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
@@ -1079,13 +1112,25 @@ export default function Dashboard() {
         setWidgetOptions(data.widget ?? []);
         setMySkills(data.mySKill ?? []);
         setMyGrowth(data.myGrowth ?? []);
-        const apiLevel = data.current_level ?? 0;
+        setDepartments(data.departmentList || []);
+        setSkillHeatmap(data.skillHeatmap || {});
 
+        // Extract unique skills from skillHeatmap
+        const allSkills = new Set<string>();
+        if (data.skillHeatmap) {
+          Object.values(data.skillHeatmap).forEach((deptData: any) => {
+            Object.keys(deptData).forEach(skill => {
+              allSkills.add(skill);
+            });
+          });
+        }
+        setSkills(Array.from(allSkills));
+
+        const apiLevel = data.current_level ?? 0;
         setCurrentLevel(apiLevel);
 
         // update max level dynamically
         setMaxLevel((prevMax) => (apiLevel > prevMax ? apiLevel : prevMax));
-
 
         setStats({
           totalEmployees: data.totle_employees ?? 0,
@@ -1191,6 +1236,17 @@ export default function Dashboard() {
     }
   };
 
+  // Get color for skill heatmap cells based on gap value
+  const getSkillGapColor = (totalEmp: number, requiredEmp: number) => {
+    if (totalEmp === 0) return "bg-red-500"; // Critical gap - no employees
+    const gapPercentage = (requiredEmp - totalEmp) / requiredEmp;
+
+    if (gapPercentage >= 0.5) return "bg-red-500"; // Critical gap
+    if (gapPercentage >= 0.3) return "bg-orange-400"; // High gap
+    if (gapPercentage >= 0.1) return "bg-yellow-400"; // Medium gap
+    return "bg-green-500"; // Healthy
+  };
+
   const maxValue = Math.max(...chartData.map((d) => d.value), 1);
 
   // Check if a widget should be shown based on selection
@@ -1209,6 +1265,56 @@ export default function Dashboard() {
       const foundSkill = mySkills.find(skill => skill.skill === skillName) || null;
       setSelectedSkill(foundSkill);
     }
+  };
+
+  // Enhanced function to handle multiple separators
+  // More robust function with fallback
+  const handleSkillListClick = (skillList: string) => {
+    let skills: string[] = [];
+
+    if (skillList && typeof skillList === 'string') {
+      // Try multiple separators
+      const separators = /[,;|/]/;
+      skills = skillList.split(separators)
+        .map(skill => skill.trim())
+        .filter(skill => skill.length > 0);
+    } else {
+      skills = ['No skills listed'];
+    }
+
+    setSelectedCandidateSkills(skills);
+    setIsSkillsModalOpen(true);
+  };
+
+  // Add this function to handle cell clicks
+  const handleCellClick = (department: string, skill: string, totalEmp: number, requiredEmp: number, skillData: any[]) => {
+    // Get levels from API data or use defaults
+    const skillLevels = skillData?.find((emp: any) => emp.skill_level)?.skill_level || skill;
+    // If your API has max_level field
+    const totalLevels = skillData?.find((emp: any) => emp.max_level)?.max_level || 3;
+    const currentLevel = parseInt(skillLevels.replace("Level ", ""))
+    const gap = (currentLevel) ? totalLevels - currentLevel : 0;
+
+
+    const gapData: GapAnalysisData = {
+      title: `${skill} in ${department}`,
+      totalLevels: totalLevels,
+      currentLevel: currentLevel,
+      gap: gap,
+      gapText: gap > 0 ? `${gap} more levels needed` : "Maximum level achieved",
+      upskillingCandidates: skillData?.map((employee: any) => ({
+        name: employee.user_name || "Unknown Employee",
+        role: employee.jobrole || "Unknown Role",
+        totalSkills: employee.total_skills || 0,
+        skillList: employee.skillList || "No skills listed",
+        image: employee.image ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}` : placeholderImage,
+        skillLevel: employee.skill_level || "Level 1" // Add skill level from API
+      })) || []
+    };
+
+
+    setSelectedGapAnalysis(gapData);
+    setIsGapAnalysisOpen(true);
   };
 
   // Convert skill_level to percent
@@ -1369,73 +1475,61 @@ export default function Dashboard() {
                     <thead>
                       <tr className="text-left">
                         <th className="px-3 py-2">Department</th>
-                        <th className="px-3 py-2">AI/ML</th>
-                        <th className="px-3 py-2">Cloud Security</th>
-                        <th className="px-3 py-2">Data Analytics</th>
-                        <th className="px-3 py-2">Python</th>
-                        <th className="px-3 py-2">React</th>
-                        <th className="px-3 py-2">Digital Marketing</th>
-                        <th className="px-3 py-2">Content Strategy</th>
-                        <th className="px-3 py-2">SEO/SEM</th>
+                        {skills.map((skill) => (
+                          <th key={skill} className="px-3 py-2 text-center">
+                            {skill}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
+
                     <tbody>
-                      <tr>
-                        <td className="px-3 py-2 font-medium bg-gray-100">Engineering</td>
-                        <td className="bg-red-500 text-white text-center">-12</td>
-                        <td className="bg-orange-400 text-white text-center">-8</td>
-                        <td className="bg-green-200 text-center">✓</td>
-                        <td className="bg-green-200 text-center">✓</td>
-                        <td className="bg-orange-400 text-white text-center">-6</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-2 font-medium bg-gray-100">Marketing</td>
-                        <td className="bg-red-500 text-white text-center">-4</td>
-                        <td className="bg-orange-400 text-white text-center">-5</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td className="bg-green-200 text-center">✓</td>
-                        <td className="bg-green-200 text-center">✓</td>
-                        <td className="bg-orange-400 text-white text-center">-3</td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-2 font-medium bg-gray-100">Sales</td>
-                        <td></td>
-                        <td></td>
-                        <td className="bg-red-500 text-white text-center">-6</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-2 font-medium bg-gray-100">Finance</td>
-                        <td></td>
-                        <td></td>
-                        <td className="bg-orange-400 text-white text-center">-4</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-2 font-medium bg-gray-100">HR</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                      </tr>
+                      {departments.map((dept) => (
+                        <tr key={dept.id}>
+                          <td className="px-3 py-2 font-medium bg-gray-100">
+                            {dept.department}
+                          </td>
+
+                          {skills.map((skill) => {
+                            const deptData = skillHeatmap[dept.department] || {};
+                            const skillData = deptData[skill];
+                            const totalEmp = skillData?.total_emp || 0;
+
+                            // Get the required number from your data instead of hardcoding
+                            const requiredEmp = skillData?.required_level || 0;
+
+                            // Assign colors based on employee count compared to requirement
+                            let cellColor = "";
+                            if (totalEmp === 0) {
+                              cellColor = "bg-red-400"; // critical gap 
+                            } else if (totalEmp === 1) {
+                              cellColor = "bg-orange-400"; // warning 
+                            } else if (totalEmp === 2) {
+                              cellColor = "bg-green-500"; // good 
+                            } else {
+                              cellColor = "bg-blue-500"; // optional for >2 
+                            }
+
+                            return (
+                              <td
+                                key={skill}
+                                className={`text-white text-center rounded-sm cursor-pointer transition-colors p-2 ${cellColor} hover:opacity-80`}
+                                onClick={() => handleCellClick(
+                                  dept.department,
+                                  skill,
+                                  totalEmp,
+                                  requiredEmp, // Pass the actual required level
+                                  skillData?.skillData || [] // Pass the skillData array
+                                )}
+                              >
+                                {totalEmp}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
                     </tbody>
+
                   </table>
                 </div>
 
@@ -1444,11 +1538,123 @@ export default function Dashboard() {
                 </p>
               </div>
 
+              {/* Gap Analysis Dialog */}
+              <>
+                {/* Gap Analysis Dialog */}
+                <Dialog open={isGapAnalysisOpen} onOpenChange={setIsGapAnalysisOpen}>
+                  <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6 hide-scroll">
+                    <DialogHeader>
+                      <DialogTitle>Gap Analysis</DialogTitle>
+                    </DialogHeader>
+                    {selectedGapAnalysis && (
+                      <div className="space-y-6">
+                        {/* Header */}
+                        <div>
+                          <h2 className="text-1xl mt-2">{selectedGapAnalysis.title}</h2>
+                        </div>
+
+                        {/* Total Levels and Current Level */}
+                        <div className="flex justify-between items-center grid-cols-2 border rounded-lg p-4 bg-gray-50">
+                          <div className="text-center">
+                            <div className="text-3xl font-bold">{selectedGapAnalysis.totalLevels}</div>
+                            <div className="text-sm mt-1">Required Level</div>
+                          </div>
+
+                          <div className="text-center">
+                            <div className="text-3xl font-bold">{selectedGapAnalysis.currentLevel}</div>
+                            <div className="text-sm mt-1">Current Level</div>
+                          </div>
+                        </div>
+
+                        {/* Gap */}
+                        <div className="bg-red-200 text-center border-t border-b border-gray-300 py-4">
+                          <h3 className="text-red text-xl font-bold ">Gap: {selectedGapAnalysis.gap}</h3>
+                          <p className="text-sm mt-1 ">{selectedGapAnalysis.gapText}</p>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="w-full h-px bg-gray-300"></div>
+
+                        {/* Upskilling Candidates with their actual levels */}
+                        <div>
+                          <h3 className="font-semibold text-lg mb-3">Upskilling Candidates</h3>
+                          <div className="space-y-4">
+                            {selectedGapAnalysis.upskillingCandidates.map((candidate, index) => {
+                              // Parse the skillList to handle multiple skills separated by commas
+                              const skills = candidate.skillList
+                                ? candidate.skillList.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0)
+                                : ['No skills listed'];
+
+                              return (
+                                <div key={index} className="border rounded-lg p-3">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-3">
+                                      <img
+                                        src={candidate.image || placeholderImage}
+                                        alt={candidate.name}
+                                        className="w-10 h-10 rounded-full object-cover"
+                                        onError={(e) => {
+                                          (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                                        }}
+                                      />
+                                      <div>
+                                        <div className="font-medium">{candidate.name}</div>
+                                        <div className="text-sm text-gray-600">{candidate.role}</div>
+                                      </div>
+                                    </div>
+                                    <div
+                                      className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-300 cursor-pointer hover:bg-blue-200"
+                                      onClick={() => toggleSkills(index)}
+                                    >
+                                      {candidate.totalSkills} Skills
+                                    </div>
+                                  </div>
+
+                                  {/* Skills list that appears when clicked */}
+                                  {expandedEmployeeIndex === index && (
+                                    <div className="mt-3 pl-12">
+                                      <h4 className="text-sm font-semibold mb-2">Skills:</h4>
+                                      <div className="space-y-2">
+                                        {skills && skills.length > 0 ? (
+                                          // split skills string if it contains |||
+                                          skills
+                                            .join("|||") // In case skills is array of strings
+                                            .split("|||")
+                                            .map((skill, skillIndex) => (
+                                              <div
+                                                key={skillIndex}
+                                                className="flex items-center gap-2 p-2 bg-gray-100 rounded"
+                                              >
+                                                <span className="mdi mdi-check-circle text-green-500 text-sm"></span>
+                                                <span className="text-sm">{skill.trim()}</span>
+                                              </div>
+                                            ))
+                                        ) : (
+                                          <div className="flex items-center gap-2 p-2 bg-gray-100 rounded">
+                                            <span className="mdi mdi-alert-circle text-yellow-500 text-sm"></span>
+                                            <span className="text-sm">No skills listed</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </>
+
+
               {/* Right: Risk & Opportunity Matrix */}
               <div className="bg-white rounded-xl shadow p-4">
-                <h2 className="font-semibold text-lg">Risk & Opportunity Matrix</h2>
+                <h2 className="font-semibold text-lg">Employee Attendance</h2>
                 <p className="text-xs text-gray-500 mb-3">
-                  Skills prioritization by business impact and availability
+                  Track and manage employee attendance efficiently
                 </p>
 
                 {/* Matrix Visualization */}
