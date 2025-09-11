@@ -9,6 +9,8 @@ const LevelResponsibility = () => {
   const [activeLevel, setActiveLevel] = useState('');
   const [activeSection, setActiveSection] = useState<'description' | 'responsibility' | 'business'>('description');
 
+  const cleanText = (text?: string) => text?.replace(/in SFIA/g, "").trim() || "";
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('userData');
@@ -125,24 +127,24 @@ const LevelResponsibility = () => {
       {activeSection === 'description' && (
         <>
           {/* Level Badge */}
-   <div className="w-full flex justify-start mt-6">
-  <div
-    className="px-6 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-left"
-    style={{
-      background:
-        "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
-    }}
-  >
-    <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 lg:gap-4">
-      <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
-        Level {activeLevel}:
-      </div>
-      <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
-        {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ""}
-      </div>
-    </div>
-  </div>
-</div>
+          <div className="w-full flex justify-start mt-6">
+            <div
+              className="px-6 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-left"
+              style={{
+                background:
+                  "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
+              }}
+            >
+              <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 lg:gap-4">
+                <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
+                  Level {activeLevel}:
+                </div>
+                <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
+                  {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ""}
+                </div>
+              </div>
+            </div>
+          </div>
 
 
           {/* Description + Guidance Notes */}
@@ -203,7 +205,7 @@ const LevelResponsibility = () => {
                   className="hide-scrollbar" // 👈 custom class to hide scrollbar
                 >
                   <p className="text-black text-[15px] whitespace-pre-line">
-                    {activeData.attribute_guidance_notes}
+                    {cleanText(activeData.attribute_guidance_notes)}
 
                   </p>
                 </div>
@@ -226,7 +228,7 @@ const LevelResponsibility = () => {
               <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
                 {key}
               </h4>
-              <p className="text-sm text-black">{attr.attribute_description}</p>
+              <p className="text-sm text-black">{cleanText(attr.attribute_description)}</p>
             </div>
           ))}
         </div>
@@ -243,7 +245,7 @@ const LevelResponsibility = () => {
               <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
                 {key}
               </h4>
-              <p className="text-sm text-black">{attr.attribute_description}</p>
+              <p className="text-sm text-black">{cleanText(attr.attribute_description)}</p>
             </div>
           ))}
         </div>
