@@ -72,7 +72,7 @@ export const LogoSection: React.FC = () => {
     );
   };
 
-  const menuItems = [{ label: "Groupwise Rights", path: "groupWiseRights/page.tsx" }];
+  const menuItems = [{ label: "Rights Management", path: "groupWiseRights/page.tsx" }];
 
   return (
     <div className="flex relative z-50 items-center">
@@ -152,7 +152,13 @@ export const LogoSection: React.FC = () => {
                 ))}
                 <li
                   className="px-4 py-2 hover:bg-red-50 cursor-pointer text-sm text-red-500 border-t border-gray-100"
-                  onClick={handleLogout}
+                  onClick={() => {
+                    // Clear all local storage
+                    localStorage.clear();
+
+                    // Redirect to '/'
+                    window.location.href = "/";
+                  }}
                 >
                   Logout
                 </li>
