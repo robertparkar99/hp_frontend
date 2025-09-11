@@ -27,6 +27,7 @@ const ChapterCard = ({
   onDeleteCourse,
   onDeleteContent,
   onEditContent,
+  onQuestionContent,
   onSaveContent,
   onViewCourse,
   sessionInfo,
@@ -297,6 +298,22 @@ const ChapterCard = ({
                     <Icon name="Plus" size={13} />
                     {/* Add */}
                   </Button>
+                  {/*Question bank open*/}
+                     <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-3 bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 hover:text-purple-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                        if (onQuestionContent) {
+                        onQuestionContent(id, course.standard_id);
+                      }
+                    }}
+                  >
+                    <Icon name="FileQuestion" size={13} />
+                    {/* Add */}
+                  </Button>
+
                   {/* Edit chapter */}
                   <Button
                     size="sm"

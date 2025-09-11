@@ -1,5 +1,3 @@
-
-
 "use client"
 
 import React, { useState, useEffect } from "react"
@@ -11,8 +9,9 @@ import AddChepterDialog from "./AddChepterDialog"
 import AddContentDialog from "./AddContentDialoge"
 import CourseHero from "./CourseHero"
 import CourseTabNavigation from "./CourseTabNavigation"
+import QuestionBank from "../questionBank/index"
 
-export default function ViewDetailPage({ subject_id, standard_id, grade = 2 }) {
+export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onClose}) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isAddContentDialogOpen, setIsAddContentDialogOpen] = useState(false)
   const [chapterToEdit, setChapterToEdit] = useState(null)
@@ -26,7 +25,11 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 }) {
   const [contentData, setContentData] = useState({})
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("modules")
+  // const [courseActiveTab, setCourseActiveTab] = useState("course")
   const [standardDetails, setStandardDetails] = useState(null)
+  const [selectedChapterId, setSelectedChapterId] = useState(null)
+  const [selectedStandardId, setSelectedStandardId] = useState(null)
+  const [showFullQuestionBank, setShowFullQuestionBank] = useState(false) // New state for full view
 
   // Session data state
   const [sessionData, setSessionData] = useState({
@@ -182,6 +185,27 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 }) {
     setCurrentChapter(null)
   }
 
+  // Handle opening question bank in full view
+  const handleOpenQuestionBank = (chapter_id, standard_id) => {
+    setSelectedChapterId(chapter_id)
+    setSelectedStandardId(standard_id)
+    setShowFullQuestionBank(true)
+  }
+
+  // Handle closing question bank and returning to modules
+  const handleCloseQuestionBank = () => {
+    setShowFullQuestionBank(false)
+    setSelectedChapterId(null)
+    setSelectedStandardId(null)
+    setActiveTab("modules")
+  }
+  // Add this handler inside your component
+const handleCloseModule = () => {
+if (onClose) {
+      onClose();
+      } // 👈 go back to course tab
+};
+
   // Format course details for CourseHero
   const formatCourseForHero = () => {
     if (!courseDetails) return null
@@ -244,6 +268,7 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 }) {
             onDeleteContent={handleDeleteContent}
             onSaveContent={handleSaveContent}
             onEditContent={handleEditContent}
+            onQuestionContent={handleOpenQuestionBank}
             sessionInfo={sessionData}
             courseDisplayName={courseDetails?.display_name || "Untitled Course"}
             standardName={standardDetails?.name || "Standard"}
@@ -253,247 +278,81 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 }) {
             No chapters found for this subject/standard.
           </div>
         )
-case "resources":
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-6 text-gray-800">
-        Resources ({calculateTotalResources()} total)
-      </h2>
-      {chapters.map((ch) => {
-        const chapterContent = contentData?.[ch.id] || {}
-        const chapterResourceCount = Object.values(chapterContent).reduce(
-          (sum, items) => sum + items.length,
-          0
-        )
+      case "resources":
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+              Resources ({calculateTotalResources()} total)
+            </h2>
+            {chapters.map((ch) => {
+              const chapterContent = contentData?.[ch.id] || {}
+              const chapterResourceCount = Object.values(chapterContent).reduce(
+                (sum, items) => sum + items.length,
+                0
+              )
 
-        return chapterResourceCount > 0 ? (
-          <div key={ch.id} className="mb-8 border-2 border-blue-200 rounded-lg p-5 bg-blue-50/30">
-            <h3 className="font-bold text-lg mb-4 text-blue-800">
-              {ch.title}
-              <span className="ml-3 text-sm text-blue-600 font-medium">
-                ({chapterResourceCount} resources)
-              </span>
-            </h3>
-            <div className="grid gap-4">
-              {Object.entries(chapterContent).map(([category, items]) =>
-                items.length > 0 ? (
-                  <div
-                    key={category}
-                    className="border-2 border-blue-100 bg-blue-50/10 p-5 rounded-lg shadow-sm"
-                  >
-                    {/* Added category heading here */}
-                    <h4 className="text-sm font-semibold text-blue-700 mb-3">{category}</h4>
-                    <ul className="space-y-3">
-                      {items.map((res) => (
-                        <li
-                          key={res.id}
-                          className="flex items-center justify-between p-4 bg-white border-2 border-blue-100 rounded-lg hover:border-blue-300 transition-colors duration-200"
+              return chapterResourceCount > 0 ? (
+                <div key={ch.id} className="mb-8 border-2 border-blue-200 rounded-lg p-5 bg-blue-50/30">
+                  <h3 className="font-bold text-lg mb-4 text-blue-800">
+                    {ch.title}
+                    <span className="ml-3 text-sm text-blue-600 font-medium">
+                      ({chapterResourceCount} resources)
+                    </span>
+                  </h3>
+                  <div className="grid gap-4">
+                    {Object.entries(chapterContent).map(([category, items]) =>
+                      items.length > 0 ? (
+                        <div
+                          key={category}
+                          className="border-2 border-blue-100 bg-blue-50/10 p-5 rounded-lg shadow-sm"
                         >
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-800 text-base">
-                              {res.title}
-                            </p>
-                            <a
-                              href={res.filename.startsWith("http://") || res.filename.startsWith("https://")
-                                ? res.filename
-                                : `https://s3-triz.fra1.digitaloceanspaces.com/public/hp_lms_content_file/${res.filename}`
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-500 hover:text-blue-700 underline"
-                            >
-                              {res.filename}
-                            </a>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                          <h4 className="text-sm font-semibold text-blue-700 mb-3">{category}</h4>
+                          <ul className="space-y-3">
+                            {items.map((res) => (
+                              <li
+                                key={res.id}
+                                className="flex items-center justify-between p-4 bg-white border-2 border-blue-100 rounded-lg hover:border-blue-300 transition-colors duration-200"
+                              >
+                                <div className="flex-1">
+                                  <p className="font-medium text-gray-800 text-base">
+                                    {res.title}
+                                  </p>
+                                  <a
+                                    href={res.filename.startsWith("http://") || res.filename.startsWith("https://")
+                                      ? res.filename
+                                      : `https://s3-triz.fra1.digitaloceanspaces.com/public/hp_lms_content_file/${res.filename}`
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-500 hover:text-blue-700 underline"
+                                  >
+                                    {res.filename}
+                                  </a>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null
+                    )}
                   </div>
-                ) : null
-              )}
-            </div>
+                </div>
+              ) : null
+            })}
+
+            {calculateTotalResources() === 0 && (
+              <div className="text-center py-12 border-2 border-blue-200 border-dashed rounded-lg bg-blue-50/20">
+                <div className="text-blue-400 mb-3">
+                  <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-700 mb-2">No resources available</h3>
+                <p className="text-gray-500">Resources will appear here once they are added to this course.</p>
+              </div>
+            )}
           </div>
-        ) : null
-      })}
-
-      {/* Empty state */}
-      {calculateTotalResources() === 0 && (
-        <div className="text-center py-12 border-2 border-blue-200 border-dashed rounded-lg bg-blue-50/20">
-          <div className="text-blue-400 mb-3">
-            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-gray-700 mb-2">No resources available</h3>
-          <p className="text-gray-500">Resources will appear here once they are added to this course.</p>
-        </div>
-      )}
-    </div>
-  )
-      // case "resources":
-      //   return (
-      //     <div className="p-4">
-      //       <h2 className="text-xl font-semibold mb-4">
-      //         Resources ({calculateTotalResources()} total)
-      //       </h2>
-      //       {chapters.map((ch) => {
-      //         const chapterContent = contentData?.[ch.id] || {}
-      //         const chapterResourceCount = Object.values(chapterContent).reduce(
-      //           (sum, items) => sum + items.length,
-      //           0
-      //         )
-
-      //         return chapterResourceCount > 0 ? (
-      //           <div key={ch.id} className="mb-6 border-b pb-4">
-      //             <h3 className="font-bold text-lg mb-3">
-      //               {ch.title}
-      //               <span className="ml-2 text-sm text-muted-foreground">
-      //                 ({chapterResourceCount} resources)
-      //               </span>
-      //             </h3>
-      //             <div className="grid gap-4">
-      //               {Object.entries(chapterContent).map(([category, items]) =>
-      //                 items.length > 0 ? (
-      //                   <div
-      //                     key={category}
-      //                     className="bg-muted/20 p-4 rounded-lg"
-      //                   >
-      //                     {/* <h4 className="font-semibold mb-2 text-foreground">
-      //                       {category}
-      //                     </h4> */}
-      //                     <ul className="space-y-2">
-      //                       {items.map((res) => (
-      //                         <li
-      //                           key={res.id}
-      //                           className="flex items-center justify-between p-2 bg-background rounded"
-      //                         >
-      //                           <div>
-      //                             <p className="font-medium text-foreground">
-      //                               {res.title}
-      //                             </p>
-      //                             {/* <p className="text-sm text-muted-foreground">
-      //                               {res.description}
-      //                             </p> */}
-      //                           </div>
-      //                           <a
-      //                             href={`${res.file_folder}/${res.filename}`}
-      //                             target="_blank"
-      //                             rel="noopener noreferrer"
-      //                             className="text-primary hover:text-primary/80 text-sm font-medium"
-      //                           >
-      //                             Download ({res.file_type})
-      //                           </a>
-      //                         </li>
-      //                       ))}
-      //                     </ul>
-      //                   </div>
-      //                 ) : null
-      //               )}
-      //             </div>
-      //           </div>
-      //         ) : null
-      //       })}
-      //     </div>
-      //   )
-      // case "resources":
-      //   return (
-      //     <div className="p-6">
-      //       <h2 className="text-2xl font-semibold mb-6 text-gray-800">
-      //         Resources ({calculateTotalResources()} total)
-      //       </h2>
-      //       {chapters.map((ch) => {
-      //         const chapterContent = contentData?.[ch.id] || {}
-      //         const chapterResourceCount = Object.values(chapterContent).reduce(
-      //           (sum, items) => sum + items.length,
-      //           0
-      //         )
-
-      //         return chapterResourceCount > 0 ? (
-      //           <div key={ch.id} className="mb-8 border-2 border-blue-200 rounded-lg p-5 bg-blue-50/30">
-      //             <h3 className="font-bold text-lg mb-4 text-blue-800">
-      //               {ch.title}
-      //               <span className="ml-3 text-sm text-blue-600 font-medium">
-      //                 ({chapterResourceCount} resources)
-      //               </span>
-      //             </h3>
-      //             <div className="grid gap-4">
-      //               {Object.entries(chapterContent).map(([category, items]) =>
-      //                 items.length > 0 ? (
-      //                   <div
-      //                     key={category}
-      //                     className="border-2 border-blue-100 bg-blue-50/10 p-5 rounded-lg shadow-sm"
-      //                   >
-      //                     <h4 className="text-sm font-semibold ">{category}</h4>
-      //                     <ul className="space-y-3">
-      //                       {items.map((res) => (
-      //                         <li
-      //                           key={res.id}
-      //                           className="flex items-center justify-between p-4 bg-white border-2 border-blue-100 rounded-lg hover:border-blue-300 transition-colors duration-200"
-      //                         >
-      //                           <div className="flex-1">
-      //                             <p className="font-medium text-gray-800 text-base">
-      //                               {res.title}
-      //                             </p>
-      //                             {/* {res.description && (
-      //                         <p className="text-sm text-gray-600 mt-1">
-      //                           {res.description}
-      //                         </p>
-      //                       )} */}
-      //                             <a
-      //                               href={res.filename.startsWith("http://") || res.filename.startsWith("https://")
-      //                                 ? res.filename
-      //                                 : `https://s3-triz.fra1.digitaloceanspaces.com/public/hp_lms_content_file/${res.filename}`
-      //                               }
-      //                               target="_blank"
-      //                               rel="noopener noreferrer"
-      //                               className="text-blue-500 hover:text-blue-700 underline"
-      //                             >
-      //                               {res.filename}
-      //                             </a>
-      //                             {/* <a
-      //                 href={`https://s3-triz.fra1.digitaloceanspaces.com/public/hp_lms_content_file/${res.filename}`}
-      //                 target="_blank"
-      //                 rel="noopener noreferrer"
-      //                 className="text-blue-500 hover:text-blue-700 underline"
-      //               >
-      //                 {res.filename}
-      //               </a> */}
-      //                             {/* <a
-      //                       href={`${res.file_folder}/${res.filename}`}
-      //                       target="_blank"
-      //                       rel="noopener noreferrer"
-      //                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ml-4 whitespace-nowrap"
-      //                     >
-      //                       Download {res.file_type && `(${res.file_type})`}
-      //                     </a> */}
-      //                           </div>
-
-      //                         </li>
-      //                       ))}
-      //                     </ul>
-      //                   </div>
-      //                 ) : null
-      //               )}
-      //             </div>
-      //           </div>
-      //         ) : null
-      //       })}
-
-      //       {/* Empty state */}
-      //       {calculateTotalResources() === 0 && (
-      //         <div className="text-center py-12 border-2 border-blue-200 border-dashed rounded-lg bg-blue-50/20">
-      //           <div className="text-blue-400 mb-3">
-      //             <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      //               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      //             </svg>
-      //           </div>
-      //           <h3 className="text-lg font-medium text-gray-700 mb-2">No resources available</h3>
-      //           <p className="text-gray-500">Resources will appear here once they are added to this course.</p>
-      //         </div>
-      //       )}
-      //     </div>
-      //   )
-
+        )
       default:
         return (
           <div className="text-center py-10">📖 Overview tab coming soon...</div>
@@ -501,10 +360,44 @@ case "resources":
     }
   }
 
+  // If we're showing the full question bank view, render only that
+  if (showFullQuestionBank) {
+    return (
+      <div className="min-h-screen bg-background p-6 pt-2">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <Button
+              variant="outline"
+              onClick={handleCloseQuestionBank}
+              className="flex items-center gap-2"
+            >
+              <Icon name="ArrowLeft" size={16} />
+              Back to Modules
+            </Button>
+          </div>
+          <QuestionBank
+            chapter_id={selectedChapterId}
+            standard_id={selectedStandardId}
+            courseDisplayName={courseDetails?.display_name || "Untitled Course"}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // Otherwise, render the normal course/module view
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
+        <Button
+          variant="outline"
+          onClick={handleCloseModule}
+          className="flex items-center gap-2"
+        >
+          <Icon name="ArrowLeft" size={16} />
+          Back to Course
+        </Button>
         <div className="flex items-center justify-between mt-8 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-foreground">

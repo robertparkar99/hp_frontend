@@ -209,6 +209,9 @@ const LearningCatalog: React.FC = () => {
     }
   }
 
+    const handleCloseViewDetail = () => {
+    setIsViewOpen(false)
+  }
   const handleLoadMore = async () => {
     return new Promise<void>((resolve) => {
       setTimeout(() => {
@@ -345,7 +348,7 @@ const LearningCatalog: React.FC = () => {
           />
         </div>
       ) : (
-        <ViewDetail subject_id={subjectId} standard_id={standardId} />
+        <ViewDetail subject_id={subjectId} standard_id={standardId} onClose={handleCloseViewDetail}  />
       )}
     </>
   )
