@@ -40,8 +40,6 @@ interface RadarProps {
 }
 
 function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
-    console.log("userCategory:", userCategory);
-
     const [data, setData] = useState<SkillData[]>([]);
     const [processedData, setProcessedData] = useState<ProcessedData>({});
     const [selectedCategory, setSelectedCategory] = useState<string>(userCategory || '');
@@ -52,23 +50,82 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
     // Required dimensions
     const DIMENSIONS = ['Skill', 'Knowledge', 'Ability', 'Attitude', 'Behavior'];
 
+    // Fixed dimension values for specific jobrole_category
+    const FIXED_DIMENSIONS: { [key: string]: RadarDataPoint[] } = {
+        "Technical/Operational": [
+            { dimension: "Skill", value: 20 },
+            { dimension: "Knowledge", value: 25 },
+            { dimension: "Ability", value: 30 },
+            { dimension: "Attitude", value: 15 },
+            { dimension: "Behavior", value: 10 },
+        ],
+        "Customer-Facing": [
+            { dimension: "Skill", value: 25 },
+            { dimension: "Knowledge", value: 15 },
+            { dimension: "Ability", value: 20 },
+            { dimension: "Attitude", value: 20 },
+            { dimension: "Behavior", value: 20 },
+        ],
+        "Managerial": [
+            { dimension: "Skill", value: 15 },
+            { dimension: "Knowledge", value: 20 },
+            { dimension: "Ability", value: 25 },
+            { dimension: "Attitude", value: 25 },
+            { dimension: "Behavior", value: 15 },
+        ],
+        "Creative/Strategic": [
+            { dimension: "Skill", value: 20 },
+            { dimension: "Knowledge", value: 10 },
+            { dimension: "Ability", value: 25 },
+            { dimension: "Attitude", value: 30 },
+            { dimension: "Behavior", value: 15 },
+        ],
+        "Compliance-Heavy": [
+            { dimension: "Skill", value: 15 },
+            { dimension: "Knowledge", value: 35 },
+            { dimension: "Ability", value: 25 },
+            { dimension: "Attitude", value: 15 },
+            { dimension: "Behavior", value: 10 },
+        ],
+    };
+    const [sessionData, setSessionData] = useState({
+        url: '',
+        subInstituteId: '',
+    });
+
+    useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+        const { APP_URL, sub_institute_id } = JSON.parse(userData);
+        setSessionData({
+            url: APP_URL,
+            subInstituteId: sub_institute_id,
+        });
+    }
+}, []);
+
     // Fetch data from API if no props provided
     useEffect(() => {
+        console.log("sessionData prop:", sessionData);
         if (usersJobroleComponent && usersJobroleComponent.length > 0) {
             console.log("Using props data:", usersJobroleComponent);
             setData(usersJobroleComponent);
             setLoading(false);
-        } else {
+        } else {    
             console.log("Fetching data from API...");
             const fetchData = async () => {
+                if (!sessionData.url || !sessionData.subInstituteId) {
+                    console.error('Missing session data for API call');
+                    return;
+                }
                 try {
                     setLoading(true);
-                    const response = await fetch('https://hp.triz.co.in/getSkillCompetency?sub_institute_id=4');
+                    const response = await fetch(`${sessionData.url}/getSkillCompetency?sub_institute_id=${sessionData.subInstituteId}`);
 
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-
+                    setLoading(false);
                     const result = await response.json();
                     let skillsArray: SkillData[] = [];
 
@@ -95,7 +152,7 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
 
             fetchData();
         }
-    }, [usersJobroleComponent]);
+    }, [sessionData.url, sessionData.subInstituteId, usersJobroleComponent]);
 
     // Process data when raw data changes
     useEffect(() => {
@@ -231,7 +288,10 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
     }
 
     const categories = Object.keys(processedData);
-    const currentData = processedData[selectedCategory] || [];
+    const isFixedCategory = selectedCategory && FIXED_DIMENSIONS[selectedCategory];
+    const currentData = isFixedCategory
+        ? FIXED_DIMENSIONS[selectedCategory]
+        : processedData[selectedCategory] || [];
 
     return (
         <div className="min-h-screen p-4">
