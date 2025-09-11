@@ -24,6 +24,7 @@ const workWeekOptions = [
 
 const OrganizationInfoForm = ({ onSave, loading = false }) => {
   const [sessionData, setSessionData] = useState({});
+  const [sessionOrgType, setSessionOrgType] = useState('');
   const [industryOptions, setIndustryOptions] = useState([]);
   const [formData, setFormData] = useState({
     legal_name: '',
@@ -56,14 +57,15 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('userData');
       if (userData) {
-        const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
-        setSessionData({ url: APP_URL, token, sub_institute_id });
+        const { APP_URL, token, sub_institute_id,org_type } = JSON.parse(userData);
+        setSessionData({ url: APP_URL, token, sub_institute_id,org_type });
       }
     }
   }, []);
 
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
+      console.log('sessionData',sessionData);
       fetchIndustries();
       fetchOrganizationData();
     }
@@ -96,13 +98,16 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
       const responseData = await response.json();
       if (responseData) {
         const data = responseData.org_data[0] || {};
+        setSessionOrgType(data.industry || '');
+        // console.log("📌 Industry from API:", data.industry); // debug
+        // console.log("📌 sessionOrgType (state):", data.industry || ''); // debug
         setFormData({
           legal_name: data.legal_name || '',
           cin: data.cin || '',
           gstin: data.gstin || '',
           pan: data.pan || '',
           registered_address: data.registered_address || '',
-          industry: data.industry || '',
+          industry: sessionOrgType || '',
           employee_count: data.employee_count || '',
           work_week: data.work_week || '',
           logo: data.logo || null,
@@ -110,34 +115,34 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         setLogoPreview(prependLogoUrl(data.logo_url || data.logo));
 
         setSisterCompanies(
-  data.sisters_org?.length
-    ? data.sisters_org.map((company) => ({
-        legal_name: company.legal_name || '',
-        cin: company.cin || '',
-        gstin: company.gstin || '',
-        pan: company.pan || '',
-        registered_address: company.registered_address || '',
-        industry: company.industry || '',
-        employee_count: company.employee_count || '',
-        work_week: company.work_week || '',
-        logo: company.logo || null,
-        logoPreview: prependLogoUrl(company.logo_url || company.logo),
-      }))
-    : [
-        {
-          legal_name: '',
-          cin: '',
-          gstin: '',
-          pan: '',
-          registered_address: '',
-          industry: '',
-          employee_count: '',
-          work_week: '',
-          logo: null,
-          logoPreview: null,
-        },
-      ]
-);
+          data.sisters_org?.length
+            ? data.sisters_org.map((company) => ({
+              legal_name: company.legal_name || '',
+              cin: company.cin || '',
+              gstin: company.gstin || '',
+              pan: company.pan || '',
+              registered_address: company.registered_address || '',
+              industry: sessionOrgType || '',
+              employee_count: company.employee_count || '',
+              work_week: company.work_week || '',
+              logo: company.logo || null,
+              logoPreview: prependLogoUrl(company.logo_url || company.logo),
+            }))
+            : [
+              {
+                legal_name: '',
+                cin: '',
+                gstin: '',
+                pan: '',
+                registered_address: '',
+                industry: sessionOrgType || '',
+                employee_count: '',
+                work_week: '',
+                logo: null,
+                logoPreview: null,
+              },
+            ]
+        );
       }
     } catch (error) {
       console.error('Error fetching organization data:', error);
@@ -155,7 +160,8 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
       formDataPayload.append('gstin', formData.gstin);
       formDataPayload.append('pan', formData.pan);
       formDataPayload.append('registered_address', formData.registered_address);
-      formDataPayload.append('industry', formData.industry);
+      // formDataPayload.append('industry', formData.industry);
+      formDataPayload.append('industry', sessionOrgType || formData.industry);
       formDataPayload.append('employee_count', formData.employee_count);
       formDataPayload.append('work_week', formData.work_week);
       if (formData.logo instanceof File) {
@@ -169,7 +175,8 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         formDataPayload.append(`sister_companies[${index}][gstin]`, sister.gstin);
         formDataPayload.append(`sister_companies[${index}][pan]`, sister.pan);
         formDataPayload.append(`sister_companies[${index}][registered_address]`, sister.registered_address);
-        formDataPayload.append(`sister_companies[${index}][industry]`, sister.industry);
+        // formDataPayload.append(`sister_companies[${index}][industry]`, sister.industry);
+        formDataPayload.append(`sister_companies[${index}][industry]`, sessionOrgType || sister.industry);
         formDataPayload.append(`sister_companies[${index}][employee_count]`, sister.employee_count);
         formDataPayload.append(`sister_companies[${index}][work_week]`, sister.work_week);
         if (sister.logo instanceof File) {
@@ -184,15 +191,15 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
       formDataPayload.append('sub_institute_id', sessionData.sub_institute_id);
 
       // Debug log
-      console.group('📦 Form Data being submitted');
-      for (let [key, value] of formDataPayload.entries()) {
-        if (value instanceof File) {
-          console.log(`${key}: File { name: "${value.name}", type: "${value.type}", size: ${value.size} bytes }`);
-        } else {
-          console.log(`${key}:`, value);
-        }
-      }
-      console.groupEnd();
+      // console.group('📦 Form Data being submitted');
+      // for (let [key, value] of formDataPayload.entries()) {
+      //   if (value instanceof File) {
+      //     console.log(`${key}: File { name: "${value.name}", type: "${value.type}", size: ${value.size} bytes }`);
+      //   } else {
+      //     console.log(`${key}:`, value);
+      //   }
+      // }
+      // console.groupEnd();
 
       const response = await fetch(`${sessionData.url}/settings/organization_data`, {
         method: 'POST',
@@ -232,7 +239,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         gstin: '',
         pan: '',
         registered_address: '',
-        industry: '',
+        industry: sessionOrgType || '',
         employee_count: '',
         work_week: '',
         logo: null,
@@ -324,7 +331,26 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Industry</label>
+              {/* <select
+                value={sessionData.org_type}
+                disabled
+                className="w-full px-3 py-2 border border-input rounded-md text-sm shadow-sm"
+              >
+                <option value="">{sessionOrgType || 'Select industry'}</option>
+              </select> */}
               <select
+              value={sessionData.org_type}
+              disabled // ✅ disables selection
+              className="w-full px-3 py-2 border border-input  rounded-md text-sm shadow-sm"
+            >
+              <option value="">Select industry</option>
+              {industryOptions.map((option, index) => (
+                <option key={index} value={option.industries}>
+                  {option.industries}
+                </option>
+              ))}
+            </select>
+              {/* <select
                 value={displayValue(formData.industry, '')}
                 onChange={(e) => handleInputChange('industry', e.target.value)}
                 className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
@@ -336,7 +362,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
                     {option.industries}
                   </option>
                 ))}
-              </select>
+              </select> */}
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium">Employee Count</label>
@@ -466,6 +492,30 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             <div className="space-y-2">
               <label className="block text-sm font-medium">Industry</label>
               <select
+              value={sessionData.org_type}
+              disabled // ✅ disables selection
+              className="w-full px-3 py-2 border border-input  rounded-md text-sm shadow-sm"
+            >
+              <option value="">Select industry</option>
+              {industryOptions.map((option, index) => (
+                <option key={index} value={option.industries}>
+                  {option.industries}
+                </option>
+              ))}
+            </select>
+              {/* <select
+                value={displayValue(sister.industry, '')}
+                disabled // ✅ disables selection
+                className="w-full px-3 py-2 border border-input rounded-md text-sm shadow-sm"
+              >
+                <option value="">Select industry</option>
+                {industryOptions.map((option, idx) => (
+                  <option key={idx} value={option.industries}>
+                    {option.industries}
+                  </option>
+                ))}
+              </select> */}
+              {/* <select
                 value={displayValue(sister.industry, '')}
                 onChange={(e) => handleSisterChange(index, 'industry', e.target.value)}
                 className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
@@ -476,7 +526,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
                     {option.industries}
                   </option>
                 ))}
-              </select>
+              </select> */}
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium">Employee Count</label>
@@ -546,3 +596,6 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
 };
 
 export default OrganizationInfoForm;
+
+
+

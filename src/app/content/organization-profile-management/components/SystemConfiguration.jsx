@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
 import { saveAs } from "file-saver";
@@ -9,22 +8,30 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 
 const ExcelExportButton = dynamic(
-  () => import('@/components/exportButtons/excelExportButton').then(mod => mod.ExcelExportButton),
+  () =>
+    import("@/components/exportButtons/excelExportButton").then(
+      (mod) => mod.ExcelExportButton
+    ),
   { ssr: false }
 );
 
 const PdfExportButton = dynamic(
-  () => import('@/components/exportButtons/PdfExportButton').then(mod => mod.PdfExportButton),
+  () =>
+    import("@/components/exportButtons/PdfExportButton").then(
+      (mod) => mod.PdfExportButton
+    ),
   { ssr: false }
 );
 
 const PrintButton = dynamic(
-  () => import('@/components/exportButtons/printExportButton').then(mod => mod.PrintButton),
+  () =>
+    import("@/components/exportButtons/printExportButton").then(
+      (mod) => mod.PrintButton
+    ),
   { ssr: false }
 );
 
@@ -35,6 +42,8 @@ const SystemConfiguration = () => {
     departmentName: "",
     assignedTo: "",
     dueDate: "",
+    frequency: "",
+    customFrequency: "",
     attachment: null,
   });
 
@@ -45,6 +54,8 @@ const SystemConfiguration = () => {
     departmentName: "",
     assignedTo: "",
     dueDate: "",
+    frequency: "",
+    customFrequency: "",
     attachment: null,
   });
 
@@ -53,7 +64,10 @@ const SystemConfiguration = () => {
   const [filters, setFilters] = useState({});
   const [fileName, setFileName] = useState("");
   const [editFileName, setEditFileName] = useState("");
+  const [allUsers, setAllUsers] = useState([]);
   const [userOptions, setUserOptions] = useState([]);
+  const [editUserOptions, setEditUserOptions] = useState([]);
+  const [departmentOptions, setDepartmentOptions] = useState([]);
   const [sessionData, setSessionData] = useState({});
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -78,6 +92,7 @@ const SystemConfiguration = () => {
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
       fetchUsers();
+      fetchDepartments();
     }
   }, [sessionData.url, sessionData.token]);
 
@@ -88,17 +103,40 @@ const SystemConfiguration = () => {
       );
       const data = await res.json();
       if (Array.isArray(data)) {
-        setUserOptions(
-          data.map((user) => {
-            let displayName = `${user.first_name || ""} ${user.middle_name || ""
-              } ${user.last_name || ""}`.trim();
-            if (!displayName) displayName = user.user_name || "";
-            return { id: user.id, name: displayName };
-          })
-        );
+        const mappedUsers = data.map((user) => {
+          let displayName = `${user.first_name || ""} ${user.middle_name || ""} ${
+            user.last_name || ""
+          }`.trim();
+          if (!displayName) displayName = user.user_name || "";
+          return {
+            id: user.id,
+            name: displayName,
+            department_id: user.department_id || null,
+          };
+        });
+        setAllUsers(mappedUsers);
       }
     } catch (error) {
       console.error("Error fetching users:", error);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/table_data?table=hrms_departments&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`
+      );
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setDepartmentOptions(
+          data.map((dept) => ({
+            id: dept.id,
+            name: dept.department || "Unnamed Department",
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
     }
   };
 
@@ -122,21 +160,48 @@ const SystemConfiguration = () => {
     }
   }, [sessionData.url, sessionData.sub_institute_id]);
 
+  // Department-based filtering
+  useEffect(() => {
+    if (formData.departmentName) {
+      const dept = departmentOptions.find(
+        (d) => d.name === formData.departmentName
+      );
+      if (dept) {
+        setUserOptions(allUsers.filter((u) => u.department_id == dept.id));
+      } else {
+        setUserOptions([]);
+      }
+    } else {
+      setUserOptions([]);
+    }
+  }, [formData.departmentName, allUsers, departmentOptions]);
+
+  useEffect(() => {
+    if (editFormData.departmentName) {
+      const dept = departmentOptions.find(
+        (d) => d.name === editFormData.departmentName
+      );
+      if (dept) {
+        setEditUserOptions(allUsers.filter((u) => u.department_id == dept.id));
+      } else {
+        setEditUserOptions([]);
+      }
+    } else {
+      setEditUserOptions([]);
+    }
+  }, [editFormData.departmentName, allUsers, departmentOptions]);
+
   const handleDeleteClick = async (id) => {
     if (!id) return;
-
     if (window.confirm("Are you sure you want to delete this Data?")) {
       try {
         const res = await fetch(
           `${sessionData.url}/settings/institute_detail/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&user_id=${sessionData.user_id}&formName=complaince_library`,
           {
             method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${sessionData.token}`,
-            },
+            headers: { Authorization: `Bearer ${sessionData.token}` },
           }
         );
-
         const data = await res.json();
         alert(data.message);
         fetchComplianceData();
@@ -151,15 +216,23 @@ const SystemConfiguration = () => {
     const itemToEdit = dataList.find((item) => item.id === id);
     if (itemToEdit) {
       setEditingId(id);
+
+      const dept = departmentOptions.find(
+        (d) => d.name === itemToEdit.standard_name
+      );
+
       setEditFormData({
         id: itemToEdit.id,
         name: itemToEdit.name || "",
         description: itemToEdit.description || "",
-        departmentName: itemToEdit.standard_name || "",
-        assignedTo: itemToEdit.assigned_to || "",
+        departmentName: dept ? dept.name : "",
+        assignedTo: itemToEdit.assigned_to?.toString() || "",
         dueDate: itemToEdit.duedate || "",
+        frequency: itemToEdit.frequency || "",
+        customFrequency: itemToEdit.custom_frequency_details || "",
         attachment: null,
       });
+
       setEditFileName(itemToEdit.attachment || "");
       setIsEditModalOpen(true);
     }
@@ -167,6 +240,10 @@ const SystemConfiguration = () => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (!sessionData.url || !sessionData.token) {
+      alert("Session data not loaded. Please refresh the page.");
+      return;
+    }
     try {
       const formPayload = new FormData();
       formPayload.append("type", "API");
@@ -179,6 +256,15 @@ const SystemConfiguration = () => {
       formPayload.append("standard_name", editFormData.departmentName);
       formPayload.append("assigned_to", editFormData.assignedTo);
       formPayload.append("duedate", editFormData.dueDate);
+      formPayload.append("frequency", editFormData.frequency);
+
+      if (editFormData.frequency === "Custom") {
+        formPayload.append(
+          "custom_frequency_details",
+          editFormData.customFrequency
+        );
+      }
+
       if (editFormData.attachment) {
         formPayload.append("attachment", editFormData.attachment);
       }
@@ -187,7 +273,10 @@ const SystemConfiguration = () => {
         `${sessionData.url}/settings/institute_detail/${editingId}`,
         {
           method: "POST",
-          headers: { Authorization: `Bearer ${sessionData.token}`, 'X-HTTP-Method-Override': 'PUT' },
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+            "X-HTTP-Method-Override": "PUT",
+          },
           body: formPayload,
         }
       );
@@ -197,57 +286,27 @@ const SystemConfiguration = () => {
       setIsEditModalOpen(false);
       setEditingId(null);
       fetchComplianceData();
-
     } catch (error) {
       console.error("Error updating form:", error);
       alert("An error occurred while updating data.");
     }
   };
 
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   const handleEditChange = (field, value) => {
     setEditFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "departmentName") {
+      setEditFormData((prev) => ({ ...prev, assignedTo: "" }));
+    }
   };
 
   const handleEditFileChange = (e) => {
     const file = e.target.files?.[0] || null;
     setEditFileName(file?.name || "");
     handleEditChange("attachment", file);
-  };
-
-  const handleColumnFilter = (field, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [field]: value.toLowerCase(),
-    }));
-  };
-
-  useEffect(() => {
-    let withExtras = dataList.map((item, index) => ({
-      ...item,
-      srno: (index + 1).toString(),
-      attachment: item.attachment?.name || item.attachment || "N/A",
-      assigned_to_name: userOptions.find(
-        (u) => u.id.toString() === (item.assigned_to || "")?.toString()
-      )?.name || "",
-    }));
-
-    let filtered = [...withExtras];
-
-    // Apply filters only if they have values
-    Object.keys(filters).forEach((key) => {
-      if (filters[key] && filters[key].trim() !== "") {
-        filtered = filtered.filter((item) => {
-          const val = (item[key] || "").toString().toLowerCase();
-          return val.includes(filters[key]);
-        });
-      }
-    });
-
-    setFilteredData(filtered);
-  }, [filters, dataList, userOptions]);
-
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleFileChange = (e) => {
@@ -258,6 +317,11 @@ const SystemConfiguration = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!sessionData.url || !sessionData.token) {
+      alert("Session data not loaded. Please refresh the page.");
+      return;
+    }
+
     try {
       const formPayload = new FormData();
       formPayload.append("type", "API");
@@ -270,6 +334,12 @@ const SystemConfiguration = () => {
       formPayload.append("standard_name", formData.departmentName);
       formPayload.append("assigned_to", formData.assignedTo);
       formPayload.append("duedate", formData.dueDate);
+      formPayload.append("frequency", formData.frequency);
+
+      if (formData.frequency === "Custom") {
+        formPayload.append("custom_frequency_details", formData.customFrequency);
+      }
+
       if (formData.attachment)
         formPayload.append("attachment", formData.attachment);
 
@@ -288,6 +358,8 @@ const SystemConfiguration = () => {
           departmentName: "",
           assignedTo: "",
           dueDate: "",
+          frequency: "",
+          customFrequency: "",
           attachment: null,
         });
         setFileName("");
@@ -302,6 +374,11 @@ const SystemConfiguration = () => {
   };
 
   const exportToCSV = () => {
+    const userMap = {};
+    allUsers.forEach((user) => {
+      userMap[user.id] = user.name;
+    });
+
     const csv = [
       [
         "Sr No.",
@@ -310,6 +387,8 @@ const SystemConfiguration = () => {
         "Standard Name",
         "Assigned To",
         "Due Date",
+        "Frequency",
+        "Custom Frequency Details",
         "Attachment",
       ],
       ...dataList.map((item, i) => [
@@ -317,11 +396,10 @@ const SystemConfiguration = () => {
         item.name,
         item.description,
         item.standard_name || "",
-        userOptions.find(
-          (u) =>
-            u.id.toString() === (item.assigned_to || "")?.toString()
-        )?.name || "",
+        userMap[item.assigned_to] || "N/A",
         item.duedate || "",
+        item.frequency || "",
+        item.custom_frequency_details || "",
         item.attachment?.name || item.attachment || "N/A",
       ]),
     ]
@@ -333,113 +411,17 @@ const SystemConfiguration = () => {
   };
 
   const columns = [
+    { name: "Sr No.", selector: (row) => row.srno, width: "100px", sortable: true },
+    { name: "Name", selector: (row) => row.name, sortable: true },
+    { name: "Description", selector: (row) => row.description, sortable: true },
+    { name: "Standard Name", selector: (row) => row.standard_name || "", sortable: true, wrap: true },
+    { name: "Assigned To", selector: (row) => row.assigned_to_name || "", sortable: true },
+    { name: "Due Date", selector: (row) => row.duedate || "", sortable: true, wrap: true },
+    { name: "Frequency", selector: (row) => row.frequency || "", sortable: true },
     {
-      name: (
-        <div>
-          <div>Sr No.</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("srno", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row) => row.srno,
-      width: "100px",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Name</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("name", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row) => row.name,
-      sortable: true
-    },
-    {
-      name: (
-        <div>
-          <div>Description</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("description", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row) => row.description,
-      sortable: true
-    },
-    {
-      name: (
-        <div>
-          <div>Standard Name</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("standard_name", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row) => row.standard_name || "",
-      sortable: true,
-      wrap: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Assigned To</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("assigned_to_name", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row) => row.assigned_to_name || "",
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Due Date</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("duedate", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row) => row.duedate || "",
-      sortable: true,
-      wrap: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Attachment</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("attachment", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
+      name: "Attachment",
       selector: (row) => {
-        if (row.attachment && row.attachment != '' && row.attachment != 'N/A') {
+        if (row.attachment && row.attachment !== "" && row.attachment !== "N/A") {
           return (
             <a
               href={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/compliance_library/${row.attachment}`}
@@ -489,67 +471,65 @@ const SystemConfiguration = () => {
         textAlign: "left",
       },
     },
-    cells: {
-      style: {
-        fontSize: "13px",
-        textAlign: "left",
-      },
-    },
+    cells: { style: { fontSize: "13px", textAlign: "left" } },
     table: {
-      style: {
-        border: "1px solid #ddd",
-        borderRadius: "20px",
-        overflow: "hidden",
-      },
+      style: { border: "1px solid #ddd", borderRadius: "20px", overflow: "hidden" },
     },
   };
 
-  // Determine which data to display
   const displayData = filteredData.length > 0 ? filteredData : dataList;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Form */}
+      {/* Add Form */}
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white shadow border border-gray-200 p-6 rounded-lg mb-10"
       >
-        {[
-          { label: "Name", name: "name", type: "text" },
-          { label: "Description", name: "description", type: "textarea" },
-          { label: "Department Name", name: "departmentName", type: "text" },
-        ].map(({ label, name, type }) => (
-          <div key={name} className={type === "textarea" ? "md:col-span-2" : ""}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {label}
-            </label>
-            {type === "textarea" ? (
-              <textarea
-                value={formData[name]}
-                onChange={(e) => handleChange(name, e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                required
-              />
-            ) : (
-              <input
-                type="text"
-                value={formData[name]}
-                onChange={(e) => handleChange(name, e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                required
-              />
-            )}
-          </div>
-        ))}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            required
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea
+            value={formData.description}
+            onChange={(e) => handleChange("description", e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            required
+          />
+        </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Assigned To
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+          <select
+            value={formData.departmentName}
+            onChange={(e) => handleChange("departmentName", e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            required
+          >
+            <option value="">Select Department</option>
+            {departmentOptions.map((dept) => (
+              <option key={dept.id} value={dept.name}>
+                {dept.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
           <select
             value={formData.assignedTo}
             onChange={(e) => handleChange("assignedTo", e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
             required
           >
             <option value="">Select User</option>
@@ -562,34 +542,62 @@ const SystemConfiguration = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Due Date
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
           <input
             type="date"
             value={formData.dueDate}
             onChange={(e) => handleChange("dueDate", e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Attachment
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+          <select
+            value={formData.frequency}
+            onChange={(e) => handleChange("frequency", e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            required
+          >
+            <option value="">Select Frequency</option>
+            {["One-Time", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Custom"].map(
+              (opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+
+        {formData.frequency === "Custom" && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Custom Frequency Date
+            </label>
+            <input
+              type="date"
+              value={formData.customFrequency}
+              onChange={(e) => handleChange("customFrequency", e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              required
+            />
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Attachment</label>
           <label className="flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-50 transition">
             <input type="file" className="hidden" onChange={handleFileChange} />
-            <span className="text-gray-600 truncate">
-              {fileName || "Choose file"}
-            </span>
+            <span className="text-gray-600 truncate">{fileName || "Choose file"}</span>
           </label>
         </div>
 
         <div className="col-span-1 md:col-span-3 flex justify-center">
           <button
             type="submit"
-            className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60"
+            className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
           >
             Submit
           </button>
@@ -597,178 +605,154 @@ const SystemConfiguration = () => {
       </form>
 
       {/* Data Table */}
-      {displayData.length > 0 && ( <>
-        <div className="mt-2">
-         {/* Header row with pagination left and export buttons right */}
-         <div className="flex justify-between items-center mb-4 py-4">
-            {/* Left side - Pagination controls */}
-            <div className="space-x-4">
-                {/* <select
-                    onChange={(e) => handlePerPageChange(Number(e.target.value), 1)}
-                    className="rounded-lg p-1 border-2 border-[#CDE4F5] bg-[#ebf7ff] text-[#444444] focus:outline-none focus:border-blue-200 focus:bg-white w-full focus:rounded-none transition-colors duration-2000 drop-shadow-[0px_5px_5px_rgba(0,0,0,0.12)]"
-                    value={paginationPerPageVal}
-                >
-                    <option value={100}>100</option>
-                    <option value={500}>500</option>
-                    <option value={1000}>1000</option>
-                </select>
-                <br />
-                <span className="text-sm">Total records : {filteredData.length}</span> */}
+      <div className="mt-2">
+        <DataTable
+          columns={columns}
+          data={displayData}
+          customStyles={customStyles}
+          pagination
+          highlightOnHover
+          responsive
+          noDataComponent={<div className="p-4 text-center">No data available</div>}
+          persistTableHead
+        />
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto hide-scroll">
+          <DialogHeader>
+            <DialogTitle>Edit Task Assignment</DialogTitle>
+          </DialogHeader>
+
+          <form
+            onSubmit={handleUpdate}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <input
+                type="text"
+                value={editFormData.name}
+                onChange={(e) => handleEditChange("name", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                required
+              />
             </div>
-
-            {/* Right side - Export buttons */}
-            <div className="flex space-x-2">
-                <PrintButton
-                    data={displayData}
-                    title="Job Roles Report"
-                    excludedFields={["id", "internal_id"]}
-                    buttonText={
-                        <>
-                            <span className="mdi mdi-printer-outline"></span>
-                        </>
-                    }
-                />
-                <ExcelExportButton
-                    sheets={[{ data: displayData, sheetName: "Submissions" }]}
-                    fileName="Skills Jobrole"
-                    onClick={() => console.log("Export initiated")}
-                    buttonText={
-                        <>
-                            <span className="mdi mdi-file-excel"></span>
-                        </>
-                    }
-                />
-                <PdfExportButton
-                    data={displayData}
-                    fileName="Skills Jobrole"
-                    onClick={() => console.log("PDF export initiated")}
-                    buttonText={
-                        <>
-                            <span className="mdi mdi-file-pdf-box"></span>
-                        </>
-                    }
-                />
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                value={editFormData.description}
+                onChange={(e) => handleEditChange("description", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                required
+              />
             </div>
-        </div>
-
-            <DataTable
-              columns={columns}
-              data={displayData.length > 0 ? displayData : [{}]}
-              customStyles={customStyles}
-              pagination
-              highlightOnHover
-              responsive
-              noDataComponent={<div className="p-4 text-center">No data available</div>}
-              persistTableHead
-            />
-          </div>
-        </>)}
-
-          {/* Edit Dialog */}
-          <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-            <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto hide-scroll">
-              <DialogHeader>
-                <DialogTitle>Edit Task Assignment</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                {[
-                  { label: "Name", name: "name", type: "text" },
-                  { label: "Description", name: "description", type: "textarea" },
-                  { label: "Department Name", name: "departmentName", type: "text" },
-                ].map(({ label, name, type }) => (
-                  <div key={name} className={type === "textarea" ? "md:col-span-2" : ""}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {label}
-                    </label>
-                    {type === "textarea" ? (
-                      <textarea
-                        value={editFormData[name]}
-                        onChange={(e) => handleEditChange(name, e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                        required
-                      />
-                    ) : (
-                      <input
-                        type="text"
-                        value={editFormData[name]}
-                        onChange={(e) => handleEditChange(name, e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                        required
-                      />
-                    )}
-                  </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+              <select
+                value={editFormData.departmentName}
+                onChange={(e) => handleEditChange("departmentName", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                required
+              >
+                <option value="">Select Department</option>
+                {departmentOptions.map((dept) => (
+                  <option key={dept.id} value={dept.name}>
+                    {dept.name}
+                  </option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+              <select
+                value={editFormData.assignedTo}
+                onChange={(e) => handleEditChange("assignedTo", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                required
+              >
+                <option value="">Select User</option>
+                {editUserOptions.map((user) => (
+                  <option key={user.id} value={user.id.toString()}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+              <input
+                type="date"
+                value={editFormData.dueDate}
+                onChange={(e) => handleEditChange("dueDate", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                required
+              />
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Assigned To
-                  </label>
-                  <select
-                    value={editFormData.assignedTo}
-                    onChange={(e) => handleEditChange("assignedTo", e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    required
-                  >
-                    <option value="">Select User</option>
-                    {userOptions.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+              <select
+                value={editFormData.frequency}
+                onChange={(e) => handleEditChange("frequency", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                required
+              >
+                <option value="">Select Frequency</option>
+                {["One-Time", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Custom"].map(
+                  (opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Due Date
-                  </label>
-                  <input
-                    type="date"
-                    value={editFormData.dueDate}
-                    onChange={(e) => handleEditChange("dueDate", e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    required
-                  />
-                </div>
+            {editFormData.frequency === "Custom" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custom Frequency Date
+                </label>
+                <input
+                  type="date"
+                  value={editFormData.customFrequency}
+                  onChange={(e) => handleEditChange("customFrequency", e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  required
+                />
+              </div>
+            )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Attachment
-                  </label>
-                  <label className="flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-50 transition">
-                    <input
-                      type="file"
-                      className="hidden"
-                      onChange={handleEditFileChange}
-                    />
-                    <span className="text-gray-600 truncate">
-                      {editFileName || "Choose file"}
-                    </span>
-                  </label>
-                  {editFileName && !editFormData.attachment && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      Current file: {editFileName}
-                    </p>
-                  )}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Attachment</label>
+              <label className="flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-50 transition">
+                <input type="file" className="hidden" onChange={handleEditFileChange} />
+                <span className="text-gray-600 truncate">
+                  {editFileName || "Choose file"}
+                </span>
+              </label>
+              {editFileName && !editFormData.attachment && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Current file: {editFileName}
+                </p>
+              )}
+            </div>
 
-                <div className="col-span-1 md:col-span-3 flex justify-center space-x-4">
-                  <Button
-                    class="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-gray-500 to-gray-700 hover:from-gray-600 hover:to-gray-800 shadow-md disabled:opacity-60"
-                    variant="outline"
-                    onClick={() => setIsEditModalOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" class="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60">
-                    Update
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-        );
+            <div className="col-span-1 md:col-span-3 flex justify-center space-x-4">
+              <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Update</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 };
 
 export default SystemConfiguration;

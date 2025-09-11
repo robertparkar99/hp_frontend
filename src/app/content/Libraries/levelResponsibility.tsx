@@ -119,136 +119,120 @@ const LevelResponsibility = () => {
         </div>
       </div>
 
-
-
-      {/* LEVEL BADGE */}
-      {activeSection === 'description' && (
-        <>
-          {/* Level Badge */}
-   <div className="w-full flex justify-start mt-6">
-  <div
-    className="px-6 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-left"
-    style={{
-      background:
-        "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
-    }}
-  >
-    <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 lg:gap-4">
-      <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
-        Level {activeLevel}:
+      {/* LEVEL BADGE - Show for all sections, aligned to start (left) */}
+      <div className="w-full flex justify-start mt-6">
+        <div
+          className="px-6 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow max-w-xl"
+          style={{
+            background: "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
+          }}
+        >
+          <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
+            Level {activeLevel}: {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ""}
+          </div>
+        </div>
       </div>
-      <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
-        {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ""}
-      </div>
-    </div>
-  </div>
-</div>
 
-
-          {/* Description + Guidance Notes */}
-          {activeData && (
-            <div className="flex justify-center items-start gap-8 mt-6 flex-wrap">
-              {/* Description Card */}
-              <div
-                className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
-                style={{
-                  width: "500px",
-                  height: "300px",
-                  background:
-                    "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
-                }}
-              >
-                <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">
-                  Description
-                </h3>
-                <hr className="border border-gray-400 mb-4" />
-                {/* Scrollable area */}
-                <div
-                  style={{
-                    width: "450px",
-                    height: "150px",
-                    overflowY: "auto",
-                    paddingRight: "8px",
-                  }}
-                >
-                  <p className="text-black text-[15px] whitespace-pre-line">
-                    {activeData.essence_level}
-                  </p>
-                </div>
-              </div>
-
-              {/* Guidance Notes Card */}
-              <div
-                className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
-                style={{
-                  width: "500px",
-                  height: "300px",
-                  textAlign: 'justify',
-                  background:
-                    "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
-                }}
-              >
-                <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">
-                  Guidance Notes
-                </h3>
-                <hr className="border border-gray-400 mb-4" />
-                {/* Scrollable area */}
-                <div
-                  style={{
-                    width: "450px",
-                    height: "150px",
-                    overflowY: "auto",
-                    paddingRight: "8px",
-                  }}
-                  className="hide-scrollbar" // 👈 custom class to hide scrollbar
-                >
-                  <p className="text-black text-[15px] whitespace-pre-line">
-                    {activeData.attribute_guidance_notes}
-
-                  </p>
-                </div>
-              </div>
+      {/* DESCRIPTION SECTION */}
+      {activeSection === 'description' && activeData && (
+        <div className="flex justify-center items-start gap-8 mt-6 flex-wrap">
+          {/* Description Card */}
+          <div
+            className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+            style={{
+              width: "500px",
+              height: "300px",
+              background: "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+            }}
+          >
+            <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">
+              Description
+            </h3>
+            <hr className="border border-gray-400 mb-4" />
+            {/* Scrollable area */}
+            <div
+              style={{
+                width: "450px",
+                height: "150px",
+                overflowY: "auto",
+                paddingRight: "8px",
+              }}
+            >
+              <p className="text-black text-[15px] whitespace-pre-line">
+                {activeData.essence_level}
+              </p>
             </div>
-          )}
+          </div>
 
-
-        </>
+          {/* Guidance Notes Card */}
+          <div
+            className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+            style={{
+              width: "500px",
+              height: "300px",
+              textAlign: 'justify',
+              background: "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+            }}
+          >
+            <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">
+              Guidance Notes
+            </h3>
+            <hr className="border border-gray-400 mb-4" />
+            {/* Scrollable area */}
+            <div
+              style={{
+                width: "450px",
+                height: "150px",
+                overflowY: "auto",
+                paddingRight: "8px",
+              }}
+              className="hide-scrollbar"
+            >
+              <p className="text-black text-[15px] whitespace-pre-line">
+                {activeData.attribute_guidance_notes}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* RESPONSIBILITY ATTRIBUTES SECTION */}
       {activeSection === 'responsibility' && levelAttributes?.Attributes && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl px-4 mt-2 w-full">
-          {Object.entries(levelAttributes.Attributes).map(([key, attr]: [string, any]) => (
-            <div
-              key={key}
-              className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
-            >
-              <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
-                {key}
-              </h4>
-              <p className="text-sm text-black">{attr.attribute_description}</p>
-            </div>
-          ))}
+        <div className="w-full max-w-6xl px-4 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Object.entries(levelAttributes.Attributes).map(([key, attr]: [string, any]) => (
+              <div
+                key={key}
+                className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
+              >
+                <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
+                  {key}
+                </h4>
+                <p className="text-sm text-black">{attr.attribute_description}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* BUSINESS SKILLS SECTION */}
       {activeSection === 'business' && levelAttributes?.Business_skills && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl px-4 mt-2 w-full">
-          {Object.entries(levelAttributes.Business_skills).map(([key, attr]: [string, any]) => (
-            <div
-              key={key}
-              className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
-            >
-              <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
-                {key}
-              </h4>
-              <p className="text-sm text-black">{attr.attribute_description}</p>
-            </div>
-          ))}
+        <div className="w-full max-w-6xl px-4 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Object.entries(levelAttributes.Business_skills).map(([key, attr]: [string, any]) => (
+              <div
+                key={key}
+                className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
+              >
+                <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
+                  {key}
+                </h4>
+                <p className="text-sm text-black">{attr.attribute_description}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-
     </div>
   );
 };
