@@ -47,15 +47,20 @@ export default function Index({ SelLOR }: SelLORProps) {
   ];
 
   const dataLor: LorData = SelLOR || {};
+ 
+    const cleanText = (text?: string) => text?.replace(/in SFIA/g, "").trim() || "";
 
+
+    
   const descriptionCards = [
     {
       title: "Description",
-      text: dataLor?.essence_level,
+      text: cleanText(dataLor?.essence_level),
+
     },
     {
       title: "Guidance notes",
-      text: dataLor?.guidance_note,
+      text: cleanText(dataLor?.guidance_note),
     },
   ].filter((card) => card.text && card.text.trim() !== ""); // ✅ filter out empty
 
@@ -105,7 +110,7 @@ export default function Index({ SelLOR }: SelLORProps) {
             }}
           >
             <span className="text-white font-bold text-3xl font-roboto">
-              Level {dataLor?.level}: {dataLor?.guiding_phrase}
+              Level {dataLor?.level}: {cleanText(dataLor?.guiding_phrase)}
             </span>
           </div>
         )}
@@ -284,7 +289,7 @@ export default function Index({ SelLOR }: SelLORProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl px-4 mt-4">
           {dataLor?.Attributes &&
             Object.entries(dataLor.Attributes)
-              .filter(([_, item]) => item?.attribute_overall_description?.trim()) // ✅ filter empty
+              .filter(([_, item]) => cleanText(item?.attribute_overall_description)?.trim()) // ✅ filter empty
               .map(([key, item]: [string, AttributeItem]) => (
                 <div
                   key={key}
@@ -294,7 +299,7 @@ export default function Index({ SelLOR }: SelLORProps) {
                     {item.attribute_name || key}
                   </h3>
                   <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                    {item.attribute_overall_description}
+                    {cleanText(item.attribute_overall_description)}
                   </p>
                 </div>
               ))}
@@ -306,7 +311,7 @@ export default function Index({ SelLOR }: SelLORProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl px-4 mt-4">
           {dataLor?.Business_skills &&
             Object.entries(dataLor.Business_skills)
-              .filter(([_, item]) => item?.attribute_overall_description?.trim()) // ✅ filter empty
+              .filter(([_, item]) => cleanText(item?.attribute_overall_description)?.trim()) // ✅ filter empty
               .map(([key, item]: [string, AttributeItem]) => (
                 <div
                   key={key}
@@ -316,7 +321,7 @@ export default function Index({ SelLOR }: SelLORProps) {
                     {item.attribute_name || key}
                   </h3>
                   <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                    {item.attribute_overall_description}
+                    {cleanText(item.attribute_overall_description)}
                   </p>
                 </div>
               ))}
