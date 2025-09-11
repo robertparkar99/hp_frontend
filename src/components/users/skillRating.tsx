@@ -25,6 +25,7 @@ interface Skill {
 
 interface JobroleSkilladd1Props {
   skills: Skill[];
+  clickedUser:any;
 }
 
 interface ValidationState {
@@ -34,7 +35,7 @@ interface ValidationState {
   attitude: Record<string, string>;
 }
 
-export default function Index({ skills }: JobroleSkilladd1Props) {
+export default function Index({ skills,clickedUser }: JobroleSkilladd1Props) {
   const [currentSkillIndex, setCurrentSkillIndex] = useState(0);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(
     skills.length > 0 ? skills[0] : null
@@ -174,11 +175,11 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
         ability: validationState.ability,
         behaviour: validationState.behaviour,
         attitude: validationState.attitude,
-        userId: sessionData.userId,
+        userId: clickedUser || 0,
         sub_institute_id: sessionData.subInstituteId
       };
 
-      console.log("Submitting data:", formData);
+      // console.log("Submitting data:", formData);
 
       const response = await fetch(`${sessionData.url}/matrix/save`, {
         method: "POST",
@@ -191,7 +192,7 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
 
       if (response.ok) {
         const result = await response.json();
-        console.log("Submission successful:", result);
+        // console.log("Submission successful:", result);
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
         

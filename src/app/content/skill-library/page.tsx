@@ -92,7 +92,10 @@ export default function Page() {
         const data = await res.json();
 
         const userTree = data?.userTree || {};
-        const userSkillsArr: Skill[] = data?.userSkills || [];
+        let userSkillsArr: Skill[] = data?.userSkills || [];
+
+        // Sort skills ascending by title
+        userSkillsArr = userSkillsArr.sort((a, b) => a.title.localeCompare(b.title));
 
         const parsedCategories: Category[] = Object.entries(userTree).map(
           ([categoryName, subCatObj]) => {
@@ -117,6 +120,11 @@ export default function Page() {
 
         setCategories(parsedCategories);
         setUserSkills(userSkillsArr);
+
+        // Set default category on first load
+        if (userSkillsArr.length > 0 && !selectedCategory) {
+          setSelectedCategory(userSkillsArr[0].category);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -158,13 +166,13 @@ export default function Page() {
   };
 
   // Dropdown options
-  const departmentOptions = Array.from(new Set(userSkills.map((s) => s.department))).filter(
-    (dept): dept is string => typeof dept === "string"
-  );
+  const departmentOptions = Array.from(new Set(userSkills.map((s) => s.department)))
+    .filter((dept): dept is string => typeof dept === "string")
+    .sort((a, b) => a.localeCompare(b));
 
-  const categoryOptions = Array.from(new Set(userSkills.map((s) => s.category))).filter(
-    (cat): cat is string => typeof cat === "string"
-  );
+  const categoryOptions = Array.from(new Set(userSkills.map((s) => s.category)))
+    .filter((cat): cat is string => typeof cat === "string")
+    .sort((a, b) => a.localeCompare(b));
 
   const proficiencyOptions = Array.from(new Set(userSkills.map((s) => s.proficiency_level)))
     .filter(Boolean)
@@ -175,32 +183,36 @@ export default function Page() {
   // Decide hexagon items
   let hexagonItems: { id?: number; title: string; subtitle?: string; skillObj?: Skill }[] = [];
 
-  if (!selectedDepartment && !selectedCategory) {
-    hexagonItems = departmentOptions.map((dept) => ({ title: dept }));
-  } else if (selectedDepartment && !selectedCategory) {
-    hexagonItems = categoryOptions.map((cat) => ({ title: cat }));
-  } else if (selectedCategory && !selectedSubcategory) {
-    const subcategoriesForCat = Array.from(
-      new Set(userSkills.filter((s) => s.category === selectedCategory).map((s) => s.sub_category))
-    ).filter(Boolean);
-    hexagonItems = subcategoriesForCat.map((sub) => ({ title: sub! }));
-  } else if (selectedCategory && selectedSubcategory) {
-    hexagonItems =
-      userSkills
-        .filter(
-          (s) =>
-            (!selectedDepartment || s.department === selectedDepartment) &&
-            s.category === selectedCategory &&
-            s.sub_category === selectedSubcategory &&
-            (!selectedProficiency || s.proficiency_level === selectedProficiency)
-        )
-        .map((skill) => ({
-          id: skill.id,
-          title: skill.title,
-          subtitle: skill.description,
-          skillObj: skill,
-        })) || [];
+  // Filtered skills
+  let filteredSkills = userSkills.filter((s) => {
+    return (
+      (!selectedDepartment || s.department === selectedDepartment) &&
+      (!selectedCategory || s.category === selectedCategory) &&
+      (!selectedSubcategory || s.sub_category === selectedSubcategory) &&
+      (!selectedProficiency || s.proficiency_level === selectedProficiency)
+    );
+  });
+
+  // Default page load → first category ni skills show
+  if (
+    !selectedDepartment &&
+    !selectedCategory &&
+    !selectedSubcategory &&
+    !selectedProficiency &&
+    userSkills.length > 0
+  ) {
+    const firstCategory = userSkills[0].category;
+    filteredSkills = userSkills.filter((s) => s.category === firstCategory);
   }
+
+  // Prepare hexagon items
+  hexagonItems =
+    filteredSkills.map((skill) => ({
+      id: skill.id,
+      title: skill.title,
+      subtitle: skill.description,
+      skillObj: skill,
+    })) || [];
 
   return (
     <>
@@ -296,11 +308,14 @@ export default function Page() {
                             .filter((s) => s.category === selectedCategory)
                             .map((s) => s.sub_category)
                         )
-                      ).map((sub, idx) => (
-                        <SelectItem key={idx} value={sub || ""}>
-                          {sub}
-                        </SelectItem>
-                      ))}
+                      )
+                        .filter((sub): sub is string => typeof sub === "string")
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((sub, idx) => (
+                          <SelectItem key={idx} value={sub}>
+                            {sub}
+                          </SelectItem>
+                        ))}
                   </SelectContent>
                 </Select>
 
@@ -348,6 +363,10 @@ export default function Page() {
             <div className="flex justify-start items-center h-screen">
               <Atom color="#525ceaff" size="medium" text="" textColor="" />
             </div>
+          ) : hexagonItems.length === 0 ? (
+            <div className="flex justify-center items-center h-full">
+              <p className="text-gray-500 text-lg font-medium">No skills found</p>
+            </div>
           ) : (
             <div className="honeycomb-container-skill flex flex-wrap gap-6 justify-center pb-4">
               {hexagonItems.map((item, index) => (
@@ -355,13 +374,7 @@ export default function Page() {
                   key={index}
                   className="hexagon-wrapper-skill relative cursor-pointer transition-transform duration-300 hover:scale-105"
                   onClick={() => {
-                    if (!selectedDepartment && departmentOptions.includes(item.title)) {
-                      setSelectedDepartment(item.title);
-                    } else if (!selectedCategory && categoryOptions.includes(item.title)) {
-                      setSelectedCategory(item.title);
-                    } else if (!selectedSubcategory && item.title) {
-                      setSelectedSubcategory(item.title);
-                    } else if (item.skillObj) {
+                    if (item.skillObj) {
                       setActiveSkill(item.skillObj);
                       setSelectedSkillId(item.skillObj.id);
                       setDialogOpen({ ...dialogOpen, view: true });
