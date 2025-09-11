@@ -16,6 +16,7 @@ const ChepterGrid = ({
   onDeleteContent,
   onSaveContent,
   onEditContent,
+  onQuestionContent,
   sessionInfo,
   courseDisplayName,
   standardName,
@@ -110,6 +111,7 @@ const ChepterGrid = ({
             onDeleteContent={onDeleteContent}
             onSaveContent={onSaveContent}
             onEditContent={onEditContent}
+            onQuestionContent={onQuestionContent}
             sessionInfo={sessionInfo}
             contents={course.contents}   // ✅ Pass chapter contents directly
             courseDisplayName={courseDisplayName}  // ✅ Pass course display name

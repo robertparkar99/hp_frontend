@@ -886,7 +886,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import TiptapEditor from "../../../content/LMS/questionBank/TiptapEditor";
 
-export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onSave }) {
+export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onSave ,courseDisplayName}) {
     const [open, setOpen] = useState(false)
     const [mappingTypes, setMappingTypes] = useState([])
     const [mappingValues, setMappingValues] = useState({})
@@ -900,7 +900,7 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
         userId: ""
     })
     const [success, setSuccess] = useState(false)
-    const [promptString, setPromptString] = useState("generate 1 question on skill data analysis")
+    const [promptString, setPromptString] = useState(`generate 1 question on ${courseDisplayName || "this course"}`)
     const [formData, setFormData] = useState({
         title: "",
         description: "",
