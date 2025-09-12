@@ -638,6 +638,7 @@ interface Skill {
 interface JobroleSkilladd1Props {
   skills: Skill[];
   userRatedSkills: any; // Add userRatedSkills prop
+   clickedUser:any;
 }
 
 interface ValidationState {
@@ -647,7 +648,7 @@ interface ValidationState {
   attitude: Record<string, string>;
 }
 
-export default function Index({ skills, userRatedSkills }: JobroleSkilladd1Props) {
+export default function Index({ skills, userRatedSkills, clickedUser}: JobroleSkilladd1Props) {
   const [currentSkillIndex, setCurrentSkillIndex] = useState(0);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(
     skills.length > 0 ? skills[0] : null
@@ -668,7 +669,7 @@ export default function Index({ skills, userRatedSkills }: JobroleSkilladd1Props
     attitude: {},
   });
 
-  const [clickedUser, setClickedUser] = useState<string | null>(null); // Add clickedUser state
+  // const [clickedUser, setClickedUser] = useState<string | null>(null); // Add clickedUser state
 
   const [attrArray, setAttrArray] = useState([
     { title: "knowledge", icon: "mdi-library" },
@@ -701,8 +702,8 @@ export default function Index({ skills, userRatedSkills }: JobroleSkilladd1Props
       });
     }
 
-    setClickedUser(clickedUserData);
-  }, [clickedUser]);
+    // setClickedUser(clickedUserData);
+  }, []);
 
   // Fetch initial data once session is ready
   useEffect(() => {
@@ -799,7 +800,8 @@ export default function Index({ skills, userRatedSkills }: JobroleSkilladd1Props
         ability: validationState.ability,
         behaviour: validationState.behaviour,
         attitude: validationState.attitude,
-        userId: userIdToUse, // Use the appropriate user ID
+        // userId: userIdToUse, // Use the appropriate user ID
+         userId: clickedUser || 0,
         sub_institute_id: sessionData.subInstituteId,
       };
 
