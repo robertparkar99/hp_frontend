@@ -18,28 +18,32 @@ const PrintButton = dynamic(
   { ssr: false }
 );
 
-type Props = { editData: any };
+type Props = { editData: any,selectedDept: any,selectedJobrole: any,selectedFunction: any };
 
 type TaskNameEntry = {
   taskName: string;
   critical_work_function: string;
-  jobrole?: string; // Used as an identifier for the task, similar to previous skill_id
+  jobrole?: string;
+  department?: string;
+  subDepartment?: string;
 };
 
 type SubmittedTaskName = {
-  id?: number; // Primary key from the API for the table row
+  id?: number;
   taskName: string;
   critical_work_function: string;
-  jobrole?: string; // Matches the type for fetching and submitting
+  jobrole?: string;
   created_by_user?: string;
   created_at?: string;
   updated_at?: string;
   category?: string;
   sub_category?: string;
-  skillTitle?: string; // This might be a remnant from 'skill' context, consider if it's still needed
+  skillTitle?: string;
+  department?: string;
+  subDepartment?: string;
 };
 
-const TaskData: React.FC<Props> = ({ editData }) => {
+const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selectedFunction }) => {
   // State Variables
   const [sessionData, setSessionData] = useState({
     url: "",
@@ -53,7 +57,7 @@ const TaskData: React.FC<Props> = ({ editData }) => {
     Record<number, string[]>
   >({});
   const [taskNames, setTaskNames] = useState<TaskNameEntry[]>([
-    { taskName: "", critical_work_function: "", jobrole: "" }, // Initialize with jobrole field
+    { taskName: "", critical_work_function: "", jobrole: "", department: "", subDepartment: "" },
   ]);
   const [submittedData, setSubmittedData] = useState<SubmittedTaskName[]>([]);
   const [loading, setLoading] = useState(false);
@@ -61,6 +65,10 @@ const TaskData: React.FC<Props> = ({ editData }) => {
     {}
   );
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [subDepartments, setSubDepartments] = useState<any[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const [selectedSubDepartment, setSelectedSubDepartment] = useState<string>("");
 
   // Session Data from Local Storage
   useEffect(() => {
@@ -86,6 +94,52 @@ const TaskData: React.FC<Props> = ({ editData }) => {
     }
   }, []);
 
+  // Fetch Departments
+  useEffect(() => {
+    if (sessionData.url && sessionData.token && sessionData.subInstituteId) {
+      fetchDepartments();
+    }
+  }, [sessionData.url, sessionData.token, sessionData.subInstituteId]);
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&order_by[direction]=desc&group_by=sector`
+      );
+      const data = await res.json();
+      setDepartments(data);
+      
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+    }
+  };
+
+  // Fetch Sub-Departments when department is selected
+  useEffect(() => {
+    if (selectedDepartment && sessionData.url && sessionData.token && sessionData.subInstituteId) {
+      fetchSubDepartments(selectedDepartment);
+    } else {
+      setSubDepartments([]);
+    }
+  }, [selectedDepartment, sessionData.url, sessionData.token, sessionData.subInstituteId]);
+
+  const fetchSubDepartments = async (department: string) => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[sector]=${encodeURIComponent(department)}&order_by[direction]=desc&group_by=track`
+      );
+      const data = await res.json();
+      setSubDepartments(data);
+      
+      // if (data && data.data) {
+      //   const subDepartmentList = data.data.map((item: any) => item.track).filter(Boolean);
+      //   setSubDepartments(subDepartmentList);
+      // }
+    } catch (error) {
+      console.error("Error fetching sub-departments:", error);
+    }
+  };
+
   // Fetch Initial Data
   useEffect(() => {
     if (sessionData.url && sessionData.token && editData?.id) {
@@ -96,20 +150,16 @@ const TaskData: React.FC<Props> = ({ editData }) => {
   const fetchInitialData = async () => {
     try {
       const res = await fetch(
-        `${sessionData.url}/jobrole_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&jobrole=${editData?.jobrole}&formType=tasks`
+        `${sessionData.url}/jobrole_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&jobrole=${editData?.jobrole}&department=${selectedDept}&function=${selectedFunction}&formType=tasks`
       );
       const data = await res.json();
 
       if (data?.usertaskData) {
-        // Log the raw data to inspect its structure if issues persist
         console.log("Raw usertaskData:", data.usertaskData);
 
         const transformedData = Array.isArray(data.usertaskData)
           ? data.usertaskData.map((item: any) => ({
             id: item.id,
-            // Safely extract taskName and ensure it's a string.
-            // If item.task is an object, try to get its 'title' or 'name' property,
-            // otherwise default to an empty string.
             taskName: (typeof item.task === 'object' && item.task !== null)
               ? (item.task.title || item.task.name || '')
               : String(item.task || ''),
@@ -117,8 +167,8 @@ const TaskData: React.FC<Props> = ({ editData }) => {
             jobrole: String(item.jobrole || editData?.jobrole || ''),
             category: String(item.category || ''),
             sub_category: String(item.sub_category || ''),
-            // skillTitle is a remnant from previous code, consider if it maps to anything
-            // meaningful in the task context from your API.
+            department: String(item.department || item.sector || ''),
+            subDepartment: String(item.subDepartment || item.track || ''),
             skillTitle: (typeof item.task === 'object' && item.task !== null)
               ? (item.task.title || item.task.name || '')
               : String(item.task || ''),
@@ -136,6 +186,8 @@ const TaskData: React.FC<Props> = ({ editData }) => {
               jobrole: String(data.usertaskData.jobrole || editData?.jobrole || ''),
               category: String(data.usertaskData.category || ''),
               sub_category: String(data.usertaskData.sub_category || ''),
+              department: String(data.usertaskData.department || data.usertaskData.sector || ''),
+              subDepartment: String(data.usertaskData.subDepartment || data.usertaskData.track || ''),
               skillTitle: (typeof data.usertaskData.task === 'object' && data.usertaskData.task !== null)
                 ? (data.usertaskData.task.title || data.usertaskData.task.name || '')
                 : String(data.usertaskData.task || ''),
@@ -161,15 +213,12 @@ const TaskData: React.FC<Props> = ({ editData }) => {
 
     try {
       const res = await fetch(
-        `${sessionData.url}/search_task?type=API&token=${ // Changed search_data to search_task
-        sessionData.token
-        }&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType
-        }&searchType=taskName&searchWord=${encodeURIComponent(keyword)}`
+        `${sessionData.url}/search_task?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=taskName&searchWord=${encodeURIComponent(keyword)}`
       );
       const data = await res.json();
       const suggestions = (data?.searchData || []).map((s: any) =>
         typeof s === 'string' ? s : (s.name || s.title || String(s) || '')
-      ).filter(Boolean); // Filter out any empty strings if conversion results in them
+      ).filter(Boolean);
       setTaskNameSuggestions((prev) => ({ ...prev, [index]: suggestions }));
     } catch (error) {
       console.error("Tasks search error:", error);
@@ -180,7 +229,7 @@ const TaskData: React.FC<Props> = ({ editData }) => {
   // Handle tasks Input Change
   const handleTaskNameChange = (
     index: number,
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     const updatedTaskNames = taskNames.map((task, i) =>
@@ -190,6 +239,14 @@ const TaskData: React.FC<Props> = ({ editData }) => {
 
     if (name === "taskName") {
       fetchTaskNameSuggestions(index, value);
+    } else if (name === "department") {
+      setSelectedDepartment(value);
+      // Reset sub-department when department changes
+      const updatedWithResetSubDept = taskNames.map((task, i) =>
+        i === index ? { ...task, department: value, subDepartment: "" } : task
+      );
+      setTaskNames(updatedWithResetSubDept);
+      setSelectedSubDepartment("");
     }
   };
 
@@ -203,7 +260,7 @@ const TaskData: React.FC<Props> = ({ editData }) => {
 
   // Add New tasks Entry
   const handleAddTaskName = () => {
-    setTaskNames([...taskNames, { taskName: "", critical_work_function: "", jobrole: "" }]);
+    setTaskNames([...taskNames, { taskName: "", critical_work_function: "", jobrole: "", department: "", subDepartment: "" }]);
   };
 
   // Remove tasks Entry
@@ -227,7 +284,8 @@ const TaskData: React.FC<Props> = ({ editData }) => {
     const tasksToSubmit = taskNames.map(task => ({
       taskName: task.taskName,
       critical_work_function: task.critical_work_function,
-      // Only include jobrole if it exists for the specific task (i.e., when editing an existing task)
+      department: task.department,
+      subDepartment: task.subDepartment,
       ...(task.jobrole && { jobrole: task.jobrole })
     }));
 
@@ -236,21 +294,21 @@ const TaskData: React.FC<Props> = ({ editData }) => {
       method_field: "PUT",
       taskName: tasksToSubmit.map((t) => t.taskName),
       critical_work_function: tasksToSubmit.map((t) => t.critical_work_function),
-      jobrole: editData?.jobrole, // This top-level jobrole identifies the job role context
+      sector: tasksToSubmit.map((t) => t.department),
+      track: tasksToSubmit.map((t) => t.subDepartment),
+      jobrole: editData?.jobrole,
       token: sessionData.token,
       sub_institute_id: sessionData.subInstituteId,
       org_type: sessionData.orgType,
       user_profile_name: sessionData.userProfile,
       user_id: sessionData.userId,
       formType: "tasks",
-      taskName_data: JSON.stringify(tasksToSubmit), // Stringify the array containing task objects with their jobrole
-      // The top-level 'id' here will be the ID of the specific jobrole being edited
-      // if editingId is set. This assumes the API expects it for single jobrole updates.
-      ...(editingId && { id: editingId }), // This 'id' refers to the job role entry, not individual tasks within it
+      taskName_data: JSON.stringify(tasksToSubmit),
+      ...(editingId && { id: editingId }),
     };
 
     try {
-      const url = `${sessionData.url}/jobrole_library/${editData?.id}`; // URL identifies the job role record
+      const url = `${sessionData.url}/jobrole_library/${editData?.id}`;
 
       const res = await fetch(url, {
         method: "PUT",
@@ -266,12 +324,14 @@ const TaskData: React.FC<Props> = ({ editData }) => {
       alert(data.message);
       console.log("Submission message:", data.message);
 
-      setTaskNames([{ taskName: "", critical_work_function: "", jobrole: "" }]); // Reset form
+      setTaskNames([{ taskName: "", critical_work_function: "", jobrole: "", department: "", subDepartment: "" }]);
       setTaskNameSuggestions({});
       setEditingId(null);
+      setSelectedDepartment("");
+      setSelectedSubDepartment("");
 
       if (sessionData.url && sessionData.token && editData?.id) {
-        await fetchInitialData(); // Refresh data after submission
+        await fetchInitialData();
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -283,25 +343,35 @@ const TaskData: React.FC<Props> = ({ editData }) => {
 
   // Handle Edit
   const handleEdit = (row: SubmittedTaskName) => {
-    // alert(row.critical_work_function);
     console.log(row);
-    setEditingId(row.id || null); // Use row.id for editingId
-    // Populate the form with the selected task's data, including its specific jobrole
-    setTaskNames([{ taskName: row.taskName, critical_work_function: row.critical_work_function, jobrole: row.jobrole }]);
+    setEditingId(row.id || null);
+    setTaskNames([{
+      taskName: row.taskName, 
+      critical_work_function: row.critical_work_function, 
+      jobrole: row.jobrole,
+      department: row.department || "",
+      subDepartment: row.subDepartment || ""
+    }]);
+    
+    // Set department and sub-department for dropdowns
+    if (row.department) {
+      setSelectedDepartment(row.department);
+      if (row.subDepartment) {
+        setSelectedSubDepartment(row.subDepartment);
+      }
+    }
+    
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Handle Delete
   const handleDelete = async (id: number) => {
-    // For demonstration, replacing window.confirm with console.log.
-    // In a real application, implement a custom modal for user confirmation.
-    if (window.confirm("Are you sure you want to delete this Skills?")) { // Consider replacing window.confirm
+    if (window.confirm("Are you sure you want to delete this Task?")) {
       try {
-        const userConfirmed = true; // Placeholder for actual modal confirmation
+        const userConfirmed = true;
 
         if (userConfirmed) {
           try {
-            // Assuming your API expects a DELETE request to jobrole_library endpoint for tasks
             const res = await fetch(
               `${sessionData.url}/jobrole_library/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=tasks`,
               {
@@ -314,7 +384,7 @@ const TaskData: React.FC<Props> = ({ editData }) => {
 
             const data = await res.json();
             console.log("Deletion message:", data.message);
-            fetchInitialData(); // Refresh data after deletion
+            fetchInitialData();
           } catch (error) {
             console.error("Error deleting tasks:", error);
             console.error("Error deleting tasks");
@@ -322,7 +392,7 @@ const TaskData: React.FC<Props> = ({ editData }) => {
         }
       } catch (error) {
         console.error("Error deleting Skills:", error);
-        alert("Error deleting Skills"); // Consider replacing alert with a custom modal UI
+        alert("Error deleting Skills");
       }
     }
   };
@@ -349,6 +419,38 @@ const TaskData: React.FC<Props> = ({ editData }) => {
 
   // DataTable Columns
   const columns = [
+    {
+      name: (
+        <div>
+          <div>Department</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("department", e.target.value)}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row: SubmittedTaskName) => row.department || "N/A",
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: (
+        <div>
+          <div>Sub-Department</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("subDepartment", e.target.value)}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row: SubmittedTaskName) => row.subDepartment || "N/A",
+      sortable: true,
+      wrap: true,
+    },
     {
       name: (
         <div>
@@ -381,56 +483,6 @@ const TaskData: React.FC<Props> = ({ editData }) => {
       sortable: true,
       wrap: true,
     },
-    // {
-    //   name: (
-    //     <div>
-    //       <div>Job Role</div>
-    //       <input
-    //         type="text"
-    //         placeholder="Search..."
-    //         onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
-    //         style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-    //       />
-    //     </div>
-    //   ),
-    //   selector: (row: SubmittedTaskName) => row.jobrole || "N/A",
-    //   sortable: true,
-    //   wrap: true,
-    // },
-    
-    // {
-    //   name: (
-    //     <div>
-    //       <div>Created By</div>
-    //       <input
-    //         type="text"
-    //         placeholder="Search..."
-    //         onChange={(e) =>
-    //           handleColumnFilter("created_by_user", e.target.value)
-    //         }
-    //         style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-    //       />
-    //     </div>
-    //   ),
-    //   selector: (row: SubmittedTaskName) => row.created_by_user || "N/A",
-    //   sortable: true,
-    // },
-    // {
-    //   name: (
-    //     <div>
-    //       <div>Created At</div>
-    //       <input
-    //         type="text"
-    //         placeholder="Search..."
-    //         onChange={(e) => handleColumnFilter("created_at", e.target.value)}
-    //         style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-    //       />
-    //     </div>
-    //   ),
-    //   selector: (row: SubmittedTaskName) =>
-    //     row.created_at ? new Date(row.created_at).toLocaleDateString() : "N/A",
-    //   sortable: true,
-    // },
     {
       name: "Actions",
       cell: (row: SubmittedTaskName) => (
@@ -450,7 +502,6 @@ const TaskData: React.FC<Props> = ({ editData }) => {
         </div>
       ),
       ignoreRowClick: true,
-      // allowOverflow: true,
       button: true,
     },
   ];
@@ -481,10 +532,53 @@ const TaskData: React.FC<Props> = ({ editData }) => {
         {taskNames.map((taskName, index) => (
           <div
             key={index}
-            className="grid md:grid-cols-3 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-2 mb-2 rounded-lg relative"
+            className="grid md:grid-cols-5 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-2 mb-2 rounded-lg relative"
           >
             {/* Hidden input for jobrole, used to carry its value on edit */}
             <input type="hidden" name="jobrole" id={`jobrole-${index}`} value={taskName.jobrole || ''} />
+
+            <div className="relative z-0 w-full group text-left">
+              <label htmlFor={`department-${index}`} className="text-left">
+                Department
+              </label>
+              <br />
+              <select
+                name="department"
+                id={`department-${index}`}
+                className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+                value={taskName.department || ""}
+                onChange={(e) => handleTaskNameChange(index, e)}
+              >
+                <option value="">Select Department</option>
+                {departments.map((dept, i) => (
+                  <option key={i} value={dept.sector}>
+                    {dept.sector}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="relative z-0 w-full group text-left">
+              <label htmlFor={`subDepartment-${index}`} className="text-left">
+                Sub-Department
+              </label>
+              <br />
+              <select
+                name="subDepartment"
+                id={`subDepartment-${index}`}
+                className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+                value={taskName.subDepartment || ""}
+                onChange={(e) => handleTaskNameChange(index, e)}
+                disabled={!taskName.department}
+              >
+                <option value="">Select Sub-Department</option>
+                {subDepartments.map((subDept, i) => (
+                  <option key={i} value={subDept.track}>
+                    {subDept.track}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="relative z-10 w-full group text-left">
               <label htmlFor={`taskName-${index}`} className="text-left">
@@ -537,12 +631,12 @@ const TaskData: React.FC<Props> = ({ editData }) => {
               ></textarea>
             </div>
 
-            <div className="relative z-0 w-full group text-left">
+            <div className="relative z-0 w-full group text-left flex items-end">
               {taskNames.length > 1 && (
                 <button
                   type="button"
                   onClick={() => handleRemoveTaskName(index)}
-                  className="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded-full mt-6 ml-2"
+                  className="bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-2 px-4 border border-red-500 hover:border-transparent rounded-full ml-2"
                 >
                   -
                 </button>
@@ -551,7 +645,7 @@ const TaskData: React.FC<Props> = ({ editData }) => {
                 <button
                   type="button"
                   onClick={handleAddTaskName}
-                  className="bg-transparent hover:bg-green-500 text-green-700 font-semibold hover:text-white py-2 px-4 border border-green-500 hover:border-transparent rounded-full mt-6 ml-2"
+                  className="bg-transparent hover:bg-green-500 text-green-700 font-semibold hover:text-white py-2 px-4 border border-green-500 hover:border-transparent rounded-full ml-2"
                 >
                   +
                 </button>
@@ -562,7 +656,7 @@ const TaskData: React.FC<Props> = ({ editData }) => {
 
         <button
           type="submit"
-          className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2"
+          className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2"
           disabled={loading}
         >
           {loading ? "Submitting..." : editingId ? "Update" : "Submit"}
@@ -572,7 +666,9 @@ const TaskData: React.FC<Props> = ({ editData }) => {
             type="button"
             onClick={() => {
               setEditingId(null);
-              setTaskNames([{ taskName: "", critical_work_function: "", jobrole: "" }]); // Reset form
+              setTaskNames([{ taskName: "", critical_work_function: "", jobrole: "", department: "", subDepartment: "" }]);
+              setSelectedDepartment("");
+              setSelectedSubDepartment("");
             }}
             className="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2"
           >

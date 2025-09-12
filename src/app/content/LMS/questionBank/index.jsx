@@ -788,7 +788,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 
-export default function QuestionBank({ chapter_id, standard_id }) {
+export default function QuestionBank({ chapter_id, standard_id ,courseDisplayName}) {
   // Default to 1 if not provided or falsy
   const effectiveChapterId = chapter_id || 1;
   const effectiveStandardId = standard_id || 1;
@@ -1266,6 +1266,7 @@ export default function QuestionBank({ chapter_id, standard_id }) {
             chapter_id={effectiveChapterId} 
             standard_id={effectiveStandardId}
             onSave={fetchData} 
+            courseDisplayName={courseDisplayName}
           />
         </div>
       </div>
