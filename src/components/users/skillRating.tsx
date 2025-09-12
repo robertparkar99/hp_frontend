@@ -91,7 +91,7 @@
 //       fetchInitialData(); // get data from skill level rate
 //     }
 //   }, [sessionData]);
-  
+
 //   // get data from skill level rate
 //   const fetchInitialData = async () => {
 //     try {
@@ -125,7 +125,7 @@
 //         [attribute]: isValid ? "yes" : "no"
 //       }
 //     }));
-    
+
 //     setShowSuccess(true);
 //     setTimeout(() => setShowSuccess(false), 1000);
 //   };
@@ -146,7 +146,7 @@
 //       // Last skill completed
 //       // You can add any completion logic here
 //     }
-    
+
 //     // Reset the image and processing state
 //     setSelectedImage("/image 16.png");
 //     setIsProcessing(false);
@@ -160,7 +160,7 @@
 
 //     setIsProcessing(true);
 //     setOpacity(0);
-    
+
 //     setTimeout(() => {
 //       setSelectedImage("/Illustration.png");
 //       setOpacity(1);
@@ -194,7 +194,7 @@
 //         console.log("Submission successful:", result);
 //         setShowSuccess(true);
 //         setTimeout(() => setShowSuccess(false), 2000);
-        
+
 //         // Move to next skill after successful API response
 //         moveToNextSkill();
 //       } else {
@@ -574,7 +574,7 @@
 //                 ))}
 //               </div>
 //             )}
-            
+
 //             {/* Next button moved to the end when showDetails is true */}
 //             <div className="flex items-center justify-end mt-4">
 //               <span className="mr-2">
@@ -637,6 +637,7 @@ interface Skill {
 
 interface JobroleSkilladd1Props {
   skills: Skill[];
+  userRatedSkills: any; // Add userRatedSkills prop
 }
 
 interface ValidationState {
@@ -646,7 +647,7 @@ interface ValidationState {
   attitude: Record<string, string>;
 }
 
-export default function Index({ skills }: JobroleSkilladd1Props) {
+export default function Index({ skills, userRatedSkills }: JobroleSkilladd1Props) {
   const [currentSkillIndex, setCurrentSkillIndex] = useState(0);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(
     skills.length > 0 ? skills[0] : null
@@ -700,7 +701,7 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
       });
     }
 
-      setClickedUser(clickedUserData);
+    setClickedUser(clickedUserData);
   }, [clickedUser]);
 
   // Fetch initial data once session is ready
@@ -709,7 +710,7 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
       fetchInitialData(); // get data from skill level rate
       console.log("Session Data:", sessionData); // Debugging line
       console.log("ckicked Data:", clickedUser); // Debugging line
-      
+
     }
   }, [sessionData]);
 
@@ -838,10 +839,15 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
   };
 
   // ✅ Conditional Rendering
-  if (sessionData.userId == clickedUser) {
-    return <AdminSkillRating />;
+  // if (sessionData.userId == clickedUser) {
+  //   return <AdminSkillRating />;
+  // }
+  if (String(sessionData.userId) === String(clickedUser)) {
+    // show skill rating page
+  } else {
+    return <AdminSkillRating skills={skills}
+      userRatedSkills={userRatedSkills} />;
   }
-
 
   return (
     <>
@@ -877,19 +883,17 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                   >
                     <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px] transition-all duration-300 group-hover:w-full group-hover:left-0 group-hover:rounded-none opacity-100 group-hover:opacity-0 group-hover:delay-[0ms]"></div>
                     <div
-                      className={`h-[36px] flex items-center transition-all duration-300 ${
-                        skill.skill_id === selectedSkill?.skill_id
-                          ? "bg-[#47A0FF] text-white"
-                          : "bg-white group-hover:bg-[#47A0FF] group-hover:text-white"
-                      } mb-1`}
+                      className={`h-[36px] flex items-center transition-all duration-300 ${skill.skill_id === selectedSkill?.skill_id
+                        ? "bg-[#47A0FF] text-white"
+                        : "bg-white group-hover:bg-[#47A0FF] group-hover:text-white"
+                        } mb-1`}
                     >
                       <div className="flex items-center justify-between w-full pl-[24px] pr-[8px]">
                         <span
-                          className={` text-[12px] truncate group-hover:text-white transition-colors duration-300 ${
-                            skill.skill_id === selectedSkill?.skill_id
-                              ? "text-white"
-                              : "text-[#393939]"
-                          }`}
+                          className={` text-[12px] truncate group-hover:text-white transition-colors duration-300 ${skill.skill_id === selectedSkill?.skill_id
+                            ? "text-white"
+                            : "text-[#393939]"
+                            }`}
                           style={{
                             fontFamily: "Inter, sans-serif",
                           }}
@@ -930,7 +934,7 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                   <h1>
                     <span
                       className="mdi mdi-information-variant-circle text-2xl"
-                       title="Skill Detail"
+                      title="Skill Detail"
                       onClick={() => setIsEditModalOpen(true)}
                     ></span>
                   </h1>
@@ -951,7 +955,7 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                 {/* Skill Level Selection */}
                 <div className="flex justify-center gap-6">
                   <div className="dropdownDiv">
-                    <select 
+                    <select
                       className="w-80 h-10 rounded-full shadow-lg border border-gray-200 hover:shadow-xl transition-shadow pl-2"
                       value={selectedSkillLevel}
                       onChange={(e) => setSelectedSkillLevel(e.target.value)}
@@ -1091,7 +1095,7 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                               ] as any[]) &&
                                 (
                                   selectedSkill[
-                                    attr?.title as keyof Skill
+                                  attr?.title as keyof Skill
                                   ] as any[]
                                 ).map((item: any, index: number) => (
                                   <div
@@ -1158,19 +1162,18 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                                     onClick={() =>
                                       handleValidation(
                                         attr?.title as
-                                          | "knowledge"
-                                          | "ability"
-                                          | "behaviour"
-                                          | "attitude",
+                                        | "knowledge"
+                                        | "ability"
+                                        | "behaviour"
+                                        | "attitude",
                                         item, // Use the actual attribute text as key
                                         true
                                       )
                                     }
-                                    className={`px-3 py-1 rounded hover:bg-green-600 ${
-                                      validationState[attr?.title as keyof ValidationState]?.[item] === "yes"
-                                        ? "bg-green-600 text-white"
-                                        : "bg-green-500 text-white"
-                                    }`}
+                                    className={`px-3 py-1 rounded hover:bg-green-600 ${validationState[attr?.title as keyof ValidationState]?.[item] === "yes"
+                                      ? "bg-green-600 text-white"
+                                      : "bg-green-500 text-white"
+                                      }`}
                                   >
                                     Yes
                                   </button>
@@ -1178,19 +1181,18 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                                     onClick={() =>
                                       handleValidation(
                                         attr?.title as
-                                          | "knowledge"
-                                          | "ability"
-                                          | "behaviour"
-                                          | "attitude",
+                                        | "knowledge"
+                                        | "ability"
+                                        | "behaviour"
+                                        | "attitude",
                                         item, // Use the actual attribute text as key
                                         false
                                       )
                                     }
-                                    className={`px-3 py-1 rounded hover:bg-red-600 ${
-                                      validationState[attr?.title as keyof ValidationState]?.[item] === "no"
-                                        ? "bg-red-600 text-white"
-                                        : "bg-red-500 text-white"
-                                    }`}
+                                    className={`px-3 py-1 rounded hover:bg-red-600 ${validationState[attr?.title as keyof ValidationState]?.[item] === "no"
+                                      ? "bg-red-600 text-white"
+                                      : "bg-red-500 text-white"
+                                      }`}
                                   >
                                     No
                                   </button>
@@ -1204,7 +1206,7 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                 ))}
               </div>
             )}
-            
+
             {/* Next button moved to the end when showDetails is true */}
             <div className="flex items-center justify-end mt-4">
               <span className="mr-2">
