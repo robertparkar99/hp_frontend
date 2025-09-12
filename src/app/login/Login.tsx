@@ -25,6 +25,7 @@ const Login: React.FC = () => {
       router.push("/Maindashboard");
       return;
     } else {
+      localStorage.clear();
       setLoading(false);
       history.pushState(null, "", window.location.pathname);
       window.addEventListener("popstate", function (event) {
