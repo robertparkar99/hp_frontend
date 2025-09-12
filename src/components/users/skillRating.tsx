@@ -846,7 +846,7 @@ export default function Index({ skills, userRatedSkills }: JobroleSkilladd1Props
     // show skill rating page
   } else {
     return <AdminSkillRating skills={skills}
-      userRatedSkills={userRatedSkills} />;
+      userRatedSkills={userRatedSkills} SkillLevels={SkillLevels}/>;
   }
 
   return (
@@ -964,7 +964,7 @@ export default function Index({ skills, userRatedSkills }: JobroleSkilladd1Props
                         SkillLevels.map((val: any, key) => (
                           <option
                             key={key}
-                            value={val?.proficiency_level}
+                            value={val.proficiency_type}
                             title={val?.description}
                           >
                             {val?.proficiency_level}
