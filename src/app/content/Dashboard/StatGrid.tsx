@@ -934,6 +934,8 @@ interface GapAnalysisData {
   }[];
 }
 
+
+
 interface MySkill {
   jobrole_skill_id: number;
   jobrole: string;
@@ -965,6 +967,8 @@ interface ChartData {
   status: string;
 }
 
+
+
 interface DashboardResponse {
   employeeList?: Employee[];
   today_task?: Task[];
@@ -981,6 +985,7 @@ interface DashboardResponse {
   current_level: number;
   departmentList?: Department[];
   skillHeatmap?: any;
+  skillLevels?: any[];
 }
 
 // Interface for skills data in the matrix
@@ -1005,6 +1010,8 @@ export default function Dashboard() {
   const [selectedCandidateSkills, setSelectedCandidateSkills] = useState<string[]>([]);
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
   const [expandedEmployeeIndex, setExpandedEmployeeIndex] = useState<number | null>(null);
+  const [skillLevels, setSkillLevels] = useState([]);
+
   const toggleSkills = (index: number) => {
     setExpandedEmployeeIndex(expandedEmployeeIndex === index ? null : index);
   };
@@ -1103,7 +1110,7 @@ export default function Dashboard() {
         );
         if (!res.ok) throw new Error(`API error: ${res.status}`);
 
-        const data: DashboardResponse = await res.json();
+        const data = await res.json();
         console.log("Dashboard API Response:", data);
 
         setEmployees(data.employeeList ?? []);
@@ -1114,6 +1121,8 @@ export default function Dashboard() {
         setMyGrowth(data.myGrowth ?? []);
         setDepartments(data.departmentList || []);
         setSkillHeatmap(data.skillHeatmap || {});
+        // setSkillLevels(data.SkillLevels || []);
+        
 
         // Extract unique skills from skillHeatmap
         const allSkills = new Set<string>();
@@ -1125,7 +1134,8 @@ export default function Dashboard() {
           });
         }
         setSkills(Array.from(allSkills));
-
+         setSkillLevels(data.SkillLevels || []);
+        console.log("Extracted Skills:", Array.from(skillLevels));
         const apiLevel = data.current_level ?? 0;
         setCurrentLevel(apiLevel);
 
@@ -1153,7 +1163,7 @@ export default function Dashboard() {
             const dayKey = formatDate(date);
             weeklyData[dayKey] = { count: 0, status: "NO_TASKS" };
           }
-          data.week_task.forEach((task) => {
+          data.week_task.forEach((task:any) => {
             if (!task.task_date) return;
             const taskDate = new Date(task.task_date);
             const taskDayKey = formatDate(taskDate);
@@ -1475,9 +1485,10 @@ export default function Dashboard() {
                     <thead>
                       <tr className="text-left">
                         <th className="px-3 py-2">Department</th>
-                        {skills.map((skill) => (
-                          <th key={skill} className="px-3 py-2 text-center">
-                            {skill}
+
+                        {skillLevels.map((level:any,key) => (
+                          <th key={key} className="px-3 py-2 text-center">
+                            {level.proficiency_level}
                           </th>
                         ))}
                       </tr>
