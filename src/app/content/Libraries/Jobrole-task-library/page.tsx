@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Atom } from "react-loading-indicators";
-import { Funnel } from "lucide-react"; // ✅ filter icon
+import { Funnel } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,8 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type JobRoleTask = {
   id: number;
-  sector: string; // Department
-  track: string;
+  sector: string;
+  track: string; // ✅ Now first filter
   jobrole: string;
   critical_work_function: string;
   task: string;
@@ -26,7 +26,7 @@ const CriticalWorkFunctionGrid = () => {
   const [data, setData] = useState<JobRoleTask[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedDept, setSelectedDept] = useState<string>("");
+  const [selectedTrack, setSelectedTrack] = useState<string>(""); // ✅ Track instead of Dept
   const [selectedJobrole, setSelectedJobrole] = useState<string>("");
   const [selectedFunction, setSelectedFunction] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
@@ -39,7 +39,7 @@ const CriticalWorkFunctionGrid = () => {
     userId: "",
   });
 
-  // ✅ Load sessionData from localStorage
+  // Load sessionData from localStorage
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
@@ -55,7 +55,7 @@ const CriticalWorkFunctionGrid = () => {
     }
   }, []);
 
-  // ✅ Fetch data after sessionData is loaded
+  // Fetch data after sessionData is loaded
   useEffect(() => {
     if (!sessionData.url || !sessionData.subInstituteId) return;
 
@@ -72,28 +72,30 @@ const CriticalWorkFunctionGrid = () => {
         const json: JobRoleTask[] = await res.json();
         setData(json);
 
-        // ✅ Set defaults
         if (json.length > 0) {
-          const depts = Array.from(new Set(json.map((d) => d.sector))).sort(
+          // ✅ Default Track
+          const tracks = Array.from(new Set(json.map((d) => d.track))).sort(
             (a, b) => a.localeCompare(b)
           );
-          const defaultDept = depts[0] || "";
+          const defaultTrack = tracks[0] || "";
 
+          // ✅ Default Jobrole
           const jobroles = Array.from(
-            new Set(json.filter((d) => d.sector === defaultDept).map((d) => d.jobrole))
+            new Set(json.filter((d) => d.track === defaultTrack).map((d) => d.jobrole))
           ).sort((a, b) => a.localeCompare(b));
           const defaultJobrole = jobroles[0] || "";
 
+          // ✅ Default Function
           const functions = Array.from(
             new Set(
               json
-                .filter((d) => d.sector === defaultDept && d.jobrole === defaultJobrole)
+                .filter((d) => d.track === defaultTrack && d.jobrole === defaultJobrole)
                 .map((d) => d.critical_work_function)
             )
           ).sort((a, b) => a.localeCompare(b));
           const defaultFunc = functions[0] || "";
 
-          setSelectedDept(defaultDept);
+          setSelectedTrack(defaultTrack);
           setSelectedJobrole(defaultJobrole);
           setSelectedFunction(defaultFunc);
         }
@@ -115,19 +117,19 @@ const CriticalWorkFunctionGrid = () => {
     );
   }
 
-  // ✅ Unique filters (sorted alphabetically)
-  const uniqueDepartments = Array.from(new Set(data.map((d) => d.sector))).sort(
+  // ✅ Unique filters
+  const uniqueTracks = Array.from(new Set(data.map((d) => d.track))).sort(
     (a, b) => a.localeCompare(b)
   );
 
   const uniqueJobroles = Array.from(
-    new Set(data.filter((d) => d.sector === selectedDept).map((d) => d.jobrole))
+    new Set(data.filter((d) => d.track === selectedTrack).map((d) => d.jobrole))
   ).sort((a, b) => a.localeCompare(b));
 
   const uniqueFunctions = Array.from(
     new Set(
       data
-        .filter((d) => d.sector === selectedDept && d.jobrole === selectedJobrole)
+        .filter((d) => d.track === selectedTrack && d.jobrole === selectedJobrole)
         .map((d) => d.critical_work_function)
     )
   ).sort((a, b) => a.localeCompare(b));
@@ -135,33 +137,32 @@ const CriticalWorkFunctionGrid = () => {
   // ✅ Filtered grid data
   const filteredData = data.filter(
     (item) =>
-      item.sector === selectedDept &&
+      item.track === selectedTrack &&
       item.jobrole === selectedJobrole &&
       item.critical_work_function === selectedFunction
   );
 
   return (
     <div className="min-h-screen p-4">
-      {/* Top bar: Filters + Funnel */}
+      {/* Top bar */}
       <div className="flex justify-end mb-6">
         <div className="flex items-center gap-4">
-          {/* Filters with animation */}
           <AnimatePresence>
             {showFilters && (
               <motion.div
-                initial={{ opacity: 0, x: 100 }} // slide from right
-                animate={{ opacity: 1, x: 0 }} // visible
-                exit={{ opacity: 0, x: 100 }} // slide back right
+                initial={{ opacity: 0, x: 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 100 }}
                 transition={{ duration: 0.4, ease: "easeInOut" }}
                 className="flex flex-col md:flex-row gap-4"
               >
-                {/* Department */}
+                {/* Track Dropdown */}
                 <Select
-                  value={selectedDept}
+                  value={selectedTrack}
                   onValueChange={(val) => {
-                    setSelectedDept(val);
+                    setSelectedTrack(val);
                     const jobroles = Array.from(
-                      new Set(data.filter((d) => d.sector === val).map((d) => d.jobrole))
+                      new Set(data.filter((d) => d.track === val).map((d) => d.jobrole))
                     ).sort((a, b) => a.localeCompare(b));
                     const firstJobrole = jobroles[0] || "";
                     setSelectedJobrole(firstJobrole);
@@ -169,7 +170,7 @@ const CriticalWorkFunctionGrid = () => {
                     const functions = Array.from(
                       new Set(
                         data
-                          .filter((d) => d.sector === val && d.jobrole === firstJobrole)
+                          .filter((d) => d.track === val && d.jobrole === firstJobrole)
                           .map((d) => d.critical_work_function)
                       )
                     ).sort((a, b) => a.localeCompare(b));
@@ -178,18 +179,18 @@ const CriticalWorkFunctionGrid = () => {
                   }}
                 >
                   <SelectTrigger className="w-[220px]">
-                    <SelectValue placeholder="Select Department" />
+                    <SelectValue placeholder="Select Track" />
                   </SelectTrigger>
                   <SelectContent>
-                    {uniqueDepartments.map((dept, idx) => (
-                      <SelectItem key={idx} value={dept}>
-                        {dept}
+                    {uniqueTracks.map((track, idx) => (
+                      <SelectItem key={idx} value={track}>
+                        {track}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                {/* Jobrole */}
+                {/* Jobrole Dropdown */}
                 <Select
                   value={selectedJobrole}
                   onValueChange={(val) => {
@@ -197,7 +198,7 @@ const CriticalWorkFunctionGrid = () => {
                     const functions = Array.from(
                       new Set(
                         data
-                          .filter((d) => d.sector === selectedDept && d.jobrole === val)
+                          .filter((d) => d.track === selectedTrack && d.jobrole === val)
                           .map((d) => d.critical_work_function)
                       )
                     ).sort((a, b) => a.localeCompare(b));
@@ -217,7 +218,7 @@ const CriticalWorkFunctionGrid = () => {
                   </SelectContent>
                 </Select>
 
-                {/* Critical Work Function */}
+                {/* Function Dropdown */}
                 <Select
                   value={selectedFunction}
                   onValueChange={(val) => setSelectedFunction(val)}
@@ -254,10 +255,8 @@ const CriticalWorkFunctionGrid = () => {
             key={item.id}
             className="relative group overflow-hidden rounded-3xl shadow-lg border-2 border-blue-200 hover:border-blue-300 transition-all duration-300"
           >
-            {/* Animated sweeping circle */}
             <div className="absolute z-[10] right-0 bottom-0 w-[1px] h-[1px] bg-[#B7DAFF] rounded-[0px_50px_0px_15px] transition-all duration-500 group-hover:w-full group-hover:h-full group-hover:rounded-[15px] group-hover:opacity-[0.5]"></div>
 
-            {/* Content */}
             <div className="relative z-10 p-8">
               <h3
                 className="text-lg font-bold text-gray-900 mb-2 leading-tight truncate"
@@ -265,14 +264,11 @@ const CriticalWorkFunctionGrid = () => {
               >
                 {item.critical_work_function}
               </h3>
-
-              {/* Decorative line */}
               <div className="flex items-center mb-2">
                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                 <div className="flex-1 h-0.5 bg-gray-300"></div>
                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
               </div>
-
               <p className="text-gray-700 text-sm leading-relaxed">
                 {item.task}
               </p>
