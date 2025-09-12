@@ -10,7 +10,9 @@ const CourseGrid = ({
   onEnroll, 
   onViewDetails,
   onLoadMore,
-  hasMore 
+  hasMore,
+    onEditCourse,
+    sessionInfo, 
 }) => {
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -115,6 +117,8 @@ const CourseGrid = ({
             viewMode={viewMode}
             onEnroll={onEnroll}
             onViewDetails={onViewDetails}
+            onEditCourse={onEditCourse}
+            sessionInfo={sessionInfo}
           />
         ))}
       </div>

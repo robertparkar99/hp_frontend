@@ -89,6 +89,8 @@ const AddChepterDialog = ({
 
       if (!res.ok) throw new Error("Failed to add chapter");
       const result = await res.json();
+
+      alert("Chapter added successfully");
       onSave(result);
       onOpenChange(false);
     } catch (err) {
@@ -132,6 +134,8 @@ const AddChepterDialog = ({
       }
 
       const result = await res.json();
+
+      alert("Chapter updated successfully");
       onSave(result);
       onOpenChange(false);
     } catch (err) {
@@ -153,13 +157,15 @@ const AddChepterDialog = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                Module Name
+                Module Name{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <input
                 type="text"
                 value={chapterName}
                 onChange={(e) => setChapterName(e.target.value)}
                 className="border p-2 rounded w-full"
+                required
               />
             </div>
 

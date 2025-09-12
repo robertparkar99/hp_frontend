@@ -43,7 +43,13 @@ export function EditQuestionDialog({
     subconcept: "",
     hint_text: "",
     mappings: [{ mapping_type: "", mapping_value: "", reasons: "" }],
-    answers: [{ text: "", feedback: "", is_correct: false }],
+    // answers: [{ text: "", feedback: "", is_correct: false }],
+    answers: [
+      { text: "", feedback: "", is_correct: false },
+      { text: "", feedback: "", is_correct: false },
+      { text: "", feedback: "", is_correct: false },
+      { text: "", feedback: "", is_correct: false }
+    ],
     syear: new Date().getFullYear(),
     grade_id: "",
     standard_id: "",
@@ -79,6 +85,110 @@ export function EditQuestionDialog({
   }, []);
 
   // fetch mapping data from the new API endpoint
+  // useEffect(() => {
+  //   if (!open || !question) return;
+    
+  //   const fetchMappingData = async () => {
+  //     try {
+  //       setLoading({ types: true, values: true });
+  //       setError("");
+        
+  //       // Fetch mapping types
+  //       const typesResponse = await fetch(
+  //         `${sessionData.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[parent_id]=0`
+  //       );
+        
+  //       if (!typesResponse.ok) {
+  //         throw new Error(`Failed to fetch mapping types: ${typesResponse.status}`);
+  //       }
+        
+  //       const typesData = await typesResponse.json();
+  //       const formattedTypes = typesData?.data || typesData?.result || typesData || [];
+  //       setMappingTypes(Array.isArray(formattedTypes) ? formattedTypes : []);
+        
+  //       // Fetch mapping values and answer data for this specific question
+  //       const questionId = question.id || question.question_id;
+  //       if (questionId && sessionData.url && sessionData.token) {
+  //         // First try the specific question endpoint
+  //         try {
+  //           const mappingResponse = await fetch(
+  //             `${sessionData.url}/lms/question_master/${questionId}/edit?type=API&sub_institute_id=${sessionData.sub_institute_id}&user_id=${sessionData.user_id || 1}&token=${sessionData.token}`
+  //           );
+            
+  //           if (mappingResponse.ok) {
+  //             const mappingData = await mappingResponse.json();
+              
+  //             // Process the question_mapping_data from the API response
+  //             if (mappingData && mappingData.question_mapping_data) {
+  //               const mappingEntries = Object.entries(mappingData.question_mapping_data);
+  //               const formattedMappings = mappingEntries.map(([key, value]) => ({
+  //                 mapping_type: value.TYPE_ID?.toString() || "",
+  //                 mapping_value: value.VALUE_ID?.toString() || "",
+  //                 reasons: value.REASONS || ""
+  //               }));
+                
+  //               // Process the answer_data from the API response
+  //               let formattedAnswers = [];
+  //               if (mappingData.answer_data && Array.isArray(mappingData.answer_data)) {
+  //                 formattedAnswers = mappingData.answer_data.map((answer) => ({
+  //                   text: answer.answer || "",
+  //                   feedback: answer.feedback || "",
+  //                   is_correct: answer.correct_answer === 1 || answer.correct_answer === true,
+  //                 }));
+  //               }
+                
+  //               // Update the form with the fetched mappings and answers
+  //               setEditForm(prev => ({
+  //                 ...prev,
+  //                 mappings: formattedMappings.length > 0 ? formattedMappings : prev.mappings,
+  //                 answers: formattedAnswers.length > 0 ? formattedAnswers : prev.answers
+  //               }));
+  //             }
+  //           } else if (mappingResponse.status === 404) {
+  //             console.warn("Edit endpoint not found, using question data directly");
+  //             // If the edit endpoint doesn't exist, use the question data we already have
+  //             if (question.mappings && Array.isArray(question.mappings)) {
+  //               setEditForm(prev => ({
+  //                 ...prev,
+  //                 mappings: question.mappings
+  //               }));
+  //             }
+  //             if (question.answers && Array.isArray(question.answers)) {
+  //               setEditForm(prev => ({
+  //                 ...prev,
+  //                 answers: question.answers
+  //               }));
+  //             }
+  //           }
+  //         } catch (err) {
+  //           console.error("Error fetching question-specific data:", err);
+  //           // Fallback to using the question data we already have
+  //           if (question.mappings && Array.isArray(question.mappings)) {
+  //             setEditForm(prev => ({
+  //               ...prev,
+  //               mappings: question.mappings
+  //             }));
+  //           }
+  //           if (question.answers && Array.isArray(question.answers)) {
+  //             setEditForm(prev => ({
+  //               ...prev,
+  //               answers: question.answers
+  //             }));
+  //           }
+  //         }
+  //       }
+  //     } catch (err) {
+  //       console.error("Error fetching mapping data:", err);
+  //       setError(`Failed to load question data: ${err.message}`);
+  //     } finally {
+  //       setLoading({ types: false, values: false });
+  //     }
+  //   };
+    
+  //   if (sessionData.url) {
+  //     fetchMappingData();
+  //   }
+  // }, [open, question, sessionData]);
   useEffect(() => {
     if (!open || !question) return;
     
@@ -131,44 +241,67 @@ export function EditQuestionDialog({
                   }));
                 }
                 
+                // Ensure at least 4 answers
+                while (formattedAnswers.length < 4) {
+                  formattedAnswers.push({ text: "", feedback: "", is_correct: false });
+                }
+                
                 // Update the form with the fetched mappings and answers
                 setEditForm(prev => ({
                   ...prev,
                   mappings: formattedMappings.length > 0 ? formattedMappings : prev.mappings,
-                  answers: formattedAnswers.length > 0 ? formattedAnswers : prev.answers
+                  answers: formattedAnswers
                 }));
               }
             } else if (mappingResponse.status === 404) {
               console.warn("Edit endpoint not found, using question data directly");
               // If the edit endpoint doesn't exist, use the question data we already have
-              if (question.mappings && Array.isArray(question.mappings)) {
-                setEditForm(prev => ({
-                  ...prev,
-                  mappings: question.mappings
-                }));
-              }
+              let answers = [];
               if (question.answers && Array.isArray(question.answers)) {
-                setEditForm(prev => ({
-                  ...prev,
-                  answers: question.answers
-                }));
+                answers = [...question.answers];
+                // Ensure at least 4 answers
+                while (answers.length < 4) {
+                  answers.push({ text: "", feedback: "", is_correct: false });
+                }
+              } else {
+                answers = [
+                  { text: "", feedback: "", is_correct: false },
+                  { text: "", feedback: "", is_correct: false },
+                  { text: "", feedback: "", is_correct: false },
+                  { text: "", feedback: "", is_correct: false }
+                ];
               }
+              
+              setEditForm(prev => ({
+                ...prev,
+                mappings: question.mappings && Array.isArray(question.mappings) ? question.mappings : prev.mappings,
+                answers: answers
+              }));
             }
           } catch (err) {
             console.error("Error fetching question-specific data:", err);
             // Fallback to using the question data we already have
-            if (question.mappings && Array.isArray(question.mappings)) {
-              setEditForm(prev => ({
-                ...prev,
-                mappings: question.mappings
-              }));
-            }
+            let answers = [];
             if (question.answers && Array.isArray(question.answers)) {
-              setEditForm(prev => ({
-                ...prev,
-                answers: question.answers
-              }));
+              answers = [...question.answers];
+              // Ensure at least 4 answers
+              while (answers.length < 4) {
+                answers.push({ text: "", feedback: "", is_correct: false });
+              }
+            } else {
+              answers = [
+                { text: "", feedback: "", is_correct: false },
+                { text: "", feedback: "", is_correct: false },
+                { text: "", feedback: "", is_correct: false },
+                { text: "", feedback: "", is_correct: false }
+              ];
             }
+            
+            setEditForm(prev => ({
+              ...prev,
+              mappings: question.mappings && Array.isArray(question.mappings) ? question.mappings : prev.mappings,
+              answers: answers
+            }));
           }
         }
       } catch (err) {
@@ -183,6 +316,7 @@ export function EditQuestionDialog({
       fetchMappingData();
     }
   }, [open, question, sessionData]);
+
 
   // fetch all mapping values (for dropdown options)
   useEffect(() => {
@@ -244,6 +378,23 @@ export function EditQuestionDialog({
         learning_outcome,
       } = question;
 
+ // Process answers to ensure at least 4
+      let answers = [];
+      if (question.answers && Array.isArray(question.answers)) {
+        answers = [...question.answers];
+        // Ensure at least 4 answers
+        while (answers.length < 4) {
+          answers.push({ text: "", feedback: "", is_correct: false });
+        }
+      } else {
+        answers = [
+          { text: "", feedback: "", is_correct: false },
+          { text: "", feedback: "", is_correct: false },
+          { text: "", feedback: "", is_correct: false },
+          { text: "", feedback: "", is_correct: false }
+        ];
+      }
+
       // Only set the form if we haven't already set mappings and answers from the API
       setEditForm(prev => ({
         ...prev,
@@ -274,11 +425,12 @@ export function EditQuestionDialog({
             { mapping_type: "", mapping_value: "", reasons: "" }
           ]
         ),
-        answers: prev.answers[0]?.text ? prev.answers : (
-          question.answers && Array.isArray(question.answers) ? question.answers : [
-            { text: "", feedback: "", is_correct: false }
-          ]
-        )
+        // answers: prev.answers[0]?.text ? prev.answers : (
+        //   question.answers && Array.isArray(question.answers) ? question.answers : [
+        //     { text: "", feedback: "", is_correct: false }
+        //   ]
+        // )
+         answers: answers
       }));
     }
   }, [question, open]);
@@ -311,7 +463,22 @@ export function EditQuestionDialog({
       mappings: prev.mappings.filter((_, i) => i !== index),
     }));
 
-  const addAnswer = () =>
+  // const addAnswer = () =>
+  //   setEditForm((prev) => ({
+  //     ...prev,
+  //     answers: [
+  //       ...prev.answers,
+  //       { text: "", feedback: "", is_correct: false },
+  //     ],
+  //   }));
+
+  // const removeAnswer = (index) =>
+  //   setEditForm((prev) => ({
+  //     ...prev,
+  //     answers: prev.answers.filter((_, i) => i !== index),
+  //   }));
+
+const addAnswer = () =>
     setEditForm((prev) => ({
       ...prev,
       answers: [
@@ -320,17 +487,44 @@ export function EditQuestionDialog({
       ],
     }));
 
-  const removeAnswer = (index) =>
-    setEditForm((prev) => ({
-      ...prev,
-      answers: prev.answers.filter((_, i) => i !== index),
-    }));
+  const removeAnswer = (index) => {
+    // Only allow removal if we have more than 4 answers
+    if (editForm.answers.length > 4) {
+      setEditForm((prev) => ({
+        ...prev,
+        answers: prev.answers.filter((_, i) => i !== index),
+      }));
+    }
+  };
+
 
   const handleSave = async () => {
   if (!sessionData.token) {
     setError("Authentication token is missing. Please refresh the page.");
     return;
   }
+  
+    // Validate at least 4 answers
+    if (editForm.answers.length < 4) {
+      setError("Please provide at least 4 answer options");
+      return;
+    }
+
+    // Validate all feedback fields are filled
+    const missingFeedback = editForm.answers.some(ans => !ans.feedback.trim());
+    if (missingFeedback) {
+      setError("Please provide feedback for all answer options");
+      return;
+    }
+
+    // Validate at least one correct answer
+    const hasCorrectAnswer = editForm.answers.some(ans => ans.is_correct);
+    if (!hasCorrectAnswer) {
+      setError("Please select at least one correct answer");
+      return;
+    }
+
+   
 
   // Prepare the data for submission
   const questionId = question.id || question.question_id;
@@ -435,10 +629,11 @@ export function EditQuestionDialog({
 
         <div className="space-y-4 py-2">
           <div>
-            <Label>Title *</Label>
+            <Label>Title{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> </Label>
             <TiptapEditor
               value={editForm.question_title}
-              onChange={(content) => handleChange("question_title", content)}
+              onChange={(content) => handleChange("question_title", content)}required
             />
           </div>
 
@@ -452,18 +647,24 @@ export function EditQuestionDialog({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Points *</Label>
+              <Label>Points{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> </Label>
               <Input
                 type="number"
                 value={editForm.points}
+                required
                 onChange={(e) => handleChange("points", e.target.value)}
               />
             </div>
             
             <div>
-              <Label>Question Mark</Label>
+              <Label>Question Mark
+                {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
+              </Label>
               <Input
                 type="number"
+                required
                 value={editForm.questionMark}
                 onChange={(e) => handleChange("questionMark", e.target.value)}
               />
@@ -471,16 +672,19 @@ export function EditQuestionDialog({
           </div>
 
           <div>
-            <Label>Mappings</Label>
+            {/* <Label>Mappings{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> </Label> */}
             {editForm.mappings.map((mapping, index) => (
               <div
                 key={index}
                 className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2"
               >
                 <div>
-                  <Label>Type</Label>
+                  <Label>Mapping Type{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> </Label>
                   <Select
                     value={mapping.mapping_type}
+                    required
                     onValueChange={(val) =>
                       handleMappingChange(index, "mapping_type", val)
                     }
@@ -505,9 +709,13 @@ export function EditQuestionDialog({
                 </div>
 
                 <div>
-                  <Label>Value</Label>
+                  <Label>Mapping Value
+                    {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
+                  </Label>
                   <Select
                     value={mapping.mapping_value}
+                    required
                     onValueChange={(val) =>
                       handleMappingChange(index, "mapping_value", val)
                     }
@@ -577,9 +785,11 @@ export function EditQuestionDialog({
           {/* All four fields in one line */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label>Question Type</Label>
+              <Label>Question Type{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> </Label>
               <Select
                 value={editForm.questionType}
+                required
                 onValueChange={(value) => handleChange("questionType", value)}
               >
                 <SelectTrigger>
@@ -593,9 +803,13 @@ export function EditQuestionDialog({
             </div>
             
             <div>
-              <Label>Question Mark</Label>
+              <Label>Question Mark
+                {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
+              </Label>
               <Input
                 type="number"
+                required
                 value={editForm.questionMark}
                 onChange={(e) => handleChange("questionMark", e.target.value)}
               />

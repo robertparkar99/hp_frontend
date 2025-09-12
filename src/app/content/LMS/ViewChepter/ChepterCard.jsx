@@ -41,6 +41,8 @@ const ChapterCard = ({
   const id = course.id || course.chapter_id;
   const title = course.title || course.chapter_name || "Untitled Chapter";
   const description = course.description || course.chapter_desc || "";
+  const standard_id = course.standard_id || "";
+  const subject_id = course.subject_id || "";
 
   const totalContentCount = Object.values(contents).reduce(
     (sum, items) => sum + items.length,
@@ -252,6 +254,8 @@ const ChapterCard = ({
         courseDisplayName={courseDisplayName}
         standardName={standardName}
         onSave={onSaveContent}
+        standard_id={standard_id}
+        subject_id={subject_id}
       />
 
       <Accordion type="multiple" className="space-y-4">
@@ -285,6 +289,7 @@ const ChapterCard = ({
                 </AccordionTrigger>
                 <div className="flex items-center gap-2 ml-2">
                   {/* Add content */}
+                  {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                   <Button
                     size="sm"
                     variant="outline"
@@ -298,7 +303,9 @@ const ChapterCard = ({
                     <Icon name="Plus" size={13} />
                     {/* Add */}
                   </Button>
+                  ) : null}
                   {/*Question bank open*/}
+                   {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                      <Button
                     size="sm"
                     variant="outline"
@@ -313,8 +320,10 @@ const ChapterCard = ({
                     <Icon name="FileQuestion" size={13} />
                     {/* Add */}
                   </Button>
+                   ) : null}
 
                   {/* Edit chapter */}
+                   {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                   <Button
                     size="sm"
                     variant="outline"
@@ -327,7 +336,9 @@ const ChapterCard = ({
                     <Icon name="Edit" size={13} />
                     {/* Edit */}
                   </Button>
+                   ) : null}
                   {/* Delete chapter */}
+                   {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                   <Button
                     size="sm"
                     variant="outline"
@@ -341,6 +352,7 @@ const ChapterCard = ({
                     <Icon name="Trash" size={13} />
                     {/* Delete */}
                   </Button>
+                   ) : null}
                 </div>
               </div>
             </CardHeader>
@@ -396,6 +408,7 @@ const ChapterCard = ({
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2">
+                                        
                                         <Button
                                           size="sm"
                                           variant="outline"
@@ -405,7 +418,7 @@ const ChapterCard = ({
                                         >
                                           <Icon name="Eye" size={13} />
                                         </Button>
-
+ {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                                         <Button
                                           size="sm"
                                           variant="outline"
@@ -419,7 +432,8 @@ const ChapterCard = ({
                                         >
                                           <Icon name="Edit" size={13} />
                                         </Button>
-
+ ):null}
+  {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                                         <Button
                                           size="sm"
                                           variant="outline"
@@ -429,6 +443,7 @@ const ChapterCard = ({
                                         >
                                           <Icon name="Trash" size={13} />
                                         </Button>
+  ):null}
                                       </div>
                                     </div>
                                   </CardContent>
