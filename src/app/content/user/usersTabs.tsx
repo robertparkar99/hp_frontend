@@ -402,8 +402,6 @@ export default function EditProfilePage() {
   const [clickedUser, setClickedUser] = useState<any>();
   const [activeTab, setActiveTab] = useState("personal-info");
   const [uploadDoc, setdocumentTypeLists] = useState<any>();
-  const [userJobroleComponent, setUserJobroleComponents] = useState<any>();
-  const [userCategory, setUserCategory] = useState<any>("");
 
   const [sessionData, setSessionData] = useState({
     url: "",
@@ -469,9 +467,6 @@ export default function EditProfilePage() {
       setUserDetails(data.data || null);
       setdocumentTypeLists(data.documentTypeLists || []);
       setDocumentLists(data.documentLists || []);
-      setUserJobroleComponents(data.usersJobroleComponent || []);
-      setUserCategory(data.usersJobroleComponent?.jobrole_category || '');
-      // console.log('tab data',data.usersJobroleComponent?.jobrole_category);
     } catch (error) {
       console.error("Failed to fetch initial data:", error);
     }
@@ -518,7 +513,7 @@ export default function EditProfilePage() {
     },
     {
       id: "Jobrole-Type",
-      label: "Expected competancy",
+      label: "Jobole Category",
       logo: "assets/User Details Images/Skill Rating.jpg",
       icon: <UserRoundSearch className="mr-2 h-5 w-5 text-slate-700" />,
     },
@@ -599,6 +594,7 @@ export default function EditProfilePage() {
             {activeTab === "skill-rating" && (
               <Skillrating 
                 skills={userRatingSkills} 
+                clickedUser={clickedUser}
                 userRatedSkills={userRatedSkills} 
               />
             )}
@@ -608,6 +604,7 @@ export default function EditProfilePage() {
                 userCategory={userCategory}
               />
             )}
+            {activeTab === "Jobrole-Type" && <Radar />}
           </div>
         </div>
       )}
