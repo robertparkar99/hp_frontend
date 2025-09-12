@@ -514,6 +514,7 @@ export default function EditProfilePage() {
     {
       id: "Jobrole-Type",
       label: "Jobole Category",
+      label: "Jobole Category",
       logo: "assets/User Details Images/Skill Rating.jpg",
       icon: <UserRoundSearch className="mr-2 h-5 w-5 text-slate-700" />,
     },
@@ -604,6 +605,7 @@ export default function EditProfilePage() {
                 userCategory={userCategory}
               />
             )}
+            {activeTab === "Jobrole-Type" && <Radar />}
             {activeTab === "Jobrole-Type" && <Radar />}
           </div>
         </div>
