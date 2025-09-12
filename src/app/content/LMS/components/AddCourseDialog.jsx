@@ -14,10 +14,10 @@ import { Button } from "../../../../components/ui/button";
 
 const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
   // Input fields
-  const [sortOrder, setSortOrder] = useState("1");
+  const [sortOrder, setSortOrder] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [displayImage, setDisplayImage] = useState(null);
-  const [subjectCategory, setSubjectCategory] = useState("Technical");
+  const [subjectCategory, setSubjectCategory] = useState("");
   const [subjectCode, setSubjectCode] = useState("");
   const [subjectType, setSubjectType] = useState("");
   const [shortName, setShortName] = useState("");
@@ -154,6 +154,7 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
       let result;
       try {
         result = JSON.parse(responseText);
+        alert("Course added successfully");
       } catch (e) {
         console.error("Failed to parse JSON response:", e);
         throw new Error("Invalid response from server");
@@ -201,9 +202,9 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
   // Populate fields when editing
   useEffect(() => {
     if (course) {
-      setSortOrder(course.sort_order || "1");
+      setSortOrder(course.sort_order || "");
       setDisplayName(course.display_name || course.title || "");
-      setSubjectCategory(course.subject_category || course.category || "Technical");
+      setSubjectCategory(course.subject_category || course.category || " ");
       setSubjectCode(course.subject_code || "");
       setSubjectType(course.subject_type || "");
       setShortName(course.short_name || "");
@@ -214,9 +215,9 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
           course.status === true
       );
     } else {
-      setSortOrder("1");
+      setSortOrder("");
       setDisplayName("");
-      setSubjectCategory("Technical");
+      setSubjectCategory("");
       setSubjectCode("");
       setSubjectType("");
       setShortName("");
@@ -226,12 +227,11 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
     setDisplayImage(null); // Always reset image
   }, [course, open]);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = () => {
     if (e.target.files && e.target.files[0]) {
       setDisplayImage(e.target.files[0]);
     }
   };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -244,7 +244,8 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
             {/* Course Name */}
             <div>
               <label className="block text-sm font-medium mb-1">
-                Course Name *
+                Course Name{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <input
                 type="text"
@@ -259,20 +260,23 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
             {/* Display Image */}
             <div>
               <label className="block text-sm font-medium mb-1">
-                Display Image
+                Display Image{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <input
                 type="file"
                 onChange={handleImageChange}
                 className="border p-2 rounded w-full"
                 accept="image/*"
+                required
               />
             </div>
 
             {/* Short Name */}
             <div>
               <label className="block text-sm font-medium mb-1">
-                Short Name
+                Short Name{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <input
                 type="text"
@@ -280,6 +284,7 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
                 value={shortName}
                 onChange={(e) => setShortName(e.target.value)}
                 className="border p-2 rounded w-full"
+                required
               />
             </div>
 
@@ -325,9 +330,10 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
               />
             </div>
 
-            {/* Standard */}
+            {/* Type */}
             <div>
-              <label className="block text-sm font-medium mb-1">Standard *</label>
+              <label className="block text-sm font-medium mb-1">Type{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> </label>
               <select
                 value={standardId}
                 onChange={(e) => setStandardId(e.target.value)}
