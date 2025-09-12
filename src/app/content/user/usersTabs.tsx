@@ -402,6 +402,8 @@ export default function EditProfilePage() {
   const [clickedUser, setClickedUser] = useState<any>();
   const [activeTab, setActiveTab] = useState("personal-info");
   const [uploadDoc, setdocumentTypeLists] = useState<any>();
+  const [userJobroleComponent, setUserJobroleComponents] = useState<any>();
+  const [userCategory, setUserCategory] = useState<any>("");
 
   const [sessionData, setSessionData] = useState({
     url: "",
@@ -438,7 +440,7 @@ export default function EditProfilePage() {
         syear: syear,
       });
     }
-  }, []);
+  }, [clickedUser]);
 
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
@@ -467,6 +469,8 @@ export default function EditProfilePage() {
       setUserDetails(data.data || null);
       setdocumentTypeLists(data.documentTypeLists || []);
       setDocumentLists(data.documentLists || []);
+        setUserJobroleComponents(data.usersJobroleComponent || []);
+      setUserCategory(data.usersJobroleComponent?.jobrole_category || '');
     } catch (error) {
       console.error("Failed to fetch initial data:", error);
     }
@@ -513,8 +517,8 @@ export default function EditProfilePage() {
     },
     {
       id: "Jobrole-Type",
-      label: "Jobole Category",
-      label: "Jobole Category",
+      label: "Expected competancy",
+      // label: "Jobole Category",
       logo: "assets/User Details Images/Skill Rating.jpg",
       icon: <UserRoundSearch className="mr-2 h-5 w-5 text-slate-700" />,
     },
