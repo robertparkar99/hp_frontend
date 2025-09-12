@@ -21,6 +21,7 @@ const CourseCard = ({
   onEditCourse,
   onDelete,
   onViewDetails,
+  sessionInfo,
   viewMode = "grid",
   alt = "Course Thumbnail",
 }) => {
@@ -196,9 +197,11 @@ const handleViewDetails = () => {
         <div className="absolute top-3 right-3 z-30">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
+                {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
               <Button variant="ghost" size="icon" className="h-8 w-8 p-0 relative z-30">
                 <Icon name="MoreHorizontal" size={18} />
               </Button>
+                ):null}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="z-40">
               <DropdownMenuItem onClick={handleEditClick}>
