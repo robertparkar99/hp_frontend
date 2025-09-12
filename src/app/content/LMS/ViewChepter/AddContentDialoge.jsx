@@ -19,6 +19,9 @@ const AddContentDialog = ({
   chapterName,
   standardName,
   courseDisplayName,
+  standard_id,
+  subject_id,
+
 }) => {
   // Dynamic mapping fields
   const [mappings, setMappings] = useState([
@@ -71,6 +74,7 @@ const AddContentDialog = ({
       if (!chapterId) return;
       try {
         const url = `${sessionInfo.url}/lms/create_content_master?chapter_id=${chapterId}&type=API`;
+        console.log("add content dialoge chepter Id ", chapterId);
         const res = await fetch(url);
         if (!res.ok) {
           setCategories([]);
@@ -320,9 +324,12 @@ const AddContentDialog = ({
     // Add hidden fields
     formData.append("show_hide", display ? "1" : "0");
     formData.append("grade", "1");
-    formData.append("standard", "1");
-    formData.append("subject", "1");
-    formData.append("chapter", "1");
+    formData.append("standard", String(standard_id));
+    console.log("standard_id", standard_id);
+    formData.append("subject", String(subject_id));
+    console.log("subject_id", subject_id);
+    formData.append("chapter", String(chapterId));
+    console.log("chapterId", chapterId);
 
     // Add mappings
     mappings.forEach((map, index) => {
@@ -402,6 +409,8 @@ const AddContentDialog = ({
       }
 
       const result = await res.json();
+    alert("Content added successfully");
+
       if (onSave) onSave(result);
       onOpenChange(false);
     } catch (err) {
@@ -432,6 +441,9 @@ const AddContentDialog = ({
       }
 
       const result = await res.json();
+
+      alert("Content updated successfully");
+
       if (onSave) onSave(result);
       onOpenChange(false);
     } catch (err) {
@@ -468,7 +480,8 @@ const AddContentDialog = ({
                 >
                   <div className="col-span-5">
                     <label className="block text-sm font-medium mb-1">
-                      Mapping Type
+                      Mapping Type{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
                     </label>
                     <select
                       value={map.mappingType}
@@ -476,6 +489,7 @@ const AddContentDialog = ({
                         handleChange(index, "mappingType", e.target.value)
                       }
                       className="border p-2 rounded w-full"
+                      required
                     >
                       <option value="">Select Mapping Type</option>
                       {mappingTypes.map((type) => (
@@ -536,12 +550,14 @@ const AddContentDialog = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  File Upload Type
+                  File Upload Type{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <select
                   value={contentType}
                   onChange={(e) => setContentType(e.target.value)}
                   className="border p-2 rounded w-full"
+                  required
                 >
                   <option value="">Select Type</option>
                   <option value="pdf">PDF</option>
@@ -594,7 +610,8 @@ const AddContentDialog = ({
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
-                Title
+                Title{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
               </label>
               <input
                 type="text"
@@ -602,6 +619,7 @@ const AddContentDialog = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="border p-2 rounded w-full"
+                required
 
               />
             </div>
@@ -638,12 +656,14 @@ const AddContentDialog = ({
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Content Category
+                  Content Category{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="border p-2 rounded w-full"
+                  required
                 >
                   <option value="">Select Category</option>
                   {categories.map((cat) => (
