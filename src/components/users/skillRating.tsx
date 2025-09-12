@@ -803,7 +803,7 @@ export default function Index({ skills, userRatedSkills }: JobroleSkilladd1Props
         sub_institute_id: sessionData.subInstituteId,
       };
 
-      console.log("Submitting data:", formData);
+      // console.log("Submitting data:", formData);
 
       const response = await fetch(`${sessionData.url}/matrix/save`, {
         method: "POST",
@@ -816,7 +816,7 @@ export default function Index({ skills, userRatedSkills }: JobroleSkilladd1Props
 
       if (response.ok) {
         const result = await response.json();
-        console.log("Submission successful:", result);
+        // console.log("Submission successful:", result);
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
 
