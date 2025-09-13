@@ -116,17 +116,17 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
 
   // Fetch Sub-Departments when department is selected
   useEffect(() => {
-    if (selectedDepartment && sessionData.url && sessionData.token && sessionData.subInstituteId) {
-      fetchSubDepartments(selectedDepartment);
+    if (sessionData.orgType && sessionData.url && sessionData.token && sessionData.subInstituteId) {
+      fetchSubDepartments(sessionData.orgType);
     } else {
       setSubDepartments([]);
     }
-  }, [selectedDepartment, sessionData.url, sessionData.token, sessionData.subInstituteId]);
+  }, [sessionData.orgType, selectedDept, sessionData.url, sessionData.token, sessionData.subInstituteId]);
 
-  const fetchSubDepartments = async (department: string) => {
+  const fetchSubDepartments = async (selectedDept: string) => {
     try {
       const res = await fetch(
-        `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[sector]=${encodeURIComponent(department)}&order_by[direction]=desc&group_by=track`
+        `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[sector]=${encodeURIComponent(selectedDept)}&order_by[direction]=desc&group_by=track`
       );
       const data = await res.json();
       setSubDepartments(data);
@@ -149,14 +149,28 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
 
   const fetchInitialData = async () => {
     try {
+      const params = new URLSearchParams({
+        type: "API",
+        token: sessionData.token,
+        sub_institute_id: sessionData.subInstituteId,
+        org_type: sessionData.orgType,
+        jobrole: editData?.jobrole,
+        formType: "tasks",
+      });
+
+      if (selectedDept !== undefined) {
+        params.append("sub_department", selectedDept);
+      }
+      if (selectedFunction !== undefined) {
+        params.append("function", selectedFunction);
+      }
+
       const res = await fetch(
-        `${sessionData.url}/jobrole_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&jobrole=${editData?.jobrole}&department=${selectedDept}&function=${selectedFunction}&formType=tasks`
+        `${sessionData.url}/jobrole_library/create?${params.toString()}`
       );
       const data = await res.json();
 
       if (data?.usertaskData) {
-        console.log("Raw usertaskData:", data.usertaskData);
-
         const transformedData = Array.isArray(data.usertaskData)
           ? data.usertaskData.map((item: any) => ({
             id: item.id,
@@ -203,6 +217,7 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
       console.error("Error fetching initial data:", error);
     }
   };
+
 
   // Fetch task Suggestions
   const fetchTaskNameSuggestions = async (index: number, keyword: string) => {
@@ -280,7 +295,6 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
     e.preventDefault();
     setLoading(true);
 
-    // Prepare taskNames to ensure jobrole is included in each object
     const tasksToSubmit = taskNames.map(task => ({
       taskName: task.taskName,
       critical_work_function: task.critical_work_function,
@@ -289,7 +303,7 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
       ...(task.jobrole && { jobrole: task.jobrole })
     }));
 
-    const payload = {
+    const payload: Record<string, any> = {
       type: "API",
       method_field: "PUT",
       taskName: tasksToSubmit.map((t) => t.taskName),
@@ -307,6 +321,13 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
       ...(editingId && { id: editingId }),
     };
 
+    if (selectedDept !== undefined) {
+      payload.sub_department = selectedDept;
+    }
+    if (selectedFunction !== undefined) {
+      payload.function = selectedFunction;
+    }
+
     try {
       const url = `${sessionData.url}/jobrole_library/${editData?.id}`;
 
@@ -322,7 +343,6 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
 
       const data = await res.json();
       alert(data.message);
-      console.log("Submission message:", data.message);
 
       setTaskNames([{ taskName: "", critical_work_function: "", jobrole: "", department: "", subDepartment: "" }]);
       setTaskNameSuggestions({});
@@ -335,7 +355,6 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      console.error("Error submitting form");
     } finally {
       setLoading(false);
     }
@@ -419,26 +438,26 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
 
   // DataTable Columns
   const columns = [
+    // {
+    //   name: (
+    //     <div>
+    //       <div>Industry</div>
+    //       <input
+    //         type="text"
+    //         placeholder="Search..."
+    //         onChange={(e) => handleColumnFilter("department", e.target.value)}
+    //         style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+    //       />
+    //     </div>
+    //   ),
+    //   selector: (row: SubmittedTaskName) => row.department || "N/A",
+    //   sortable: true,
+    //   wrap: true,
+    // },
     {
       name: (
         <div>
           <div>Department</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("department", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
-          />
-        </div>
-      ),
-      selector: (row: SubmittedTaskName) => row.department || "N/A",
-      sortable: true,
-      wrap: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Sub-Department</div>
           <input
             type="text"
             placeholder="Search..."
@@ -537,30 +556,27 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
             {/* Hidden input for jobrole, used to carry its value on edit */}
             <input type="hidden" name="jobrole" id={`jobrole-${index}`} value={taskName.jobrole || ''} />
 
-            <div className="relative z-0 w-full group text-left">
-              <label htmlFor={`department-${index}`} className="text-left">
-                Department
-              </label>
-              <br />
-              <select
-                name="department"
-                id={`department-${index}`}
-                className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
-                value={taskName.department || ""}
-                onChange={(e) => handleTaskNameChange(index, e)}
-              >
-                <option value="">Select Department</option>
-                {departments.map((dept, i) => (
-                  <option key={i} value={dept.sector}>
-                    {dept.sector}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* <div className="relative z-0 w-full group text-left">
+  <label htmlFor={`department-${index}`} className="text-left">
+    Department
+  </label>
+  <br />
+  <select
+    name="department"
+    id={`department-${index}`}
+    className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#f9f9f9] text-black focus:outline-none focus:border-blue-500"
+    value={sessionData.orgType || ""}  // always set from sessionData
+    disabled
+  >
+    <option value={sessionData.orgType || ""}>
+      {sessionData.orgType || "N/A"}
+    </option>
+  </select>
+</div> */}
 
             <div className="relative z-0 w-full group text-left">
               <label htmlFor={`subDepartment-${index}`} className="text-left">
-                Sub-Department
+                Department
               </label>
               <br />
               <select
@@ -569,9 +585,8 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
                 className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
                 value={taskName.subDepartment || ""}
                 onChange={(e) => handleTaskNameChange(index, e)}
-                disabled={!taskName.department}
               >
-                <option value="">Select Sub-Department</option>
+                <option value="">Select Department</option>
                 {subDepartments.map((subDept, i) => (
                   <option key={i} value={subDept.track}>
                     {subDept.track}
