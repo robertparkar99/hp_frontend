@@ -9,8 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Atom } from "react-loading-indicators";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface SkillItem {
   id: number;
@@ -26,7 +26,6 @@ interface SkillItem {
 const Honeycomb: React.FC = () => {
   const [data, setData] = useState<SkillItem[]>([]);
   const [filteredData, setFilteredData] = useState<SkillItem[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
   const [sessionData, setSessionData] = useState({
     url: "",
     token: "",
@@ -136,96 +135,83 @@ const Honeycomb: React.FC = () => {
 
   return (
     <>
-      {/* 🔽 Funnel & Filters Section */}
+      {/* 🔽 Funnel + Popover Filters Section */}
       <div className="flex p-4 justify-end mb-6">
-        <div className="flex items-center gap-4">
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, x: 100 }}   // from right
-                animate={{ opacity: 1, x: 0 }}     // fade in
-                exit={{ opacity: 0, x: 100 }}      // back to right
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="flex flex-col md:flex-row gap-4"
-              >
-                {/* Category Filter */}
-                <Select
-                  value={category || "all"}
-                  onValueChange={(value) => {
-                    if (value === "all") {
-                      setCategory("");
-                      setSubCategory("");
-                    } else {
-                      setCategory(value);
-                      setSubCategory("");
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-56 border rounded-md px-3 py-2 text-sm bg-white shadow">
-                    <SelectValue placeholder="Filter by Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Filter by Category</SelectItem>
-                    {uniqueCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="p-3 ">
+              <Funnel className="w-5 h-5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[300px] p-4 space-y-4" align="end">
+            {/* Category Filter */}
+            <Select
+              value={category || "all"}
+              onValueChange={(value) => {
+                if (value === "all") {
+                  setCategory("");
+                  setSubCategory("");
+                } else {
+                  setCategory(value);
+                  setSubCategory("");
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {uniqueCategories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-                {/* Subcategory Filter */}
-                <Select
-                  value={subCategory || "all"}
-                  onValueChange={(value) =>
-                    setSubCategory(value === "all" ? "" : value)
-                  }
-                  disabled={!category}
-                >
-                  <SelectTrigger className="w-56 border rounded-md px-3 py-2 text-sm bg-white shadow disabled:bg-gray-100 disabled:text-gray-400">
-                    <SelectValue placeholder="Filter by Sub Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Filter by Sub Category</SelectItem>
-                    {filteredSubCategories.map((sub) => (
-                      <SelectItem key={sub} value={sub}>
-                        {sub}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Subcategory Filter */}
+            <Select
+              value={subCategory || "all"}
+              onValueChange={(value) =>
+                setSubCategory(value === "all" ? "" : value)
+              }
+              disabled={!category}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by Sub Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sub Categories</SelectItem>
+                {filteredSubCategories.map((sub) => (
+                  <SelectItem key={sub} value={sub}>
+                    {sub}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-                {/* Proficiency Filter */}
-                <Select
-                  value={proficiency || "all"}
-                  onValueChange={(value) =>
-                    setProficiency(value === "all" ? "" : value)
-                  }
-                >
-                  <SelectTrigger className="w-56 border rounded-md px-3 py-2 text-sm bg-white shadow">
-                    <SelectValue placeholder="Filter by Proficiency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Filter by Proficiency</SelectItem>
-                    {uniqueProficiency.map((prof) => (
-                      <SelectItem key={prof} value={prof}>
-                        {prof}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Funnel Button */}
-          <button
-            onClick={() => setShowFilters((prev) => !prev)}
-            className="p-3"
-          >
-            <Funnel className="w-5 h-5" />
-          </button>
-        </div>
+            {/* Proficiency Filter */}
+            <Select
+              value={proficiency || "all"}
+              onValueChange={(value) =>
+                setProficiency(value === "all" ? "" : value)
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by Proficiency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Proficiency Levels</SelectItem>
+                {uniqueProficiency.map((prof) => (
+                  <SelectItem key={prof} value={prof}>
+                    {prof}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* 🔽 Circles Section */}
