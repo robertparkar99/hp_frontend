@@ -897,7 +897,8 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
         url: "",
         token: "",
         subInstituteId: "",
-        userId: ""
+        userId: "",
+        user_profile_name:"",
     })
     const [success, setSuccess] = useState(false)
     const [promptString, setPromptString] = useState(`generate 1 question on ${courseDisplayName || "this course"}`)
@@ -937,12 +938,13 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
     useEffect(() => {
         const userData = localStorage.getItem("userData");
         if (userData) {
-            const { APP_URL, token, sub_institute_id, user_id } = JSON.parse(userData);
+            const { APP_URL, token, sub_institute_id, user_id,user_profile_name } = JSON.parse(userData);
             setSessionData({
                 url: APP_URL,
                 token,
                 subInstituteId: sub_institute_id,
                 userId: user_id,
+                user_profile_name: user_profile_name
             });
         }
     }, []);
@@ -1486,7 +1488,7 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? ( 
+{["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
                 <Button><Plus className="mr-2 h-4 w-4" />Add Question</Button> 
                  ):null} 
             </DialogTrigger>
