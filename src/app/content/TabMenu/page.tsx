@@ -74,7 +74,7 @@ const TabsMenu: React.FC<TabsMenuProps> = ({
                   className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                   onClick={() => openAndClose("JobroleTaxonomy")}
                 >
-                  Department
+                  Jobrole Taxonomy
                 </button>
               )}
 
