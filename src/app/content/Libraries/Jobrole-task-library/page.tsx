@@ -85,7 +85,7 @@ const CriticalWorkFunctionGrid = () => {
   const fetchData = async () => {
     try {
       const res = await fetch(
-        `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&order_by[direction]=desc&group_by=task`,
+        `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[sector]=${sessionData.orgType}&order_by[direction]=desc&group_by=task`,
         {
           headers: {
             Authorization: `Bearer ${sessionData.token}`,
@@ -93,11 +93,12 @@ const CriticalWorkFunctionGrid = () => {
         }
       );
       const json: JobRoleTask[] = await res.json();
+      console.log("Fetched Data:", json);
       setData(json);
 
       // ✅ Set defaults
       if (json.length > 0) {
-        const depts = Array.from(new Set(json.map((d) => d.sector || "")))
+        const depts = Array.from(new Set(json.map((d) => d.track || "")))
           .filter(Boolean)
           .sort();
         const defaultDept = depts[0] || "";
@@ -105,7 +106,7 @@ const CriticalWorkFunctionGrid = () => {
         const jobroles = Array.from(
           new Set(
             json
-              .filter((d) => d.sector === defaultDept)
+              .filter((d) => d.track === defaultDept)
               .map((d) => d.jobrole || "")
           )
         )
@@ -117,7 +118,7 @@ const CriticalWorkFunctionGrid = () => {
           new Set(
             json
               .filter(
-                (d) => d.sector === defaultDept && d.jobrole === defaultJobrole
+                (d) => d.track === defaultDept && d.jobrole === defaultJobrole
               )
               .map((d) => d.critical_work_function || "")
           )
@@ -146,52 +147,52 @@ const CriticalWorkFunctionGrid = () => {
   }
 
   // ✅ Unique filters (sorted alphabetically)
-  const uniqueDepartments = Array.from(new Set(data.map((d) => d.sector || "")))
+  const uniqueDepartments = data.length > 0 ? Array.from(new Set(data.map((d) => d.track || "")))
     .filter(Boolean)
-    .sort();
+    .sort() : [];
 
-  const uniqueJobroles = Array.from(
+  const uniqueJobroles = data.length > 0 ? Array.from(
     new Set(
-      data.filter((d) => d.sector === selectedDept).map((d) => d.jobrole || "")
-    )
+      data.filter((d) => d.track === selectedDept).map((d) => d.jobrole || "")
+    ) 
   )
     .filter(Boolean)
-    .sort();
+    .sort() : [];
 
-  const uniqueFunctions = Array.from(
+  const uniqueFunctions = data.length > 0 ? Array.from(
     new Set(
       data
         .filter(
-          (d) => d.sector === selectedDept && d.jobrole === selectedJobrole
+          (d) => d.track === selectedDept && d.jobrole === selectedJobrole
         )
         .map((d) => d.critical_work_function || "")
     )
   )
     .filter(Boolean)
-    .sort();
+    .sort() : [];
 
   // ✅ Filtered grid data
-  const filteredData = data.filter(
+  const filteredData = data.length > 0 ? data.filter(
     (item) =>
-      item.sector === selectedDept &&
+      item.track === selectedDept &&
       item.jobrole === selectedJobrole &&
       item.critical_work_function === selectedFunction
-  );
+  ) : [];
 
   const handleDepartmentChange = (val: string) => {
     setSelectedDept(val);
-    const jobroles = Array.from(
-      new Set(data.filter((d) => d.sector === val).map((d) => d.jobrole || ""))
+    const jobroles = data.length > 0 ? Array.from(
+      new Set(data.filter((d) => d.track === val).map((d) => d.jobrole || ""))
     )
       .filter(Boolean)
-      .sort();
+      .sort() : [];
     const firstJobrole = jobroles[0] || "";
     setSelectedJobrole(firstJobrole);
 
     const functions = Array.from(
       new Set(
         data
-          .filter((d) => d.sector === val && d.jobrole === firstJobrole)
+          .filter((d) => d.track === val && d.jobrole === firstJobrole)
           .map((d) => d.critical_work_function || "")
       )
     )
@@ -206,7 +207,7 @@ const CriticalWorkFunctionGrid = () => {
     const functions = Array.from(
       new Set(
         data
-          .filter((d) => d.sector === selectedDept && d.jobrole === val)
+          .filter((d) => d.track === selectedDept && d.jobrole === val)
           .map((d) => d.critical_work_function || "")
       )
     )
@@ -454,8 +455,8 @@ const CriticalWorkFunctionGrid = () => {
             </DialogHeader>
             <ul>
               <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#6fc7ff] p-2 rounded-full">Critical Work Function</span> <span className="p-1">{viewData?.critical_work_function}</span></li>
-              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#fcf38d] p-2 rounded-full">Department</span> <span className="p-1">{viewData?.sector}</span></li>
-              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#fcb0b0] p-2 rounded-full">Sector</span>   <span className="p-1">{viewData?.track}</span></li>
+              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#fcf38d] p-2 rounded-full">Department</span> <span className="p-1">{viewData?.track}</span></li>
+              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#fcb0b0] p-2 rounded-full">track</span>   <span className="p-1">{viewData?.track}</span></li>
               <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#8dd39c] p-2 rounded-full">Jobrole</span>  <span className="p-1">{viewData?.jobrole}</span></li>
             </ul>
           </DialogContent>
