@@ -10,6 +10,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
+// added by uma on 10-09-2025 for edit and delete
+import TaskData from "@/components/jobroleComponent/tabComponent/taskData";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { FaEdit, FaTrash } from "react-icons/fa";
 
 type JobRoleTask = {
   id: number;
@@ -30,7 +40,10 @@ const CriticalWorkFunctionGrid = () => {
   const [selectedJobrole, setSelectedJobrole] = useState<string>("");
   const [selectedFunction, setSelectedFunction] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
-
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isView,setView] = useState(false);
+  const [viewData, setViewData] = useState<any>({});
   const [sessionData, setSessionData] = useState({
     url: "",
     token: "",
@@ -58,19 +71,21 @@ const CriticalWorkFunctionGrid = () => {
   // Fetch data after sessionData is loaded
   useEffect(() => {
     if (!sessionData.url || !sessionData.subInstituteId) return;
+    fetchData();
+  }, [sessionData]);
 
-    const fetchData = async () => {
-      try {
-        const res = await fetch(
-          `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&order_by[direction]=desc&group_by=task`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionData.token}`,
-            },
-          }
-        );
-        const json: JobRoleTask[] = await res.json();
-        setData(json);
+  const fetchData = async () => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&order_by[direction]=desc&group_by=task`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+          },
+        }
+      );
+      const json: JobRoleTask[] = await res.json();
+      setData(json);
 
         if (json.length > 0) {
           // ✅ Default Track
@@ -132,7 +147,9 @@ const CriticalWorkFunctionGrid = () => {
         .filter((d) => d.track === selectedTrack && d.jobrole === selectedJobrole)
         .map((d) => d.critical_work_function)
     )
-  ).sort((a, b) => a.localeCompare(b));
+  )
+    .filter(Boolean)
+    .sort();
 
   // ✅ Filtered grid data
   const filteredData = data.filter(
@@ -141,6 +158,95 @@ const CriticalWorkFunctionGrid = () => {
       item.jobrole === selectedJobrole &&
       item.critical_work_function === selectedFunction
   );
+
+  const handleDepartmentChange = (val: string) => {
+    setSelectedDept(val);
+    const jobroles = Array.from(
+      new Set(data.filter((d) => d.sector === val).map((d) => d.jobrole || ""))
+    )
+      .filter(Boolean)
+      .sort();
+    const firstJobrole = jobroles[0] || "";
+    setSelectedJobrole(firstJobrole);
+
+    const functions = Array.from(
+      new Set(
+        data
+          .filter((d) => d.sector === val && d.jobrole === firstJobrole)
+          .map((d) => d.critical_work_function || "")
+      )
+    )
+      .filter(Boolean)
+      .sort();
+    const firstFunc = functions[0] || "";
+    setSelectedFunction(firstFunc);
+  };
+
+  const handleJobroleChange = (val: string) => {
+    setSelectedJobrole(val);
+    const functions = Array.from(
+      new Set(
+        data
+          .filter((d) => d.sector === selectedDept && d.jobrole === val)
+          .map((d) => d.critical_work_function || "")
+      )
+    )
+      .filter(Boolean)
+      .sort();
+    const firstFunc = functions[0] || "";
+    setSelectedFunction(firstFunc);
+  };
+  // added by uma on 10-09-2025 for edit and delete
+  const handleCloseModel = () => {
+    setDialogOpen({ ...dialogOpen, edit: false });
+    fetchData();
+  };
+  const handleEditClick = (id: number, jobrole: string) => {
+    setSelectedJobRole(id);
+    fetchEditData(id, jobrole);
+    setDialogOpen({ ...dialogOpen, edit: true });
+  };
+
+  async function fetchEditData(id: number, jobrole: string) {
+    const jobroleResponse = await fetch(
+      `${sessionData.url}/table_data?table=s_user_jobrole&filters[jobrole]=${jobrole}&filters[sub_institute_id]=${sessionData.subInstituteId}`
+    );
+    const jobroleData = await jobroleResponse.json();
+    console.log("jobroleData", jobroleData[0].id);
+    if (jobroleData[0].id) {
+      const res = await fetch(
+        `${sessionData.url}/jobrole_library/${jobroleData[0].id}/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&formType=user`
+      );
+      const data = await res.json();
+      setEditData(data.editData || {});
+      setIsEditModalOpen(true);
+    }
+  }
+
+  const handleDeleteClick = async (id: number) => {
+    if (!id) return;
+
+    if (window.confirm("Are you sure you want to delete this job role task?")) {
+      try {
+        const res = await fetch(
+          `${sessionData.url}/jobrole_library/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=tasks`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${sessionData.token}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+        alert(data.message);
+        fetchData();
+      } catch (error) {
+        console.error("Error deleting job role:", error);
+        alert("Error deleting job role");
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen p-4">
@@ -238,15 +344,15 @@ const CriticalWorkFunctionGrid = () => {
             )}
           </AnimatePresence>
 
-          {/* Funnel Button */}
-          <button
-            onClick={() => setShowFilters((prev) => !prev)}
-            className="p-3"
-          >
-            <Funnel className="w-5 h-5" />
-          </button>
+            {/* Funnel Button */}
+            <button
+              onClick={() => setShowFilters((prev) => !prev)}
+              className="p-3"
+            >
+              <Funnel className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-      </div>
 
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

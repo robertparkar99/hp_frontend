@@ -10,6 +10,8 @@ interface Skill {
     jobrole: string;
     jobrole_skill_id: number;
     knowledge: any[];
+    behaviour: any[];
+    attitude: any[];
     proficiency_level: string;
     skill: string;
     skill_id: number;
@@ -34,6 +36,9 @@ const JobRoleSkills: React.FC<UserJobroleSkillsProps> = ({ userJobroleSkills }) 
                         onBack={() => setActiveSkill("")}
                         knowledge={skillArray.find(skill => skill.skill === activeSkill)?.knowledge || []}
                         ability={skillArray.find(skill => skill.skill === activeSkill)?.ability || []}
+                        behaviour={skillArray.find(skill => skill.skill === activeSkill)?.behaviour || []}
+                        attitude={skillArray.find(skill => skill.skill === activeSkill)?.attitude || []}
+
                         skills={skillArray}
                     />
                 )

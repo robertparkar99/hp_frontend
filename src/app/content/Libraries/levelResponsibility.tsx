@@ -9,6 +9,8 @@ const LevelResponsibility = () => {
   const [activeLevel, setActiveLevel] = useState('');
   const [activeSection, setActiveSection] = useState<'description' | 'responsibility' | 'business'>('description');
 
+ const cleanText = (text?: string) => text?.replace(/in SFIA/g, "").trim() || "";
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('userData');
@@ -189,7 +191,8 @@ const LevelResponsibility = () => {
               className="hide-scrollbar"
             >
               <p className="text-black text-[15px] whitespace-pre-line">
-                {activeData.attribute_guidance_notes}
+                {cleanText(activeData.attribute_guidance_notes)}
+
               </p>
             </div>
           </div>
@@ -208,7 +211,7 @@ const LevelResponsibility = () => {
                 <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
                   {key}
                 </h4>
-                <p className="text-sm text-black">{attr.attribute_description}</p>
+                <p className="text-sm text-black">{cleanText(attr.attribute_description)}</p>
               </div>
             ))}
           </div>
@@ -227,7 +230,7 @@ const LevelResponsibility = () => {
                 <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
                   {key}
                 </h4>
-                <p className="text-sm text-black">{attr.attribute_description}</p>
+                <p className="text-sm text-black">{cleanText(attr.attribute_description)}</p>
               </div>
             ))}
           </div>
