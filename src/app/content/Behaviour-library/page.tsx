@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -9,6 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover"; // ✅ popover
 import { Funnel } from "lucide-react";
 import { Atom } from "react-loading-indicators";
 
@@ -40,10 +45,10 @@ const BehaviourGrid = () => {
   const [loadingCards, setLoadingCards] = useState(true);
   const [cardData, setCardData] = useState<BehaviourItem[]>([]);
   const [allData, setAllData] = useState<BehaviourItem[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
 
   const [sessionData, setSessionData] = useState<SessionData>({});
 
+  // ---------- Load session ----------
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = localStorage.getItem("userData");
@@ -55,6 +60,7 @@ const BehaviourGrid = () => {
     }
   }, []);
 
+  // ---------- Fetch dropdown options ----------
   useEffect(() => {
     if (!sessionData.sub_institute_id) return;
 
@@ -93,6 +99,7 @@ const BehaviourGrid = () => {
     fetchDropdowns();
   }, [sessionData.sub_institute_id]);
 
+  // ---------- Update subcategories when category changes ----------
   useEffect(() => {
     if (!selectedCategory) {
       setSubCategories([]);
@@ -111,6 +118,7 @@ const BehaviourGrid = () => {
     setSelectedSubCategory("");
   }, [selectedCategory, allData]);
 
+  // ---------- Fetch cards ----------
   useEffect(() => {
     if (!sessionData.sub_institute_id) return;
 
@@ -149,38 +157,33 @@ const BehaviourGrid = () => {
 
   return (
     <>
-      {/* 🔽 Filters + Funnel aligned in one row */}
+      {/* 🔽 Filters in Popover with Funnel */}
       <div className="flex p-4 justify-end items-center gap-3 mb-4">
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 50 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Filters
-                categories={categories}
-                subCategories={subCategories}
-                skills={skills}
-                loadingOptions={loadingOptions}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                selectedSubCategory={selectedSubCategory}
-                setSelectedSubCategory={setSelectedSubCategory}
-                selectedLevel={selectedLevel}
-                setSelectedLevel={setSelectedLevel}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="p-3">
+              <Funnel />
+            </button>
+          </PopoverTrigger>
 
-        <button
-          onClick={() => setShowFilters((prev) => !prev)}
-          className="p-3"
-        >
-          <Funnel />
-        </button>
+          <PopoverContent
+            align="end"
+            className="w-[280px] p-6 bg-white shadow-xl rounded-xl flex flex-col gap-4"
+          >
+            <Filters
+              categories={categories}
+              subCategories={subCategories}
+              skills={skills}
+              loadingOptions={loadingOptions}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedSubCategory={selectedSubCategory}
+              setSelectedSubCategory={setSelectedSubCategory}
+              selectedLevel={selectedLevel}
+              setSelectedLevel={setSelectedLevel}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* 🔽 Card Grid */}
@@ -266,19 +269,23 @@ function Filters({
   setSelectedLevel: (val: string) => void;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div className="flex flex-col gap-4">
       {/* Category Dropdown */}
       <Select
         value={selectedCategory || "all"}
-        onValueChange={(value) => setSelectedCategory(value === "all" ? "" : value)}
+        onValueChange={(value) =>
+          setSelectedCategory(value === "all" ? "" : value)
+        }
       >
-        <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+        <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white">
           <SelectValue placeholder="Filter by Category" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Filter by Category</SelectItem>
           {categories.length === 0 ? (
-            <SelectItem value="loading" disabled>No Categories</SelectItem>
+            <SelectItem value="loading" disabled>
+              No Categories
+            </SelectItem>
           ) : (
             categories.map((cat, idx) => (
               <SelectItem key={idx} value={cat}>
@@ -297,13 +304,15 @@ function Filters({
         }
         disabled={subCategories.length === 0}
       >
-        <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+        <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white disabled:bg-gray-100 disabled:text-gray-400">
           <SelectValue placeholder="Filter by Sub Category" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Filter by Sub Category</SelectItem>
           {subCategories.length === 0 ? (
-            <SelectItem value="loading" disabled>No Sub Categories</SelectItem>
+            <SelectItem value="loading" disabled>
+              No Sub Categories
+            </SelectItem>
           ) : (
             subCategories.map((sub, idx) => (
               <SelectItem key={idx} value={sub}>
@@ -317,15 +326,19 @@ function Filters({
       {/* Proficiency Dropdown */}
       <Select
         value={selectedLevel || "all"}
-        onValueChange={(value) => setSelectedLevel(value === "all" ? "" : value)}
+        onValueChange={(value) =>
+          setSelectedLevel(value === "all" ? "" : value)
+        }
       >
-        <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+        <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white">
           <SelectValue placeholder="Filter by Proficiency Level" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Filter by Proficiency Level</SelectItem>
           {loadingOptions ? (
-            <SelectItem value="loading" disabled>Loading...</SelectItem>
+            <SelectItem value="loading" disabled>
+              Loading...
+            </SelectItem>
           ) : (
             skills.map((level, idx) => (
               <SelectItem key={idx} value={level}>

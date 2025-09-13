@@ -18,7 +18,7 @@ const PrintButton = dynamic(
   { ssr: false }
 );
 
-type Props = { editData: any,selectedDept: any,selectedJobrole: any,selectedFunction: any };
+type Props = { editData: any, selectedDept: any, selectedJobrole: any, selectedFunction: any };
 
 type TaskNameEntry = {
   taskName: string;
@@ -43,7 +43,7 @@ type SubmittedTaskName = {
   subDepartment?: string;
 };
 
-const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selectedFunction }) => {
+const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, selectedFunction }) => {
   // State Variables
   const [sessionData, setSessionData] = useState({
     url: "",
@@ -108,7 +108,7 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
       );
       const data = await res.json();
       setDepartments(data);
-      
+
     } catch (error) {
       console.error("Error fetching departments:", error);
     }
@@ -130,7 +130,7 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
       );
       const data = await res.json();
       setSubDepartments(data);
-      
+
       // if (data && data.data) {
       //   const subDepartmentList = data.data.map((item: any) => item.track).filter(Boolean);
       //   setSubDepartments(subDepartmentList);
@@ -365,13 +365,13 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
     console.log(row);
     setEditingId(row.id || null);
     setTaskNames([{
-      taskName: row.taskName, 
-      critical_work_function: row.critical_work_function, 
+      taskName: row.taskName,
+      critical_work_function: row.critical_work_function,
       jobrole: row.jobrole,
       department: row.department || "",
       subDepartment: row.subDepartment || ""
     }]);
-    
+
     // Set department and sub-department for dropdowns
     if (row.department) {
       setSelectedDepartment(row.department);
@@ -379,7 +379,7 @@ const TaskData: React.FC<Props> = ({ editData,selectedDept,selectedJobrole,selec
         setSelectedSubDepartment(row.subDepartment);
       }
     }
-    
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
