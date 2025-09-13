@@ -897,7 +897,8 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
         url: "",
         token: "",
         subInstituteId: "",
-        userId: ""
+        userId: "",
+        user_profile_name:"",
     })
     const [success, setSuccess] = useState(false)
     const [promptString, setPromptString] = useState(`generate 1 question on ${courseDisplayName || "this course"}`)
@@ -917,7 +918,13 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
         concept: "",
         subconcept: "",
         hint_text: "",
-        answers: [{ text: "", feedback: "", is_correct: false }],
+        // answers: [{ text: "", feedback: "", is_correct: false }],
+        answers: [
+  { text: "", feedback: "", is_correct: false },
+  { text: "", feedback: "", is_correct: false },
+  { text: "", feedback: "", is_correct: false },
+  { text: "", feedback: "", is_correct: false }
+],
     })
 
     // Character limits based on your database schema
@@ -931,12 +938,13 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
     useEffect(() => {
         const userData = localStorage.getItem("userData");
         if (userData) {
-            const { APP_URL, token, sub_institute_id, user_id } = JSON.parse(userData);
+            const { APP_URL, token, sub_institute_id, user_id,user_profile_name } = JSON.parse(userData);
             setSessionData({
                 url: APP_URL,
                 token,
                 subInstituteId: sub_institute_id,
                 userId: user_id,
+                user_profile_name: user_profile_name
             });
         }
     }, []);
@@ -1063,7 +1071,7 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
     }
 
     const removeAnswer = (index) => {
-        if (formData.answers.length > 1) {
+        if (formData.answers.length > 4) {
             setFormData((prev) => ({ ...prev, answers: prev.answers.filter((_, i) => i !== index) }))
         }
     }
@@ -1074,6 +1082,15 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
             answers: [...prev.answers, { text: "", feedback: "", is_correct: false }],
         }))
     }
+    // const addAnswer = () => {
+//   Only allow adding if we have less than 4 answers
+//   if (formData.answers.length < 4) {
+//     setFormData((prev) => ({
+//       ...prev,
+//       answers: [...prev.answers, { text: "", feedback: "", is_correct: false }],
+//     }))
+//   }
+
 
     // Truncate text to specified character limit
     const truncateText = (text, limit) => {
@@ -1230,96 +1247,207 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
         questionFormAI(promptString);
     }
 
+    // const onSubmit = async (e) => {
+    //     e.preventDefault();
+    //     setLoading(true);
+    //     setMessage({ text: "", type: "" });
+
+    //     try {
+    //         // Create payload with truncated values to prevent data too long errors
+    //         const payload = {
+    //             type: "API",
+    //             sub_institute_id: sessionData.subInstituteId,
+    //             user_id: sessionData.userId,
+    //             token: sessionData.token,
+    //             grade_id: 1,
+    //             question_title: truncateText(formData.title, CHAR_LIMITS.answer),
+    //             description: truncateText(formData.description, 1000), // Assuming description has a higher limit
+    //             learning_outcome: truncateText(formData.learningOutcome, CHAR_LIMITS.answer),
+    //             standard_id: formData.searchStandard || 1,
+    //             chapter_id: formData.searchByChapter || 1,
+    //             subject_id: formData.subject || 1,
+    //             question_type_id: formData.questionType,
+    //             points: formData.questionMark,
+    //             multiple_answer: formData.multipleAnswers ? 1 : 0,
+    //             status: formData.show ? 1 : 0,
+    //             concept: truncateText(formData.concept || "", CHAR_LIMITS.answer),
+    //             subconcept: truncateText(formData.subconcept || "", CHAR_LIMITS.answer),
+    //             hint_text: truncateText(formData.hint_text || "", CHAR_LIMITS.hint),
+    //         };
+
+    //         // Add mappings with truncated reasons
+    //         if (formData.mappings?.length) {
+    //             formData.mappings.forEach((map, i) => {
+    //                 payload[`mapping_type[${i}]`] = map.mappingType || "";
+    //                 payload[`mapping_value[${i}]`] = map.mappingValue || "";
+    //                 payload[`reasons[${i}]`] = truncateText(map.reason || "", CHAR_LIMITS.reason);
+    //             });
+    //         }
+
+    //         // Add answers with truncated text and feedback
+    //         if (formData.answers?.length) {
+    //             formData.answers.forEach((ans, i) => {
+    //                 const truncatedAnswer = truncateText(ans.text, CHAR_LIMITS.answer);
+    //                 const truncatedFeedback = truncateText(ans.feedback, CHAR_LIMITS.feedback);
+
+    //                 payload[`options[NEW][${i}]`] = truncatedAnswer || "";
+    //                 payload[`feedback[NEW][${i}]`] = truncatedFeedback || "";
+    //                 payload[`correct_answer[${i}]`] = ans.is_correct ? 1 : 0;
+    //             });
+    //         }
+
+    //         if (formData.id) {
+    //             payload.id = formData.id;
+    //         }
+
+    //         const formDataPayload = new FormData();
+    //         Object.entries(payload).forEach(([key, value]) => {
+    //             formDataPayload.append(key, value);
+    //         });
+
+    //         let url = `${sessionData.url}/lms/question_master`;
+    //         let method = 'POST';
+
+    //         if (formData.id) {
+    //             url = `${sessionData.url}/lms/question_master/${formData.id}`;
+    //             method = 'PUT';
+    //         }
+
+    //         const response = await fetch(url, {
+    //             method: method,
+    //             headers: {
+    //                 'Authorization': `Bearer ${sessionData.token}`,
+    //             },
+    //             body: formDataPayload,
+    //         });
+
+    //         if (!response.ok) {
+    //             const errorText = await response.text();
+    //             throw new Error(`HTTP error! status: ${response.status}`);
+    //         }
+    //         onSave();
+
+    //         const result = await response.json();
+    //         handleSuccess(result);
+
+    //     } catch (error) {
+    //         console.error('Error saving question:', error);
+    //         setMessage({ text: `Error saving question: ${error.message}`, type: 'error' });
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
     const onSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setMessage({ text: "", type: "" });
+    e.preventDefault();
+    setMessage({ text: "", type: "" });
 
-        try {
-            // Create payload with truncated values to prevent data too long errors
-            const payload = {
-                type: "API",
-                sub_institute_id: sessionData.subInstituteId,
-                user_id: sessionData.userId,
-                token: sessionData.token,
-                grade_id: 1,
-                question_title: truncateText(formData.title, CHAR_LIMITS.answer),
-                description: truncateText(formData.description, 1000), // Assuming description has a higher limit
-                learning_outcome: truncateText(formData.learningOutcome, CHAR_LIMITS.answer),
-                standard_id: formData.searchStandard || 1,
-                chapter_id: formData.searchByChapter || 1,
-                subject_id: formData.subject || 1,
-                question_type_id: formData.questionType,
-                points: formData.questionMark,
-                multiple_answer: formData.multipleAnswers ? 1 : 0,
-                status: formData.show ? 1 : 0,
-                concept: truncateText(formData.concept || "", CHAR_LIMITS.answer),
-                subconcept: truncateText(formData.subconcept || "", CHAR_LIMITS.answer),
-                hint_text: truncateText(formData.hint_text || "", CHAR_LIMITS.hint),
-            };
+    // Validate at least 4 answers
+    if (formData.answers.length < 4) {
+        setMessage({ text: "Please provide at least 4 answer options", type: 'error' });
+        return;
+    }
+    
+    // Validate all feedback fields are filled
+    const missingFeedback = formData.answers.some(ans => !ans.feedback.trim());
+    if (missingFeedback) {
+        setMessage({ text: "Please provide feedback for all answer options", type: 'error' });
+        return;
+    }
 
-            // Add mappings with truncated reasons
-            if (formData.mappings?.length) {
-                formData.mappings.forEach((map, i) => {
-                    payload[`mapping_type[${i}]`] = map.mappingType || "";
-                    payload[`mapping_value[${i}]`] = map.mappingValue || "";
-                    payload[`reasons[${i}]`] = truncateText(map.reason || "", CHAR_LIMITS.reason);
-                });
-            }
+    // Validate at least one correct answer
+    const hasCorrectAnswer = formData.answers.some(ans => ans.is_correct);
+    if (!hasCorrectAnswer) {
+        setMessage({ text: "Please select at least one correct answer", type: 'error' });
+        return;
+    }
 
-            // Add answers with truncated text and feedback
-            if (formData.answers?.length) {
-                formData.answers.forEach((ans, i) => {
-                    const truncatedAnswer = truncateText(ans.text, CHAR_LIMITS.answer);
-                    const truncatedFeedback = truncateText(ans.feedback, CHAR_LIMITS.feedback);
+    setLoading(true);
 
-                    payload[`options[NEW][${i}]`] = truncatedAnswer || "";
-                    payload[`feedback[NEW][${i}]`] = truncatedFeedback || "";
-                    payload[`correct_answer[${i}]`] = ans.is_correct ? 1 : 0;
-                });
-            }
+    try {
+        // Create payload with truncated values to prevent data too long errors
+        const payload = {
+            type: "API",
+            sub_institute_id: sessionData.subInstituteId,
+            user_id: sessionData.userId,
+            token: sessionData.token,
+            grade_id: 1,
+            question_title: truncateText(formData.title, CHAR_LIMITS.answer),
+            description: truncateText(formData.description, 1000), // Assuming description has a higher limit
+            learning_outcome: truncateText(formData.learningOutcome, CHAR_LIMITS.answer),
+            standard_id: formData.searchStandard || 1,
+            chapter_id: formData.searchByChapter || 1,
+            subject_id: formData.subject || 1,
+            question_type_id: formData.questionType,
+            points: formData.questionMark,
+            multiple_answer: formData.multipleAnswers ? 1 : 0,
+            status: formData.show ? 1 : 0,
+            concept: truncateText(formData.concept || "", CHAR_LIMITS.answer),
+            subconcept: truncateText(formData.subconcept || "", CHAR_LIMITS.answer),
+            hint_text: truncateText(formData.hint_text || "", CHAR_LIMITS.hint),
+        };
 
-            if (formData.id) {
-                payload.id = formData.id;
-            }
-
-            const formDataPayload = new FormData();
-            Object.entries(payload).forEach(([key, value]) => {
-                formDataPayload.append(key, value);
+        // Add mappings with truncated reasons
+        if (formData.mappings?.length) {
+            formData.mappings.forEach((map, i) => {
+                payload[`mapping_type[${i}]`] = map.mappingType || "";
+                payload[`mapping_value[${i}]`] = map.mappingValue || "";
+                payload[`reasons[${i}]`] = truncateText(map.reason || "", CHAR_LIMITS.reason);
             });
-
-            let url = `${sessionData.url}/lms/question_master`;
-            let method = 'POST';
-
-            if (formData.id) {
-                url = `${sessionData.url}/lms/question_master/${formData.id}`;
-                method = 'PUT';
-            }
-
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Authorization': `Bearer ${sessionData.token}`,
-                },
-                body: formDataPayload,
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            onSave();
-
-            const result = await response.json();
-            handleSuccess(result);
-
-        } catch (error) {
-            console.error('Error saving question:', error);
-            setMessage({ text: `Error saving question: ${error.message}`, type: 'error' });
-        } finally {
-            setLoading(false);
         }
-    };
+
+        // Add answers with truncated text and feedback
+        if (formData.answers?.length) {
+            formData.answers.forEach((ans, i) => {
+                const truncatedAnswer = truncateText(ans.text, CHAR_LIMITS.answer);
+                const truncatedFeedback = truncateText(ans.feedback, CHAR_LIMITS.feedback);
+
+                payload[`options[NEW][${i}]`] = truncatedAnswer || "";
+                payload[`feedback[NEW][${i}]`] = truncatedFeedback || "";
+                payload[`correct_answer[${i}]`] = ans.is_correct ? 1 : 0;
+            });
+        }
+
+        if (formData.id) {
+            payload.id = formData.id;
+        }
+
+        const formDataPayload = new FormData();
+        Object.entries(payload).forEach(([key, value]) => {
+            formDataPayload.append(key, value);
+        });
+
+        let url = `${sessionData.url}/lms/question_master`;
+        let method = 'POST';
+
+        if (formData.id) {
+            url = `${sessionData.url}/lms/question_master/${formData.id}`;
+            method = 'PUT';
+        }
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Authorization': `Bearer ${sessionData.token}`,
+            },
+            body: formDataPayload,
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        onSave();
+
+        const result = await response.json();
+        handleSuccess(result);
+
+    } catch (error) {
+        console.error('Error saving question:', error);
+        setMessage({ text: `Error saving question: ${error.message}`, type: 'error' });
+    } finally {
+        setLoading(false);
+    }
+};
 
     const handleSuccess = (result) => {
         setMessage({ text: 'Question saved successfully!', type: 'success' })
@@ -1346,7 +1474,13 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                 concept: "",
                 subconcept: "",
                 hint_text: "",
-                answers: [{ text: "", feedback: "", is_correct: false }],
+                // answers: [{ text: "", feedback: "", is_correct: false }],
+                answers: [
+    { text: "", feedback: "", is_correct: false },
+    { text: "", feedback: "", is_correct: false },
+    { text: "", feedback: "", is_correct: false },
+    { text: "", feedback: "", is_correct: false }
+  ],
             })
         }, 1500);
     }
@@ -1354,7 +1488,9 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4" />Add Question</Button>
+{["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
+                <Button><Plus className="mr-2 h-4 w-4" />Add Question</Button> 
+                 ):null} 
             </DialogTrigger>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
@@ -1378,7 +1514,9 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
 
                         <form onSubmit={onSubmit} className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium mb-2">Question Title</label>
+                                <label className="block text-sm font-medium mb-2">Question Title{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
+                                </label>
 
                                 <div className="flex items-center border rounded p-2 mb-2 justify-between bg-gray-50">
                                     <input
@@ -1386,7 +1524,7 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                                         value={promptString}
                                         onChange={(e) => setPromptString(e.target.value)}
                                         placeholder="Enter your prompt for AI generation..."
-                                        className="flex-1 bg-transparent border-none outline-none text-sm text-gray-700"
+                                        className="flex-1 bg-transparent border-none outline-none text-sm text-gray-700"required
                                     />
                                     <RefreshCw
                                         size={18}
@@ -1413,14 +1551,16 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-2">Mapping</label>
+                                {/* <label className="block text-sm font-medium mb-2">Mapping</label> */}
                                 {formData.mappings.map((mapping, index) => (
                                     <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end">
                                         <div>
-                                            <label className="block text-sm font-medium">Mapping Type</label>
+                                            <label className="block text-sm font-medium">Mapping Type{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
                                             <Select
                                                 value={mapping.mappingType}
                                                 onValueChange={(val) => handleMappingChange(index, "mappingType", val)}
+                                                required
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select mapping type" />
@@ -1435,12 +1575,14 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                                             </Select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium">Mapping Value</label>
+                                            <label className="block text-sm font-medium">Mapping Value{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
                                             <Select
                                                 key={`mapping-value-${index}-${mapping.mappingValue}`}
                                                 value={mapping.mappingValue}
                                                 onValueChange={(val) => handleMappingChange(index, "mappingValue", val)}
                                                 disabled={!mapping.mappingType}
+                                                required
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select value">
@@ -1496,7 +1638,8 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
 
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Question Type</label>
+                                    <label className="block text-sm font-medium mb-1">Question Type{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
                                     <Select value={formData.questionType} onValueChange={(val) => handleChange("questionType", val)} required>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Question Type" />
@@ -1507,7 +1650,8 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                                     </Select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Question Mark</label>
+                                    <label className="block text-sm font-medium mb-1">Question Mark{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
                                     <Input
                                         type="number"
                                         min="1"
@@ -1533,19 +1677,27 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                <label className="block text-sm font-medium mb-1">Concept</label>
                                 <Input
                                     placeholder="Concept"
                                     value={formData.concept}
                                     onChange={(e) => handleChange("concept", e.target.value)}
                                 />
+                                </div>
+                                <div>
+                                <label className="block text-sm font-medium mb-1">Sub Concept</label>
                                 <Input
                                     placeholder="Sub Concept"
                                     value={formData.subconcept}
                                     onChange={(e) => handleChange("subconcept", e.target.value)}
                                 />
+                                </div>
                             </div>
 
                             <div>
+                                <div>
+                                <label className="block text-sm font-medium mb-1">Hint</label>
                                 <Input
                                     placeholder="Hint"
                                     value={formData.hint_text}
@@ -1556,6 +1708,7 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                                         {CHAR_LIMITS.hint - formData.hint_text.length} characters remaining
                                     </p>
                                 )}
+                                </div>
                             </div>
 
                             <div>
@@ -1580,7 +1733,7 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                                             )}
                                         </div>
 
-                                        <div className="flex-1">
+                                        {/* <div className="flex-1">
                                             <Input
                                                 placeholder="Enter Feedback"
                                                 value={ans.feedback || ""}
@@ -1595,8 +1748,43 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                                                     {CHAR_LIMITS.feedback - ans.feedback.length} characters remaining
                                                 </p>
                                             )}
-                                        </div>
+                                        </div> */}
+<div className="flex-1">
+  <Input
+    placeholder="Enter Feedback"
+    value={ans.feedback || ""}
+    onChange={(e) => {
+      const newAnswers = [...formData.answers];
+      newAnswers[i].feedback = e.target.value;
+      setFormData((prev) => ({ ...prev, answers: newAnswers }));
+    }}
+    required // Make feedback required
+  />
+  {ans.feedback && ans.feedback.length > CHAR_LIMITS.feedback - 50 && (
+    <p className="text-sm text-amber-600 mt-1">
+      {CHAR_LIMITS.feedback - ans.feedback.length} characters remaining
+    </p>
+  )}
+</div>
 
+{/* In the button section: */}
+<div className="flex gap-2">
+  {i === formData.answers.length - 1 && (
+    <Button type="button" size="icon" onClick={addAnswer}>
+      <Plus className="h-4 w-4" />
+    </Button>
+  )}
+  {formData.answers.length > 4 && ( // Only show remove button if more than 4 answers
+    <Button
+      type="button"
+      size="icon"
+      variant="destructive"
+      onClick={() => removeAnswer(i)}
+    >
+      <X className="h-4 w-4" />
+    </Button>
+  )}
+</div>
                                         {formData.multipleAnswers ? (
                                             <Checkbox
                                                 checked={ans.is_correct}
@@ -1621,7 +1809,7 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                                             />
                                         )}
 
-                                        <div className="flex gap-2">
+                                        {/* <div className="flex gap-2">
                                             {i === formData.answers.length - 1 && (
                                                 <Button type="button" size="icon" onClick={addAnswer}>
                                                     <Plus className="h-4 w-4" />
@@ -1637,7 +1825,7 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
                                                     <X className="h-4 w-4" />
                                                 </Button>
                                             )}
-                                        </div>
+                                        </div> */}
                                     </div>
                                 ))}
                             </div>
