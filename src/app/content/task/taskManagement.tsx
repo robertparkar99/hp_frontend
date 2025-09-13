@@ -8,6 +8,16 @@ import React, {
   FormEvent,
 } from "react";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { h1 } from "framer-motion/m";
+import TaskListModel from "../task/components/taskListModel";
+
 interface SessionData {
   url: string;
   token: string;
@@ -71,6 +81,7 @@ const TaskManagement = () => {
   const [employeeList, setEmployeeList] = useState<Employee[]>([]);
   const [selEmployee, setSelEmployee] = useState<string[]>([]);
   const [taskList, setTaskList] = useState<Task[]>([]);
+  const [taskListArr, setTaskListArr] = useState<any>();
   const [selTask, setSelTask] = useState<string>("");
   const [skillList, setSkillList] = useState<Skill[]>([]);
   const [selSkill, setSelSkill] = useState<string[]>([]);
@@ -81,6 +92,9 @@ const TaskManagement = () => {
   const [repeatUntil, setRepeatUntil] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState(0);
+  const [isjobroleList, setIsJobroleList] = useState(false);
+  const [isjobroleModel, setIsJobroleModel] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -183,6 +197,7 @@ const TaskManagement = () => {
         const data = await response.json();
         setSkillList(data.jobroleSkills || []);
         setTaskList(data.jobroleTasks || []);
+        setTaskListArr(data.jobroleTasks || []);
       } catch (error) {
         console.error("Error fetching employee details:", error);
         alert("Failed to load employee details");
@@ -376,18 +391,35 @@ const geminiChat = async (prompt: string | '') => {
   }
 }
   return (
+    <>
     <div className="mainDiv">
       <div className="max-w-6xl mx-auto">
         <div className="rounded-lg h-[fit-content] mb-6">
           <div className="px-2">
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground">
-                New Assignment
-              </h2>
-              <p className="text-muted-foreground">
-                Track and monitor task assignment progress
-              </p>
-            </div>
+          <div className="w-full flex justify-between">
+                <div>
+                  <h2 className="text-2xl text-left font-semibold text-foreground">
+                    New Assignment
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Track and monitor task assignment progress
+                  </p>
+                </div>
+                <div>
+                  {isjobroleList && (
+                    <button className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
+                    onClick={() => {
+                      setIsJobroleModel(true);
+                      setIsEditModalOpen(true);
+                    }}>
+                      <span
+                        className="mdi mdi-format-list-checks"
+                      ></span>
+                      &nbsp; Bulk Tasks
+                    </button>
+                  )}
+                </div>
+              </div>
             <hr className="my-6" />
             {/* Single Form with 3 columns per row */}
             <form className="space-y-6" onSubmit={handleSubmit} ref={formRef}>
@@ -447,6 +479,7 @@ const geminiChat = async (prompt: string | '') => {
                       if (userIds.length > 0) {
                         fetchEmployeeDetails(userIds[userIds.length - 1]);
                       }
+                      setIsJobroleList(true);
                     }}
                     multiple
                     required
@@ -832,6 +865,17 @@ const geminiChat = async (prompt: string | '') => {
         </div>
       </div>
     </div>
+    {isjobroleModel && (
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto hide-scroll">
+          <DialogHeader>
+            <DialogTitle>Bulk Task Assignment</DialogTitle>
+          </DialogHeader>
+            <TaskListModel taskListArr={taskListArr} ObserverList={ObserverList} sessionData={sessionData} selectedEmployees={selEmployee.join(",")}/>
+        </DialogContent>
+      </Dialog>
+    )}
+   </>
   );
 };
 
