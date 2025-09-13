@@ -47,16 +47,13 @@ export default function Index({ SelLOR }: SelLORProps) {
   ];
 
   const dataLor: LorData = SelLOR || {};
- 
-    const cleanText = (text?: string) => text?.replace(/in SFIA/g, "").trim() || "";
 
+   const cleanText = (text?: string) => text?.replace(/in SFIA/g, "").trim() || "";
 
-    
   const descriptionCards = [
     {
       title: "Description",
       text: cleanText(dataLor?.essence_level),
-
     },
     {
       title: "Guidance notes",
@@ -289,7 +286,7 @@ export default function Index({ SelLOR }: SelLORProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl px-4 mt-4">
           {dataLor?.Attributes &&
             Object.entries(dataLor.Attributes)
-              .filter(([_, item]) => cleanText(item?.attribute_overall_description)?.trim()) // ✅ filter empty
+              .filter(([_, item]) => cleanText(item?.attribute_overall_description)?.trim())
               .map(([key, item]: [string, AttributeItem]) => (
                 <div
                   key={key}
@@ -311,7 +308,7 @@ export default function Index({ SelLOR }: SelLORProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl px-4 mt-4">
           {dataLor?.Business_skills &&
             Object.entries(dataLor.Business_skills)
-              .filter(([_, item]) => cleanText(item?.attribute_overall_description)?.trim()) // ✅ filter empty
+              .filter(([_, item]) => cleanText(item?.attribute_overall_description)?.trim())
               .map(([key, item]: [string, AttributeItem]) => (
                 <div
                   key={key}

@@ -9,7 +9,7 @@ const LevelResponsibility = () => {
   const [activeLevel, setActiveLevel] = useState('');
   const [activeSection, setActiveSection] = useState<'description' | 'responsibility' | 'business'>('description');
 
-  const cleanText = (text?: string) => text?.replace(/in SFIA/g, "").trim() || "";
+ const cleanText = (text?: string) => text?.replace(/in SFIA/g, "").trim() || "";
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -177,75 +177,74 @@ const LevelResponsibility = () => {
             </div>
           </div>
 
-              {/* Guidance Notes Card */}
-              <div
-                className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
-                style={{
-                  width: "500px",
-                  height: "300px",
-                  textAlign: 'justify',
-                  background:
-                    "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
-                }}
-              >
-                <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">
-                  Guidance Notes
-                </h3>
-                <hr className="border border-gray-400 mb-4" />
-                {/* Scrollable area */}
-                <div
-                  style={{
-                    width: "450px",
-                    height: "150px",
-                    overflowY: "auto",
-                    paddingRight: "8px",
-                  }}
-                  className="hide-scrollbar" // 👈 custom class to hide scrollbar
-                >
-                  <p className="text-black text-[15px] whitespace-pre-line">
-                    {cleanText(activeData.attribute_guidance_notes)}
+          {/* Guidance Notes Card */}
+          <div
+            className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+            style={{
+              width: "500px",
+              height: "300px",
+              textAlign: 'justify',
+              background: "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+            }}
+          >
+            <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">
+              Guidance Notes
+            </h3>
+            <hr className="border border-gray-400 mb-4" />
+            {/* Scrollable area */}
+            <div
+              style={{
+                width: "450px",
+                height: "150px",
+                overflowY: "auto",
+                paddingRight: "8px",
+              }}
+              className="hide-scrollbar"
+            >
+              <p className="text-black text-[15px] whitespace-pre-line">
+                {cleanText(activeData.attribute_guidance_notes)}
 
-                  </p>
-                </div>
-              </div>
+              </p>
             </div>
-          )}
-
-
-        </>
+          </div>
+        </div>
       )}
 
       {/* RESPONSIBILITY ATTRIBUTES SECTION */}
       {activeSection === 'responsibility' && levelAttributes?.Attributes && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl px-4 mt-2 w-full">
-          {Object.entries(levelAttributes.Attributes).map(([key, attr]: [string, any]) => (
-            <div
-              key={key}
-              className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
-            >
-              <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
-                {key}
-              </h4>
-              <p className="text-sm text-black">{cleanText(attr.attribute_description)}</p>
-            </div>
-          ))}
+        <div className="w-full max-w-6xl px-4 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Object.entries(levelAttributes.Attributes).map(([key, attr]: [string, any]) => (
+              <div
+                key={key}
+                className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
+              >
+                <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
+                  {key}
+                </h4>
+                <p className="text-sm text-black">{cleanText(attr.attribute_description)}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* BUSINESS SKILLS SECTION */}
       {activeSection === 'business' && levelAttributes?.Business_skills && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl px-4 mt-2 w-full">
-          {Object.entries(levelAttributes.Business_skills).map(([key, attr]: [string, any]) => (
-            <div
-              key={key}
-              className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
-            >
-              <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
-                {key}
-              </h4>
-              <p className="text-sm text-black">{cleanText(attr.attribute_description)}</p>
-            </div>
-          ))}
+        <div className="w-full max-w-6xl px-4 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Object.entries(levelAttributes.Business_skills).map(([key, attr]: [string, any]) => (
+              <div
+                key={key}
+                className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
+              >
+                <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
+                  {key}
+                </h4>
+                <p className="text-sm text-black">{cleanText(attr.attribute_description)}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
