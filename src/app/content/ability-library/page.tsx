@@ -8,10 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import "./triangle.css"; // custom CSS
 import { Atom } from "react-loading-indicators";
 import { Funnel } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // ✅ animations
+import { motion } from "framer-motion"; // ✅ hover animation
 
 type ApiItem = {
   id: number;
@@ -44,20 +45,16 @@ export default function Page() {
 
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(
-    null
-  );
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [sessionData, setSessionData] = useState<SessionData>({});
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = localStorage.getItem("userData");
       if (userData) {
-        const { APP_URL, token, sub_institute_id, org_type } =
-          JSON.parse(userData);
+        const { APP_URL, token, sub_institute_id, org_type } = JSON.parse(userData);
         setSessionData({ url: APP_URL, token, sub_institute_id, org_type });
       }
     }
@@ -75,23 +72,9 @@ export default function Page() {
         const json = await res.json();
         const data = safeArray(json);
 
-        setSkills(
-          [...new Set(data.map((item) => item.proficiency_level))].filter(
-            Boolean
-          )
-        );
-        setCategories(
-          [...new Set(data.map((item) => item.classification_category))].filter(
-            Boolean
-          )
-        );
-        setSubCategories(
-          [
-            ...new Set(
-              data.map((item) => item.classification_sub_category)
-            ),
-          ].filter(Boolean)
-        );
+        setSkills([...new Set(data.map((item) => item.proficiency_level))].filter(Boolean));
+        setCategories([...new Set(data.map((item) => item.classification_category))].filter(Boolean));
+        setSubCategories([...new Set(data.map((item) => item.classification_sub_category))].filter(Boolean));
       } catch (err) {
         console.error("Error fetching dropdown data:", err);
       } finally {
@@ -103,8 +86,7 @@ export default function Page() {
 
   // Update subcategories when category changes
   useEffect(() => {
-    if (!selectedCategory || !sessionData.sub_institute_id || !sessionData.url)
-      return;
+    if (!selectedCategory || !sessionData.sub_institute_id || !sessionData.url) return;
 
     const fetchSubCats = async () => {
       try {
@@ -115,13 +97,7 @@ export default function Page() {
         const json = await res.json();
         const data = safeArray(json);
 
-        setSubCategories(
-          [
-            ...new Set(
-              data.map((item) => item.classification_sub_category)
-            ),
-          ].filter(Boolean)
-        );
+        setSubCategories([...new Set(data.map((item) => item.classification_sub_category))].filter(Boolean));
         setSelectedSubCategory(null);
       } catch (err) {
         console.error("Error fetching subcategories:", err);
@@ -141,15 +117,9 @@ export default function Page() {
 
         let url = `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=ability&order_by[id]=desc`;
 
-        if (selectedLevel) {
-          url += `&filters[proficiency_level]=${selectedLevel}`;
-        }
-        if (selectedCategory) {
-          url += `&filters[classification_category]=${selectedCategory}`;
-        }
-        if (selectedSubCategory) {
-          url += `&filters[classification_sub_category]=${selectedSubCategory}`;
-        }
+        if (selectedLevel) url += `&filters[proficiency_level]=${selectedLevel}`;
+        if (selectedCategory) url += `&filters[classification_category]=${selectedCategory}`;
+        if (selectedSubCategory) url += `&filters[classification_sub_category]=${selectedSubCategory}`;
 
         const res = await fetch(url, { cache: "no-store" });
         const json = await res.json();
@@ -183,40 +153,29 @@ export default function Page() {
 
   return (
     <>
-      {/* 🔽 Funnel + Filters */}
+      {/* 🔽 Funnel + Popover Filters */}
       <div className="flex p-4 justify-end items-center gap-3">
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 100 }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="flex gap-3"
-            >
-              <Filters
-                categories={categories}
-                subCategories={subCategories}
-                skills={skills}
-                loadingOptions={loadingOptions}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                selectedSubCategory={selectedSubCategory}
-                setSelectedSubCategory={setSelectedSubCategory}
-                selectedLevel={selectedLevel}
-                setSelectedLevel={setSelectedLevel}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Funnel Button */}
-        <button
-          onClick={() => setShowFilters((prev) => !prev)}
-          className="p-3"
-        >
-          <Funnel className="w-5 h-5" />
-        </button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="p-3">
+              <Funnel className="w-5 h-5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[280px] p-4 space-y-4" align="end">
+            <Filters
+              categories={categories}
+              subCategories={subCategories}
+              skills={skills}
+              loadingOptions={loadingOptions}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedSubCategory={selectedSubCategory}
+              setSelectedSubCategory={setSelectedSubCategory}
+              selectedLevel={selectedLevel}
+              setSelectedLevel={setSelectedLevel}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Triangles Grid */}
@@ -251,13 +210,10 @@ function Filters({
   setSelectedLevel,
 }: FiltersProps) {
   return (
-    <div className="flex gap-3">
+    <div className="flex flex-col gap-3">
       {/* Category */}
-      <Select
-        value={selectedCategory ?? ""}
-        onValueChange={(value) => setSelectedCategory(value)}
-      >
-        <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+      <Select value={selectedCategory ?? ""} onValueChange={(value) => setSelectedCategory(value)}>
+        <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white">
           <SelectValue placeholder="Filter by Category" />
         </SelectTrigger>
         <SelectContent>
@@ -281,7 +237,7 @@ function Filters({
         onValueChange={(value) => setSelectedSubCategory(value)}
         disabled={!selectedCategory}
       >
-        <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+        <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white">
           <SelectValue placeholder="Filter by Sub Category" />
         </SelectTrigger>
         <SelectContent>
@@ -300,11 +256,8 @@ function Filters({
       </Select>
 
       {/* Proficiency Level */}
-      <Select
-        value={selectedLevel ?? ""}
-        onValueChange={(value) => setSelectedLevel(value)}
-      >
-        <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+      <Select value={selectedLevel ?? ""} onValueChange={(value) => setSelectedLevel(value)}>
+        <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white">
           <SelectValue placeholder="Filter by Proficiency" />
         </SelectTrigger>
         <SelectContent>
@@ -332,19 +285,15 @@ function TriangleGrid({ rows }: { rows: ApiItem[][] }) {
         rows.map((row, rowIndex) => (
           <div key={rowIndex} className="flex gap-6 mt-23">
             {row.map((item, colIndex) => {
-              const shouldRotate =
-                rowIndex % 2 === 0 ? colIndex % 2 === 1 : colIndex % 2 === 0;
+              const shouldRotate = rowIndex % 2 === 0 ? colIndex % 2 === 1 : colIndex % 2 === 0;
 
               return (
                 <motion.div
                   key={item.id}
-                  whileHover={{ scale: 1.1 }} // ✅ hover grow
+                  whileHover={{ scale: 1.1 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <Triangle
-                    text={item.classification_item}
-                    rotate={shouldRotate}
-                  />
+                  <Triangle text={item.classification_item} rotate={shouldRotate} />
                 </motion.div>
               );
             })}
