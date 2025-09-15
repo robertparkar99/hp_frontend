@@ -407,7 +407,7 @@ if (onClose) {
               Browse and manage Module
             </p>
           </div>
-
+  {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
           <Button
             onClick={() => {
               setChapterToEdit(null)
@@ -418,6 +418,7 @@ if (onClose) {
           >
             <Icon name="Plus" size={16} /> Add Module
           </Button>
+  ):null}
         </div>
 
         {/* Course Hero */}

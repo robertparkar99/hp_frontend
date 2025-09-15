@@ -121,30 +121,19 @@ const LevelResponsibility = () => {
         </div>
       </div>
 
-
-
-      {/* LEVEL BADGE */}
-      {activeSection === 'description' && (
-        <>
-          {/* Level Badge */}
-          <div className="w-full flex justify-start mt-6">
-            <div
-              className="px-6 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow text-left"
-              style={{
-                background:
-                  "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
-              }}
-            >
-              <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 lg:gap-4">
-                <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
-                  Level {activeLevel}:
-                </div>
-                <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
-                  {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ""}
-                </div>
-              </div>
-            </div>
+      {/* LEVEL BADGE - Show for all sections, aligned to start (left) */}
+      <div className="w-full flex justify-start mt-6">
+        <div
+          className="px-6 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow max-w-xl"
+          style={{
+            background: "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
+          }}
+        >
+          <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
+            Level {activeLevel}: {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ""}
           </div>
+        </div>
+      </div>
 
       {/* DESCRIPTION SECTION */}
       {activeSection === 'description' && activeData && (
@@ -246,9 +235,6 @@ const LevelResponsibility = () => {
             ))}
           </div>
         </div>
-      )}
-
-        </>
       )}
     </div>
   );
