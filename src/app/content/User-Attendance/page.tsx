@@ -11,6 +11,7 @@ import {
   AttendanceRecord,
   AttendanceFormData,
 } from "./types/attendance";
+import { parse, format } from "date-fns";
 
 function App() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -29,12 +30,37 @@ function App() {
   const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ✅ Session Data from localStorage
+  const [sessionData, setSessionData] = useState({
+    url: "",
+    token: "",
+    subInstituteId: "",
+    orgType: "",
+    userId: "",
+  });
+
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+        orgType: org_type,
+        userId: user_id,
+      });
+    }
+  }, []);
+
   // ✅ Fetch Employees from API
   useEffect(() => {
+    if (!sessionData.url || !sessionData.subInstituteId) return;
+
     const fetchEmployees = async () => {
       try {
         const res = await fetch(
-          "http://127.0.0.1:8000/table_data?table=tbluser&filters[sub_institute_id]=1&filters[status]=1"
+          `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
         );
         const json = await res.json();
         console.log("Employees API raw response:", json);
@@ -62,22 +88,24 @@ function App() {
     };
 
     fetchEmployees();
-  }, []);
+  }, [sessionData]);
 
-  // ✅ Fetch Attendance Records on Page Load (HRMS API)
+  // ✅ Fetch Attendance Records
   useEffect(() => {
+    if (!sessionData.url || !sessionData.token) return;
+
     const fetchAttendance = async () => {
       try {
         setLoading(true);
 
         const params = new URLSearchParams();
         params.append("type", "API");
-        params.append("token", "76|LnoeslSRYnAvDf7kJeg1vif0ylZZsCxNJ2SRKNwX29663c2d");
-        params.append("sub_institute_id", "1");
-        params.append("user_id", "1");
+        params.append("token", sessionData.token);
+        params.append("sub_institute_id", sessionData.subInstituteId);
+        params.append("user_id", sessionData.userId);
         params.append("formType", "UserAttendance");
 
-        const url = `http://127.0.0.1:8000/hrms-attendance?${params.toString()}`;
+        const url = `${sessionData.url}/hrms-attendance?${params.toString()}`;
         console.log("📡 Fetching initial attendance:", url);
 
         const res = await fetch(url);
@@ -89,8 +117,12 @@ function App() {
             id: rec.id?.toString() || "",
             employeeId: rec.user_id?.toString() || "",
             date: rec.day || "",
-            punchIn: rec.punchin_time ? rec.punchin_time.split(" ")[1] : null,
-            punchOut: rec.punchout_time ? rec.punchout_time.split(" ")[1] : null,
+            punchIn: rec.punchin_time
+              ? format(parse(rec.punchin_time.split(" ")[1], "HH:mm:ss", new Date()), "hh:mm a")
+              : null,
+            punchOut: rec.punchout_time
+              ? format(parse(rec.punchout_time.split(" ")[1], "HH:mm:ss", new Date()), "hh:mm a")
+              : null,
             totalHours: rec.timestamp_diff
               ? (() => {
                   const [h, m, s] = rec.timestamp_diff.split(":").map(Number);
@@ -106,7 +138,7 @@ function App() {
           setAttendanceRecords([]);
         }
       } catch (err) {
-        console.error("❌ Failed to fetch initial attendance", err);
+        console.error("❌ Failed to fetch attendance", err);
         setAttendanceRecords([]);
       } finally {
         setLoading(false);
@@ -114,20 +146,18 @@ function App() {
     };
 
     fetchAttendance();
-  }, []);
+  }, [sessionData]);
 
-  // ✅ Handle Search (filtered HRMS API)
+  // ✅ Handle Search
   const handleSearch = async () => {
-    console.log("🔍 Search clicked", multiEmployees, multiDepartments, fromDate, toDate);
-
     try {
       setLoading(true);
 
       const params = new URLSearchParams();
       params.append("type", "API");
-      params.append("token", "76|LnoeslSRYnAvDf7kJeg1vif0ylZZsCxNJ2SRKNwX29663c2d");
-      params.append("sub_institute_id", "1");
-      params.append("user_id", "1");
+      params.append("token", sessionData.token);
+      params.append("sub_institute_id", sessionData.subInstituteId);
+      params.append("user_id", sessionData.userId);
       params.append("formType", "UserAttendance");
 
       if (fromDate) params.append("from_date", fromDate);
@@ -140,7 +170,7 @@ function App() {
         params.append(`employee_id[${idx}]`, emp.id)
       );
 
-      const url = `http://127.0.0.1:8000/hrms-attendance?${params.toString()}`;
+      const url = `${sessionData.url}/hrms-attendance?${params.toString()}`;
       console.log("📡 Fetching filtered attendance:", url);
 
       const res = await fetch(url);
@@ -152,8 +182,12 @@ function App() {
           id: rec.id?.toString() || "",
           employeeId: rec.user_id?.toString() || "",
           date: rec.day || "",
-          punchIn: rec.punchin_time ? rec.punchin_time.split(" ")[1] : null,
-          punchOut: rec.punchout_time ? rec.punchout_time.split(" ")[1] : null,
+          punchIn: rec.punchin_time
+            ? format(parse(rec.punchin_time.split(" ")[1], "HH:mm:ss", new Date()), "hh:mm a")
+            : null,
+          punchOut: rec.punchout_time
+            ? format(parse(rec.punchout_time.split(" ")[1], "HH:mm:ss", new Date()), "hh:mm a")
+            : null,
           totalHours: rec.timestamp_diff
             ? (() => {
                 const [h, m, s] = rec.timestamp_diff.split(":").map(Number);
@@ -165,12 +199,7 @@ function App() {
         }));
 
         setAttendanceRecords(formatted);
-
-        if (multiEmployees.length === 1) {
-          setSelectedEmployee(multiEmployees[0]);
-        } else {
-          setSelectedEmployee(null);
-        }
+        setSelectedEmployee(multiEmployees.length === 1 ? multiEmployees[0] : null);
       } else {
         setAttendanceRecords([]);
       }
@@ -182,15 +211,92 @@ function App() {
     }
   };
 
-  const handleSubmitAttendance = (data: AttendanceFormData) => {
-    const employee = employees.find((emp) => emp.id === data.employeeId);
-    if (!employee) return;
-    // keep your punch in/out logic here...
+  // ✅ Get Public IP
+  const getPublicIp = async (): Promise<string> => {
+    try {
+      const res = await fetch("https://api.ipify.org?format=json");
+      const data = await res.json();
+      return data.ip || "0.0.0.0";
+    } catch {
+      return "0.0.0.0";
+    }
   };
 
-  const handleEditRecord = (record: AttendanceRecord) => {
-    setEditingRecord(record);
-    setShowForm(true);
+  // ✅ Submit Attendance (Add New)
+  const handleSubmitAttendance = async (data: AttendanceFormData) => {
+    try {
+      const employee = employees.find((emp) => emp.id === data.employeeId);
+      if (!employee) return;
+
+      const ip = await getPublicIp();
+
+      const formData = new FormData();
+      formData.append("type", "API");
+      formData.append("token", sessionData.token);
+      formData.append("sub_institute_id", sessionData.subInstituteId);
+      formData.append("user_id", sessionData.userId);
+      formData.append("department_id", employee.department || "");
+      formData.append("employee_id", employee.id);
+      formData.append("day", data.date);
+      formData.append("punch_in", data.time || "");
+      formData.append("address", ip);
+      formData.append("formType", "add");
+
+      const res = await fetch(`${sessionData.url}/hrms/update_user_att`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json();
+      if (json?.status === "1") {
+        alert("✅ Attendance saved successfully!");
+        setShowForm(false);
+        setEditingRecord(null);
+        handleSearch();
+      } else {
+        alert(json.message || "❌ Failed to save attendance");
+      }
+    } catch (err) {
+      console.error("❌ Error saving attendance", err);
+    }
+  };
+
+  // ✅ Update Attendance (Edit)
+  const handleUpdateRecords = async (updated: AttendanceRecord[]) => {
+    try {
+      const formData = new FormData();
+      formData.append("formType", "update");
+      formData.append("type", "API");
+      formData.append("token", sessionData.token);
+      formData.append("sub_institute_id", sessionData.subInstituteId);
+      formData.append("user_id", sessionData.userId);
+
+      updated.forEach((rec) => {
+        if (rec.punchIn) {
+          const inTime = rec.punchIn.length === 5 ? rec.punchIn + ":00" : rec.punchIn;
+          formData.append(`in_time[${rec.date}][${rec.employeeId}]`, inTime);
+        }
+        if (rec.punchOut) {
+          const outTime = rec.punchOut.length === 5 ? rec.punchOut + ":00" : rec.punchOut;
+          formData.append(`out_time[${rec.date}][${rec.employeeId}]`, outTime);
+        }
+      });
+
+      const res = await fetch(`${sessionData.url}/hrms/update_user_att`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json();
+      if (json?.status === "1") {
+        alert("✅ Attendance updated successfully!");
+        handleSearch();
+      } else {
+        alert(json.message || "❌ Failed to update attendance");
+      }
+    } catch (err) {
+      console.error("❌ Error updating attendance", err);
+    }
   };
 
   return (
@@ -271,7 +377,7 @@ function App() {
                 records={attendanceRecords}
                 employees={employees}
                 selectedEmployee={selectedEmployee}
-                onEditRecord={handleEditRecord}
+                onUpdateRecords={handleUpdateRecords}
               />
             )}
           </div>

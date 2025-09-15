@@ -24,7 +24,6 @@ export interface AttendanceRecord {
 export interface AttendanceFormData {
   employeeId: string;
   date: string;
-  time: string;
-  type: "punch-in" | "punch-out";
+  time: string;     // punch in time
   notes?: string;
 }

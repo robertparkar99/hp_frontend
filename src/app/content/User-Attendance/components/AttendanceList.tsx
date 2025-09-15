@@ -1,6 +1,6 @@
 "use client";
-import React from "react";
-import { Clock, Edit, Calendar, User, AlertCircle } from "lucide-react";
+import React, { useState } from "react";
+import { Clock, Calendar, AlertCircle, User } from "lucide-react";
 import { AttendanceRecord, Employee } from "../types/attendance";
 import { format, parseISO } from "date-fns";
 
@@ -8,7 +8,7 @@ interface AttendanceListProps {
   records: AttendanceRecord[];
   employees: Employee[];
   selectedEmployee: Employee | null;
-  onEditRecord: (record: AttendanceRecord) => void;
+  onUpdateRecords?: (updated: AttendanceRecord[]) => void;
   fromDate?: string;
   toDate?: string;
 }
@@ -31,10 +31,13 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
   records,
   employees,
   selectedEmployee,
-  onEditRecord,
+  onUpdateRecords,
   fromDate,
   toDate,
 }) => {
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [editedRecords, setEditedRecords] = useState<Record<string, AttendanceRecord>>({});
+
   const getEmployee = (employeeId: string): Employee | undefined => {
     return employees.find((emp) => emp.id === employeeId);
   };
@@ -87,6 +90,37 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
+  const handleCheckboxChange = (record: AttendanceRecord) => {
+    setSelectedRows((prev) =>
+      prev.includes(record.id)
+        ? prev.filter((id) => id !== record.id)
+        : [...prev, record.id]
+    );
+    setEditedRecords((prev) => ({
+      ...prev,
+      [record.id]: { ...record },
+    }));
+  };
+
+  const handleFieldChange = (
+    recordId: string,
+    field: "punchIn" | "punchOut",
+    value: string
+  ) => {
+    setEditedRecords((prev) => ({
+      ...prev,
+      [recordId]: {
+        ...prev[recordId],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleUpdate = () => {
+    const updated = selectedRows.map((id) => editedRecords[id]);
+    if (onUpdateRecords) onUpdateRecords(updated);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-100 flex flex-col">
       {/* Header */}
@@ -110,6 +144,9 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Sr. No
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Employee
               </th>
@@ -128,19 +165,28 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sortedRecords.map((record) => {
+            {sortedRecords.map((record, index) => {
               const employee = getEmployee(record.employeeId);
+              const isSelected = selectedRows.includes(record.id);
+              const edited = editedRecords[record.id] || record;
+
               return (
-                <tr
-                  key={record.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
+                <tr key={record.id} className="hover:bg-gray-50 transition-colors">
+                  {/* Sr. No + Checkbox */}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleCheckboxChange(record)}
+                      className="mr-2"
+                    />
+                    {index + 1}
+                  </td>
+
+                  {/* Employee */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <img
@@ -155,24 +201,53 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
                         <div className="text-sm font-medium text-gray-900">
                           {employee?.name || "Unknown Employee"}
                         </div>
-                        {/* <div className="text-sm text-gray-500">
-                          {employee?.department || "No Department"}
-                        </div> */}
                       </div>
                     </div>
                   </td>
+
+                  {/* Date */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {format(parseISO(record.date), "MMM dd, yyyy")}
                   </td>
+
+                  {/* Punch In */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {record.punchIn || "-"}
+                    {isSelected ? (
+                      <input
+                        type="time"
+                        value={edited.punchIn || ""}
+                        onChange={(e) =>
+                          handleFieldChange(record.id, "punchIn", e.target.value)
+                        }
+                        className="border rounded px-2 py-1"
+                      />
+                    ) : (
+                      record.punchIn || "-"
+                    )}
                   </td>
+
+                  {/* Punch Out */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {record.punchOut || "-"}
+                    {isSelected ? (
+                      <input
+                        type="time"
+                        value={edited.punchOut || ""}
+                        onChange={(e) =>
+                          handleFieldChange(record.id, "punchOut", e.target.value)
+                        }
+                        className="border rounded px-2 py-1"
+                      />
+                    ) : (
+                      record.punchOut || "-"
+                    )}
                   </td>
+
+                  {/* Total Hours */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {record.totalHours ? `${record.totalHours}h` : "-"}
                   </td>
+
+                  {/* Status */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
@@ -184,15 +259,6 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
                         {record.status.replace("-", " ")}
                       </span>
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => onEditRecord(record)}
-                      className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-900 transition-colors"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span>Edit</span>
-                    </button>
                   </td>
                 </tr>
               );
@@ -214,6 +280,18 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
           </div>
         )}
       </div>
+
+      {/* Update Button */}
+      {selectedRows.length > 0 && (
+        <div className="p-4 border-t border-gray-200 flex justify-end">
+          <button
+            onClick={handleUpdate}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            Update Selected
+          </button>
+        </div>
+      )}
     </div>
   );
 };
