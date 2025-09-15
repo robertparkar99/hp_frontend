@@ -12,8 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { Atom } from "react-loading-indicators";
-import { motion, AnimatePresence } from "framer-motion";
 
 type Skill = {
   id: number;
@@ -64,7 +69,6 @@ export default function Page() {
   });
 
   const [refreshKey, setRefreshKey] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -180,9 +184,6 @@ export default function Page() {
     .sort((a, b) => a - b)
     .map(String);
 
-  // Decide hexagon items
-  let hexagonItems: { id?: number; title: string; subtitle?: string; skillObj?: Skill }[] = [];
-
   // Filtered skills
   let filteredSkills = userSkills.filter((s) => {
     return (
@@ -193,7 +194,7 @@ export default function Page() {
     );
   });
 
-  // Default page load → first category ni skills show
+  // Default page load → first category skills
   if (
     !selectedDepartment &&
     !selectedCategory &&
@@ -205,8 +206,7 @@ export default function Page() {
     filteredSkills = userSkills.filter((s) => s.category === firstCategory);
   }
 
-  // Prepare hexagon items
-  hexagonItems =
+  const hexagonItems =
     filteredSkills.map((skill) => ({
       id: skill.id,
       title: skill.title,
@@ -216,148 +216,153 @@ export default function Page() {
 
   return (
     <>
+      {/* Top bar with Funnel Popover */}
       <div className="p-4 flex justify-end mb-6">
-        <div className="flex items-center gap-4">
-          {/* Filters */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, x: 100 }} // from right
-                animate={{ opacity: 1, x: 0 }} // slide into place
-                exit={{ opacity: 0, x: 100 }} // slide back right
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="flex flex-col md:flex-row gap-4"
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="p-3 rounded-lg hover:bg-gray-100">
+              <Funnel className="w-5 h-5" />
+            </button>
+          </PopoverTrigger>
+
+          <PopoverContent className="w-[300px] p-4 space-y-4" align="end">
+            <h3 className="text-lg font-semibold mb-2">Filter Skills</h3>
+
+            {/* Department Filter */}
+            <Select
+              value={selectedDepartment || "all"}
+              onValueChange={(value) => {
+                if (value === "all") {
+                  setSelectedDepartment(undefined);
+                  setSelectedCategory(undefined);
+                  setSelectedSubcategory(undefined);
+                  setSelectedProficiency(undefined);
+                } else {
+                  setSelectedDepartment(value);
+                  setSelectedCategory(undefined);
+                  setSelectedSubcategory(undefined);
+                  setSelectedProficiency(undefined);
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by Department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {departmentOptions.map((dept, idx) => (
+                  <SelectItem key={idx} value={dept}>
+                    {dept}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Category Filter */}
+            <Select
+              value={selectedCategory || "all"}
+              onValueChange={(value) => {
+                if (value === "all") {
+                  setSelectedCategory(undefined);
+                  setSelectedSubcategory(undefined);
+                } else {
+                  setSelectedCategory(value);
+                  setSelectedSubcategory(undefined);
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categoryOptions.map((cat, idx) => (
+                  <SelectItem key={idx} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Subcategory Filter */}
+            <Select
+              value={selectedSubcategory || "all"}
+              onValueChange={(value) => {
+                if (value === "all") {
+                  setSelectedSubcategory(undefined);
+                } else {
+                  setSelectedSubcategory(value);
+                }
+              }}
+              disabled={!selectedCategory}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by Sub Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sub Categories</SelectItem>
+                {selectedCategory &&
+                  Array.from(
+                    new Set(
+                      userSkills
+                        .filter((s) => s.category === selectedCategory)
+                        .map((s) => s.sub_category)
+                    )
+                  )
+                    .filter((sub): sub is string => typeof sub === "string")
+                    .sort((a, b) => a.localeCompare(b))
+                    .map((sub, idx) => (
+                      <SelectItem key={idx} value={sub}>
+                        {sub}
+                      </SelectItem>
+                    ))}
+              </SelectContent>
+            </Select>
+
+            {/* Proficiency Filter */}
+            <Select
+              value={selectedProficiency || "all"}
+              onValueChange={(value) => {
+                if (value === "all") {
+                  setSelectedProficiency(undefined);
+                } else {
+                  setSelectedProficiency(value);
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by Proficiency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Proficiency Levels</SelectItem>
+                {proficiencyOptions.map((lvl, idx) => (
+                  <SelectItem key={idx} value={lvl}>
+                    {lvl}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Buttons */}
+            <div className="flex justify-between pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedDepartment(undefined);
+                  setSelectedCategory(undefined);
+                  setSelectedSubcategory(undefined);
+                  setSelectedProficiency(undefined);
+                }}
               >
-                {/* Department Filter */}
-                <Select
-                  value={selectedDepartment || "all"}
-                  onValueChange={(value) => {
-                    if (value === "all") {
-                      setSelectedDepartment(undefined);
-                      setSelectedCategory(undefined);
-                      setSelectedSubcategory(undefined);
-                      setSelectedProficiency(undefined);
-                    } else {
-                      setSelectedDepartment(value);
-                      setSelectedCategory(undefined);
-                      setSelectedSubcategory(undefined);
-                      setSelectedProficiency(undefined);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-[220px] rounded-lg border-gray-300 shadow-md bg-white">
-                    <SelectValue placeholder="Filter by Department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Filter by Department</SelectItem>
-                    {departmentOptions.map((dept, idx) => (
-                      <SelectItem key={idx} value={dept}>
-                        {dept}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Category Filter */}
-                <Select
-                  value={selectedCategory || "all"}
-                  onValueChange={(value) => {
-                    if (value === "all") {
-                      setSelectedCategory(undefined);
-                      setSelectedSubcategory(undefined);
-                    } else {
-                      setSelectedCategory(value);
-                      setSelectedSubcategory(undefined);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-[220px] rounded-lg border-gray-300 shadow-md bg-white">
-                    <SelectValue placeholder="Filter by Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Filter by Category</SelectItem>
-                    {categoryOptions.map((cat, idx) => (
-                      <SelectItem key={idx} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Subcategory Filter */}
-                <Select
-                  value={selectedSubcategory || "all"}
-                  onValueChange={(value) => {
-                    if (value === "all") {
-                      setSelectedSubcategory(undefined);
-                    } else {
-                      setSelectedSubcategory(value);
-                    }
-                  }}
-                  disabled={!selectedCategory}
-                >
-                  <SelectTrigger className="w-[220px] rounded-lg border-gray-300 shadow-md bg-white">
-                    <SelectValue placeholder="Filter by Sub Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Filter by Sub Category</SelectItem>
-                    {selectedCategory &&
-                      Array.from(
-                        new Set(
-                          userSkills
-                            .filter((s) => s.category === selectedCategory)
-                            .map((s) => s.sub_category)
-                        )
-                      )
-                        .filter((sub): sub is string => typeof sub === "string")
-                        .sort((a, b) => a.localeCompare(b))
-                        .map((sub, idx) => (
-                          <SelectItem key={idx} value={sub}>
-                            {sub}
-                          </SelectItem>
-                        ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Proficiency Filter */}
-                <Select
-                  value={selectedProficiency || "all"}
-                  onValueChange={(value) => {
-                    if (value === "all") {
-                      setSelectedProficiency(undefined);
-                    } else {
-                      setSelectedProficiency(value);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-[220px] rounded-lg border-gray-300 shadow-md bg-white">
-                    <SelectValue placeholder="Filter by Proficiency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Filter by Proficiency</SelectItem>
-                    {proficiencyOptions.map((lvl, idx) => (
-                      <SelectItem key={idx} value={lvl}>
-                        {lvl}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Funnel Button */}
-          <button
-            onClick={() => setShowFilters((prev) => !prev)}
-            className="p-3"
-          >
-            <Funnel className="w-5 h-5" />
-          </button>
-        </div>
+                Clear
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
+      {/* Honeycomb Section with Loader */}
       <div className="flex gap-6 flex-col">
-        {/* Honeycomb Section with Loader */}
         <section className="w-full h-screen overflow-y-auto scrollbar-hide flex items-start justify-center">
           {loading ? (
             <div className="flex justify-start items-center h-screen">
