@@ -120,42 +120,77 @@ const AssessmentLibrary = () => {
   }, [sessionData]); // Depend on sessionData
 
   // ✅ Filtering & sorting
+  // const filteredAssessments = useMemo(() => {
+  //   let filtered = assessments.filter((assessment) => {
+  //     const q = searchQuery.toLowerCase();
+  //     if (searchQuery && !assessment.title?.toLowerCase().includes(q)) return false;
+
+  //     if (filters.category !== 'all' && assessment.category?.toLowerCase() !== filters.category) return false;
+  //     if (filters.difficulty !== 'all' && assessment.difficulty?.toLowerCase() !== filters.difficulty) return false;
+  //     if (filters.status !== 'all' && assessment.status?.toLowerCase() !== filters.status) return false;
+  //     if (filters.showAvailableOnly && assessment.status !== 'Available') return false;
+
+  //     return true;
+  //   });
+
+  //   filtered.sort((a, b) => {
+  //     if (filters.sortBy === 'deadline') {
+  //       return new Date(a.deadline) - new Date(b.deadline);
+  //     }
+  //     if (filters.sortBy === 'difficulty') {
+  //       const order = { easy: 1, medium: 2, hard: 3 };
+  //       return order[a.difficulty?.toLowerCase() || 'medium'] -
+  //         order[b.difficulty?.toLowerCase() || 'medium'];
+  //     }
+  //     return 0;
+  //   });
+
+  //   return filtered;
+  // }, [assessments, searchQuery, filters]);
   const filteredAssessments = useMemo(() => {
-    let filtered = assessments.filter((assessment) => {
-      const q = searchQuery.toLowerCase();
-      if (searchQuery && !assessment.title?.toLowerCase().includes(q)) return false;
+  return assessments.filter((item) => {
+    // Search query filter
+    if (searchQuery && !item.title?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
 
-      if (filters.category !== 'all' && assessment.category?.toLowerCase() !== filters.category) return false;
-      if (filters.difficulty !== 'all' && assessment.difficulty?.toLowerCase() !== filters.difficulty) return false;
-      if (filters.status !== 'all' && assessment.status?.toLowerCase() !== filters.status) return false;
-      if (filters.showAvailableOnly && assessment.status !== 'Available') return false;
+    // Category filter
+    if (filters.category !== 'all' && item.category !== filters.category) return false;
 
-      return true;
-    });
+    // Difficulty filter
+    if (filters.difficulty !== 'all' && item.difficulty !== filters.difficulty) return false;
 
-    filtered.sort((a, b) => {
-      if (filters.sortBy === 'deadline') {
-        return new Date(a.deadline) - new Date(b.deadline);
-      }
-      if (filters.sortBy === 'difficulty') {
-        const order = { easy: 1, medium: 2, hard: 3 };
-        return order[a.difficulty?.toLowerCase() || 'medium'] -
-          order[b.difficulty?.toLowerCase() || 'medium'];
-      }
-      return 0;
-    });
+    // Status filter
+    if (filters.status !== 'all' && item.status?.toLowerCase() !== filters.status?.toLowerCase()) return false;
 
-    return filtered;
-  }, [assessments, searchQuery, filters]);
+    // Show only available
+    if (filters.showAvailableOnly && item.status !== 'Available') return false;
+
+    // Optionally deadline / subject filter if you added dropdowns for them
+    if (filters.deadline && item.deadline !== filters.deadline) return false;
+    if (filters.subject && item.subject !== filters.subject) return false;
+
+    return true;
+  });
+}, [assessments, filters, searchQuery]);
+
   console.log('Filtered Assessments:', filteredAssessments);
   // ✅ Stats
-  const stats = useMemo(() => ({
-    total: assessments.length,
-    notAttempted: assessments.filter(a => a.status === 'Not Attempted').length,
-    inProgress: assessments.filter(a => a.status === 'In Progress').length,
-    completed: assessments.filter(a => a.status === 'Completed').length,
-    failed: assessments.filter(a => a.status === 'Failed').length,
-  }), [assessments]);
+ const stats = useMemo(() => {
+  const today = new Date();
+
+  let total = assessments.length;
+  let active = assessments.filter(a => a.status === 'Available').length;
+  let inactive = assessments.filter(a => a.status === 'Closed').length;
+  let recent = assessments.filter(a => a.deadline && new Date(a.deadline) <= today).length;
+  let upcoming = assessments.filter(a => a.deadline && new Date(a.deadline) > today).length;
+
+  return {
+    total,
+    notAttempted: active,
+    inProgress: inactive,
+    completed: recent,
+    failed: upcoming
+  };
+}, [assessments]);
 
   // ✅ Handlers for the new buttons
   const handleImportQuestions = () => {
@@ -282,6 +317,7 @@ const AssessmentLibrary = () => {
                             isOpen={true}
                             onClose={() => { }}
                             isMobile={false}
+                            assessments={assessments}
                           />
                         </Popover.Panel>
                       </Popover>
@@ -312,7 +348,7 @@ const AssessmentLibrary = () => {
                         <Icon name="Search" size={28} className="text-muted-foreground" />
                       </div>
                       <h3 className="text-base sm:text-lg font-semibold mb-2">No assessments found</h3>
-                      <Button
+                      {/* <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
@@ -327,7 +363,7 @@ const AssessmentLibrary = () => {
                           }}
                         >
                           Clear All Filters
-                        </Button>
+                        </Button> */}
                       </div>
                   )}
                 </>
