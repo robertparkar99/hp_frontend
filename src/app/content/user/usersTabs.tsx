@@ -609,8 +609,8 @@ export default function EditProfilePage() {
                 userCategory={userCategory}
               />
             )}
-            {activeTab === "Jobrole-Type" && <Radar />}
-            {activeTab === "Jobrole-Type" && <Radar />}
+            {/* {activeTab === "Jobrole-Type" && <Radar />} */}
+            {/* {activeTab === "Jobrole-Type" && <Radar />} */}
           </div>
         </div>
       )}
