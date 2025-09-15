@@ -8,9 +8,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover"; // ✅ popover
 import { Funnel } from "lucide-react"; // ✅ filter icon
 import { Atom } from "react-loading-indicators";
-import { motion, AnimatePresence } from "framer-motion"; // ✅ animations
+import { motion } from "framer-motion"; // ✅ hover animation
 
 // ---------- Types ----------
 type CardData = {
@@ -42,7 +47,6 @@ export default function Index() {
   const [cards, setCards] = useState<CardData[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [loadingCards, setLoadingCards] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
 
   const [sessionData, setSessionData] = useState<SessionData>({});
 
@@ -182,41 +186,36 @@ export default function Index() {
 
   return (
     <>
-      {/* 🔽 Funnel + Filters in one row */}
+      {/* 🔽 Funnel + Filters in Popover */}
       <div className="flex p-4 justify-end items-center gap-3 mb-6">
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 100 }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="flex flex-col sm:flex-row gap-3"
-            >
-              <Filters
-                categories={categories}
-                subCategories={subCategories}
-                skills={skills}
-                loadingOptions={loadingOptions}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                selectedSubCategory={selectedSubCategory}
-                setSelectedSubCategory={setSelectedSubCategory}
-                selectedLevel={selectedLevel}
-                setSelectedLevel={setSelectedLevel}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <button
-          onClick={() => setShowFilters((prev) => !prev)}
-          className="p-3"
-        >
-          <Funnel />
-        </button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="p-3">
+              <Funnel />
+            </button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            align="end"
+            className="w-[300px] p-6 bg-white shadow-xl rounded-xl flex flex-col gap-4"
+          >
+            <Filters
+              categories={categories}
+              subCategories={subCategories}
+              skills={skills}
+              loadingOptions={loadingOptions}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedSubCategory={selectedSubCategory}
+              setSelectedSubCategory={setSelectedSubCategory}
+              selectedLevel={selectedLevel}
+              setSelectedLevel={setSelectedLevel}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {/* 🔽 Cards / Triangles */}
+      {/* 🔽 Cards */}
       <CardGrid cards={cards} loadingCards={loadingCards} />
     </>
   );
@@ -249,13 +248,13 @@ function Filters({
   setSelectedLevel,
 }: FiltersProps) {
   return (
-    <>
+    <div className="flex flex-col gap-4">
       {/* Category */}
       <Select
         value={selectedCategory ?? ""}
         onValueChange={(value) => setSelectedCategory(value)}
       >
-        <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+        <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white">
           <SelectValue placeholder="Filter by Category" />
         </SelectTrigger>
         <SelectContent>
@@ -279,7 +278,7 @@ function Filters({
         onValueChange={(value) => setSelectedSubCategory(value)}
         disabled={!selectedCategory}
       >
-        <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+        <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white disabled:bg-gray-100 disabled:text-gray-400">
           <SelectValue placeholder="Filter by Sub Category" />
         </SelectTrigger>
         <SelectContent>
@@ -302,7 +301,7 @@ function Filters({
         value={selectedLevel ?? ""}
         onValueChange={(value) => setSelectedLevel(value)}
       >
-        <SelectTrigger className="w-[220px] rounded-xl border-gray-300 shadow-md bg-white">
+        <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white">
           <SelectValue placeholder="Filter by Proficiency Level" />
         </SelectTrigger>
         <SelectContent>
@@ -319,7 +318,7 @@ function Filters({
           )}
         </SelectContent>
       </Select>
-    </>
+    </div>
   );
 }
 
