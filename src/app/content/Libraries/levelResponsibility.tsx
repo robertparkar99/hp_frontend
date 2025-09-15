@@ -248,6 +248,8 @@ const LevelResponsibility = () => {
         </div>
       )}
 
+        </>
+      )}
     </div>
   );
 };

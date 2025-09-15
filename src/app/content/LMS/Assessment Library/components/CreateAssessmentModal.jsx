@@ -282,12 +282,12 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
           {/* Exam Details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Exam Name / Paper Name <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium mb-1">Assesment Name / Paper Name <span className="text-red-500">*</span></label>
               <Input value={formData.examName} onChange={e => handleChange('examName', e.target.value)} />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Exam Description / Paper Description <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium mb-1">Assesment Description / Paper Description <span className="text-red-500">*</span></label>
               <Input value={formData.examDescription} onChange={e => handleChange('examDescription', e.target.value)} />
             </div>
 
@@ -328,7 +328,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
               <Input type="number" value={formData.allowedTime} onChange={e => handleChange("allowedTime", e.target.value)} />
             </div>
             <div>
-              <label className="block mb-1">Exam Type</label>
+              <label className="block mb-1">Assesment Type</label>
               <div className="flex items-center space-x-4">
                 <label>
                   <input type="radio" checked={formData.examType === 'online'} onChange={() => handleChange('examType', 'online')} /> Online
@@ -393,8 +393,8 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
                         />
                       </th>
                       <th className="border border-border p-2 text-left whitespace-normal break-words w-[300px]">Question</th>
-                      <th className="border border-border p-2 text-left whitespace-nowrap">Chapter</th>
-                      <th className="border border-border p-2 text-left whitespace-nowrap">Chapter No</th>
+                      <th className="border border-border p-2 text-left whitespace-nowrap">module</th>
+                      <th className="border border-border p-2 text-left whitespace-nowrap">module No</th>
                       <th className="border border-border p-2 text-left whitespace-nowrap">Topic</th>
                       <th className="border border-border p-2 text-left whitespace-nowrap">Question Type</th>
                       <th className="border border-border p-2 text-left whitespace-nowrap">Correct Answer</th>
@@ -448,7 +448,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
             Cancel
           </Button>
           <Button className='bg-black' onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Exam"}
+            {saving ? "Saving..." : "Save"}
           </Button>
         </div>
       </div>
