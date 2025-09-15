@@ -1412,21 +1412,29 @@ export default function QuestionBank({ chapter_id, standard_id ,courseDisplayNam
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+   {/* {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? ( */}
                           <DropdownMenuItem
                             onClick={() => handlePreviewClick(question)}
                           >
+                           
                             <Eye className="mr-2 h-4 w-4" />
                             Preview
                           </DropdownMenuItem>
+   {/* ):null} */}
+      {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
                           <DropdownMenuItem
                             onClick={() => handleEditClick(question)}
                           >
                             <Edit className="mr-2 h-4 w-4" /> Edit
                           </DropdownMenuItem>
+      ):null} 
+         {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
                           <DropdownMenuItem>
                             <Download className="mr-2 h-4 w-4" />
                             Export
                           </DropdownMenuItem>
+         ):null}
+            {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
                           <DropdownMenuItem
                             onClick={() => handleDelete(question.id)}
                             className="text-destructive"
@@ -1434,6 +1442,7 @@ export default function QuestionBank({ chapter_id, standard_id ,courseDisplayNam
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
+            ):null}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

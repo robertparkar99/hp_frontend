@@ -64,6 +64,7 @@ const LearningCatalog: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
 
+
   // ✅ Session data
   const [sessionData, setSessionData] = useState<any>(null)
 
@@ -92,6 +93,7 @@ const LearningCatalog: React.FC = () => {
 
       const apiUrl = buildApiUrl()
       console.log('📡 Fetching courses from:', apiUrl)
+      // console.log('user_profile_name',sessionData.user_profile_name);  
 
       const res = await fetch(apiUrl)
       if (!res.ok) throw new Error(`❌ Failed to fetch courses. Status: ${res.status}`)
@@ -250,7 +252,7 @@ const LearningCatalog: React.FC = () => {
       }
       setCourses((prev) => [newCourse, ...prev])
     }
-
+fetchCourses();
     setCourseToEdit(null)
     setIsAddDialogOpen(false)
   }
@@ -278,6 +280,7 @@ const LearningCatalog: React.FC = () => {
                 </div>
 
                 <div className="flex gap-2">
+                  {/* {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
                   <Button
                     onClick={() => {
                       setCourseToEdit(null)
@@ -288,6 +291,23 @@ const LearningCatalog: React.FC = () => {
                     <Icon name="Plus" size={16} className="mr-2" />
                     Add Course
                   </Button>
+                  ) : null} */}
+                  {
+  sessionData && 
+  sessionData.user_profile_name && 
+  ["ADMIN", "HR"].includes(sessionData.user_profile_name.toUpperCase()) ? (
+    <Button
+      onClick={() => {
+        setCourseToEdit(null)
+        setIsAddDialogOpen(true)
+      }}
+      className="flex items-center gap-2"
+    >
+      <Icon name="Plus" size={16} className="mr-2" />
+      Add Course
+    </Button>
+  ) : null
+}
 
                   <Button
                     variant="outline"
@@ -333,6 +353,7 @@ const LearningCatalog: React.FC = () => {
                     onLoadMore={handleLoadMore}
                     hasMore={hasMore}
                     onEditCourse={handleEditCourse}
+                    sessionInfo={sessionData}
                   />
                 </div>
               </div>

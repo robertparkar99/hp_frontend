@@ -8,6 +8,7 @@ import { AttendanceList } from './AttendanceList';
 import { AttendanceStats } from './AttendanceStats';
 import { format } from 'date-fns';
 
+
 interface AttendanceRecord {
   id: string;
   date: string;
@@ -59,6 +60,18 @@ const mapApiToRecords = (data: ApiAttendance[]): AttendanceRecord[] => {
     employeeName: item.employee_name,
     department: item.department,
   }));
+};
+
+// ✅ Helper to get public IP
+const getPublicIp = async (): Promise<string> => {
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    return data.ip || "0.0.0.0";
+  } catch (err) {
+    console.error("❌ Failed to fetch IP:", err);
+    return "0.0.0.0";
+  }
 };
 
 export function AttendanceDashboard() {
@@ -157,6 +170,8 @@ export function AttendanceDashboard() {
   const punchInApi = async (now: Date) => {
     try {
       setIsProcessing(true);
+      const ip = await getPublicIp(); // ✅ Fetch public IP
+
       const formData = new FormData();
       formData.append('type', 'API');
       formData.append('token', sessionData.token);
@@ -165,7 +180,7 @@ export function AttendanceDashboard() {
       formData.append('sub_institute_id', sessionData.subInstituteId);
       formData.append('outdate', format(now, 'yyyy-MM-dd'));
       formData.append('punchin_time', format(now, 'yyyy-MM-dd HH:mm:ss'));
-      formData.append('address_in', '127.0.0.1');
+      formData.append('address_in', ip); // ✅ Real IP
 
       const res = await fetch(`${sessionData.url}/hrms-in-time/store`, {
         method: 'POST',
@@ -194,6 +209,8 @@ export function AttendanceDashboard() {
   const punchOutApi = async (now: Date) => {
     try {
       setIsProcessing(true);
+      const ip = await getPublicIp(); // ✅ Fetch public IP
+
       const formData = new FormData();
       formData.append('type', 'API');
       formData.append('token', sessionData.token);
@@ -202,7 +219,7 @@ export function AttendanceDashboard() {
       formData.append('sub_institute_id', sessionData.subInstituteId);
       formData.append('outdate', format(now, 'yyyy-MM-dd'));
       formData.append('punchout_time', format(now, 'yyyy-MM-dd HH:mm:ss'));
-      formData.append('address_out', '127.0.0.1');
+      formData.append('address_out', ip); // ✅ Real IP
 
       await fetch(`${sessionData.url}/hrms-out-time/store`, {
         method: 'POST',
