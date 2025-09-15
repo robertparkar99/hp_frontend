@@ -155,6 +155,36 @@ const AssessmentComplete = ({
       setSubmitError(error.message || 'Failed to submit assessment.');
     }
   };
+  const [filters, setFilters] = useState({
+  dueDate: 'all',
+  course: 'all',
+  industry: 'all',
+  status: 'all'
+});
+// Filter function to show only matching cards
+const filteredAssessments = assessments.filter(assessment => {
+  // Filter by due date
+  if (filters.dueDate !== 'all' && assessment.close_date !== filters.dueDate) {
+    return false;
+  }
+  
+  // Filter by course
+  if (filters.course !== 'all' && (assessment.subject_name || assessment.subject) !== filters.course) {
+    return false;
+  }
+  
+  // Filter by industry
+  if (filters.industry !== 'all' && (assessment.grade_name || assessment.category) !== filters.industry) {
+    return false;
+  }
+  
+  // Filter by status
+  if (filters.status !== 'all' && (assessment.active_exam || assessment.status) !== filters.status) {
+    return false;
+  }
+  
+  return true;
+});
 
   return (
     <div className="bg-card border border-border rounded-lg p-8">
@@ -239,7 +269,7 @@ const AssessmentComplete = ({
 
         {/* Performance by Category */}
         <div className="border-t border-border pt-4">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Performance by Category</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4"> Your Performance</h3>
           <div className="space-y-4">
             {Object.values(categories).map((category, index) => (
               <div key={index} className="border border-border rounded-lg overflow-hidden">
