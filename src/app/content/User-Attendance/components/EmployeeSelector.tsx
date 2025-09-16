@@ -16,6 +16,7 @@ interface EmployeeSelectorPropsBase {
 
 interface SingleSelectProps extends EmployeeSelectorPropsBase {
   multiSelect?: false;
+  empMultiSelect?: any;
   selectedEmployee: Employee | null;
   selectedDepartment: string | null;
   onSelectEmployee: (employee: Employee | null) => void;
@@ -24,6 +25,7 @@ interface SingleSelectProps extends EmployeeSelectorPropsBase {
 
 interface MultiSelectProps extends EmployeeSelectorPropsBase {
   multiSelect: true;
+  empMultiSelect?: any;
   selectedEmployee: Employee[];
   selectedDepartment: string[];
   onSelectEmployee: (employee: Employee[]) => void;
@@ -39,6 +41,7 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   onSelectDepartment,
   className = "",
   multiSelect = false,
+  empMultiSelect,
 }) => {
   const [isEmpOpen, setIsEmpOpen] = useState(false);
   const [isDeptOpen, setIsDeptOpen] = useState(false);
@@ -86,7 +89,7 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
     ? [selectedDepartment as string]
     : [];
 
-  const selectedEmployees: Employee[] = multiSelect
+  const selectedEmployees: Employee[] = empMultiSelect
     ? (selectedEmployee as Employee[])
     : selectedEmployee
     ? [selectedEmployee as Employee]
@@ -166,7 +169,7 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
 
   // Employee select
   const handleEmployeeSelect = (emp: Employee | null) => {
-    if (multiSelect) {
+    if (empMultiSelect) {
       const handler = onSelectEmployee as (employee: Employee[]) => void;
       if (!emp) {
         handler([]);
@@ -290,7 +293,7 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
           Select Employee
         </label>
 
-        {multiSelect ? (
+        {empMultiSelect ? (
           <div
             tabIndex={0}
             className="border border-gray-300 rounded-md max-h-40 overflow-y-auto bg-white focus:ring-2 focus:ring-gray-500"

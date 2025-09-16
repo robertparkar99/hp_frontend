@@ -221,6 +221,7 @@ export default function DemoMulti() {
         <div className="flex-1 min-w-[250px]">
           <EmployeeSelector
             multiSelect
+            empMultiSelect={true}
             selectedEmployee={selectedEmployees}
             selectedDepartment={selectedDepartments}
             onSelectEmployee={setSelectedEmployees}
