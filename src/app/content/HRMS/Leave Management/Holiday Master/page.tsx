@@ -10,12 +10,81 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+interface Holiday {
+  id: number;
+  sub_institute_id: number;
+  holiday_name: string;
+  day_type: string;
+  department: string;
+  from_date: string;
+  to_date: string;
+  created_by: number;
+  updated_by: number;
+  deleted_by: number | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  department_name: string;
+}
+
+interface WeekDay {
+  id: number;
+  day: string;
+  day_type: string;
+  sub_institute_id: number;
+  created_by: number | null;
+  updated_by: number;
+  deleted_by: number | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+interface Department {
+  id: number;
+  department: string;
+}
+
+interface ApiResponse {
+  holidayList: Holiday[];
+  weekDayList: WeekDay[];
+  status: string;
+}
+
 const HolidayMaster = () => {
   const [activeTab, setActiveTab] = useState("holidays");
   const [selectedMonth, setSelectedMonth] = useState("2024-01");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [weekDays, setWeekDays] = useState<WeekDay[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [sessionData, setSessionData] = useState({
+    url: "",
+    token: "",
+    subInstituteId: "",
+    orgType: "",
+    userId: "",
+  });
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [savingDayOffs, setSavingDayOffs] = useState(false);
 
-  // NEW: state for weekly selections
+  // Load session data
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+        orgType: org_type,
+        userId: user_id,
+      });
+    }
+  }, []);
+
   const [dayOffSelections, setDayOffSelections] = useState<Record<string, string>>({
     Monday: "full",
     Tuesday: "full",
@@ -23,23 +92,295 @@ const HolidayMaster = () => {
     Thursday: "full",
     Friday: "full",
     Saturday: "full",
-    Sunday: "weekend",
+    Sunday: "full",
   });
 
-  const holidays = [
-    { id: 1, name: "New Year's Day", date: "2024-01-01", type: "National Holiday", description: "Start of the new year" },
-    { id: 2, name: "Republic Day", date: "2024-01-26", type: "National Holiday", description: "India's Republic Day celebration" },
-    { id: 3, name: "Holi", date: "2024-03-13", type: "Festival", description: "Festival of colors" },
-    { id: 4, name: "Good Friday", date: "2024-03-29", type: "Religious", description: "Christian holiday" },
-    { id: 5, name: "Eid al-Fitr", date: "2024-04-10", type: "Religious", description: "End of Ramadan" },
-  ];
+  // Fetch holidays
+  const fetchHolidays = async () => {
+    try {
+      if (!sessionData.url || !sessionData.subInstituteId || !sessionData.token) return;
+      setLoading(true);
 
-  const dayOffs = [
-    { id: 1, name: "Company Foundation Day", date: "2024-02-15", type: "Company Event", description: "Annual celebration" },
-    { id: 2, name: "Team Building Day", date: "2024-03-20", type: "Company Event", description: "Quarterly team activity" },
-    { id: 3, name: "Annual Maintenance", date: "2024-04-05", type: "Maintenance", description: "System maintenance day" },
-  ];
+      const response = await fetch(
+        `${sessionData.url}/hrms/holiday?sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&type=API`
+      );
 
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const data: ApiResponse = await response.json();
+
+      if (data.status === "1") {
+        setHolidays(data.holidayList);
+        setWeekDays(data.weekDayList);
+
+        const newSelections: Record<string, string> = { ...dayOffSelections };
+        data.weekDayList.forEach((weekDay) => {
+          const dayName = weekDay.day.charAt(0).toUpperCase() + weekDay.day.slice(1);
+          if (newSelections.hasOwnProperty(dayName)) {
+            newSelections[dayName] = weekDay.day_type;
+          }
+        });
+        setDayOffSelections(newSelections);
+      } else throw new Error("API returned an error status");
+    } catch (err) {
+      console.error("Error fetching holidays:", err);
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (sessionData.url && sessionData.subInstituteId && sessionData.token) {
+      fetchHolidays();
+    }
+  }, [sessionData]);
+
+  // Fetch departments
+  useEffect(() => {
+    if (!sessionData.url || !sessionData.subInstituteId || !sessionData.token) return;
+
+    const fetchDepartments = async () => {
+      try {
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=hrms_departments&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
+        );
+
+        if (!res.ok) throw new Error(`Department API error! status: ${res.status}`);
+
+        const json = await res.json();
+        const deptData: Department[] = Array.isArray(json) ? json : json.data ?? [];
+        setDepartments(deptData);
+      } catch (err) {
+        console.error("Failed to fetch departments", err);
+      }
+    };
+
+    fetchDepartments();
+  }, [sessionData]);
+
+  // Delete holiday function
+  const deleteHoliday = async (holidayId: number) => {
+    try {
+      setDeletingId(holidayId);
+
+      const response = await fetch(
+        `${sessionData.url}/hrms/holiday/${holidayId}?sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&user_id=${sessionData.userId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) throw new Error(`Failed to delete holiday: ${response.status}`);
+
+      const result = await response.json();
+      console.log("Holiday deleted:", result);
+
+      // Refresh the holidays list
+      await fetchHolidays();
+    } catch (err) {
+      console.error("Error deleting holiday:", err);
+      alert("Error deleting holiday");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // Save day offs (weekdays) function
+  const saveDayOffs = async () => {
+    try {
+      setSavingDayOffs(true);
+
+      // Convert day names to lowercase for the API
+      const params = new URLSearchParams();
+      params.append("sub_institute_id", sessionData.subInstituteId);
+      params.append("token", sessionData.token);
+      params.append("user_id", sessionData.userId);
+      // Add each day's selection
+      Object.entries(dayOffSelections).forEach(([day, value]) => {
+        params.append(day.toLowerCase(), value);
+      });
+
+      const response = await fetch(
+        `${sessionData.url}/hrms/holiday_weekdays?${params.toString()}`,
+        {
+          method: 'POST',
+        }
+      );
+
+      if (!response.ok) throw new Error(`Failed to save day offs: ${response.status}`);
+
+      const result = await response.json();
+      console.log("Day offs saved:", result);
+
+      alert("Day offs saved successfully!");
+    } catch (err) {
+      console.error("Error saving day offs:", err);
+      alert("Error saving day offs");
+    } finally {
+      setSavingDayOffs(false);
+    }
+  };
+
+  // ---------------------------
+  // Add Holiday Form Component
+  // ---------------------------
+  const AddHolidayForm = () => {
+    const [name, setName] = useState("");
+    const [date, setDate] = useState("");
+    const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const values = Array.from(e.target.selectedOptions, (option) => option.value);
+      setSelectedDepartments(values);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!name || !date || selectedDepartments.length === 0) {
+        alert("Please fill all fields");
+        return;
+      }
+
+      try {
+        setIsSubmitting(true);
+        const params = new URLSearchParams();
+        params.append("sub_institute_id", sessionData.subInstituteId);
+        params.append("token", sessionData.token);
+        params.append("holiday_name", name);
+        params.append("from_date", date);
+        params.append("to_date", date); // Use the same date for to_date
+        selectedDepartments.forEach((deptId, idx) =>
+          params.append(`department[${idx}]`, deptId)
+        );
+        params.append("user_id", sessionData.userId);
+
+        const response = await fetch(`${sessionData.url}/hrms/holiday`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: params.toString(),
+        });
+
+        if (!response.ok) throw new Error("Failed to add holiday");
+
+        const result = await response.json();
+        console.log("Holiday added:", result);
+
+        // Refresh the holidays list instead of reloading the page
+        await fetchHolidays();
+
+        // Reset form and close modal
+        setName("");
+        setDate("");
+        setSelectedDepartments([]);
+        setIsAddModalOpen(false);
+      } catch (err) {
+        console.error("Error adding holiday:", err);
+        alert("Error adding holiday");
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    // keyboard select all
+    useEffect(() => {
+      const select = document.getElementById("department") as HTMLSelectElement | null;
+      if (!select) return;
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "a") {
+          e.preventDefault();
+          for (let i = 0; i < select.options.length; i++) select.options[i].selected = true;
+        }
+      };
+
+      select.addEventListener("keydown", handleKeyDown);
+      return () => select.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
+    return (
+      <div className="bg-gradient-to-br from-background to-muted/30 p-6 border border-border/50">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="name">Holiday Name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter holiday name"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="department">Department</Label>
+            <select
+              id="department"
+              multiple
+              value={selectedDepartments}
+              onChange={handleDepartmentChange}
+              className="w-full border rounded-md p-2"
+              required
+            >
+              {departments.length > 0 ? (
+                departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.department}
+                  </option>
+                ))
+              ) : (
+                <option disabled>No departments found</option>
+              )}
+            </select>
+            <p className="text-sm text-muted-foreground">Hold Ctrl/Cmd to select multiple departments</p>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setIsAddModalOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Adding...
+                </>
+              ) : (
+                <>
+                    <Plus className="h-4 w-4 mr-2" />
+                  Add Holiday
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    );
+  };
+
+  // ---------------------------
+  // Rest of your code unchanged
+  // ---------------------------
   const months = [
     { value: "2024-01", label: "January 2024" },
     { value: "2024-02", label: "February 2024" },
@@ -51,156 +392,80 @@ const HolidayMaster = () => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case "National Holiday": return "bg-primary text-primary-foreground shadow-sm";
-      case "Festival": return "bg-gradient-to-r from-warning to-warning/80 text-warning-foreground shadow-sm";
-      case "Religious": return "bg-success text-success-foreground shadow-sm";
-      case "Company Event": return "bg-gradient-to-r from-secondary to-muted text-foreground shadow-sm";
-      case "Maintenance": return "bg-muted text-muted-foreground border border-border";
-      default: return "bg-muted text-muted-foreground";
+      case "National Holiday":
+        return "bg-primary text-primary-foreground shadow-sm";
+      case "Festival":
+        return "bg-gradient-to-r from-warning to-warning/80 text-warning-foreground shadow-sm";
+      case "Religious":
+        return "bg-success text-success-foreground shadow-sm";
+      case "Company Event":
+        return "bg-gradient-to-r from-secondary to-muted text-foreground shadow-sm";
+      case "Maintenance":
+        return "bg-muted text-muted-foreground border border-border";
+      default:
+        return "bg-muted text-muted-foreground";
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case "National Holiday": return <Star className="h-4 w-4" />;
-      case "Festival": return <Sparkles className="h-4 w-4" />;
-      case "Religious": return <Calendar className="h-4 w-4" />;
-      case "Company Event": return <MapPin className="h-4 w-4" />;
-      case "Maintenance": return <Clock className="h-4 w-4" />;
-      default: return <Calendar className="h-4 w-4" />;
+      case "National Holiday":
+        return <Star className="h-4 w-4" />;
+      case "Festival":
+        return <Sparkles className="h-4 w-4" />;
+      case "Religious":
+        return <Calendar className="h-4 w-4" />;
+      case "Company Event":
+        return <MapPin className="h-4 w-4" />;
+      case "Maintenance":
+        return <Clock className="h-4 w-4" />;
+      default:
+        return <Calendar className="h-4 w-4" />;
     }
   };
 
-  const AddHolidayForm = () => {
-    useEffect(() => {
-      const select = document.getElementById("department") as HTMLSelectElement | null;
-      if (!select) return;
-
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "a") {
-          e.preventDefault();
-          for (let i = 0; i < select.options.length; i++) {
-            select.options[i].selected = true;
-          }
-        }
-      };
-
-      select.addEventListener("keydown", handleKeyDown);
-      return () => select.removeEventListener("keydown", handleKeyDown);
-    }, []);
-
-    return (
-      <div className="bg-gradient-to-br from-background to-muted/30 p-6 border border-border/50">
-        <form className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium text-foreground">
-              Holiday Name
-            </Label>
-            <Input
-              id="name"
-              placeholder="Enter holiday name"
-              className="border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="date" className="text-sm font-medium text-foreground">
-              Date
-            </Label>
-            <Input
-              id="date"
-              type="date"
-              className="border-border/50 focus:border-primary focus:ring-primary/20 transition-all"
-            />
-          </div>
-
-          {/* Department Multi-Select */}
-          <div className="space-y-2">
-            <Label htmlFor="department" className="text-md font-medium text-foreground">
-              Department
-            </Label>
-            <select
-              id="department"
-              multiple
-              className="w-full border border-border/50 rounded-md p-2 text-sm focus:border-primary focus:ring-primary/20 transition-all h-30"
-            >
-              <option value="academic">Academic Division</option>
-              <option value="finance">Accounts & Finance Department</option>
-              <option value="assistant">Accounts Assistant Team</option>
-              <option value="accounts">Accounts Department</option>
-              <option value="team">Accounts Team</option>
-            </select>
-          </div>
-
-          {/* Removed Description field */}
-
-          <div className="flex justify-end space-x-3 pt-4 border-t border-border/30">
-            <Button
-              variant="outline"
-              onClick={() => setIsAddModalOpen(false)}
-              className="hover:bg-muted/50 transition-colors"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              onClick={() => setIsAddModalOpen(false)}
-              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-primary-foreground shadow-md hover:shadow-lg transition-all"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add {activeTab === "holidays" ? "Holiday" : "Day Off"}
-            </Button>
-          </div>
-        </form>
-      </div>
-    );
-  };
-
-  const renderList = (items: any[]) => (
+  const renderList = (items: Holiday[]) => (
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
       {items.map((item) => (
-        <Card
-          key={item.id}
-          className="group bg-gradient-to-br from-card to-card/80 border-border/30 hover:border-primary/40 hover:shadow-md transition-all duration-200 hover:-translate-y-1 overflow-hidden"
-        >
+        <Card key={item.id} className="group bg-gradient-to-br from-card to-card/80 border-border/30 hover:border-primary/40 hover:shadow-md transition-all duration-200 hover:-translate-y-1 overflow-hidden">
           <CardContent className="p-4">
             <div className="space-y-3">
-              {/* Header with icon and badge */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-md bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-                    {getTypeIcon(item.type)}
+                    <Calendar className="h-4 w-4" />
                   </div>
-                  <Badge className={`${getTypeColor(item.type)} text-xs font-medium px-2 py-0.5`}>
-                    {item.type}
+                  <Badge className={`${getTypeColor("National Holiday")} text-xs font-medium px-2 py-0.5`}>
+                    {item.day_type === "full" ? "Full Day" : "Half Day"}
                   </Badge>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive-light/50 transition-all opacity-0 group-hover:opacity-100"
+                  onClick={() => deleteHoliday(item.id)}
+                  disabled={deletingId === item.id}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  {deletingId === item.id ? (
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
+                  ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                  )}
                 </Button>
               </div>
 
-              {/* Title */}
               <div>
-                <h3 className="font-semibold text-base text-foreground leading-tight line-clamp-2">{item.name}</h3>
+                <h3 className="font-semibold text-base text-foreground leading-tight line-clamp-2">{item.holiday_name}</h3>
               </div>
 
-              {/* Description */}
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{item.description}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">Departments: {item.department_name}</p>
 
-              {/* Date */}
               <div className="flex items-center gap-2 pt-1 border-t border-border/30">
                 <Calendar className="h-3.5 w-3.5 text-primary/70" />
                 <span className="text-xs font-medium text-primary">
-                  {new Date(item.date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  {new Date(item.from_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  {item.from_date !== item.to_date &&
+                    ` - ${new Date(item.to_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
                 </span>
               </div>
             </div>
@@ -209,6 +474,32 @@ const HolidayMaster = () => {
       ))}
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading holidays...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="p-3 bg-destructive/10 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+            <Calendar className="h-6 w-6 text-destructive" />
+          </div>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Data</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -276,9 +567,9 @@ const HolidayMaster = () => {
                   <Calendar className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Total {activeTab === "holidays" ? "Holidays" : "Day Offs"}</p>
+                  <p className="text-xs text-muted-foreground">Total Holidays</p>
                   <p className="text-xl font-bold text-foreground">
-                    {activeTab === "holidays" ? holidays.length : dayOffs.length}
+                    {holidays.length}
                   </p>
                 </div>
               </div>
@@ -294,9 +585,9 @@ const HolidayMaster = () => {
                 <div>
                   <p className="text-xs text-muted-foreground">This Month</p>
                   <p className="text-xl font-bold text-foreground">
-                    {(activeTab === "holidays" ? holidays : dayOffs).filter(
+                    {holidays.filter(
                       (item) =>
-                        new Date(item.date).getMonth() === new Date(selectedMonth + "-01").getMonth()
+                        new Date(item.from_date).getMonth() === new Date(selectedMonth + "-01").getMonth()
                     ).length}
                   </p>
                 </div>
@@ -313,7 +604,7 @@ const HolidayMaster = () => {
                 <div>
                   <p className="text-xs text-muted-foreground">Upcoming</p>
                   <p className="text-xl font-bold text-foreground">
-                    {(activeTab === "holidays" ? holidays : dayOffs).filter((item) => new Date(item.date) > new Date()).length}
+                    {holidays.filter((item) => new Date(item.from_date) > new Date()).length}
                   </p>
                 </div>
               </div>
@@ -329,7 +620,7 @@ const HolidayMaster = () => {
                 <div>
                   <p className="text-xs text-muted-foreground">Past Events</p>
                   <p className="text-xl font-bold text-foreground">
-                    {(activeTab === "holidays" ? holidays : dayOffs).filter((item) => new Date(item.date) < new Date()).length}
+                    {holidays.filter((item) => new Date(item.from_date) < new Date()).length}
                   </p>
                 </div>
               </div>
@@ -376,7 +667,7 @@ const HolidayMaster = () => {
                 )}
               </TabsContent>
 
-              {/* NEW Day Offs UI */}
+              {/* Day Offs UI */}
               <TabsContent value="dayoffs" className="mt-0 space-y-4">
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -412,10 +703,18 @@ const HolidayMaster = () => {
 
                   <div className="flex justify-end pt-4">
                     <Button
-                      onClick={() => console.log("Day Offs Saved:", dayOffSelections)}
+                      onClick={saveDayOffs}
                       className="bg-primary text-primary-foreground hover:bg-primary/90"
+                      disabled={savingDayOffs}
                     >
-                      Save changes
+                      {savingDayOffs ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        "Save changes"
+                      )}
                     </Button>
                   </div>
                 </div>
