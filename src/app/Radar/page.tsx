@@ -255,6 +255,13 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
                             <div className="h-96 md:h-[500px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <RadarChart data={currentData} margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
+                                        <defs>
+                                            {/* Gradient fill that adapts to intensity */}
+                                            <radialGradient id="radarGradient" cx="50%" cy="50%" r="70%">
+                                                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+                                                <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.05" />
+                                            </radialGradient>
+                                        </defs>
                                         <PolarGrid stroke="#e5e7eb" strokeWidth={1} className="opacity-60" />
                                         <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 14, fontWeight: 600, fill: '#374151' }} />
                                         <PolarRadiusAxis angle={90} domain={[0, 35]} tick={{ fontSize: 12, fill: '#6b7280' }} tickCount={9} />
@@ -262,8 +269,8 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
                                             name="Skill Composition"
                                             dataKey="value"
                                             stroke="#3b82f6"
-                                            fill="#3b82f6"
-                                            fillOpacity={0.1}
+                                            fill="url(#radarGradient)"
+                                            fillOpacity={0.8}
                                             strokeWidth={3}
                                             dot={{ fill: '#1d4ed8', strokeWidth: 2, stroke: '#ffffff', r: 6 }}
                                         />
