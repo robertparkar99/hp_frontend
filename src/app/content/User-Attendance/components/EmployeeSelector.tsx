@@ -50,7 +50,15 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
 
   const deptRef = useRef<HTMLDivElement>(null);
   const empRef = useRef<HTMLDivElement>(null);
+  const [sessionData, setSessionData] = useState({
+      url: '',
+      token: '',
+      subInstituteId: '',
+      orgType: '',
+      userId: '',
+    });
 
+   
   // ✅ Fallback avatar
   const fallbackImg =
     "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
@@ -66,21 +74,40 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
     return fallbackImg;
   };
 
-  // ✅ Fetch departments
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const res = await fetch(
-          "http://127.0.0.1:8000/table_data?table=hrms_departments&filters[sub_institute_id]=1&filters[status]=1"
-        );
-        const data: Department[] = await res.json();
-        setDepartments(data);
-      } catch (err) {
-        console.error("Failed to fetch departments", err);
-      }
-    };
-    fetchDepartments();
-  }, []);
+    // Load session data from localStorage
+      useEffect(() => {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+          setSessionData({
+            url: APP_URL,
+            token,
+            subInstituteId: sub_institute_id,
+            orgType: org_type,
+            userId: user_id,
+          });
+        }
+      }, []);
+// ✅ Fetch departments
+useEffect(() => {
+  const fetchDepartments = async () => {
+    try {
+      if (!sessionData.url || !sessionData.subInstituteId) return;
+
+      const res = await fetch(
+        `${sessionData.url}/table_data?table=hrms_departments&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
+      );
+
+      const json = await res.json();
+      const deptData: Department[] = Array.isArray(json) ? json : json.data ?? [];
+      setDepartments(deptData);
+    } catch (err) {
+      console.error("Failed to fetch departments", err);
+    }
+  };
+
+  fetchDepartments();
+}, [sessionData]);
 
   // Normalize selections
   const selectedDepartments: string[] = multiSelect
@@ -95,59 +122,45 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
     ? [selectedEmployee as Employee]
     : [];
 
-  // ✅ Fetch employees whenever departments change
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        let formatted: Employee[] = [];
+// ✅ Fetch employees whenever departments change
+useEffect(() => {
+  const fetchEmployees = async () => {
+    try {
+      if (!sessionData.url || !sessionData.subInstituteId) return;
 
-        if (selectedDepartments.length === 0) {
-          const res = await fetch(
-            `http://127.0.0.1:8000/table_data?table=tbluser&filters[sub_institute_id]=1&filters[status]=1`
-          );
-          const data = await res.json();
-          formatted = data.map((emp: any) => ({
-            id: emp.id,
-            name: `${emp.first_name || ""} ${emp.middle_name || ""} ${
-              emp.last_name || ""
-            }`.trim(),
-            avatar: getAvatarUrl(emp.image),
-            department: emp.department_id?.toString() || "",
-          }));
-          setEmployees(formatted);
-          return;
-        }
+      let results: any[] = [];
 
+      if (selectedDepartments.length === 0) {
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
+        );
+        const json = await res.json();
+        results = Array.isArray(json) ? json : json.data ?? [];
+      } else {
         const requests = selectedDepartments.map((deptId) =>
           fetch(
-            `http://127.0.0.1:8000/table_data?table=tbluser&filters[sub_institute_id]=1&filters[status]=1&filters[department_id]=${deptId}`
+            `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${deptId}`
           ).then((res) => res.json())
         );
-
-        const results = await Promise.all(requests);
-        formatted = results.flat().map((emp: any) => ({
-          id: emp.id,
-          name: `${emp.first_name || ""} ${emp.middle_name || ""} ${
-            emp.last_name || ""
-          }`.trim(),
-          avatar: getAvatarUrl(emp.image),
-          email: emp.email || "",
-          position: emp.position || "",
-          departmentId: emp.department_id?.toString() || "",
-          department: emp.department_id?.toString() || "",
-        }));
-
-        const unique = formatted.filter(
-          (emp, index, self) => index === self.findIndex((e) => e.id === emp.id)
-        );
-
-        setEmployees(unique);
-      } catch (err) {
-        console.error("Failed to fetch employees", err);
+        const resAll = await Promise.all(requests);
+        results = resAll.flatMap((r) => (Array.isArray(r) ? r : r.data ?? []));
       }
-    };
-    fetchEmployees();
-  }, [selectedDepartments]);
+
+      const formatted: Employee[] = results.map((emp: any) => ({
+        id: emp.id,
+        name: `${emp.first_name || ""} ${emp.middle_name || ""} ${emp.last_name || ""}`.trim(),
+        avatar: getAvatarUrl(emp.image),
+        department: emp.department_id?.toString() || "",
+      }));
+
+      setEmployees(formatted);
+    } catch (err) {
+      console.error("Failed to fetch employees", err);
+    }
+  };
+
+  fetchEmployees();
+}, [selectedDepartments, sessionData]);
 
   // Department select
   const handleDepartmentSelect = (dept: string | null) => {
