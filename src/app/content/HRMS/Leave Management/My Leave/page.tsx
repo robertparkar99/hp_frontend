@@ -1,4 +1,4 @@
-
+"use client";
 import { useState } from "react";
 import { Calendar, Clock, Filter, Eye, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

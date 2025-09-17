@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { Send, RotateCcw, Calendar, User, Building2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

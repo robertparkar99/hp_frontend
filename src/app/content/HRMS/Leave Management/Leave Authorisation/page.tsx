@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { CheckCircle, XCircle, Clock, Users, Filter, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
