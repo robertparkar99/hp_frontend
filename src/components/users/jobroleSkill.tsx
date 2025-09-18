@@ -128,6 +128,7 @@ const JobRoleSkills: React.FC<UserJobroleSkillsProps> = ({ userJobroleSkills, sk
           behaviour={skillArray.find((s) => s.skill === activeSkill)?.behaviour || []}
           attitude={skillArray.find((s) => s.skill === activeSkill)?.attitude || []}
           skills={skillArray}
+          activeSkillName={activeSkill} // Add this line
         />
       ) : skillArray.length > 0 ? (
         <div className="honeycomb-container pb-8">
