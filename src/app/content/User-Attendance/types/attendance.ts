@@ -4,10 +4,13 @@ export interface Department {
 }
 
 export interface Employee {
-  id: string;
-  name: string;
-  avatar: string;
-  department: string;
+  id: number;
+  name?: string;
+  avatar?: string;
+  email?: string;
+  position?: string;
+  departmentId?: string;
+  department?: string;
 }
 
 export interface AttendanceRecord {

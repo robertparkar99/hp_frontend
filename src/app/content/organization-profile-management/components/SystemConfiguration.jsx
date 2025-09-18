@@ -60,7 +60,6 @@ const SystemConfiguration = () => {
   });
 
   const [dataList, setDataList] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
   const [filters, setFilters] = useState({});
   const [fileName, setFileName] = useState("");
   const [editFileName, setEditFileName] = useState("");
@@ -104,9 +103,8 @@ const SystemConfiguration = () => {
       const data = await res.json();
       if (Array.isArray(data)) {
         const mappedUsers = data.map((user) => {
-          let displayName = `${user.first_name || ""} ${user.middle_name || ""} ${
-            user.last_name || ""
-          }`.trim();
+          let displayName = `${user.first_name || ""} ${user.middle_name || ""} ${user.last_name || ""
+            }`.trim();
           if (!displayName) displayName = user.user_name || "";
           return {
             id: user.id,
@@ -153,6 +151,23 @@ const SystemConfiguration = () => {
       console.error("Error fetching compliance data:", error);
     }
   };
+
+  // Filter data based on all active filters
+  const filteredData = dataList.filter((item, index) => {
+    return Object.entries(filters).every(([key, filterValue]) => {
+      if (!filterValue) return true;
+      
+      // Handle serial number search
+      if (key === 'srno') {
+        const serialNumber = index + 1;
+        return serialNumber.toString().toLowerCase().includes(filterValue.toLowerCase());
+      }
+      
+      // Handle other columns
+      const cellValue = item[key] ? item[key].toString().toLowerCase() : '';
+      return cellValue.includes(filterValue.toLowerCase());
+    });
+  });
 
   useEffect(() => {
     if (sessionData.url && sessionData.sub_institute_id) {
@@ -372,13 +387,21 @@ const SystemConfiguration = () => {
       alert("An error occurred while submitting data.");
     }
   };
+  
+  const handleColumnFilter = (columnKey, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [columnKey]: value
+    }));
+  };
 
   const exportToCSV = () => {
+    // Create a user map for easier lookup
     const userMap = {};
-    allUsers.forEach((user) => {
+    allUsers.forEach(user => {
       userMap[user.id] = user.name;
     });
-
+   
     const csv = [
       [
         "Sr No.",
@@ -411,15 +434,189 @@ const SystemConfiguration = () => {
   };
 
   const columns = [
-    { name: "Sr No.", selector: (row) => row.srno, width: "100px", sortable: true },
-    { name: "Name", selector: (row) => row.name, sortable: true },
-    { name: "Description", selector: (row) => row.description, sortable: true },
-    { name: "Standard Name", selector: (row) => row.standard_name || "", sortable: true, wrap: true },
-    { name: "Assigned To", selector: (row) => row.assigned_to_name || "", sortable: true },
-    { name: "Due Date", selector: (row) => row.duedate || "", sortable: true, wrap: true },
-    { name: "Frequency", selector: (row) => row.frequency || "", sortable: true },
     {
-      name: "Attachment",
+      name: (
+        <div>
+          <div>Sr No.</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("srno", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row, index) => index + 1,
+      sortable: true,
+      width: "120px"
+    },
+    {
+      name: (
+        <div>
+          <div>Name</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("name", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.name,
+      sortable: true
+    },
+    {
+      name: (
+        <div>
+          <div>Description</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("description", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row) => row.description,
+      sortable: true
+    },
+    {
+      name: (
+        <div>
+          <div>Standard Name</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("standard_name", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row) => row.standard_name || "",
+      sortable: true,
+      wrap: true
+    },
+    {
+      name: (
+        <div>
+          <div>Assigned To</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("assigned_to", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row) => {
+        // Create a user map for easier lookup
+        const userMap = {};
+        allUsers.forEach(user => {
+          userMap[user.id] = user.name;
+        });
+        return userMap[row.assigned_to] || "N/A";
+      },
+      sortable: true
+    },
+    {
+      name: (
+        <div>
+          <div>Due Date</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("duedate", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row) => row.duedate || "",
+      sortable: true,
+      wrap: true
+    },
+    {
+      name: (
+        <div>
+          <div>Frequency</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("frequency", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row) => row.frequency || "",
+      sortable: true
+    },
+    {
+      name: (
+        <div>
+          <div>Attachment</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("attachment", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
       selector: (row) => {
         if (row.attachment && row.attachment !== "" && row.attachment !== "N/A") {
           return (
@@ -436,7 +633,7 @@ const SystemConfiguration = () => {
         return row.attachment;
       },
       sortable: true,
-      wrap: true,
+      wrap: true
     },
     {
       name: "Actions",
@@ -606,6 +803,41 @@ const SystemConfiguration = () => {
 
       {/* Data Table */}
       <div className="mt-2">
+         <div className="flex justify-between items-center mb-4 py-4">
+          <div className="space-x-4">
+            {/* Pagination controls if needed */}
+          </div>
+          <div className="flex space-x-2">
+            <PrintButton
+              data={filteredData.length > 0 ? filteredData : dataList}
+              title="Incident Reports"
+              excludedFields={["id"]}
+              buttonText={
+                <>
+                  <span className="mdi mdi-printer-outline"></span>
+                </>
+              }
+            />
+            <ExcelExportButton
+              sheets={[{ data: filteredData.length > 0 ? filteredData : dataList, sheetName: "Incident Reports" }]}
+              fileName="incident_reports"
+              buttonText={
+                <>
+                  <span className="mdi mdi-file-excel"></span>
+                </>
+              }
+            />
+            <PdfExportButton
+              data={filteredData.length > 0 ? filteredData : dataList}
+              fileName="incident_reports"
+              buttonText={
+                <>
+                  <span className="mdi mdi-file-pdf-box"></span>
+                </>
+              }
+            />
+          </div>
+        </div>
         <DataTable
           columns={columns}
           data={displayData}
