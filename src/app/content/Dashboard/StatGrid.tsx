@@ -2595,7 +2595,7 @@ export default function Dashboard() {
         {/* Organization Info Card */}
         <div className="col-span-full grid grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow p-6">
-            <h2 className="text-2xl font-bold mb-6">Organizations Dashboard</h2>
+            <h2 className="text-2xl font-bold mb-6">Organizations Info</h2>
 
             {loading ? (
               <div className="flex justify-center items-center h-40">
