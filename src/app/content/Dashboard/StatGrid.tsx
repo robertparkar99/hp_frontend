@@ -883,6 +883,9 @@ import { Edit, Plus } from "lucide-react";
 import icon from '@/components/AppIcon';
 import { Atom } from "react-loading-indicators"
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
+import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
+import { UserCircle, Search } from "lucide-react";
+
 import {
   Dialog,
   DialogContent,
@@ -1018,6 +1021,8 @@ export default function Dashboard() {
 
   const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+
 
 
   const toggleSkills = (index: number) => {
@@ -1564,6 +1569,29 @@ export default function Dashboard() {
 
   return (
     <div className={`h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-0"}`}>
+      {/* 🔹 Header: Welcome + Search */}
+      <div className="flex items-center justify-between bg-white rounded-xl shadow p-4 mb-6">
+
+        {/* Welcome with icon */}
+        <div className="flex items-center gap-2">
+          <UserCircle className="w-7 h-7 text-blue-600" />
+          <h1 className="text-xl font-bold text-gray-800">
+            Welcome, {sessionData?.userProfileName || "User"}
+          </h1>
+        </div>
+
+        {/* Search bar */}
+        <div className="relative w-64">
+          <input
+            type="text"
+            placeholder="Search employees..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pl-10"
+          />
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+        </div>
+      </div>
       <div className="grid grid-cols-12 gap-6 ">
         {/* Left Section - Adjust column span based on sidebar state */}
         <div className={`${isSidebarOpen ? "col-span-9" : "col-span-9"} space-y-6`}>
@@ -1722,7 +1750,7 @@ export default function Dashboard() {
 
                             // Assign colors based on employee count compared to requirement
                             let cellColor = "bg-gray-300"; // default color for missing data
-                             let displayValue = "";
+                            let displayValue = "";
                             if (totalEmp === 0) {
                               cellColor = "bg-red-400"; // critical gap 
                             } else if (totalEmp === 1) {
@@ -1762,7 +1790,7 @@ export default function Dashboard() {
               </div>
 
 
-             
+
 
               {/* Gap Analysis Dialog */}
               <>
@@ -2360,68 +2388,68 @@ export default function Dashboard() {
             </div>
           </div>
           <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
-            {(shouldShowWidget("Today Task List") || !selectedWidget) && (
-              <div className="p-4 bg-white rounded-lg shadow h-110 overflow-y-auto hide-scroll">
-                {/* Header with + button */}
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-semibold">course List</h2>
-                  <button
-                    onClick={() => {
-                      triggerMenuNavigation(null, 'task/taskManagement.tsx');
-                    }}
-                    className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-                  >
-                    +
-                  </button>
-                </div>
+            <div className="p-4 bg-white rounded-lg shadow h-110 overflow-y-auto hide-scroll">
+              {/* Header with + button */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold">Course List</h2>
+                <button
+                  onClick={() => setOpenDialog(true)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                >
+                  +
+                </button>
+              </div>
 
-                {todayTasks.length > 0 ? (
-                  todayTasks.map((task, index) => (
-                    <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
-                      {/* Badge */}
-                      <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
-                        {task.task_type}
-                      </span>
+              {todayTasks.length > 0 ? (
+                todayTasks.map((task, index) => (
+                  <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                    {/* Badge */}
+                    <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                      {task.task_type}
+                    </span>
 
-                      {/* Title */}
-                      <p className="mt-2">{task.task_title}</p>
+                    {/* Title */}
+                    <p className="mt-2">{task.task_title}</p>
 
-                      {/* Profile */}
-                      <div className="flex items-center gap-2 mt-2">
-                        <img
-                          src={
-                            task.image && task.image !== ""
-                              ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
-                              : placeholderImage
-                          }
-                          alt={task.allocatedUser}
-                          className="w-8 h-8 rounded-full object-cover"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                          }}
-                        />
-                        <div>
-                          <p className="text-sm font-medium">{task.allocatedUser}</p>
-                          <p className="text-xs text-gray-400">
-                            {(() => {
-                              if (!task.task_date) return "";
-                              const d = new Date(task.task_date);
-                              const day = String(d.getDate()).padStart(2, "0");
-                              const month = String(d.getMonth() + 1).padStart(2, "0");
-                              const year = d.getFullYear();
-                              return `${day}-${month}-${year}`;
-                            })()}
-                          </p>
-                        </div>
+                    {/* Profile */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <img
+                        src={
+                          task.image && task.image !== ""
+                            ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                            : placeholderImage
+                        }
+                        alt={task.allocatedUser}
+                        className="w-8 h-8 rounded-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                        }}
+                      />
+                      <div>
+                        <p className="text-sm font-medium">{task.allocatedUser}</p>
+                        <p className="text-xs text-gray-400">
+                          {(() => {
+                            if (!task.task_date) return "";
+                            const d = new Date(task.task_date);
+                            const day = String(d.getDate()).padStart(2, "0");
+                            const month = String(d.getMonth() + 1).padStart(2, "0");
+                            const year = d.getFullYear();
+                            return `${day}-${month}-${year}`;
+                          })()}
+                        </p>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-sm">No tasks for today</p>
-                )}
-              </div>
-            )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm">No course </p>
+              )}
+            </div>
+
+            {/* Popup Modal */}
+            <AddCourseDialog open={openDialog} onOpenChange={setOpenDialog} />
           </div>
+
         </div>
 
         {/* Employee Table - Full width row */}
@@ -2591,10 +2619,69 @@ export default function Dashboard() {
             ))}
           </div>
         )}
+        <div className="col-span-3 space-y-6">
+        <div className="p-4 bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll">
+          {/* Header with + button */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold">Assesment  List</h2>
+            <button
+              onClick={() => setOpenDialog(true)}
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+            >
+              +
+            </button>
+          </div>
+
+          {todayTasks.length > 0 ? (
+            todayTasks.map((task, index) => (
+              <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                {/* Badge */}
+                <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                  {task.task_type}
+                </span>
+
+                {/* Title */}
+                <p className="mt-2">{task.task_title}</p>
+
+                {/* Profile */}
+                <div className="flex items-center gap-2 mt-2">
+                  <img
+                    src={
+                      task.image && task.image !== ""
+                        ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                        : placeholderImage
+                    }
+                    alt={task.allocatedUser}
+                    className="w-8 h-8 rounded-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                    }}
+                  />
+                  <div>
+                    <p className="text-sm font-medium">{task.allocatedUser}</p>
+                    <p className="text-xs text-gray-400">
+                      {(() => {
+                        if (!task.task_date) return "";
+                        const d = new Date(task.task_date);
+                        const day = String(d.getDate()).padStart(2, "0");
+                        const month = String(d.getMonth() + 1).padStart(2, "0");
+                        const year = d.getFullYear();
+                        return `${day}-${month}-${year}`;
+                      })()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500 text-sm">No course </p>
+          )}
+        </div>
+        </div>
 
         {/* Organization Info Card */}
         <div className="col-span-full grid grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow p-6">
+          {/* <div className="bg-white rounded-xl shadow p-6">
             <h2 className="text-2xl font-bold mb-6">Organizations Info</h2>
 
             {loading ? (
@@ -2603,7 +2690,6 @@ export default function Dashboard() {
               </div>
             ) : orgData ? (
               <div className="bg-white rounded-xl shadow-lg p-6 flex items-start space-x-4 max-w-lg">
-                {/* Logo */}
                 <div className="flex-shrink-0">
                   {orgData.logo ? (
                     <img
@@ -2617,8 +2703,6 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
-
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-semibold text-gray-800">
                     {orgData.legal_name || "N/A"}
@@ -2633,7 +2717,7 @@ export default function Dashboard() {
                       </span>
                     </p>
                     <p className="flex items-center gap-2">
-                      {/* <IdentificationIcon className="h-4 w-4 text-blue-600" /> */}
+                      <IdentificationIcon className="h-4 w-4 text-blue-600" />
                       <span>
                         <strong>CIN:</strong> {orgData.cin || "N/A"}
                       </span>
@@ -2657,8 +2741,6 @@ export default function Dashboard() {
                       </span>
                     </p>
                   </div>
-
-                  {/* Button */}
                   <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition">
                     View Details
                   </button>
@@ -2682,7 +2764,6 @@ export default function Dashboard() {
                     key={index}
                     className="bg-white rounded-xl shadow-lg p-6 flex items-start space-x-4 max-w-lg"
                   >
-                    {/* Logo */}
                     <div className="flex-shrink-0">
                       {concern.logo ? (
                         <img
@@ -2699,8 +2780,6 @@ export default function Dashboard() {
                         </div>
                       )}
                     </div>
-
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-semibold text-gray-800">
                         {concern.legal_name || "N/A"}
@@ -2738,8 +2817,6 @@ export default function Dashboard() {
                           </span>
                         </p>
                       </div>
-
-                      {/* Button */}
                       <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition">
                         View Details
                       </button>
@@ -2750,7 +2827,7 @@ export default function Dashboard() {
             ) : (
               <p className="text-gray-500">No sister concerns found.</p>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
 
