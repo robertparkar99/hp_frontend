@@ -8,12 +8,11 @@ import { AttendanceList } from './AttendanceList';
 import { AttendanceStats } from './AttendanceStats';
 import { format } from 'date-fns';
 
-
 interface AttendanceRecord {
   id: string;
   date: string;
-  punchIn: string | null;
-  punchOut: string | null;
+  punchIn: string | null;   // raw ISO string
+  punchOut: string | null;  // raw ISO string
   totalHours: number | null;
   status: 'present' | 'absent' | 'active';
   employeeName?: string;
@@ -48,13 +47,13 @@ const parseHours = (diff: string | null): number => {
   return Math.round(total * 100) / 100;
 };
 
-// ✅ Map API → local records
+// ✅ Map API → local records (keep raw timestamps)
 const mapApiToRecords = (data: ApiAttendance[]): AttendanceRecord[] => {
   return data.map(item => ({
     id: item.id.toString(),
     date: format(new Date(item.day), 'EEE, MMM do'),
-    punchIn: item.punchin_time ? format(new Date(item.punchin_time), 'hh:mm a') : null,
-    punchOut: item.punchout_time ? format(new Date(item.punchout_time), 'hh:mm a') : null,
+    punchIn: item.punchin_time,
+    punchOut: item.punchout_time,
     totalHours: parseHours(item.timestamp_diff),
     status: item.status === 1 ? 'present' : 'absent',
     employeeName: item.employee_name,
@@ -120,24 +119,6 @@ export function AttendanceDashboard() {
     }
   }, []);
 
-  // ✅ Persist punchInTime in localStorage
-  useEffect(() => {
-    if (punchInTime) {
-      localStorage.setItem('punchInTime', punchInTime.toISOString());
-    } else {
-      localStorage.removeItem('punchInTime');
-    }
-  }, [punchInTime]);
-
-  // ✅ Restore punchInTime after refresh
-  useEffect(() => {
-    const stored = localStorage.getItem('punchInTime');
-    if (stored) {
-      setPunchInTime(new Date(stored));
-      setIsPunchedIn(true);
-    }
-  }, []);
-
   // ✅ Clock updater
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -166,11 +147,29 @@ export function AttendanceDashboard() {
     fetchAttendance();
   }, [sessionData]);
 
+  // ✅ Update punch state based on API data
+  useEffect(() => {
+    if (!apiData) return;
+
+    const records = mapApiToRecords(apiData.attendanceData);
+
+    if (records.length > 0) {
+      const latest = records[0];
+      if (latest.punchIn && !latest.punchOut) {
+        setIsPunchedIn(true);
+        setPunchInTime(new Date(latest.punchIn)); // ✅ raw timestamp works now
+      } else {
+        setIsPunchedIn(false);
+        setPunchInTime(null);
+      }
+    }
+  }, [apiData]);
+
   // ✅ API: Punch In
   const punchInApi = async (now: Date) => {
     try {
       setIsProcessing(true);
-      const ip = await getPublicIp(); // ✅ Fetch public IP
+      const ip = await getPublicIp();
 
       const formData = new FormData();
       formData.append('type', 'API');
@@ -180,7 +179,7 @@ export function AttendanceDashboard() {
       formData.append('sub_institute_id', sessionData.subInstituteId);
       formData.append('outdate', format(now, 'yyyy-MM-dd'));
       formData.append('punchin_time', format(now, 'yyyy-MM-dd HH:mm:ss'));
-      formData.append('address_in', ip); // ✅ Real IP
+      formData.append('address_in', ip);
 
       const res = await fetch(`${sessionData.url}/hrms-in-time/store`, {
         method: 'POST',
@@ -209,7 +208,7 @@ export function AttendanceDashboard() {
   const punchOutApi = async (now: Date) => {
     try {
       setIsProcessing(true);
-      const ip = await getPublicIp(); // ✅ Fetch public IP
+      const ip = await getPublicIp();
 
       const formData = new FormData();
       formData.append('type', 'API');
@@ -219,7 +218,7 @@ export function AttendanceDashboard() {
       formData.append('sub_institute_id', sessionData.subInstituteId);
       formData.append('outdate', format(now, 'yyyy-MM-dd'));
       formData.append('punchout_time', format(now, 'yyyy-MM-dd HH:mm:ss'));
-      formData.append('address_out', ip); // ✅ Real IP
+      formData.append('address_out', ip);
 
       await fetch(`${sessionData.url}/hrms-out-time/store`, {
         method: 'POST',
@@ -242,8 +241,8 @@ export function AttendanceDashboard() {
     if (!isPunchedIn) {
       const result = await punchInApi(now);
       if (result && result.status !== "0") {
-        setPunchInTime(now);
         setIsPunchedIn(true);
+        setPunchInTime(now);
       }
     } else {
       await punchOutApi(now);

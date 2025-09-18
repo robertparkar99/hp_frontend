@@ -29,6 +29,30 @@ export default function Home() {
   const [selectedEmployees, setSelectedEmployees] = useState<Employee[]>([]);
   const [data, setData] = useState<AttendanceRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userHasSearched, setUserHasSearched] = useState(false); // ✅ track if user searched
+  const [sessionData, setSessionData] = useState({
+    url: "",
+    token: "",
+    subInstituteId: "",
+    orgType: "",
+    userId: "",
+  });
+
+  // Load session data from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } =
+        JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+        orgType: org_type,
+        userId: user_id,
+      });
+    }
+  }, []);
 
   // ✅ Reset employees when departments change
   useEffect(() => {
@@ -36,6 +60,12 @@ export default function Home() {
   }, [selectedDepartments]);
 
   const fetchData = async () => {
+    setUserHasSearched(true); // ✅ mark as searched
+    if (!sessionData.url || !sessionData.token || !sessionData.subInstituteId) {
+      console.error("❌ Missing session data", sessionData);
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -48,14 +78,16 @@ export default function Home() {
         .map((deptId, i) => `department_id[${i}]=${deptId}`)
         .join("&");
 
-      // Build employee query string (optional if API supports)
+      // Build employee query string
       const empParams = selectedEmployees
         .map((emp, i) => `user_id[${i}]=${emp.id}`)
         .join("&");
 
-      const url = `https://hp.triz.co.in/show-early-going-hrms-attendance-report?type=API&sub_institute_id=1&token=1311|nXR4PqkYoK9lBQ6KweI7i8n5uSHnui2l7hsw5EjV13f37e8c&date=${formattedDate}${
+      const url = `${sessionData.url}/show-early-going-hrms-attendance-report?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&date=${formattedDate}${
         deptParams ? "&" + deptParams : ""
       }${empParams ? "&" + empParams : ""}`;
+
+      console.log("📡 Fetching:", url);
 
       const res = await fetch(url);
       const json = await res.json();
@@ -67,16 +99,13 @@ export default function Home() {
               item.middle_name ?? ""
             } ${item.last_name ?? ""}`.trim();
 
-            // Department from departments map
             const departmentName =
               json?.departments?.[item.department_id] ?? "Unknown";
 
-            // Punch out time
             const outTime = item.punchout_time
               ? item.punchout_time.split(" ")[1]?.slice(0, 5)
               : "-";
 
-            // Expected out time (based on weekday)
             const dayOfWeek = new Date(item.day).toLocaleString("en-US", {
               weekday: "long",
             });
@@ -99,7 +128,7 @@ export default function Home() {
         setData([]);
       }
     } catch (error) {
-      console.error("Error fetching API:", error);
+      console.error("❌ Error fetching API:", error);
     } finally {
       setLoading(false);
     }
@@ -183,9 +212,9 @@ export default function Home() {
   return (
     <div className="p-6 space-y-6">
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
-        {/* Department + Employee Selector */}
-        <div className="col-span-2 flex flex-col gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        {/* Department Selector */}
+        <div className="flex flex-col w-150 mr-2">
           <EmployeeSelector
             multiSelect
             empMultiSelect
@@ -197,9 +226,9 @@ export default function Home() {
           />
         </div>
 
-        {/* Date + Search */}
-        <div className="flex flex-col w-full">
-          <label className="block mb-1 font-semibold">Date</label>
+        {/* Date */}
+        <div className="flex flex-col ml-25 w-100 ">
+          <label className="block font-semibold">Date</label>
           <DatePicker
             selected={date}
             onChange={(d) => setDate(d)}
@@ -207,12 +236,15 @@ export default function Home() {
             dateFormat="dd-MM-yyyy"
           />
         </div>
+      </div>
 
+      {/* Search Button row */}
+      <div className="flex justify-center mt-6">
         <Button
           onClick={fetchData}
-          className="text-lg mt-7 rounded-lg font-bold h-10 flex items-center"
+          className="px-6 py-2 rounded-lg font-bold flex items-center"
         >
-          <Search className="w-6 h-6 mr-3" />
+          <Search className="w-5 h-5 mr-2" />
           Search
         </Button>
       </div>
@@ -255,7 +287,13 @@ export default function Home() {
           data={data}
           pagination
           highlightOnHover
-          noDataComponent={loading ? "Loading..." : "No data available in table"}
+          noDataComponent={
+            loading
+              ? "Loading..."
+              : userHasSearched && data.length === 0
+              ? "No data available in table"
+              : "" // ✅ blank on first load
+          }
           customStyles={customStyles}
         />
       </div>
