@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 
 interface AttendanceRecord {
@@ -74,22 +74,26 @@ export function AttendanceList({ records }: AttendanceListProps) {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-8 text-sm">
               <div className="text-center">
                 <p className="text-muted-foreground mb-1">Punch In</p>
                 <p className="font-semibold text-success">
-                  {record.punchIn || '--'}
+                  {record.punchIn && isValid(new Date(record.punchIn))
+                    ? format(new Date(record.punchIn), 'hh:mm a')
+                    : '--'}
                 </p>
               </div>
-              
+
               <div className="text-center">
                 <p className="text-muted-foreground mb-1">Punch Out</p>
                 <p className="font-semibold text-warning">
-                  {record.punchOut || '--'}
+                  {record.punchOut && isValid(new Date(record.punchOut))
+                    ? format(new Date(record.punchOut), 'hh:mm a')
+                    : '--'}
                 </p>
               </div>
-              
+
               <div className="text-center">
                 <p className="text-muted-foreground mb-1">Total Hours</p>
                 <p className="font-bold text-primary">

@@ -229,7 +229,7 @@ export default function DemoMulti() {
           />
         </div>
 
-        <div>
+        <div className="mb-28">
           <label className="block text-sm font-medium text-gray-700">
             From Date
           </label>
@@ -241,7 +241,7 @@ export default function DemoMulti() {
           />
         </div>
 
-        <div>
+        <div className="mb-28">
           <label className="block text-sm font-medium text-gray-700">
             To Date
           </label>
@@ -255,7 +255,7 @@ export default function DemoMulti() {
 
         <div
           onClick={handleSearch}
-          className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white bg-green-600 rounded-lg cursor-pointer"
+          className="flex items-center mb-28 justify-center space-x-2 px-4 py-3 text-sm font-medium text-white bg-[#000000] rounded-lg cursor-pointer"
         >
           <Search className="w-4 h-4" />
           <span>Search</span>
