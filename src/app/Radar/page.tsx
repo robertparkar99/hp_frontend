@@ -1,6 +1,5 @@
 'use client'
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
     RadarChart,
     Radar,
@@ -10,7 +9,6 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from 'recharts';
-import { ChevronDown } from 'lucide-react';
 import { Atom } from 'react-loading-indicators';
 
 // Types
@@ -46,11 +44,16 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string>('');
 
+    const [sessionData, setSessionData] = useState({
+        url: '',
+        subInstituteId: '',
+    });
 
-    // Required dimensions
-    const DIMENSIONS = ['Skill', 'Knowledge', 'Ability', 'Attitude', 'Behavior'];
+    const hasFetchedRef = useRef(false);
+    const sessionDataLoadedRef = useRef(false);
 
-    // Fixed dimension values for specific jobrole_category
+    const DIMENSIONS = useMemo(() => ['Skill', 'Knowledge', 'Ability', 'Attitude', 'Behavior'], []);
+
     const FIXED_DIMENSIONS: { [key: string]: RadarDataPoint[] } = {
         "Technical/Operational": [
             { dimension: "Skill", value: 20 },
@@ -88,165 +91,114 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
             { dimension: "Behavior", value: 10 },
         ],
     };
-    const [sessionData, setSessionData] = useState({
-        url: '',
-        subInstituteId: '',
-    });
 
     useEffect(() => {
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-        const { APP_URL, sub_institute_id } = JSON.parse(userData);
-        setSessionData({
-            url: APP_URL,
-            subInstituteId: sub_institute_id,
-        });
-    }
-}, []);
-
-    // Fetch data from API if no props provided
-    useEffect(() => {
-        console.log("sessionData prop:", sessionData);
-        if (usersJobroleComponent && usersJobroleComponent.length > 0) {
-            console.log("Using props data:", usersJobroleComponent);
-            setData(usersJobroleComponent);
-            setLoading(false);
-        } else {    
-            console.log("Fetching data from API...");
-            const fetchData = async () => {
-                if (!sessionData.url || !sessionData.subInstituteId) {
-                    console.error('Missing session data for API call');
-                    return;
-                }
-                try {
-                    setLoading(true);
-                    const response = await fetch(`${sessionData.url}/getSkillCompetency?sub_institute_id=${sessionData.subInstituteId}`);
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    setLoading(false);
-                    const result = await response.json();
-                    let skillsArray: SkillData[] = [];
-
-                    if (Array.isArray(result)) {
-                        skillsArray = result;
-                    } else if (result && Array.isArray(result.data)) {
-                        skillsArray = result.data;
-                    } else if (result && Array.isArray(result.skills)) {
-                        skillsArray = result.skills;
-                    } else {
-                        console.warn('API response does not contain expected array structure:', result);
-                        skillsArray = [];
-                    }
-
-                    console.log("API data fetched:", skillsArray);
-                    setData(skillsArray);
-                } catch (err) {
-                    console.error('Error fetching data:', err);
-                    setError('Failed to fetch skill competency data');
-                } finally {
-                    setLoading(false);
-                }
-            };
-
-            fetchData();
+        if (sessionDataLoadedRef.current) return;
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+            const { APP_URL, sub_institute_id } = JSON.parse(userData);
+            setSessionData({
+                url: APP_URL,
+                subInstituteId: sub_institute_id,
+            });
+            sessionDataLoadedRef.current = true;
         }
-    }, [sessionData.url, sessionData.subInstituteId, usersJobroleComponent]);
+    }, []);
 
-    // Process data when raw data changes
-    useEffect(() => {
-        if (data.length === 0) return;
-
-        // Get unique categories from the data
-        const categories = [
-            ...new Set(
-                data.map((item: any) => item.jobrole_category)
-            ),
-        ].filter(Boolean);
-
-        console.log("Available categories:", categories);
-        console.log("Current selectedCategory:", selectedCategory);
-        console.log("UserCategory prop:", userCategory);
-
+    const processData = useCallback((dataToProcess: SkillData[]) => {
+        const categories = [...new Set(dataToProcess.map(item => item.jobrole_category))].filter(Boolean);
         const processed: ProcessedData = {};
 
-        categories.forEach((category) => {
-            const items = data.filter(
-                (item: any) => item.jobrole_category === category
-            );
-
-            // Group by skills_category
+        categories.forEach(category => {
+            const items = dataToProcess.filter(item => item.jobrole_category === category);
             const dimensionTotals: { [key: string]: number } = {};
 
-            items.forEach((item: any) => {
-                let dimension = item.skills_category?.trim() || '';
-
-                const dimensionMap: { [key: string]: string } = {
-                    skill: 'Skill',
-                    skills: 'Skill',
+            items.forEach(item => {
+                let dim = item.skills_category?.trim() || '';
+                const map: any = {
+                    skill: 'Skill', skills: 'Skill',
                     knowledge: 'Knowledge',
-                    ability: 'Ability',
-                    abilities: 'Ability',
-                    attitude: 'Attitude',
-                    attitudes: 'Attitude',
-                    behavior: 'Behavior',
-                    behaviours: 'Behavior',
-                    behaviors: 'Behavior',
+                    ability: 'Ability', abilities: 'Ability',
+                    attitude: 'Attitude', attitudes: 'Attitude',
+                    behavior: 'Behavior', behaviours: 'Behavior', behaviors: 'Behavior'
                 };
-
-                dimension = dimensionMap[dimension.toLowerCase()] || dimension;
-
-                if (DIMENSIONS.includes(dimension)) {
-                    dimensionTotals[dimension] =
-                        (dimensionTotals[dimension] || 0) + (item.weightage || 0);
+                dim = map[dim.toLowerCase()] || dim;
+                if (DIMENSIONS.includes(dim)) {
+                    dimensionTotals[dim] = (dimensionTotals[dim] || 0) + (item.weightage || 0);
                 }
             });
 
-            // Normalize to percentages
-            const radarData: RadarDataPoint[] = DIMENSIONS.map((dimension) => ({
-                dimension,
-                value: dimensionTotals[dimension] || 0,
+            const radarData: RadarDataPoint[] = DIMENSIONS.map(d => ({
+                dimension: d,
+                value: dimensionTotals[d] || 0,
             }));
 
-            const total = radarData.reduce((sum, item) => sum + item.value, 0);
+            const total = radarData.reduce((sum, x) => sum + x.value, 0);
             if (total > 0) {
-                radarData.forEach((item) => {
-                    item.value = Math.round((item.value / total) * 100);
-                });
+                radarData.forEach(x => x.value = Math.round((x.value / total) * 100));
             } else {
-                radarData.forEach((item) => {
-                    item.value = 20;
-                });
+                radarData.forEach(x => x.value = 20);
             }
 
             processed[category] = radarData;
         });
 
-        setProcessedData(processed);
+        return processed;
+    }, [DIMENSIONS]);
 
-        // Set the selected category - prioritize userCategory prop, then use first available category
-        if (userCategory && categories.includes(userCategory)) {
-            console.log("Setting category from userCategory prop:", userCategory);
-            setSelectedCategory(userCategory);
-        } else if (categories.length > 0 && !selectedCategory) {
-            console.log("Setting category from first available:", categories[0]);
-            setSelectedCategory(categories[0]);
-        } else if (selectedCategory && !categories.includes(selectedCategory) && categories.length > 0) {
-            console.log("Selected category not available, using first:", categories[0]);
-            setSelectedCategory(categories[0]);
-        }
-    }, [data, userCategory]);
-
-    // Update selectedCategory when userCategory prop changes
     useEffect(() => {
-        if (userCategory && userCategory !== selectedCategory) {
-            console.log("Updating selectedCategory from prop change:", userCategory);
-            setSelectedCategory(userCategory);
+        if (usersJobroleComponent && usersJobroleComponent.length > 0 && !hasFetchedRef.current) {
+            const processed = processData(usersJobroleComponent);
+            setProcessedData(processed);
+            const categories = Object.keys(processed);
+            if (userCategory && categories.includes(userCategory)) {
+                setSelectedCategory(userCategory);
+            } else if (categories.length > 0) {
+                setSelectedCategory(categories[0]);
+            }
+            setLoading(false);
+            hasFetchedRef.current = true;
         }
-    }, [userCategory]);
+    }, [usersJobroleComponent, userCategory, processData]);
 
-    // Custom tooltip
+    useEffect(() => {
+        if (hasFetchedRef.current || usersJobroleComponent?.length > 0) return;
+        if (!sessionData.url || !sessionData.subInstituteId) return;
+        //   if (!userCategory) return;
+
+        hasFetchedRef.current = true;
+
+        const fetchData = async () => {
+            try {
+                // console.log('userCategory',userCategory);
+                setLoading(true);
+                const response = await fetch(`${sessionData.url}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.subInstituteId}&group_by=jobrole_category`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                let skillsArray: SkillData[] = [];
+                if (Array.isArray(result)) skillsArray = result;
+                else if (result?.data) skillsArray = result.data;
+                else if (result?.skills) skillsArray = result.skills;
+
+                setData(skillsArray);
+                const processed = processData(skillsArray);
+                setProcessedData(processed);
+
+                const categories = Object.keys(processed);
+                if (userCategory && categories.includes(userCategory)) setSelectedCategory(userCategory);
+                else if (categories.length > 0) setSelectedCategory(categories[0]);
+            } catch (err) {
+                console.error("Error fetching data:", err);
+                setError("Failed to fetch skill competency data");
+                hasFetchedRef.current = false;
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [sessionData.url, sessionData.subInstituteId, usersJobroleComponent, userCategory, processData]);
+
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
             const data = payload[0];
@@ -260,34 +212,27 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
         return null;
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center p-4">
-                <p className="text-gray-600 mt-4 text-center">
-                    <Atom color="#525ceaff" size="medium" text="" textColor="" />
-                </p>
-            </div>
-        );
-    }
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+            <Atom color="#525ceaff" size="medium" text="" textColor="" />
+        </div>
+    );
 
-    if (error) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-                    <div className="text-red-500 text-xl mb-2">⚠️</div>
-                    <p className="text-gray-800 font-medium">{error}</p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
-                    >
-                        Retry
-                    </button>
-                </div>
+    if (error) return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+                <div className="text-red-500 text-xl mb-2">⚠️</div>
+                <p className="text-gray-800 font-medium">{error}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                >
+                    Retry
+                </button>
             </div>
-        );
-    }
+        </div>
+    );
 
-    const categories = Object.keys(processedData);
     const isFixedCategory = selectedCategory && FIXED_DIMENSIONS[selectedCategory];
     const currentData = isFixedCategory
         ? FIXED_DIMENSIONS[selectedCategory]
@@ -307,38 +252,27 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
 
                     {currentData.length > 0 ? (
                         <div className="w-full">
-                            {/* <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-                                {selectedCategory} 
-                            </h2> */}
-
                             <div className="h-96 md:h-[500px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <RadarChart data={currentData} margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
+                                        <defs>
+                                            {/* Gradient fill that adapts to intensity */}
+                                            <radialGradient id="radarGradient" cx="50%" cy="50%" r="70%">
+                                                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+                                                <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.05" />
+                                            </radialGradient>
+                                        </defs>
                                         <PolarGrid stroke="#e5e7eb" strokeWidth={1} className="opacity-60" />
-                                        <PolarAngleAxis
-                                            dataKey="dimension"
-                                            tick={{ fontSize: 14, fontWeight: 600, fill: '#374151' }}
-                                            className="text-gray-700"
-                                        />
-                                        <PolarRadiusAxis
-                                            angle={90}
-                                            domain={[0, 100]}
-                                            tick={{ fontSize: 12, fill: '#6b7280' }}
-                                            tickCount={6}
-                                        />
+                                        <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 14, fontWeight: 600, fill: '#374151' }} />
+                                        <PolarRadiusAxis angle={90} domain={[0, 35]} tick={{ fontSize: 12, fill: '#6b7280' }} tickCount={9} />
                                         <Radar
                                             name="Skill Composition"
                                             dataKey="value"
                                             stroke="#3b82f6"
-                                            fill="#3b82f6"
-                                            fillOpacity={0.1}
+                                            fill="url(#radarGradient)"
+                                            fillOpacity={0.8}
                                             strokeWidth={3}
-                                            dot={{
-                                                fill: '#1d4ed8',
-                                                strokeWidth: 2,
-                                                stroke: '#ffffff',
-                                                r: 6,
-                                            }}
+                                            dot={{ fill: '#1d4ed8', strokeWidth: 2, stroke: '#ffffff', r: 6 }}
                                         />
                                         <Tooltip content={<CustomTooltip />} />
                                     </RadarChart>
@@ -346,11 +280,8 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
                             </div>
 
                             <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
-                                {currentData.map((item, index) => (
-                                    <div
-                                        key={item.dimension}
-                                        className="flex items-center justify-center p-3 bg-gray-50 rounded-lg border border-gray-200"
-                                    >
+                                {currentData.map(item => (
+                                    <div key={item.dimension} className="flex items-center justify-center p-3 bg-gray-50 rounded-lg border border-gray-200">
                                         <div className="w-3 h-3 bg-blue-600 rounded-full mr-2"></div>
                                         <div className="text-center">
                                             <p className="text-sm font-semibold text-gray-700">{item.dimension}</p>

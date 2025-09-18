@@ -4,10 +4,13 @@ export interface Department {
 }
 
 export interface Employee {
-  id: string;
+  id: number;
   name: string;
   avatar: string;
-  department: string;
+  email?: string;
+  position?: string;
+  departmentId?: string;
+  department?: string;
 }
 
 export interface AttendanceRecord {
@@ -24,7 +27,6 @@ export interface AttendanceRecord {
 export interface AttendanceFormData {
   employeeId: string;
   date: string;
-  time: string;
-  type: "punch-in" | "punch-out";
+  time: string;     // punch in time
   notes?: string;
 }

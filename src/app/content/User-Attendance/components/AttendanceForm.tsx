@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import { Save, Clock, Calendar, FileText } from 'lucide-react';
-import { Employee, AttendanceFormData } from '../types/attendance';
-import { format } from 'date-fns';
+import { Save, Clock, Calendar, FileText } from "lucide-react";
+import { Employee, AttendanceFormData } from "../types/attendance";
+import { format } from "date-fns";
 
 interface AttendanceFormProps {
   employees: Employee[];
@@ -15,14 +15,13 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
   employees,
   selectedEmployee,
   onSubmit,
-  onCancel
+  onCancel,
 }) => {
   const [formData, setFormData] = useState<AttendanceFormData>({
-    employeeId: selectedEmployee?.id || '',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    time: format(new Date(), 'HH:mm'),
-    type: 'punch-in',
-    notes: ''
+    employeeId: selectedEmployee?.id || "",
+    date: format(new Date(), "yyyy-MM-dd"),
+    time: format(new Date(), "HH:mm"),
+    notes: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -37,20 +36,23 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
           <Clock className="w-5 h-5 text-blue-600" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Add/Edit Attendance</h3>
-          <p className="text-sm text-gray-500">Record employee punch in/out time</p>
+          <h3 className="text-lg font-semibold text-gray-900">Add Attendance</h3>
+          <p className="text-sm text-gray-500">Record employee punch in time</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Employee Selector */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Employee
             </label>
             <select
               value={formData.employeeId}
-              onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, employeeId: e.target.value })
+              }
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             >
@@ -63,20 +65,7 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Type
-            </label>
-            <select
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value as 'punch-in' | 'punch-out' })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="punch-in">Punch In</option>
-              <option value="punch-out">Punch Out</option>
-            </select>
-          </div>
-
+          {/* Date */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Calendar className="w-4 h-4 inline mr-1" />
@@ -85,27 +74,30 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
             <input
               type="date"
               value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, date: e.target.value })
+              }
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
 
+          {/* Punch In Time (disabled) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Clock className="w-4 h-4 inline mr-1" />
-              Time
+              Punch In
             </label>
             <input
               type="time"
               value={formData.time}
-              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
+              disabled
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed"
             />
           </div>
         </div>
 
+        {/* Notes */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <FileText className="w-4 h-4 inline mr-1" />
@@ -120,6 +112,7 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
           />
         </div>
 
+        {/* Buttons */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
           <button
             type="button"
