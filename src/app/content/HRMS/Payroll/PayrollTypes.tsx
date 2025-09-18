@@ -908,9 +908,9 @@ export default function PayrollTypes() {
       name: "Actions",
       cell: (row) => (
         <div className="flex space-x-2">
-          <Button variant="ghost" size="sm" onClick={() => handleViewClick(row.id)}>
+          {/* <Button variant="ghost" size="sm" onClick={() => handleViewClick(row.id)}>
             <Eye className="w-4 h-4" />
-          </Button>
+          </Button> */}
           <Button variant="ghost" size="sm" onClick={() => handleEditClick(row.id)}>
             <Edit className="w-4 h-4" />
           </Button>
@@ -926,7 +926,7 @@ export default function PayrollTypes() {
       ),
       ignoreRowClick: true,
       button: true,
-      width: "180px",
+      width: "120px",
     },
   ];
 
