@@ -520,7 +520,7 @@ const HolidayMaster = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
+              {/* <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
                 <Filter className="h-5 w-5 text-white/80" />
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                   <SelectTrigger className="w-48 border-white/20 bg-white/10 text-white placeholder:text-white/60 focus:ring-white/30">
@@ -534,7 +534,7 @@ const HolidayMaster = () => {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
 
               <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                 <DialogTrigger asChild>

@@ -5,8 +5,8 @@ export interface Department {
 
 export interface Employee {
   id: number;
-  name: string;
-  avatar: string;
+  name?: string;
+  avatar?: string;
   email?: string;
   position?: string;
   departmentId?: string;
