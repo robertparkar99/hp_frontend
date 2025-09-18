@@ -94,15 +94,15 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
 
     useEffect(() => {
         if (sessionDataLoadedRef.current) return;
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-        const { APP_URL, sub_institute_id } = JSON.parse(userData);
-        setSessionData({
-            url: APP_URL,
-            subInstituteId: sub_institute_id,
-        });
-        sessionDataLoadedRef.current = true;
-    }
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+            const { APP_URL, sub_institute_id } = JSON.parse(userData);
+            setSessionData({
+                url: APP_URL,
+                subInstituteId: sub_institute_id,
+            });
+            sessionDataLoadedRef.current = true;
+        }
     }, []);
 
     const processData = useCallback((dataToProcess: SkillData[]) => {
@@ -113,35 +113,35 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
             const items = dataToProcess.filter(item => item.jobrole_category === category);
             const dimensionTotals: { [key: string]: number } = {};
 
-          items.forEach(item => {
-              let dim = item.skills_category?.trim() || '';
-              const map: any = {
-                  skill: 'Skill', skills: 'Skill',
-                  knowledge: 'Knowledge',
-                ability: 'Ability', abilities: 'Ability',
-                attitude: 'Attitude', attitudes: 'Attitude',
-                behavior: 'Behavior', behaviours: 'Behavior', behaviors: 'Behavior'
-            };
-            dim = map[dim.toLowerCase()] || dim;
-            if (DIMENSIONS.includes(dim)) {
-                dimensionTotals[dim] = (dimensionTotals[dim] || 0) + (item.weightage || 0);
+            items.forEach(item => {
+                let dim = item.skills_category?.trim() || '';
+                const map: any = {
+                    skill: 'Skill', skills: 'Skill',
+                    knowledge: 'Knowledge',
+                    ability: 'Ability', abilities: 'Ability',
+                    attitude: 'Attitude', attitudes: 'Attitude',
+                    behavior: 'Behavior', behaviours: 'Behavior', behaviors: 'Behavior'
+                };
+                dim = map[dim.toLowerCase()] || dim;
+                if (DIMENSIONS.includes(dim)) {
+                    dimensionTotals[dim] = (dimensionTotals[dim] || 0) + (item.weightage || 0);
+                }
+            });
+
+            const radarData: RadarDataPoint[] = DIMENSIONS.map(d => ({
+                dimension: d,
+                value: dimensionTotals[d] || 0,
+            }));
+
+            const total = radarData.reduce((sum, x) => sum + x.value, 0);
+            if (total > 0) {
+                radarData.forEach(x => x.value = Math.round((x.value / total) * 100));
+            } else {
+                radarData.forEach(x => x.value = 20);
             }
+
+            processed[category] = radarData;
         });
-
-          const radarData: RadarDataPoint[] = DIMENSIONS.map(d => ({
-              dimension: d,
-              value: dimensionTotals[d] || 0,
-          }));
-
-          const total = radarData.reduce((sum, x) => sum + x.value, 0);
-          if (total > 0) {
-            radarData.forEach(x => x.value = Math.round((x.value / total) * 100));
-        } else {
-            radarData.forEach(x => x.value = 20);
-        }
-
-          processed[category] = radarData;
-      });
 
         return processed;
     }, [DIMENSIONS]);
@@ -149,13 +149,13 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
     useEffect(() => {
         if (usersJobroleComponent && usersJobroleComponent.length > 0 && !hasFetchedRef.current) {
             const processed = processData(usersJobroleComponent);
-        setProcessedData(processed);
+            setProcessedData(processed);
             const categories = Object.keys(processed);
             if (userCategory && categories.includes(userCategory)) {
-            setSelectedCategory(userCategory);
-        } else if (categories.length > 0) {
-            setSelectedCategory(categories[0]);
-        }
+                setSelectedCategory(userCategory);
+            } else if (categories.length > 0) {
+                setSelectedCategory(categories[0]);
+            }
             setLoading(false);
             hasFetchedRef.current = true;
         }
@@ -255,15 +255,22 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
                             <div className="h-96 md:h-[500px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <RadarChart data={currentData} margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
+                                        <defs>
+                                            {/* Gradient fill that adapts to intensity */}
+                                            <radialGradient id="radarGradient" cx="50%" cy="50%" r="70%">
+                                                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+                                                <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.05" />
+                                            </radialGradient>
+                                        </defs>
                                         <PolarGrid stroke="#e5e7eb" strokeWidth={1} className="opacity-60" />
                                         <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 14, fontWeight: 600, fill: '#374151' }} />
-                                        <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 12, fill: '#6b7280' }} tickCount={6} />
+                                        <PolarRadiusAxis angle={90} domain={[0, 35]} tick={{ fontSize: 12, fill: '#6b7280' }} tickCount={9} />
                                         <Radar
                                             name="Skill Composition"
                                             dataKey="value"
                                             stroke="#3b82f6"
-                                            fill="#3b82f6"
-                                            fillOpacity={0.1}
+                                            fill="url(#radarGradient)"
+                                            fillOpacity={0.8}
                                             strokeWidth={3}
                                             dot={{ fill: '#1d4ed8', strokeWidth: 2, stroke: '#ffffff', r: 6 }}
                                         />

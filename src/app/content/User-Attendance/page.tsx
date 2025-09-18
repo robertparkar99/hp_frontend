@@ -308,6 +308,7 @@ function App() {
             <div className="flex-1 min-w-[250px]">
               <EmployeeSelector
                 multiSelect
+                empMultiSelect={true}
                 selectedEmployee={multiEmployees}
                 selectedDepartment={multiDepartments}
                 onSelectEmployee={setMultiEmployees}
