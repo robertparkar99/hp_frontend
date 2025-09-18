@@ -644,13 +644,13 @@ export default function PayrollTypes() {
 
       if (success) {
         setDataList((prev) => prev.filter((item) => item.id !== id));
-        alert("Payroll type deleted successfully.");
+        // alert("Payroll type deleted successfully.");
       } else {
-        alert("Deleting payroll type: " + text);
+        alert("Deleting payroll type ");
       }
     } catch (err: any) {
       console.error("❌ Error deleting payroll type:", err);
-      alert(" " + (err.message || "Something went wrong"));
+      // alert(" " + (err.message || "Something went wrong"));
     }
   };
 
