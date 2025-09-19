@@ -595,6 +595,7 @@ export default function PayrollTypes() {
         payroll_percentage: item.payroll_percentage || null,
         status: item.status === 1 ? "Active" : "Inactive",
         day_count: item.day_count == 1,
+        sort_order:item.sort_order,
       }));
 
       setDataList(mapped);
