@@ -1,236 +1,231 @@
 "use client";
-import { useState } from "react";
-import { Calendar, Clock, Filter, Eye, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Filter, Eye, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
+type AcademicYear = {
+  id: number;
+  syear: string;
+  title: string;
+};
+
+type Leave = {
+  id: number;
+  from_date: string;
+  to_date: string;
+  comment: string | null;
+  leave_type_name: string;
+  status: string | null;
+  created_at: string;
+  approved_by: string;
+};
+
+type LeaveBalance = {
+  [key: string]: { used: number; total: number; remaining: number };
+};
+
 const MyLeave = () => {
-  const [selectedYear, setSelectedYear] = useState("2024");
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [years, setYears] = useState<AcademicYear[]>([]);
+  const [leaves, setLeaves] = useState<Leave[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [leaveBalance, setLeaveBalance] = useState<LeaveBalance>({});
 
-  const leaveBalance = {
-    annual: { used: 8, total: 24, remaining: 16 },
-    sick: { used: 3, total: 12, remaining: 9 },
-    personal: { used: 2, total: 6, remaining: 4 },
-  };
+  // 🔹 Fetch academic years
+  useEffect(() => {
+    const fetchYears = async () => {
+      try {
+        const res = await fetch(
+          "http://127.0.0.1:8000/table_data?table=academic_year&sub_institute_id=1&group_by=syear"
+        );
+        const data: AcademicYear[] = await res.json();
+        // sort latest first
+        const sorted = data.sort((a, b) => b.syear.localeCompare(a.syear));
+        setYears(sorted);
+        if (sorted.length > 0) {
+          setSelectedYear(sorted[0].syear); // default: latest year
+        }
+      } catch (error) {
+        console.error("Error fetching years:", error);
+      }
+    };
 
-  const myLeaves = [
-    {
-      id: 1,
-      leaveType: "Annual Leave",
-      startDate: "2024-01-15",
-      endDate: "2024-01-17",
-      days: 3,
-      reason: "Family vacation",
-      appliedOn: "2024-01-05",
-      status: "Approved",
-      approvedBy: "John Manager",
-      approvedOn: "2024-01-06",
-    },
-    {
-      id: 2,
-      leaveType: "Sick Leave",
-      startDate: "2024-02-20",
-      endDate: "2024-02-21",
-      days: 2,
-      reason: "Fever and cold",
-      appliedOn: "2024-02-19",
-      status: "Approved",
-      approvedBy: "John Manager",
-      approvedOn: "2024-02-19",
-    },
-    {
-      id: 3,
-      leaveType: "Personal Leave",
-      startDate: "2024-03-10",
-      endDate: "2024-03-12",
-      days: 3,
-      reason: "Personal work",
-      appliedOn: "2024-03-01",
-      status: "Pending",
-      approvedBy: null,
-      approvedOn: null,
-    },
-    {
-      id: 4,
-      leaveType: "Annual Leave",
-      startDate: "2024-02-05",
-      endDate: "2024-02-07",
-      days: 3,
-      reason: "Short vacation",
-      appliedOn: "2024-01-25",
-      status: "Rejected",
-      approvedBy: "John Manager",
-      approvedOn: "2024-01-26",
-      rejectionReason: "Insufficient notice period",
-    },
-    {
-      id: 5,
-      leaveType: "Annual Leave",
-      startDate: "2024-04-15",
-      endDate: "2024-04-19",
-      days: 5,
-      reason: "Spring vacation",
-      appliedOn: "2024-04-01",
-      status: "Approved",
-      approvedBy: "John Manager",
-      approvedOn: "2024-04-02",
-    },
-  ];
+    fetchYears();
+  }, []);
 
-  const years = ["2024", "2023", "2022"];
+  // 🔹 Fetch leaves based on selected year
+  useEffect(() => {
+    if (!selectedYear) return;
+    const fetchLeaves = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(
+          `http://127.0.0.1:8000/get-leave?year=${selectedYear}&user_id=1&sub_institute_id=1&type=API`
+        );
+        const data: Leave[] = await res.json();
+        setLeaves(data);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Approved": return "bg-success text-success-foreground";
-      case "Rejected": return "bg-destructive text-destructive-foreground";
-      case "Pending": return "bg-warning text-warning-foreground";
-      default: return "bg-muted text-muted-foreground";
+        // compute leave balance
+        const balance: LeaveBalance = {};
+        data.forEach((leave) => {
+          const key = leave.leave_type_name;
+          const from = new Date(leave.from_date);
+          const to = new Date(leave.to_date);
+          const days =
+            Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) +
+            1;
+
+          if (!balance[key]) {
+            balance[key] = { used: 0, total: 30, remaining: 30 };
+          }
+          balance[key].used += days;
+          balance[key].remaining = balance[key].total - balance[key].used;
+        });
+        setLeaveBalance(balance);
+      } catch (error) {
+        console.error("Error fetching leaves:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaves();
+  }, [selectedYear]);
+
+  const getStatusColor = (status: string | null) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return "bg-success text-success-foreground";
+      case "rejected":
+        return "bg-destructive text-destructive-foreground";
+      case "pending":
+        return "bg-warning text-warning-foreground";
+      default:
+        return "bg-muted text-muted-foreground";
     }
   };
 
-  const filteredLeaves = myLeaves.filter(leave => {
-    const matchesStatus = selectedStatus === "all" || leave.status === selectedStatus;
-    const leaveYear = new Date(leave.startDate).getFullYear().toString();
-    const matchesYear = selectedYear === "all" || leaveYear === selectedYear;
-    
-    return matchesStatus && matchesYear;
-  });
-
   const getBalancePercentage = (used: number, total: number) => {
-    return Math.round((used / total) * 100);
+    return total > 0 ? Math.round((used / total) * 100) : 0;
   };
 
-  const LeaveDetailsModal = ({ leave }: { leave: any }) => (
+  const getDurationDays = (from_date: string, to_date: string) => {
+    const from = new Date(from_date);
+    const to = new Date(to_date);
+    return (
+      Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    );
+  };
+
+  const LeaveDetailsModal = ({ leave }: { leave: Leave }) => (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <p className="text-sm font-medium text-muted-foreground">Leave Type</p>
-          <p className="text-foreground">{leave.leaveType}</p>
+          <p className="text-foreground">{leave.leave_type_name}</p>
         </div>
         <div>
           <p className="text-sm font-medium text-muted-foreground">Status</p>
           <Badge className={getStatusColor(leave.status)}>
-            {leave.status}
+            {leave.status ?? "N/A"}
           </Badge>
         </div>
         <div>
           <p className="text-sm font-medium text-muted-foreground">Start Date</p>
-          <p className="text-foreground">{new Date(leave.startDate).toLocaleDateString()}</p>
+          <p className="text-foreground">
+            {new Date(leave.from_date).toLocaleDateString()}
+          </p>
         </div>
         <div>
           <p className="text-sm font-medium text-muted-foreground">End Date</p>
-          <p className="text-foreground">{new Date(leave.endDate).toLocaleDateString()}</p>
+          <p className="text-foreground">
+            {new Date(leave.to_date).toLocaleDateString()}
+          </p>
         </div>
         <div>
           <p className="text-sm font-medium text-muted-foreground">Duration</p>
-          <p className="text-foreground">{leave.days} {leave.days === 1 ? 'day' : 'days'}</p>
+          <p className="text-foreground">
+            {getDurationDays(leave.from_date, leave.to_date)} days
+          </p>
         </div>
         <div>
           <p className="text-sm font-medium text-muted-foreground">Applied On</p>
-          <p className="text-foreground">{new Date(leave.appliedOn).toLocaleDateString()}</p>
+          <p className="text-foreground">
+            {new Date(leave.created_at).toLocaleDateString()}
+          </p>
         </div>
       </div>
-      <div>
-        <p className="text-sm font-medium text-muted-foreground mb-2">Reason</p>
-        <p className="text-foreground">{leave.reason}</p>
+      {leave.comment && (
+        <div>
+          <p className="text-sm font-medium text-muted-foreground mb-2">
+            Reason
+          </p>
+          <p className="text-foreground">{leave.comment}</p>
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">
+            Approved By
+          </p>
+          <p className="text-foreground">{leave.approved_by}</p>
+        </div>
       </div>
-      {leave.status === "Approved" && leave.approvedBy && (
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Approved By</p>
-            <p className="text-foreground">{leave.approvedBy}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Approved On</p>
-            <p className="text-foreground">{new Date(leave.approvedOn).toLocaleDateString()}</p>
-          </div>
-        </div>
-      )}
-      {leave.status === "Rejected" && leave.rejectionReason && (
-        <div className="pt-4 border-t">
-          <p className="text-sm font-medium text-muted-foreground mb-2">Rejection Reason</p>
-          <p className="text-destructive">{leave.rejectionReason}</p>
-        </div>
-      )}
     </div>
   );
 
   return (
     <div className="space-y-6">
-      {/* Leave Balance */}
+      {/* Leave Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="card-simple">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Annual Leave</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Used: {leaveBalance.annual.used}</span>
-                <span>Remaining: {leaveBalance.annual.remaining}</span>
+        {Object.keys(leaveBalance).map((type) => (
+          <Card key={type} className="card-simple">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {type}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Used: {leaveBalance[type].used}</span>
+                  <span>Remaining: {leaveBalance[type].remaining}</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all"
+                    style={{
+                      width: `${getBalancePercentage(
+                        leaveBalance[type].used,
+                        leaveBalance[type].total
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {leaveBalance[type].used} of {leaveBalance[type].total} days
+                  used
+                </p>
               </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all"
-                  style={{ width: `${getBalancePercentage(leaveBalance.annual.used, leaveBalance.annual.total)}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {leaveBalance.annual.used} of {leaveBalance.annual.total} days used
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="card-simple">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Sick Leave</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Used: {leaveBalance.sick.used}</span>
-                <span>Remaining: {leaveBalance.sick.remaining}</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-warning h-2 rounded-full transition-all"
-                  style={{ width: `${getBalancePercentage(leaveBalance.sick.used, leaveBalance.sick.total)}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {leaveBalance.sick.used} of {leaveBalance.sick.total} days used
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="card-simple">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Personal Leave</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Used: {leaveBalance.personal.used}</span>
-                <span>Remaining: {leaveBalance.personal.remaining}</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-success h-2 rounded-full transition-all"
-                  style={{ width: `${getBalancePercentage(leaveBalance.personal.used, leaveBalance.personal.total)}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {leaveBalance.personal.used} of {leaveBalance.personal.total} days used
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Filters */}
@@ -240,27 +235,15 @@ const MyLeave = () => {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
+                <SelectTrigger className="w-55">
+                  <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
                   {years.map((year) => (
-                    <SelectItem key={year} value={year}>
-                      {year}
+                    <SelectItem key={year.id} value={year.syear}>
+                      {year.title} {/* 👈 Show full title in dropdown */}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -273,30 +256,50 @@ const MyLeave = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Leave History ({filteredLeaves.length})
+            Leave History ({loading ? "Loading..." : leaves.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {filteredLeaves.map((leave) => (
+            {!loading && leaves.length === 0 && (
+              <p className="text-muted-foreground text-sm">
+                No leave records found.
+              </p>
+            )}
+            {leaves.map((leave) => (
               <Card key={leave.id} className="card-simple">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-foreground">{leave.leaveType}</h3>
+                        <h3 className="font-semibold text-foreground">
+                          {leave.leave_type_name}
+                        </h3>
                         <Badge className={getStatusColor(leave.status)}>
-                          {leave.status}
+                          {leave.status ?? "N/A"}
                         </Badge>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
-                        <p><span className="font-medium">Duration:</span> {leave.days} days</p>
-                        <p><span className="font-medium">Applied:</span> {new Date(leave.appliedOn).toLocaleDateString()}</p>
-                        <p><span className="font-medium">Period:</span> {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}</p>
+                        <p>
+                          <span className="font-medium">Duration:</span>{" "}
+                          {getDurationDays(leave.from_date, leave.to_date)} days
+                        </p>
+                        <p>
+                          <span className="font-medium">Applied:</span>{" "}
+                          {new Date(leave.created_at).toLocaleDateString()}
+                        </p>
+                        <p>
+                          <span className="font-medium">Period:</span>{" "}
+                          {new Date(leave.from_date).toLocaleDateString()} -{" "}
+                          {new Date(leave.to_date).toLocaleDateString()}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
-                        <span className="font-medium">Reason:</span> {leave.reason}
-                      </p>
+                      {leave.comment && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                          <span className="font-medium">Reason:</span>{" "}
+                          {leave.comment}
+                        </p>
+                      )}
                     </div>
                     <Dialog>
                       <DialogTrigger asChild>
