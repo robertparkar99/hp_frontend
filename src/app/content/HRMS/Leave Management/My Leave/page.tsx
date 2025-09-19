@@ -46,13 +46,35 @@ const MyLeave = () => {
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [loading, setLoading] = useState(false);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance>({});
+  const [sessionData, setSessionData] = useState({
+    url: '',
+    token: '',
+    subInstituteId: '',
+    orgType: '',
+    userId: '',
+  });
+
+  // Load session data from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+        orgType: org_type,
+        userId: user_id,
+      });
+    }
+  }, []);
 
   // 🔹 Fetch academic years
   useEffect(() => {
     const fetchYears = async () => {
       try {
         const res = await fetch(
-          "http://127.0.0.1:8000/table_data?table=academic_year&sub_institute_id=1&group_by=syear"
+          `${sessionData.url}/table_data?table=academic_year&sub_institute_id=${sessionData.subInstituteId}&group_by=syear`
         );
         const data: AcademicYear[] = await res.json();
         // sort latest first
@@ -67,7 +89,7 @@ const MyLeave = () => {
     };
 
     fetchYears();
-  }, []);
+  }, [sessionData.url, sessionData.subInstituteId]);
 
   // 🔹 Fetch leaves based on selected year
   useEffect(() => {
@@ -76,7 +98,7 @@ const MyLeave = () => {
       try {
         setLoading(true);
         const res = await fetch(
-          `http://127.0.0.1:8000/get-leave?year=${selectedYear}&user_id=1&sub_institute_id=1&type=API`
+          `${sessionData.url}/get-leave?year=${selectedYear}&user_id=${sessionData.userId}&sub_institute_id=${sessionData.subInstituteId}&type=API`
         );
         const data: Leave[] = await res.json();
         setLeaves(data);
@@ -106,7 +128,7 @@ const MyLeave = () => {
     };
 
     fetchLeaves();
-  }, [selectedYear]);
+  }, [selectedYear, sessionData.url, sessionData.subInstituteId, sessionData.userId]);
 
   const getStatusColor = (status: string | null) => {
     switch (status?.toLowerCase()) {
