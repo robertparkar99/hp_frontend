@@ -317,7 +317,7 @@ function App() {
             </div>
 
             {/* From Date */}
-            <div>
+            <div className="mb-28">
               <label className="block text-sm font-medium text-gray-700">From Date</label>
               <input
                 type="date"
@@ -328,7 +328,7 @@ function App() {
             </div>
 
             {/* To Date */}
-            <div>
+            <div className="mb-28">
               <label className="block text-sm font-medium text-gray-700">To Date</label>
               <input
                 type="date"
@@ -343,7 +343,7 @@ function App() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSearch}
-              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white bg-[#000000] border border-transparent rounded-lg  mb-28"
             >
               <Search className="w-4 h-4" />
               <span>Search</span>
@@ -354,7 +354,7 @@ function App() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowForm(true)}
-              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg  mb-28"
             >
               <Plus className="w-4 h-4" />
               <span>Add</span>

@@ -19,6 +19,7 @@ type AttendanceRow = {
   empCode: string | number;
   department: string;
   name: string;
+  date?: string; // ✅ new Date field
   totalDays: number;
   weekOff: number;
   holiday: number;
@@ -277,13 +278,13 @@ export default function Home() {
             className="w-full"
           />
         </div>
-        <div className="flex items-center w-full">
+        <div className="flex justify-center w-full col-span-4">
           <Button
             onClick={handleSearch}
             disabled={loading || !sessionData.token}
-            className="text-xl px-4 py-6 rounded-xl font-bold transform transition-all duration-300 h-10"
+            className="px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 h-9"
           >
-            <Search className="w-6 h-6 mr-3" />
+            <Search className="w-4 h-4" />
             {loading ? "Loading..." : "Search"}
           </Button>
         </div>

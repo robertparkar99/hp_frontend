@@ -19,6 +19,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
   const [sessionSubInstituteId, setessinSubInstituteId] = useState<string>();
   const [sessionUserID, setessionUserID] = useState<string>();
   const [sessionUserProfile, setessionUserProfile] = useState<string>();
+  const [sessionSyear, setessionSyear] = useState<string>();
   const [viewData, setViewData] = useState<any | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
@@ -48,13 +49,14 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
     if (typeof window !== "undefined") {
       const userData = localStorage.getItem("userData");
       if (userData) {
-        const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name } = JSON.parse(userData);
+        const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name,syear } = JSON.parse(userData);
         setSessionUrl(APP_URL);
         setSessionToken(token);
         setessionOrgType(org_type);
         setessinSubInstituteId(sub_institute_id);
         setessionUserID(user_id);
         setessionUserProfile(user_profile_name);
+        setessionSyear(syear);
       }
     }
   }, []);
@@ -287,6 +289,20 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
     return !Array.isArray(arr) || arr.length === 0;
   }
 
+  const handleCousreCreation = async () => {
+    alert('Course Creation in progress, Please Wait it will take sometime ! If failed then please try after some seconds');
+    try {
+      const res = await fetch(
+        `${sessionUrl}/AICourseGeneration?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&user_id=${sessionUserID}&user_profile_name=${sessionUserProfile}&syear=${sessionSyear}&industry=${sessionOrgType}&department=${viewData?.department}&skill_category=${viewData?.category}&skill_sub_category=${viewData?.sub_category}&skill_micro_category=${viewData?.micro_category}&skill_name=${viewData?.title}&skill_description=${viewData?.description}`,
+      );
+
+      const data = await res.json();
+      alert(data.message);
+    } catch (error) {
+      console.error("Error deleting job role:", error);
+      alert("Error deleting job role");
+    }
+  }
   return (
     <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-4">
       <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative h-screen overflow-auto hide-scroll">
@@ -313,24 +329,34 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
           </div>
 
           {/* Right Dropdown */}
-          <div className="w-[20%] bg-gradient-to-br from-violet-200 to-violet-100 p-4 rounded-r-lg flex items-center justify-center">
-            <div className="relative w-2/3">
+          <div className="w-[20%] bg-gradient-to-br from-violet-200 to-violet-100 p-4 rounded-r-lg flex flex-col items-center justify-center space-y-2">
+            <div className="relative w-full">
               <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="inline-flex justify-between w-full rounded-sm border-2 border-blue-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="inline-flex justify-between w-full rounded-lg border-2 border-violet-300 bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 hover:bg-violet-50 transition duration-200 shadow-sm"
               >
-                Actions
-                <svg className="ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.23 8.27a.75.75 0 01.02-1.06z" />
+                <span className="flex items-center">
+                  <span className="mdi mdi-cog-outline mr-2"></span>
+                  Actions
+                </span>
+                <svg className="h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
               {isOpen && (
-                <ul className="absolute z-10 mt-1 w-full rounded-sm bg-white border border-gray-200 shadow-lg py-1 text-sm text-gray-700">
-                  <li onClick={() => setDialogOpen({ ...dialogOpen, edit: true })}><button className="w-full text-left px-2 py-2 hover:bg-gray-100 border-b-1 border-[#ddd]"><span className="mdi mdi-note-edit-outline"></span> Edit Skills</button></li>
-                  {/* <li onClick={exportPDF}><button className="w-full text-left px-2 py-2 hover:bg-gray-100 border-b-1 border-[#ddd]"> <span className="mdi mdi-download"></span> Export PDF</button></li> */}
-                  <li onClick={() => handleDelete(skillId)}><button className="w-full text-left px-2 py-2 hover:bg-gray-100 border-b-1 border-[#ddd]"><span className="mdi mdi-delete"></span> Delete Skill</button></li>
+                <ul className="absolute z-10 mt-2 w-full rounded-lg bg-white border border-violet-100 shadow-lg py-1 text-sm">
+                  <li onClick={() => setDialogOpen({ ...dialogOpen, edit: true })}
+                      className="flex items-center px-4 py-2.5 hover:bg-violet-50 cursor-pointer text-violet-700 border-b border-violet-100">
+                    <span className="mdi mdi-note-edit-outline mr-2"></span>
+                    Edit Skills
+                  </li>
+                  <li onClick={() => handleDelete(skillId)}
+                      className="flex items-center px-4 py-2.5 hover:bg-violet-50 cursor-pointer text-red-600">
+                    <span className="mdi mdi-delete mr-2"></span>
+                    Delete Skill
+                  </li>
                 </ul>
               )}
               {dialogOpen.edit && (
@@ -338,7 +364,6 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                   skillId={skillId}
                   onClose={() => setDialogOpen({ ...dialogOpen, edit: false })}
                   onSuccess={() => {
-                    // Refresh data after editing
                     fetch(`${sessionUrl}/skill_library?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}`)
                       .then(res => res.json())
                       .then(data => { });
@@ -347,7 +372,16 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose }) => 
                 />
               )}
             </div>
+            
+            <button 
+              onClick={() => handleCousreCreation()}
+              className="flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm"
+            >
+              <span className="mdi mdi-creation text-xl"></span>
+              <span>Build Course</span>
+            </button>
           </div>
+      
         </div>
         {/* header parts end  */}
 
