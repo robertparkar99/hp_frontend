@@ -243,7 +243,6 @@ export default function LeaveType() {
 
   return (
     <div className="space-y-8">
-      
       {/* Leave Types Management */}
       <Card className="bg-gradient-card shadow-card">
         <CardHeader>
