@@ -901,6 +901,7 @@ interface Employee {
   email: string;
   mobile: string;
   jobrole: string;
+  profile_name: string;
   status: string;
   department_name: string;
   joined_date?: string;
@@ -1694,6 +1695,7 @@ export default function Dashboard() {
             </div>
           </div>
 
+
           {/* Conditional rendering based on user role */}
           {sessionData?.userProfileName === "Admin" ? (
             // Admin view - Skills Heatmap and Matrix
@@ -2242,8 +2244,185 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+          {/* Employee Table - Full width row */}
+          {(shouldShowWidget("Employee List") || !selectedWidget) && (
+            <div className="col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll mb-15 ">
+              {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
+
+              {/* Table Headers with Search Fields */}
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
+                {/* Employee Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Employee</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("full_name", e.target.value)}
+                  />
+                </div>
+
+                {/* Mobile Column with Search */}
+                {/* <div className="flex flex-col">
+                <span className="flex items-center mb-1">Mobile</span>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-full py-1 text-xs"
+                  onChange={(e) => handleColumnFilter("mobile", e.target.value)}
+                />
+              </div> */}
+
+                {/* Department Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Department</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("department_name", e.target.value)}
+                  />
+                </div>
+
+                {/* Role Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Job Role</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
+                  />
+                </div>
+
+                {/* profile Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">profile</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("profile_name", e.target.value)}
+                  />
+                </div>
 
 
+                {/* Status Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Status</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("status", e.target.value)}
+                  />
+                </div>
+
+                {/* Action Column with + Button */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="flex items-center mb-1">Action</span>
+                    <button
+                      onClick={() => setIsAddUserModalOpen(true)}
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                    >
+                      +
+                    </button>
+                    {isAddUserModalOpen && (
+                      <AddUserModal
+                        isOpen={isAddUserModalOpen}
+                        setIsOpen={setIsAddUserModalOpen}
+                        sessionData={sessionData}
+                        userJobroleLists={[]}
+                        userDepartmentLists={[]}
+                        userLOR={[]}
+                        userProfiles={[]}
+                        userLists={[]}
+                      />
+
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Employee Rows */}
+              {filteredEmployees.map((emp) => (
+                <div
+                  key={emp.id}
+                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img
+                      src={
+                        emp.image && emp.image !== ""
+                          ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${emp.image}`
+                          : placeholderImage
+                      }
+                      alt={emp.full_name || "profile"}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                      }}
+                    />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{emp.full_name}</p>
+                      <p className="text-gray-500 text-xs truncate">{emp.email}</p>
+                    </div>
+                  </div>
+
+                  {/* <span className="truncate">{emp.mobile || "-"}</span> */}
+                  <span className="truncate">{emp.department_name}</span>
+                  <span className="truncate">{emp.jobrole}</span>
+                  <span className="truncate">{emp.profile_name}</span>
+
+                  <span
+                    className={`px-2 py-1 rounded-md w-fit text-xs ${emp.status === "Active"
+                      ? "text-green-600 bg-green-100"
+                      : "text-red-600 bg-red-100"
+                      }`}
+                  >
+                    {emp.status}
+                  </span>
+
+                  <div className="flex relative">
+                    <MoreHorizontal
+                      className="w-4 h-4 text-gray-500 cursor-pointer flex-shrink-0"
+                      onClick={(e) => handleActionMenuClick(e, emp)}
+                    />
+
+                    {/* Action Menu */}
+                    {showActions === emp.id && (
+                      <div
+                        className="absolute w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                        style={{
+                          top: '100%',
+                          right: 0,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="py-2">
+                          <button
+                            onClick={() => handleEditEmployeeMenu(emp)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <Edit size={16} />
+                            <span>Edit Employee</span>
+                          </button>
+                          <button
+                            onClick={() => handleAssignTaskMenu(emp)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <Plus size={16} />
+                            <span>Assign Task</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right Section - Adjust column span based on sidebar state */}
@@ -2388,6 +2567,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
+            {/* Course List */}
             <div className="p-4 bg-white rounded-lg shadow h-110 overflow-y-auto hide-scroll">
               {/* Header with + button */}
               <div className="flex items-center justify-between mb-4">
@@ -2442,241 +2622,69 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">No course </p>
+                <p className="text-gray-500 text-sm">No course</p>
               )}
             </div>
 
-            {/* Popup Modal */}
-            <AddCourseDialog open={openDialog} onOpenChange={setOpenDialog} />
-          </div>
-
-        </div>
-
-        {/* Employee Table - Full width row */}
-        {(shouldShowWidget("Employee List") || !selectedWidget) && (
-          <div className="col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll ">
-            {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
-
-            {/* Table Headers with Search Fields */}
-            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
-              {/* Employee Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Employee</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("full_name", e.target.value)}
-                />
-              </div>
-
-              {/* Mobile Column with Search */}
-              {/* <div className="flex flex-col">
-                <span className="flex items-center mb-1">Mobile</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("mobile", e.target.value)}
-                />
-              </div> */}
-
-              {/* Department Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Department</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("department_name", e.target.value)}
-                />
-              </div>
-
-              {/* Role Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Role</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
-                />
-              </div>
-
-              {/* Status Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Status</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("status", e.target.value)}
-                />
-              </div>
-
-              {/* Action Column with + Button */}
-              <div className="flex flex-col items-center justify-center">
-                <div className="flex items-center justify-between w-full">
-                  <span className="flex items-center mb-1">Action</span>
-                  <button
-                    onClick={() => setIsAddUserModalOpen(true)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-                  >
-                    +
-                  </button>
-                  {isAddUserModalOpen && (
-                    <AddUserModal
-                      isOpen={isAddUserModalOpen}
-                      setIsOpen={setIsAddUserModalOpen}
-                      sessionData={sessionData}
-                      userJobroleLists={[]}
-                      userDepartmentLists={[]}
-                      userLOR={[]}
-                      userProfiles={[]}
-                      userLists={[]}
-                    />
-
-                  )}
-
-                </div>
-              </div>
-            </div>
-
-            {/* Employee Rows */}
-            {filteredEmployees.map((emp) => (
-              <div
-                key={emp.id}
-                className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <img
-                    src={
-                      emp.image && emp.image !== ""
-                        ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${emp.image}`
-                        : placeholderImage
-                    }
-                    alt={emp.full_name || "profile"}
-                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                    }}
-                  />
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{emp.full_name}</p>
-                    <p className="text-gray-500 text-xs truncate">{emp.email}</p>
-                  </div>
-                </div>
-
-                {/* <span className="truncate">{emp.mobile || "-"}</span> */}
-                <span className="truncate">{emp.department_name}</span>
-                <span className="truncate">{emp.jobrole}</span>
-
-                <span
-                  className={`px-2 py-1 rounded-md w-fit text-xs ${emp.status === "Active"
-                    ? "text-green-600 bg-green-100"
-                    : "text-red-600 bg-red-100"
-                    }`}
+            {/* Assessment List */}
+            <div className="p-4 bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll">
+              {/* Header with + button */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold">Assessment List</h2>
+                <button
+                  onClick={() => setOpenDialog(true)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
                 >
-                  {emp.status}
-                </span>
+                  +
+                </button>
+              </div>
 
-                <div className="flex relative">
-                  <MoreHorizontal
-                    className="w-4 h-4 text-gray-500 cursor-pointer flex-shrink-0"
-                    onClick={(e) => handleActionMenuClick(e, emp)}
-                  />
+              {weekTasks.length > 0 ? (
+                weekTasks.map((task, index) => (
+                  <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                    {/* Badge */}
+                    <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                      {task.task_type}
+                    </span>
 
-                  {/* Action Menu */}
-                  {showActions === emp.id && (
-                    <div
-                      className="absolute w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
-                      style={{
-                        top: '100%',
-                        right: 0,
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="py-2">
-                        <button
-                          onClick={() => handleEditEmployeeMenu(emp)}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                        >
-                          <Edit size={16} />
-                          <span>Edit Employee</span>
-                        </button>
-                        <button
-                          onClick={() => handleAssignTaskMenu(emp)}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                        >
-                          <Plus size={16} />
-                          <span>Assign Task</span>
-                        </button>
+                    {/* Title */}
+                    <p className="mt-2">{task.task_title}</p>
+
+                    {/* Profile */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <img
+                        src={
+                          task.image && task.image !== ""
+                            ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                            : placeholderImage
+                        }
+                        alt={task.allocatedUser}
+                        className="w-8 h-8 rounded-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                        }}
+                      />
+                      <div>
+                        <p className="text-sm font-medium">{task.allocatedUser}</p>
+                        <p className="text-xs text-gray-400">
+                          {(() => {
+                            if (!task.task_date) return "";
+                            const d = new Date(task.task_date);
+                            const day = String(d.getDate()).padStart(2, "0");
+                            const month = String(d.getMonth() + 1).padStart(2, "0");
+                            const year = d.getFullYear();
+                            return `${day}-${month}-${year}`;
+                          })()}
+                        </p>
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="col-span-3 space-y-6">
-        <div className="p-4 bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll">
-          {/* Header with + button */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Assesment  List</h2>
-            <button
-              onClick={() => setOpenDialog(true)}
-              className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-            >
-              +
-            </button>
-          </div>
-
-          {todayTasks.length > 0 ? (
-            todayTasks.map((task, index) => (
-              <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
-                {/* Badge */}
-                <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
-                  {task.task_type}
-                </span>
-
-                {/* Title */}
-                <p className="mt-2">{task.task_title}</p>
-
-                {/* Profile */}
-                <div className="flex items-center gap-2 mt-2">
-                  <img
-                    src={
-                      task.image && task.image !== ""
-                        ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
-                        : placeholderImage
-                    }
-                    alt={task.allocatedUser}
-                    className="w-8 h-8 rounded-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                    }}
-                  />
-                  <div>
-                    <p className="text-sm font-medium">{task.allocatedUser}</p>
-                    <p className="text-xs text-gray-400">
-                      {(() => {
-                        if (!task.task_date) return "";
-                        const d = new Date(task.task_date);
-                        const day = String(d.getDate()).padStart(2, "0");
-                        const month = String(d.getMonth() + 1).padStart(2, "0");
-                        const year = d.getFullYear();
-                        return `${day}-${month}-${year}`;
-                      })()}
-                    </p>
                   </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500 text-sm">No course </p>
-          )}
-        </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm">No assessment</p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Organization Info Card */}
