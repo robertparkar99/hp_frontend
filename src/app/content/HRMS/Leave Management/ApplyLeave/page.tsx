@@ -1,55 +1,266 @@
 "use client";
-import { useState } from "react";
-import { Send, RotateCcw, Calendar, User, Building2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, User, Building2, Send, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const ApplyLeave = () => {
   const { toast } = useToast();
+
   const [formData, setFormData] = useState({
-    employeeName: "",
-    employeeId: "",
-    department: "",
+    typeOfLeave: "",
+    department_id: "",
+    employee_id: "",
+    employee: "",
     leaveType: "",
-    startDate: "",
-    endDate: "",
-    duration: "full-day",
-    reason: "",
-    contactDuringLeave: "",
+    dayType: "",
+    fromDate: "",
+    toDate: "",
+    date: "",
+    slot: "",
+    comment: "",
   });
 
-  const departments = [
-    "Human Resources",
-    "Information Technology",
-    "Finance",
-    "Marketing",
-    "Operations",
-    "Sales",
-  ];
+  const [sessionData, setSessionData] = useState({
+    url: "",
+    token: "",
+    subInstituteId: "",
+    orgType: "",
+    userId: "",
+  });
 
-  const leaveTypes = [
-    "Annual Leave",
-    "Sick Leave",
-    "Personal Leave",
-    "Maternity Leave",
-    "Paternity Leave",
-    "Emergency Leave",
-  ];
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [leaveTypes, setLeaveTypes] = useState<any[]>([]); // ✅ NEW state for leave types
+  const [submittedData, setSubmittedData] = useState<any[]>([]);
+  const [loadingDepts, setLoadingDepts] = useState(false);
+  const [loadingEmps, setLoadingEmps] = useState(false);
+  const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(false); // ✅ loading state
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // Helpers
+  const normalizeList = (payload: any) => {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload.data)) return payload.data;
+    if (Array.isArray(payload.result)) return payload.result;
+    return [];
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const getFullName = (emp: any) => {
+    if (!emp) return "";
+    const nameParts = [emp.first_name, emp.middle_name, emp.last_name].filter(Boolean);
+    const full = nameParts.join(" ").trim();
+    if (full) return full;
+    if (emp.name) return emp.name;
+    if (emp.user_name) return emp.user_name;
+    if (emp.email) return emp.email;
+    return `ID ${emp.id ?? ""}`;
+  };
+
+  const getDeptNameById = (id: any) => {
+    if (!id) return "";
+    const str = id.toString();
+    const found = departments.find((d) => d.id?.toString() === str);
+    return found?.department || "";
+  };
+
+  // Load session data
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (!userData) return;
+    try {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } =
+        JSON.parse(userData);
+      setSessionData({
+        url: APP_URL || "",
+        token: token || "",
+        subInstituteId: sub_institute_id?.toString() || "",
+        orgType: org_type || "",
+        userId: user_id?.toString() || "",
+      });
+    } catch (err) {
+      console.error("Invalid userData in localStorage", err);
+    }
+  }, []);
+
+  // ✅ Fetch Leave Types
+  useEffect(() => {
+    if (!sessionData.url || !sessionData.subInstituteId || !sessionData.token) return;
+
+    const fetchLeaveTypes = async () => {
+      setLoadingLeaveTypes(true);
+      try {
+        const res = await fetch(
+          `${sessionData.url}/leave-type?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}`
+        );
+        if (!res.ok) throw new Error(`Leave types fetch failed: ${res.status}`);
+        const json = await res.json();
+        setLeaveTypes(json.LeaveTypeLists || []);
+      } catch (err) {
+        console.error("Failed to fetch leave types:", err);
+        toast({
+          title: "Error",
+          description: "Could not load leave types.",
+          variant: "destructive",
+        });
+        setLeaveTypes([]);
+      } finally {
+        setLoadingLeaveTypes(false);
+      }
+    };
+
+    fetchLeaveTypes();
+  }, [sessionData]);
+
+  // Fetch departments
+  useEffect(() => {
+    if (!sessionData.url || !sessionData.subInstituteId) return;
+    const fetchDepartments = async () => {
+      setLoadingDepts(true);
+      try {
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=hrms_departments&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
+        );
+        if (!res.ok) throw new Error(`Depts fetch failed: ${res.status}`);
+        const json = await res.json();
+        const list = normalizeList(json);
+        setDepartments(list);
+      } catch (err) {
+        console.error("Failed to fetch departments:", err);
+        toast({
+          title: "Error",
+          description: "Could not load departments.",
+          variant: "destructive",
+        });
+        setDepartments([]);
+      } finally {
+        setLoadingDepts(false);
+      }
+    };
+    fetchDepartments();
+  }, [sessionData]);
+
+  // Fetch employees when department_id changes
+  useEffect(() => {
+    if (!formData.department_id || !sessionData.url || !sessionData.subInstituteId) {
+      setEmployees([]);
+      return;
+    }
+    const fetchEmployees = async () => {
+      setLoadingEmps(true);
+      try {
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${formData.department_id}`
+        );
+        if (!res.ok) throw new Error(`Emps fetch failed: ${res.status}`);
+        const json = await res.json();
+        const list = normalizeList(json);
+        setEmployees(list);
+      } catch (err) {
+        console.error("Failed to fetch employees:", err);
+        toast({
+          title: "Error",
+          description: "Could not load employees.",
+          variant: "destructive",
+        });
+        setEmployees([]);
+      } finally {
+        setLoadingEmps(false);
+      }
+    };
+    fetchEmployees();
+  }, [formData.department_id, sessionData]);
+
+  // Fetch leave applications on page load
+  useEffect(() => {
+    if (!sessionData.url || !sessionData.token || !sessionData.subInstituteId || !sessionData.userId) return;
+
+    const fetchApplications = async () => {
+      try {
+        const url = new URL(`${sessionData.url}/leave-apply`);
+        url.searchParams.append("type", "API");
+        url.searchParams.append("sub_institute_id", sessionData.subInstituteId);
+        url.searchParams.append("token", sessionData.token);
+        url.searchParams.append("user_id", sessionData.userId);
+        url.searchParams.append("syear", new Date().getFullYear().toString());
+
+        const res = await fetch(url.toString(), { method: "GET" });
+        if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+        const json = await res.json();
+
+        const list = json.leaveHistory || [];
+        setSubmittedData(list);
+
+        if (json.departments) {
+          setDepartments(
+            Object.entries(json.departments).map(([id, name]) => ({
+              id,
+              department: name,
+            }))
+          );
+        }
+      } catch (err) {
+        console.error("Failed to fetch leave applications:", err);
+        toast({
+          title: "Error",
+          description: "Could not load leave applications.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchApplications();
+  }, [sessionData]);
+
+  // Handle form input changes
+  const handleInputChange = (field: string, value: string) => {
+    if (field === "department_id") {
+      setFormData((prev) => ({
+        ...prev,
+        department_id: value,
+        employee_id: "",
+        employee: "",
+      }));
+      return;
+    }
+
+    if (field === "employee_id") {
+      const selectedEmp = employees.find((e) => e.id?.toString() === value);
+      setFormData((prev) => ({
+        ...prev,
+        employee_id: selectedEmp?.id?.toString() || "",
+        employee: getFullName(selectedEmp) || "",
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Submit leave
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Basic validation
-    if (!formData.employeeName || !formData.leaveType || !formData.startDate || !formData.endDate) {
+
+    if (!formData.typeOfLeave || !formData.leaveType || !formData.dayType) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -58,207 +269,314 @@ const ApplyLeave = () => {
       return;
     }
 
-    toast({
-      title: "Leave Application Submitted",
-      description: "Your leave application has been submitted successfully and is pending approval.",
-    });
-    
-    // Reset form
-    handleReset();
+    if (!sessionData.url || !sessionData.token || !sessionData.userId) {
+      toast({
+        title: "Error",
+        description: "Session data missing. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const url = new URL(`${sessionData.url}/leave-apply`);
+      url.searchParams.append("type", "API");
+      url.searchParams.append("sub_institute_id", sessionData.subInstituteId);
+      url.searchParams.append("token", sessionData.token);
+      url.searchParams.append("leave_type", formData.leaveType);
+      url.searchParams.append("day_type", formData.dayType);
+
+      if (formData.dayType === "full") {
+        url.searchParams.append("from_date", formData.fromDate);
+        url.searchParams.append("to_date", formData.toDate);
+      } else if (formData.dayType === "half") {
+        url.searchParams.append("from_date", formData.date);
+        url.searchParams.append("to_date", formData.date);
+        url.searchParams.append("slot", formData.slot);
+      }
+
+      url.searchParams.append("comment", formData.comment || "");
+      url.searchParams.append("user_id", sessionData.userId);
+      url.searchParams.append("leave_type_id", formData.leaveType);
+
+      if (formData.department_id) {
+        url.searchParams.append("department_id", formData.department_id);
+      }
+      if (formData.employee_id) {
+        url.searchParams.append("employee_id", formData.employee_id);
+      }
+
+      const res = await fetch(url.toString(), { method: "POST" });
+      if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
+      const json = await res.json();
+
+      toast({
+        title: "Leave Application Submitted",
+        description: "Your leave request has been submitted successfully.",
+      });
+
+      setSubmittedData((prev) => [...prev, { ...formData, ...json }]);
+      handleReset();
+    } catch (err) {
+      console.error("Submit error:", err);
+      toast({
+        title: "Error",
+        description: "Failed to submit leave application.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleReset = () => {
     setFormData({
-      employeeName: "",
-      employeeId: "",
-      department: "",
+      typeOfLeave: "",
+      department_id: "",
+      employee_id: "",
+      employee: "",
       leaveType: "",
-      startDate: "",
-      endDate: "",
-      duration: "full-day",
-      reason: "",
-      contactDuringLeave: "",
+      dayType: "",
+      fromDate: "",
+      toDate: "",
+      date: "",
+      slot: "",
+      comment: "",
     });
-  };
-
-  const calculateDays = () => {
-    if (formData.startDate && formData.endDate) {
-      const start = new Date(formData.startDate);
-      const end = new Date(formData.endDate);
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      return diffDays;
-    }
-    return 0;
+    setEmployees([]);
   };
 
   return (
     <div className="space-y-6">
-      {/* Form */}
       <Card className="card-elevated">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Leave Application Form
+            <Calendar className="h-5 w-5" /> Leave Application
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Employee Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Main row */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <Label htmlFor="employeeName" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Employee Name *
-                </Label>
-                <Input
-                  className="mt-2"
-                  id="employeeName"
-                  value={formData.employeeName}
-                  onChange={(e) => handleInputChange("employeeName", e.target.value)}
-                  placeholder="Enter your full name"
-                  required
-                />
+                <Label>Type of Leave *</Label>
+                <Select
+                  value={formData.typeOfLeave || undefined}
+                  onValueChange={(value) => handleInputChange("typeOfLeave", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="self">Self</SelectItem>
+                    <SelectItem value="employee">Employee</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
               <div>
-                <Label htmlFor="employeeId">Employee ID</Label>
-                <Input
-                  id="employeeId"
-                  value={formData.employeeId}
-                  onChange={(e) => handleInputChange("employeeId", e.target.value)}
-                  placeholder="Enter employee ID"
+                <Label>Leave Type *</Label>
+                <Select
+                  value={formData.leaveType || undefined}
+                  onValueChange={(value) => handleInputChange("leaveType", value)}
+                  disabled={loadingLeaveTypes}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={loadingLeaveTypes ? "Loading..." : "Select leave type"}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {leaveTypes.map((lt) => (
+                      <SelectItem key={lt.id} value={lt.id.toString()}>
+                        {lt.leave_type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Day Type *</Label>
+                <Select
+                  value={formData.dayType || undefined}
+                  onValueChange={(value) => handleInputChange("dayType", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select day type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">Full</SelectItem>
+                    <SelectItem value="half">Half</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Comment</Label>
+                <Textarea
+                  value={formData.comment}
+                  onChange={(e) => handleInputChange("comment", e.target.value)}
+                  placeholder="Add a comment"
+                  rows={1}
                 />
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="department" className="flex items-center gap-2 mb-2">
-                <Building2 className="h-4 w-4" />
-                Department
-              </Label>
-              <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Leave Details */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Leave Details</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {/* Department + Employee (when employee type selected) */}
+            {formData.typeOfLeave === "employee" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="leaveType">Leave Type *</Label>
-                  <Select value={formData.leaveType} onValueChange={(value) => handleInputChange("leaveType", value)}>
+                  <Label className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" /> Department
+                  </Label>
+                  <Select
+                    value={formData.department_id || undefined}
+                    onValueChange={(value) => handleInputChange("department_id", value)}
+                    disabled={loadingDepts}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select leave type" />
+                      <SelectValue
+                        placeholder={loadingDepts ? "Loading..." : "Select department"}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {leaveTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id?.toString()}>
+                          {dept.department}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
                 <div>
-                  <Label>Duration</Label>
-                  <RadioGroup
-                    value={formData.duration}
-                    onValueChange={(value) => handleInputChange("duration", value)}
-                    className="flex flex-row space-x-4 mt-2"
+                  <Label className="flex items-center gap-2">
+                    <User className="h-4 w-4" /> Employee
+                  </Label>
+                  <Select
+                    value={formData.employee_id || undefined}
+                    onValueChange={(value) => handleInputChange("employee_id", value)}
+                    disabled={!formData.department_id || loadingEmps}
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="full-day" id="full-day" />
-                      <Label htmlFor="full-day">Full Day</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="half-day" id="half-day" />
-                      <Label htmlFor="half-day">Half Day</Label>
-                    </div>
-                  </RadioGroup>
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={loadingEmps ? "Loading..." : "Select employee"}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((emp) => (
+                        <SelectItem key={emp.id} value={emp.id?.toString()}>
+                          {getFullName(emp)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+            )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* Dates for full/half */}
+            {formData.dayType === "full" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="startDate">Start Date *</Label>
+                  <Label>From Date *</Label>
                   <Input
-                    id="startDate"
                     type="date"
-                    value={formData.startDate}
-                    onChange={(e) => handleInputChange("startDate", e.target.value)}
-                    required
+                    value={formData.fromDate}
+                    onChange={(e) => handleInputChange("fromDate", e.target.value)}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="endDate">End Date *</Label>
+                  <Label>To Date *</Label>
                   <Input
-                    id="endDate"
                     type="date"
-                    value={formData.endDate}
-                    onChange={(e) => handleInputChange("endDate", e.target.value)}
-                    required
+                    value={formData.toDate}
+                    onChange={(e) => handleInputChange("toDate", e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.dayType === "half" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Date *</Label>
+                  <Input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => handleInputChange("date", e.target.value)}
                   />
                 </div>
                 <div>
-                  <Label>Total Days</Label>
-                  <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center">
-                    <span className="text-foreground font-medium">
-                      {calculateDays()} {calculateDays() === 1 ? 'day' : 'days'}
-                    </span>
-                  </div>
+                  <Label>Slot *</Label>
+                  <Select
+                    value={formData.slot || undefined}
+                    onValueChange={(value) => handleInputChange("slot", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select slot" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="first">First Half</SelectItem>
+                      <SelectItem value="second">Second Half</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Additional Information */}
-            <div className="border-t pt-6 space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Additional Information</h3>
-              
-              <div>
-                <Label htmlFor="reason">Reason for Leave</Label>
-                <Textarea
-                  id="reason"
-                  value={formData.reason}
-                  onChange={(e) => handleInputChange("reason", e.target.value)}
-                  placeholder="Please provide a brief reason for your leave"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="contactDuringLeave">Contact During Leave</Label>
-                <Input
-                  id="contactDuringLeave"
-                  value={formData.contactDuringLeave}
-                  onChange={(e) => handleInputChange("contactDuringLeave", e.target.value)}
-                  placeholder="Phone number or email (optional)"
-                />
-              </div>
-            </div>
-
-            {/* Form Actions */}
+            {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
               <Button type="submit" className="btn-primary">
-                <Send className="h-4 w-4 mr-2" />
-                Submit Application
+                <Send className="h-4 w-4 mr-2" /> Submit
               </Button>
               <Button type="button" variant="outline" onClick={handleReset}>
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reset Form
+                <RotateCcw className="h-4 w-4 mr-2" /> Reset
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Submitted Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Submitted Leave Applications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Department</TableHead>
+                <TableHead>Employee</TableHead>
+                <TableHead>Leave Type</TableHead>
+                <TableHead>Day Type</TableHead>
+                <TableHead>From Date</TableHead>
+                <TableHead>To Date</TableHead>
+                <TableHead>Slot</TableHead>
+                <TableHead>Comment</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {submittedData.map((row, i) => {
+                const deptName = getDeptNameById(row.department_id);
+                const leaveTypeName =
+                  leaveTypes.find((lt) => lt.id.toString() === row.leave_type_id?.toString())
+                    ?.leave_type || row.leaveType;
+                return (
+                  <TableRow key={i}>
+                    <TableCell>{deptName}</TableCell>
+                    <TableCell>{row.leave_type_name || row.employee}</TableCell>
+                    <TableCell>{leaveTypeName}</TableCell>
+                    <TableCell>{row.day_type || row.dayType}</TableCell>
+                    <TableCell>{row.from_date || row.fromDate || row.date}</TableCell>
+                    <TableCell>{row.to_date || row.toDate || row.date}</TableCell>
+                    <TableCell>{row.slot}</TableCell>
+                    <TableCell>{row.comment}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

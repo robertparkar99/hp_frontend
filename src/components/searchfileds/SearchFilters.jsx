@@ -89,7 +89,7 @@ const SearchFilters = ({
         if (cancelled) return;
 
         const arr = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
-        const formatted = [{ label: 'Search Section', value: '' }, ...arr.map(item => ({
+        const formatted = [{ label: 'Search Department', value: '' }, ...arr.map(item => ({
           label: item.title || item.name || `Section ${item.id}`,
           value: item.id
         }))];
@@ -113,7 +113,7 @@ const SearchFilters = ({
     let cancelled = false;
     const fetchStandards = async () => {
       if (!mergedForm.searchSection) {
-        setStandards([{ label: 'Search Standard', value: '' }]);
+        setStandards([{ label: 'Search Industry', value: '' }]);
         return;
       }
 
@@ -184,7 +184,7 @@ const SearchFilters = ({
     let cancelled = false;
     const fetchSubjects = async () => {
       if (!mergedForm.searchStandard) {
-        setSubjects([{ label: 'Select Subject', value: '' }]);
+        setSubjects([{ label: 'Select Course', value: '' }]);
         return;
       }
 
@@ -255,7 +255,7 @@ const SearchFilters = ({
     let cancelled = false;
     const fetchChapters = async () => {
       if (!mergedForm.subject || !mergedForm.searchStandard) {
-        setChapters([{ label: 'Search By Chapter', value: '' }]);
+        setChapters([{ label: 'Search By Module', value: '' }]);
         return;
       }
 
@@ -327,7 +327,7 @@ const SearchFilters = ({
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Select
-          label="Search Section"
+          label="Search Department"
           value={mergedForm.searchSection}
           onChange={(val) => handleChange('searchSection', val)}
           options={sections}
@@ -335,7 +335,7 @@ const SearchFilters = ({
         />
 
         <Select
-          label="Search Standard"
+          label="Search Industry"
           value={mergedForm.searchStandard}
           onChange={(val) => handleChange('searchStandard', val)}
           options={standards}
@@ -343,7 +343,7 @@ const SearchFilters = ({
         />
 
         <Select
-          label="Select Subject"
+          label="Select Course"
           value={mergedForm.subject}
           onChange={(val) => handleChange('subject', val)}
           options={subjects}
@@ -351,7 +351,7 @@ const SearchFilters = ({
         />
 
         <Select
-          label="Search By Chapter"
+          label="Search By Module"
           value={mergedForm.searchByChapter}
           onChange={(val) => handleChange('searchByChapter', val)}
           options={chapters}

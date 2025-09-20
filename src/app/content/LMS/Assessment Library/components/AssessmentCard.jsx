@@ -29,8 +29,13 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status.toLowerCase()) {
+  const getStatusIcon = (status, active) => {
+    if (active === 0) {
+      return { icon: 'Circle', color: 'text-gray-400' }; // inactive always gray
+    }
+
+    // if active === 1, fall back to status-based logic
+    switch (status?.toLowerCase()) {
       case 'completed':
         return { icon: 'CheckCircle', color: 'text-green-600' };
       case 'in progress':
@@ -42,7 +47,9 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
     }
   };
 
-  const statusInfo = getStatusIcon(assessment.status);
+  // usage:
+  const statusInfo = getStatusIcon(assessment.status, assessment.active);
+
   const isDeadlineUrgent = assessment.deadline && new Date(assessment.deadline) <= new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   return (
@@ -57,8 +64,8 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
             <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getCategoryColor(assessment.category)}`}>
               {assessment.category}
             </span>
-            <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getDifficultyColor(assessment.difficulty)}`}>
-              {assessment.difficulty}
+            <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getDifficultyColor(assessment.subject)}`}>
+              {assessment.subject}
             </span>
           </div>
         </div>
@@ -76,11 +83,8 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
     />
   </Button> */}
 
-          <Icon
-            name={statusInfo.icon}
-            size={20}
-            className={statusInfo.color} // whatever status color you want
-          />
+         <span className={`h-[15px] w-[15px] rounded-full ${assessment.status !== 'Closed' ? 'bg-success' : 'bg-[#ddd]'} border-1`}></span>
+
         </div>
       </div>
 
@@ -147,7 +151,7 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
           variant="default"
           fullWidth
           onClick={() => onStartAssessment(assessment)}
-        disabled={assessment.status === 'Closed'}
+          disabled={assessment.status === 'Closed'}
 
         >
           {assessment.status !== 'Closed' && 'Start Assessment'}

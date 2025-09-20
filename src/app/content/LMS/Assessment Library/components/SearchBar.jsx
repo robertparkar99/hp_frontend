@@ -26,7 +26,7 @@ const SearchBar = ({ searchQuery, onSearchChange, onToggleFilters, isMobile }) =
           />
           <input
             type="text"
-            placeholder="Search assessments by title, category, or keywords..."
+            placeholder="Search assessments by  due date, Course, or Industry..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             onFocus={() => setIsFocused(true)}

@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     {/* test starts here  */}
     <div className="contentDiv h-[60vh] w-full">
       <div className="mainDiv">
-        <main className="hide-scroll" style={{ padding: '1rem', height:'80vh', overflow:'auto'}}> <MainScreen/></main>
+        <main className="hide-scroll" style={{ padding: '1rem', height:'90vh', overflow:'auto'}}> <MainScreen/></main>
       </div>
     </div>
 

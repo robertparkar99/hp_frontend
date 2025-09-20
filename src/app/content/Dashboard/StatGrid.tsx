@@ -877,8 +877,15 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { MoreVertical, ChevronDown } from "lucide-react";
+import { MoreVertical, ChevronDown, MoreHorizontal, Building2Icon, UsersIcon, MapPinIcon, BriefcaseIcon, CreditCardIcon } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Edit, Plus } from "lucide-react";
+import icon from '@/components/AppIcon';
 import { Atom } from "react-loading-indicators"
+import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
+import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
+import { UserCircle, Search } from "lucide-react";
+
 import {
   Dialog,
   DialogContent,
@@ -894,6 +901,7 @@ interface Employee {
   email: string;
   mobile: string;
   jobrole: string;
+  profile_name: string;
   status: string;
   department_name: string;
   joined_date?: string;
@@ -933,8 +941,6 @@ interface GapAnalysisData {
     skillLevel?: string; // Add skill level
   }[];
 }
-
-
 
 interface MySkill {
   jobrole_skill_id: number;
@@ -1012,9 +1018,86 @@ export default function Dashboard() {
   const [expandedEmployeeIndex, setExpandedEmployeeIndex] = useState<number | null>(null);
   const [skillLevels, setSkillLevels] = useState([]);
 
+  const [orgData, setOrgData] = useState<any>(null);
+
+  const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+
+
+
   const toggleSkills = (index: number) => {
     setExpandedEmployeeIndex(expandedEmployeeIndex === index ? null : index);
   };
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Filter employees based on search term
+  const globalFilteredEmployees = employees.filter(emp =>
+    emp.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.mobile?.includes(searchTerm) ||
+    emp.department_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.jobrole?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Add these state variables to your component
+  const [showActions, setShowActions] = useState<number | string | null>(null);
+  const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0 });
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+
+
+  // Add these handler functions
+  const handleActionMenuClick = (e: React.MouseEvent, employee: Employee) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenuCoords({
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX,
+    });
+    setShowActions(employee.id);
+    setSelectedEmployee(employee);
+  };
+
+  const handleEditEmployeeMenu = (employee: Employee) => {
+    console.log("Edit employee:", employee);
+    setShowActions(null);
+    // Implement your edit employee logic here
+  };
+  // Add this function at the top level of your component (with your other functions)
+  const triggerMenuNavigation = (employeeId: number | string | null, menu: string) => {
+    ;
+    window.__currentMenuItem = menu;
+    window.dispatchEvent(
+      new CustomEvent('menuSelected', {
+        detail: { menu, pageType: 'page', access: menu, pageProps: employeeId || null },
+      })
+    );
+  };
+
+
+
+  const handleAssignTaskMenu = (employee: Employee) => {
+    console.log("Assign task to:", employee);
+    setShowActions(null);
+    triggerMenuNavigation(employee.id, 'task/taskManagement.tsx');
+  };
+
+  // Add useEffect to close menu when clicking outside
+  // Add useEffect to close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showActions !== null) {
+        setShowActions(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showActions]);
+
+
 
   const [stats, setStats] = useState({
     totalEmployees: 0,
@@ -1122,7 +1205,7 @@ export default function Dashboard() {
         setDepartments(data.departmentList || []);
         setSkillHeatmap(data.skillHeatmap || {});
         // setSkillLevels(data.SkillLevels || []);
-        
+
 
         // Extract unique skills from skillHeatmap
         const allSkills = new Set<string>();
@@ -1134,7 +1217,7 @@ export default function Dashboard() {
           });
         }
         setSkills(Array.from(allSkills));
-         setSkillLevels(data.SkillLevels || []);
+        setSkillLevels(data.SkillLevels || []);
         console.log("Extracted Skills:", Array.from(skillLevels));
         const apiLevel = data.current_level ?? 0;
         setCurrentLevel(apiLevel);
@@ -1163,7 +1246,7 @@ export default function Dashboard() {
             const dayKey = formatDate(date);
             weeklyData[dayKey] = { count: 0, status: "NO_TASKS" };
           }
-          data.week_task.forEach((task:any) => {
+          data.week_task.forEach((task: any) => {
             if (!task.task_date) return;
             const taskDate = new Date(task.task_date);
             const taskDayKey = formatDate(taskDate);
@@ -1216,6 +1299,102 @@ export default function Dashboard() {
     fetchDashboard();
   }, [sessionData]);
 
+  // Update your organization data fetch useEffect
+  useEffect(() => {
+    if (!sessionData) return;
+
+    const fetchOrgData = async () => {
+      try {
+        const res = await fetch(
+          `${sessionData.url}/settings/organization_data?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}`
+        );
+
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+        const data = await res.json();
+        console.log("Organization API Response Data:", data);
+
+        // Extract the first organization from the array
+        const organization = data.org_data && data.org_data.length > 0 ? data.org_data[0] : null;
+        setOrgData(organization);
+        // Check both locations
+        const sistersFromRoot = data.sisters_org || [];
+        const sistersFromOrg = organization?.sisters_org || [];
+        const sistersFromOrgData = organization?.org_data?.sisters_org || [];
+
+        console.log("Sisters from root:", sistersFromRoot);
+        console.log("Sisters from org:", sistersFromOrg);
+        console.log("Sisters from org_data:", sistersFromOrgData);
+
+        // Check if sisters_org exists in the response data
+        setSisterConcerns(sistersFromRoot.length > 0 ? sistersFromRoot :
+          sistersFromOrg.length > 0 ? sistersFromOrg :
+            sistersFromOrgData);
+      } catch (err) {
+        console.error("Error fetching organization data:", err);
+      }
+    };
+
+    fetchOrgData();
+  }, [sessionData]);
+
+  useEffect(() => {
+    console.log("Current orgData state:", orgData);
+    console.log("Current sisterConcerns state:", sisterConcerns);
+
+    if (orgData) {
+      console.log("Organization fields:", {
+        legal_name: orgData.legal_name,
+        industry: orgData.industry,
+        cin: orgData.cin,
+        pan: orgData.pan,
+        employee_count: orgData.employee_count,
+        registered_address: orgData.registered_address,
+        logo: orgData.logo
+      });
+    }
+  }, [orgData, sisterConcerns]);
+  // Add this debug useEffect
+  // useEffect(() => {
+  //   console.log("Current orgData state:", orgData);
+  //   console.log("Current sisterConcerns state:", sisterConcerns);
+  // }, [orgData, sisterConcerns]);
+  // const orgCards = orgData
+  //   ? [
+  //       {
+  //         label: "Legal Name",
+  //         value: orgData.legal_name,
+  //         icon: <Building2Icon className="h-6 w-6 text-blue-600" />,
+  //       },
+  //       // {
+  //       //   label: "CIN",
+  //       //   value: orgData.cin,
+  //       //   icon: <IdentificationIcon className="h-6 w-6 text-green-600" />,
+  //       // },
+  //       {
+  //         label: "PAN",
+  //         value: orgData.pan,
+  //         icon: <CreditCardIcon className="h-6 w-6 text-purple-600" />,
+  //       },
+  //       {
+  //         label: "Industry",
+  //         value: orgData.industry,
+  //         icon: <BriefcaseIcon className="h-6 w-6 text-yellow-600" />,
+  //       },
+  //       {
+  //         label: "Employee Count",
+  //         value: orgData.employee_count,
+  //         icon: <UsersIcon className="h-6 w-6 text-pink-600" />,
+  //       },
+  //       {
+  //         label: "Registered Address",
+  //         value: orgData.registered_address,
+  //         icon: <MapPinIcon className="h-6 w-6 text-red-600" />,
+  //       },
+  //     ]
+  //   : [];
+
+
   // Chart bar color
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -1245,6 +1424,39 @@ export default function Dashboard() {
         return "bg-gray-400";
     }
   };
+
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+
+  const handleColumnFilter = (columnKey: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnKey]: value.toLowerCase()
+    }));
+  };
+
+  // Update the filteredEmployees to include column filtering
+  const filteredEmployees = employees.filter(emp => {
+    // Global search
+    const globalMatch =
+      emp.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.mobile?.includes(searchTerm) ||
+      emp.department_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.jobrole?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Column-specific filters
+    const columnMatch = Object.entries(columnFilters).every(([key, filterValue]) => {
+      if (!filterValue) return true;
+
+      const cellValue = emp[key as keyof Employee];
+      if (typeof cellValue === 'string') {
+        return cellValue.toLowerCase().includes(filterValue);
+      }
+      return true;
+    });
+
+    return globalMatch && columnMatch;
+  });
 
   // Get color for skill heatmap cells based on gap value
   const getSkillGapColor = (totalEmp: number, requiredEmp: number) => {
@@ -1348,12 +1560,39 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  // const handleAssignTaskMenu = (employee) => {
+  //   triggerMenuNavigation(employee.id, 'task/taskManagement.tsx');
+  // };
   // Convert to percent (normalize)
   const currentPercent =
     maxLevel > 0 ? Math.min(100, Math.round((currentLevel / maxLevel) * 100)) : 0;
 
   return (
     <div className={`h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-0"}`}>
+      {/* 🔹 Header: Welcome + Search */}
+      <div className="flex items-center justify-between bg-white rounded-xl shadow p-4 mb-6">
+
+        {/* Welcome with icon */}
+        <div className="flex items-center gap-2">
+          <UserCircle className="w-7 h-7 text-blue-600" />
+          <h1 className="text-xl font-bold text-gray-800">
+            Welcome, {sessionData?.userProfileName || "User"}
+          </h1>
+        </div>
+
+        {/* Search bar */}
+        <div className="relative w-64">
+          <input
+            type="text"
+            placeholder="Search employees..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pl-10"
+          />
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+        </div>
+      </div>
       <div className="grid grid-cols-12 gap-6 ">
         {/* Left Section - Adjust column span based on sidebar state */}
         <div className={`${isSidebarOpen ? "col-span-9" : "col-span-9"} space-y-6`}>
@@ -1401,11 +1640,9 @@ export default function Dashboard() {
               </div>
 
               {/* Chart - Only show if no widget selected or Weekly Task Progress selected */}
-              {(shouldShowWidget("Weekly Task Progress") || !selectedWidget) && (
+              <div className="bg-white rounded-lg shadow p-4">
                 <div className="flex-1">
-                  <h2 className="font-semibold mb-4 text-center">
-                    Weekly Task Progress
-                  </h2>
+                  <h2 className="font-semibold mb-4 text-center">Weekly Task Progress</h2>
                   <div className="relative">
                     {/* Y-axis labels */}
                     <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
@@ -1454,9 +1691,10 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
+
 
           {/* Conditional rendering based on user role */}
           {sessionData?.userProfileName === "Admin" ? (
@@ -1477,6 +1715,9 @@ export default function Dashboard() {
                   <span className="flex items-center gap-1">
                     <span className="w-3 h-3 rounded-sm bg-green-500" /> Healthy
                   </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-sm bg-gray-300" /> No Data
+                  </span>
                 </div>
 
                 {/* Heatmap Table */}
@@ -1486,7 +1727,7 @@ export default function Dashboard() {
                       <tr className="text-left">
                         <th className="px-3 py-2">Department</th>
 
-                        {skillLevels.map((level:any,key) => (
+                        {skillLevels.map((level: any, key) => (
                           <th key={key} className="px-3 py-2 text-center">
                             {level.proficiency_level}
                           </th>
@@ -1510,7 +1751,8 @@ export default function Dashboard() {
                             const requiredEmp = skillData?.required_level || 0;
 
                             // Assign colors based on employee count compared to requirement
-                            let cellColor = "";
+                            let cellColor = "bg-gray-300"; // default color for missing data
+                            let displayValue = "";
                             if (totalEmp === 0) {
                               cellColor = "bg-red-400"; // critical gap 
                             } else if (totalEmp === 1) {
@@ -1548,6 +1790,9 @@ export default function Dashboard() {
                   Click on any cell to drill down into detailed gap analysis
                 </p>
               </div>
+
+
+
 
               {/* Gap Analysis Dialog */}
               <>
@@ -1661,6 +1906,7 @@ export default function Dashboard() {
               </>
 
 
+
               {/* Right: Risk & Opportunity Matrix */}
               <div className="bg-white rounded-xl shadow p-4">
                 <h2 className="font-semibold text-lg">Employee Attendance</h2>
@@ -1680,11 +1926,11 @@ export default function Dashboard() {
 
                   {/* X-axis label */}
                   {/* <div className="absolute bottom-0 left-0 -mb-6 text-xs font-medium w-full text-center">
-                    Low Availability
-                  </div> */}
+                      Low Availability
+                    </div> */}
                   {/* <div className="absolute bottom-0 right-0 -mb-6 text-xs font-medium w-full text-center">
-                    High Availability
-                  </div> */}
+                      High Availability
+                    </div> */}
 
                   {/* Quadrants */}
                   {/* <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-red-50 border-b-2 border-l-2 border-red-200"></div> */}
@@ -1692,20 +1938,20 @@ export default function Dashboard() {
 
                   {/* quadrant labels */}
                   {/* <div className="absolute top-2 right-2 text-xs font-medium text-red-600">
-                    High Priority
-                    <div className="text-[10px] text-red-500">(High Impact, Scarce)</div>
-                  </div>
-                  <div className="absolute top-2 left-2 text-xs font-medium text-green-600">
-                    Strategic Watch
-                    <div className="text-[10px] text-green-500">(High Impact, Available)</div>
-                  </div> */}
+                      High Priority
+                      <div className="text-[10px] text-red-500">(High Impact, Scarce)</div>
+                    </div>
+                    <div className="absolute top-2 left-2 text-xs font-medium text-green-600">
+                      Strategic Watch
+                      <div className="text-[10px] text-green-500">(High Impact, Available)</div>
+                    </div> */}
 
                   {/* Data points */}
                   {skillsMatrixData.map((skill, index) => (
                     <div
                       key={index}
                       className={`absolute w-3 h-3 rounded-full cursor-pointer ${getGapColor(skill.gap)}
-                      ${selectedSkill && selectedSkill.skill === skill.name ?
+                        ${selectedSkill && selectedSkill.skill === skill.name ?
                           'ring-2 ring-offset-1 ring-black' : ''}`}
                       style={{
                         left: `${skill.availability}%`,
@@ -1747,6 +1993,9 @@ export default function Dashboard() {
                   Click on any point to view skill details
                 </p>
               </div>
+
+
+
             </div>
           ) : (
 
@@ -1961,47 +2210,376 @@ export default function Dashboard() {
 
                 {/* Skills for Data Scientist Role */}
                 {/* <h3 className="font-medium mt-5 mb-2">Skills for Data Scientist Role</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between border rounded-lg p-3">
-                    <div>
-                      <p>AI/ML</p>
-                      <p className="text-xs text-gray-500">Need Expert level</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <p>AI/ML</p>
+                        <p className="text-xs text-gray-500">Need Expert level</p>
+                      </div>
+                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+                        3 courses
+                      </button>
                     </div>
-                    <button className="px-3 py-1 border rounded-lg text-xs font-medium">
-                      3 courses
-                    </button>
-                  </div>
 
-                  <div className="flex items-center justify-between border rounded-lg p-3">
-                    <div>
-                      <p>Cloud Security</p>
-                      <p className="text-xs text-gray-500">Need Intermediate level</p>
+                    <div className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <p>Cloud Security</p>
+                        <p className="text-xs text-gray-500">Need Intermediate level</p>
+                      </div>
+                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+                        5 courses
+                      </button>
                     </div>
-                    <button className="px-3 py-1 border rounded-lg text-xs font-medium">
-                      5 courses
-                    </button>
-                  </div>
 
-                  <div className="flex items-center justify-between border rounded-lg p-3">
-                    <div>
-                      <p>Data Analytics</p>
-                      <p className="text-xs text-gray-500">Need Expert level</p>
+                    <div className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <p>Data Analytics</p>
+                        <p className="text-xs text-gray-500">Need Expert level</p>
+                      </div>
+                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+                        4 courses
+                      </button>
                     </div>
-                    <button className="px-3 py-1 border rounded-lg text-xs font-medium">
-                      4 courses
-                    </button>
-                  </div>
-                </div> */}
+                  </div> */}
               </div>
+            </div>
+          )}
+          {/* Employee Table - Full width row */}
+          {(shouldShowWidget("Employee List") || !selectedWidget) && (
+            <div className="col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll mb-15 ">
+              {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
+
+              {/* Table Headers with Search Fields */}
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
+                {/* Employee Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Employee</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("full_name", e.target.value)}
+                  />
+                </div>
+
+                {/* Mobile Column with Search */}
+                {/* <div className="flex flex-col">
+                <span className="flex items-center mb-1">Mobile</span>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-full py-1 text-xs"
+                  onChange={(e) => handleColumnFilter("mobile", e.target.value)}
+                />
+              </div> */}
+
+                {/* Department Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Department</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("department_name", e.target.value)}
+                  />
+                </div>
+
+                {/* Role Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Job Role</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
+                  />
+                </div>
+
+                {/* profile Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">profile</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("profile_name", e.target.value)}
+                  />
+                </div>
+
+
+                {/* Status Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Status</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("status", e.target.value)}
+                  />
+                </div>
+
+                {/* Action Column with + Button */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="flex items-center mb-1">Action</span>
+                    <button
+                      onClick={() => setIsAddUserModalOpen(true)}
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                    >
+                      +
+                    </button>
+                    {isAddUserModalOpen && (
+                      <AddUserModal
+                        isOpen={isAddUserModalOpen}
+                        setIsOpen={setIsAddUserModalOpen}
+                        sessionData={sessionData}
+                        userJobroleLists={[]}
+                        userDepartmentLists={[]}
+                        userLOR={[]}
+                        userProfiles={[]}
+                        userLists={[]}
+                      />
+
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Employee Rows */}
+              {filteredEmployees.map((emp) => (
+                <div
+                  key={emp.id}
+                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img
+                      src={
+                        emp.image && emp.image !== ""
+                          ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${emp.image}`
+                          : placeholderImage
+                      }
+                      alt={emp.full_name || "profile"}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                      }}
+                    />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{emp.full_name}</p>
+                      <p className="text-gray-500 text-xs truncate">{emp.email}</p>
+                    </div>
+                  </div>
+
+                  {/* <span className="truncate">{emp.mobile || "-"}</span> */}
+                  <span className="truncate">{emp.department_name}</span>
+                  <span className="truncate">{emp.jobrole}</span>
+                  <span className="truncate">{emp.profile_name}</span>
+
+                  <span
+                    className={`px-2 py-1 rounded-md w-fit text-xs ${emp.status === "Active"
+                      ? "text-green-600 bg-green-100"
+                      : "text-red-600 bg-red-100"
+                      }`}
+                  >
+                    {emp.status}
+                  </span>
+
+                  <div className="flex relative">
+                    <MoreHorizontal
+                      className="w-4 h-4 text-gray-500 cursor-pointer flex-shrink-0"
+                      onClick={(e) => handleActionMenuClick(e, emp)}
+                    />
+
+                    {/* Action Menu */}
+                    {showActions === emp.id && (
+                      <div
+                        className="absolute w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                        style={{
+                          top: '100%',
+                          right: 0,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="py-2">
+                          <button
+                            onClick={() => handleEditEmployeeMenu(emp)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <Edit size={16} />
+                            <span>Edit Employee</span>
+                          </button>
+                          <button
+                            onClick={() => handleAssignTaskMenu(emp)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <Plus size={16} />
+                            <span>Assign Task</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
         {/* Right Section - Adjust column span based on sidebar state */}
         <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
-          {(shouldShowWidget("Today Task List") || !selectedWidget) && (
-            <div className="p-4 bg-white rounded-lg shadow h-77 overflow-y-auto hide-scroll">
-              <h2 className="font-semibold mb-4">Today's Task Progress</h2>
+          <div className="bg-white rounded-lg shadow">
+            {/* Tab Navigation */}
+            <div className="flex border-b">
+              <button
+                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Today Task List" || !selectedWidget ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700"}`}
+                onClick={() => setSelectedWidget("Today Task List")}
+              >
+                Today's Tasks
+              </button>
+              <button
+                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Week Task List" ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700"}`}
+                onClick={() => setSelectedWidget("Week Task List")}
+              >
+                Weekly Tasks
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-4">
+              {/* Today's Tasks */}
+              {(selectedWidget === "Today Task List" || !selectedWidget) && (
+                <div className="h-66 overflow-y-auto hide-scroll">
+                  {/* Header with + button */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-semibold">Today's Task Progress</h2>
+                    <button
+                      onClick={() => {
+                        triggerMenuNavigation(null, 'task/taskManagement.tsx');
+                      }}
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {todayTasks.length > 0 ? (
+                    todayTasks.map((task, index) => (
+                      <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                        {/* Badge */}
+                        <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                          {task.task_type}
+                        </span>
+
+                        {/* Title */}
+                        <p className="mt-2">{task.task_title}</p>
+
+                        {/* Profile */}
+                        <div className="flex items-center gap-2 mt-2">
+                          <img
+                            src={
+                              task.image && task.image !== ""
+                                ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                                : placeholderImage
+                            }
+                            alt={task.allocatedUser}
+                            className="w-8 h-8 rounded-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                            }}
+                          />
+                          <div>
+                            <p className="text-sm font-medium">{task.allocatedUser}</p>
+                            <p className="text-xs text-gray-400">
+                              {(() => {
+                                if (!task.task_date) return "";
+                                const d = new Date(task.task_date);
+                                const day = String(d.getDate()).padStart(2, "0");
+                                const month = String(d.getMonth() + 1).padStart(2, "0");
+                                const year = d.getFullYear();
+                                return `${day}-${month}-${year}`;
+                              })()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No tasks for today</p>
+                  )}
+                </div>
+              )}
+
+              {/* Weekly Tasks */}
+              {selectedWidget === "Week Task List" && (
+                <div className="h-66 overflow-y-auto hide-scroll">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-semibold">Weekly Task Progress</h2>
+
+                  </div>
+
+                  {weekTasks.length > 0 ? (
+                    weekTasks.map((task, index) => (
+                      <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                        {/* Badge */}
+                        <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                          {task.task_type}
+                        </span>
+
+                        {/* Title */}
+                        <p className="mt-2">{task.task_title}</p>
+                        {/* <p className="text-xs text-gray-500">Created Outlook of wireframe</p> */}
+
+                        {/* Profile */}
+                        <div className="flex items-center gap-2 mt-2">
+                          <img
+                            src={
+                              task.image && task.image !== ""
+                                ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                                : placeholderImage
+                            }
+                            alt={task.allocatedUser}
+                            className="w-8 h-8 rounded-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                            }}
+                          />
+                          <div>
+                            <p className="text-sm font-medium">{task.allocatedUser}</p>
+                            <p className="text-xs text-gray-400">
+                              {(() => {
+                                if (!task.task_date) return "";
+                                const d = new Date(task.task_date);
+                                const day = String(d.getDate()).padStart(2, "0");
+                                const month = String(d.getMonth() + 1).padStart(2, "0");
+                                const year = d.getFullYear();
+                                return `${day}-${month}-${year}`;
+                              })()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No tasks for this week</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
+            {/* Course List */}
+            <div className="p-4 bg-white rounded-lg shadow h-110 overflow-y-auto hide-scroll">
+              {/* Header with + button */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold">Course List</h2>
+                <button
+                  onClick={() => setOpenDialog(true)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                >
+                  +
+                </button>
+              </div>
+
               {todayTasks.length > 0 ? (
                 todayTasks.map((task, index) => (
                   <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
@@ -2012,7 +2590,6 @@ export default function Dashboard() {
 
                     {/* Title */}
                     <p className="mt-2">{task.task_title}</p>
-                    {/* <p className="text-xs text-gray-500">Created Outlook of wireframe</p> */}
 
                     {/* Profile */}
                     <div className="flex items-center gap-2 mt-2">
@@ -2045,14 +2622,23 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">No tasks for today</p>
+                <p className="text-gray-500 text-sm">No course</p>
               )}
             </div>
-          )}
 
-          {(shouldShowWidget("Week Task List") || !selectedWidget) && (
-            <div className="p-4 bg-white rounded-lg shadow h-110 overflow-y-auto hide-scroll">
-              <h2 className="font-semibold mb-4">Weekly Task Progress</h2>
+            {/* Assessment List */}
+            <div className="p-4 bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll">
+              {/* Header with + button */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold">Assessment List</h2>
+                <button
+                  onClick={() => setOpenDialog(true)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                >
+                  +
+                </button>
+              </div>
+
               {weekTasks.length > 0 ? (
                 weekTasks.map((task, index) => (
                   <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
@@ -2063,7 +2649,6 @@ export default function Dashboard() {
 
                     {/* Title */}
                     <p className="mt-2">{task.task_title}</p>
-                    {/* <p className="text-xs text-gray-500">Created Outlook of wireframe</p> */}
 
                     {/* Profile */}
                     <div className="flex items-center gap-2 mt-2">
@@ -2096,20 +2681,177 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">No tasks for this week</p>
+                <p className="text-gray-500 text-sm">No assessment</p>
               )}
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* Organization Info Card */}
+        <div className="col-span-full grid grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* <div className="bg-white rounded-xl shadow p-6">
+            <h2 className="text-2xl font-bold mb-6">Organizations Info</h2>
+
+            {loading ? (
+              <div className="flex justify-center items-center h-40">
+                <Atom color="#525ceaff" size="small" text="" textColor="" />
+              </div>
+            ) : orgData ? (
+              <div className="bg-white rounded-xl shadow-lg p-6 flex items-start space-x-4 max-w-lg">
+                <div className="flex-shrink-0">
+                  {orgData.logo ? (
+                    <img
+                      src={orgData.logo}
+                      alt="Organization Logo"
+                      className="h-16 w-16 rounded-full object-contain border"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                      Logo
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {orgData.legal_name || "N/A"}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-3">{orgData.industry}</p>
+
+                  <div className="space-y-2 text-sm">
+                    <p className="flex items-center gap-2">
+                      <Building2Icon className="h-4 w-4 text-blue-600" />
+                      <span>
+                        <strong>Legal Name:</strong> {orgData.legal_name || "N/A"}
+                      </span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <IdentificationIcon className="h-4 w-4 text-blue-600" />
+                      <span>
+                        <strong>CIN:</strong> {orgData.cin || "N/A"}
+                      </span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <CreditCardIcon className="h-4 w-4 text-green-600" />
+                      <span>
+                        <strong>PAN:</strong> {orgData.pan || "N/A"}
+                      </span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <UsersIcon className="h-4 w-4 text-pink-600" />
+                      <span>
+                        <strong>Employees:</strong> {orgData.employee_count || "N/A"}
+                      </span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <MapPinIcon className="h-4 w-4 text-red-600" />
+                      <span>
+                        <strong>Address:</strong> {orgData.registered_address || "N/A"}
+                      </span>
+                    </p>
+                  </div>
+                  <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition">
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500">No organization data available.</p>
+            )}
+          </div>
+          <div className="bg-white rounded-xl shadow p-6">
+            <h2 className="text-xl font-bold mb-6">Sister Concerns</h2>
+
+            {loading ? (
+              <div className="flex justify-center items-center h-32">
+                <Atom color="#525ceaff" size="small" text="" textColor="" />
+              </div>
+            ) : sisterConcerns && sisterConcerns.length > 0 ? (
+              <div className="grid grid-cols-1 gap-6">
+                {sisterConcerns.map((concern, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-xl shadow-lg p-6 flex items-start space-x-4 max-w-lg"
+                  >
+                    <div className="flex-shrink-0">
+                      {concern.logo ? (
+                        <img
+                          src={concern.logo}
+                          alt="Sister Concern Logo"
+                          className="h-16 w-16 rounded-full object-contain border"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                          }}
+                        />
+                      ) : (
+                        <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                          Logo
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-800">
+                        {concern.legal_name || "N/A"}
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-3">{concern.industry}</p>
+
+                      <div className="space-y-2 text-sm">
+                        <p className="flex items-center gap-2">
+                          <Building2Icon className="h-4 w-4 text-blue-600" />
+                          <span>
+                            <strong>Legal Name:</strong> {concern.legal_name || "N/A"}
+                          </span>
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <span>
+                            <strong>CIN:</strong> {concern.cin || "N/A"}
+                          </span>
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <CreditCardIcon className="h-4 w-4 text-green-600" />
+                          <span>
+                            <strong>PAN:</strong> {concern.pan || "N/A"}
+                          </span>
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <UsersIcon className="h-4 w-4 text-pink-600" />
+                          <span>
+                            <strong>Employees:</strong> {concern.employee_count || "N/A"}
+                          </span>
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <MapPinIcon className="h-4 w-4 text-red-600" />
+                          <span>
+                            <strong>Address:</strong> {concern.registered_address || "N/A"}
+                          </span>
+                        </p>
+                      </div>
+                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition">
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No sister concerns found.</p>
+            )}
+          </div> */}
         </div>
       </div>
 
       {/* Close dropdown when clicking outside */}
-      {isWidgetDropdownOpen && (
-        <div
-          className="fixed inset-0 z-0"
-          onClick={() => setIsWidgetDropdownOpen(false)}
-        ></div>
-      )}
-    </div>
+      {
+        isWidgetDropdownOpen && (
+          <div
+            className="fixed inset-0 z-0"
+            onClick={() => setIsWidgetDropdownOpen(false)}
+          ></div>
+        )
+      }
+    </div >
   );
+}
+
+function triggerMenuNavigation(id: string | number, arg1: string) {
+  throw new Error("Function not implemented.");
 }
