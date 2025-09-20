@@ -218,9 +218,9 @@ const AddChepterDialog = ({
           <Button
             onClick={course ? handleEditChapter : handleAddChapter}
             disabled={loading}
-            className="mt-4 mx-auto px-4 py-2 text-sm"
+            className="mt-4 mx-auto px-4 py-2 text-sm rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
           >
-            {loading ? "Saving..." : course ? "Update Module" : "Add Module"}
+            {loading ? "Saving..." : course ? "Update " : "Submit"}
           </Button>
         </div>
       </DialogContent>

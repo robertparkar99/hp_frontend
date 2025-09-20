@@ -263,9 +263,9 @@ export function AttendanceDashboard() {
     .join(' ');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/30 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/30 to-background w-full">
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-primary/90 to-primary text-primary-foreground">
+      <div className="relative overflow-hidden mt-[-17] mr-[-10] ml-[-10] bg-[#6fb2f2] text-primary-foreground">
         <div className="absolute inset-0 opacity-20" />
         <div className="relative container mx-auto px-6 py-8">
           <div className="flex items-center justify-between">
@@ -319,11 +319,11 @@ export function AttendanceDashboard() {
               size="lg"
               disabled={isProcessing}
               className={`
-                text-xl px-12 py-6 rounded-xl font-bold transform transition-all duration-300
+                bg-[#f5f5f5] text-[#668a42] hover:bg-gray-200 transition-colors text-xl px-12 py-6 rounded-xl font-bold transform transition-all duration-300
                 ${isPunchedIn ? 'btn-punch-out' : 'btn-punch-in'}
               `}
             >
-              <Clock className="w-6 h-6 mr-3" />
+              <Clock className="w-6 h-6 mr-3 " />
               {isPunchedIn ? 'Punch Out' : 'Punch In'}
             </Button>
           </CardContent>

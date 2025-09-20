@@ -163,7 +163,7 @@
 
 //     if (!srnoRaw) return interim;
 
-    
+
 //     const srnoNum = parseInt(srnoRaw, 10);
 //     if (!isNaN(srnoNum)) {
 //       interim = interim.filter((_row, idx) => idx + 1 === srnoNum);
@@ -539,7 +539,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import DataTable, { TableColumn } from "react-data-table-component";
+
+import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import { Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -595,7 +596,7 @@ export default function PayrollTypes() {
         payroll_percentage: item.payroll_percentage || null,
         status: item.status === 1 ? "Active" : "Inactive",
         day_count: item.day_count == 1,
-        sort_order:item.sort_order,
+        sort_order: item.sort_order,
       }));
 
       setDataList(mapped);
@@ -694,14 +695,14 @@ export default function PayrollTypes() {
       const columnMatch = otherKeys.every((key) => {
         const val = filters[key];
         if (!val) return true;
-        
+
         // Special handling for day_count column
         if (key === "day_count") {
           const searchTermLower = val.toLowerCase();
           const rowValue = row.day_count ? "yes" : "no";
           return rowValue.includes(searchTermLower);
         }
-        
+
         return String((row as any)[key] || "").toLowerCase().includes(val);
       });
 
@@ -724,21 +725,8 @@ export default function PayrollTypes() {
     alert("View row with ID: " + id);
   };
 
-  // ✅ Custom Table Styles
-  const customStyles = {
-    headCells: {
-      style: {
-        fontSize: "14px",
-        backgroundColor: "#f8fafc",
-        color: "black",
-        fontWeight: "bold",
-        whiteSpace: "nowrap",
-      },
-    },
-    cells: {
-      style: { fontSize: "13px" },
-    },
-  };
+
+
 
   // ✅ Columns
   const columns: TableColumn<PayrollType>[] = [
@@ -750,7 +738,14 @@ export default function PayrollTypes() {
             type="text"
             placeholder="Search..."
             onChange={(e) => handleColumnFilter("srno", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px", marginTop: "4px" }}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
           />
         </div>
       ),
@@ -766,7 +761,14 @@ export default function PayrollTypes() {
             type="text"
             placeholder="Search..."
             onChange={(e) => handleColumnFilter("type", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px", marginTop: "4px" }}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
           />
         </div>
       ),
@@ -774,11 +776,10 @@ export default function PayrollTypes() {
       sortable: true,
       cell: (row) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
-            row.type === "Earning"
-              ? "bg-success/10 text-success"
-              : "bg-warning/10 text-warning"
-          }`}
+          className={`px-2 py-1 rounded-full text-xs font-medium ${row.type === "Earning"
+            ? "bg-success/10 text-success"
+            : "bg-warning/10 text-warning"
+            }`}
         >
           {row.type}
         </span>
@@ -792,7 +793,14 @@ export default function PayrollTypes() {
             type="text"
             placeholder="Search..."
             onChange={(e) => handleColumnFilter("name", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px", marginTop: "4px" }}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
           />
         </div>
       ),
@@ -807,7 +815,14 @@ export default function PayrollTypes() {
             type="text"
             placeholder="Search..."
             onChange={(e) => handleColumnFilter("amountType", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px", marginTop: "4px" }}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
           />
         </div>
       ),
@@ -826,7 +841,9 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              marginTop: "4px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
             }}
           />
         </div>
@@ -845,8 +862,8 @@ export default function PayrollTypes() {
           {row.payroll_percentage === null || row.payroll_percentage === undefined
             ? "-"
             : row.amountType === "Fixed"
-            ? row.payroll_percentage
-            : `${row.payroll_percentage}%`}
+              ? row.payroll_percentage
+              : `${row.payroll_percentage}%`}
         </span>
       ),
     },
@@ -862,7 +879,9 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              marginTop: "4px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
             }}
           />
         </div>
@@ -871,9 +890,8 @@ export default function PayrollTypes() {
       sortable: true,
       cell: (row) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
-            row.day_count ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-          }`}
+          className={`px-2 py-1 rounded-full text-xs font-medium ${row.day_count ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+            }`}
         >
           {row.day_count ? "Yes" : "No"}
         </span>
@@ -887,7 +905,15 @@ export default function PayrollTypes() {
             type="text"
             placeholder="Search..."
             onChange={(e) => handleColumnFilter("status", e.target.value)}
-            style={{ width: "100%", padding: "4px", fontSize: "12px", marginTop: "4px" }}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          // style={{ width: "100%", padding: "4px", fontSize: "12px", marginTop: "4px" }}
           />
         </div>
       ),
@@ -895,11 +921,10 @@ export default function PayrollTypes() {
       sortable: true,
       cell: (row) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
-            row.status === "Active"
-              ? "bg-success/10 text-success"
-              : "bg-destructive/10 text-destructive"
-          }`}
+          className={`px-2 py-1 rounded-full text-xs font-medium ${row.status === "Active"
+            ? "bg-success/10 text-success"
+            : "bg-destructive/10 text-destructive"
+            }`}
         >
           {row.status}
         </span>
@@ -912,16 +937,27 @@ export default function PayrollTypes() {
           {/* <Button variant="ghost" size="sm" onClick={() => handleViewClick(row.id)}>
             <Eye className="w-4 h-4" />
           </Button> */}
-          <Button variant="ghost" size="sm" onClick={() => handleEditClick(row.id)}>
-            <Edit className="w-4 h-4" />
+          {/* <Button variant="ghost" size="sm" onClick={() => handleEditClick(row.id)}
+            className="bg-blue-500 hover:bg-blue-700 text-white text-xs rounded">
+          
+            <span className="mdi mdi-pencil"></span>
+          </Button> */}
+          <Button
+            variant="ghost"
+            onClick={() => handleEditClick(row.id)}
+            className="bg-blue-500 hover:bg-blue-700 hover:text-white text-white text-[10px] px-1.5 py-0.5 rounded-sm h-6 min-w-6"
+          >
+            <span className="mdi mdi-pencil text-[12px]"></span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="text-destructive"
+            // className="text-destructive"
             onClick={() => handleDeleteClick(row.id)}
+            className="bg-red-500 hover:bg-red-700 hover:text-white text-white text-[10px] px-1.5 py-0.5 rounded-sm h-6 min-w-6"
           >
-            <Trash2 className="w-4 h-4" />
+            <span className="mdi mdi-delete text-[12px]"></span>
+            {/* <Trash2  /> */}
           </Button>
         </div>
       ),
@@ -931,6 +967,32 @@ export default function PayrollTypes() {
     },
   ];
 
+
+
+  const customStyles: TableStyles = {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
+      },
+    },
+    cells: {
+      style: {
+        fontSize: "13px",
+        textAlign: "left",
+      },
+    },
+    table: {
+      style: {
+        border: "1px solid #ddd",
+        borderRadius: "20px",
+        overflow: "hidden",
+      },
+    },
+  };
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -942,7 +1004,7 @@ export default function PayrollTypes() {
           </p>
         </div>
         <Button
-          className="w-fit bg-primary text-primary-foreground hover:bg-primary/90"
+          className="bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
           onClick={handleAddClick}
         >
           <Plus className="w-4 h-4 mr-2 " />

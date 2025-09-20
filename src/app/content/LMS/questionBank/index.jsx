@@ -820,13 +820,14 @@ export default function QuestionBank({ chapter_id, standard_id ,courseDisplayNam
   useEffect(() => {
     const userData = localStorage.getItem('userData');
     if (userData) {
-      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      const { APP_URL, token, sub_institute_id, org_type, user_id ,user_profile_name} = JSON.parse(userData);
       setSessionData({
         url: APP_URL,
         token,
         subInstituteId: sub_institute_id,
         orgType: org_type,
         userId: user_id,
+        user_profile_name:user_profile_name,
       });
     }
   }, []);

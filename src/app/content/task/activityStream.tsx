@@ -305,8 +305,8 @@ const ActivityStream = () => {
             </Card>
 
             {/* Task Tabs */}
-            <Tabs defaultValue="today" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+            <Tabs defaultValue="today" className="w-full ">
+              <TabsList className="grid w-full grid-cols-3 bg-[#EFF4FF]">
                 <TabsTrigger value="today" className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Today ({filteredTodayTasks.length})
