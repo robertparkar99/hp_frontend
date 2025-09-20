@@ -50,9 +50,11 @@ const ApplyLeave = () => {
 
   const [departments, setDepartments] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [leaveTypes, setLeaveTypes] = useState<any[]>([]); // ✅ NEW state for leave types
   const [submittedData, setSubmittedData] = useState<any[]>([]);
   const [loadingDepts, setLoadingDepts] = useState(false);
   const [loadingEmps, setLoadingEmps] = useState(false);
+  const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(false); // ✅ loading state
 
   // Helpers
   const normalizeList = (payload: any) => {
@@ -99,6 +101,35 @@ const ApplyLeave = () => {
       console.error("Invalid userData in localStorage", err);
     }
   }, []);
+
+  // ✅ Fetch Leave Types
+  useEffect(() => {
+    if (!sessionData.url || !sessionData.subInstituteId || !sessionData.token) return;
+
+    const fetchLeaveTypes = async () => {
+      setLoadingLeaveTypes(true);
+      try {
+        const res = await fetch(
+          `${sessionData.url}/leave-type?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}`
+        );
+        if (!res.ok) throw new Error(`Leave types fetch failed: ${res.status}`);
+        const json = await res.json();
+        setLeaveTypes(json.LeaveTypeLists || []);
+      } catch (err) {
+        console.error("Failed to fetch leave types:", err);
+        toast({
+          title: "Error",
+          description: "Could not load leave types.",
+          variant: "destructive",
+        });
+        setLeaveTypes([]);
+      } finally {
+        setLoadingLeaveTypes(false);
+      }
+    };
+
+    fetchLeaveTypes();
+  }, [sessionData]);
 
   // Fetch departments
   useEffect(() => {
@@ -176,11 +207,9 @@ const ApplyLeave = () => {
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
         const json = await res.json();
 
-        // ✅ use leaveHistory
         const list = json.leaveHistory || [];
         setSubmittedData(list);
 
-        // ✅ store departments map from API
         if (json.departments) {
           setDepartments(
             Object.entries(json.departments).map(([id, name]) => ({
@@ -324,7 +353,7 @@ const ApplyLeave = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-         <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Main row */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
@@ -348,13 +377,19 @@ const ApplyLeave = () => {
                 <Select
                   value={formData.leaveType || undefined}
                   onValueChange={(value) => handleInputChange("leaveType", value)}
+                  disabled={loadingLeaveTypes}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select leave type" />
+                    <SelectValue
+                      placeholder={loadingLeaveTypes ? "Loading..." : "Select leave type"}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Casual Leave</SelectItem>
-                    <SelectItem value="2">On Duty Leave</SelectItem>
+                    {leaveTypes.map((lt) => (
+                      <SelectItem key={lt.id} value={lt.id.toString()}>
+                        {lt.leave_type}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -503,44 +538,47 @@ const ApplyLeave = () => {
       </Card>
 
       {/* Submitted Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Submitted Leave Applications</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Leave Type</TableHead>
-                  <TableHead>Day Type</TableHead>
-                  <TableHead>From Date</TableHead>
-                  <TableHead>To Date</TableHead>
-                  <TableHead>Slot</TableHead>
-                  <TableHead>Comment</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {submittedData.map((row, i) => {
-                  const deptName = getDeptNameById(row.department_id);
-                  return (
-                    <TableRow key={i}>
-                      <TableCell>{deptName}</TableCell>
-                      <TableCell>{row.leave_type_name || row.employee}</TableCell>
-                      <TableCell>{row.leave_type_id || row.leaveType}</TableCell>
-                      <TableCell>{row.day_type || row.dayType}</TableCell>
-                      <TableCell>{row.from_date || row.fromDate || row.date}</TableCell>
-                      <TableCell>{row.to_date || row.toDate || row.date}</TableCell>
-                      <TableCell>{row.slot}</TableCell>
-                      <TableCell>{row.comment}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Submitted Leave Applications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Department</TableHead>
+                <TableHead>Employee</TableHead>
+                <TableHead>Leave Type</TableHead>
+                <TableHead>Day Type</TableHead>
+                <TableHead>From Date</TableHead>
+                <TableHead>To Date</TableHead>
+                <TableHead>Slot</TableHead>
+                <TableHead>Comment</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {submittedData.map((row, i) => {
+                const deptName = getDeptNameById(row.department_id);
+                const leaveTypeName =
+                  leaveTypes.find((lt) => lt.id.toString() === row.leave_type_id?.toString())
+                    ?.leave_type || row.leaveType;
+                return (
+                  <TableRow key={i}>
+                    <TableCell>{deptName}</TableCell>
+                    <TableCell>{row.leave_type_name || row.employee}</TableCell>
+                    <TableCell>{leaveTypeName}</TableCell>
+                    <TableCell>{row.day_type || row.dayType}</TableCell>
+                    <TableCell>{row.from_date || row.fromDate || row.date}</TableCell>
+                    <TableCell>{row.to_date || row.toDate || row.date}</TableCell>
+                    <TableCell>{row.slot}</TableCell>
+                    <TableCell>{row.comment}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
