@@ -696,24 +696,24 @@ const PayrollTypeDialog = ({
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
+          <div className="flex justify-center space-x-3 pt-4">
+            {/* <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
               Cancel
-            </Button>
+            </Button> */}
             <Button
               onClick={handleSave}
               disabled={loading}
-              className="px-4 py-2"
+              className="px-4 py-2 px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
             >
               {loading
                 ? "Saving..."
                 : editingPayroll
-                  ? "Update Payroll Type"
-                  : "Add Payroll Type"}
+                  ? "Update "
+                  : "Submit"}
             </Button>
           </div>
         </div>
