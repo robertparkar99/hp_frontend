@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import { FiEdit } from "react-icons/fi";
-import { Trash2, Funnel, LayoutGrid, Table } from "lucide-react";
+import { Trash2, Funnel, Hexagon, Table } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -224,16 +224,19 @@ export default function Page() {
         {/* View Toggle */}
         <div className="flex gap-2 px-2">
           <Button
-            variant={viewMode === "hexagon" ? "default" : "outline"}
+            className={viewMode === "hexagon" ? "bg-blue-200 text-black" : "bg-gray-100"}
+            variant="outline"
             onClick={() => setViewMode("hexagon")}
           >
-            <LayoutGrid className="w-4 h-4 mr-2" /> Hexagon
+            <Hexagon className="w-6 h-6" />
           </Button>
+
           <Button
-            variant={viewMode === "table" ? "default" : "outline"}
+            className={viewMode === "table" ? "bg-blue-200 text-black" : "bg-gray-100"}
+            variant="outline"
             onClick={() => setViewMode("table")}
           >
-            <Table className="w-4 h-4 mr-2" /> Table
+            <Table className="w-4 h-4" />
           </Button>
         </div>
 
@@ -445,47 +448,47 @@ export default function Page() {
             </div>
           ) : (
             // 📋 Table View with rounded corners
-<div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-  <table className="min-w-full">
-    <thead>
-      <tr className="bg-gray-100 text-left">
-        <th className="p-3 border-b">Title</th>
-        <th className="p-3 border-b">Description</th>
-        <th className="p-3 border-b">Department</th>
-        <th className="p-3 border-b">Category</th>
-        <th className="p-3 border-b">Sub Category</th>
-        <th className="p-3 border-b">Proficiency</th>
-        <th className="p-3 border-b">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {filteredSkills.map((skill) => (
-        <tr key={skill.id} className="hover:bg-gray-50">
-          <td className="p-3 border-b">{skill.title}</td>
-          <td className="p-3 border-b">{skill.description}</td>
-          <td className="p-3 border-b">{skill.department}</td>
-          <td className="p-3 border-b">{skill.category}</td>
-          <td className="p-3 border-b">{skill.sub_category}</td>
-          <td className="p-3 border-b">{skill.proficiency_level}</td>
-          <td className="p-3 border-b gap-4">
-            <button
-              className="text-gray-500"
-              onClick={() => handleEdit(skill)}
-            >
-              <FiEdit className="w-4 h-4" />
-            </button>
-            <button
-              className="text-gray-500"
-              onClick={() => handleDelete(skill.id)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+            <div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="bg-blue-200 text-left">
+                    <th className="p-3 border-b">Title</th>
+                    <th className="p-3 border-b">Description</th>
+                    <th className="p-3 border-b">Department</th>
+                    <th className="p-3 border-b">Category</th>
+                    <th className="p-3 border-b">Sub Category</th>
+                    <th className="p-3 border-b">Proficiency</th>
+                    <th className="p-3 border-b">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSkills.map((skill) => (
+                    <tr key={skill.id} className="hover:bg-gray-50">
+                      <td className="p-3 border-b">{skill.title}</td>
+                      <td className="p-3 border-b">{skill.description}</td>
+                      <td className="p-3 border-b">{skill.department}</td>
+                      <td className="p-3 border-b">{skill.category}</td>
+                      <td className="p-3 border-b">{skill.sub_category}</td>
+                      <td className="p-3 border-b">{skill.proficiency_level}</td>
+                      <td className="p-3 border-b gap-4">
+                        <button
+                          className="text-gray-500"
+                          onClick={() => handleEdit(skill)}
+                        >
+                          <FiEdit className="w-4 h-4" />
+                        </button>
+                        <button
+                          className="text-gray-500"
+                          onClick={() => handleDelete(skill.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
           )}
         </section>
