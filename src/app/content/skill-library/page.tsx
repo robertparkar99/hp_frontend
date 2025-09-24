@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import { FiEdit } from "react-icons/fi";
-import { Trash2, Funnel } from "lucide-react";
+import { Trash2, Funnel, LayoutGrid, Table } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -69,6 +69,9 @@ export default function Page() {
   });
 
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // 🔑 New State for View Mode
+  const [viewMode, setViewMode] = useState<"hexagon" | "table">("hexagon");
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -216,8 +219,25 @@ export default function Page() {
 
   return (
     <>
-      {/* Top bar with Funnel Popover */}
-      <div className="p-4 flex justify-end mb-6">
+      {/* Top bar with Funnel + View Toggle */}
+      <div className="p-4 flex justify-between items-center mb-6">
+        {/* View Toggle */}
+        <div className="flex gap-2 px-2">
+          <Button
+            variant={viewMode === "hexagon" ? "default" : "outline"}
+            onClick={() => setViewMode("hexagon")}
+          >
+            <LayoutGrid className="w-4 h-4 mr-2" /> Hexagon
+          </Button>
+          <Button
+            variant={viewMode === "table" ? "default" : "outline"}
+            onClick={() => setViewMode("table")}
+          >
+            <Table className="w-4 h-4 mr-2" /> Table
+          </Button>
+        </div>
+
+        {/* Filter Button */}
         <Popover>
           <PopoverTrigger asChild>
             <button className="p-3 rounded-lg hover:bg-gray-100">
@@ -361,18 +381,19 @@ export default function Page() {
         </Popover>
       </div>
 
-      {/* Honeycomb Section with Loader */}
+      {/* Content Section */}
       <div className="flex gap-6 flex-col">
         <section className="w-full h-screen overflow-y-auto scrollbar-hide flex items-start justify-center">
           {loading ? (
             <div className="flex justify-start items-center h-screen">
               <Atom color="#525ceaff" size="medium" text="" textColor="" />
             </div>
-          ) : hexagonItems.length === 0 ? (
+          ) : filteredSkills.length === 0 ? (
             <div className="flex justify-center items-center h-full">
               <p className="text-gray-500 text-lg font-medium">No skills found</p>
             </div>
-          ) : (
+          ) : viewMode === "hexagon" ? (
+            // 🔷 Hexagon View
             <div className="honeycomb-container-skill flex flex-wrap gap-6 justify-center pb-4">
               {hexagonItems.map((item, index) => (
                 <div
@@ -422,6 +443,50 @@ export default function Page() {
                 </div>
               ))}
             </div>
+          ) : (
+            // 📋 Table View with rounded corners
+<div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+  <table className="min-w-full">
+    <thead>
+      <tr className="bg-gray-100 text-left">
+        <th className="p-3 border-b">Title</th>
+        <th className="p-3 border-b">Description</th>
+        <th className="p-3 border-b">Department</th>
+        <th className="p-3 border-b">Category</th>
+        <th className="p-3 border-b">Sub Category</th>
+        <th className="p-3 border-b">Proficiency</th>
+        <th className="p-3 border-b">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {filteredSkills.map((skill) => (
+        <tr key={skill.id} className="hover:bg-gray-50">
+          <td className="p-3 border-b">{skill.title}</td>
+          <td className="p-3 border-b">{skill.description}</td>
+          <td className="p-3 border-b">{skill.department}</td>
+          <td className="p-3 border-b">{skill.category}</td>
+          <td className="p-3 border-b">{skill.sub_category}</td>
+          <td className="p-3 border-b">{skill.proficiency_level}</td>
+          <td className="p-3 border-b gap-4">
+            <button
+              className="text-gray-500"
+              onClick={() => handleEdit(skill)}
+            >
+              <FiEdit className="w-4 h-4" />
+            </button>
+            <button
+              className="text-gray-500"
+              onClick={() => handleDelete(skill.id)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
           )}
         </section>
 
