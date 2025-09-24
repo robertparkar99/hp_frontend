@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Funnel, LayoutGrid, Table } from "lucide-react";
+import { Funnel, LayoutGrid, Table, Circle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -118,12 +118,12 @@ const Honeycomb: React.FC = () => {
 
   const filteredSubCategories = category
     ? Array.from(
-        new Set(
-          data
-            .filter((item) => item.classification_category === category)
-            .map((item) => item.classification_sub_category)
-        )
+      new Set(
+        data
+          .filter((item) => item.classification_category === category)
+          .map((item) => item.classification_sub_category)
       )
+    )
     : [];
 
   const uniqueProficiency = Array.from(
@@ -144,18 +144,22 @@ const Honeycomb: React.FC = () => {
         {/* View Toggle */}
         <div className="flex gap-2">
           <Button
-            variant={viewMode === "circle" ? "default" : "outline"}
+            variant="outline"
+            className={viewMode === "circle" ? "bg-blue-200 text-black" : "bg-white"}
             onClick={() => setViewMode("circle")}
           >
-            <LayoutGrid className="w-4 h-4 mr-2" /> Round View
+            <Circle className="w-4 h-4" />
           </Button>
+
           <Button
-            variant={viewMode === "table" ? "default" : "outline"}
+            variant="outline"
+            className={viewMode === "table" ? "bg-blue-200 text-black" : "bg-white"}
             onClick={() => setViewMode("table")}
           >
-            <Table className="w-4 h-4 mr-2" /> Table View
+            <Table className="w-4 h-4" />
           </Button>
         </div>
+
 
         {/* Filters */}
         <Popover>
@@ -276,7 +280,7 @@ const Honeycomb: React.FC = () => {
           <div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
             <table className="min-w-full">
               <thead>
-                <tr className="bg-gray-100 text-left">
+                <tr className="bg-blue-200 text-left">
                   <th className="p-3 border-b">Item</th>
                   <th className="p-3 border-b">Category</th>
                   <th className="p-3 border-b">Sub Category</th>
