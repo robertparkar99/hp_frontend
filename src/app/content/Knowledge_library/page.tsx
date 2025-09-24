@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Funnel } from "lucide-react";
+import { Funnel, LayoutGrid, Table } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Atom } from "react-loading-indicators";
+import { Button } from "@/components/ui/button";
 
 interface SkillItem {
   id: number;
@@ -39,6 +40,9 @@ const Honeycomb: React.FC = () => {
   const [category, setCategory] = useState<string>("");
   const [subCategory, setSubCategory] = useState<string>("");
   const [proficiency, setProficiency] = useState<string>("");
+
+  // 🔑 View toggle state
+  const [viewMode, setViewMode] = useState<"circle" | "table">("circle");
 
   // Circle layout
   const size = 160;
@@ -135,11 +139,28 @@ const Honeycomb: React.FC = () => {
 
   return (
     <>
-      {/* 🔽 Funnel + Popover Filters Section */}
-      <div className="flex p-4 justify-end mb-6">
+      {/* 🔽 Top bar: Toggle + Filters */}
+      <div className="flex p-4 justify-between items-center mb-6">
+        {/* View Toggle */}
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "circle" ? "default" : "outline"}
+            onClick={() => setViewMode("circle")}
+          >
+            <LayoutGrid className="w-4 h-4 mr-2" /> Round View
+          </Button>
+          <Button
+            variant={viewMode === "table" ? "default" : "outline"}
+            onClick={() => setViewMode("table")}
+          >
+            <Table className="w-4 h-4 mr-2" /> Table View
+          </Button>
+        </div>
+
+        {/* Filters */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="p-3 ">
+            <button className="p-3 rounded-lg hover:bg-gray-100">
               <Funnel className="w-5 h-5" />
             </button>
           </PopoverTrigger>
@@ -214,16 +235,17 @@ const Honeycomb: React.FC = () => {
         </Popover>
       </div>
 
-      {/* 🔽 Circles Section */}
-      <div className="relative w-full flex pl-40 justify-center items-center">
+      {/* 🔽 Content */}
+      <div className="w-full flex justify-center">
         {isLoading ? (
-          <div className="flex justify-center items-center h-85 pr-40">
+          <div className="flex justify-center items-center h-80">
             <Atom color="#525ceaff" size="medium" text="" textColor="" />
           </div>
         ) : filteredData.length === 0 ? (
           <p className="text-gray-500 text-sm">No skills found</p>
-        ) : (
-          <div className="relative w-full h-full">
+        ) : viewMode === "circle" ? (
+          // Round / Circle View
+          <div className="relative flex justify-center ml-50 mr-50 w-full h-full pl-40">
             {filteredData.map((item, index) => {
               const row = Math.floor(index / 4);
               const col = index % 4;
@@ -248,6 +270,32 @@ const Honeycomb: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+        ) : (
+          // 📋 Table View
+          <div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-gray-100 text-left">
+                  <th className="p-3 border-b">Item</th>
+                  <th className="p-3 border-b">Category</th>
+                  <th className="p-3 border-b">Sub Category</th>
+                  <th className="p-3 border-b">Proficiency</th>
+                  <th className="p-3 border-b">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="p-3 border-b">{item.classification_item}</td>
+                    <td className="p-3 border-b">{item.classification_category}</td>
+                    <td className="p-3 border-b">{item.classification_sub_category}</td>
+                    <td className="p-3 border-b">{item.proficiency_level}</td>
+                    <td className="p-3 border-b">{item.proficiency_description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
