@@ -105,7 +105,7 @@ export function OrganizationTree({ departments }: OrganizationTreeProps) {
   const treeData = buildTree();
 
   return (
-    <Card>
+    <Card className="h-100 overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />

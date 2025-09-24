@@ -444,11 +444,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
 
         {/* Footer */}
         <div className="p-6 border-t border-border flex justify-end space-x-3 mt-[-10px]">
-          <Button variant="outline" onClick={onClose}>
+          {/* <Button variant="outline" onClick={onClose}>
             Cancel
-          </Button>
-          <Button className='bg-black' onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save"}
+          </Button> */}
+          <Button onClick={handleSave} disabled={saving} className="mt-4 mx-auto text-sm px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+            {saving ? "Saving..." : "Submit"}
           </Button>
         </div>
       </div>

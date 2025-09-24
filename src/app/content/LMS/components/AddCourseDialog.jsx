@@ -387,10 +387,10 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
 
           <Button
             onClick={handleAddCourse}
-            className="mt-4 mx-auto px-4 py-2 text-sm"
+            className="mt-4 mx-auto px-4 py-2 text-sm rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
             disabled={loading || loadingStandards}
           >
-            {loading ? "Processing..." : course ? "Update" : "Add"} Course
+            {loading ? "Processing..." : course ? "Update" : "Submit"} 
           </Button>
         </div>
       </DialogContent>

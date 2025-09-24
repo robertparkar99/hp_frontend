@@ -343,10 +343,10 @@ function App() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSearch}
-              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white bg-[#000000] border border-transparent rounded-lg  mb-28"
+              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white rounded-lg  mb-28 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
             >
-              <Search className="w-4 h-4" />
-              <span>Search</span>
+              <Search className="w-4 h-4 text-black" />
+              <span className="text-black">Search</span>
             </motion.button>
 
             {/* Add Button */}
@@ -354,9 +354,9 @@ function App() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowForm(true)}
-              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg  mb-28"
+              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium border border-transparent rounded-lg  mb-28 rounded-lg bg-gray-100 "
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 " />
               <span>Add</span>
             </motion.button>
           </div>

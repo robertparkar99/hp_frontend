@@ -586,9 +586,9 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         </div>
       ))}
 
-      <div className="mt-6">
-        <Button type="submit" disabled={loading}>
-          {loading ? 'Saving...' : 'Save Organization Info'}
+      <div className="mt-6 col-span-1 md:col-span-3 flex justify-center">
+        <Button id="submit" type="submit" disabled={loading} className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+          {loading ? 'Saving...' : 'Submit'}
         </Button>
       </div>
     </form>

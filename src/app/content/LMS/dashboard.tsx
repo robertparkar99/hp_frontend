@@ -643,11 +643,12 @@ const LearningCatalog: React.FC = () => {
                     sessionData.user_profile_name &&
                     ["ADMIN", "HR"].includes(sessionData.user_profile_name.toUpperCase()) ? (
                     <Button
+                  
                       onClick={() => {
                         setCourseToEdit(null)
                         setIsAddDialogOpen(true)
                       }}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
                     >
                       <Icon name="Plus" size={16} className="mr-2" />
                       Add Course
