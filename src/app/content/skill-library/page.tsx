@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from "react";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
+import AddDialog from "@/components/skillComponent/addDialouge"; // ✅ Added
 import { FiEdit } from "react-icons/fi";
-import { Trash2, Funnel, Hexagon, Table } from "lucide-react";
+import { Trash2, Funnel, Hexagon, Table, Plus } from "lucide-react"; // ✅ Added Plus
 import {
   Select,
   SelectContent,
@@ -259,13 +260,6 @@ export default function Page() {
       name: (
         <div className="flex flex-col">
           <span>Title</span>
-          {/* <input
-            type="text"
-            placeholder="Search..."
-            className=" px-2 py-1 text-sm"
-            value={filters.title}
-            onChange={(e) => setFilters({ ...filters, title: e.target.value })}
-          /> */}
           <input
             type="text"
             placeholder="Search..."
@@ -276,6 +270,7 @@ export default function Page() {
       ),
       selector: (row) => row.title,
       sortable: true,
+      width: "170px"
     },
     {
       name: (
@@ -306,6 +301,7 @@ export default function Page() {
       ),
       selector: (row) => row.department || "-",
       sortable: true,
+      width: "150px"
     },
     {
       name: (
@@ -321,6 +317,7 @@ export default function Page() {
       ),
       selector: (row) => row.category || "-",
       sortable: true,
+      width: "160px"
     },
     {
       name: (
@@ -336,6 +333,7 @@ export default function Page() {
       ),
       selector: (row) => row.sub_category || "-",
       sortable: true,
+      width: "160px"
     },
     {
       name: (
@@ -350,20 +348,28 @@ export default function Page() {
         </div>
       ),
       selector: (row) => row.proficiency_level || "-",
-      sortable: true,
+      sortable: true, 
+      width: "120px"
     },
     {
       name: "Actions",
       cell: (row) => (
-        <div className="flex gap-2">
-          <button className="text-gray-500" onClick={() => handleEdit(row)}>
-            <FiEdit className="w-4 h-4" />
+        <div className="flex space-x-2">
+          <button
+            onClick={() => handleEdit(row)}
+            className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
+          >
+            <span className="mdi mdi-pencil"></span>
           </button>
-          <button className="text-gray-500" onClick={() => handleDelete(row.id)}>
-            <Trash2 className="w-4 h-4" />
+          <button
+            onClick={() => handleDelete(row.id)}
+            className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
+          >
+            <span className="mdi mdi-delete"></span>
           </button>
         </div>
       ),
+      width: "130px"
     },
   ];
 
@@ -377,12 +383,166 @@ export default function Page() {
 
   return (
     <>
-      {/* Top bar with Funnel + View Toggle */}
-      <div className="p-4 flex justify-between items-center mb-6">
+      {/* Top bar with Add + Funnel + View Toggle */}
+      <div className="p-4 flex justify-end items-end mb-6">
+
+        {/* Right side controls (Add + Filter) */}
+        <div className="flex gap-2 items-center">
+          {/* ➕ Add Button */}
+          <button
+            className="p-2 rounded-lg hover:bg-gray-100"
+            onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+
+          {/* Filter Button */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 rounded-lg hover:bg-gray-100">
+                <Funnel className="w-5 h-5" />
+              </button>
+            </PopoverTrigger>
+
+            <PopoverContent className="w-[300px] p-4 space-y-4" align="end">
+              <h3 className="text-lg font-semibold mb-2">Filter Skills</h3>
+
+              {/* Department Filter */}
+              <Select
+                value={selectedDepartment || "all"}
+                onValueChange={(value) => {
+                  if (value === "all") {
+                    setSelectedDepartment(undefined);
+                    setSelectedCategory(undefined);
+                    setSelectedSubcategory(undefined);
+                    setSelectedProficiency(undefined);
+                  } else {
+                    setSelectedDepartment(value);
+                    setSelectedCategory(undefined);
+                    setSelectedSubcategory(undefined);
+                    setSelectedProficiency(undefined);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {departmentOptions.map((dept, idx) => (
+                    <SelectItem key={idx} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Category Filter */}
+              <Select
+                value={selectedCategory || "all"}
+                onValueChange={(value) => {
+                  if (value === "all") {
+                    setSelectedCategory(undefined);
+                    setSelectedSubcategory(undefined);
+                  } else {
+                    setSelectedCategory(value);
+                    setSelectedSubcategory(undefined);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categoryOptions.map((cat, idx) => (
+                    <SelectItem key={idx} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Subcategory Filter */}
+              <Select
+                value={selectedSubcategory || "all"}
+                onValueChange={(value) => {
+                  if (value === "all") {
+                    setSelectedSubcategory(undefined);
+                  } else {
+                    setSelectedSubcategory(value);
+                  }
+                }}
+                disabled={!selectedCategory}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by Sub Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sub Categories</SelectItem>
+                  {selectedCategory &&
+                    Array.from(
+                      new Set(
+                        userSkills
+                          .filter((s) => s.category === selectedCategory)
+                          .map((s) => s.sub_category)
+                      )
+                    )
+                      .filter((sub): sub is string => typeof sub === "string")
+                      .sort((a, b) => a.localeCompare(b))
+                      .map((sub, idx) => (
+                        <SelectItem key={idx} value={sub}>
+                          {sub}
+                        </SelectItem>
+                      ))}
+                </SelectContent>
+              </Select>
+
+              {/* Proficiency Filter */}
+              <Select
+                value={selectedProficiency || "all"}
+                onValueChange={(value) => {
+                  if (value === "all") {
+                    setSelectedProficiency(undefined);
+                  } else {
+                    setSelectedProficiency(value);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by Proficiency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Proficiency Levels</SelectItem>
+                  {proficiencyOptions.map((lvl, idx) => (
+                    <SelectItem key={idx} value={lvl}>
+                      {lvl}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Buttons */}
+              <div className="flex justify-between pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedDepartment(undefined);
+                    setSelectedCategory(undefined);
+                    setSelectedSubcategory(undefined);
+                    setSelectedProficiency(undefined);
+                  }}
+                >
+                  Clear
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
         {/* View Toggle */}
-        <div className="flex gap-2 px-2">
+        <div className="flex gap-1 px-2">
           <Button
-            className={viewMode === "hexagon" ? "bg-blue-200 text-black" : "bg-gray-100"}
+            className={`${viewMode === "hexagon" ? "bg-blue-200 text-black" : "bg-gray-100"} h-9 w-6`}
             variant="outline"
             onClick={() => setViewMode("hexagon")}
           >
@@ -390,7 +550,7 @@ export default function Page() {
           </Button>
 
           <Button
-            className={viewMode === "table" ? "bg-blue-200 text-black" : "bg-gray-100"}
+            className={`${viewMode === "table" ? "bg-blue-200 text-black" : "bg-gray-100"} h-9 w-6`}
             variant="outline"
             onClick={() => setViewMode("table")}
           >
@@ -398,148 +558,6 @@ export default function Page() {
           </Button>
         </div>
 
-        {/* Filter Button */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button className="p-3 rounded-lg hover:bg-gray-100">
-              <Funnel className="w-5 h-5" />
-            </button>
-          </PopoverTrigger>
-
-          <PopoverContent className="w-[300px] p-4 space-y-4" align="end">
-            <h3 className="text-lg font-semibold mb-2">Filter Skills</h3>
-
-            {/* Department Filter */}
-            <Select
-              value={selectedDepartment || "all"}
-              onValueChange={(value) => {
-                if (value === "all") {
-                  setSelectedDepartment(undefined);
-                  setSelectedCategory(undefined);
-                  setSelectedSubcategory(undefined);
-                  setSelectedProficiency(undefined);
-                } else {
-                  setSelectedDepartment(value);
-                  setSelectedCategory(undefined);
-                  setSelectedSubcategory(undefined);
-                  setSelectedProficiency(undefined);
-                }
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Filter by Department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
-                {departmentOptions.map((dept, idx) => (
-                  <SelectItem key={idx} value={dept}>
-                    {dept}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Category Filter */}
-            <Select
-              value={selectedCategory || "all"}
-              onValueChange={(value) => {
-                if (value === "all") {
-                  setSelectedCategory(undefined);
-                  setSelectedSubcategory(undefined);
-                } else {
-                  setSelectedCategory(value);
-                  setSelectedSubcategory(undefined);
-                }
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Filter by Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categoryOptions.map((cat, idx) => (
-                  <SelectItem key={idx} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Subcategory Filter */}
-            <Select
-              value={selectedSubcategory || "all"}
-              onValueChange={(value) => {
-                if (value === "all") {
-                  setSelectedSubcategory(undefined);
-                } else {
-                  setSelectedSubcategory(value);
-                }
-              }}
-              disabled={!selectedCategory}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Filter by Sub Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sub Categories</SelectItem>
-                {selectedCategory &&
-                  Array.from(
-                    new Set(
-                      userSkills
-                        .filter((s) => s.category === selectedCategory)
-                        .map((s) => s.sub_category)
-                    )
-                  )
-                    .filter((sub): sub is string => typeof sub === "string")
-                    .sort((a, b) => a.localeCompare(b))
-                    .map((sub, idx) => (
-                      <SelectItem key={idx} value={sub}>
-                        {sub}
-                      </SelectItem>
-                    ))}
-              </SelectContent>
-            </Select>
-
-            {/* Proficiency Filter */}
-            <Select
-              value={selectedProficiency || "all"}
-              onValueChange={(value) => {
-                if (value === "all") {
-                  setSelectedProficiency(undefined);
-                } else {
-                  setSelectedProficiency(value);
-                }
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Filter by Proficiency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Proficiency Levels</SelectItem>
-                {proficiencyOptions.map((lvl, idx) => (
-                  <SelectItem key={idx} value={lvl}>
-                    {lvl}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Buttons */}
-            <div className="flex justify-between pt-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedDepartment(undefined);
-                  setSelectedCategory(undefined);
-                  setSelectedSubcategory(undefined);
-                  setSelectedProficiency(undefined);
-                }}
-              >
-                Clear
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
       </div>
 
       {/* Content Section */}
@@ -644,6 +662,18 @@ export default function Page() {
             }}
             onSuccess={() => {
               setDialogOpen({ ...dialogOpen, edit: false });
+              setRefreshKey((prev) => prev + 1);
+            }}
+          />
+        )}
+
+        {/* Add Dialog */}
+        {dialogOpen.add && (
+          <AddDialog
+            skillId={0}
+            onClose={() => setDialogOpen({ ...dialogOpen, add: false })}
+            onSuccess={() => {
+              setDialogOpen({ ...dialogOpen, add: false });
               setRefreshKey((prev) => prev + 1);
             }}
           />
