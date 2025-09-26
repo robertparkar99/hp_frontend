@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Funnel, LayoutGrid, Table, Circle } from "lucide-react";
+import { Funnel, Circle, Table as TableIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -12,6 +12,7 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Atom } from "react-loading-indicators";
 import { Button } from "@/components/ui/button";
+import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 
 interface SkillItem {
   id: number;
@@ -40,6 +41,15 @@ const Honeycomb: React.FC = () => {
   const [category, setCategory] = useState<string>("");
   const [subCategory, setSubCategory] = useState<string>("");
   const [proficiency, setProficiency] = useState<string>("");
+
+  // Column filter state
+  const [filters, setFilters] = useState({
+    item: "",
+    category: "",
+    subCategory: "",
+    proficiency: "",
+    description: "",
+  });
 
   // 🔑 View toggle state
   const [viewMode, setViewMode] = useState<"circle" | "table">("circle");
@@ -92,7 +102,7 @@ const Honeycomb: React.FC = () => {
     fetchData();
   }, [sessionData]);
 
-  // Apply filters
+  // Apply dropdown filters
   useEffect(() => {
     let temp = data;
 
@@ -110,6 +120,39 @@ const Honeycomb: React.FC = () => {
 
     setFilteredData(temp);
   }, [category, subCategory, proficiency, data]);
+
+  const customStyles: TableStyles = {
+      headCells: {
+        style: {
+          fontSize: "14px",
+          backgroundColor: "#D1E7FF",
+          color: "black",
+          whiteSpace: "nowrap",
+          textAlign: "left",
+        },
+      },
+      cells: {
+        style: {
+          fontSize: "13px",
+          textAlign: "left",
+        },
+      },
+      table: {
+        style: {
+          borderRadius: "20px",
+          overflow: "hidden",
+        },
+      },
+    };
+
+  // Apply column filters
+  const columnFilteredData = filteredData.filter((item) =>
+    item.classification_item.toLowerCase().includes(filters.item.toLowerCase()) &&
+    item.classification_category.toLowerCase().includes(filters.category.toLowerCase()) &&
+    item.classification_sub_category.toLowerCase().includes(filters.subCategory.toLowerCase()) &&
+    item.proficiency_level.toLowerCase().includes(filters.proficiency.toLowerCase()) &&
+    item.proficiency_description.toLowerCase().includes(filters.description.toLowerCase())
+  );
 
   // Unique options
   const uniqueCategories = Array.from(
@@ -137,6 +180,85 @@ const Honeycomb: React.FC = () => {
     return a.localeCompare(b);
   });
 
+  // DataTable columns with search inputs
+  const columns: TableColumn<SkillItem>[] = [
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Item</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, item: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_item,
+      sortable: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Category</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_category,
+      sortable: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Sub Category</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, subCategory: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_sub_category,
+      sortable: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Proficiency</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, proficiency: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.proficiency_level,
+      sortable: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Description</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, description: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.proficiency_description,
+      sortable: true,
+    },
+  ];
+
   return (
     <>
       {/* 🔽 Top bar: Toggle + Filters */}
@@ -156,10 +278,9 @@ const Honeycomb: React.FC = () => {
             className={viewMode === "table" ? "bg-blue-200 text-black" : "bg-white"}
             onClick={() => setViewMode("table")}
           >
-            <Table className="w-4 h-4" />
+            <TableIcon className="w-4 h-4" />
           </Button>
         </div>
-
 
         {/* Filters */}
         <Popover>
@@ -245,12 +366,12 @@ const Honeycomb: React.FC = () => {
           <div className="flex justify-center items-center h-80">
             <Atom color="#525ceaff" size="medium" text="" textColor="" />
           </div>
-        ) : filteredData.length === 0 ? (
+        ) : columnFilteredData.length === 0 ? (
           <p className="text-gray-500 text-sm">No skills found</p>
         ) : viewMode === "circle" ? (
           // Round / Circle View
           <div className="relative flex justify-center ml-50 mr-50 w-full h-full pl-40">
-            {filteredData.map((item, index) => {
+            {columnFilteredData.map((item, index) => {
               const row = Math.floor(index / 4);
               const col = index % 4;
 
@@ -276,30 +397,18 @@ const Honeycomb: React.FC = () => {
             })}
           </div>
         ) : (
-          // 📋 Table View
-          <div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-            <table className="min-w-full">
-              <thead>
-                <tr className="bg-blue-200 text-left">
-                  <th className="p-3 border-b">Item</th>
-                  <th className="p-3 border-b">Category</th>
-                  <th className="p-3 border-b">Sub Category</th>
-                  <th className="p-3 border-b">Proficiency</th>
-                  <th className="p-3 border-b">Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredData.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="p-3 border-b">{item.classification_item}</td>
-                    <td className="p-3 border-b">{item.classification_category}</td>
-                    <td className="p-3 border-b">{item.classification_sub_category}</td>
-                    <td className="p-3 border-b">{item.proficiency_level}</td>
-                    <td className="p-3 border-b">{item.proficiency_description}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          // 📋 DataTable View with filters
+          <div className="w-full">
+            <DataTable
+              columns={columns}
+              data={columnFilteredData}
+              customStyles={customStyles}
+              pagination
+              highlightOnHover
+              striped
+              responsive
+              persistTableHead
+            />
           </div>
         )}
       </div>
