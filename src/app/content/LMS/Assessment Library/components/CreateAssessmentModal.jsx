@@ -317,7 +317,8 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
             </div>
 
             <div className="flex items-center space-x-2">
-              <Checkbox checked={formData.enableTimeLimit} onCheckedChange={checked => handleChange('enableTimeLimit', checked)} />
+              <Checkbox checked={formData.enableTimeLimit} onCheckedChange={checked => handleChange('enableTimeLimit', checked)} className={`border-gray-300 rounded-sm 
+    ${formData.enableTimeLimit ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`} />
               <span>Enable Time Limit</span>
             </div>
           </div>
@@ -343,19 +344,28 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
           {/* Checkboxes */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="flex items-center space-x-2">
-              <Checkbox checked={formData.shuffleQuestions} onCheckedChange={checked => handleChange('shuffleQuestions', checked)} />
+              {/* <Checkbox checked={formData.shuffleQuestions} onCheckedChange={checked => handleChange('shuffleQuestions', checked)} /> */}
+              <Checkbox
+                checked={formData.shuffleQuestions}
+                onCheckedChange={(checked) => handleChange("shuffleQuestions", checked)}
+                className={`border-gray-300 rounded-sm 
+    ${formData.shuffleQuestions ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`}
+              />  
               <span>Shuffle Question</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox checked={formData.showFeedback} onCheckedChange={checked => handleChange('showFeedback', checked)} />
+              <Checkbox checked={formData.showFeedback} onCheckedChange={checked => handleChange('showFeedback', checked)}  className={`border-gray-300 rounded-sm 
+    ${formData.showFeedback ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`}/>
               <span>Show Feedback</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox checked={formData.show} onCheckedChange={checked => handleChange('show', checked)} />
+              <Checkbox checked={formData.show} onCheckedChange={checked => handleChange('show', checked)}  className={`border-gray-300 rounded-sm 
+    ${formData.show ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`}/>
               <span>Show</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox checked={formData.showRightAnswerAfterResult} onCheckedChange={checked => handleChange('showRightAnswerAfterResult', checked)} />
+              <Checkbox checked={formData.showRightAnswerAfterResult} onCheckedChange={checked => handleChange('showRightAnswerAfterResult', checked)}  className={`border-gray-300 rounded-sm 
+    ${formData.showRightAnswerAfterResult ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`}/>
               <span>Show Right Answer after Result</span>
             </div>
           </div>

@@ -505,7 +505,7 @@ const HolidayMaster = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       {/* Modern Gradient Header */}
-      <div className="bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground">
+      <div className="bg-[#6fb2f2] text-primary-foreground mt-[-17] mr-[-10] ml-[-10]">
         <div className="px-6 py-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="space-y-3">
@@ -565,7 +565,7 @@ const HolidayMaster = () => {
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
-                  <Calendar className="h-5 w-5 text-primary" />
+                  <Calendar className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Total Holidays</p>

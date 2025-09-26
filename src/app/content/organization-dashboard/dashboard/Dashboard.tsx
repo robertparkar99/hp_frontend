@@ -140,7 +140,7 @@ export function Dashboard() {
         <main className="flex-1 p-6 space-y-6 overflow-x-hidden">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-2xl font-bold text-foreground">
               Organization Dashboard
             </h1>
           </div>
@@ -191,8 +191,8 @@ export function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="text-primary" />
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Activity className="h-5 w-5" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
@@ -203,20 +203,20 @@ export function Dashboard() {
                   className="h-20 flex-col gap-2"
                   onClick={() => setActiveView("manageUsers")}
                 >
-                  <Users className="h-6 w-6 text-primary" />
+                  <Users className="h-6 w-6 text-blue-400" />
                   <span className="text-sm">Manage Users</span>
                 </Button>
 
                 <Button variant="outline" className="h-20 flex-col gap-2">
-                  <Building2 className="h-6 w-6 text-primary" />
+                  <Building2 className="h-6 w-6 text-blue-400" />
                   <span className="text-sm">Edit Structure</span>
                 </Button>
                 <Button variant="outline" className="h-20 flex-col gap-2">
-                  <UserCheck className="h-6 w-6 text-primary" />
+                  <UserCheck className="h-6 w-6 text-blue-400" />
                   <span className="text-sm">Assign Roles</span>
                 </Button>
                 <Button variant="outline" className="h-20 flex-col gap-2">
-                  <TrendingUp className="h-6 w-6 text-primary" />
+                  <TrendingUp className="h-6 w-6 text-blue-400" />
                   <span className="text-sm">View Analytics</span>
                 </Button>
               </CardContent>
@@ -224,8 +224,8 @@ export function Dashboard() {
 
             <Card className="h-70 overflow-hidden">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AudioLines className="text-primary" />
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <AudioLines className="h-5 w-5" />
                   Disciplinary
                 </CardTitle>
               </CardHeader>

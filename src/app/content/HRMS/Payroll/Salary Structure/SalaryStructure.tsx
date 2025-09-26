@@ -924,8 +924,7 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -947,8 +946,7 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -970,8 +968,7 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+            
               marginTop: "5px"
             }}
           />
@@ -993,8 +990,7 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -1016,8 +1012,7 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -1039,8 +1034,7 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -1070,8 +1064,7 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -1101,8 +1094,7 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -1132,8 +1124,7 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -1163,8 +1154,7 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -1194,8 +1184,6 @@ const SalaryStructure: React.FC = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
               marginTop: "5px"
             }}
           />
@@ -1283,6 +1271,16 @@ const SalaryStructure: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
+
+      <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Salary Structure Management</h1>
+              {/* <p className="text-sm text-muted-foreground mt-1">
+                Manage your organization's information, Department structure.
+              </p> */}
+            </div>
+          </div>
+
       {/* Filters Section */}
       <div className="flex flex-col lg:flex-row gap-6 w-full">
         {/* Department Selector - Takes majority space */}
@@ -1318,7 +1316,7 @@ const SalaryStructure: React.FC = () => {
           <Button
             onClick={fetchData}
             disabled={loading}
-            className="px-6 py-2 rounded-lg font-bold flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-14"
+            className="px-6 py-2 rounded-lg flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-14"
           >
             <Search className="w-5 h-5 mr-2 text-black" />
             {loading ? "Searching..." : "Search"}
@@ -1328,20 +1326,20 @@ const SalaryStructure: React.FC = () => {
 
       {/* Export Buttons */}
       <div className="flex gap-3 flex-wrap justify-end">
+        
+        <Button
+          onClick={() => window.print()}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+        >
+          <Printer className="w-5 h-5" />
+        </Button>
         <Button
           onClick={exportToPDF}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
         >
           <span className="mdi mdi-file-pdf-box text-xl"></span>
         </Button>
-        <Button
-          onClick={exportToCSV}
-          title="Export as CSV"
-          aria-label="Export as CSV"
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors px-3"
-        >
-          <FileSpreadsheet className="w-8 h-5" />
-        </Button>
+ 
 
         <Button
           onClick={exportToExcel}
@@ -1349,15 +1347,7 @@ const SalaryStructure: React.FC = () => {
         >
           <span className="mdi mdi-file-excel-outline text-xl"></span>
         </Button>
-        <Button
-          onClick={() => window.print()}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-        >
-          <Printer className="w-5 h-5" />
-        </Button>
-        <Button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
-          <Table className="w-5 h-5" />
-        </Button>
+       
       </div>
 
       {/* Data Table */}

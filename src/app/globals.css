@@ -103,6 +103,9 @@ body {
   top: 0;
   width: 17%;
 }
+.no-shadow{
+box-shadow : none !important;
+}
 /* .cocSnr{
   border-top: none;
   background-color: #f5f5f5;

@@ -47,7 +47,7 @@ const AssignmentPreview = ({ taskData, onClose, onConfirm }) => {
               <Icon name={getTypeIcon(taskData.type)} size={20} className="text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Assignment Preview</h2>
+              <h2 className="text-xl font-semibold text-foreground">Assignment Preview</h2>
               <p className="text-sm text-muted-foreground">Review before sending to employees</p>
             </div>
           </div>

@@ -1,10 +1,13 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import Image from '../../../../components/AppImage';
 import Icon from '../../../../components/AppIcon';
 import { Button } from '../../../../components/ui/button';
 
 const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
+  const fallbackImage =
+    "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
+
   const getSkillLevelColor = (level) => {
     switch (level) {
       case 'Expert': return 'bg-success text-success-foreground';
@@ -40,21 +43,24 @@ const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
       })
     );
   };
-
+  const [imgSrc, setImgSrc] = useState(
+    employee.image && employee.image.trim()
+      ? employee.image.startsWith("http")
+        ? employee.image // already full URL
+        : `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}`
+      : fallbackImage
+  );
   return (
     <div className="bg-card border border-border rounded-lg p-6 hover:shadow-card transition-smooth">
       <div className="flex items-start space-x-4">
         <div className="relative">
           <Image
-            src={
-              employee.image && employee.image.trim()
-                ? employee.image.startsWith('http')
-                  ? employee.image // already a full URL, use as-is
-                  : `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}`
-                : 'https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39'
-            }
-            alt={employee.full_name || 'Employee'}
+            src={imgSrc}
+            alt={employee.full_name || "Employee"}
+            width={40}
+            height={40}
             className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
+            onError={() => setImgSrc(fallbackImage)} // ✅ fallback if fetch fails
           />
           <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card ${getStatusColor(employee.status)}`} />
         </div>
