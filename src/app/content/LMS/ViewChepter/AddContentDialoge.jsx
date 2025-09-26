@@ -716,20 +716,20 @@ const AddContentDialog = ({
               Display
             </label>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
+            <div className="flex justify-end gap-2 pt-4 ">
+              {/* <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={loading}
               >
                 Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={loading} className="mt-4 mx-auto px-4 py-2 text-sm">
+              </Button> */}
+              <Button onClick={handleSave} disabled={loading} className="mt-4 mx-auto text-sm px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
                 {loading
                   ? "Saving..."
                   : content
-                    ? "Update Content"
-                    : "Add Content"}
+                    ? "Update "
+                    : "Submit"}
               </Button>
             </div>
           </div>

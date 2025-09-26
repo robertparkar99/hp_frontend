@@ -106,10 +106,10 @@ const LeaveAuthorization = () => {
   const filteredRequests = leaveRequests.filter(request => {
     const matchesDepartment = selectedDepartment === "all" || request.department === selectedDepartment;
     const matchesStatus = selectedStatus === "all" || request.status === selectedStatus;
-    const matchesSearch = searchTerm === "" || 
+    const matchesSearch = searchTerm === "" ||
       request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.employeeId.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return matchesDepartment && matchesStatus && matchesSearch;
   });
 
@@ -153,18 +153,29 @@ const LeaveAuthorization = () => {
         <p className="text-sm font-medium text-muted-foreground mb-2">Reason</p>
         <p className="text-foreground">{request.reason}</p>
       </div>
-      {request.status === "Pending" && (
-        <div className="flex gap-2 pt-4 border-t">
-          <Button className="btn-success flex-1" onClick={() => handleApprove(request.id, request.employeeName)}>
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Approve
-          </Button>
-          <Button className="btn-destructive flex-1" onClick={() => handleReject(request.id, request.employeeName)}>
-            <XCircle className="h-4 w-4 mr-2" />
-            Reject
-          </Button>
-        </div>
-      )}
+{request.status === "Pending" && (
+  <div className="flex gap-2 pt-4 border-t">
+    {/* Approve */}
+    <Button
+      className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-green-600 hover:bg-gray-300 focus:ring-2 focus:ring-green-200"
+      onClick={() => handleApprove(request.id, request.employeeName)}
+    >
+      <CheckCircle className="h-5 w-5" />
+      Approve
+    </Button>
+
+    {/* Reject */}
+    <Button
+      className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-red-600 hover:bg-gray-300 focus:ring-2 focus:ring-red-200"
+      onClick={() => handleReject(request.id, request.employeeName)}
+    >
+      <XCircle className="h-5 w-5" />
+      Reject
+    </Button>
+  </div>
+)}
+
+
     </div>
   );
 
@@ -273,20 +284,8 @@ const LeaveAuthorization = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            View Details
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-lg">
-                          <DialogHeader>
-                            <DialogTitle>Leave Application Details</DialogTitle>
-                          </DialogHeader>
-                          <LeaveDetailsModal request={request} />
-                        </DialogContent>
-                      </Dialog>
-                      {request.status === "Pending" && (
+
+                      {/* {request.status === "Pending" && (
                         <>
                           <Button 
                             size="sm" 
@@ -303,7 +302,43 @@ const LeaveAuthorization = () => {
                             <XCircle className="h-4 w-4" />
                           </Button>
                         </>
+                      )} */}
+                      {request.status === "Pending" && (
+                        <>
+                          {/* Approve */}
+                          <Button
+                            size="sm"
+                            variant="ghost" // removes default bg/border
+                            onClick={() => handleApprove(request.id, request.employeeName)}
+                            className="p-2 hover:bg-transparent text-gray-500 hover:text-green-600 focus:text-green-600"
+                          >
+                            <CheckCircle className="h-8 w-8" />
+                          </Button>
+
+                          {/* Reject */}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleReject(request.id, request.employeeName)}
+                            className="p-2 hover:bg-transparent text-gray-500 hover:text-red-600 focus:text-red-600"
+                          >
+                            <XCircle className="h-10 w-10" />
+                          </Button>
+                        </>
                       )}
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            View Details
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-lg">
+                          <DialogHeader>
+                            <DialogTitle>Leave Application Details</DialogTitle>
+                          </DialogHeader>
+                          <LeaveDetailsModal request={request} />
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
                 </CardContent>

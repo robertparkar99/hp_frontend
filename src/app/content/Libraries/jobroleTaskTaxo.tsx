@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type Department = {
   id: number;
-  name: string; // Jobrole category name
+  name: string; // Jobrole task category name
 };
 
-export default function JobroleTaxonomy() {
+export default function JobroleTaskTaxonomy() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,9 +23,6 @@ export default function JobroleTaxonomy() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editDeptName, setEditDeptName] = useState("");
   const [saving, setSaving] = useState(false);
-
-  // Delete state
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Session data
   const [sessionData, setSessionData] = useState({
@@ -52,26 +49,26 @@ export default function JobroleTaxonomy() {
     }
   }, []);
 
-  // Fetch job roles from API
+  // Fetch job role tasks from API
   const fetchDepartments = async () => {
     if (!sessionData.url || !sessionData.token) return;
 
     try {
       const res = await fetch(
-        `${sessionData.url}/api/jobroletexonomies?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&status=active`
+        `${sessionData.url}/api/job-role-tasks?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}`
       );
 
-      if (!res.ok) throw new Error("Failed to fetch job roles");
+      if (!res.ok) throw new Error("Failed to fetch job role tasks");
 
       const data = await res.json();
       const mapped: Department[] = data.data.map((item: any) => ({
         id: item.id,
-        name: item.jobrole_category,
+        name: item.task_category,
       }));
 
       setDepartments(mapped);
     } catch (err) {
-      console.error("Error fetching departments:", err);
+      console.error("Error fetching job role tasks:", err);
     } finally {
       setLoading(false);
     }
@@ -83,14 +80,14 @@ export default function JobroleTaxonomy() {
     }
   }, [sessionData.url, sessionData.subInstituteId]);
 
-  // Add new jobrole to API
+  // Add new jobrole task to API
   const handleAddDepartment = async () => {
     if (!newDeptName.trim()) return;
     setAdding(true);
 
     try {
       await fetch(
-        `${sessionData.url}/api/jobroletexonomies?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&jobrole_category=${encodeURIComponent(
+        `${sessionData.url}/api/job-role-tasks?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&task_category=${encodeURIComponent(
           newDeptName.trim()
         )}&user_id=${sessionData.userId}`,
         {
@@ -102,22 +99,22 @@ export default function JobroleTaxonomy() {
       setNewDeptName("");
       setShowForm(false);
     } catch (err) {
-      console.error("Error adding department:", err);
+      console.error("Error adding job role task:", err);
     } finally {
       setAdding(false);
     }
   };
 
-  // Edit jobrole in API
+  // Edit jobrole task in API
   const handleEditDepartment = async (dept: Department) => {
     if (!editDeptName.trim()) return;
     setSaving(true);
 
     try {
       const res = await fetch(
-        `${sessionData.url}/api/jobroletexonomies/${encodeURIComponent(
+        `${sessionData.url}/api/job-role-tasks/${encodeURIComponent(
           dept.name
-        )}?type=API&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}&jobrole_category=${encodeURIComponent(
+        )}?type=API&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}&task_category=${encodeURIComponent(
           editDeptName.trim()
         )}&_method=PUT&token=${sessionData.token}`,
         {
@@ -136,29 +133,28 @@ export default function JobroleTaxonomy() {
         setEditDeptName("");
       }
     } catch (err) {
-      console.error("Error editing department:", err);
+      console.error("Error editing job role task:", err);
     } finally {
       setSaving(false);
     }
   };
 
-
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold">Jobrole Taxonomy</h2>
+        <h2 className="text-xl font-bold">Jobrole Task Taxonomy</h2>
         <Button variant="outline" onClick={() => setShowForm(true)}>
-          Add Jobrole category
+          Add Jobrole Task Category
         </Button>
       </div>
 
       {/* Add Department Form */}
       {showForm && (
         <div className="bg-gray-100 p-4 rounded mb-6">
-          <h3 className="font-medium mb-2">Add New Jobrole Category</h3>
+          <h3 className="font-medium mb-2">Add New Jobrole Task Category</h3>
           <Input
             type="text"
-            placeholder="Jobrole Category Name"
+            placeholder="Jobrole Task Category Name"
             value={newDeptName}
             onChange={(e) => setNewDeptName(e.target.value)}
             className="mb-3"

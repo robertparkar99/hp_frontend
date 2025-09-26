@@ -13,7 +13,7 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@/components/ui/popover"; // ✅ popover
+} from "@/components/ui/popover";
 import { Funnel } from "lucide-react";
 import { Atom } from "react-loading-indicators";
 
@@ -162,7 +162,7 @@ const BehaviourGrid = () => {
         <Popover>
           <PopoverTrigger asChild>
             <button className="p-3">
-              <Funnel />
+              <Funnel className="w-5 h-5" />
             </button>
           </PopoverTrigger>
 
@@ -200,40 +200,40 @@ const BehaviourGrid = () => {
           ) : (
             cardData.map((card) => (
               <motion.div
-                key={card.id}
-                className="bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm min-h-[180px]"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <h3
-                  className="text-blue-800 font-bold text-[16px] mb-3 truncate"
-                  title={card.classification_item}
-                >
-                  {card.classification_item}
-                </h3>
+  key={card.id}
+  className="group bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm min-h-[180px]"
+  whileHover={{ scale: 1.05 }}
+  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+>
+  <h3
+    className="text-blue-800 font-bold text-[16px] mb-3 truncate"
+    title={card.classification_item}
+  >
+    {card.classification_item}
+  </h3>
 
-                <div className="border-t border-gray-400 mb-3"></div>
+  {/* ✨ Modern Hover Divider */}
+  <div className="relative mb-3 h-[2px] bg-gray-300 overflow-hidden">
+    <div className="absolute left-0 top-0 h-full w-0 bg-blue-500 transition-all duration-500 group-hover:w-full"></div>
+  </div>
 
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-blue-800 font-semibold text-sm">
-                      Category :{" "}
-                    </span>
-                    <span className="text-gray-700 text-sm">
-                      {card.classification_category}
-                    </span>
-                  </div>
+  <div className="space-y-2">
+    <div>
+      <span className="text-blue-800 font-semibold text-sm">Category : </span>
+      <span className="text-gray-700 text-sm">
+        {card.classification_category}
+      </span>
+    </div>
 
-                  <div>
-                    <span className="text-blue-800 font-semibold text-sm">
-                      Sub Category :{" "}
-                    </span>
-                    <span className="text-gray-700 text-sm">
-                      {card.classification_sub_category}
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
+    <div>
+      <span className="text-blue-800 font-semibold text-sm">Sub Category : </span>
+      <span className="text-gray-700 text-sm">
+        {card.classification_sub_category}
+      </span>
+    </div>
+  </div>
+</motion.div>
+
             ))
           )}
         </div>

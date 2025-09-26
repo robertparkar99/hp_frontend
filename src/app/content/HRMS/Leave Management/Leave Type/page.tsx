@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import DataTable, { TableColumn, TableStyles } from 'react-data-table-component';
+import Icon from '@/components/AppIcon';
+
 
 interface LeaveType {
   id: number;
@@ -35,6 +39,17 @@ export default function LeaveType() {
   const [assignmentType, setAssignmentType] = useState("designation");
   const [allocationPeriod, setAllocationPeriod] = useState("yearly");
   const { toast } = useToast();
+  const [filterText, setFilterText] = useState('');
+  const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
+  // State for column-wise filters
+const [columnFilters, setColumnFilters] = useState({
+  srno: "",
+  leaveTypeId:"",
+  maxDays: "",
+  name: "",
+  status: "",
+});
+
 
   const [sessionData, setSessionData] = useState<SessionData>({
     url: "",
@@ -240,10 +255,228 @@ export default function LeaveType() {
   const handleDelete = (id: number) => {
     deleteLeaveTypeAPI(id);
   };
+  const handleColumnFilter = (column: string, value: string) => {
+  setColumnFilters((prev) => ({
+    ...prev,
+    [column]: value,
+  }));
+  setResetPaginationToggle(!resetPaginationToggle);
+};
+
+// Clear all filters
+const clearFilter = () => {
+  setColumnFilters({
+    srno: "",
+    leaveTypeId:"",
+    maxDays: "",
+    name: "",
+    status: "",
+  });
+  setResetPaginationToggle(!resetPaginationToggle);
+};
+
+  // Filter leave types based on search text
+  // const filteredItems = leaveTypes.filter(
+  //   item => 
+  //     item.leaveTypeId.toLowerCase().includes(filterText.toLowerCase()) ||
+  //     item.name.toLowerCase().includes(filterText.toLowerCase()) ||
+  //     item.maxDays.toString().includes(filterText) ||
+  //     item.status.toLowerCase().includes(filterText.toLowerCase())
+  // );
+const filteredItems = leaveTypes.filter((item, index) => {
+  return (
+    (columnFilters.srno === "" ||
+      (index + 1).toString().includes(columnFilters.srno)) &&
+    (columnFilters.leaveTypeId === "" ||
+      item.leaveTypeId.toLowerCase().includes(columnFilters.leaveTypeId.toLowerCase())) &&
+    (columnFilters.maxDays === "" ||
+      item.maxDays.toString().includes(columnFilters.maxDays)) &&
+    (columnFilters.name === "" ||
+      item.name.toLowerCase().includes(columnFilters.name.toLowerCase())) &&
+    (columnFilters.status === "" ||
+      item.status.toLowerCase().includes(columnFilters.status.toLowerCase()))
+  );
+});
+
+  // Handle column filtering
+  // const handleColumnFilter = (column: string, value: string) => {
+  //   // For simplicity, we're using a global filter
+  //   setFilterText(value);
+  //   setResetPaginationToggle(!resetPaginationToggle);
+  // };
+
+  // Clear filter
+  // const clearFilter = () => {
+  //   if (filterText) {
+  //     setResetPaginationToggle(!resetPaginationToggle);
+  //     setFilterText('');
+  //   }
+  // };
+
+  // Custom styles for DataTable
+ const customStyles : TableStyles =  {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
+      },
+    },
+    cells: { style: { fontSize: "13px", textAlign: "left" } },
+    table: {
+      style: { border: "1px solid #ddd",
+        borderRadius: "20px", overflow: "hidden" },
+    },
+  };
+
+  // Define columns for DataTable
+  const columns :TableColumn<LeaveType>[] = [
+    {
+      name: (
+        <div>
+          <div>Sr No.</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("srno", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      // selector: (row: LeaveType, index: number) => index + 1,
+      selector: (row: LeaveType, index?: number) => (index !== undefined ? index + 1 : 0),
+      sortable: true,
+      width: "120px"
+    },
+    {
+      name: (
+        <div>
+          <div>Leave Type ID</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("leaveTypeId", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row : LeaveType) => row.leaveTypeId,
+      sortable: true,
+    },
+    {
+      name: (
+        <div>
+          <div>Leave Type Name</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("name", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+          
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row : LeaveType) => row.name,
+      sortable: true,
+    },
+    {
+      name: (
+        <div>
+          <div>Sort Order</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("maxDays", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row : LeaveType) => row.maxDays,
+      sortable: true,
+    },
+    {
+      name: (
+        <div>
+          <div>Status</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("status", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+             
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row : LeaveType) => row.status,
+      sortable: true,
+      cell: (row : LeaveType) => (
+        <Badge variant={row.status === "active" ? "default" : "secondary"}>
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+      name: "Actions",
+      cell: (row: LeaveType) => (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => handleEdit(row)}
+            className="bg-blue-500 hover:bg-blue-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white"
+          >
+           
+            <Icon name="Edit" size={14} />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => handleDelete(row.id)}
+            className="bg-red-500 hover:bg-red-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white"
+          >
+            <Icon name="Trash2" size={14} />
+          </Button>
+        </div>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+      width: "120px"
+    },
+  ];
 
   return (
     <div className="space-y-8">
-      
       {/* Leave Types Management */}
       <Card className="bg-gradient-card shadow-card">
         <CardHeader>
@@ -256,9 +489,9 @@ export default function LeaveType() {
             </div>
             <Button
               onClick={() => setShowForm(true)}
-              className="bg-[#5091fa] hover:shadow-glow transition-all"
+              className="bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4 mr-2 text-black" />
               Add Leave Type
             </Button>
           </div>
@@ -326,9 +559,9 @@ export default function LeaveType() {
                   </div>
 
                   <div className="flex gap-3 pt-4">
-                    <Button type="submit" className="bg-[#5091fa] hover:shadow-glow transition-all">
+                    <Button type="submit" className="px-8 py-2 rounded-full text-white font-sem ibold bg-gradient-to-r from-blue-500 to-blue-700">
                       <Save className="w-4 h-4 mr-2" />
-                      {editingId ? "Update" : "Create"} Leave Type
+                      {editingId ? "Update" : "Submit"} 
                     </Button>
                     <Button type="button" variant="outline" onClick={resetForm}>
                       <X className="w-4 h-4 mr-2" />
@@ -340,52 +573,18 @@ export default function LeaveType() {
             </Card>
           )}
 
-          {/* Table */}
-          <div className="border rounded-lg bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Leave Type ID</TableHead>
-                  <TableHead>Leave Type Name</TableHead>
-                  <TableHead>Sort Order</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leaveTypes.map((leaveType) => (
-                  <TableRow key={leaveType.id}>
-                    <TableCell className="font-medium">{leaveType.leaveTypeId}</TableCell>
-                    <TableCell>{leaveType.name}</TableCell>
-                    <TableCell>{leaveType.maxDays}</TableCell>
-                    <TableCell>
-                      <Badge variant={leaveType.status === "active" ? "default" : "secondary"}>
-                        {leaveType.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEdit(leaveType)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDelete(leaveType.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          {/* DataTable */}
+          <div >
+            <DataTable
+              columns={columns}
+              data={filteredItems}
+              customStyles={customStyles}
+              pagination
+              highlightOnHover
+              responsive
+              noDataComponent={<div className="p-4 text-center">No data available</div>}
+              persistTableHead
+            />
           </div>
         </CardContent>
       </Card>

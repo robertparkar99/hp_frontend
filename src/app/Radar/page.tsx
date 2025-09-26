@@ -244,7 +244,7 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
                 <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
                     <div className="mb-8">
                         <div className="relative">
-                            <div className="w-full px-3 py-2 text-sm font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded-lg shadow-sm text-center">
+                            <div className="w-full px-3 py-2 text-sm font-semibold text-gray-800 bg-blue-300 border border-gray-300 rounded-lg shadow-sm text-center">
                                 {selectedCategory || "No Category Selected"} - Competency Distribution
                             </div>
                         </div>

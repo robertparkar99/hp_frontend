@@ -19,7 +19,7 @@ export function RecentActivity({ activities }: RecentActivityProps) {
   return (
     <Card className="h-100 overflow-hidden">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-xl">
           <Clock className="h-5 w-5" />
           Compliance
         </CardTitle>
@@ -34,8 +34,8 @@ export function RecentActivity({ activities }: RecentActivityProps) {
             key={activity.id}
             className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-card-hover transition-colors"
           >
-            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-              <TrendingUp className="h-4 w-4 text-primary" />
+            <div className="w-8 h-8 bg-primary/5 rounded-full flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="h-4 w-4 text-blue-400" />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -49,7 +49,7 @@ export function RecentActivity({ activities }: RecentActivityProps) {
               </div>
             </div>
 
-            <Badge className="bg-primary/10 text-primary">
+            <Badge className="bg-primary/5 text-blue-400 hover:bg-primary/10">
               {activity.frequency}
             </Badge>
           </div>

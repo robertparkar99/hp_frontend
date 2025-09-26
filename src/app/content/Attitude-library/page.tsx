@@ -191,7 +191,7 @@ export default function Index() {
         <Popover>
           <PopoverTrigger asChild>
             <button className="p-3">
-              <Funnel />
+              <Funnel className="w-5 h-5" />
             </button>
           </PopoverTrigger>
 
@@ -363,13 +363,19 @@ function CardGrid({
             transition={{ duration: 0.3 }}
             className={`w-full h-[180px] bg-white border-2 border-[#C5DFFF] shadow-md shadow-black/20 p-5 flex flex-col ${borderRadius}`}
           >
-            {/* Title */}
-            <h2
-              className="text-[#1E3A8A] font-bold text-[18px] text-center mb-3 leading-normal border-b border-[#919191] pb-1 truncate"
+            {/* Title with Modern Hover */}
+            <motion.h2
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+              className="relative text-[#1E3A8A] font-bold text-[18px] text-center mb-3 leading-normal 
+                         pb-1 truncate cursor-pointer 
+                         hover:text-blue-500 transition-colors duration-300
+                         after:absolute after:bottom-0 after:left-1/2 after:w-0 after:h-[2px] after:bg-blue-500 
+                         after:transition-all after:duration-300 after:-translate-x-1/2 hover:after:w-full"
               title={card.classification_item}
             >
               {card.classification_item}
-            </h2>
+            </motion.h2>
 
             {/* Category */}
             <div className="text-[14px] mb-1 mt-2 leading-[1.125]">

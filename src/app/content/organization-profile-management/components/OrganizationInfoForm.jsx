@@ -444,7 +444,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             </h4>
             <div className="flex space-x-2">
               {index === 0 && (
-                <button type="button" onClick={addSisterCompany} className="p-1 rounded-full bg-primary text-primary-foreground hover:bg-primary/90" title="Add another sister company">
+                <button type="button" onClick={addSisterCompany} className="p-1 rounded-full bg-blue-400 text-white hover:bg-blue-500" title="Add another sister company">
                   <Icon name="Plus" size={16} />
                 </button>
               )}
@@ -586,9 +586,9 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         </div>
       ))}
 
-      <div className="mt-6">
-        <Button type="submit" disabled={loading}>
-          {loading ? 'Saving...' : 'Save Organization Info'}
+      <div className="mt-6 col-span-1 md:col-span-3 flex justify-center">
+        <Button id="submit" type="submit" disabled={loading} className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+          {loading ? 'Saving...' : 'Submit'}
         </Button>
       </div>
     </form>

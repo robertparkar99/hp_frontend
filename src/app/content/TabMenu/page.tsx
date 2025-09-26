@@ -78,6 +78,15 @@ const TabsMenu: React.FC<TabsMenuProps> = ({
                 </button>
               )}
 
+              {activeTab === "Jobrole Task Library" && (
+                <button
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                  onClick={() => openAndClose("JobroleTaskTaxonomy")}
+                >
+                  Jobrole Task Taxonomy
+                </button>
+              )}
+
               {activeTab === "Knowledge" && (
                 <button
                   className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"

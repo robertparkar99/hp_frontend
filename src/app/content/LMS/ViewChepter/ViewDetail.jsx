@@ -414,7 +414,7 @@ if (onClose) {
               setChapterToDelete(null)
               setIsAddDialogOpen(true)
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
           >
             <Icon name="Plus" size={16} /> Add Module
           </Button>

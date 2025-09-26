@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Download } from "lucide-react";
+
 
 interface UploadDocType {
   id: number;
@@ -170,16 +172,23 @@ const UploadDocumentPage: React.FC<UploadDocProps> = ({ uploadDoc, sessionData, 
             />
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">File</label>
-            <input
-              type="file"
-              required
-              accept=".pdf,.doc,.docx,.txt"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="h-[44px] w-full text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-300 rounded-md shadow-sm"
-            />
-          </div>
+         <div className="flex flex-col">
+      <label className="text-sm font-medium text-gray-700 mb-1">File</label>
+
+      <div className="relative w-full">
+        {/* Icon inside input */}
+        <Download className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-600 pointer-events-none" />
+
+        <input
+          type="file"
+          required
+          accept=".pdf,.doc,.docx,.txt"
+          onChange={(e) => console.log(e.target.files?.[0])}
+          className="h-[44px] w-full pl-10 px-4 pt-3 rounded-md border border-gray-300 text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition file:hidden"
+        />
+      </div>
+
+    </div>
         </div>
 
         <div className="flex justify-center pt-2">
@@ -203,7 +212,7 @@ const UploadDocumentPage: React.FC<UploadDocProps> = ({ uploadDoc, sessionData, 
         ) : documentLists.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm text-left border border-gray-200 shadow-md rounded-md overflow-hidden">
-              <thead className="bg-gray-100 text-gray-700">
+              <thead className="bg-[#D1E7FF] text-black">
                 <tr>
                   <th className="px-6 py-3 border-b">Document Type</th>
                   <th className="px-6 py-3 border-b">Title</th>

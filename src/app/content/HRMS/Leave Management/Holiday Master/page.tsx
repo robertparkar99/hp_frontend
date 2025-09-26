@@ -359,6 +359,7 @@ const HolidayMaster = () => {
             <Button
               type="submit" 
               disabled={isSubmitting}
+              className="px-8 py-2 rounded-full text-white font-sem ibold bg-gradient-to-r from-blue-500 to-blue-700"
             >
               {isSubmitting ? (
                 <>
@@ -368,7 +369,7 @@ const HolidayMaster = () => {
               ) : (
                 <>
                     <Plus className="h-4 w-4 mr-2" />
-                  Add Holiday
+                 Submit
                 </>
               )}
             </Button>
@@ -504,7 +505,7 @@ const HolidayMaster = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       {/* Modern Gradient Header */}
-      <div className="bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground">
+      <div className="bg-[#6fb2f2] text-primary-foreground mt-[-17] mr-[-10] ml-[-10]">
         <div className="px-6 py-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="space-y-3">
@@ -564,7 +565,7 @@ const HolidayMaster = () => {
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
-                  <Calendar className="h-5 w-5 text-primary" />
+                  <Calendar className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Total Holidays</p>
@@ -632,7 +633,7 @@ const HolidayMaster = () => {
         <Card className="bg-gradient-to-br from-card via-card to-card/50 border-border/30 shadow-lg overflow-hidden">
           <CardHeader className="pb-3 bg-gradient-to-r from-muted/20 to-transparent">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted/30 p-0.5 h-10">
+              <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted/30 p-0.5 h-10 bg-[#EFF4FF]">
                 <TabsTrigger
                   value="holidays"
                   className="data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium text-sm h-8"
@@ -701,10 +702,11 @@ const HolidayMaster = () => {
                     ))}
                   </div>
 
-                  <div className="flex justify-end pt-4">
+                  <div className="flex justify-center pt-4">
                     <Button
+                    id="submit"
                       onClick={saveDayOffs}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                      className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
                       disabled={savingDayOffs}
                     >
                       {savingDayOffs ? (
@@ -713,7 +715,7 @@ const HolidayMaster = () => {
                           Saving...
                         </>
                       ) : (
-                        "Save changes"
+                        "Submit"
                       )}
                     </Button>
                   </div>

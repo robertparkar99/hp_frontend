@@ -220,7 +220,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
     <div className="bg-card border border-border rounded-lg p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-foreground">Department Structure</h3>
+        <h3 className="text-xl font-semibold text-foreground">Department Structure</h3>
         <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
           Add Department
         </Button>
@@ -236,11 +236,11 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
             placeholder="Department Name"
           />
           <div className="flex justify-end space-x-3 mt-4">
-            <Button variant="outline" size="sm" onClick={() => setShowAddForm(false)}>
+            <Button id='cancel' variant="outline" size="sm" onClick={() => setShowAddForm(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleAddDepartment}>
-              Add Department
+            <Button size="sm" id='submit' onClick={handleAddDepartment} className="px-5 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+              Submit
             </Button>
           </div>
         </div>
@@ -270,8 +270,8 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
             <Button variant="outline" size="sm" onClick={() => setEditDepartment(null)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleEditSave}>
-              Save Changes
+            <Button id="update" size="sm" onClick={handleEditSave} className="px-5 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+              Update
             </Button>
           </div>
         </div>
@@ -292,8 +292,8 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
             <Button variant="outline" size="sm" onClick={() => setEditSubDepartment(null)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleEditSubDepartmentSave}>
-              Save Changes
+            <Button size="sm" id="update" onClick={handleEditSubDepartmentSave} className="px-5 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+              Update
             </Button>
           </div>
         </div>
@@ -305,7 +305,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
           <div key={department.id} className="border border-border rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
-                <Icon name="Building2" size={20} className="text-primary" />
+                <Icon name="Building2" size={20} className="text-blue-400" />
                 <div>
                   <h4 className="font-medium text-foreground">{department.name}</h4>
                   <p className="text-sm text-muted-foreground">
@@ -324,7 +324,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
                   });
                   setShowAddForm(false);
                 }}
-                className="text-muted-foreground hover:text-primary"
+                className="text-muted-foreground hover:text-blue-400"
               >
                 <Icon name="Pencil" size={16} />
               </Button>
@@ -369,7 +369,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
       {/* Footer */}
       <div className="flex justify-end space-x-3 mt-6">
         <Button variant="outline">Cancel</Button>
-        <Button onClick={handleSave} loading={loading}>
+        <Button onClick={handleSave} loading={loading} className="px-8 py-2 rounded-full text-white font-sem ibold bg-gradient-to-r from-blue-500 to-blue-700">
           Save Structure
         </Button>
       </div>

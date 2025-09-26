@@ -19,6 +19,7 @@ import Ability from "../ability-library/page";
 import Jobrole from "../Jobrole-library/page";
 import JobroleTask from "./Jobrole-task-library/page";
 import JobroleTaxonomy from "../jobrole-taxonomy/page";
+import JobroleTAskTaxonomy from "./jobroleTaskTaxo";
 // ✅ Loader Component
 const Loader = () => (
   <div className="flex justify-center items-center h-screen">
@@ -81,6 +82,7 @@ const SkillLibrary = () => {
             {openPage === "JobroleTaxonomy" && (
               <JobroleTaxonomy />
             )}
+            {openPage === "JobroleTaskTaxonomy" && <JobroleTAskTaxonomy />}
             {openPage === "Knowledge" && (
               <KnowledgeTax onSave={() => handleSaveAndClose("Knowledge Taxonomy")} loading={false} />
             )}

@@ -381,7 +381,7 @@ const SearchFilters = ({
       )}
 
       {showSearchButton && (
-        <Button onClick={onSearch}>Search</Button>
+        <Button onClick={onSearch} className="bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors">Search</Button>
       )}
     </div>
   );
