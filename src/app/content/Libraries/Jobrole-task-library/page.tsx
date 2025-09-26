@@ -292,11 +292,12 @@ const CriticalWorkFunctionGrid = () => {
           {filteredData.map((item) => (
             <div
               key={item.id}
-              className="relative group overflow-hidden rounded-3xl shadow-lg border-2 border-blue-200 hover:border-blue-300 transition-all duration-300"
+              className="relative group overflow-hidden rounded-3xl shadow-lg border-2 border-blue-200 hover:border-blue-300 transition-all duration-300 flex flex-col h-full"
             >
-              <div className="relative z-10 p-8">
+              {/* Header */}
+              <div className="px-6 py-4">
                 <h3
-                  className="text-lg font-bold text-gray-900 mb-2 leading-tight truncate cursor-pointer"
+                  className="text-lg font-bold text-gray-900 leading-tight truncate cursor-pointer hover:text-blue-600 transition-colors"
                   title={item.critical_work_function}
                   onClick={() => {
                     setViewData(item);
@@ -306,23 +307,31 @@ const CriticalWorkFunctionGrid = () => {
                 >
                   {item.critical_work_function}
                 </h3>
-                <p className="text-gray-700 text-sm leading-relaxed">
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 px-6 ">
+                <p className="text-gray-700 text-sm leading-relaxed line-clamp-4">
                   {item.task}
                 </p>
-                <div className="flex justify-end space-x-2 mt-4">
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-3">
+                <div className="flex justify-end space-x-3">
                   <button
-                    onClick={() =>
-                      item.id && setIsEditModalOpen(true)
-                    }
+                    onClick={() => item.id && setIsEditModalOpen(true)}
+                    className="text-gray-600 "
+                    title="Edit"
                   >
-                    <FaEdit className="text-gray-500" />
+                    <FaEdit className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() =>
-                      item.id && alert("Delete logic goes here")
-                    }
+                    onClick={() => item.id && alert("Delete logic goes here")}
+                    className="text-gray-600 "
+                    title="Delete"
                   >
-                    <FaTrash className="text-gray-500" />
+                    <FaTrash className="w-4 h-4" />
                   </button>
                 </div>
               </div>

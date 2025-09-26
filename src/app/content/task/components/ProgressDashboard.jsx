@@ -887,8 +887,8 @@ const ProgressDashboard = () => {
         change: '',
         trend: 'up',
         icon: 'FileText',
-        color: 'text-primary bg-[#e9e9e9]',
-        digit : 'text-primary',
+        color: 'text-blue-400 bg-[#e9e9e9]',
+        digit : 'text-blue-400',
       },
       {
         label: 'Completed',
@@ -1074,8 +1074,8 @@ const ProgressDashboard = () => {
       sortable: true,
       cell: row => (
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Icon name={getTypeIcon(row.type)} size={16} className="text-primary" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+            <Icon name={getTypeIcon(row.type)} size={20} className="text-blue-400" />
           </div>
           <div>
             <h4 className="font-medium text-foreground">{row.task_title}</h4>
@@ -1322,8 +1322,8 @@ const ProgressDashboard = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-foreground">Assignment Progress</h2>
-          <p className="text-muted-foreground">Track and monitor task assignment progress</p>
+          <h2 className="text-xl font-semibold text-foreground">Assignment Progress</h2>
+          <p className="text-muted-foreground text-sm">Track and monitor task assignment progress</p>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -1369,7 +1369,7 @@ const ProgressDashboard = () => {
                 <Icon name={stat.icon} size={24} />
               </div>
               <div className={`flex items-center`}>
-               <h3 className={`text-2xl font-bold text-foreground ${stat.digit}`}>{stat.value}</h3>
+               <h3 className={`text-2xl font-bold ${stat.digit}`}>{stat.value}</h3>
               </div>
             </div>
             <div className="mt-4">

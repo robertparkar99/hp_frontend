@@ -48,8 +48,8 @@ function TreeNode({ node, level }: TreeNodeProps) {
           <div className="w-6" />
         )}
 
-        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-          <Building2 className="h-5 w-5 text-primary" />
+        <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center">
+          <Building2 className="h-5 w-5 text-blue-400" />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -107,7 +107,7 @@ export function OrganizationTree({ departments }: OrganizationTreeProps) {
   return (
     <Card className="h-100 overflow-hidden">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-xl">
           <Users className="h-5 w-5" />
           Organization Structure
         </CardTitle>

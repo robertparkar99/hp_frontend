@@ -467,8 +467,7 @@ const EmployeeTable = ({
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -476,7 +475,7 @@ const EmployeeTable = ({
       ),
       selector: (row, index) => index + 1,
       sortable: true,
-      width: "80px"
+      width: "60px"
     },
     {
       name: (
@@ -490,8 +489,7 @@ const EmployeeTable = ({
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -500,20 +498,20 @@ const EmployeeTable = ({
       selector: row => row.full_name,
       sortable: true,
       cell: (row) => (
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-5">
           <EmployeeAvatar
             image={row.image}
             full_name={row.full_name}
             status={row.status}
           />
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-1">
             <button
               onClick={() => handleViewProfileMenu(row)}
-              className="font-medium text-foreground hover:text-primary transition-smooth block truncate"
+              className="font-medium text-foreground hover:text-primary transition-smooth block truncate pt-3"
             >
               {row.full_name}
             </button>
-            <p className="text-sm text-muted-foreground truncate">
+            <p className="text-sm text-muted-foreground truncate pb-3">
               {row.email}
             </p>
           </div>
@@ -533,8 +531,7 @@ const EmployeeTable = ({
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -556,8 +553,7 @@ const EmployeeTable = ({
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -579,8 +575,7 @@ const EmployeeTable = ({
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -602,8 +597,7 @@ const EmployeeTable = ({
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />

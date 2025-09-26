@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import DataTable, { TableColumn } from "react-data-table-component";
-import { Search } from "lucide-react";
+import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import { Search, Printer } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import * as XLSX from "xlsx";
@@ -181,14 +181,6 @@ export default function Home() {
     XLSX.writeFile(wb, "report.xlsx");
   };
 
-  // Export CSV
-  const exportToCSV = () => {
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
-    const csvData = XLSX.write(wb, { bookType: "csv", type: "array" });
-    saveAs(new Blob([csvData]), "report.csv");
-  };
 
   // Export PDF
   const exportToPDF = () => {
@@ -229,7 +221,7 @@ export default function Home() {
     doc.save("attendance_report.pdf");
   };
 
-  const customStyles = {
+  const customStyles: TableStyles = {
     headCells: {
       style: {
         backgroundColor: "#e3f1ff",
@@ -247,6 +239,15 @@ export default function Home() {
 
   return (
     <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Department Wise Report</h1>
+          {/* <p className="text-sm text-muted-foreground mt-1">
+                Manage your organization's information, Department structure.
+              </p> */}
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
         <div className="flex flex-col w-full">
@@ -270,7 +271,7 @@ export default function Home() {
         <div className="col-span-2 flex flex-col gap-4">
           <EmployeeSelector
             multiSelect
-            empMultiSelect={false}
+            empMultiSelect={true}
             selectedDepartment={selectedDepartments}
             onSelectDepartment={handleDepartmentSelect}
             selectedEmployee={selectedEmployees}
@@ -290,50 +291,44 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Export Buttons */}
-      {data.length > 0 && (
-        <div className="flex gap-3 flex-wrap">
-          <button
-            onClick={exportToPDF}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            PDF
-          </button>
-          <button
-            onClick={exportToCSV}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            CSV
-          </button>
-          <button
-            onClick={exportToExcel}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            EXCEL
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            PRINT
-          </button>
-          <button className="bg-blue-500 text-white px-4 py-2 rounded">
-            Show 100 rows
-          </button>
-        </div>
-      )}
+{/* Export Buttons */}
+{data.length > 0 && (
+  <div className="flex gap-3 flex-wrap justify-end">
 
-      {/* Data Table */}
-      <div className="rounded-2xl overflow-hidden shadow">
-        <DataTable
-          columns={columns}
-          data={data}
-          pagination
-          highlightOnHover
-          noDataComponent={loading ? "Loading..." : "No data available"}
-          customStyles={customStyles}
-        />
-      </div>
-    </div>
+    <Button
+      onClick={() => window.print()}
+      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+    >
+      <Printer className="w-5 h-5" />
+    </Button>
+    <Button
+      onClick={exportToPDF}
+      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
+    >
+      <span className="mdi mdi-file-pdf-box text-xl"></span>
+    </Button>
+
+    <Button
+      onClick={exportToExcel}
+      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
+    >
+      <span className="mdi mdi-file-excel-outline text-xl"></span>
+    </Button>
+
+  </div>
+)}
+
+{/* Data Table */ }
+<div className="rounded-2xl overflow-hidden shadow">
+  <DataTable
+    columns={columns}
+    data={data}
+    pagination
+    highlightOnHover
+    noDataComponent={loading ? "Loading..." : "No data available"}
+    customStyles={customStyles}
+  />
+</div>
+    </div >
   );
 }

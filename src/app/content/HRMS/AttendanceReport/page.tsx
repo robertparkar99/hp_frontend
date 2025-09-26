@@ -849,7 +849,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import EmployeeSelector from "@/app/content/User-Attendance/components/EmployeeSelector";
 import { Employee } from "@/app/content/User-Attendance/types/attendance";
 import { Search } from "lucide-react";
-import DataTable, { TableColumn } from "react-data-table-component";
+import DataTable, { TableColumn,TableStyles } from "react-data-table-component";
 
 type AttendanceRow = {
   id: number;
@@ -1071,7 +1071,7 @@ export default function DemoMulti() {
   }, [tableData, filterText, columnFilters]);
 
   // 🔹 Custom styles for DataTable
-  const customStyles = {
+  const customStyles : TableStyles = {
     headCells: {
       style: {
         fontSize: "14px",
@@ -1123,8 +1123,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -1146,8 +1145,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+            
               marginTop: "5px"
             }}
           />
@@ -1168,8 +1166,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -1190,8 +1187,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+            
               marginTop: "5px"
             }}
           />
@@ -1212,8 +1208,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -1234,8 +1229,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -1256,8 +1250,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -1278,8 +1271,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -1300,8 +1292,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+           
               marginTop: "5px"
             }}
           />
@@ -1332,7 +1323,17 @@ export default function DemoMulti() {
   const customRowStyles: any[] = [];
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
+
+    <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Attendence Report</h1>
+              {/* <p className="text-sm text-muted-foreground mt-1">
+                Manage your organization's information, Department structure.
+              </p> */}
+            </div>
+          </div>
+
       {/* Filters Section */}
       <div className="flex items-end gap-4 flex-wrap">
         <div className="flex-1 min-w-[250px]">
@@ -1390,17 +1391,7 @@ export default function DemoMulti() {
         ))}
       </div>
 
-      {/* Global Search */}
-      <div className="flex justify-end">
-        <input
-          type="text"
-          placeholder="Global search..."
-          value={filterText}
-          onChange={(e) => setFilterText(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          style={{ width: '300px' }}
-        />
-      </div>
+      
 
       {/* DataTable */}
       {tableData.length > 0 && (

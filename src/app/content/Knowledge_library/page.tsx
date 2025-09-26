@@ -262,30 +262,13 @@ const Honeycomb: React.FC = () => {
   return (
     <>
       {/* 🔽 Top bar: Toggle + Filters */}
-      <div className="flex p-4 justify-between items-center mb-6">
+      <div className="flex p-4 justify-end items-end mb-6">
         {/* View Toggle */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className={viewMode === "circle" ? "bg-blue-200 text-black" : "bg-white"}
-            onClick={() => setViewMode("circle")}
-          >
-            <Circle className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant="outline"
-            className={viewMode === "table" ? "bg-blue-200 text-black" : "bg-white"}
-            onClick={() => setViewMode("table")}
-          >
-            <TableIcon className="w-4 h-4" />
-          </Button>
-        </div>
-
+     
         {/* Filters */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="p-3 rounded-lg hover:bg-gray-100">
+            <button className="p-2 rounded-lg hover:bg-gray-100">
               <Funnel className="w-5 h-5" />
             </button>
           </PopoverTrigger>
@@ -358,6 +341,24 @@ const Honeycomb: React.FC = () => {
             </Select>
           </PopoverContent>
         </Popover>
+   <div className="flex gap-2 px-2">
+          <Button
+            variant="outline"
+            className={`${viewMode === "circle" ? "bg-blue-200 text-black" : "bg-white"} h-9 w-6`}
+            onClick={() => setViewMode("circle")}
+          >
+            <Circle className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant="outline"
+            className={`${viewMode === "table" ? "bg-blue-200 text-black" : "bg-white"} h-9 w-6`}
+            onClick={() => setViewMode("table")}
+          >
+            <TableIcon className="w-4 h-4" />
+          </Button>
+        </div>
+
       </div>
 
       {/* 🔽 Content */}

@@ -106,7 +106,7 @@ export default function PayrollDeductionsPage() {
             type="text"
             placeholder="Search..."
             onChange={(e) => handleColumnFilter("srNo", e.target.value)}
-            className="w-full border text-xs rounded p-1 mt-1"
+            className="w-full text-xs p-1 mt-1"
           />
         </div>
       ),
@@ -122,13 +122,13 @@ export default function PayrollDeductionsPage() {
             type="text"
             placeholder="Search..."
             onChange={(e) => handleColumnFilter("employeeCode", e.target.value)}
-            className="w-full border text-xs rounded p-1 mt-1"
+            className="w-full text-xs p-1 mt-1"
           />
         </div>
       ),
       selector: (row) => row.employeeCode,
       sortable: true,
-      width: "220px",
+      width: "216px",
     },
     {
       name: (
@@ -138,13 +138,13 @@ export default function PayrollDeductionsPage() {
             type="text"
             placeholder="Search..."
             onChange={(e) => handleColumnFilter("employeeName", e.target.value)}
-            className="w-full border text-xs rounded p-1 mt-1"
+            className="w-full text-xs p-1 mt-1"
           />
         </div>
       ),
       selector: (row) => row.employeeName,
       sortable: true,
-      width: "250px",
+      width: "240px",
     },
     {
       name: (
@@ -154,13 +154,13 @@ export default function PayrollDeductionsPage() {
             type="text"
             placeholder="Search..."
             onChange={(e) => handleColumnFilter("department", e.target.value)}
-            className="w-full border text-xs rounded p-1 mt-1"
+            className="w-full  text-xs  p-1 mt-1"
           />
         </div>
       ),
       selector: (row) => row.department,
       sortable: true,
-      width: "250px",
+      width: "240px",
     },
     {
       name: (
@@ -172,7 +172,7 @@ export default function PayrollDeductionsPage() {
             onChange={(e) =>
               handleColumnFilter("deductionAmount", e.target.value)
             }
-            className="w-full border text-xs rounded p-1 mt-1"
+            className="w-full text-xs p-1 mt-1"
           />
         </div>
       ),
@@ -181,7 +181,7 @@ export default function PayrollDeductionsPage() {
           type="number"
           value={row.deductionAmount}
           onChange={(e) => handleChange(row.id, e.target.value)}
-          className="border rounded p-1 w-full text-center"
+          className=" p-1 w-full text-center"
         />
       ),
       selector: (row) => row.deductionAmount,
@@ -256,7 +256,15 @@ export default function PayrollDeductionsPage() {
   const years = Array.from({ length: currentYear - 2000 + 11 }, (_, i) => 2000 + i);
 
   return (
-    <div className="p-3">
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground"> Payroll Deduction Management</h1>
+          {/* <p className="text-sm text-muted-foreground mt-1">
+                Manage your organization's information, Department structure.
+              </p> */}
+        </div>
+      </div>
       {/* Filters */}
       <div className="grid grid-cols-5 gap-4 items-end mb-6">
         {/* Deduction Type */}
@@ -326,49 +334,47 @@ export default function PayrollDeductionsPage() {
 
         {/* Search Button */}
         <div>
-          <button
+          {/* <button
             onClick={handleSearch}
-            className="px-6 py-2 rounded-lg font-bold flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-8"
+            className="px-6 py-2 rounded-lg flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-8"
           >
             <Search className="w-5 h-5 mr-2" /> Search
-          </button>
+          </button> */}
+          <Button
+            onClick={handleSearch}
+            disabled={loading}
+            className="px-6 py-2 rounded-lg flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-14"
+          >
+            <Search className="w-5 h-5 mr-2 text-black" />
+            {loading ? "Searching..." : "Search"}
+          </Button>
         </div>
       </div>
 
       {/* Export Buttons */}
       {searched && (
-          <div className="flex gap-3 flex-wrap justify-end">
-                <Button
-                  onClick={exportToPDF}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
-                >
-                  <span className="mdi mdi-file-pdf-box text-xl"></span>
-                </Button>
-                <Button
-                  onClick={exportToCSV}
-                  title="Export as CSV"
-                  aria-label="Export as CSV"
-                  className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors px-3"
-                >
-                  <FileSpreadsheet className="w-8 h-5" />
-                </Button>
-        
-                <Button
-                  onClick={exportToExcel}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
-                >
-                  <span className="mdi mdi-file-excel-outline text-xl"></span>
-                </Button>
-                <Button
-                  onClick={() => window.print()}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-                >
-                  <Printer className="w-5 h-5" />
-                </Button>
-                <Button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
-                  <Table className="w-5 h-5" />
-                </Button>
-              </div>
+        <div className="flex gap-3 flex-wrap justify-end">
+          <Button
+            onClick={() => window.print()}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+          >
+            <Printer className="w-5 h-5" />
+          </Button>
+          <Button
+            onClick={exportToPDF}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
+          >
+            <span className="mdi mdi-file-pdf-box text-xl"></span>
+          </Button>
+
+
+          <Button
+            onClick={exportToExcel}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
+          >
+            <span className="mdi mdi-file-excel-outline text-xl"></span>
+          </Button>
+        </div>
       )}
 
       {/* DataTable */}

@@ -162,7 +162,7 @@ const BehaviourGrid = () => {
         <Popover>
           <PopoverTrigger asChild>
             <button className="p-3">
-              <Funnel />
+              <Funnel className="w-5 h-5" />
             </button>
           </PopoverTrigger>
 
