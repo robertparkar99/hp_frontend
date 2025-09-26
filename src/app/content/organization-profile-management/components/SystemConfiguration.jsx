@@ -10,6 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import dynamic from "next/dynamic";
+import Icon from '@/components/AppIcon';
+
 
 const ExcelExportButton = dynamic(
   () =>
@@ -446,8 +448,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+          
               marginTop: "5px"
             }}
           />
@@ -469,8 +470,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -491,8 +491,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -513,8 +512,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -536,8 +534,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -565,8 +562,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           />
@@ -588,8 +584,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -610,8 +605,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -641,15 +635,15 @@ const SystemConfiguration = () => {
         <div className="flex space-x-2">
           <button
             onClick={() => row.id && handleEditClick(row.id)}
-            className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
+            className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-2 px-2 rounded"
           >
-            <span className="mdi mdi-pencil"></span>
+            <Icon name="Edit" size={14} />
           </button>
           <button
             onClick={() => row.id && handleDeleteClick(row.id)}
-            className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
+            className="bg-red-500 hover:bg-red-700 text-white text-xs py-2 px-2 rounded"
           >
-            <span className="mdi mdi-delete"></span>
+            <Icon name="Trash2" size={14} />
           </button>
         </div>
       ),

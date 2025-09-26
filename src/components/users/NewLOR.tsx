@@ -66,7 +66,7 @@ export default function Index({ SelLOR }: SelLORProps) {
       {/* TOP SELECTION TABS */}
       <div className="w-full max-w-6xl mx-auto">
         <div
-          className="rounded-2xl border-4 border-blue-500/80 bg-[#f6faff] shadow-lg backdrop-blur-lg"
+          className="rounded-2xl border-2 border-blue-500/80 bg-[#f6faff] shadow-lg backdrop-blur-lg"
           style={{
             boxShadow: "2px 3px 8px 6px rgba(193, 193, 193, 0.25)",
           }}
@@ -102,7 +102,7 @@ export default function Index({ SelLOR }: SelLORProps) {
           activeSection
         ) && (
           <div
-            className="rounded-2xl border-4 border-[#A4D0FF] flex items-center justify-start px-4 py-2 mt-6 shadow-sm"
+            className="rounded-2xl border-2 border-[#A4D0FF] flex items-center justify-start px-4 py-2 mt-6 shadow-sm"
             style={{
               background:
                 "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
@@ -135,7 +135,7 @@ export default function Index({ SelLOR }: SelLORProps) {
                 className="absolute inset-0"
                 style={{
                   borderRadius: "16px",
-                  border: "4px solid #94BEFF",
+                  border: "2px solid #94BEFF",
                   background:
                     "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
                   backdropFilter: "blur(2px)",
@@ -146,7 +146,7 @@ export default function Index({ SelLOR }: SelLORProps) {
                 style={{
                   position: "relative",
                   margin: "30px 0px 0px 20px",
-                  fontSize: "28px",
+                  fontSize: "24px",
                   fontWeight: "700",
                   fontFamily: "Inter, sans-serif",
                   color: "#0043CE",

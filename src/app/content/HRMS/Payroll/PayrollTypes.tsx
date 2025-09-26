@@ -742,8 +742,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -765,8 +764,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -797,8 +795,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -819,8 +816,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -841,8 +837,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+            
               marginTop: "5px"
             }}
           />
@@ -879,8 +874,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+          
               marginTop: "5px"
             }}
           />
@@ -909,8 +903,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+             
               marginTop: "5px"
             }}
           // style={{ width: "100%", padding: "4px", fontSize: "12px", marginTop: "4px" }}
@@ -994,7 +987,7 @@ export default function PayrollTypes() {
     },
   };
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

@@ -444,7 +444,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             </h4>
             <div className="flex space-x-2">
               {index === 0 && (
-                <button type="button" onClick={addSisterCompany} className="p-1 rounded-full bg-primary text-primary-foreground hover:bg-primary/90" title="Add another sister company">
+                <button type="button" onClick={addSisterCompany} className="p-1 rounded-full bg-blue-400 text-white hover:bg-blue-500" title="Add another sister company">
                   <Icon name="Plus" size={16} />
                 </button>
               )}

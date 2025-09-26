@@ -209,8 +209,8 @@ const ActivityStream = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
-          <p className="text-gray-600">Track task progress across your team</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
+          <p className="text-gray-600 text-sm">Track task progress across your team</p>
         </div>
 
         {/* Stats Cards */}
@@ -267,7 +267,7 @@ const ActivityStream = () => {
             {/* Filters */}
             <Card className="mb-6 shafow-lg shadow-blue-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-xl">
                   <Filter className="w-5 h-5" />
                   Filters
                 </CardTitle>

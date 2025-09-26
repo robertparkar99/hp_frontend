@@ -107,7 +107,7 @@
 
 //   const handleDeptSubmit = (e: React.FormEvent) => {
 //     e.preventDefault();
-    
+
 //     if (!deptFormData.department || !deptFormData.leaveType || !deptFormData.days) {
 //       toast({
 //         title: "Error",
@@ -143,7 +143,7 @@
 
 //   const handleEmpSubmit = (e: React.FormEvent) => {
 //     e.preventDefault();
-    
+
 //     if (!empFormData.department || !empFormData.employee || !empFormData.leaveType || !empFormData.days) {
 //       toast({
 //         title: "Error",
@@ -549,6 +549,9 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Save, X, Building, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DataTable, { TableColumn, TableStyles } from 'react-data-table-component';
+import Icon from '@/components/AppIcon';
+
+
 
 interface DepartmentAllocation {
   id: number;
@@ -644,51 +647,51 @@ export default function LeaveAllocation() {
     year: new Date().getFullYear().toString(),
     days: "",
   });
-// State for search text per column
-const [columnFilters, setColumnFilters] = useState({
-  srno: "",
-  department: "",
-  employee: "",
-  leaveType: "",
-  year: "",
-  days: "",
-  status: ""
-});
+  // State for search text per column
+  const [columnFilters, setColumnFilters] = useState({
+    srno: "",
+    department: "",
+    employee: "",
+    leaveType: "",
+    year: "",
+    days: "",
+    status: ""
+  });
 
-// Handle column filter
-const handleColumnFilter = (column: string, value: string) => {
-  setColumnFilters((prev) => ({
-    ...prev,
-    [column]: value,
-  }));
-};
+  // Handle column filter
+  const handleColumnFilter = (column: string, value: string) => {
+    setColumnFilters((prev) => ({
+      ...prev,
+      [column]: value,
+    }));
+  };
 
- const filteredDeptAllocations = departmentAllocations.filter((item, index) => {
-  return (
-    (columnFilters.srno === "" || (index + 1).toString().includes(columnFilters.srno)) &&
-    (columnFilters.department === "" || item.department.toLowerCase().includes(columnFilters.department.toLowerCase())) &&
-    (columnFilters.leaveType === "" || item.leaveType.toLowerCase().includes(columnFilters.leaveType.toLowerCase())) &&
-    (columnFilters.year === "" || item.year.toString().includes(columnFilters.year)) &&
-    (columnFilters.days === "" || item.days.toString().includes(columnFilters.days)) &&
-    (columnFilters.status === "" || item.status.toLowerCase().includes(columnFilters.status.toLowerCase()))
-  );
-});
+  const filteredDeptAllocations = departmentAllocations.filter((item, index) => {
+    return (
+      (columnFilters.srno === "" || (index + 1).toString().includes(columnFilters.srno)) &&
+      (columnFilters.department === "" || item.department.toLowerCase().includes(columnFilters.department.toLowerCase())) &&
+      (columnFilters.leaveType === "" || item.leaveType.toLowerCase().includes(columnFilters.leaveType.toLowerCase())) &&
+      (columnFilters.year === "" || item.year.toString().includes(columnFilters.year)) &&
+      (columnFilters.days === "" || item.days.toString().includes(columnFilters.days)) &&
+      (columnFilters.status === "" || item.status.toLowerCase().includes(columnFilters.status.toLowerCase()))
+    );
+  });
   // Filter employee allocations based on search text
- const filteredEmpAllocations = employeeAllocations.filter((item, index) => {
-  return (
-    (columnFilters.srno === "" || (index + 1).toString().includes(columnFilters.srno)) &&
-    (columnFilters.department === "" || item.department.toLowerCase().includes(columnFilters.department.toLowerCase())) &&
-    (columnFilters.employee === "" || item.employee.toLowerCase().includes(columnFilters.employee.toLowerCase())) &&
-    (columnFilters.leaveType === "" || item.leaveType.toLowerCase().includes(columnFilters.leaveType.toLowerCase())) &&
-    (columnFilters.year === "" || item.year.toString().includes(columnFilters.year)) &&
-    (columnFilters.days === "" || item.days.toString().includes(columnFilters.days)) &&
-    (columnFilters.status === "" || item.status.toLowerCase().includes(columnFilters.status.toLowerCase()))
-  );
-});
+  const filteredEmpAllocations = employeeAllocations.filter((item, index) => {
+    return (
+      (columnFilters.srno === "" || (index + 1).toString().includes(columnFilters.srno)) &&
+      (columnFilters.department === "" || item.department.toLowerCase().includes(columnFilters.department.toLowerCase())) &&
+      (columnFilters.employee === "" || item.employee.toLowerCase().includes(columnFilters.employee.toLowerCase())) &&
+      (columnFilters.leaveType === "" || item.leaveType.toLowerCase().includes(columnFilters.leaveType.toLowerCase())) &&
+      (columnFilters.year === "" || item.year.toString().includes(columnFilters.year)) &&
+      (columnFilters.days === "" || item.days.toString().includes(columnFilters.days)) &&
+      (columnFilters.status === "" || item.status.toLowerCase().includes(columnFilters.status.toLowerCase()))
+    );
+  });
 
   const handleDeptSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!deptFormData.department || !deptFormData.leaveType || !deptFormData.days) {
       toast({
         title: "Error",
@@ -724,7 +727,7 @@ const handleColumnFilter = (column: string, value: string) => {
 
   const handleEmpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!empFormData.department || !empFormData.employee || !empFormData.leaveType || !empFormData.days) {
       toast({
         title: "Error",
@@ -776,21 +779,22 @@ const handleColumnFilter = (column: string, value: string) => {
     });
   };
 
-   const customStyles : TableStyles =  {
-      headCells: {
-        style: {
-          fontSize: "14px",
-          backgroundColor: "#D1E7FF",
-          color: "black",
-          whiteSpace: "nowrap",
-          textAlign: "left",
-        },
+  const customStyles: TableStyles = {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
       },
-      cells: { style: { fontSize: "13px", textAlign: "left" } },
-      table: {
-        style: { border: "1px solid #ddd", borderRadius: "20px", overflow: "hidden" },
-      },
-    };
+    },
+    cells: { style: { fontSize: "13px", textAlign: "left" } },
+    table: {
+      style: { border: "1px solid #ddd",
+        borderRadius: "20px", overflow: "hidden" },
+    },
+  };
   // Define columns for Department DataTable
   const deptColumns: TableColumn<DepartmentAllocation>[] = [
     {
@@ -805,8 +809,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -828,8 +831,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -850,8 +852,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -872,8 +873,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -894,8 +894,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+            
               marginTop: "5px"
             }}
           />
@@ -917,8 +916,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+           
               marginTop: "5px"
             }}
           />
@@ -936,16 +934,17 @@ const handleColumnFilter = (column: string, value: string) => {
       name: "Actions",
       cell: (row: DepartmentAllocation) => (
         <div className="flex gap-2">
-          <Button size="sm" variant="ghost"  className="bg-blue-500 hover:bg-blue-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white">
-            <span className="mdi mdi-pencil hover:text-white"></span>
+          <Button size="sm" variant="ghost" className="bg-blue-500 hover:bg-blue-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white">
+           
+            <Icon name="Edit" size={14} />
           </Button>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => handleDeleteDept(row.id)}
-           className="bg-red-500 hover:bg-red-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white"
+            className="bg-red-500 hover:bg-red-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white"
           >
-          <span className="mdi mdi-delete hover:text-white"></span>
+            <Icon name="Trash2" size={14} />
           </Button>
         </div>
       ),
@@ -970,8 +969,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -993,8 +991,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -1015,8 +1012,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -1037,8 +1033,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -1059,8 +1054,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -1081,8 +1075,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -1104,8 +1097,7 @@ const handleColumnFilter = (column: string, value: string) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+              
               marginTop: "5px"
             }}
           />
@@ -1124,15 +1116,15 @@ const handleColumnFilter = (column: string, value: string) => {
       cell: (row: EmployeeAllocation) => (
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" className="bg-blue-500 hover:bg-blue-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white">
-             <span className="mdi mdi-pencil hover:text-white"></span>
+            <Icon name="Edit" size={14} />
           </Button>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => handleDeleteEmp(row.id)}
-           className="bg-red-500 hover:bg-red-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white"
+            className="bg-red-500 hover:bg-red-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white"
           >
- <span className="mdi mdi-delete hover:text-white"></span>
+            <Icon name="Trash2" size={14} />
           </Button>
         </div>
       ),
@@ -1195,7 +1187,7 @@ const handleColumnFilter = (column: string, value: string) => {
                   Allocate leave days to entire departments
                 </CardDescription>
               </div>
-              <Button 
+              <Button
                 onClick={() => setShowDeptForm(true)}
                 className="bg-gradient-primary hover:shadow-glow transition-all"
               >
@@ -1215,7 +1207,7 @@ const handleColumnFilter = (column: string, value: string) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="dept-department">Select Department *</Label>
-                        <Select value={deptFormData.department} onValueChange={(value) => setDeptFormData(prev => ({...prev, department: value}))}>
+                        <Select value={deptFormData.department} onValueChange={(value) => setDeptFormData(prev => ({ ...prev, department: value }))}>
                           <SelectTrigger>
                             <SelectValue placeholder="Choose department" />
                           </SelectTrigger>
@@ -1228,7 +1220,7 @@ const handleColumnFilter = (column: string, value: string) => {
                       </div>
                       <div>
                         <Label htmlFor="dept-leave-type">Select Leave Type *</Label>
-                        <Select value={deptFormData.leaveType} onValueChange={(value) => setDeptFormData(prev => ({...prev, leaveType: value}))}>
+                        <Select value={deptFormData.leaveType} onValueChange={(value) => setDeptFormData(prev => ({ ...prev, leaveType: value }))}>
                           <SelectTrigger>
                             <SelectValue placeholder="Choose leave type" />
                           </SelectTrigger>
@@ -1245,7 +1237,7 @@ const handleColumnFilter = (column: string, value: string) => {
                           id="dept-year"
                           type="number"
                           value={deptFormData.year}
-                          onChange={(e) => setDeptFormData(prev => ({...prev, year: e.target.value}))}
+                          onChange={(e) => setDeptFormData(prev => ({ ...prev, year: e.target.value }))}
                         />
                       </div>
                       <div>
@@ -1254,7 +1246,7 @@ const handleColumnFilter = (column: string, value: string) => {
                           id="dept-days"
                           type="number"
                           value={deptFormData.days}
-                          onChange={(e) => setDeptFormData(prev => ({...prev, days: e.target.value}))}
+                          onChange={(e) => setDeptFormData(prev => ({ ...prev, days: e.target.value }))}
                           placeholder="e.g., 25"
                         />
                       </div>
@@ -1305,7 +1297,7 @@ const handleColumnFilter = (column: string, value: string) => {
                   Allocate leave days to individual employees
                 </CardDescription>
               </div>
-              <Button 
+              <Button
                 onClick={() => setShowEmpForm(true)}
                 className="bg-gradient-primary hover:shadow-glow transition-all"
               >
@@ -1325,7 +1317,7 @@ const handleColumnFilter = (column: string, value: string) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="emp-department">Select Department *</Label>
-                        <Select value={empFormData.department} onValueChange={(value) => setEmpFormData(prev => ({...prev, department: value}))}>
+                        <Select value={empFormData.department} onValueChange={(value) => setEmpFormData(prev => ({ ...prev, department: value }))}>
                           <SelectTrigger>
                             <SelectValue placeholder="Choose department" />
                           </SelectTrigger>
@@ -1338,7 +1330,7 @@ const handleColumnFilter = (column: string, value: string) => {
                       </div>
                       <div>
                         <Label htmlFor="emp-employee">Select Employee *</Label>
-                        <Select value={empFormData.employee} onValueChange={(value) => setEmpFormData(prev => ({...prev, employee: value}))}>
+                        <Select value={empFormData.employee} onValueChange={(value) => setEmpFormData(prev => ({ ...prev, employee: value }))}>
                           <SelectTrigger>
                             <SelectValue placeholder="Choose employee" />
                           </SelectTrigger>
@@ -1351,7 +1343,7 @@ const handleColumnFilter = (column: string, value: string) => {
                       </div>
                       <div>
                         <Label htmlFor="emp-leave-type">Select Leave Type *</Label>
-                        <Select value={empFormData.leaveType} onValueChange={(value) => setEmpFormData(prev => ({...prev, leaveType: value}))}>
+                        <Select value={empFormData.leaveType} onValueChange={(value) => setEmpFormData(prev => ({ ...prev, leaveType: value }))}>
                           <SelectTrigger>
                             <SelectValue placeholder="Choose leave type" />
                           </SelectTrigger>
@@ -1368,7 +1360,7 @@ const handleColumnFilter = (column: string, value: string) => {
                           id="emp-year"
                           type="number"
                           value={empFormData.year}
-                          onChange={(e) => setEmpFormData(prev => ({...prev, year: e.target.value}))}
+                          onChange={(e) => setEmpFormData(prev => ({ ...prev, year: e.target.value }))}
                         />
                       </div>
                       <div className="md:col-span-2">
@@ -1377,7 +1369,7 @@ const handleColumnFilter = (column: string, value: string) => {
                           id="emp-days"
                           type="number"
                           value={empFormData.days}
-                          onChange={(e) => setEmpFormData(prev => ({...prev, days: e.target.value}))}
+                          onChange={(e) => setEmpFormData(prev => ({ ...prev, days: e.target.value }))}
                           placeholder="e.g., 25"
                         />
                       </div>

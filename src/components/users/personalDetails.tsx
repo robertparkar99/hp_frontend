@@ -724,7 +724,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               onChange={() =>
                                 handleInputChange("personal", "gender", "M")
                               }
-                              className="accent-blue-500"
+                              className="accent-blue-500 no-shadow"
+                              
                             />
                             Male
                           </label>
@@ -737,7 +738,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               onChange={() =>
                                 handleInputChange("personal", "gender", "F")
                               }
-                              className="accent-pink-500"
+                              className="accent-pink-500 no-shadow"
                             />
                             Female
                           </label>
@@ -1126,6 +1127,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                                     day
                                   )}
                                   onChange={() => handleCheckboxChange(day)}
+                                  className="no-shadow"
                                 />
                                 {day}
                               </label>

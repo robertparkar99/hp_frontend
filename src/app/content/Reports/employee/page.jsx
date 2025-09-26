@@ -324,8 +324,8 @@ useEffect(() => {
       <main className="pb-16">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Employee Directory</h1>
-            <p className="text-muted-foreground mt-2">
+            <h1 className="text-2xl font-bold text-foreground">Employee Directory</h1>
+            <p className="text-muted-foreground mt-2 text-sm">
               Search, filter, and manage workforce information efficiently
             </p>
           </div>
@@ -370,7 +370,7 @@ useEffect(() => {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => setViewMode('table')}
-                      className={`p-2 rounded-md transition-smooth ${viewMode === 'table' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+                      className={`p-2 rounded-md transition-smooth ${viewMode === 'table' ? 'bg-blue-400 text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
                         }`}
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -379,7 +379,7 @@ useEffect(() => {
                     </button>
                     <button
                       onClick={() => setViewMode('cards')}
-                      className={`p-2 rounded-md transition-smooth ${viewMode === 'cards' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+                      className={`p-2 rounded-md transition-smooth ${viewMode === 'cards' ? 'bg-blue-400 text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
                         }`}
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

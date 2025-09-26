@@ -175,7 +175,7 @@ export default function HomePage() {
         </div>
 
         <button
-          className="rounded-lg hover:bg-gray-100 px-4 py-2 flex items-center justify-center text-xl"
+          className="rounded-lg hover:bg-gray-100 px-3 py-1 flex items-center justify-center text-xl"
           onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
           data-titlehead="Add New Jobrole"
         >

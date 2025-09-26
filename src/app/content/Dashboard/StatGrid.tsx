@@ -1575,7 +1575,7 @@ export default function Dashboard() {
 
         {/* Welcome with icon */}
         <div className="flex items-center gap-2">
-          <UserCircle className="w-7 h-7 text-blue-600" />
+          <UserCircle className="w-7 h-7 text-blue-400" />
           <h1 className="text-xl font-bold text-gray-800">
             Welcome, {sessionData?.userProfileName || "User"}
           </h1>
@@ -2431,13 +2431,13 @@ export default function Dashboard() {
             {/* Tab Navigation */}
             <div className="flex border-b">
               <button
-                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Today Task List" || !selectedWidget ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700"}`}
+                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Today Task List" || !selectedWidget ? "text-blue-500 border-b-2 border-blue-500" : "text-gray-500 hover:text-gray-700"}`}
                 onClick={() => setSelectedWidget("Today Task List")}
               >
                 Today's Tasks
               </button>
               <button
-                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Week Task List" ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700"}`}
+                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Week Task List" ? "text-blue-400 border-b-2 border-blue-400" : "text-gray-500 hover:text-gray-700"}`}
                 onClick={() => setSelectedWidget("Week Task List")}
               >
                 Weekly Tasks
@@ -2456,17 +2456,28 @@ export default function Dashboard() {
                       onClick={() => {
                         triggerMenuNavigation(null, 'task/taskManagement.tsx');
                       }}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-400 text-white hover:bg-blue-600"
                     >
                       +
                     </button>
                   </div>
 
                   {todayTasks.length > 0 ? (
-                    todayTasks.map((task, index) => (
-                      <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                    todayTasks.map((task, index) => {
+                       const badgeColors: Record<string, string> = {
+                        Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
+               
+                      return (
+                      <div key={index}  className={`mb-4 border-l-2 pl-3 ${
+          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+        }`}>
                         {/* Badge */}
-                        <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                        <span  className={`text-xs font-semibold px-2 py-1 rounded ${
+            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+          }`}>
                           {task.task_type}
                         </span>
 
@@ -2502,7 +2513,8 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
-                    ))
+                    )
+                  })
                   ) : (
                     <p className="text-gray-500 text-sm">No tasks for today</p>
                   )}
@@ -2518,50 +2530,66 @@ export default function Dashboard() {
                   </div>
 
                   {weekTasks.length > 0 ? (
-                    weekTasks.map((task, index) => (
-                      <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
-                        {/* Badge */}
-                        <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
-                          {task.task_type}
-                        </span>
+                    weekTasks.map((task, index) => {
+                      // ✅ Define color mapping
+                      const badgeColors: Record<string, string> = {
+                        Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
 
-                        {/* Title */}
-                        <p className="mt-2">{task.task_title}</p>
-                        {/* <p className="text-xs text-gray-500">Created Outlook of wireframe</p> */}
+                      return (
+                        <div
+                          key={index}
+                          className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+                            }`}
+                        >
+                          {/* Badge */}
+                          <span
+                            className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+                              }`}
+                          >
+                            {task.task_type}
+                          </span>
 
-                        {/* Profile */}
-                        <div className="flex items-center gap-2 mt-2">
-                          <img
-                            src={
-                              task.image && task.image !== ""
-                                ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
-                                : placeholderImage
-                            }
-                            alt={task.allocatedUser}
-                            className="w-8 h-8 rounded-full object-cover"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                            }}
-                          />
-                          <div>
-                            <p className="text-sm font-medium">{task.allocatedUser}</p>
-                            <p className="text-xs text-gray-400">
-                              {(() => {
-                                if (!task.task_date) return "";
-                                const d = new Date(task.task_date);
-                                const day = String(d.getDate()).padStart(2, "0");
-                                const month = String(d.getMonth() + 1).padStart(2, "0");
-                                const year = d.getFullYear();
-                                return `${day}-${month}-${year}`;
-                              })()}
-                            </p>
+                          {/* Title */}
+                          <p className="mt-2">{task.task_title}</p>
+
+                          {/* Profile */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <img
+                              src={
+                                task.image && task.image !== ""
+                                  ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                                  : placeholderImage
+                              }
+                              alt={task.allocatedUser}
+                              className="w-8 h-8 rounded-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                              }}
+                            />
+                            <div>
+                              <p className="text-sm font-medium">{task.allocatedUser}</p>
+                              <p className="text-xs text-gray-400">
+                                {(() => {
+                                  if (!task.task_date) return "";
+                                  const d = new Date(task.task_date);
+                                  const day = String(d.getDate()).padStart(2, "0");
+                                  const month = String(d.getMonth() + 1).padStart(2, "0");
+                                  const year = d.getFullYear();
+                                  return `${day}-${month}-${year}`;
+                                })()}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <p className="text-gray-500 text-sm">No tasks for this week</p>
                   )}
+
                 </div>
               )}
             </div>
@@ -2574,17 +2602,30 @@ export default function Dashboard() {
                 <h2 className="font-semibold">Course List</h2>
                 <button
                   onClick={() => setOpenDialog(true)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-400 text-white hover:bg-red-600"
                 >
                   +
                 </button>
               </div>
 
               {todayTasks.length > 0 ? (
-                todayTasks.map((task, index) => (
-                  <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                todayTasks.map((task, index) =>
+                 {
+                                   // ✅ Define color mapping
+                      const badgeColors: Record<string, string> = {
+                       Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
+            
+                  return (
+                  <div key={index}  className={`mb-4 border-l-2 pl-3 ${
+          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+        }`}>
                     {/* Badge */}
-                    <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                    <span  className={`text-xs font-semibold px-2 py-1 rounded ${
+            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+          }`}>
                       {task.task_type}
                     </span>
 
@@ -2620,7 +2661,8 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                ))
+                )
+              })
               ) : (
                 <p className="text-gray-500 text-sm">No course</p>
               )}
@@ -2633,17 +2675,30 @@ export default function Dashboard() {
                 <h2 className="font-semibold">Assessment List</h2>
                 <button
                   onClick={() => setOpenDialog(true)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-blur-400 text-white hover:bg-blue-400"
                 >
                   +
                 </button>
               </div>
 
               {weekTasks.length > 0 ? (
-                weekTasks.map((task, index) => (
-                  <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                weekTasks.map((task, index) =>
+                {  
+                           // ✅ Define color mapping
+                      const badgeColors: Record<string, string> = {
+                       Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
+                  
+                  return (
+                  <div key={index}  className={`mb-4 border-l-2 pl-3 ${
+          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+        }`}>
                     {/* Badge */}
-                    <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                    <span  className={`text-xs font-semibold px-2 py-1 rounded ${
+            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+          }`}>
                       {task.task_type}
                     </span>
 
@@ -2679,7 +2734,8 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                ))
+                )
+})
               ) : (
                 <p className="text-gray-500 text-sm">No assessment</p>
               )}

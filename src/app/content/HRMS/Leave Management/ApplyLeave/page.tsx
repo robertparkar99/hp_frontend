@@ -721,8 +721,7 @@ const filteredData = useMemo(() => {
             width: "100%",
             padding: "4px",
             fontSize: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "3px",
+           
             marginTop: "5px"
           }}
         />
@@ -745,8 +744,7 @@ const filteredData = useMemo(() => {
             width: "100%",
             padding: "4px",
             fontSize: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "3px",
+            
             marginTop: "5px"
           }}
         />
@@ -768,8 +766,7 @@ const filteredData = useMemo(() => {
             width: "100%",
             padding: "4px",
             fontSize: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "3px",
+           
             marginTop: "5px"
           }}
         />
@@ -791,8 +788,7 @@ const filteredData = useMemo(() => {
             width: "100%",
             padding: "4px",
             fontSize: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "3px",
+           
             marginTop: "5px"
           }}
         />
@@ -817,8 +813,7 @@ const filteredData = useMemo(() => {
             width: "100%",
             padding: "4px",
             fontSize: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "3px",
+          
             marginTop: "5px"
           }}
         />
@@ -839,8 +834,7 @@ const filteredData = useMemo(() => {
             width: "100%",
             padding: "4px",
             fontSize: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "3px",
+            
             marginTop: "5px"
           }}
         />
@@ -861,8 +855,7 @@ const filteredData = useMemo(() => {
             width: "100%",
             padding: "4px",
             fontSize: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "3px",
+          
             marginTop: "5px"
           }}
         />
@@ -883,8 +876,7 @@ const filteredData = useMemo(() => {
             width: "100%",
             padding: "4px",
             fontSize: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "3px",
+           
             marginTop: "5px"
           }}
         />
@@ -905,8 +897,7 @@ const filteredData = useMemo(() => {
             width: "100%",
             padding: "4px",
             fontSize: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "3px",
+          
             marginTop: "5px"
           }}
         />
@@ -934,7 +925,7 @@ const filteredData = useMemo(() => {
     },
     cells: { style: { fontSize: "13px", textAlign: "left" } },
     table: {
-      style: { border: "1px solid #ddd", borderRadius: "20px", overflow: "hidden" },
+      style: {  overflow: "hidden" },
     },
   };
 
@@ -958,6 +949,35 @@ const filteredData = useMemo(() => {
   }, []);
 
   // Fetch Leave Types
+  // useEffect(() => {
+  //   if (!sessionData.url || !sessionData.subInstituteId || !sessionData.token) return;
+
+  //   const fetchLeaveTypes = async () => {
+  //     setLoadingLeaveTypes(true);
+  //     try {
+  //       const res = await fetch(
+  //         `${sessionData.url}/leave-type?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}`
+  //       );
+  //       if (!res.ok) throw new Error(`Leave types fetch failed: ${res.status}`);
+  //       const json = await res.json();
+  //       setLeaveTypes(json.LeaveTypeLists || []);
+  //     } catch (err) {
+  //       console.error("Failed to fetch leave types:", err);
+  //       toast({
+  //         title: "Error",
+  //         description: "Could not load leave types.",
+  //         variant: "destructive",
+  //       });
+  //       setLeaveTypes([]);
+  //     } finally {
+  //       setLoadingLeaveTypes(false);
+  //     }
+  //   };
+
+  //   fetchLeaveTypes();
+  // }, [sessionData]);
+
+  //   // ✅ Fetch Leave Types
   useEffect(() => {
     if (!sessionData.url || !sessionData.subInstituteId || !sessionData.token) return;
 
