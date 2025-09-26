@@ -409,19 +409,19 @@ const JobroleData: React.FC<Props> = ({ editData }) => {
                   autoComplete="off"
                 />
 
-                {jobRoleSuggestions[index]?.length > 0 && (
-                  <ul className="relative z-20 w-full max-h-60 overflow-y-auto border border-gray-300 rounded-lg mt-1 shadow-lg bg-white">
-                    {jobRoleSuggestions[index].map((suggestion, sIndex) => (
-                      <li
-                        key={sIndex}
-                        className="p-2 hover:bg-blue-100 cursor-pointer"
-                        onClick={() => handleSelectSuggestion(index, suggestion)}
-                      >
-                        {suggestion}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                {(jobRoleSuggestions[index] || []).map((suggestion: any, sIndex) => {
+                  const label = typeof suggestion === "string" ? suggestion : suggestion.title || "";
+                  return (
+                    <li
+                      key={sIndex}
+                      className="p-2 hover:bg-blue-100 cursor-pointer"
+                      onClick={() => handleSelectSuggestion(index, label)}
+                    >
+                      {label}
+                    </li>
+                  );
+                })}
+
               </div>
             </div>
 

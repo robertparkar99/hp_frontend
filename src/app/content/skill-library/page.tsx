@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import { FiEdit } from "react-icons/fi";
-import { Trash2, Funnel } from "lucide-react";
+import { Trash2, Funnel, Hexagon, Table } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Atom } from "react-loading-indicators";
+import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 
 type Skill = {
   id: number;
@@ -69,6 +70,19 @@ export default function Page() {
   });
 
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // 🔑 View Mode
+  const [viewMode, setViewMode] = useState<"hexagon" | "table">("hexagon");
+
+  // 🔎 Row-wise filters
+  const [filters, setFilters] = useState({
+    title: "",
+    description: "",
+    department: "",
+    category: "",
+    sub_category: "",
+    proficiency_level: "",
+  });
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -206,6 +220,153 @@ export default function Page() {
     filteredSkills = userSkills.filter((s) => s.category === firstCategory);
   }
 
+  // Apply column-wise filters
+  const columnFilteredSkills = filteredSkills.filter((s) =>
+    s.title.toLowerCase().includes(filters.title.toLowerCase()) &&
+    (s.description || "").toLowerCase().includes(filters.description.toLowerCase()) &&
+    (s.department || "").toLowerCase().includes(filters.department.toLowerCase()) &&
+    (s.category || "").toLowerCase().includes(filters.category.toLowerCase()) &&
+    (s.sub_category || "").toLowerCase().includes(filters.sub_category.toLowerCase()) &&
+    (s.proficiency_level || "").toLowerCase().includes(filters.proficiency_level.toLowerCase())
+  );
+
+  const customStyles: TableStyles = {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
+      },
+    },
+    cells: {
+      style: {
+        fontSize: "13px",
+        textAlign: "left",
+      },
+    },
+    table: {
+      style: {
+        borderRadius: "20px",
+        overflow: "hidden",
+      },
+    },
+  };
+  // DataTable columns with header filters
+  const columns: TableColumn<Skill>[] = [
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Title</span>
+          {/* <input
+            type="text"
+            placeholder="Search..."
+            className=" px-2 py-1 text-sm"
+            value={filters.title}
+            onChange={(e) => setFilters({ ...filters, title: e.target.value })}
+          /> */}
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, title: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.title,
+      sortable: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Description</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, description: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.description || "-",
+      sortable: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Department</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, department: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.department || "-",
+      sortable: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Category</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.category || "-",
+      sortable: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Sub Category</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, sub_category: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.sub_category || "-",
+      sortable: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Proficiency</span>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => setFilters({ ...filters, proficiency_level: e.target.value })}
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.proficiency_level || "-",
+      sortable: true,
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div className="flex gap-2">
+          <button className="text-gray-500" onClick={() => handleEdit(row)}>
+            <FiEdit className="w-4 h-4" />
+          </button>
+          <button className="text-gray-500" onClick={() => handleDelete(row.id)}>
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   const hexagonItems =
     filteredSkills.map((skill) => ({
       id: skill.id,
@@ -216,8 +377,28 @@ export default function Page() {
 
   return (
     <>
-      {/* Top bar with Funnel Popover */}
-      <div className="p-4 flex justify-end mb-6">
+      {/* Top bar with Funnel + View Toggle */}
+      <div className="p-4 flex justify-between items-center mb-6">
+        {/* View Toggle */}
+        <div className="flex gap-2 px-2">
+          <Button
+            className={viewMode === "hexagon" ? "bg-blue-200 text-black" : "bg-gray-100"}
+            variant="outline"
+            onClick={() => setViewMode("hexagon")}
+          >
+            <Hexagon className="w-6 h-6" />
+          </Button>
+
+          <Button
+            className={viewMode === "table" ? "bg-blue-200 text-black" : "bg-gray-100"}
+            variant="outline"
+            onClick={() => setViewMode("table")}
+          >
+            <Table className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Filter Button */}
         <Popover>
           <PopoverTrigger asChild>
             <button className="p-3 rounded-lg hover:bg-gray-100">
@@ -361,18 +542,19 @@ export default function Page() {
         </Popover>
       </div>
 
-      {/* Honeycomb Section with Loader */}
+      {/* Content Section */}
       <div className="flex gap-6 flex-col">
         <section className="w-full h-screen overflow-y-auto scrollbar-hide flex items-start justify-center">
           {loading ? (
             <div className="flex justify-start items-center h-screen">
               <Atom color="#525ceaff" size="medium" text="" textColor="" />
             </div>
-          ) : hexagonItems.length === 0 ? (
+          ) : columnFilteredSkills.length === 0 ? (
             <div className="flex justify-center items-center h-full">
               <p className="text-gray-500 text-lg font-medium">No skills found</p>
             </div>
-          ) : (
+          ) : viewMode === "hexagon" ? (
+            // 🔷 Hexagon View
             <div className="honeycomb-container-skill flex flex-wrap gap-6 justify-center pb-4">
               {hexagonItems.map((item, index) => (
                 <div
@@ -421,6 +603,20 @@ export default function Page() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            // 📋 DataTable View with column filters
+            <div className="w-full ">
+              <DataTable
+                columns={columns}
+                data={columnFilteredSkills}
+                customStyles={customStyles}
+                pagination
+                highlightOnHover
+                striped
+                responsive
+                persistTableHead
+              />
             </div>
           )}
         </section>
