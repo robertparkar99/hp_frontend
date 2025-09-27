@@ -489,8 +489,8 @@ const LearningCatalog: React.FC = () => {
               id: item.subject_id ?? index,
               subject_id: item.subject_id ?? 0,
               standard_id: item.standard_id ?? 0,
-              title: item.standard_name ?? 'Untitled',
-              description: item.subject_name ?? 'No description available',
+              title: item.subject_name ?? 'Untitled',
+              description: item.standard_name ?? 'No description available',
               thumbnail: item.display_image?.trim() || DEFAULT_THUMBNAIL,
               contentType: 'video',
               category: item.content_category || category,
@@ -691,6 +691,7 @@ const LearningCatalog: React.FC = () => {
                   />
 
                   <CourseGrid
+                    totalcourse={courses.length}
                     courses={filteredCourses}
                     viewMode={viewMode}
                     loading={loading ? true : undefined}

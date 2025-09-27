@@ -125,7 +125,7 @@ const handleViewDetails = () => {
             </div>
 
             <p className="text-muted-foreground text-sm mb-1 line-clamp-1">
-              {course.description}
+              <span className="font-medium mr-1">Department:</span>{course.description}
             </p>
 
             <div className="text-sm text-muted-foreground mb-4">

@@ -58,7 +58,7 @@ const SearchToolbar = ({
   // Fetch filters from API
   const fetchFilters = async () => {
     if (!sessionData.sub_institute_id || !sessionData.url) return;
-    
+
     setLoading(true);
     try {
       const res = await fetch(
@@ -228,7 +228,8 @@ const SearchToolbar = ({
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('grid')}
-              className="rounded-r-none border-r border-border"
+              className={`rounded-r-none border-r border-border ${viewMode === "grid" ? "bg-blue-400 text-white hover:bg-blue-500" : "bg-transparent"
+                }`}
             >
               <Icon name="Grid3X3" size={16} />
             </Button>
@@ -236,7 +237,8 @@ const SearchToolbar = ({
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('list')}
-              className="rounded-l-none"
+              className={`rounded-l-none ${viewMode === "list" ? "bg-blue-400 text-white hover:bg-blue-500" : "bg-transparent"
+                }`}
             >
               <Icon name="List" size={16} />
             </Button>

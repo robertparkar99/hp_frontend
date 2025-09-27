@@ -927,7 +927,7 @@ export default function TaskDashboard() {
           <input
             type="text"
             placeholder="Search Task..."
-            className="w-full text-[10px] sm:text-xs p-1 border rounded"
+            className="w-full text-[10px] sm:text-xs p-1"
             value={filters.task}
             onChange={(e) => setFilters({ ...filters, task: e.target.value })}
           />
@@ -954,7 +954,7 @@ export default function TaskDashboard() {
           <input
             type="text"
             placeholder="Search Description..."
-            className="w-full text-[10px] sm:text-xs p-1 border rounded"
+            className="w-full text-[10px] sm:text-xs p-1"
             value={filters.description}
             onChange={(e) =>
               setFilters({ ...filters, description: e.target.value })
@@ -973,7 +973,7 @@ export default function TaskDashboard() {
           <input
             type="text"
             placeholder="Search Employee..."
-            className="w-full text-[10px] sm:text-xs p-1 border rounded"
+            className="w-full text-[10px] sm:text-xs p-1"
             value={filters.employee}
             onChange={(e) =>
               setFilters({ ...filters, employee: e.target.value })
@@ -991,7 +991,7 @@ export default function TaskDashboard() {
           <input
             type="text"
             placeholder="Search Deadline..."
-            className="w-full text-[10px] sm:text-xs p-1 border rounded"
+            className="w-full text-[10px] sm:text-xs p-1"
             value={filters.deadline}
             onChange={(e) =>
               setFilters({ ...filters, deadline: e.target.value })
@@ -1009,7 +1009,7 @@ export default function TaskDashboard() {
           <input
             type="text"
             placeholder="Search Priority..."
-            className="w-full text-[10px] sm:text-xs p-1 border rounded"
+            className="w-full text-[10px] sm:text-xs p-1"
             value={filters.priority}
             onChange={(e) =>
               setFilters({ ...filters, priority: e.target.value })
@@ -1028,7 +1028,7 @@ export default function TaskDashboard() {
           <input
             type="text"
             placeholder="Search Status..."
-            className="w-full text-[10px] sm:text-xs p-1 border rounded"
+            className="w-full text-[10px] sm:text-xs p-1"
             value={filters.status}
             onChange={(e) =>
               setFilters({ ...filters, status: e.target.value })
@@ -1053,7 +1053,7 @@ export default function TaskDashboard() {
           <input
             type="text"
             placeholder="Search Approve Status..."
-            className="w-full text-[10px] sm:text-xs p-1 border rounded"
+            className="w-full text-[10px] sm:text-xs p-1"
             value={filters.approve_status}
             onChange={(e) =>
               setFilters({ ...filters, approve_status: e.target.value })
