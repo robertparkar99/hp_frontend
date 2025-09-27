@@ -150,7 +150,7 @@ const AddChepterDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl w-full">
         <DialogHeader>
-          <DialogTitle>{course ? "Edit Module" : "Add Module"}</DialogTitle>
+          <DialogTitle>{course ? "Edit Module" : "Create Module"}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col space-y-4">

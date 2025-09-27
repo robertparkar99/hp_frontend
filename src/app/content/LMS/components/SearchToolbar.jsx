@@ -62,7 +62,7 @@ const SearchToolbar = ({
     setLoading(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/lms/course_master?type=API&sub_institute_id=1&syear=2025&user_id=1&user_profile_name=admin`
+        `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}`
       );
       const data = await res.json();
 
@@ -168,7 +168,7 @@ const SearchToolbar = ({
           <div className="relative">
             <Input
               type="search"
-              placeholder="Search courses"
+              placeholder="Search courses by title,department,shortname,course type..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-10 pr-10"
@@ -263,7 +263,7 @@ const SearchToolbar = ({
           )}
         </div>
 
-        <div className="hidden md:flex items-center space-x-2">
+        {/* <div className="hidden md:flex items-center space-x-2">
           <span className="text-sm text-muted-foreground mr-2">Quick:</span>
           {categories.slice(0, 4).map((category) => (
             <Button
@@ -276,7 +276,7 @@ const SearchToolbar = ({
               {category.label}
             </Button>
           ))}
-        </div>
+        </div> */}
       </div>
     </div>
   );

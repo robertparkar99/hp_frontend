@@ -1489,12 +1489,12 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
-                    <Button className="bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"><Plus className="mr-2 h-4 w-4 " />Add Question</Button>
+                    <Button className="bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"><Plus className="mr-2 h-4 w-4 " />Create Question</Button>
                 ) : null}
             </DialogTrigger>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{editingQuestion ? "Edit Question" : "Add New Question"}</DialogTitle>
+                    <DialogTitle>{editingQuestion ? "Edit Question" : "Create New Question"}</DialogTitle>
                     <DialogDescription>Fill in the fields to {editingQuestion ? "edit" : "create"} a question.</DialogDescription>
                 </DialogHeader>
 
