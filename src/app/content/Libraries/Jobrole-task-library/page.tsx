@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Atom } from "react-loading-indicators";
-import { Funnel } from "lucide-react"; // ✅ filter icon
+import { Funnel, Square, Table } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -9,21 +9,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { motion, AnimatePresence } from "framer-motion";
-// added by uma on 10-09-2025 for edit and delete
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import TaskData from "@/components/jobroleComponent/tabComponent/taskData";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 
 type JobRoleTask = {
   id: number;
-  sector: string; // Department
+  sector: string;
   track: string;
   jobrole: string;
   critical_work_function: string;
@@ -39,10 +42,9 @@ const CriticalWorkFunctionGrid = () => {
   const [selectedDept, setSelectedDept] = useState<string>("");
   const [selectedJobrole, setSelectedJobrole] = useState<string>("");
   const [selectedFunction, setSelectedFunction] = useState<string>("");
-  const [showFilters, setShowFilters] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isView,setView] = useState(false);
+  const [isView, setView] = useState(false);
   const [viewData, setViewData] = useState<any>({});
   const [sessionData, setSessionData] = useState({
     url: "",
@@ -51,16 +53,20 @@ const CriticalWorkFunctionGrid = () => {
     orgType: "",
     userId: "",
   });
-  // added by uma on 10-09-2025 for edit and delete
   const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
-  const [dialogOpen, setDialogOpen] = useState({
-    view: false,
-    add: false,
-    edit: false,
-  });
-  // added by uma on 10-09-2025 for edit and delete end
 
-  // ✅ Load sessionData from localStorage
+  // ✅ View toggle state
+  const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
+
+  // ✅ Column filters for DataTable
+  const [columnFilters, setColumnFilters] = useState({
+    jobrole: "",
+    department: "",
+    description: "",
+    performance_expectation: "",
+  });
+
+  // Load session data
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
@@ -76,7 +82,7 @@ const CriticalWorkFunctionGrid = () => {
     }
   }, []);
 
-  // ✅ Fetch data after sessionData is loaded
+  // Fetch data after sessionData is ready
   useEffect(() => {
     if (!sessionData.url || !sessionData.subInstituteId) return;
     fetchData();
@@ -93,10 +99,8 @@ const CriticalWorkFunctionGrid = () => {
         }
       );
       const json: JobRoleTask[] = await res.json();
-      console.log("Fetched Data:", json);
       setData(json);
 
-      // ✅ Set defaults
       if (json.length > 0) {
         const depts = Array.from(new Set(json.map((d) => d.track || "")))
           .filter(Boolean)
@@ -146,20 +150,22 @@ const CriticalWorkFunctionGrid = () => {
     );
   }
 
-  // ✅ Unique filters (sorted alphabetically)
-  const uniqueDepartments = data.length > 0 ? Array.from(new Set(data.map((d) => d.track || "")))
-    .filter(Boolean)
-    .sort() : [];
-
-  const uniqueJobroles = data.length > 0 ? Array.from(
-    new Set(
-      data.filter((d) => d.track === selectedDept).map((d) => d.jobrole || "")
-    ) 
+  // Unique filters
+  const uniqueDepartments = Array.from(
+    new Set(data.map((d) => d.track || ""))
   )
     .filter(Boolean)
-    .sort() : [];
+    .sort();
 
-  const uniqueFunctions = data.length > 0 ? Array.from(
+  const uniqueJobroles = Array.from(
+    new Set(
+      data.filter((d) => d.track === selectedDept).map((d) => d.jobrole || "")
+    )
+  )
+    .filter(Boolean)
+    .sort();
+
+  const uniqueFunctions = Array.from(
     new Set(
       data
         .filter(
@@ -169,23 +175,24 @@ const CriticalWorkFunctionGrid = () => {
     )
   )
     .filter(Boolean)
-    .sort() : [];
+    .sort();
 
-  // ✅ Filtered grid data
-  const filteredData = data.length > 0 ? data.filter(
+  // Filtered grid data
+  const filteredData = data.filter(
     (item) =>
       item.track === selectedDept &&
       item.jobrole === selectedJobrole &&
       item.critical_work_function === selectedFunction
-  ) : [];
+  );
 
+  // Handle select changes
   const handleDepartmentChange = (val: string) => {
     setSelectedDept(val);
-    const jobroles = data.length > 0 ? Array.from(
+    const jobroles = Array.from(
       new Set(data.filter((d) => d.track === val).map((d) => d.jobrole || ""))
     )
       .filter(Boolean)
-      .sort() : [];
+      .sort();
     const firstJobrole = jobroles[0] || "";
     setSelectedJobrole(firstJobrole);
 
@@ -198,8 +205,7 @@ const CriticalWorkFunctionGrid = () => {
     )
       .filter(Boolean)
       .sort();
-    const firstFunc = functions[0] || "";
-    setSelectedFunction(firstFunc);
+    setSelectedFunction(functions[0] || "");
   };
 
   const handleJobroleChange = (val: string) => {
@@ -213,83 +219,219 @@ const CriticalWorkFunctionGrid = () => {
     )
       .filter(Boolean)
       .sort();
-    const firstFunc = functions[0] || "";
-    setSelectedFunction(firstFunc);
-  };
-  // added by uma on 10-09-2025 for edit and delete
-  const handleCloseModel = () => {
-    setDialogOpen({ ...dialogOpen, edit: false });
-    fetchData();
-  };
-  const handleEditClick = (id: number, jobrole: string) => {
-    setSelectedJobRole(id);
-    fetchEditData(id, jobrole);
-    setDialogOpen({ ...dialogOpen, edit: true });
+    setSelectedFunction(functions[0] || "");
   };
 
-  async function fetchEditData(id: number, jobrole: string) {
-    const jobroleResponse = await fetch(
-      `${sessionData.url}/table_data?table=s_user_jobrole&filters[jobrole]=${jobrole}&filters[sub_institute_id]=${sessionData.subInstituteId}`
-    );
-    const jobroleData = await jobroleResponse.json();
-    console.log("jobroleData", jobroleData[0].id);
-    if (jobroleData[0].id) {
-      const res = await fetch(
-        `${sessionData.url}/jobrole_library/${jobroleData[0].id}/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&formType=user`
+  // Edit/Delete functions
+  const handleEditClick = (id: number, jobrole: string) => {
+    console.log("Edit clicked:", id, jobrole);
+    setSelectedJobRole(id);
+    setIsEditModalOpen(true);
+    fetchEditData(id, jobrole);
+  };
+
+  const fetchEditData = async (id: number, jobrole: string) => {
+    try {
+      const jobroleRes = await fetch(
+        `${sessionData.url}/table_data?table=s_user_jobrole&filters[jobrole]=${jobrole}&filters[sub_institute_id]=${sessionData.subInstituteId}`
       );
-      const data = await res.json();
-      setEditData(data.editData || {});
-      setIsEditModalOpen(true);
+      const jobroleData = await jobroleRes.json();
+      if (jobroleData[0]?.id) {
+        const res = await fetch(
+          `${sessionData.url}/jobrole_library/${jobroleData[0].id}/edit?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&formType=user`
+        );
+        const data = await res.json();
+        setEditData(data.editData || {});
+      }
+    } catch (error) {
+      console.error("Error fetching edit data:", error);
     }
-  }
+  };
 
   const handleDeleteClick = async (id: number) => {
     if (!id) return;
-
-    if (window.confirm("Are you sure you want to delete this job role task?")) {
-      try {
-        const res = await fetch(
-          `${sessionData.url}/jobrole_library/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=tasks`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${sessionData.token}`,
-            },
-          }
-        );
-
-        const data = await res.json();
-        alert(data.message);
-        fetchData();
-      } catch (error) {
-        console.error("Error deleting job role:", error);
-        alert("Error deleting job role");
-      }
+    if (!window.confirm("Are you sure you want to delete this task?")) return;
+    try {
+      const res = await fetch(
+        `${sessionData.url}/jobrole_library/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=tasks`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${sessionData.token}` },
+        }
+      );
+      const data = await res.json();
+      alert(data.message);
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      alert("Error deleting task");
     }
   };
+
+  // ✅ DataTable Columns
+  const columns: TableColumn<JobRoleTask>[] = [
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Job Role</span>
+          <input
+            type="text"
+            value={columnFilters.jobrole}
+            onChange={(e) =>
+              setColumnFilters({ ...columnFilters, jobrole: e.target.value })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.jobrole,
+      sortable: true,
+      wrap: true,
+      width: "160px",
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Department</span>
+          <input
+            type="text"
+            value={columnFilters.department}
+            onChange={(e) =>
+              setColumnFilters({ ...columnFilters, department: e.target.value })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.track,
+      sortable: true,
+      wrap: true,
+      width: "140px",
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Description</span>
+          <input
+            type="text"
+            value={columnFilters.description}
+            onChange={(e) =>
+              setColumnFilters({
+                ...columnFilters,
+                description: e.target.value,
+              })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.task,
+      sortable: false,
+      wrap: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Performance Expectation</span>
+          <input
+            type="text"
+            value={columnFilters.performance_expectation}
+            onChange={(e) =>
+              setColumnFilters({
+                ...columnFilters,
+                performance_expectation: e.target.value,
+              })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.task_type,
+      sortable: false,
+      wrap: true,
+      width: "160px",
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        
+        <div className="flex space-x-2">
+          <button
+            onClick={() => handleEditClick(row.id, row.jobrole)}
+            className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
+          >
+            <span className="mdi mdi-pencil"></span>
+          </button>
+          <button
+            onClick={() => handleDeleteClick(row.id)}
+            className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
+          >
+            <span className="mdi mdi-delete"></span>
+          </button>
+        </div>
+      ),
+      width: "120px",
+    },
+  ];
+
+  const customStyles: TableStyles = {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
+      },
+    },
+    cells: {
+      style: {
+        fontSize: "13px",
+        textAlign: "left",
+      },
+    },
+    table: {
+      style: {
+        borderRadius: "20px",
+        overflow: "hidden",
+      },
+    },
+  };
+
+  // ✅ Apply column filters
+  const filteredTableData = filteredData.filter((row) =>
+    Object.entries(columnFilters).every(([key, val]) =>
+      val ? String(row[key as keyof JobRoleTask] || "").toLowerCase().includes(val.toLowerCase()) : true
+    )
+  );
 
   return (
     <>
       <div className="min-h-screen p-4">
-        {/* Top bar: Filters + Funnel */}
+        {/* Top filter + Toggle */}
         <div className="flex justify-end mb-6">
-          <div className="flex items-center gap-4">
-            {/* Filters with animation */}
-            <AnimatePresence>
-              {showFilters && (
-                <motion.div
-                  initial={{ opacity: 0, x: 100 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 100 }}
-                  transition={{ duration: 0.4, ease: "easeInOut" }}
-                  className="flex flex-col md:flex-row gap-4"
-                >
-                  {/* Department */}
+          {/* Filters */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-3">
+                <Funnel className="w-5 h-5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 mr-10 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Department
+                  </label>
                   <Select
                     value={selectedDept}
                     onValueChange={handleDepartmentChange}
                   >
-                    <SelectTrigger className="w-[220px]">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select Department" />
                     </SelectTrigger>
                     <SelectContent>
@@ -300,13 +442,16 @@ const CriticalWorkFunctionGrid = () => {
                       ))}
                     </SelectContent>
                   </Select>
-
-                  {/* Jobrole */}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Job Role
+                  </label>
                   <Select
                     value={selectedJobrole}
                     onValueChange={handleJobroleChange}
                   >
-                    <SelectTrigger className="w-[260px]">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select Jobrole" />
                     </SelectTrigger>
                     <SelectContent>
@@ -317,14 +462,17 @@ const CriticalWorkFunctionGrid = () => {
                       ))}
                     </SelectContent>
                   </Select>
-
-                  {/* Critical Work Function */}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Work Function
+                  </label>
                   <Select
                     value={selectedFunction}
                     onValueChange={setSelectedFunction}
                   >
-                    <SelectTrigger className="w-[300px]">
-                      <SelectValue placeholder="Select Work Function" />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Function" />
                     </SelectTrigger>
                     <SelectContent>
                       {uniqueFunctions.map((func, idx) => (
@@ -334,101 +482,100 @@ const CriticalWorkFunctionGrid = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
-            {/* Funnel Button */}
+          {/* ✅ Icon Toggle */}
+          <div className="flex border rounded-md overflow-hidden">
             <button
-              onClick={() => setShowFilters((prev) => !prev)}
-              className="p-3"
+              onClick={() => setViewMode("myview")}
+              className={`px-3 py-2 flex items-center justify-center transition-colors ${
+                viewMode === "myview"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
             >
-              <Funnel className="w-5 h-5" />
+              <Square className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`px-3 py-2 flex items-center justify-center transition-colors ${
+                viewMode === "table"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <Table className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredData.map((item) => (
-            <div
-              key={item.id}
-              className="relative group overflow-hidden rounded-3xl shadow-lg border-2 border-blue-200 hover:border-blue-300 transition-all duration-300"
-            >
-              {/* Animated sweeping circle */}
-              <div className="absolute z-[10] right-0 bottom-0 w-[1px] h-[1px] bg-[#B7DAFF] rounded-[0px_50px_0px_15px] transition-all duration-500 group-hover:w-full group-hover:h-full group-hover:rounded-[15px] group-hover:opacity-[0.5]"></div>
+        {/* ✅ Toggle between Card View and Table View */}
+        {viewMode === "myview" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredData.map((item) => (
+              <div
+                key={item.id}
+                className="relative group overflow-hidden rounded-3xl shadow-lg border-2 border-blue-200 hover:border-blue-300 transition-all duration-300 flex flex-col"
+              >
+                <div className="absolute z-[10] right-0 bottom-0 w-[1px] h-[1px] bg-[#B7DAFF] rounded-[0px_50px_0px_15px] transition-all duration-500 group-hover:w-full group-hover:h-full group-hover:rounded-[15px] group-hover:opacity-[0.5] pointer-events-none"></div>
 
-              {/* Content */}
-              <div className="relative z-10 p-8">
-                <h3
-                  className="text-lg font-bold text-gray-900 mb-2 leading-tight truncate"
-                  title={item.critical_work_function}
-                  onClick={() => {setViewData(item); setView(true); setIsViewModalOpen(true);}}
-                >
-                  {item.critical_work_function}
-                </h3>
-
-                {/* Decorative line */}
-                <div className="flex items-center mb-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                  <div className="flex-1 h-0.5 bg-gray-300"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                <div className="relative z-10 p-6 flex-1">
+                  <h3
+                    className="text-lg font-bold text-gray-900 mb-2 leading-tight truncate cursor-pointer hover:text-blue-600 transition-colors"
+                    title={item.critical_work_function}
+                    onClick={() => {
+                      setViewData(item);
+                      setView(true);
+                      setIsViewModalOpen(true);
+                    }}
+                  >
+                    {item.critical_work_function}
+                  </h3>
+                  <div className="flex items-center mb-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <div className="flex-1 h-0.5 bg-gray-300"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    {item.task}
+                  </p>
                 </div>
 
-                <p className="text-gray-700 text-sm leading-relaxed">
-                  {item.task}
-                </p>
-                <div className="divFooter text-center">
-                  <div className="flex justify-end space-x-2">
-                    {/* <button
-                      onClick={() =>
-                        item.id && handleEditClick(item.id, item.jobrole)
-                      }
-                      className="text-gray text-xs py-1 px-2 rounded"
-                    >
-                      <span
-                        className="mdi mdi-pencil"
-                        data-titleHead="Edit Jobrole"
-                      ></span>
-                    </button>
-                    <button
-                      onClick={() => item.id && handleDeleteClick(item.id)}
-                      className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
-                    >
-                      <span
-                        className="mdi mdi-trash-can"
-                        data-titleHead="Delete Jobrole"
-                      ></span>
-                    </button> */}
-                    <button
-                      onClick={() =>
-                        item.id && handleEditClick(item.id, item.jobrole)
-                      }
-                    >
-                      <FaEdit className="text-gray-500" />
-                    </button>
-                    <button
-                      onClick={() => item.id && handleDeleteClick(item.id)}
-                    >
-                      <FaTrash className="text-gray-500" />
-                    </button>
-                  </div>
+                <div className="flex justify-end p-2 mt-[-6]">
+                  <button
+                    className="p-2 hover:text-blue-600"
+                    onClick={() => handleEditClick(item.id, item.jobrole)}
+                  >
+                    <FaEdit />
+                  </button>
+                  <button
+                    className="p-2 hover:text-red-600"
+                    onClick={() => handleDeleteClick(item.id)}
+                  >
+                    <FaTrash />
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={filteredTableData}
+            customStyles={customStyles}
+            pagination
+            highlightOnHover
+            striped
+          />
+        )}
       </div>
-      {dialogOpen.edit && selectedJobRole && (
-        <Dialog
-          open={isEditModalOpen}
-          onOpenChange={(open) => {
-            setIsEditModalOpen(open);
-            if (!open) {
-              fetchData();
-            }
-          }}
-        >
+
+      {/* Edit Modal */}
+      {selectedJobRole && (
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
           <DialogContent className="max-w-5xl max-h-[95vh] bg-[#f1fbff] overflow-y-auto hide-scroll">
             <DialogHeader>
               <DialogTitle>Edit Task Assignment</DialogTitle>
@@ -442,27 +589,39 @@ const CriticalWorkFunctionGrid = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* View Modal */}
       {isView && viewData && (
-        <Dialog
-          open={isViewModalOpen}
-          onOpenChange={(open) => {
-            setIsViewModalOpen(open);
-          }}
-        >
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
           <DialogContent className="max-w-4xl max-h-[95vh] bg-[#f1fbff] overflow-y-auto hide-scroll">
             <DialogHeader>
-              <DialogTitle className="border-b-2 pb-2">{viewData?.task}</DialogTitle>
+              <DialogTitle className="border-b-2 pb-2">
+                {viewData?.task}
+              </DialogTitle>
             </DialogHeader>
-            <ul>
-              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#6fc7ff] p-2 rounded-full">Critical Work Function</span> <span className="p-1">{viewData?.critical_work_function}</span></li>
-              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#fcf38d] p-2 rounded-full">Department</span> <span className="p-1">{viewData?.track}</span></li>
-              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#fcb0b0] p-2 rounded-full">track</span>   <span className="p-1">{viewData?.track}</span></li>
-              <li className="my-2 py-1 border-1 rounded-full"><span className="bg-[#8dd39c] p-2 rounded-full">Jobrole</span>  <span className="p-1">{viewData?.jobrole}</span></li>
+            <ul className="p-2">
+              <li className="my-2 py-1">
+                <span className="bg-[#6fc7ff] p-2 rounded-full">
+                  Critical Work Function
+                </span>{" "}
+                <span className="p-1">
+                  {viewData?.critical_work_function}
+                </span>
+              </li>
+              <li className="my-2 py-1">
+                <span className="bg-[#fcf38d] p-2 rounded-full">
+                  Department
+                </span>{" "}
+                <span className="p-1">{viewData?.track}</span>
+              </li>
+              <li className="my-2 py-1">
+                <span className="bg-[#8dd39c] p-2 rounded-full">Jobrole</span>{" "}
+                <span className="p-1">{viewData?.jobrole}</span>
+              </li>
             </ul>
           </DialogContent>
         </Dialog>
       )}
-      );
     </>
   );
 };

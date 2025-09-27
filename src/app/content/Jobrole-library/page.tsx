@@ -13,7 +13,7 @@ import AddDialog from "@/components/jobroleComponent/addDialouge";
 import EditDialog from "@/components/jobroleComponent/editDialouge";
 import { Atom } from "react-loading-indicators";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import { LayoutGrid, Square, Table } from "lucide-react"; // ✅ Toggle icons
+import {  Square, Table } from "lucide-react"; // ✅ Toggle icons
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component"; // ✅ DataTable
 
 type JobRole = {
