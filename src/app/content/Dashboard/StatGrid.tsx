@@ -1,3 +1,880 @@
+// "use client";
+// import { useEffect, useState } from "react";
+// import { MoreVertical, ChevronDown } from "lucide-react";
+
+// // Interfaces
+// interface Employee {
+//   id: number | string;
+//   full_name: string;
+//   email: string;
+//   mobile: string;
+//   jobrole: string;
+//   status: string;
+//   department_name: string;
+//   joined_date?: string;
+//   image?: string;
+//   sortConfig?: { key: string; direction: "asc" | "desc" } | null;
+// }
+
+// interface Task {
+//   id: number | string | null;
+//   task_title: string;
+//   task_type: string;
+//   task_date: string;
+//   status: string;
+//   allocatedUser: string;
+//   allocatedBy: string;
+//   image?: string;
+// }
+
+// interface ChartData {
+//   label: string;
+//   value: number;
+//   status: string;
+// }
+
+// interface DashboardResponse {
+//   employeeList?: Employee[];
+//   today_task?: Task[];
+//   week_task?: Task[];
+//   // Statistics fields
+//   totle_employees?: number;
+//   umapped_employees?: number;
+//   totle_jobroles?: number;
+//   totle_skills?: number;
+//   // Widget data for dropdown
+//   widget?: string[];
+// }
+
+// export default function Dashboard() {
+//   const [employees, setEmployees] = useState<Employee[]>([]);
+//   const [todayTasks, setTodayTasks] = useState<Task[]>([]);
+//   const [weekTasks, setWeekTasks] = useState<Task[]>([]);
+//   const [stats, setStats] = useState({
+//     totalEmployees: 0,
+//     unmappedEmployees: 0,
+//     totalJobRoles: 0,
+//     totalSkills: 0,
+//   });
+//   const [chartData, setChartData] = useState<ChartData[]>([]);
+//   const [loading, setLoading] = useState<boolean>(true);
+//   const [sessionData, setSessionData] = useState<any>(null);
+//   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+//   const [widgetOptions, setWidgetOptions] = useState<string[]>([]);
+//   const [isWidgetDropdownOpen, setIsWidgetDropdownOpen] = useState(false);
+//   const [selectedWidget, setSelectedWidget] = useState<string | null>(null);
+
+//   const placeholderImage =
+//     "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
+
+//   // Check if sidebar is open
+//   useEffect(() => {
+//     const checkSidebarState = () => {
+//       const sidebarState = localStorage.getItem("sidebarOpen");
+//       setIsSidebarOpen(sidebarState === "true");
+//     };
+
+//     checkSidebarState();
+
+//     window.addEventListener("sidebarStateChange", checkSidebarState);
+
+//     return () => {
+//       window.removeEventListener("sidebarStateChange", checkSidebarState);
+//     };
+//   }, []);
+
+//   // Load session data once
+//   useEffect(() => {
+//     const userData = localStorage.getItem("userData");
+//     if (userData) {
+//       const {
+//         APP_URL,
+//         token,
+//         sub_institute_id,
+//         org_type,
+//         user_id,
+//         user_profile_id,
+//         user_profile_name,
+//       } = JSON.parse(userData);
+//       setSessionData({
+//         url: APP_URL,
+//         token,
+//         subInstituteId: sub_institute_id,
+//         orgType: org_type,
+//         userId: user_id,
+//         userProfileId: user_profile_id,
+//         userProfileName: user_profile_name,
+//       });
+//     }
+//   }, []);
+
+//   // Fetch dashboard data
+//   useEffect(() => {
+//     if (!sessionData) return;
+
+//     async function fetchDashboard() {
+//       try {
+//         const res = await fetch(
+//           `${sessionData.url}/dashboard?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&user_id=${sessionData.userId}&user_profile_id=${sessionData.userProfileId}&user_profile_name=${sessionData.userProfileName}&org_type=${sessionData.orgType}`
+//         );
+//         if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+//         const data: DashboardResponse = await res.json();
+//         console.log("Dashboard API Response:", data);
+
+//         setEmployees(data.employeeList ?? []);
+//         setTodayTasks(data.today_task ?? []);
+//         setWeekTasks(data.week_task ?? []);
+//         setWidgetOptions(data.widget ?? []);
+
+//         setStats({
+//           totalEmployees: data.totle_employees ?? 0,
+//           unmappedEmployees: data.umapped_employees ?? 0,
+//           totalJobRoles: data.totle_jobroles ?? 0,
+//           totalSkills: data.totle_skills ?? 0,
+//         });
+
+//         // Chart data processing...
+//         if (data.week_task && data.week_task.length > 0) {
+//           const now = new Date();
+//           const startOfWeek = new Date(now);
+//           startOfWeek.setDate(now.getDate() - now.getDay());
+//           const formatDate = (date: Date) => date.toISOString().split("T")[0];
+//           const weeklyData: Record<string, { count: number; status: string }> =
+//             {};
+//           for (let i = 0; i < 7; i++) {
+//             const date = new Date(startOfWeek);
+//             date.setDate(startOfWeek.getDate() + i);
+//             const dayKey = formatDate(date);
+//             weeklyData[dayKey] = { count: 0, status: "NO_TASKS" };
+//           }
+//           data.week_task.forEach((task) => {
+//             if (!task.task_date) return;
+//             const taskDate = new Date(task.task_date);
+//             const taskDayKey = formatDate(taskDate);
+//             if (taskDayKey in weeklyData) {
+//               weeklyData[taskDayKey].count += 1;
+//               const currentStatus = weeklyData[taskDayKey].status;
+//               if (task.status === "COMPLETED") {
+//                 weeklyData[taskDayKey].status = "COMPLETED";
+//               } else if (
+//                 task.status === "IN_PROGRESS" &&
+//                 currentStatus !== "COMPLETED"
+//               ) {
+//                 weeklyData[taskDayKey].status = "IN_PROGRESS";
+//               } else if (
+//                 task.status === "PENDING" &&
+//                 currentStatus !== "COMPLETED" &&
+//                 currentStatus !== "IN_PROGRESS"
+//               ) {
+//                 weeklyData[taskDayKey].status = "PENDING";
+//               }
+//             }
+//           });
+//           const daysOfWeek = [
+//             "Sunday",
+//             "Monday",
+//             "Tuesday",
+//             "Wednesday",
+//             "Thursday",
+//             "Friday",
+//             "Saturday",
+//           ];
+//           const processedChartData = Object.keys(weeklyData)
+//             .sort()
+//             .map((date) => {
+//               const dayDate = new Date(date);
+//               return {
+//                 label: daysOfWeek[dayDate.getDay()].substring(0, 3),
+//                 value: weeklyData[date].count,
+//                 status: weeklyData[date].status,
+//               };
+//             });
+//           setChartData(processedChartData);
+//         }
+//       } catch (err) {
+//         console.error("Error fetching dashboard:", err);
+//       } finally {
+//         setLoading(false);
+//       }
+//     }
+//     fetchDashboard();
+//   }, [sessionData]);
+
+//   // Chart bar color
+//   const getStatusColor = (status: string) => {
+//     switch (status) {
+//       case "COMPLETED":
+//         return "bg-blue-800";
+//       case "IN_PROGRESS":
+//         return "bg-blue-500";
+//       case "PENDING":
+//         return "bg-blue-300";
+//       default:
+//         return "bg-gray-300";
+//     }
+//   };
+
+//   const maxValue = Math.max(...chartData.map((d) => d.value), 1);
+
+//   // Check if a widget should be shown based on selection
+//   const shouldShowWidget = (widgetName: string) => {
+//     if (!selectedWidget) return true; // Show all if none selected
+//     return selectedWidget === widgetName;
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="flex items-center justify-center h-screen text-gray-600">
+//         Loading dashboard...
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className={`min-h-screen text-gray-900  transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-0"
+//       }`}>
+//       {/* Header with widget dropdown */}
+//       {/* <div className="flex justify-between items-center mb-6">
+//         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1> */}
+
+//       {/* Widget Dropdown */}
+//       {/* <div className="relative">
+//           <button 
+//             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50"
+//             onClick={() => setIsWidgetDropdownOpen(!isWidgetDropdownOpen)}
+//           >
+//             <span className="mdi mdi-list-box text-xl text-gray-600"></span>
+
+//             <ChevronDown className="w-4 h-4" />
+//           </button>
+
+//           {isWidgetDropdownOpen && (
+//             <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+//               <ul className="py-1">
+//                 <li>
+//                   <button
+//                     className="w-full text-left px-4 py-2 hover:bg-gray-100"
+//                     onClick={() => {
+//                       setSelectedWidget(null);
+//                       setIsWidgetDropdownOpen(false);
+//                     }}
+//                   >
+//                     All Widgets
+//                   </button>
+//                 </li>
+//                 {widgetOptions.map((widget, index) => (
+//                   <li key={index}>
+//                     <button
+//                       className="w-full text-left px-4 py-2 hover:bg-gray-100"
+//                       onClick={() => {
+//                         setSelectedWidget(widget);
+//                         setIsWidgetDropdownOpen(false);
+//                       }}
+//                     >
+//                       {widget}
+//                     </button>
+//                   </li>
+//                 ))}
+//               </ul>
+//             </div>
+//           )}
+//         </div> */}
+//       {/* </div> */}
+
+//       <div className="grid grid-cols-12 gap-6">
+//         {/* Left Section - Adjust column span based on sidebar state */}
+//         <div className={`${isSidebarOpen ? "col-span-9" : "col-span-9"} space-y-6`}>
+//           {/* Stats + Chart - Always visible */}
+//           <div className="bg-white rounded-xl shadow p-6">
+//             <div className="flex gap-6">
+//               {/* Stats Section */}
+//               <div className="grid grid-cols-2 divide-x divide-y border rounded-lg overflow-hidden flex-1">
+//                 <div className="flex items-center gap-3 border-b border-r pb-4 pr-6">
+//                   {/* <div className="w-5 h-5 rounded bg-blue-300" /> */}
+//                   <div className="flex items-center gap-3 p-4">
+//                     <div className="w-9 h-9 rounded bg-blue-300 mb-7" />
+//                     <div>
+//                       <p className="font-bold text-gray-700">Total Employee</p>
+//                       <p className="text-2xl font-bold text-center mt-3">{stats.totalEmployees}</p>
+//                     </div>
+//                   </div>
+//                 </div>
+//                 <div className="flex items-center gap-3 border-b pl-6 pb-4">
+//                   {/* <div className="w-5 h-5 rounded bg-red-300" /> */}
+//                   <div className="flex items-center gap-3 p-1">
+//                     <div className="w-9 h-9 rounded bg-red-300 mb-7" />
+//                     <div>
+//                       <p className="font-bold text-gray-700">Unmapped Employee</p>
+//                       <p className="text-2xl font-bold text-center mt-3">{stats.unmappedEmployees}</p>
+//                     </div>
+//                   </div>
+//                 </div>
+//                 <div className="flex items-center gap-3 border-r pt-4 pr-6">
+//                   {/* <div className="w-5 h-5 rounded bg-green-300" /> */}
+//                   <div className="flex items-center gap-3 p-4">
+//                     <div className="w-9 h-9 rounded bg-green-300 mb-9" />
+//                     <div>
+//                       <p className="font-bold text-gray-700 mb-5">Total Job role</p>
+//                       <p className="text-2xl font-bold text-center">{stats.totalJobRoles}</p>
+//                     </div>
+//                   </div>
+//                 </div>
+//                 <div className="flex items-center gap-3 pt-4 pl-6">
+//                   {/* <div className="w-5 h-5 rounded bg-yellow-300" /> */}
+//                   <div className="flex items-center gap-3 p-4">
+//                     <div className="w-9 h-9 rounded bg-yellow-300 mb-9" />
+//                     <div>
+//                       <p className="font-bold text-gray-700 mb-5">Total Skill</p>
+//                       <p className="text-2xl font-bold text-center">{stats.totalSkills}</p>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+
+//               {/* Chart - Only show if no widget selected or Weekly Task Progress selected */}
+//               {(shouldShowWidget("Weekly Task Progress") || !selectedWidget) && (
+//                 <div className="flex-1">
+//                   <h2 className="font-semibold mb-4 text-center">
+//                     Weekly Task Progress
+//                   </h2>
+//                   <div className="relative">
+//                     {/* Y-axis labels */}
+//                     <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
+//                       <span>{maxValue}</span>
+//                       <span>{Math.round(maxValue * 0.8)}</span>
+//                       <span>{Math.round(maxValue * 0.6)}</span>
+//                       <span>{Math.round(maxValue * 0.4)}</span>
+//                       <span>{Math.round(maxValue * 0.2)}</span>
+//                       <span>0</span>
+//                     </div>
+
+//                     {/* Chart content */}
+//                     <div className="ml-6 h-48 flex justify-between items-end gap-2">
+//                       {chartData.map((data, i) => (
+//                         <div key={i} className="flex flex-col items-center flex-1">
+//                           <div
+//                             className={`w-full rounded-t ${getStatusColor(data.status)}`}
+//                             style={{
+//                               height: `${(data.value / maxValue) * 100}%`,
+//                               minHeight: data.value > 0 ? '4px' : '0'
+//                             }}
+//                           />
+//                           <span className="text-xs text-gray-500 mt-2">{data.label}</span>
+//                         </div>
+//                       ))}
+//                     </div>
+//                   </div>
+
+//                   {/* Chart Legend */}
+//                   <div className="flex justify-center mt-4 gap-4 text-xs">
+//                     <div className="flex items-center gap-1">
+//                       <div className="w-3 h-3 bg-blue-800 rounded"></div>
+//                       <span>Completed</span>
+//                     </div>
+//                     <div className="flex items-center gap-1">
+//                       <div className="w-3 h-3 bg-blue-500 rounded"></div>
+//                       <span>In Progress</span>
+//                     </div>
+//                     <div className="flex items-center gap-1">
+//                       <div className="w-3 h-3 bg-blue-300 rounded"></div>
+//                       <span>Pending</span>
+//                     </div>
+//                     <div className="flex items-center gap-1">
+//                       <div className="w-3 h-3 bg-gray-300 rounded"></div>
+//                       <span>No Tasks</span>
+//                     </div>
+//                   </div>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+
+//           {/* Employee Table - Only show if no widget selected or Employee List selected */}
+//           {/* {(shouldShowWidget("Employee List") || !selectedWidget) && (
+//             <div className="bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll ">
+
+//               <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] bg-blue-100 px-4 py-2 font-medium text-sm gap-4">
+//                 <span className="flex items-center">Employee</span>
+//                 <span className="flex items-center">Mobile</span>
+//                 <span className="flex items-center">Department</span>
+//                 <span className="flex items-center">Role</span>
+//                 <span className="flex items-center">Status</span>
+//                 <span className="flex items-center justify-end">Action</span>
+//               </div>
+
+
+//               {employees.map((emp) => (
+//                 <div
+//                   key={emp.id}
+//                   className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] items-center px-4 py-3 border-t text-sm gap-4 hover:bg-gray-50"
+//                 >
+
+//                   <div className="flex items-center gap-2 min-w-0">
+//                     <img
+//                       src={
+//                         emp.image && emp.image !== ""
+//                           ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${emp.image}`
+//                           : placeholderImage
+//                       }
+//                       alt={emp.full_name || "profile"}
+//                       className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+//                       onError={(e) => {
+//                         (e.currentTarget as HTMLImageElement).src =
+//                           placeholderImage;
+//                       }}
+//                     />
+//                     <div className="min-w-0">
+//                       <p className="font-medium truncate">{emp.full_name}</p>
+//                       <p className="text-gray-500 text-xs truncate">{emp.email}</p>
+//                     </div>
+//                   </div>
+
+//                   <span className="truncate">{emp.mobile || "-"}</span>
+
+//                   <span className="truncate">{emp.department_name}</span>
+
+//                   <span className="truncate">{emp.jobrole}</span>
+
+//                   <span
+//                     className={`px-2 py-1 rounded-md w-fit text-xs ${emp.status === "Active"
+//                       ? "text-green-600 bg-green-100"
+//                       : "text-red-600 bg-red-100"
+//                       }`}
+//                   >
+//                     {emp.status}
+//                   </span>
+
+
+//                   <div className="flex justify-end">
+//                     <MoreVertical className="w-4 h-4 text-gray-500 cursor-pointer flex-shrink-0" />
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           )} */}
+
+//           {sessionData?.userProfileName === "Admin" ? (
+//             // 👉 Admin view
+
+//             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+//               {/* Left: Enterprise Skills Heatmap */}
+//               <div className="col-span-2 bg-white rounded-xl shadow p-4">
+//                 <h2 className="font-semibold text-lg mb-2">Enterprise Skills Heatmap</h2>
+
+//                 {/* Legend */}
+//                 <div className="flex gap-4 text-sm mb-3">
+//                   <span className="flex items-center gap-1">
+//                     <span className="w-3 h-3 rounded-sm bg-red-500" /> Critical Gap
+//                   </span>
+//                   <span className="flex items-center gap-1">
+//                     <span className="w-3 h-3 rounded-sm bg-orange-400" /> Moderate Gap
+//                   </span>
+//                   <span className="flex items-center gap-1">
+//                     <span className="w-3 h-3 rounded-sm bg-green-500" /> Healthy
+//                   </span>
+//                 </div>
+
+//                 {/* Heatmap Table */}
+//                 <div className="overflow-x-auto ">
+//                   <table className="w-full border-separate   border-spacing-1 text-sm">
+//                     <thead>
+//                       <tr className="text-left ">
+//                         <th className="px-3 py-2">Department</th>
+//                         <th className="px-3 py-2">AI/ML</th>
+//                         <th className="px-3 py-2">Cloud Security</th>
+//                         <th className="px-3 py-2">Data Analytics</th>
+//                         <th className="px-3 py-2">Python</th>
+//                         <th className="px-3 py-2">React</th>
+//                         <th className="px-3 py-2">Digital Marketing</th>
+//                         <th className="px-3 py-2">Content Strategy</th>
+//                         <th className="px-3 py-2">SEO/SEM</th>
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       <tr >
+//                         <td className="px-3 py-2 font-medium bg-gray-100">Engineering</td>
+//                         <td className="bg-red-500 text-white text-center">-12</td>
+//                         <td className="bg-orange-400 text-white text-center">-8</td>
+//                         <td className="bg-green-200 text-center">✓</td>
+//                         <td className="bg-green-200 text-center">✓</td>
+//                         <td className="bg-orange-400 text-white text-center">-6</td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                       </tr>
+//                       <tr>
+//                         <td className="px-3 py-2 font-medium bg-gray-100">Marketing</td>
+//                         <td className="bg-red-500 text-white text-center">-4</td>
+//                         <td className="bg-orange-400 text-white text-center">-5</td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                         <td className="bg-green-200 text-center">✓</td>
+//                         <td className="bg-green-200 text-center">✓</td>
+//                         <td className="bg-orange-400 text-white text-center">-3</td>
+//                       </tr>
+//                       <tr>
+//                         <td className="px-3 py-2 font-medium bg-gray-100">Sales</td>
+//                         <td></td>
+//                         <td></td>
+//                         <td className="bg-red-500 text-white text-center">-6</td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                       </tr>
+//                       <tr>
+//                         <td className="px-3 py-2 font-medium bg-gray-100">Finance</td>
+//                         <td></td>
+//                         <td></td>
+//                         <td className="bg-orange-400 text-white text-center">-4</td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                       </tr>
+//                       <tr>
+//                         <td className="px-3 py-2 font-medium bg-gray-100">HR</td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                         <td></td>
+//                       </tr>
+//                     </tbody>
+//                   </table>
+//                 </div>
+
+//                 <p className="text-xs text-gray-500 mt-2">
+//                   Click on any cell to drill down into detailed gap analysis
+//                 </p>
+//               </div>
+
+//               {/* Right: Risk & Opportunity Matrix */}
+//               <div className="bg-white rounded-xl shadow p-4">
+//                 <h2 className="font-semibold text-lg">Risk & Opportunity Matrix</h2>
+//                 <p className="text-xs text-gray-500 mb-3">
+//                   Skills prioritization by business impact and availability
+//                 </p>
+
+//                 {/* Placeholder for scatter plot */}
+//                 <div className="h-64 flex items-center justify-center border border-dashed border-gray-300 rounded">
+//                   <span className="text-gray-400 text-sm">[Scatter Plot Here]</span>
+//                 </div>
+
+//                 {/* Legend */}
+//                 <div className="flex gap-4 mt-4 text-sm">
+//                   <span className="flex items-center gap-1">
+//                     <span className="w-3 h-3 rounded-full bg-red-500" /> High Priority (High Impact, Scarce)
+//                   </span>
+//                   <span className="flex items-center gap-1">
+//                     <span className="w-3 h-3 rounded-full bg-orange-400" /> Strategic Watch (High Impact, Available)
+//                   </span>
+//                 </div>
+//               </div>
+//             </div>
+//           ) : (
+//             // 👉 Non-admin view
+//             < div className="space-y-6">
+//           {/* My Skill Profile */}
+//           <div className="bg-white border rounded-xl p-5">
+//             <h2 className="font-semibold text-lg flex items-center gap-2 mb-1">
+//               <span>🧑‍💻</span> My Skill Profile
+//             </h2>
+//             <p className="text-sm text-gray-500 mb-4">
+//               Skills endorsed by peers and managers
+//             </p>
+
+//             <div className="grid md:grid-cols-2 gap-4">
+//               {/* React */}
+//               <div className="flex items-center justify-between border rounded-lg p-3">
+//                 <div>
+//                   <p className="font-medium">React</p>
+//                   <div className="flex items-center gap-2 mt-1 text-sm">
+//                     <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-600 text-xs font-medium">
+//                       expert
+//                     </span>
+//                     <span className="text-gray-500">⭐ 12</span>
+//                   </div>
+//                 </div>
+//                 <button className="px-3 py-1 border rounded-lg text-sm font-medium hover:bg-gray-50">
+//                   Get Endorsed
+//                 </button>
+//               </div>
+
+//               {/* JavaScript */}
+//               <div className="flex items-center justify-between border rounded-lg p-3">
+//                 <div>
+//                   <p className="font-medium">JavaScript</p>
+//                   <div className="flex items-center gap-2 mt-1 text-sm">
+//                     <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-600 text-xs font-medium">
+//                       expert
+//                     </span>
+//                     <span className="text-gray-500">⭐ 15</span>
+//                   </div>
+//                 </div>
+//                 <button className="px-3 py-1 border rounded-lg text-sm font-medium hover:bg-gray-50">
+//                   Get Endorsed
+//                 </button>
+//               </div>
+
+//               {/* Python */}
+//               <div className="flex items-center justify-between border rounded-lg p-3">
+//                 <div>
+//                   <p className="font-medium">Python</p>
+//                   <div className="flex items-center gap-2 mt-1 text-sm">
+//                     <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 text-xs font-medium">
+//                       intermediate
+//                     </span>
+//                     <span className="text-gray-500">⭐ 8</span>
+//                   </div>
+//                 </div>
+//                 <button className="px-3 py-1 border rounded-lg text-sm font-medium hover:bg-gray-50">
+//                   Get Endorsed
+//                 </button>
+//               </div>
+
+//               {/* Data Analytics */}
+//               <div className="flex items-center justify-between border rounded-lg p-3">
+//                 <div>
+//                   <p className="font-medium">Data Analytics</p>
+//                   <div className="flex items-center gap-2 mt-1 text-sm">
+//                     <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 text-xs font-medium">
+//                       novice
+//                     </span>
+//                     <span className="text-gray-500">⭐ 3</span>
+//                   </div>
+//                 </div>
+//                 <button className="px-3 py-1 border rounded-lg text-sm font-medium hover:bg-gray-50">
+//                   Get Endorsed
+//                 </button>
+//               </div>
+
+//               {/* Cloud Security */}
+//               <div className="flex items-center justify-between border rounded-lg p-3">
+//                 <div>
+//                   <p className="font-medium">Cloud Security</p>
+//                   <div className="flex items-center gap-2 mt-1 text-sm">
+//                     <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 text-xs font-medium">
+//                       novice
+//                     </span>
+//                     <span className="text-gray-500">⭐ 1</span>
+//                   </div>
+//                 </div>
+//                 <button className="px-3 py-1 border rounded-lg text-sm font-medium hover:bg-gray-50">
+//                   Get Endorsed
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+
+//           {/* My Growth Opportunities */}
+//           <div className="bg-white border rounded-xl p-5">
+//             <h2 className="font-semibold text-lg flex items-center gap-2 mb-2">
+//               ⊚ My Growth Opportunities
+//             </h2>
+
+//             {/* Current Role Proficiency */}
+//             <div className="flex items-center justify-between mb-2">
+//               <p className="text-sm font-medium">Current Role Proficiency</p>
+//               <p className="text-green-600 font-semibold">55%</p>
+//             </div>
+//             <div className="w-full h-3 bg-gray-100 rounded">
+//               <div className="h-3 bg-gray-900 rounded" style={{ width: "55%" }}></div>
+//             </div>
+
+//             {/* Skills List */}
+//             <div className="mt-4 space-y-2">
+//               {[
+//                 { skill: "React", percent: 100 },
+//                 { skill: "JavaScript", percent: 100 },
+//                 { skill: "Node.js", percent: 30 },
+//                 { skill: "Database Design", percent: 25 },
+//                 { skill: "System Architecture", percent: 20 },
+//               ].map((item) => (
+//                 <div key={item.skill} className="flex items-center justify-between text-sm">
+//                   <span>{item.skill}</span>
+//                   <div className="flex items-center gap-2 w-40">
+//                     <div className="flex-1 h-2 bg-gray-100 rounded">
+//                       <div
+//                         className="h-2 bg-gray-900 rounded"
+//                         style={{ width: `${item.percent}%` }}
+//                       ></div>
+//                     </div>
+//                     <span className="text-gray-800 font-medium">{item.percent}%</span>
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+
+//             {/* Skills for Data Scientist Role */}
+//             <h3 className="font-medium mt-5 mb-2">Skills for Data Scientist Role</h3>
+//             <div className="space-y-2 text-sm">
+//               <div className="flex items-center justify-between border rounded-lg p-3">
+//                 <div>
+//                   <p>AI/ML</p>
+//                   <p className="text-xs text-gray-500">Need Expert level</p>
+//                 </div>
+//                 <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+//                   3 courses
+//                 </button>
+//               </div>
+
+//               <div className="flex items-center justify-between border rounded-lg p-3">
+//                 <div>
+//                   <p>Cloud Security</p>
+//                   <p className="text-xs text-gray-500">Need Intermediate level</p>
+//                 </div>
+//                 <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+//                   5 courses
+//                 </button>
+//               </div>
+
+//               <div className="flex items-center justify-between border rounded-lg p-3">
+//                 <div>
+//                   <p>Data Analytics</p>
+//                   <p className="text-xs text-gray-500">Need Expert level</p>
+//                 </div>
+//                 <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+//                   4 courses
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//           )}
+
+//       </div>
+
+//       {/* Right Section - Adjust column span based on sidebar state */}
+
+//       <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
+//         {(shouldShowWidget("Today Task List") || !selectedWidget) && (
+
+//           <div className="p-4 bg-white rounded-lg shadow h-77 overflow-y-auto hide-scroll">
+//             <h2 className="font-semibold mb-4">Today's Task Progress</h2>
+//             {todayTasks.length > 0 ? (
+//               todayTasks.map((task, index) => (
+//                 <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+//                   {/* Badge */}
+//                   <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+//                     {task.task_type}
+//                   </span>
+
+//                   {/* Title */}
+//                   <p className="font-semibold mt-2">{task.task_title}</p>
+//                   <p className="text-xs text-gray-500">Created Outlook of wireframe</p>
+
+//                   {/* Profile */}
+//                   <div className="flex items-center gap-2 mt-2">
+//                     <img
+//                       src={
+//                         task.image && task.image !== ""
+//                           ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+//                           : placeholderImage
+//                       }
+//                       alt={task.allocatedUser}
+//                       className="w-8 h-8 rounded-full object-cover"
+//                       onError={(e) => {
+//                         (e.currentTarget as HTMLImageElement).src = placeholderImage;
+//                       }}
+//                     />
+//                     <div>
+//                       <p className="text-sm font-medium">{task.allocatedUser}</p>
+//                       <p className="text-xs text-gray-400">
+//                         {(() => {
+//                           if (!task.task_date) return "";
+//                           const d = new Date(task.task_date);
+//                           const day = String(d.getDate()).padStart(2, "0");
+//                           const month = String(d.getMonth() + 1).padStart(2, "0");
+//                           const year = d.getFullYear();
+//                           return `${day}-${month}-${year}`;
+//                         })()}
+//                       </p>
+//                     </div>
+//                   </div>
+//                 </div>
+//               ))
+//             ) : (
+//               <p className="text-gray-500 text-sm">No tasks for today</p>
+//             )}
+//           </div>
+
+//         )}
+
+//         {(shouldShowWidget("Week Task List") || !selectedWidget) && (
+//           <div className="p-4 bg-white rounded-lg shadow h-96 overflow-y-auto hide-scroll">
+//             <h2 className="font-semibold mb-4">Weekly Task Progress</h2>
+//             {weekTasks.length > 0 ? (
+//               weekTasks.map((task, index) => (
+//                 <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+//                   {/* Badge */}
+//                   <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+//                     {task.task_type}
+//                   </span>
+
+//                   {/* Title */}
+//                   <p className="font-semibold mt-2">{task.task_title}</p>
+//                   <p className="text-xs text-gray-500">Created Outlook of wireframe</p>
+
+//                   {/* Profile */}
+//                   <div className="flex items-center gap-2 mt-2">
+//                     <img
+//                       src={
+//                         task.image && task.image !== ""
+//                           ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+//                           : placeholderImage
+//                       }
+//                       alt={task.allocatedUser}
+//                       className="w-8 h-8 rounded-full object-cover"
+//                       onError={(e) => {
+//                         (e.currentTarget as HTMLImageElement).src = placeholderImage;
+//                       }}
+//                     />
+//                     <div>
+//                       <p className="text-sm font-medium">{task.allocatedUser}</p>
+//                       <p className="text-xs text-gray-400">
+//                         {(() => {
+//                           if (!task.task_date) return "";
+//                           const d = new Date(task.task_date);
+//                           const day = String(d.getDate()).padStart(2, "0");
+//                           const month = String(d.getMonth() + 1).padStart(2, "0");
+//                           const year = d.getFullYear();
+//                           return `${day}-${month}-${year}`;
+//                         })()}
+//                       </p>
+//                     </div>
+//                   </div>
+//                 </div>
+//               ))
+//             ) : (
+//               <p className="text-gray-500 text-sm">No tasks for this week</p>
+//             )}
+//           </div>
+//         )}
+//       </div>
+//     </div>
+
+
+//       {/* Close dropdown when clicking outside */ }
+//   {
+//     isWidgetDropdownOpen && (
+//       <div
+//         className="fixed inset-0 z-0"
+//         onClick={() => setIsWidgetDropdownOpen(false)}
+//       ></div>
+//     )
+//   }
+//     </div >
+//   );
+// }
+
 "use client";
 import { useEffect, useState } from "react";
 import { MoreVertical, ChevronDown, MoreHorizontal, Building2Icon, UsersIcon, MapPinIcon, BriefcaseIcon, CreditCardIcon } from "lucide-react";
@@ -7,8 +884,6 @@ import icon from '@/components/AppIcon';
 import { Atom } from "react-loading-indicators"
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
-import CreateAssessmentModal from "@/app/content/LMS/Assessment Library/components/CreateAssessmentModal";
-
 import { UserCircle, Search } from "lucide-react";
 
 import {
@@ -148,8 +1023,6 @@ export default function Dashboard() {
   const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const [openAssessmentModal, setOpenAssessmentModal] = useState(false);
-
 
 
 
@@ -702,7 +1575,7 @@ export default function Dashboard() {
 
         {/* Welcome with icon */}
         <div className="flex items-center gap-2">
-          <UserCircle className="w-7 h-7 text-blue-600" />
+          <UserCircle className="w-7 h-7 text-blue-400" />
           <h1 className="text-xl font-bold text-gray-800">
             Welcome, {sessionData?.userProfileName || "User"}
           </h1>
@@ -783,28 +1656,19 @@ export default function Dashboard() {
 
                     {/* Chart content */}
                     <div className="ml-6 h-48 flex justify-between items-end gap-2">
-  {chartData.map((data, i) => (
-    <div key={i} className="flex flex-col items-center flex-1 relative group">
-      {/* Bar */}
-      <div
-        className={`w-full rounded-t ${getStatusColor(data.status)}`}
-        style={{
-          height: `${(data.value / maxValue) * 100}%`,
-          minHeight: data.value > 0 ? "4px" : "0",
-        }}
-      />
-
-      {/* X-axis label */}
-      <span className="text-xs text-gray-500 mt-2">{data.label}</span>
-
-      {/* Tooltip */}
-      <div className="absolute -top-8 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
-        {data.value} / {maxValue}
-      </div>
-    </div>
-  ))}
-</div>
-
+                      {chartData.map((data, i) => (
+                        <div key={i} className="flex flex-col items-center flex-1">
+                          <div
+                            className={`w-full rounded-t ${getStatusColor(data.status)}`}
+                            style={{
+                              height: `${(data.value / maxValue) * 100}%`,
+                              minHeight: data.value > 0 ? '4px' : '0'
+                            }}
+                          />
+                          <span className="text-xs text-gray-500 mt-2">{data.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Chart Legend */}
@@ -1290,226 +2154,116 @@ export default function Dashboard() {
 
 
               {/* My Growth Opportunities */}
-            <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200 h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
-  <div className="flex justify-between items-center mb-4">
-    <h2 className="text-lg font-semibold text-gray-800">📅 My Growth Opportunities</h2>
-    {/* <button
-      onClick={() => setShowRecommendations(true)}
-      className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm"
-    >
-      View Actions
-    </button> */}
-  </div>
+              <div className="bg-white border rounded-xl p-5 w-full col-span-12 -mx-1 px-6">
+                <h2 className="font-semibold text-lg flex items-center gap-2 mb-2">
+                  ⊚ My Growth Opportunities
+                </h2>
 
-  <div className="space-y-5 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
-    {/* Current Role Proficiency Summary */}
-    <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="font-semibold text-gray-800 text-base">Overall Proficiency</h3>
-        <span className="text-green-600 font-semibold">
-          {myGrowth.length > 0
-            ? `${Math.round(myGrowth.reduce((sum, item) => sum + getLevelPercent(item.skill_level), 0) / myGrowth.length)}%`
-            : "0%"
-          }
-        </span>
-      </div>
-      <div className="w-full bg-gray-300 rounded h-2 mt-2">
-        <div
-          className="bg-green-600 h-2 rounded"
-          style={{
-            width: myGrowth.length > 0
-              ? `${Math.round(myGrowth.reduce((sum, item) => sum + getLevelPercent(item.skill_level), 0) / myGrowth.length)}%`
-              : "0%"
-          }}
-        ></div>
-      </div>
-    </div>
-
-    {/* Growth Opportunities List */}
-    {myGrowth.length > 0 ? (
-      myGrowth.map((item) => {
-        const percent = getLevelPercent(item.skill_level);
-        const totalLevels = 5;
-        
-        // Extract numeric value from skill_level (handle "Level X" format or direct number)
-        const skillLevelValue = item.skill_level ? 
-          (typeof item.skill_level === 'string' ? 
-            parseInt(item.skill_level.replace("Level ", "")) || 1 : 
-            item.skill_level) : 1;
-        
-        const currentLevel = Math.min(Math.max(skillLevelValue, 1), 5); // Clamp between 1-5
-        const completionPercentage = Math.round((currentLevel / totalLevels) * 100);
-
-        const status =
-          completionPercentage >= 80
-            ? "On Track"
-            : completionPercentage >= 60
-              ? "Medium Risk"
-              : "At Risk";
-
-        const statusColor =
-          completionPercentage >= 80
-            ? "text-green-700"
-            : completionPercentage >= 60
-              ? "text-yellow-700"
-              : "text-red-700";
-
-        // Use current date if created_at doesn't exist
-        const created_at = new Date().toLocaleDateString();
-
-        // Render circles with proper typing
-        const renderCircles = (value: number | string) => {
-          const numericValue = typeof value === 'string' ? 
-            parseFloat(value) || 0 : 
-            value || 0;
-          
-          const clampedValue = Math.min(Math.max(numericValue, 0), 5); // Clamp between 0-5
-          const full = Math.floor(clampedValue);
-          const half = clampedValue % 1 !== 0;
-          const empty = 5 - full - (half ? 1 : 0);
-
-          return (
-            <div className="flex items-center">
-              {Array.from({ length: full }).map((_, i) => (
-                <span key={`f-${i}`} className="text-blue-600 text-2xl">●</span>
-              ))}
-              {half && <span className="text-blue-600 text-2xl">◐</span>}
-              {Array.from({ length: empty }).map((_, i) => (
-                <span key={`e-${i}`} className="text-gray-300 text-2xl">●</span>
-              ))}
-            </div>
-          );
-        };
-
-        // For growth opportunities, use skill_level as current and set a default target
-        const currentRating = skillLevelValue;
-        const targetLevel = 4; // Default target level for growth opportunities
-
-        return (
-          <div
-            key={item.id}
-            className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm"
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-gray-800 text-base">
-                {item.title || "Untitled Skill"}
-              </h3>
-
-              {/* Gap Display */}
-              <span className="font-medium text-gray-500 flex items-center space-x-1 text-xs">
-                Gap:
-                {(() => {
-                  const gap = currentRating - targetLevel;
-
-                  if (gap > 0) {
-                    return (
-                      <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
-                        <span className="mdi mdi-trending-up text-sm"></span>
-                        <span>+{gap.toFixed(1)}</span>
-                      </div>
-                    );
-                  } else if (gap < 0) {
-                    return (
-                      <div className="flex items-center space-x-1 text-red-600 font-medium text-xs">
-                        <span className="mdi mdi-alert-circle text-sm"></span>
-                        <span>{gap.toFixed(1)}</span>
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
-                        <span className="mdi mdi-check-circle text-sm"></span>
-                        <span>0.0</span>
-                      </div>
-                    );
-                  }
-                })()}
-              </span>
-              
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                {created_at}
-              </span>
-            </div>
-
-            <p className="text-sm text-gray-600">
-              {item.category || "General"} • {item.sub_category || "Uncategorized"}
-            </p>
-
-            {/* Progress bar */}
-            <div className="w-full bg-gray-300 rounded h-2 mt-2">
-              <div
-                className="bg-blue-600 h-2 rounded"
-                style={{ width: `${completionPercentage}%` }}
-              ></div>
-            </div>
-
-            {/* Current Level and Target Level */}
-            <div className="grid grid-cols-2 text-sm font-semibold text-gray-700 border-b pb-1 mt-4">
-              <p>Current Level</p>
-              <p>Target Level</p>
-            </div>
-
-            {/* Ratings row */}
-            <div className="grid grid-cols-2 gap-4 mt-2 text-xs items-center">
-              {/* Current Level */}
-              <div className="flex items-center space-x-2">
-                {renderCircles(currentRating)}
-                <span className="ml-2 text-sm font-medium">{currentRating}</span>
-              </div>
-
-              {/* Target Level + Gap + Status */}
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center space-x-3">
-                  {/* Target Level */}
-                  <div className="flex items-center space-x-2">
-                    {renderCircles(targetLevel)}
-                    <span className="ml-2 text-sm font-medium">{targetLevel}</span>
-                  </div>
+                {/* Current Role Proficiency - Now calculated as average of all skills */}
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium">Current Role Proficiency</p>
+                  <p className="text-green-600 font-semibold">
+                    {myGrowth.length > 0
+                      ? `${Math.round(myGrowth.reduce((sum, item) => sum + getLevelPercent(item.skill_level), 0) / myGrowth.length)}%`
+                      : "0%"
+                    }
+                  </p>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded">
+                  <div
+                    className="h-3 bg-gray-900 rounded"
+                    style={{
+                      width: myGrowth.length > 0
+                        ? `${Math.round(myGrowth.reduce((sum, item) => sum + getLevelPercent(item.skill_level), 0) / myGrowth.length)}%`
+                        : "0%"
+                    }}
+                  ></div>
                 </div>
 
-                {/* Status Badge aligned at the end */}
-                <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors 
-                    focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 
-                    ${status === "On Track" ? "bg-green-50 text-green-700 border-green-200" : 
-                      status === "Medium Risk" ? "bg-yellow-50 text-yellow-700 border-yellow-200" : 
-                      "bg-red-50 text-red-700 border-red-200"}`}
-                >
-                  {status}
-                </span>
+                {/* Skills List from API */}
+                <div className="mt-4 space-y-2">
+                  {myGrowth.length > 0 ? (
+                    myGrowth.map((item) => {
+                      const percent = getLevelPercent(item.skill_level);
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <span>{item.title}</span>
+                          <div className="flex items-center gap-2 w-40">
+                            <div className="flex-1 h-2 bg-gray-100 rounded">
+                              <div
+                                className="h-2 bg-gray-900 rounded"
+                                style={{ width: `${percent}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-gray-800 font-medium">{percent}%</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-500 text-sm">No growth opportunities found</p>
+                  )}
+                </div>
+
+                {/* Skills for Data Scientist Role */}
+                {/* <h3 className="font-medium mt-5 mb-2">Skills for Data Scientist Role</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <p>AI/ML</p>
+                        <p className="text-xs text-gray-500">Need Expert level</p>
+                      </div>
+                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+                        3 courses
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <p>Cloud Security</p>
+                        <p className="text-xs text-gray-500">Need Intermediate level</p>
+                      </div>
+                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+                        5 courses
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <p>Data Analytics</p>
+                        <p className="text-xs text-gray-500">Need Expert level</p>
+                      </div>
+                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+                        4 courses
+                      </button>
+                    </div>
+                  </div> */}
               </div>
-            </div>
-          </div>
-        );
-      })
-    ) : (
-      <div className="text-center py-4">
-        <p className="text-gray-600">No growth opportunities found</p>
-      </div>
-    )}
-  </div>
-</div>
             </div>
           )}
           {/* Employee Table - Full width row */}
-          <div className="p-4 col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll mb-15 ">
-            {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
+          {(shouldShowWidget("Employee List") || !selectedWidget) && (
+            <div className="col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll mb-15 ">
+              {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
 
-            {/* Table Headers with Search Fields */}
-            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
-              {/* Employee Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Employee</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("full_name", e.target.value)}
-                />
-              </div>
+              {/* Table Headers with Search Fields */}
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
+                {/* Employee Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Employee</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("full_name", e.target.value)}
+                  />
+                </div>
 
-              {/* Mobile Column with Search */}
-              {/* <div className="flex flex-col">
+                {/* Mobile Column with Search */}
+                {/* <div className="flex flex-col">
                 <span className="flex items-center mb-1">Mobile</span>
                 <input
                   type="text"
@@ -1519,156 +2273,156 @@ export default function Dashboard() {
                 />
               </div> */}
 
-              {/* Department Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Department</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("department_name", e.target.value)}
-                />
-              </div>
-
-              {/* Role Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Job Role</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
-                />
-              </div>
-
-              {/* profile Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">profile</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("profile_name", e.target.value)}
-                />
-              </div>
-
-
-              {/* Status Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Status</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("status", e.target.value)}
-                />
-              </div>
-
-              {/* Action Column with + Button */}
-              <div className="flex flex-col items-center justify-center">
-                <div className="flex items-center justify-between w-full">
-                  <span className="flex items-center mb-1">Action</span>
-                  <button
-                    onClick={() => setIsAddUserModalOpen(true)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-                  >
-                    +
-                  </button>
-                  {isAddUserModalOpen && (
-                    <AddUserModal
-                      isOpen={isAddUserModalOpen}
-                      setIsOpen={setIsAddUserModalOpen}
-                      sessionData={sessionData}
-                      userJobroleLists={[]}
-                      userDepartmentLists={[]}
-                      userLOR={[]}
-                      userProfiles={[]}
-                      userLists={[]}
-                    />
-
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Employee Rows */}
-            {filteredEmployees.map((emp) => (
-              <div
-                key={emp.id}
-                className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <img
-                    src={
-                      emp.image && emp.image !== ""
-                        ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${emp.image}`
-                        : placeholderImage
-                    }
-                    alt={emp.full_name || "profile"}
-                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                    }}
+                {/* Department Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Department</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("department_name", e.target.value)}
                   />
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{emp.full_name}</p>
-                    <p className="text-gray-500 text-xs truncate">{emp.email}</p>
+                </div>
+
+                {/* Role Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Job Role</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
+                  />
+                </div>
+
+                {/* profile Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">profile</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("profile_name", e.target.value)}
+                  />
+                </div>
+
+
+                {/* Status Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Status</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("status", e.target.value)}
+                  />
+                </div>
+
+                {/* Action Column with + Button */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="flex items-center mb-1">Action</span>
+                    <button
+                      onClick={() => setIsAddUserModalOpen(true)}
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                    >
+                      +
+                    </button>
+                    {isAddUserModalOpen && (
+                      <AddUserModal
+                        isOpen={isAddUserModalOpen}
+                        setIsOpen={setIsAddUserModalOpen}
+                        sessionData={sessionData}
+                        userJobroleLists={[]}
+                        userDepartmentLists={[]}
+                        userLOR={[]}
+                        userProfiles={[]}
+                        userLists={[]}
+                      />
+
+                    )}
                   </div>
                 </div>
-
-                {/* <span className="truncate">{emp.mobile || "-"}</span> */}
-                <span className="truncate">{emp.department_name}</span>
-                <span className="truncate">{emp.jobrole}</span>
-                <span className="truncate">{emp.profile_name}</span>
-
-                <span
-                  className={`px-2 py-1 rounded-md w-fit text-xs ${emp.status === "Active"
-                    ? "text-green-600 bg-green-100"
-                    : "text-red-600 bg-red-100"
-                    }`}
-                >
-                  {emp.status}
-                </span>
-
-                <div className="flex relative">
-                  <MoreHorizontal
-                    className="w-4 h-4 text-gray-500 cursor-pointer flex-shrink-0"
-                    onClick={(e) => handleActionMenuClick(e, emp)}
-                  />
-
-                  {/* Action Menu */}
-                  {showActions === emp.id && (
-                    <div
-                      className="absolute w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
-                      style={{
-                        top: '100%',
-                        right: 0,
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="py-2">
-                        <button
-                          onClick={() => handleEditEmployeeMenu(emp)}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                        >
-                          <Edit size={16} />
-                          <span>Edit Employee</span>
-                        </button>
-                        <button
-                          onClick={() => handleAssignTaskMenu(emp)}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                        >
-                          <Plus size={16} />
-                          <span>Assign Task</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
-            ))}
-          </div>
 
+              {/* Employee Rows */}
+              {filteredEmployees.map((emp) => (
+                <div
+                  key={emp.id}
+                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img
+                      src={
+                        emp.image && emp.image !== ""
+                          ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${emp.image}`
+                          : placeholderImage
+                      }
+                      alt={emp.full_name || "profile"}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                      }}
+                    />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{emp.full_name}</p>
+                      <p className="text-gray-500 text-xs truncate">{emp.email}</p>
+                    </div>
+                  </div>
+
+                  {/* <span className="truncate">{emp.mobile || "-"}</span> */}
+                  <span className="truncate">{emp.department_name}</span>
+                  <span className="truncate">{emp.jobrole}</span>
+                  <span className="truncate">{emp.profile_name}</span>
+
+                  <span
+                    className={`px-2 py-1 rounded-md w-fit text-xs ${emp.status === "Active"
+                      ? "text-green-600 bg-green-100"
+                      : "text-red-600 bg-red-100"
+                      }`}
+                  >
+                    {emp.status}
+                  </span>
+
+                  <div className="flex relative">
+                    <MoreHorizontal
+                      className="w-4 h-4 text-gray-500 cursor-pointer flex-shrink-0"
+                      onClick={(e) => handleActionMenuClick(e, emp)}
+                    />
+
+                    {/* Action Menu */}
+                    {showActions === emp.id && (
+                      <div
+                        className="absolute w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                        style={{
+                          top: '100%',
+                          right: 0,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="py-2">
+                          <button
+                            onClick={() => handleEditEmployeeMenu(emp)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <Edit size={16} />
+                            <span>Edit Employee</span>
+                          </button>
+                          <button
+                            onClick={() => handleAssignTaskMenu(emp)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <Plus size={16} />
+                            <span>Assign Task</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right Section - Adjust column span based on sidebar state */}
@@ -1677,13 +2431,13 @@ export default function Dashboard() {
             {/* Tab Navigation */}
             <div className="flex border-b">
               <button
-                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Today Task List" || !selectedWidget ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700"}`}
+                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Today Task List" || !selectedWidget ? "text-blue-500 border-b-2 border-blue-500" : "text-gray-500 hover:text-gray-700"}`}
                 onClick={() => setSelectedWidget("Today Task List")}
               >
                 Today's Tasks
               </button>
               <button
-                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Week Task List" ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700"}`}
+                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Week Task List" ? "text-blue-400 border-b-2 border-blue-400" : "text-gray-500 hover:text-gray-700"}`}
                 onClick={() => setSelectedWidget("Week Task List")}
               >
                 Weekly Tasks
@@ -1702,17 +2456,28 @@ export default function Dashboard() {
                       onClick={() => {
                         triggerMenuNavigation(null, 'task/taskManagement.tsx');
                       }}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-400 text-white hover:bg-blue-600"
                     >
                       +
                     </button>
                   </div>
 
                   {todayTasks.length > 0 ? (
-                    todayTasks.map((task, index) => (
-                      <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                    todayTasks.map((task, index) => {
+                       const badgeColors: Record<string, string> = {
+                        Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
+               
+                      return (
+                      <div key={index}  className={`mb-4 border-l-2 pl-3 ${
+          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+        }`}>
                         {/* Badge */}
-                        <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                        <span  className={`text-xs font-semibold px-2 py-1 rounded ${
+            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+          }`}>
                           {task.task_type}
                         </span>
 
@@ -1748,7 +2513,8 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
-                    ))
+                    )
+                  })
                   ) : (
                     <p className="text-gray-500 text-sm">No tasks for today</p>
                   )}
@@ -1764,73 +2530,102 @@ export default function Dashboard() {
                   </div>
 
                   {weekTasks.length > 0 ? (
-                    weekTasks.map((task, index) => (
-                      <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
-                        {/* Badge */}
-                        <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
-                          {task.task_type}
-                        </span>
+                    weekTasks.map((task, index) => {
+                      // ✅ Define color mapping
+                      const badgeColors: Record<string, string> = {
+                        Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
 
-                        {/* Title */}
-                        <p className="mt-2">{task.task_title}</p>
-                        {/* <p className="text-xs text-gray-500">Created Outlook of wireframe</p> */}
+                      return (
+                        <div
+                          key={index}
+                          className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+                            }`}
+                        >
+                          {/* Badge */}
+                          <span
+                            className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+                              }`}
+                          >
+                            {task.task_type}
+                          </span>
 
-                        {/* Profile */}
-                        <div className="flex items-center gap-2 mt-2">
-                          <img
-                            src={
-                              task.image && task.image !== ""
-                                ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
-                                : placeholderImage
-                            }
-                            alt={task.allocatedUser}
-                            className="w-8 h-8 rounded-full object-cover"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                            }}
-                          />
-                          <div>
-                            <p className="text-sm font-medium">{task.allocatedUser}</p>
-                            <p className="text-xs text-gray-400">
-                              {(() => {
-                                if (!task.task_date) return "";
-                                const d = new Date(task.task_date);
-                                const day = String(d.getDate()).padStart(2, "0");
-                                const month = String(d.getMonth() + 1).padStart(2, "0");
-                                const year = d.getFullYear();
-                                return `${day}-${month}-${year}`;
-                              })()}
-                            </p>
+                          {/* Title */}
+                          <p className="mt-2">{task.task_title}</p>
+
+                          {/* Profile */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <img
+                              src={
+                                task.image && task.image !== ""
+                                  ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                                  : placeholderImage
+                              }
+                              alt={task.allocatedUser}
+                              className="w-8 h-8 rounded-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                              }}
+                            />
+                            <div>
+                              <p className="text-sm font-medium">{task.allocatedUser}</p>
+                              <p className="text-xs text-gray-400">
+                                {(() => {
+                                  if (!task.task_date) return "";
+                                  const d = new Date(task.task_date);
+                                  const day = String(d.getDate()).padStart(2, "0");
+                                  const month = String(d.getMonth() + 1).padStart(2, "0");
+                                  const year = d.getFullYear();
+                                  return `${day}-${month}-${year}`;
+                                })()}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <p className="text-gray-500 text-sm">No tasks for this week</p>
                   )}
+
                 </div>
               )}
             </div>
           </div>
-
           <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
+            {/* Course List */}
             <div className="p-4 bg-white rounded-lg shadow h-110 overflow-y-auto hide-scroll">
               {/* Header with + button */}
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold">Course List</h2>
                 <button
                   onClick={() => setOpenDialog(true)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-400 text-white hover:bg-red-600"
                 >
                   +
                 </button>
               </div>
 
               {todayTasks.length > 0 ? (
-                todayTasks.map((task, index) => (
-                  <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                todayTasks.map((task, index) =>
+                 {
+                                   // ✅ Define color mapping
+                      const badgeColors: Record<string, string> = {
+                       Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
+            
+                  return (
+                  <div key={index}  className={`mb-4 border-l-2 pl-3 ${
+          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+        }`}>
                     {/* Badge */}
-                    <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                    <span  className={`text-xs font-semibold px-2 py-1 rounded ${
+            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+          }`}>
                       {task.task_type}
                     </span>
 
@@ -1866,39 +2661,44 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                ))
+                )
+              })
               ) : (
-                <p className="text-gray-500 text-sm">No course </p>
+                <p className="text-gray-500 text-sm">No course</p>
               )}
             </div>
 
-            {/* Popup Modal */}
-            <AddCourseDialog
-              open={openDialog}
-              onOpenChange={setOpenDialog}
-              onSave={() => { /* implement save logic if needed */ }}
-              course={null}
-            />
-          </div>
-          <div className="col-span-3 space-y-6">
+            {/* Assessment List */}
             <div className="p-4 bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll">
               {/* Header with + button */}
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold">Assesment List</h2>
+                <h2 className="font-semibold">Assessment List</h2>
                 <button
-                  onClick={() => setOpenAssessmentModal(true)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                  onClick={() => setOpenDialog(true)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-blur-400 text-white hover:bg-blue-400"
                 >
                   +
                 </button>
-
               </div>
 
-              {todayTasks.length > 0 ? (
-                todayTasks.map((task, index) => (
-                  <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+              {weekTasks.length > 0 ? (
+                weekTasks.map((task, index) =>
+                {  
+                           // ✅ Define color mapping
+                      const badgeColors: Record<string, string> = {
+                       Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
+                  
+                  return (
+                  <div key={index}  className={`mb-4 border-l-2 pl-3 ${
+          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+        }`}>
                     {/* Badge */}
-                    <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                    <span  className={`text-xs font-semibold px-2 py-1 rounded ${
+            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+          }`}>
                       {task.task_type}
                     </span>
 
@@ -1934,20 +2734,14 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                ))
+                )
+})
               ) : (
-                <p className="text-gray-500 text-sm">No course </p>
+                <p className="text-gray-500 text-sm">No assessment</p>
               )}
             </div>
-            <CreateAssessmentModal
-              isOpen={openAssessmentModal}
-              onClose={() => setOpenAssessmentModal(false)}
-              onSave={() => { /* implement save logic if needed */ }}
-            />
-
           </div>
         </div>
-
 
         {/* Organization Info Card */}
         <div className="col-span-full grid grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-6">

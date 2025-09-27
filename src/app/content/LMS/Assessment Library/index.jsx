@@ -43,6 +43,7 @@ const AssessmentLibrary = () => {
     subInstituteId: '',
     orgType: '',
     userId: '',
+    user_profile_name: "",
   });
 
   const [assessments, setAssessments] = useState([]);
@@ -68,13 +69,15 @@ const AssessmentLibrary = () => {
   useEffect(() => {
     const userData = localStorage.getItem('userData');
     if (userData) {
-      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      const { APP_URL, token, sub_institute_id, org_type, user_id,user_profile_name } = JSON.parse(userData);
       setSessionData({
         url: APP_URL,
         token,
         subInstituteId: sub_institute_id,
         orgType: org_type,
         userId: user_id,
+        user_profile_name,
+
       });
     }
   }, []);
@@ -275,6 +278,7 @@ const AssessmentLibrary = () => {
               </Button> */}
 
               {/* Create Assessment Button */}
+              {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
               <Button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
@@ -282,6 +286,7 @@ const AssessmentLibrary = () => {
                 <Icon name="Plus" size={16} />
                 Create Assessment
               </Button>
+                ):null}
             </div>
           </div>
 

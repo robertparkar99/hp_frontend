@@ -237,7 +237,7 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{course ? "Edit Course" : "Add Course"}</DialogTitle>
+          <DialogTitle>{course ? "Edit Course" : "Create Course"}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col space-y-4">
