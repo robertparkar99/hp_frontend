@@ -338,6 +338,14 @@ export default function HomePage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Add New Jobrole */}
+          <button
+            className="rounded-lg hover:bg-gray-100 px-3 py-1 flex items-center justify-center text-xl"
+            onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
+            data-titlehead="Add New Jobrole"
+          >
+            +
+          </button>
           {/* ✅ Icon Toggle */}
           <div className="flex border rounded-md overflow-hidden">
             <button
@@ -362,14 +370,7 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* Add New Jobrole */}
-          <button
-            className="rounded-lg hover:bg-gray-100 px-3 py-1 flex items-center justify-center text-xl"
-            onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
-            data-titlehead="Add New Jobrole"
-          >
-            +
-          </button>
+          
         </div>
       </div>
 
