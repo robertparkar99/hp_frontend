@@ -437,6 +437,41 @@ export default function Page() {
                 </SelectContent>
               </Select>
 
+              {/* Jobrole Filter */}
+              <Select
+                value={selectedSubcategory || "all"}
+                onValueChange={(value) => {
+                  if (value === "all") {
+                    setSelectedSubcategory(undefined);
+                  } else {
+                    setSelectedSubcategory(value);
+                  }
+                }}
+                disabled={!selectedCategory}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by Sub Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Jobrole</SelectItem>
+                  {/* {selectedCategory &&
+                    Array.from(
+                      new Set(
+                        userSkills
+                          .filter((s) => s.category === selectedCategory)
+                          .map((s) => s.sub_category)
+                      )
+                    )
+                      .filter((sub): sub is string => typeof sub === "string")
+                      .sort((a, b) => a.localeCompare(b))
+                      .map((sub, idx) => (
+                        <SelectItem key={idx} value={sub}>
+                          {sub}
+                        </SelectItem>
+                      ))} */}
+                </SelectContent>
+              </Select>
+
               {/* Category Filter */}
               <Select
                 value={selectedCategory || "all"}
