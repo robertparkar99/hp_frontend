@@ -13,6 +13,8 @@ import AddDialog from "@/components/jobroleComponent/addDialouge";
 import EditDialog from "@/components/jobroleComponent/editDialouge";
 import { Atom } from "react-loading-indicators";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { LayoutGrid, Square, Table } from "lucide-react"; // ✅ Toggle icons
+import DataTable, { TableColumn, TableStyles } from "react-data-table-component"; // ✅ DataTable
 
 type JobRole = {
   id: number;
@@ -33,6 +35,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [departments, setDepartments] = useState<string[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>("All Departments");
+  const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
+  const [searchTerm, setSearchTerm] = useState<string>(""); // ✅ search state
 
   const [dialogOpen, setDialogOpen] = useState({
     view: false,
@@ -50,7 +54,7 @@ export default function HomePage() {
     userId: "",
   });
 
-  // ✅ Load session data from localStorage
+  // ✅ Load session data
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
@@ -76,7 +80,6 @@ export default function HomePage() {
         `${sessionData.url}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.subInstituteId}`
       );
       const json = await res.json();
-      console.log("✅ API Response:", json);
 
       let data: JobRole[] = [];
       if (Array.isArray(json)) {
@@ -87,7 +90,6 @@ export default function HomePage() {
 
       setRoles(data);
 
-      // ✅ Extract unique departments
       const uniqueDepts = Array.from(
         new Set(data.map((r) => r.department).filter(Boolean))
       ).sort((a, b) => a.localeCompare(b));
@@ -104,7 +106,7 @@ export default function HomePage() {
     fetchData();
   }, [sessionData]);
 
-  // ✅ Delete API Call
+  // ✅ Delete role
   const handleDeleteClick = async (id: number) => {
     if (!id) return;
 
@@ -143,11 +145,172 @@ export default function HomePage() {
     setSelectedJobRole(null);
   };
 
-  // ✅ Filter roles by department
+  // ✅ Filtered roles
   const filteredRoles =
     selectedDept === "All Departments"
       ? roles
       : roles.filter((role) => role.department === selectedDept);
+
+  // ✅ Apply search on filtered roles
+  const searchedRoles = filteredRoles.filter(
+    (role) =>
+      role.jobrole.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      role.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // ✅ Column search state
+  const [columnFilters, setColumnFilters] = useState<{
+    [key: string]: string;
+  }>({ jobrole: "", department: "", description: "", performance_expectation: "" });
+
+  // ✅ Filter data based on column search
+  const columnFilteredRoles = searchedRoles.filter((role) => {
+    return (
+      role.jobrole.toLowerCase().includes(columnFilters.jobrole?.toLowerCase() || "") &&
+      role.department.toLowerCase().includes(columnFilters.department?.toLowerCase() || "") &&
+      role.description.toLowerCase().includes(columnFilters.description?.toLowerCase() || "") &&
+      role.performance_expectation
+        .toLowerCase()
+        .includes(columnFilters.performance_expectation?.toLowerCase() || "")
+    );
+  });
+
+  // ✅ DataTable columns with column search inputs
+  const columns: TableColumn<JobRole>[] = [
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Job Role</span>
+          <input
+            type="text"
+            value={columnFilters.jobrole}
+            onChange={(e) =>
+              setColumnFilters({ ...columnFilters, jobrole: e.target.value })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.jobrole,
+      sortable: true,
+      wrap: true,
+      width: "160px",
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Department</span>
+          <input
+            type="text"
+            value={columnFilters.department}
+            onChange={(e) =>
+              setColumnFilters({ ...columnFilters, department: e.target.value })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.department,
+      sortable: true,
+      wrap: true,
+      width: "140px",
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Description</span>
+          <input
+            type="text"
+            value={columnFilters.description}
+            onChange={(e) =>
+              setColumnFilters({ ...columnFilters, description: e.target.value })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.description,
+      sortable: false,
+      wrap: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Performance Expectation</span>
+          <input
+            type="text"
+            value={columnFilters.performance_expectation}
+            onChange={(e) =>
+              setColumnFilters({
+                ...columnFilters,
+                performance_expectation: e.target.value,
+              })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.performance_expectation,
+      sortable: false,
+      wrap: true,
+      width: "160px",
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div className="flex gap-3">
+          {/* <button onClick={() => handleEdit(row.id)}>
+            <FaEdit className="text-blue-500" />
+          </button>
+          <button onClick={() => handleDeleteClick(row.id)}>
+            <FaTrash className="text-red-500" />
+          </button> */}
+          <button
+            onClick={() => handleEdit(row.id)}
+            className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
+          >
+            <span className="mdi mdi-pencil"></span>
+          </button>
+          <button
+            onClick={() => handleDeleteClick(row.id)}
+            className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
+          >
+            <span className="mdi mdi-delete"></span>
+          </button>
+        </div>
+      ),
+      width: "100px"
+    },
+  ];
+
+  // ✅ Custom styles for DataTable
+  const customStyles: TableStyles = {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
+      },
+    },
+    cells: {
+      style: {
+        fontSize: "13px",
+        textAlign: "left",
+      },
+    },
+    table: {
+      style: {
+        borderRadius: "20px",
+        overflow: "hidden",
+      },
+    },
+  };
 
   return (
     <div className="pt-6 sm:px-4 px-2">
@@ -174,13 +337,40 @@ export default function HomePage() {
           </Select>
         </div>
 
-        <button
-          className="rounded-lg hover:bg-gray-100 px-3 py-1 flex items-center justify-center text-xl"
-          onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
-          data-titlehead="Add New Jobrole"
-        >
-          +
-        </button>
+        <div className="flex items-center gap-3">
+          {/* ✅ Icon Toggle */}
+          <div className="flex border rounded-md overflow-hidden">
+            <button
+              onClick={() => setViewMode("myview")}
+              className={`px-3 py-2 flex items-center justify-center transition-colors ${
+                viewMode === "myview"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <Square className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`px-3 py-2 flex items-center justify-center transition-colors ${
+                viewMode === "table"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <Table className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Add New Jobrole */}
+          <button
+            className="rounded-lg hover:bg-gray-100 px-3 py-1 flex items-center justify-center text-xl"
+            onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
+            data-titlehead="Add New Jobrole"
+          >
+            +
+          </button>
+        </div>
       </div>
 
       {/* Add Dialog */}
@@ -207,14 +397,15 @@ export default function HomePage() {
         />
       )}
 
-      {/* Loader / No Data / Cards */}
+      {/* Loader / No Data */}
       {loading ? (
         <div className="flex justify-center items-center h-screen">
           <Atom color="#525ceaff" size="medium" text="" textColor="" />
         </div>
-      ) : filteredRoles.length === 0 ? (
+      ) : searchedRoles.length === 0 ? (
         <div className="text-center text-gray-600">No job roles found.</div>
-      ) : (
+      ) : viewMode === "myview" ? (
+        // ✅ My View (cards)
         <div
           className="
             grid gap-2.5 min-h-40 w-full
@@ -222,7 +413,7 @@ export default function HomePage() {
             auto-rows-[110px]
           "
         >
-          {filteredRoles.map((role) => {
+          {searchedRoles.map((role) => {
             const isSelected = selected === role.id;
             return (
               <motion.div
@@ -243,7 +434,6 @@ export default function HomePage() {
                   }
                 `}
               >
-                {/* Collapsed Card */}
                 {!isSelected && (
                   <>
                     <motion.span
@@ -252,8 +442,6 @@ export default function HomePage() {
                     >
                       {role.jobrole}
                     </motion.span>
-
-                    {/* Action Buttons */}
                     <div
                       className="flex justify-center gap-3"
                       onClick={(e) => e.stopPropagation()}
@@ -268,7 +456,6 @@ export default function HomePage() {
                   </>
                 )}
 
-                {/* Expanded Card */}
                 {isSelected && (
                   <motion.div
                     layout
@@ -279,10 +466,7 @@ export default function HomePage() {
                     className="absolute inset-0 z-10 flex items-center justify-center"
                   >
                     <div className="bg-white text-black rounded-md border border-gray-300 w-full h-full flex">
-                      {/* Left Blue Strip */}
                       <div className="w-1 bg-[#5E9DFF] rounded-l-md"></div>
-
-                      {/* Content */}
                       <div className="flex-1 p-4 flex flex-col">
                         <h3 className="text-base font-semibold text-center mb-2">
                           {role.jobrole}
@@ -308,6 +492,19 @@ export default function HomePage() {
               </motion.div>
             );
           })}
+        </div>
+      ) : (
+        // ✅ DataTable View
+        <div>
+          <DataTable
+            columns={columns}
+            data={columnFilteredRoles}
+            customStyles={customStyles}
+            pagination
+            highlightOnHover
+            striped
+            responsive
+          />
         </div>
       )}
     </div>
