@@ -13,9 +13,10 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover"; // ✅ popover
-import { Funnel } from "lucide-react"; // ✅ filter icon
+import { Funnel, LayoutGrid, Table } from "lucide-react"; // ✅ icons
 import { Atom } from "react-loading-indicators";
 import { motion } from "framer-motion"; // ✅ hover animation
+import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 
 // ---------- Types ----------
 type CardData = {
@@ -23,6 +24,7 @@ type CardData = {
   classification_item: string;
   classification_category: string;
   classification_sub_category: string;
+  proficiency_level?: string;
 };
 
 interface SessionData {
@@ -49,6 +51,15 @@ export default function Index() {
   const [loadingCards, setLoadingCards] = useState(false);
 
   const [sessionData, setSessionData] = useState<SessionData>({});
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+
+  // ✅ Table filters
+  const [columnFilters, setColumnFilters] = useState({
+    classification_item: "",
+    classification_category: "",
+    classification_sub_category: "",
+    proficiency_level: "",
+  });
 
   // ---------- Load session ----------
   useEffect(() => {
@@ -184,9 +195,127 @@ export default function Index() {
     sessionData.url,
   ]);
 
+  // ✅ Table columns
+  const columns: TableColumn<CardData>[] = [
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Item</span>
+          <input
+            type="text"
+            value={columnFilters.classification_item}
+            onChange={(e) =>
+              setColumnFilters({
+                ...columnFilters,
+                classification_item: e.target.value,
+              })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_item,
+      sortable: true,
+      wrap: true,
+      
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Category</span>
+          <input
+            type="text"
+            value={columnFilters.classification_category}
+            onChange={(e) =>
+              setColumnFilters({
+                ...columnFilters,
+                classification_category: e.target.value,
+              })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_category,
+      sortable: true,
+      wrap: true,
+      width: "300px"
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Sub Category</span>
+          <input
+            type="text"
+            value={columnFilters.classification_sub_category}
+            onChange={(e) =>
+              setColumnFilters({
+                ...columnFilters,
+                classification_sub_category: e.target.value,
+              })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_sub_category,
+      sortable: true,
+      wrap: true,
+      width: "160px",
+    },
+    {
+      name: "Proficiency",
+      selector: (row) => row.proficiency_level ?? "-",
+      sortable: true,
+      width: "120px",
+    },
+  ];
+
+  // ✅ Table styles
+  const customStyles: TableStyles = {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
+      },
+    },
+    cells: {
+      style: {
+        fontSize: "13px",
+        textAlign: "left",
+      },
+    },
+    table: {
+      style: {
+        borderRadius: "20px",
+        overflow: "hidden",
+      },
+    },
+  };
+
+  // ✅ Table filtering
+  const filteredData = cards.filter(
+    (row) =>
+      row.classification_item
+        .toLowerCase()
+        .includes(columnFilters.classification_item.toLowerCase()) &&
+      row.classification_category
+        .toLowerCase()
+        .includes(columnFilters.classification_category.toLowerCase()) &&
+      row.classification_sub_category
+        .toLowerCase()
+        .includes(columnFilters.classification_sub_category.toLowerCase())
+  );
+
   return (
     <>
-      {/* 🔽 Funnel + Filters in Popover */}
+      {/* 🔽 Funnel + Filters + Toggle */}
       <div className="flex p-4 justify-end items-center gap-3 mb-6">
         <Popover>
           <PopoverTrigger asChild>
@@ -213,10 +342,49 @@ export default function Index() {
             />
           </PopoverContent>
         </Popover>
+
+        {/* 🔀 Toggle Switch (lucide icons) */}
+        <div className="flex border rounded-md overflow-hidden">
+          {/* Cards Button */}
+          <button
+            onClick={() => setViewMode("cards")}
+            className={`px-3 py-2 flex items-center justify-center ${
+              viewMode === "cards"
+                ? "bg-blue-100 text-blue-600"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <LayoutGrid className="h-5 w-5" />
+          </button>
+
+          {/* Table Button */}
+          <button
+            onClick={() => setViewMode("table")}
+            className={`px-3 py-2 flex items-center justify-center ${
+              viewMode === "table"
+                ? "bg-blue-100 text-blue-600"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Table className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
-      {/* 🔽 Cards */}
-      <CardGrid cards={cards} loadingCards={loadingCards} />
+      {/* 🔽 Switch View */}
+      {viewMode === "cards" ? (
+        <CardGrid cards={cards} loadingCards={loadingCards} />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredData}
+          customStyles={customStyles}
+          progressPending={loadingCards}
+          highlightOnHover
+          pagination
+          dense
+        />
+      )}
     </>
   );
 }

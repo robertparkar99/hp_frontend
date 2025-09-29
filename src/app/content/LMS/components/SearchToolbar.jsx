@@ -58,11 +58,11 @@ const SearchToolbar = ({
   // Fetch filters from API
   const fetchFilters = async () => {
     if (!sessionData.sub_institute_id || !sessionData.url) return;
-    
+
     setLoading(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/lms/course_master?type=API&sub_institute_id=1&syear=2025&user_id=1&user_profile_name=admin`
+        `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}`
       );
       const data = await res.json();
 
@@ -168,7 +168,7 @@ const SearchToolbar = ({
           <div className="relative">
             <Input
               type="search"
-              placeholder="Search courses"
+              placeholder="Search courses by title,department,shortname,course type..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-10 pr-10"
@@ -228,7 +228,8 @@ const SearchToolbar = ({
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('grid')}
-              className="rounded-r-none border-r border-border"
+              className={`rounded-r-none border-r border-border ${viewMode === "grid" ? "bg-blue-400 text-white hover:bg-blue-500" : "bg-transparent"
+                }`}
             >
               <Icon name="Grid3X3" size={16} />
             </Button>
@@ -236,7 +237,8 @@ const SearchToolbar = ({
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('list')}
-              className="rounded-l-none"
+              className={`rounded-l-none ${viewMode === "list" ? "bg-blue-400 text-white hover:bg-blue-500" : "bg-transparent"
+                }`}
             >
               <Icon name="List" size={16} />
             </Button>
@@ -261,7 +263,7 @@ const SearchToolbar = ({
           )}
         </div>
 
-        <div className="hidden md:flex items-center space-x-2">
+        {/* <div className="hidden md:flex items-center space-x-2">
           <span className="text-sm text-muted-foreground mr-2">Quick:</span>
           {categories.slice(0, 4).map((category) => (
             <Button
@@ -274,7 +276,7 @@ const SearchToolbar = ({
               {category.label}
             </Button>
           ))}
-        </div>
+        </div> */}
       </div>
     </div>
   );

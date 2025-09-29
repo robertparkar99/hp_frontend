@@ -11,8 +11,9 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import "./triangle.css"; // custom CSS
 import { Atom } from "react-loading-indicators";
-import { Funnel } from "lucide-react";
-import { motion } from "framer-motion"; // ✅ hover animation
+import { Funnel, LayoutGrid, Table, TriangleDashed } from "lucide-react";
+import { motion } from "framer-motion";
+import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 
 type ApiItem = {
   id: number;
@@ -49,6 +50,19 @@ export default function Page() {
 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [sessionData, setSessionData] = useState<SessionData>({});
+
+  // Toggle view: triangle or table
+  const [viewMode, setViewMode] = useState<"triangle" | "table">("triangle");
+
+  // Column search state for DataTable
+  const [columnFilters, setColumnFilters] = useState<{
+    [key: string]: string;
+  }>({
+    classification_item: "",
+    proficiency_level: "",
+    classification_category: "",
+    classification_sub_category: "",
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -107,11 +121,11 @@ export default function Page() {
     fetchSubCats();
   }, [selectedCategory, sessionData]);
 
-  // Fetch triangles with filters applied
+  // Fetch items with filters applied
   useEffect(() => {
     if (!sessionData.sub_institute_id || !sessionData.url) return;
 
-    const fetchTriangles = async () => {
+    const fetchItems = async () => {
       try {
         setLoading(true);
 
@@ -127,13 +141,13 @@ export default function Page() {
 
         setItems(data);
       } catch (err) {
-        console.error("Error fetching triangles:", err);
+        console.error("Error fetching items:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTriangles();
+    fetchItems();
   }, [sessionData, selectedLevel, selectedCategory, selectedSubCategory]);
 
   if (loading) {
@@ -144,7 +158,116 @@ export default function Page() {
     );
   }
 
-  // Group into rows of 5
+  // Column-wise filter for DataTable
+  const filteredItems = items.filter((item) => {
+  return (
+    (item.classification_item?.toLowerCase() || "").includes(columnFilters.classification_item?.toLowerCase() || "") &&
+    (item.proficiency_level?.toLowerCase() || "").includes(columnFilters.proficiency_level?.toLowerCase() || "") &&
+    (item.classification_category?.toLowerCase() || "").includes(columnFilters.classification_category?.toLowerCase() || "") &&
+    (item.classification_sub_category?.toLowerCase() || "").includes(columnFilters.classification_sub_category?.toLowerCase() || "")
+  );
+});
+
+  // DataTable columns
+  const columns: TableColumn<ApiItem>[] = [
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Item</span>
+          <input
+            value={columnFilters.classification_item}
+            onChange={(e) =>
+              setColumnFilters({ ...columnFilters, classification_item: e.target.value })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_item,
+      sortable: true, 
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Proficiency</span>
+          <input
+            value={columnFilters.proficiency_level}
+            onChange={(e) =>
+              setColumnFilters({ ...columnFilters, proficiency_level: e.target.value })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.proficiency_level,
+      sortable: true,
+      width: "100px"
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Category</span>
+          <input
+            value={columnFilters.classification_category}
+            onChange={(e) =>
+              setColumnFilters({ ...columnFilters, classification_category: e.target.value })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_category,
+      sortable: true,
+      width: "160px"
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Sub Category</span>
+          <input
+            value={columnFilters.classification_sub_category}
+            onChange={(e) =>
+              setColumnFilters({ ...columnFilters, classification_sub_category: e.target.value })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_sub_category,
+      sortable: true,
+      width: "200px"
+    },
+  ];
+
+  const customStyles: TableStyles = {
+      headCells: {
+        style: {
+          fontSize: "14px",
+          backgroundColor: "#D1E7FF",
+          color: "black",
+          whiteSpace: "nowrap",
+          textAlign: "left",
+        },
+      },
+      cells: {
+        style: {
+          fontSize: "13px",
+          textAlign: "left",
+        },
+      },
+      table: {
+        style: {
+          borderRadius: "20px",
+          overflow: "hidden",
+        },
+      },
+    };
+
+  // Group items into rows of 5 for triangle view
   const chunk = <T,>(arr: T[], size: number): T[][] =>
     Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
       arr.slice(i * size, i * size + size)
@@ -152,9 +275,11 @@ export default function Page() {
   const rows = chunk(items, 5);
 
   return (
-    <>
-      {/* 🔽 Funnel + Popover Filters */}
-      <div className="flex p-4 justify-end items-center gap-3">
+    <div className="p-4">
+      {/* Toggle buttons and filters */}
+      <div className="flex justify-end items-center mb-4">
+
+        {/* Funnel Filter Popover */}
         <Popover>
           <PopoverTrigger asChild>
             <button className="p-3">
@@ -176,11 +301,48 @@ export default function Page() {
             />
           </PopoverContent>
         </Popover>
+
+        <div className="flex items-center gap-3">
+          <div className="flex border rounded-md overflow-hidden">
+            <button
+              onClick={() => setViewMode("triangle")}
+              className={`px-3 py-2 flex items-center justify-center ${
+                viewMode === "triangle"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <TriangleDashed className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`px-3 py-2 flex items-center justify-center ${
+                viewMode === "table"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <Table className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Triangles Grid */}
-      <TriangleGrid rows={rows} />
-    </>
+      {/* View */}
+      {viewMode === "triangle" ? (
+        <TriangleGrid rows={rows} />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredItems}
+          customStyles={customStyles}
+          pagination
+          highlightOnHover
+          striped
+          responsive
+        />
+      )}
+    </div>
   );
 }
 
@@ -211,27 +373,19 @@ function Filters({
 }: FiltersProps) {
   return (
     <div className="flex flex-col gap-3">
-      {/* Category */}
       <Select value={selectedCategory ?? ""} onValueChange={(value) => setSelectedCategory(value)}>
         <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white">
           <SelectValue placeholder="Filter by Category" />
         </SelectTrigger>
         <SelectContent>
           {categories.length === 0 ? (
-            <SelectItem value="loading" disabled>
-              No Categories
-            </SelectItem>
+            <SelectItem value="loading" disabled>No Categories</SelectItem>
           ) : (
-            categories.map((cat, idx) => (
-              <SelectItem key={idx} value={cat}>
-                {cat}
-              </SelectItem>
-            ))
+            categories.map((cat, idx) => <SelectItem key={idx} value={cat}>{cat}</SelectItem>)
           )}
         </SelectContent>
       </Select>
 
-      {/* Sub Category */}
       <Select
         value={selectedSubCategory ?? ""}
         onValueChange={(value) => setSelectedSubCategory(value)}
@@ -242,35 +396,22 @@ function Filters({
         </SelectTrigger>
         <SelectContent>
           {subCategories.length === 0 ? (
-            <SelectItem value="loading" disabled>
-              No Sub Categories
-            </SelectItem>
+            <SelectItem value="loading" disabled>No Sub Categories</SelectItem>
           ) : (
-            subCategories.map((sub, idx) => (
-              <SelectItem key={idx} value={sub}>
-                {sub}
-              </SelectItem>
-            ))
+            subCategories.map((sub, idx) => <SelectItem key={idx} value={sub}>{sub}</SelectItem>)
           )}
         </SelectContent>
       </Select>
 
-      {/* Proficiency Level */}
       <Select value={selectedLevel ?? ""} onValueChange={(value) => setSelectedLevel(value)}>
         <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white">
           <SelectValue placeholder="Filter by Proficiency" />
         </SelectTrigger>
         <SelectContent>
           {loadingOptions ? (
-            <SelectItem value="loading" disabled>
-              Loading...
-            </SelectItem>
+            <SelectItem value="loading" disabled>Loading...</SelectItem>
           ) : (
-            skills.map((level, idx) => (
-              <SelectItem key={idx} value={level}>
-                {level}
-              </SelectItem>
-            ))
+            skills.map((level, idx) => <SelectItem key={idx} value={level}>{level}</SelectItem>)
           )}
         </SelectContent>
       </Select>
@@ -283,10 +424,9 @@ function TriangleGrid({ rows }: { rows: ApiItem[][] }) {
     <div className="flex flex-col items-center gap-8">
       {rows.length > 0 ? (
         rows.map((row, rowIndex) => (
-          <div key={rowIndex} className="flex gap-6 mt-23">
+          <div key={rowIndex} className="flex gap-6 mt-20">
             {row.map((item, colIndex) => {
               const shouldRotate = rowIndex % 2 === 0 ? colIndex % 2 === 1 : colIndex % 2 === 0;
-
               return (
                 <motion.div
                   key={item.id}

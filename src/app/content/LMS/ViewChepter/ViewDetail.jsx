@@ -400,10 +400,10 @@ if (onClose) {
         </Button>
         <div className="flex items-center justify-between mt-8 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-2xl font-bold text-foreground">
               Module Catalog
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-sm">
               Browse and manage Module
             </p>
           </div>
@@ -416,7 +416,7 @@ if (onClose) {
             }}
             className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
           >
-            <Icon name="Plus" size={16} /> Add Module
+            <Icon name="Plus" size={16} /> Create Module
           </Button>
   ):null}
         </div>

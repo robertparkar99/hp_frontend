@@ -1251,8 +1251,8 @@ export default function QuestionBank({ chapter_id, standard_id ,courseDisplayNam
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Question Bank</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight">Question Bank</h1>
+          <p className="text-muted-foreground text-sm">
             Manage and organize assessment questions
           </p>
         </div>

@@ -237,7 +237,7 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{course ? "Edit Course" : "Add Course"}</DialogTitle>
+          <DialogTitle>{course ? "Edit Course" : "Create Course"}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col space-y-4">
@@ -333,9 +333,9 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
               />
             </div>
 
-            {/* Industry */}
+            {/* Department */}
             <div>
-              <label className="block text-sm font-medium mb-1">Industry {" "}
+              <label className="block text-sm font-medium mb-1">Department{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <select
                 value={standardId}
@@ -344,7 +344,7 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
                 disabled={loadingStandards}
                 required
               >
-                <option value="">Select Industry</option>
+                <option value="">Select Department</option>
                 {standards.map((standard) => (
                   <option key={standard.id} value={standard.id}>
                     {standard.standard_name || standard.name || `Standard ${standard.id}`}

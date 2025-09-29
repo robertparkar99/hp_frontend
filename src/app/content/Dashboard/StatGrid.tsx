@@ -1,3 +1,4 @@
+
 "use client";
 import { useEffect, useState } from "react";
 import { MoreVertical, ChevronDown, MoreHorizontal, Building2Icon, UsersIcon, MapPinIcon, BriefcaseIcon, CreditCardIcon } from "lucide-react";
@@ -7,8 +8,6 @@ import icon from '@/components/AppIcon';
 import { Atom } from "react-loading-indicators"
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
-import CreateAssessmentModal from "@/app/content/LMS/Assessment Library/components/CreateAssessmentModal";
-
 import { UserCircle, Search } from "lucide-react";
 
 import {
@@ -148,8 +147,6 @@ export default function Dashboard() {
   const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const [openAssessmentModal, setOpenAssessmentModal] = useState(false);
-
 
 
 
@@ -702,7 +699,7 @@ export default function Dashboard() {
 
         {/* Welcome with icon */}
         <div className="flex items-center gap-2">
-          <UserCircle className="w-7 h-7 text-blue-600" />
+          <UserCircle className="w-7 h-7 text-blue-400" />
           <h1 className="text-xl font-bold text-gray-800">
             Welcome, {sessionData?.userProfileName || "User"}
           </h1>
@@ -783,28 +780,19 @@ export default function Dashboard() {
 
                     {/* Chart content */}
                     <div className="ml-6 h-48 flex justify-between items-end gap-2">
-  {chartData.map((data, i) => (
-    <div key={i} className="flex flex-col items-center flex-1 relative group">
-      {/* Bar */}
-      <div
-        className={`w-full rounded-t ${getStatusColor(data.status)}`}
-        style={{
-          height: `${(data.value / maxValue) * 100}%`,
-          minHeight: data.value > 0 ? "4px" : "0",
-        }}
-      />
-
-      {/* X-axis label */}
-      <span className="text-xs text-gray-500 mt-2">{data.label}</span>
-
-      {/* Tooltip */}
-      <div className="absolute -top-8 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
-        {data.value} / {maxValue}
-      </div>
-    </div>
-  ))}
-</div>
-
+                      {chartData.map((data, i) => (
+                        <div key={i} className="flex flex-col items-center flex-1">
+                          <div
+                            className={`w-full rounded-t ${getStatusColor(data.status)}`}
+                            style={{
+                              height: `${(data.value / maxValue) * 100}%`,
+                              minHeight: data.value > 0 ? '4px' : '0'
+                            }}
+                          />
+                          <span className="text-xs text-gray-500 mt-2">{data.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Chart Legend */}
@@ -1290,226 +1278,116 @@ export default function Dashboard() {
 
 
               {/* My Growth Opportunities */}
-            <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200 h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
-  <div className="flex justify-between items-center mb-4">
-    <h2 className="text-lg font-semibold text-gray-800">📅 My Growth Opportunities</h2>
-    {/* <button
-      onClick={() => setShowRecommendations(true)}
-      className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm"
-    >
-      View Actions
-    </button> */}
-  </div>
+              <div className="bg-white border rounded-xl p-5 w-full col-span-12 -mx-1 px-6">
+                <h2 className="font-semibold text-lg flex items-center gap-2 mb-2">
+                  ⊚ My Growth Opportunities
+                </h2>
 
-  <div className="space-y-5 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
-    {/* Current Role Proficiency Summary */}
-    <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="font-semibold text-gray-800 text-base">Overall Proficiency</h3>
-        <span className="text-green-600 font-semibold">
-          {myGrowth.length > 0
-            ? `${Math.round(myGrowth.reduce((sum, item) => sum + getLevelPercent(item.skill_level), 0) / myGrowth.length)}%`
-            : "0%"
-          }
-        </span>
-      </div>
-      <div className="w-full bg-gray-300 rounded h-2 mt-2">
-        <div
-          className="bg-green-600 h-2 rounded"
-          style={{
-            width: myGrowth.length > 0
-              ? `${Math.round(myGrowth.reduce((sum, item) => sum + getLevelPercent(item.skill_level), 0) / myGrowth.length)}%`
-              : "0%"
-          }}
-        ></div>
-      </div>
-    </div>
-
-    {/* Growth Opportunities List */}
-    {myGrowth.length > 0 ? (
-      myGrowth.map((item) => {
-        const percent = getLevelPercent(item.skill_level);
-        const totalLevels = 5;
-        
-        // Extract numeric value from skill_level (handle "Level X" format or direct number)
-        const skillLevelValue = item.skill_level ? 
-          (typeof item.skill_level === 'string' ? 
-            parseInt(item.skill_level.replace("Level ", "")) || 1 : 
-            item.skill_level) : 1;
-        
-        const currentLevel = Math.min(Math.max(skillLevelValue, 1), 5); // Clamp between 1-5
-        const completionPercentage = Math.round((currentLevel / totalLevels) * 100);
-
-        const status =
-          completionPercentage >= 80
-            ? "On Track"
-            : completionPercentage >= 60
-              ? "Medium Risk"
-              : "At Risk";
-
-        const statusColor =
-          completionPercentage >= 80
-            ? "text-green-700"
-            : completionPercentage >= 60
-              ? "text-yellow-700"
-              : "text-red-700";
-
-        // Use current date if created_at doesn't exist
-        const created_at = new Date().toLocaleDateString();
-
-        // Render circles with proper typing
-        const renderCircles = (value: number | string) => {
-          const numericValue = typeof value === 'string' ? 
-            parseFloat(value) || 0 : 
-            value || 0;
-          
-          const clampedValue = Math.min(Math.max(numericValue, 0), 5); // Clamp between 0-5
-          const full = Math.floor(clampedValue);
-          const half = clampedValue % 1 !== 0;
-          const empty = 5 - full - (half ? 1 : 0);
-
-          return (
-            <div className="flex items-center">
-              {Array.from({ length: full }).map((_, i) => (
-                <span key={`f-${i}`} className="text-blue-600 text-2xl">●</span>
-              ))}
-              {half && <span className="text-blue-600 text-2xl">◐</span>}
-              {Array.from({ length: empty }).map((_, i) => (
-                <span key={`e-${i}`} className="text-gray-300 text-2xl">●</span>
-              ))}
-            </div>
-          );
-        };
-
-        // For growth opportunities, use skill_level as current and set a default target
-        const currentRating = skillLevelValue;
-        const targetLevel = 4; // Default target level for growth opportunities
-
-        return (
-          <div
-            key={item.id}
-            className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm"
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-gray-800 text-base">
-                {item.title || "Untitled Skill"}
-              </h3>
-
-              {/* Gap Display */}
-              <span className="font-medium text-gray-500 flex items-center space-x-1 text-xs">
-                Gap:
-                {(() => {
-                  const gap = currentRating - targetLevel;
-
-                  if (gap > 0) {
-                    return (
-                      <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
-                        <span className="mdi mdi-trending-up text-sm"></span>
-                        <span>+{gap.toFixed(1)}</span>
-                      </div>
-                    );
-                  } else if (gap < 0) {
-                    return (
-                      <div className="flex items-center space-x-1 text-red-600 font-medium text-xs">
-                        <span className="mdi mdi-alert-circle text-sm"></span>
-                        <span>{gap.toFixed(1)}</span>
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
-                        <span className="mdi mdi-check-circle text-sm"></span>
-                        <span>0.0</span>
-                      </div>
-                    );
-                  }
-                })()}
-              </span>
-              
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                {created_at}
-              </span>
-            </div>
-
-            <p className="text-sm text-gray-600">
-              {item.category || "General"} • {item.sub_category || "Uncategorized"}
-            </p>
-
-            {/* Progress bar */}
-            <div className="w-full bg-gray-300 rounded h-2 mt-2">
-              <div
-                className="bg-blue-600 h-2 rounded"
-                style={{ width: `${completionPercentage}%` }}
-              ></div>
-            </div>
-
-            {/* Current Level and Target Level */}
-            <div className="grid grid-cols-2 text-sm font-semibold text-gray-700 border-b pb-1 mt-4">
-              <p>Current Level</p>
-              <p>Target Level</p>
-            </div>
-
-            {/* Ratings row */}
-            <div className="grid grid-cols-2 gap-4 mt-2 text-xs items-center">
-              {/* Current Level */}
-              <div className="flex items-center space-x-2">
-                {renderCircles(currentRating)}
-                <span className="ml-2 text-sm font-medium">{currentRating}</span>
-              </div>
-
-              {/* Target Level + Gap + Status */}
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center space-x-3">
-                  {/* Target Level */}
-                  <div className="flex items-center space-x-2">
-                    {renderCircles(targetLevel)}
-                    <span className="ml-2 text-sm font-medium">{targetLevel}</span>
-                  </div>
+                {/* Current Role Proficiency - Now calculated as average of all skills */}
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium">Current Role Proficiency</p>
+                  <p className="text-green-600 font-semibold">
+                    {myGrowth.length > 0
+                      ? `${Math.round(myGrowth.reduce((sum, item) => sum + getLevelPercent(item.skill_level), 0) / myGrowth.length)}%`
+                      : "0%"
+                    }
+                  </p>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded">
+                  <div
+                    className="h-3 bg-gray-900 rounded"
+                    style={{
+                      width: myGrowth.length > 0
+                        ? `${Math.round(myGrowth.reduce((sum, item) => sum + getLevelPercent(item.skill_level), 0) / myGrowth.length)}%`
+                        : "0%"
+                    }}
+                  ></div>
                 </div>
 
-                {/* Status Badge aligned at the end */}
-                <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors 
-                    focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 
-                    ${status === "On Track" ? "bg-green-50 text-green-700 border-green-200" : 
-                      status === "Medium Risk" ? "bg-yellow-50 text-yellow-700 border-yellow-200" : 
-                      "bg-red-50 text-red-700 border-red-200"}`}
-                >
-                  {status}
-                </span>
+                {/* Skills List from API */}
+                <div className="mt-4 space-y-2">
+                  {myGrowth.length > 0 ? (
+                    myGrowth.map((item) => {
+                      const percent = getLevelPercent(item.skill_level);
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <span>{item.title}</span>
+                          <div className="flex items-center gap-2 w-40">
+                            <div className="flex-1 h-2 bg-gray-100 rounded">
+                              <div
+                                className="h-2 bg-gray-900 rounded"
+                                style={{ width: `${percent}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-gray-800 font-medium">{percent}%</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-500 text-sm">No growth opportunities found</p>
+                  )}
+                </div>
+
+                {/* Skills for Data Scientist Role */}
+                {/* <h3 className="font-medium mt-5 mb-2">Skills for Data Scientist Role</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <p>AI/ML</p>
+                        <p className="text-xs text-gray-500">Need Expert level</p>
+                      </div>
+                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+                        3 courses
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <p>Cloud Security</p>
+                        <p className="text-xs text-gray-500">Need Intermediate level</p>
+                      </div>
+                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+                        5 courses
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <p>Data Analytics</p>
+                        <p className="text-xs text-gray-500">Need Expert level</p>
+                      </div>
+                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
+                        4 courses
+                      </button>
+                    </div>
+                  </div> */}
               </div>
-            </div>
-          </div>
-        );
-      })
-    ) : (
-      <div className="text-center py-4">
-        <p className="text-gray-600">No growth opportunities found</p>
-      </div>
-    )}
-  </div>
-</div>
             </div>
           )}
           {/* Employee Table - Full width row */}
-          <div className="p-4 col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll mb-15 ">
-            {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
+          {(shouldShowWidget("Employee List") || !selectedWidget) && (
+            <div className="col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll mb-15 ">
+              {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
 
-            {/* Table Headers with Search Fields */}
-            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
-              {/* Employee Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Employee</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("full_name", e.target.value)}
-                />
-              </div>
+              {/* Table Headers with Search Fields */}
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
+                {/* Employee Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Employee</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("full_name", e.target.value)}
+                  />
+                </div>
 
-              {/* Mobile Column with Search */}
-              {/* <div className="flex flex-col">
+                {/* Mobile Column with Search */}
+                {/* <div className="flex flex-col">
                 <span className="flex items-center mb-1">Mobile</span>
                 <input
                   type="text"
@@ -1519,156 +1397,156 @@ export default function Dashboard() {
                 />
               </div> */}
 
-              {/* Department Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Department</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("department_name", e.target.value)}
-                />
-              </div>
-
-              {/* Role Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Job Role</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
-                />
-              </div>
-
-              {/* profile Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">profile</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("profile_name", e.target.value)}
-                />
-              </div>
-
-
-              {/* Status Column with Search */}
-              <div className="flex flex-col">
-                <span className="flex items-center mb-1">Status</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("status", e.target.value)}
-                />
-              </div>
-
-              {/* Action Column with + Button */}
-              <div className="flex flex-col items-center justify-center">
-                <div className="flex items-center justify-between w-full">
-                  <span className="flex items-center mb-1">Action</span>
-                  <button
-                    onClick={() => setIsAddUserModalOpen(true)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-                  >
-                    +
-                  </button>
-                  {isAddUserModalOpen && (
-                    <AddUserModal
-                      isOpen={isAddUserModalOpen}
-                      setIsOpen={setIsAddUserModalOpen}
-                      sessionData={sessionData}
-                      userJobroleLists={[]}
-                      userDepartmentLists={[]}
-                      userLOR={[]}
-                      userProfiles={[]}
-                      userLists={[]}
-                    />
-
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Employee Rows */}
-            {filteredEmployees.map((emp) => (
-              <div
-                key={emp.id}
-                className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <img
-                    src={
-                      emp.image && emp.image !== ""
-                        ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${emp.image}`
-                        : placeholderImage
-                    }
-                    alt={emp.full_name || "profile"}
-                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                    }}
+                {/* Department Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Department</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("department_name", e.target.value)}
                   />
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{emp.full_name}</p>
-                    <p className="text-gray-500 text-xs truncate">{emp.email}</p>
+                </div>
+
+                {/* Role Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Job Role</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
+                  />
+                </div>
+
+                {/* profile Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">profile</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("profile_name", e.target.value)}
+                  />
+                </div>
+
+
+                {/* Status Column with Search */}
+                <div className="flex flex-col">
+                  <span className="flex items-center mb-1">Status</span>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="w-full py-1 text-xs"
+                    onChange={(e) => handleColumnFilter("status", e.target.value)}
+                  />
+                </div>
+
+                {/* Action Column with + Button */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="flex items-center mb-1">Action</span>
+                    <button
+                      onClick={() => setIsAddUserModalOpen(true)}
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                    >
+                      +
+                    </button>
+                    {isAddUserModalOpen && (
+                      <AddUserModal
+                        isOpen={isAddUserModalOpen}
+                        setIsOpen={setIsAddUserModalOpen}
+                        sessionData={sessionData}
+                        userJobroleLists={[]}
+                        userDepartmentLists={[]}
+                        userLOR={[]}
+                        userProfiles={[]}
+                        userLists={[]}
+                      />
+
+                    )}
                   </div>
                 </div>
-
-                {/* <span className="truncate">{emp.mobile || "-"}</span> */}
-                <span className="truncate">{emp.department_name}</span>
-                <span className="truncate">{emp.jobrole}</span>
-                <span className="truncate">{emp.profile_name}</span>
-
-                <span
-                  className={`px-2 py-1 rounded-md w-fit text-xs ${emp.status === "Active"
-                    ? "text-green-600 bg-green-100"
-                    : "text-red-600 bg-red-100"
-                    }`}
-                >
-                  {emp.status}
-                </span>
-
-                <div className="flex relative">
-                  <MoreHorizontal
-                    className="w-4 h-4 text-gray-500 cursor-pointer flex-shrink-0"
-                    onClick={(e) => handleActionMenuClick(e, emp)}
-                  />
-
-                  {/* Action Menu */}
-                  {showActions === emp.id && (
-                    <div
-                      className="absolute w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
-                      style={{
-                        top: '100%',
-                        right: 0,
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="py-2">
-                        <button
-                          onClick={() => handleEditEmployeeMenu(emp)}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                        >
-                          <Edit size={16} />
-                          <span>Edit Employee</span>
-                        </button>
-                        <button
-                          onClick={() => handleAssignTaskMenu(emp)}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                        >
-                          <Plus size={16} />
-                          <span>Assign Task</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
-            ))}
-          </div>
 
+              {/* Employee Rows */}
+              {filteredEmployees.map((emp) => (
+                <div
+                  key={emp.id}
+                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img
+                      src={
+                        emp.image && emp.image !== ""
+                          ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${emp.image}`
+                          : placeholderImage
+                      }
+                      alt={emp.full_name || "profile"}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                      }}
+                    />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{emp.full_name}</p>
+                      <p className="text-gray-500 text-xs truncate">{emp.email}</p>
+                    </div>
+                  </div>
+
+                  {/* <span className="truncate">{emp.mobile || "-"}</span> */}
+                  <span className="truncate">{emp.department_name}</span>
+                  <span className="truncate">{emp.jobrole}</span>
+                  <span className="truncate">{emp.profile_name}</span>
+
+                  <span
+                    className={`px-2 py-1 rounded-md w-fit text-xs ${emp.status === "Active"
+                      ? "text-green-600 bg-green-100"
+                      : "text-red-600 bg-red-100"
+                      }`}
+                  >
+                    {emp.status}
+                  </span>
+
+                  <div className="flex relative">
+                    <MoreHorizontal
+                      className="w-4 h-4 text-gray-500 cursor-pointer flex-shrink-0"
+                      onClick={(e) => handleActionMenuClick(e, emp)}
+                    />
+
+                    {/* Action Menu */}
+                    {showActions === emp.id && (
+                      <div
+                        className="absolute w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                        style={{
+                          top: '100%',
+                          right: 0,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="py-2">
+                          <button
+                            onClick={() => handleEditEmployeeMenu(emp)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <Edit size={16} />
+                            <span>Edit Employee</span>
+                          </button>
+                          <button
+                            onClick={() => handleAssignTaskMenu(emp)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <Plus size={16} />
+                            <span>Assign Task</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right Section - Adjust column span based on sidebar state */}
@@ -1677,13 +1555,13 @@ export default function Dashboard() {
             {/* Tab Navigation */}
             <div className="flex border-b">
               <button
-                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Today Task List" || !selectedWidget ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700"}`}
+                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Today Task List" || !selectedWidget ? "text-blue-500 border-b-2 border-blue-500" : "text-gray-500 hover:text-gray-700"}`}
                 onClick={() => setSelectedWidget("Today Task List")}
               >
                 Today's Tasks
               </button>
               <button
-                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Week Task List" ? "text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:text-gray-700"}`}
+                className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Week Task List" ? "text-blue-400 border-b-2 border-blue-400" : "text-gray-500 hover:text-gray-700"}`}
                 onClick={() => setSelectedWidget("Week Task List")}
               >
                 Weekly Tasks
@@ -1702,17 +1580,28 @@ export default function Dashboard() {
                       onClick={() => {
                         triggerMenuNavigation(null, 'task/taskManagement.tsx');
                       }}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-400 text-white hover:bg-blue-600"
                     >
                       +
                     </button>
                   </div>
 
                   {todayTasks.length > 0 ? (
-                    todayTasks.map((task, index) => (
-                      <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                    todayTasks.map((task, index) => {
+                       const badgeColors: Record<string, string> = {
+                        Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
+               
+                      return (
+                      <div key={index}  className={`mb-4 border-l-2 pl-3 ${
+          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+        }`}>
                         {/* Badge */}
-                        <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                        <span  className={`text-xs font-semibold px-2 py-1 rounded ${
+            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+          }`}>
                           {task.task_type}
                         </span>
 
@@ -1748,7 +1637,8 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
-                    ))
+                    )
+                  })
                   ) : (
                     <p className="text-gray-500 text-sm">No tasks for today</p>
                   )}
@@ -1764,73 +1654,102 @@ export default function Dashboard() {
                   </div>
 
                   {weekTasks.length > 0 ? (
-                    weekTasks.map((task, index) => (
-                      <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
-                        {/* Badge */}
-                        <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
-                          {task.task_type}
-                        </span>
+                    weekTasks.map((task, index) => {
+                      // ✅ Define color mapping
+                      const badgeColors: Record<string, string> = {
+                        Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
 
-                        {/* Title */}
-                        <p className="mt-2">{task.task_title}</p>
-                        {/* <p className="text-xs text-gray-500">Created Outlook of wireframe</p> */}
+                      return (
+                        <div
+                          key={index}
+                          className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+                            }`}
+                        >
+                          {/* Badge */}
+                          <span
+                            className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+                              }`}
+                          >
+                            {task.task_type}
+                          </span>
 
-                        {/* Profile */}
-                        <div className="flex items-center gap-2 mt-2">
-                          <img
-                            src={
-                              task.image && task.image !== ""
-                                ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
-                                : placeholderImage
-                            }
-                            alt={task.allocatedUser}
-                            className="w-8 h-8 rounded-full object-cover"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                            }}
-                          />
-                          <div>
-                            <p className="text-sm font-medium">{task.allocatedUser}</p>
-                            <p className="text-xs text-gray-400">
-                              {(() => {
-                                if (!task.task_date) return "";
-                                const d = new Date(task.task_date);
-                                const day = String(d.getDate()).padStart(2, "0");
-                                const month = String(d.getMonth() + 1).padStart(2, "0");
-                                const year = d.getFullYear();
-                                return `${day}-${month}-${year}`;
-                              })()}
-                            </p>
+                          {/* Title */}
+                          <p className="mt-2">{task.task_title}</p>
+
+                          {/* Profile */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <img
+                              src={
+                                task.image && task.image !== ""
+                                  ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                                  : placeholderImage
+                              }
+                              alt={task.allocatedUser}
+                              className="w-8 h-8 rounded-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                              }}
+                            />
+                            <div>
+                              <p className="text-sm font-medium">{task.allocatedUser}</p>
+                              <p className="text-xs text-gray-400">
+                                {(() => {
+                                  if (!task.task_date) return "";
+                                  const d = new Date(task.task_date);
+                                  const day = String(d.getDate()).padStart(2, "0");
+                                  const month = String(d.getMonth() + 1).padStart(2, "0");
+                                  const year = d.getFullYear();
+                                  return `${day}-${month}-${year}`;
+                                })()}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <p className="text-gray-500 text-sm">No tasks for this week</p>
                   )}
+
                 </div>
               )}
             </div>
           </div>
-
           <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
+            {/* Course List */}
             <div className="p-4 bg-white rounded-lg shadow h-110 overflow-y-auto hide-scroll">
               {/* Header with + button */}
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold">Course List</h2>
                 <button
                   onClick={() => setOpenDialog(true)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-400 text-white hover:bg-red-600"
                 >
                   +
                 </button>
               </div>
 
               {todayTasks.length > 0 ? (
-                todayTasks.map((task, index) => (
-                  <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+                todayTasks.map((task, index) =>
+                 {
+                                   // ✅ Define color mapping
+                      const badgeColors: Record<string, string> = {
+                       Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
+            
+                  return (
+                  <div key={index}  className={`mb-4 border-l-2 pl-3 ${
+          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+        }`}>
                     {/* Badge */}
-                    <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                    <span  className={`text-xs font-semibold px-2 py-1 rounded ${
+            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+          }`}>
                       {task.task_type}
                     </span>
 
@@ -1866,39 +1785,44 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                ))
+                )
+              })
               ) : (
-                <p className="text-gray-500 text-sm">No course </p>
+                <p className="text-gray-500 text-sm">No course</p>
               )}
             </div>
 
-            {/* Popup Modal */}
-            <AddCourseDialog
-              open={openDialog}
-              onOpenChange={setOpenDialog}
-              onSave={() => { /* implement save logic if needed */ }}
-              course={null}
-            />
-          </div>
-          <div className="col-span-3 space-y-6">
+            {/* Assessment List */}
             <div className="p-4 bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll">
               {/* Header with + button */}
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold">Assesment List</h2>
+                <h2 className="font-semibold">Assessment List</h2>
                 <button
-                  onClick={() => setOpenAssessmentModal(true)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                  onClick={() => setOpenDialog(true)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-blur-400 text-white hover:bg-blue-400"
                 >
                   +
                 </button>
-
               </div>
 
-              {todayTasks.length > 0 ? (
-                todayTasks.map((task, index) => (
-                  <div key={index} className="mb-4 border-l-2 border-red-400 pl-3">
+              {weekTasks.length > 0 ? (
+                weekTasks.map((task, index) =>
+                {  
+                           // ✅ Define color mapping
+                      const badgeColors: Record<string, string> = {
+                       Hard: "text-red-700 bg-red-500 border-red-400",
+                        Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
+                        Low: "text-green-700 bg-green-500 border-green-400",
+                      };
+                  
+                  return (
+                  <div key={index}  className={`mb-4 border-l-2 pl-3 ${
+          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+        }`}>
                     {/* Badge */}
-                    <span className="text-xs text-red-500 font-semibold bg-red-100 px-2 py-1 rounded">
+                    <span  className={`text-xs font-semibold px-2 py-1 rounded ${
+            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+          }`}>
                       {task.task_type}
                     </span>
 
@@ -1934,20 +1858,14 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                ))
+                )
+})
               ) : (
-                <p className="text-gray-500 text-sm">No course </p>
+                <p className="text-gray-500 text-sm">No assessment</p>
               )}
             </div>
-            <CreateAssessmentModal
-              isOpen={openAssessmentModal}
-              onClose={() => setOpenAssessmentModal(false)}
-              onSave={() => { /* implement save logic if needed */ }}
-            />
-
           </div>
         </div>
-
 
         {/* Organization Info Card */}
         <div className="col-span-full grid grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-6">

@@ -466,7 +466,7 @@ const AddContentDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl w-full">
         <DialogHeader>
-          <DialogTitle>{content ? "Edit Content" : "Add Content"}</DialogTitle>
+          <DialogTitle>{content ? "Edit Content" : "Create Content"}</DialogTitle>
         </DialogHeader>
         <div className="max-h-[70vh] overflow-y-auto scrollbar-hide pr-2">
           <div className="flex flex-col space-y-4">

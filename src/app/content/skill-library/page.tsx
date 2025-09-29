@@ -437,6 +437,41 @@ export default function Page() {
                 </SelectContent>
               </Select>
 
+              {/* Jobrole Filter */}
+              <Select
+                value={selectedSubcategory || "all"}
+                onValueChange={(value) => {
+                  if (value === "all") {
+                    setSelectedSubcategory(undefined);
+                  } else {
+                    setSelectedSubcategory(value);
+                  }
+                }}
+                disabled={!selectedCategory}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by Sub Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Jobrole</SelectItem>
+                  {/* {selectedCategory &&
+                    Array.from(
+                      new Set(
+                        userSkills
+                          .filter((s) => s.category === selectedCategory)
+                          .map((s) => s.sub_category)
+                      )
+                    )
+                      .filter((sub): sub is string => typeof sub === "string")
+                      .sort((a, b) => a.localeCompare(b))
+                      .map((sub, idx) => (
+                        <SelectItem key={idx} value={sub}>
+                          {sub}
+                        </SelectItem>
+                      ))} */}
+                </SelectContent>
+              </Select>
+
               {/* Category Filter */}
               <Select
                 value={selectedCategory || "all"}
@@ -540,23 +575,29 @@ export default function Page() {
           </Popover>
         </div>
         {/* View Toggle */}
-        <div className="flex gap-1 px-2">
-          <Button
-            className={`${viewMode === "hexagon" ? "bg-blue-200 text-black" : "bg-gray-100"} h-9 w-6`}
-            variant="outline"
-            onClick={() => setViewMode("hexagon")}
-          >
-            <Hexagon className="w-6 h-6" />
-          </Button>
+         <div className="flex border rounded-md overflow-hidden">
+      <button
+        onClick={() => setViewMode("hexagon")}
+        className={`px-3 py-2 flex items-center justify-center transition-colors ${
+          viewMode === "hexagon"
+            ? "bg-blue-100 text-blue-600"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
+      >
+        <Hexagon className="h-5 w-5" />
+      </button>
 
-          <Button
-            className={`${viewMode === "table" ? "bg-blue-200 text-black" : "bg-gray-100"} h-9 w-6`}
-            variant="outline"
-            onClick={() => setViewMode("table")}
-          >
-            <Table className="w-4 h-4" />
-          </Button>
-        </div>
+      <button
+        onClick={() => setViewMode("table")}
+        className={`px-3 py-2 flex items-center justify-center transition-colors ${
+          viewMode === "table"
+            ? "bg-blue-100 text-blue-600"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
+      >
+        <Table className="h-5 w-5" />
+      </button>
+    </div>
 
       </div>
 

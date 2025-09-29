@@ -122,28 +122,28 @@ const Honeycomb: React.FC = () => {
   }, [category, subCategory, proficiency, data]);
 
   const customStyles: TableStyles = {
-      headCells: {
-        style: {
-          fontSize: "14px",
-          backgroundColor: "#D1E7FF",
-          color: "black",
-          whiteSpace: "nowrap",
-          textAlign: "left",
-        },
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
       },
-      cells: {
-        style: {
-          fontSize: "13px",
-          textAlign: "left",
-        },
+    },
+    cells: {
+      style: {
+        fontSize: "13px",
+        textAlign: "left",
       },
-      table: {
-        style: {
-          borderRadius: "20px",
-          overflow: "hidden",
-        },
+    },
+    table: {
+      style: {
+        borderRadius: "20px",
+        overflow: "hidden",
       },
-    };
+    },
+  };
 
   // Apply column filters
   const columnFilteredData = filteredData.filter((item) =>
@@ -263,8 +263,7 @@ const Honeycomb: React.FC = () => {
     <>
       {/* 🔽 Top bar: Toggle + Filters */}
       <div className="flex p-4 justify-end items-end mb-6">
-        {/* View Toggle */}
-     
+
         {/* Filters */}
         <Popover>
           <PopoverTrigger asChild>
@@ -341,22 +340,26 @@ const Honeycomb: React.FC = () => {
             </Select>
           </PopoverContent>
         </Popover>
-   <div className="flex gap-2 px-2">
-          <Button
-            variant="outline"
-            className={`${viewMode === "circle" ? "bg-blue-200 text-black" : "bg-white"} h-9 w-6`}
+        <div className="flex border rounded-md overflow-hidden">
+          <button
             onClick={() => setViewMode("circle")}
+            className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "circle"
+                ? "bg-blue-100 text-blue-600"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
           >
-            <Circle className="w-4 h-4" />
-          </Button>
+            <Circle className="h-5 w-5" />
+          </button>
 
-          <Button
-            variant="outline"
-            className={`${viewMode === "table" ? "bg-blue-200 text-black" : "bg-white"} h-9 w-6`}
+          <button
             onClick={() => setViewMode("table")}
+            className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "table"
+                ? "bg-blue-100 text-blue-600"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
           >
-            <TableIcon className="w-4 h-4" />
-          </Button>
+            <TableIcon className="h-5 w-5" />
+          </button>
         </div>
 
       </div>
