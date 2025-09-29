@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, Search, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,28 @@ const LeaveAuthorization = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [leaveStatus, setLeaveStatus] = useState<string[]>([]);
+  const [sessionData, setSessionData] = useState({
+      url: '',
+      token: '',
+      subInstituteId: '',
+      orgType: '',
+      userId: '',
+    });
+  
+    // Load session data from localStorage
+    useEffect(() => {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+        setSessionData({
+          url: APP_URL,
+          token,
+          subInstituteId: sub_institute_id,
+          orgType: org_type,
+          userId: user_id,
+        });
+      }
+    }, []);
 
   // 🔹 Leave Status Options
   const statusOptions = ["Approved", "Rejected", "Pending"];
@@ -43,7 +65,7 @@ const LeaveAuthorization = () => {
     try {
       setLoading(true);
 
-      let url = `http://127.0.0.1:8000/show-leave-authorisation?type=API&sub_institute_id=1&user_id=1`;
+      let url = `${sessionData.url}/show-leave-authorisation?type=API&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`;
 
       if (fromDate) url += `&from_date=${fromDate}`;
       if (toDate) url += `&to_date=${toDate}`;
@@ -107,7 +129,7 @@ const LeaveAuthorization = () => {
       formData.append("type", "API");
 
       const res = await fetch(
-        `http://127.0.0.1:8000/leave-authorisation-store?type=API&sub_institute_id=1&user_id=1`,
+        `${sessionData.url}/leave-authorisation-store?type=API&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`,
         {
           method: "POST",
           body: formData,
