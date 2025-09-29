@@ -1,4 +1,6 @@
 
+
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -88,43 +90,180 @@ type ApiResponse = {
 const EmployeeReport = () => {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [employeeId, setEmployeeId] = useState<string | null>(null);
+  const [sessionData, setSessionData] = useState<{
+    url: string;
+    token: string;
+    subInstituteId: string;
+    orgType: string;
+    userId: string;
+    syear: string;
+  } | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const handlePrint = () => window.print();
   const handleDownload = () => console.log("Downloading PDF...");
 
+  // 🔹 Back to Employees function - ADD THIS FUNCTION
+  const handleCloseEmployeeReport = () => {
+    console.log("🔙 Navigating back to employee directory...");
+
+    // Clear the stored employee data
+    localStorage.removeItem('selectedEmployeeId');
+    localStorage.removeItem('selectedEmployeeData');
+    sessionStorage.removeItem('selectedEmployeeId');
+
+    // Navigate back to the employee directory using your menu system
+    window.dispatchEvent(
+      new CustomEvent('menuSelected', {
+        detail: {
+          menu: "Reports/employee/page.jsx",
+          pageType: 'page',
+          access: "Reports/employee/page.jsx",
+          pageProps: null
+        },
+      })
+    );
+  };
+
+  // 🔹 Load session data from localStorage
   useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      try {
+        const { APP_URL, token, sub_institute_id, org_type, user_id, syear } =
+          JSON.parse(userData);
+
+        setSessionData({
+          url: APP_URL,
+          token,
+          subInstituteId: String(sub_institute_id),
+          orgType: org_type,
+          userId: String(user_id),
+          syear: String(syear),
+        });
+      } catch (e) {
+        console.error("Invalid userData in localStorage", e);
+      }
+    }
+  }, []);
+
+  // 🔹 Get employee ID from localStorage with retry mechanism
+  useEffect(() => {
+    const getEmployeeId = () => {
+      // Try multiple storage locations
+      const fromLocalStorage = localStorage.getItem('selectedEmployeeId');
+      const fromSessionStorage = sessionStorage.getItem('selectedEmployeeId');
+      const fromClickedUser = localStorage.getItem('clickedUser');
+
+      console.log("🔍 Searching for employee ID:");
+      console.log("  - localStorage selectedEmployeeId:", fromLocalStorage);
+      console.log("  - sessionStorage selectedEmployeeId:", fromSessionStorage);
+      console.log("  - localStorage clickedUser:", fromClickedUser);
+
+      // Priority order for employee ID
+      const employeeId = fromLocalStorage || fromSessionStorage || fromClickedUser;
+
+      if (employeeId) {
+        console.log("✅ Found employee ID:", employeeId);
+        setEmployeeId(employeeId);
+        return true;
+      }
+
+      console.log("❌ No employee ID found in storage");
+      return false;
+    };
+
+    // Initial attempt
+    if (getEmployeeId()) {
+      return;
+    }
+
+    // Retry mechanism with increasing delays
+    const maxRetries = 5;
+    if (retryCount < maxRetries) {
+      const retryDelay = Math.min(500 * Math.pow(2, retryCount), 3000); // Exponential backoff
+      console.log(`🔄 Retrying employee ID fetch in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+
+      const retryTimer = setTimeout(() => {
+        if (getEmployeeId()) {
+          setRetryCount(0);
+        } else {
+          setRetryCount(prev => prev + 1);
+        }
+      }, retryDelay);
+
+      return () => clearTimeout(retryTimer);
+    } else {
+      console.error("❌ Max retries reached. Could not find employee ID.");
+      setLoading(false);
+    }
+  }, [retryCount]);
+
+  useEffect(() => {
+    if (!sessionData || !employeeId) {
+      if (employeeId === null && retryCount >= 5) {
+        setLoading(false);
+      }
+      return;
+    }
+
     const fetchEmployee = async () => {
       try {
+        console.log("🔄 Fetching employee data for ID:", employeeId);
+
         const res = await fetch(
-          "http://127.0.0.1:8000/user/employee_report?type=API&token=76|LnoeslSRYnAvDf7kJeg1vif0ylZZsCxNJ2SRKNwX29663c2d&sub_institute_id=1&syear=2025&employee_id=2"
+          `${sessionData.url}/user/employee_report?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&syear=${sessionData.syear}&employee_id=${employeeId}`
         );
 
         if (!res.ok) throw new Error("Failed to fetch employee data");
 
         const json = await res.json();
+        console.log("✅ Employee data fetched:", json);
         setData(json);
       } catch (error) {
-        console.error("Error fetching employee data:", error);
+        console.error("❌ Error fetching employee data:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchEmployee();
-  }, []);
+  }, [sessionData, employeeId, retryCount]);
 
+  // Show loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p>Loading employee report...</p>
+        <div className="text-center">
+          <p>Loading employee report...</p>
+          {retryCount > 0 && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Searching for employee data ({retryCount}/5)...
+            </p>
+          )}
+        </div>
       </div>
     );
   }
 
+  // Show error state if no data
   if (!data || !data.employeeData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p>Failed to load employee report.</p>
+        <div className="text-center">
+          <p className="text-destructive">Failed to load employee report.</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Employee ID: {employeeId || 'Not found'}
+          </p>
+          <Button
+            onClick={handleCloseEmployeeReport}
+            variant="outline"
+            className="mt-4"
+          >
+            ← Back to Employees
+          </Button>
+        </div>
       </div>
     );
   }
@@ -148,21 +287,30 @@ const EmployeeReport = () => {
   });
 
   return (
-    <div className="min-h-screen bg-muted/30  ">
+    <div className="min-h-screen bg-muted/30">
       {/* Print Actions */}
       <div className="print:hidden mb-6 max-w-5xl mx-auto px-6">
-        <div className="flex justify-end gap-3">
-          <Button onClick={handlePrint} variant="outline" className="flex items-center gap-2">
-            <Printer className="h-4 w-4" />
-            Print Report
+        <div className="flex justify-between items-center">
+          <Button
+            onClick={handleCloseEmployeeReport}
+            variant="outline"
+          >
+            ← Back to Employees
           </Button>
-          <Button onClick={handleDownload} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Download PDF
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={handlePrint} variant="outline" className="flex items-center gap-2">
+              <Printer className="h-4 w-4" />
+              Print Report
+            </Button>
+            <Button onClick={handleDownload} className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Download PDF
+            </Button>
+          </div>
         </div>
       </div>
 
+      {/* Rest of your EmployeeReport JSX remains the same */}
       {/* Report Container */}
       <div className="max-w-6xl mx-auto bg-card shadow-lg print:shadow-none print:max-w-none">
         {/* Header */}
@@ -183,10 +331,21 @@ const EmployeeReport = () => {
           {/* Employee Info */}
           <div className="flex items-center gap-6">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={employeeData.image} alt={employeeData.full_name} />
+              {/* <AvatarImage src={employeeData.image} alt={employeeData.full_name} />
               <AvatarFallback>
                 {employeeData.full_name.split(" ").map((n) => n[0]).join("")}
-              </AvatarFallback>
+              </AvatarFallback> */}
+              <Avatar className="h-20 w-20">
+                <img
+                  src={employeeData.image || "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"}
+                  alt={employeeData.full_name}
+                  className="h-full w-full object-cover rounded-full"
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
+                  }}
+                />
+              </Avatar>
             </Avatar>
             <div className="flex-1">
               <h2 className="text-2xl font-semibold">{employeeData.full_name}</h2>
@@ -209,6 +368,7 @@ const EmployeeReport = () => {
 
         {/* ==================== CONTENT ==================== */}
         <div className="p-8 print:p-6 space-y-8">
+          {/* Personal & Employment Information */}
           <section>
             <h3 className="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2">
               Personal & Employment Information
@@ -268,10 +428,10 @@ const EmployeeReport = () => {
                     <p className="font-medium">{employeeData.qualification}</p>
                   </div>
                 </div>
-
               </div>
             </div>
           </section>
+
           {/* Skills & Certifications */}
           <section>
             <h3 className="text-xl font-semibold mb-4 border-b border-border pb-2">
@@ -283,7 +443,7 @@ const EmployeeReport = () => {
                 <h4 className="font-semibold mb-3">Technical Skills</h4>
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2 
                   [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-                  {skillData.length > 0 ? (
+                  {/* {skillData.length > 0 ? (
                     skillData.map((skill, index) => (
                       <div key={index} className="flex items-center justify-between py-2">
                         <span className="font-medium truncate pr-4">{skill.title}</span>
@@ -305,7 +465,30 @@ const EmployeeReport = () => {
                     ))
                   ) : (
                     <p className="text-sm text-muted-foreground">No skills available.</p>
+                  )} */}
+                  {skillData.length > 0 ? (
+                    skillData
+                      .filter(skill => skill.title) // ✅ Only keep skills with a valid title
+                      .map((skill, index) => (
+                        <div key={index} className="flex items-center justify-between py-2">
+                          <span className="font-medium truncate pr-4">{skill.title}</span>
+
+                          {skill.proficiency_level !== null && (
+                            <span
+                              className="flex items-center justify-center 
+                   w-6 h-6 text-[12px] font-medium
+                   border border-blue-600 text-blue-600
+                   rounded-full"
+                            >
+                              {skill.proficiency_level}
+                            </span>
+                          )}
+                        </div>
+                      ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No skills available.</p>
                   )}
+
                 </div>
               </div>
 
@@ -374,7 +557,6 @@ const EmployeeReport = () => {
                         >
                           {task.status}
                         </Badge>
-
                       </div>
                     ))
                   ) : (
@@ -415,61 +597,9 @@ const EmployeeReport = () => {
                     </Card>
                   </div>
                 </div>
-
-
-                {/* Key Insights */}
-                {/* <div className="mt-4 p-4 bg-muted/30 rounded col-span-2">
-                  <h5 className="font-medium text-foreground mb-2">Key Insights</h5>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• Excellent role-skill alignment</li>
-                    <li>• Strong task completion track record</li>
-                    <li>• {expiringCerts.length} certification(s) expiring soon</li>
-                    <li>• Recommended for advanced React training</li>
-                  </ul>
-                </div> */}
               </div>
             </div>
           </section>
-
-          {/* Summary & Recommendations */}
-          {/* <section>
-            <h3 className="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2">
-              Summary & Recommendations
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-primary" />
-                    Strengths
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-1 text-sm">
-                    <li>• Strong academic qualification ({employeeData.qualification})</li>
-                    <li>• Experienced ({employeeData.total_experience}+ years)</li>
-                    <li>• Reliable and active status</li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" stroke="#ff5733" />
-                    Development Opportunities
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-1 text-sm">
-                    <li>• Upskill in leadership and management</li>
-                    <li>• Explore advanced certifications in teaching</li>
-                    <li>• Potential for cross-department training</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-          </section> */}
         </div>
 
         {/* Footer */}
