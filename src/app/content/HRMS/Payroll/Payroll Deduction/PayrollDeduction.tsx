@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, FileSpreadsheet, Table, Printer } from "lucide-react";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import { Button } from "@/components/ui/button";
@@ -29,41 +29,413 @@ type EmployeeTableData = Employee & {
   srNo: number;
 };
 
+type PayrollType = {
+  id: number;
+  payroll_type: number;
+  payroll_name: string;
+  amount_type: number;
+  status: number;
+  sort_order: number;
+  sub_institute_id: number;
+  payroll_percentage: number | null;
+  day_count: string;
+  created_by: number;
+  updated_by: number | null;
+  deleted_by: number | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
 export default function PayrollDeductionsPage() {
   const [deductionType, setDeductionType] = useState("Allowance");
-  const [payrollName, setPayrollName] = useState("GRADE PAY");
-  const [month, setMonth] = useState("Aug");
-  const [year, setYear] = useState("2025");
+  const [payrollName, setPayrollName] = useState("");
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [payrollTypes, setPayrollTypes] = useState<PayrollType[]>([]);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [selectedPayrollType, setSelectedPayrollType] = useState<PayrollType | null>(null);
+  const [payrollTypeValue, setPayrollTypeValue] = useState<number>(9);
 
-  // Search (dummy for now)
-  const handleSearch = () => {
-    setLoading(true);
-    setTimeout(() => {
-      const data: Employee[] = [
-        {
-          id: 1,
-          employeeCode: "433",
-          employeeName: "Admin MM User",
-          department: "Accounts Department",
-          deductionAmount: "",
-        },
-        {
-          id: 2,
-          employeeCode: "419",
-          employeeName: "admin admin admin",
-          department: "-",
-          deductionAmount: "",
-        },
-      ];
-      setEmployees(data);
-      setSearched(true);
-      setLoading(false);
-    }, 500);
+
+  const [sessionData, setSessionData] = useState({
+    url: "",
+    token: "",
+    subInstituteId: "",
+    orgType: "",
+    userId: "",
+  });
+
+  // Load session data
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } =
+        JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+        orgType: org_type,
+        userId: user_id,
+      });
+    }
+  }, []);
+
+  // Fetch payroll types based on deduction type
+  useEffect(() => {
+    const fetchPayrollTypes = async () => {
+      try {
+        setLoading(true);
+        // Convert deduction type to payroll_type value
+        const payrollTypeValue = deductionType === "Allowance" ? 1 : 2;
+
+        const response = await fetch(
+          `${sessionData.url}/table_data?table=payroll_types&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[payroll_type]=${payrollTypeValue}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("API Response:", data); // Debug log
+
+          // If data is directly an array, use it directly
+          if (Array.isArray(data)) {
+            setPayrollTypes(data);
+            // Set default payroll name if available
+            if (data.length > 0) {
+              setPayrollName(data[0].payroll_name);
+              setSelectedPayrollType(data[0]);
+            } else {
+              setPayrollName("");
+              setSelectedPayrollType(null);
+            }
+          }
+          // If data has a data property that's an array
+          else if (data.data && Array.isArray(data.data)) {
+            setPayrollTypes(data.data);
+            if (data.data.length > 0) {
+              setPayrollName(data.data[0].payroll_name);
+              setSelectedPayrollType(data.data[0]);
+            } else {
+              setPayrollName("");
+              setSelectedPayrollType(null);
+            }
+          }
+          // If no data found
+          else {
+            console.warn("Unexpected API response format:", data);
+            setPayrollTypes([]);
+            setPayrollName("");
+            setSelectedPayrollType(null);
+          }
+        } else {
+          console.error("Failed to fetch payroll types");
+          setPayrollTypes([]);
+          setPayrollName("");
+          setSelectedPayrollType(null);
+        }
+      } catch (error) {
+        console.error("Error fetching payroll types:", error);
+        setPayrollTypes([]);
+        setPayrollName("");
+        setSelectedPayrollType(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (sessionData.url) {
+      fetchPayrollTypes();
+    }
+  }, [deductionType, sessionData.url, sessionData.subInstituteId]);
+
+  // Handle payroll name change
+  // Update your handlePayrollNameChange function
+  const handlePayrollNameChange = (value: string) => {
+    setPayrollName(value);
+    console.log('payName', value);
+    const selected = payrollTypes.find(type => type.payroll_name === value);
+    setSelectedPayrollType(selected || null);
+    if (selected) {
+      setPayrollTypeValue(selected.id); // Set the actual payroll type ID
+    }
   };
+
+  // Search function - Preserve existing deduction amounts
+// Search function - Preserve existing deduction amounts and use deductionArr from API
+// Search function - Clear existing data and show fresh results
+const handleSearch = async () => {
+  if (!payrollName) {
+    alert("Please select a payroll name first");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    // Convert deduction type to API value
+    const deductionTypeValue = deductionType === "Allowance" ? 1 : 2;
+    
+    // Build API URL with parameters
+    const apiUrl = new URL(`${sessionData.url}/payroll-deduction`);
+    apiUrl.searchParams.append('type', 'API');
+    apiUrl.searchParams.append('token', sessionData.token);
+    apiUrl.searchParams.append('sub_institute_id', sessionData.subInstituteId);
+    apiUrl.searchParams.append('status', '1');
+    apiUrl.searchParams.append('deduction_type', payrollTypeValue.toString());
+    apiUrl.searchParams.append('month', month);
+    apiUrl.searchParams.append('year', year);
+    apiUrl.searchParams.append('submit', 'Search');
+
+    console.log("Search API URL:", apiUrl.toString());
+
+    const response = await fetch(apiUrl.toString());
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Search API Response:", data);
+
+      // Extract deductionArr from API response
+      const deductionArr = data.deductionArr || {};
+      console.log("Deduction Array from API:", deductionArr);
+
+      let newEmployees: Employee[] = [];
+
+      // Handle the response with all_emp array
+      if (data.all_emp && Array.isArray(data.all_emp)) {
+        newEmployees = data.all_emp.map((item: any, index: number) => {
+          const employeeCode = item.employee_no || "N/A";
+          const employeeId = item.id || index + 1;
+          
+          // Get amount from deductionArr using employee ID
+          const apiAmount = deductionArr[employeeId] ? deductionArr[employeeId].toString() : "";
+          
+          return {
+            id: employeeId,
+            employeeCode: employeeCode,
+            employeeName: `${item.first_name || ""} ${item.middle_name || ""} ${item.last_name || ""}`.trim(),
+            department: item.department || "N/A",
+            deductionAmount: apiAmount || "", // Always use API data for fresh search
+          };
+        });
+      }
+      // Fallback: if data is directly an array
+      else if (Array.isArray(data)) {
+        newEmployees = data.map((item: any, index: number) => {
+          const employeeCode = item.employee_no || item.employeeCode || "N/A";
+          const employeeId = item.id || index + 1;
+          const apiAmount = deductionArr[employeeId] ? deductionArr[employeeId].toString() : "";
+
+          return {
+            id: employeeId,
+            employeeCode: employeeCode,
+            employeeName: `${item.first_name || ""} ${item.middle_name || ""} ${item.last_name || ""}`.trim() || item.employeeName || "N/A",
+            department: item.department || "N/A",
+            deductionAmount: apiAmount || "",
+          };
+        });
+      }
+      // Fallback: if data has a data property that's an array
+      else if (data.data && Array.isArray(data.data)) {
+        newEmployees = data.data.map((item: any, index: number) => {
+          const employeeCode = item.employee_no || item.employeeCode || "N/A";
+          const employeeId = item.id || index + 1;
+          const apiAmount = deductionArr[employeeId] ? deductionArr[employeeId].toString() : "";
+
+          return {
+            id: employeeId,
+            employeeCode: employeeCode,
+            employeeName: `${item.first_name || ""} ${item.middle_name || ""} ${item.last_name || ""}`.trim() || item.employeeName || "N/A",
+            department: item.department || "N/A",
+            deductionAmount: apiAmount || "",
+          };
+        });
+      }
+      else {
+        console.warn("Unexpected search API response format:", data);
+        newEmployees = [];
+      }
+      
+      // Clear existing employees and set fresh data
+      setEmployees(newEmployees);
+      setSearched(true);
+      console.log("Fresh employee data loaded:", newEmployees);
+    } else {
+      console.error("Failed to fetch employee data");
+      // Clear employees on error to show fresh state
+      setEmployees([]);
+    }
+  } catch (error) {
+    console.error("Error searching employees:", error);
+    // Clear employees on error to show fresh state
+    setEmployees([]);
+  } finally {
+    setLoading(false);
+  }
+};
+  // Submit function to send data to store API
+  const handleSubmit = async () => {
+    if (employees.length === 0) {
+      alert("No employee data to submit");
+      return;
+    }
+
+    if (!selectedPayrollType) {
+      alert("Please select a payroll type");
+      return;
+    }
+
+    // Check if at least one employee has deduction amount filled
+    const hasAmounts = employees.some(emp => emp.deductionAmount && emp.deductionAmount !== '');
+    if (!hasAmounts) {
+      alert("Please enter deduction amounts for at least one employee");
+      return;
+    }
+
+    setSubmitLoading(true);
+
+    try {
+      const deductionTypeValue = deductionType === "Allowance" ? 1 : 2;
+
+      // Build API URL with parameters - pass month in capital letters as selected
+      const apiUrl = new URL(`${sessionData.url}/payroll-deduction/store`);
+      apiUrl.searchParams.append('type', 'API');
+      apiUrl.searchParams.append('token', sessionData.token);
+      apiUrl.searchParams.append('sub_institute_id', sessionData.subInstituteId);
+      apiUrl.searchParams.append('deduction_type_id', deductionTypeValue.toString());
+      apiUrl.searchParams.append('payroll_type', selectedPayrollType.id.toString());
+      apiUrl.searchParams.append('month', month); // Pass month in capital letters as selected
+      apiUrl.searchParams.append('year', year);
+
+      // Add deduction amounts for each employee
+      employees.forEach(emp => {
+        if (emp.deductionAmount && emp.deductionAmount !== '') {
+          apiUrl.searchParams.append(`deductAmt[${emp.id}]`, emp.deductionAmount);
+        }
+      });
+
+      console.log("Submit API URL:", apiUrl.toString());
+      console.log("Data being submitted:", {
+        employees: employees.filter(emp => emp.deductionAmount && emp.deductionAmount !== ''),
+        payrollType: selectedPayrollType.payroll_name,
+        deductionType,
+        month: month, // Log the month being passed (in capital)
+        year
+      });
+
+      const response = await fetch(apiUrl.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Submit API Response:", result);
+
+        // Show success alert
+        alert("✅ Data submitted successfully!");
+
+        // Clear deduction amounts after successful submission
+        // setEmployees(prev => prev.map(emp => ({...emp, deductionAmount: ""})));
+
+      } else {
+        const errorResult = await response.json().catch(() => null);
+        console.error("Failed to submit data:", errorResult);
+        alert("❌ Failed to submit data. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error submitting data:", error);
+      alert("❌ Error submitting data. Please try again.");
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  // Submit function to send data to store API
+  // Submit function to send data to store API
+  // const handleSubmit = async () => {
+  //   if (employees.length === 0) {
+  //     alert("No employee data to submit");
+  //     return;
+  //   }
+
+  //   if (!selectedPayrollType) {
+  //     alert("Please select a payroll type");
+  //     return;
+  //   }
+
+  //   // Check if at least one employee has deduction amount filled
+  //   const hasAmounts = employees.some(emp => emp.deductionAmount && emp.deductionAmount !== '');
+  //   if (!hasAmounts) {
+  //     alert("Please enter deduction amounts for at least one employee");
+  //     return;
+  //   }
+
+  //   setSubmitLoading(true);
+
+  //   try {
+  //     const deductionTypeValue = deductionType === "Allowance" ? 1 : 2;
+
+  //     // Build API URL with parameters - pass month name as is (in lowercase)
+  //     const apiUrl = new URL(`${sessionData.url}/payroll-deduction/store`);
+  //     apiUrl.searchParams.append('type', 'API');
+  //     apiUrl.searchParams.append('token', sessionData.token);
+  //     apiUrl.searchParams.append('sub_institute_id', sessionData.subInstituteId);
+  //     apiUrl.searchParams.append('deduction_type_id', deductionTypeValue.toString());
+  //     apiUrl.searchParams.append('payroll_type', selectedPayrollType.id.toString());
+  //     apiUrl.searchParams.append('month', month.toLowerCase()); // Pass month name directly
+  //     apiUrl.searchParams.append('year', year);
+
+  //     // Add deduction amounts for each employee
+  //     employees.forEach(emp => {
+  //       if (emp.deductionAmount && emp.deductionAmount !== '') {
+  //         apiUrl.searchParams.append(`deductAmt[${emp.id}]`, emp.deductionAmount);
+  //       }
+  //     });
+
+  //     console.log("Submit API URL:", apiUrl.toString());
+  //     console.log("Data being submitted:", {
+  //       employees: employees.filter(emp => emp.deductionAmount && emp.deductionAmount !== ''),
+  //       payrollType: selectedPayrollType.payroll_name,
+  //       deductionType,
+  //       month: month.toLowerCase(), // Log the month name being passed
+  //       year
+  //     });
+
+  //     const response = await fetch(apiUrl.toString(), {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const result = await response.json();
+  //       console.log("Submit API Response:", result);
+
+  //       // Show success alert
+  //       alert("✅ Data submitted successfully!");
+
+  //       // Clear deduction amounts after successful submission
+  //       // setEmployees(prev => prev.map(emp => ({...emp, deductionAmount: ""})));
+
+  //     } else {
+  //       const errorResult = await response.json().catch(() => null);
+  //       console.error("Failed to submit data:", errorResult);
+  //       alert("❌ Failed to submit data. Please try again.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error submitting data:", error);
+  //     alert("❌ Error submitting data. Please try again.");
+  //   } finally {
+  //     setSubmitLoading(false);
+  //   }
+  // };
 
   // Update Deduction Amount
   const handleChange = (id: number, value: string) => {
@@ -112,7 +484,7 @@ export default function PayrollDeductionsPage() {
       ),
       selector: (row) => row.srNo,
       sortable: true,
-      width: "140px",
+      width: "165px",
     },
     {
       name: (
@@ -128,7 +500,7 @@ export default function PayrollDeductionsPage() {
       ),
       selector: (row) => row.employeeCode,
       sortable: true,
-      width: "216px",
+      width: "250px",
     },
     {
       name: (
@@ -144,7 +516,7 @@ export default function PayrollDeductionsPage() {
       ),
       selector: (row) => row.employeeName,
       sortable: true,
-      width: "240px",
+      width: "250px",
     },
     {
       name: (
@@ -160,7 +532,7 @@ export default function PayrollDeductionsPage() {
       ),
       selector: (row) => row.department,
       sortable: true,
-      width: "240px",
+      width: "250px",
     },
     {
       name: (
@@ -182,11 +554,12 @@ export default function PayrollDeductionsPage() {
           value={row.deductionAmount}
           onChange={(e) => handleChange(row.id, e.target.value)}
           className=" p-1 w-full text-center"
+          placeholder="Enter amount"
         />
       ),
       selector: (row) => row.deductionAmount,
       sortable: true,
-      width: "200px",
+      width: "262px",
     },
   ];
 
@@ -260,11 +633,9 @@ export default function PayrollDeductionsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground"> Payroll Deduction Management</h1>
-          {/* <p className="text-sm text-muted-foreground mt-1">
-                Manage your organization's information, Department structure.
-              </p> */}
         </div>
       </div>
+
       {/* Filters */}
       <div className="grid grid-cols-5 gap-4 items-end mb-6">
         {/* Deduction Type */}
@@ -284,13 +655,23 @@ export default function PayrollDeductionsPage() {
         {/* Payroll Name */}
         <div>
           <Label>Payroll Name</Label>
-          <Select value={payrollName} onValueChange={setPayrollName}>
+          <Select
+            value={payrollName}
+            onValueChange={handlePayrollNameChange}
+            disabled={payrollTypes.length === 0 || loading}
+          >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Payroll Name" />
+              <SelectValue placeholder={
+                loading ? "Loading..." :
+                  payrollTypes.length === 0 ? "No options" : "Select Payroll Name"
+              } />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="GRADE PAY">GRADE PAY</SelectItem>
-              <SelectItem value="BASIC PAY">BASIC PAY</SelectItem>
+              {payrollTypes.map((type) => (
+                <SelectItem key={type.id} value={type.payroll_name}>
+                  {type.payroll_name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -334,26 +715,22 @@ export default function PayrollDeductionsPage() {
 
         {/* Search Button */}
         <div>
-          {/* <button
-            onClick={handleSearch}
-            className="px-6 py-2 rounded-lg flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-8"
-          >
-            <Search className="w-5 h-5 mr-2" /> Search
-          </button> */}
           <Button
             onClick={handleSearch}
-            disabled={loading}
-            className="px-6 py-2 rounded-lg flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-14"
+            disabled={loading || payrollTypes.length === 0}
+            className="px-6 py-2 rounded-lg flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-8"
           >
             <Search className="w-5 h-5 mr-2 text-black" />
             {loading ? "Searching..." : "Search"}
           </Button>
         </div>
       </div>
+     
 
-      {/* Export Buttons */}
+
+      {/* Action Buttons - Submit button on the right side */}
       {searched && (
-        <div className="flex gap-3 flex-wrap justify-end">
+        <div className="flex gap-3 flex-wrap justify-end mb-4">
           <Button
             onClick={() => window.print()}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
@@ -366,8 +743,6 @@ export default function PayrollDeductionsPage() {
           >
             <span className="mdi mdi-file-pdf-box text-xl"></span>
           </Button>
-
-
           <Button
             onClick={exportToExcel}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
@@ -381,6 +756,7 @@ export default function PayrollDeductionsPage() {
       {searched && (
         <div className="mt-6">
           <h1 className="text-xl font-bold mb-4">Payroll Deduction</h1>
+
           <DataTable
             columns={columns}
             data={filteredData}
@@ -398,6 +774,17 @@ export default function PayrollDeductionsPage() {
             }
             persistTableHead
           />
+
+          {/* Submit Button below table */}
+          <div className="flex justify-end mt-4">
+            <Button
+              onClick={handleSubmit}
+              disabled={submitLoading || employees.length === 0}
+              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors"
+            >
+              {submitLoading ? "Submitting..." : "Submit Data"}
+            </Button>
+          </div>
         </div>
       )}
     </div>
