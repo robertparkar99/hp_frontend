@@ -129,10 +129,10 @@ const renderCircles = (value: number) => {
 };
 
 // Fullscreen Chart Component
-const FullscreenChart = ({ chartData, SkillLevels, onClose }: { 
-  chartData: any[]; 
-  SkillLevels: any[]; 
-  onClose: () => void; 
+const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
+  chartData: any[];
+  SkillLevels: any[];
+  onClose: () => void;
 }) => {
   const max = SkillLevels.length;
 
@@ -148,7 +148,7 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
           className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
         >
           <span className="mdi mdi-close"></span>
-          
+
         </button>
       </div>
 
@@ -163,16 +163,16 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
             margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="skill" 
-              angle={-45} 
+            <XAxis
+              dataKey="skill"
+              angle={-45}
               textAnchor="end"
               height={80}
               interval={0}
             />
-            <YAxis 
-              type="number" 
-              allowDecimals={false} 
+            <YAxis
+              type="number"
+              allowDecimals={false}
               domain={[0, max]}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -217,9 +217,16 @@ export default function Page({
   SkillLevels,
   userJobroleSkills,
 }: JobroleSkilladd1Props) {
-  const [skills] = useState<Skill[]>(initialSkills || []);
-  const [userRatedSkills, setUserRatedSkills] = useState<RatedSkill[]>(
-    initialUserRatedSkills || []
+  const [skills, setSkills] = useState<Skill[]>(initialSkills || []);
+  const [userRatedSkills, setUserRatedSkills] = useState<RatedSkill[]>(initialUserRatedSkills || []);
+
+  // Compute un-rated skills
+  const unRatedSkills = skills.filter(
+    skill =>
+      !userRatedSkills.some(
+        rated =>
+          rated.id === skill.skill_id || rated.title === skill.skill
+      )
   );
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -353,10 +360,10 @@ export default function Page({
     <main className="p-6 space-y-6">
       {/* Fullscreen Chart Modal */}
       {showFullscreenChart && (
-        <FullscreenChart 
-          chartData={fullChartData} 
-          SkillLevels={SkillLevels} 
-          onClose={() => setShowFullscreenChart(false)} 
+        <FullscreenChart
+          chartData={fullChartData}
+          SkillLevels={SkillLevels}
+          onClose={() => setShowFullscreenChart(false)}
         />
       )}
 
@@ -373,7 +380,7 @@ export default function Page({
                 </span>
               )}
             </h2>
-            
+
             {fullChartData.length > 6 && (
               <button
                 onClick={() => setShowFullscreenChart(true)}
@@ -384,7 +391,7 @@ export default function Page({
               </button>
             )}
           </div>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Chart */}
             <div className="lg:col-span-2 h-72">
@@ -413,7 +420,7 @@ export default function Page({
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-              
+
               {/* Legend */}
               <div className="flex gap-4 mt-4 justify-center">
                 <div className="flex items-center gap-2">
@@ -570,8 +577,9 @@ export default function Page({
           {/* Skill List */}
           <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200 h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">🚨 Un-Rated Skills</h2>
+
             <div className="space-y-4 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
-              {skills.length === 0 ? (
+              {unRatedSkills.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full py-12">
                   <div className="mb-6">
                     <img
@@ -587,279 +595,171 @@ export default function Page({
                   </p>
                 </div>
               ) : (
-                <>
-                  {skills.map((skill) => (
-                    <div
-                      key={skill.jobrole_skill_id}
-                      className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm"
-                    >
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-semibold text-gray-800">
-                          {skill.title || skill.skill}
-                        </h3>
-                        <span className="text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
-                          {skill.proficiency_level}
-                        </span>
-                      </div>
-                      <p className="text-gray-700 text-sm mt-1">
-                        {skill.description}
-                      </p>
-                      <div className="flex gap-2 mt-2">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded border border-blue-200">
-                          {skill.category}
-                        </span>
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded border border-green-200">
-                          {skill.sub_category}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 mt-2">
-                        Job Role: {skill.jobrole}
-                      </p>
-                      <div className="flex gap-3 mt-3">
-                        <button
-                          onClick={() => {
-                            setSelectedSkill(skill);
-                            setIsEditModalOpen(true);
-                          }}
-                          className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                        >
-                          View More
-                        </button>
-                      </div>
+                unRatedSkills.map(skill => (
+                  <div
+                    key={skill.jobrole_skill_id}
+                    className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm"
+                  >
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-semibold text-gray-800">{skill.title || skill.skill}</h3>
+                      <span className="text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
+                        {skill.proficiency_level}
+                      </span>
                     </div>
-                  ))}
-                </>
+                    <p className="text-gray-700 text-sm mt-1">{skill.description}</p>
+                    <div className="flex gap-2 mt-2">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded border border-blue-200">{skill.category}</span>
+                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded border border-green-200">{skill.sub_category}</span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2">Job Role: {skill.jobrole}</p>
+                    <div className="flex gap-3 mt-3">
+                      <button
+                        onClick={() => {
+                          setSelectedSkill(skill);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      >
+                        View More
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
-
-              {/* Modal */}
-              <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto hide-scroll">
-                  <DialogHeader>
-                    <DialogTitle>
-                      <span className="mdi mdi-brain"></span>{" "}
-                      {selectedSkill?.skill ?? "Skill Details"}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <hr className="m-0 mx-2" />
-
-                  {selectedSkill ? (
-                    <div className="w-full">
-                      <div className="flex gap-4 px-4">
-                        <div className="w-1/4 bg-[#eaf7ff] p-2 rounded-md">
-                          <span className="mdi mdi-briefcase"></span>&nbsp;
-                          <label className="text-bold">Jobrole</label>
-                          <hr className="my-2" />
-                          {selectedSkill.jobrole}
-                        </div>
-                        <div className="w-1/4 bg-[#eaf7ff] p-2 rounded-md">
-                          <span className="mdi mdi-tag-multiple"></span>&nbsp;
-                          <label className="text-bold">Category</label>
-                          <hr className="my-2" />
-                          {selectedSkill.category}
-                        </div>
-                        <div className="w-1/4 bg-[#eaf7ff] p-2 rounded-md">
-                          <span className="mdi mdi-tag"></span>&nbsp;
-                          <label className="text-bold">Sub-Category</label>
-                          <hr className="my-2" />
-                          {selectedSkill.sub_category}
-                        </div>
-                        <div className="w-1/4 bg-[#eaf7ff] p-2 rounded-md">
-                          <span className="mdi mdi-chart-bar"></span>&nbsp;
-                          <label className="text-bold">Proficiency</label>
-                          <hr className="my-2" />
-                          {selectedSkill.proficiency_level}
-                        </div>
-                      </div>
-
-                      <div className="px-4 mt-4">
-                        <div className="w-full bg-[#eaf7f2] p-2 rounded-md">
-                          <span className="mdi mdi-information-variant-circle"></span>
-                          &nbsp;
-                          <label className="text-bold">Description</label>
-                          <hr className="my-2" />
-                          {selectedSkill.description}
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4 px-4 mt-4">
-                        {attrArray.map((attr, key) => (
-                          <div
-                            key={key}
-                            className="w-1/2 bg-blue-100 flex rounded-2xl shadow p-2"
-                          >
-                            <div className="py-2 w-full">
-                              <h4 className="font-semibold mb-2">
-                                <span
-                                  className={`mdi ${attr.icon} text-xl`}
-                                ></span>{" "}
-                                {attr.title.charAt(0).toUpperCase() +
-                                  attr.title.slice(1)}
-                              </h4>
-                              <hr className="mb-2" />
-                              <div className="w-full h-[calc(40vh)] overflow-y-auto hide-scrollbar">
-                                {(selectedSkill[attr.title as keyof Skill] as
-                                  any[])?.map((item: any, index: number) => (
-                                    <div
-                                      key={index}
-                                      className="w-full bg-white p-2 rounded-lg mb-2"
-                                    >
-                                      <p className="text-sm">{item}</p>
-                                    </div>
-                                  ))}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <p>No Skill details found</p>
-                  )}
-
-                  <DialogFooter>
-                    <button
-                      onClick={() => setIsEditModalOpen(false)}
-                      className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
-                    >
-                      Close
-                    </button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </div>
           </div>
 
           {/* User Rated Skills */}
-          <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200 h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">📅 Rated Skills</h2>
-              <button
-                onClick={() => setShowRecommendations(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm"
-              >
-                View Actions
-              </button>
-            </div>
+         <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200 h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="text-lg font-semibold text-gray-800">📅 Rated Skills</h2>
+    <button
+      onClick={() => setShowRecommendations(true)}
+      className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm"
+    >
+      View Actions
+    </button>
+  </div>
 
-            <div className="space-y-5 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
-              {userRatedSkills && userRatedSkills.length > 0 ? (
-                userRatedSkills.slice(0, 3).map((ratedSkill: RatedSkill) => {
-                  const totalLevels = SkillLevels.length;
-                  const currentLevel = ratedSkill.skill_level
-                    ? parseInt(ratedSkill.skill_level)
-                    : 1;
-                  const completionPercentage = Math.round((currentLevel / totalLevels) * 100);
-                  const status =
-                    completionPercentage >= 80
-                      ? "On Track"
-                      : completionPercentage >= 60
-                        ? "Medium Risk"
-                        : "At Risk";
-                  const statusColor =
-                    completionPercentage >= 80
-                      ? "text-green-700"
-                      : completionPercentage >= 60
-                        ? "text-yellow-700"
-                        : "text-red-700";
-                  const created_at = ratedSkill.created_at
-                    ? new Date(ratedSkill.created_at).toLocaleDateString()
-                    : "N/A";
+  <div className="space-y-5 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
+    {userRatedSkills && userRatedSkills.length > 0 ? (
+      userRatedSkills.map((ratedSkill: RatedSkill) => {
+        const totalLevels = SkillLevels.length;
+        const currentLevel = ratedSkill.skill_level
+          ? parseInt(ratedSkill.skill_level)
+          : 1;
+        const completionPercentage = Math.round((currentLevel / totalLevels) * 100);
+        const status =
+          completionPercentage >= 80
+            ? "On Track"
+            : completionPercentage >= 60
+              ? "Medium Risk"
+              : "At Risk";
+        const statusColor =
+          completionPercentage >= 80
+            ? "text-green-700"
+            : completionPercentage >= 60
+              ? "text-yellow-700"
+              : "text-red-700";
+        const created_at = ratedSkill.created_at
+          ? new Date(ratedSkill.created_at).toLocaleDateString()
+          : "N/A";
 
-                  // Use the fixed renderCircles function
-                  const selfRating = ratedSkill.skill_level !== undefined ? 
-                    parseFloat(ratedSkill.skill_level) || 0 : 0;
-                  const expected = ratedSkill.proficiency_level !== undefined ? 
-                    parseFloat(ratedSkill.proficiency_level) || 0 : 0;
+        const selfRating = ratedSkill.skill_level !== undefined ?
+          parseFloat(ratedSkill.skill_level) || 0 : 0;
+        const expected = ratedSkill.proficiency_level !== undefined ?
+          parseFloat(ratedSkill.proficiency_level) || 0 : 0;
 
+        return (
+          <div
+            key={ratedSkill.id}
+            className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm"
+          >
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold text-gray-800 text-base">
+                {ratedSkill.title || "Untitled Skill"}
+              </h3>
+              <span className="font-medium text-gray-500 flex items-center space-x-1 text-xs">Gap:{(() => {
+                const gap = selfRating - expected;
+                if (gap > 0) {
                   return (
-                    <div
-                      key={ratedSkill.id}
-                      className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm"
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-semibold text-gray-800 text-base">
-                          {ratedSkill.title || "Untitled Skill"}
-                        </h3>
-                        <span className="font-medium text-gray-500 flex items-center space-x-1 text-xs">Gap:{(() => {
-                          const gap = selfRating - expected;
-                          if (gap > 0) {
-                            return (
-                              <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
-                                <span className="mdi mdi-trending-up text-sm"></span>
-                                <span>+{gap.toFixed(1)}</span>
-                              </div>
-                            );
-                          } else if (gap < 0) {
-                            return (
-                              <div className="flex items-center space-x-1 text-red-600 font-medium text-xs">
-                                <span className="mdi mdi-alert-circle text-sm"></span>
-                                <span>{gap.toFixed(1)}</span>
-                              </div>
-                            );
-                          } else {
-                            return (
-                              <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
-                                <span className="mdi mdi-check-circle text-sm"></span>
-                                <span>0.0</span>
-                              </div>
-                            );
-                          }
-                        })()}</span>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                          {created_at}
-                        </span>
-                      </div>
-
-                      <p className="text-sm text-gray-600">
-                        {ratedSkill.category || "General"} •{" "}
-                        {ratedSkill.sub_category || "Uncategorized"}
-                      </p>
-
-                      <div className="w-full bg-gray-300 rounded h-2 mt-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded"
-                          style={{ width: `${completionPercentage}%` }}
-                        ></div>
-                      </div>
-
-                      <div className="grid grid-cols-2 text-sm font-semibold text-gray-700 border-b pb-1 mt-4">
-                        <p>Self Rating</p>
-                        <p>Expected</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 mt-2 text-xs items-center">
-                        <div className="flex items-center space-x-2">
-                          {renderCircles(selfRating)}
-                          <span className="ml-2 text-sm font-medium">{selfRating}</span>
-                        </div>
-
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center space-x-3">
-                            <div className="flex items-center space-x-2">
-                              {renderCircles(expected)}
-                              <span className="ml-2 text-sm font-medium">{expected}</span>
-                            </div>
-                          </div>
-
-                          <span
-                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors 
-        focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
-        hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
-                          >
-                            {status}
-                          </span>
-                        </div>
-                      </div>
+                    <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
+                      <span className="mdi mdi-trending-up text-sm"></span>
+                      <span>+{gap.toFixed(1)}</span>
                     </div>
                   );
-                })
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-gray-600">No user rated skills found</p>
+                } else if (gap < 0) {
+                  return (
+                    <div className="flex items-center space-x-1 text-red-600 font-medium text-xs">
+                      <span className="mdi mdi-alert-circle text-sm"></span>
+                      <span>{gap.toFixed(1)}</span>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
+                      <span className="mdi mdi-check-circle text-sm"></span>
+                      <span>0.0</span>
+                    </div>
+                  );
+                }
+              })()}</span>
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                {created_at}
+              </span>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              {ratedSkill.category || "General"} •{" "}
+              {ratedSkill.sub_category || "Uncategorized"}
+            </p>
+
+            <div className="w-full bg-gray-300 rounded h-2 mt-2">
+              <div
+                className="bg-blue-600 h-2 rounded"
+                style={{ width: `${completionPercentage}%` }}
+              ></div>
+            </div>
+
+            <div className="grid grid-cols-2 text-sm font-semibold text-gray-700 border-b pb-1 mt-4">
+              <p>Self Rating</p>
+              <p>Expected</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-2 text-xs items-center">
+              <div className="flex items-center space-x-2">
+                {renderCircles(selfRating)}
+                <span className="ml-2 text-sm font-medium">{selfRating}</span>
+              </div>
+
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    {renderCircles(expected)}
+                    <span className="ml-2 text-sm font-medium">{expected}</span>
+                  </div>
                 </div>
-              )}
+
+                <span
+                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors 
+      focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
+      hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
+                >
+                  {status}
+                </span>
+              </div>
             </div>
           </div>
+        );
+      })
+    ) : (
+      <div className="text-center py-4">
+        <p className="text-gray-600">No user rated skills found</p>
+      </div>
+    )}
+  </div>
+</div>
+
         </div>
 
         {/* Recommendations Modal */}
