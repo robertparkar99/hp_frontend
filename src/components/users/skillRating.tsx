@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 import {
@@ -29,6 +31,7 @@ interface Skill {
 interface JobroleSkilladd1Props {
   skills: Skill[];
   userRatedSkills: any;
+  setUserRatedSkills: React.Dispatch<React.SetStateAction<any[]>>; // Added this prop
   clickedUser: any;
   userJobroleSkills: any;
 }
@@ -53,9 +56,13 @@ interface ProficiencyLevel {
   proficiency_type?: string;
 }
 
-// Add this line to make it a client component
-
-export default function Index({ skills, userRatedSkills, clickedUser, userJobroleSkills }: JobroleSkilladd1Props) {
+export default function Index({ 
+  skills, 
+  userRatedSkills, 
+  setUserRatedSkills, // Added this prop
+  clickedUser, 
+  userJobroleSkills 
+}: JobroleSkilladd1Props) {
   const router = useRouter();
   const [currentSkillIndex, setCurrentSkillIndex] = useState<number>(0);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(
@@ -89,6 +96,9 @@ export default function Index({ skills, userRatedSkills, clickedUser, userJobrol
     { title: "behaviour", icon: "mdi-account-child" },
     { title: "attitude", icon: "mdi-emoticon" },
   ]);
+
+  // Local state for rated skills if parent state update doesn't work
+  const [localRatedSkills, setLocalRatedSkills] = useState<any[]>(userRatedSkills || []);
 
   // Function to handle navigation to AdminSkillRating
 
@@ -128,8 +138,8 @@ export default function Index({ skills, userRatedSkills, clickedUser, userJobrol
 
   // Check if current skill is already rated and set the level accordingly
   useEffect(() => {
-    if (selectedSkill && userRatedSkills && userRatedSkills.length > 0) {
-      const ratedSkill = userRatedSkills.find((rated: any) =>
+    if (selectedSkill && localRatedSkills && localRatedSkills.length > 0) {
+      const ratedSkill = localRatedSkills.find((rated: any) =>
         rated.skill_id === selectedSkill.skill_id
       );
 
@@ -155,7 +165,7 @@ export default function Index({ skills, userRatedSkills, clickedUser, userJobrol
         }
       }
     }
-  }, [selectedSkill, userRatedSkills, SkillLevels, currentSkillIndex]);
+  }, [selectedSkill, localRatedSkills, SkillLevels, currentSkillIndex]);
 
   // Save current skill data to temporary storage
   const saveCurrentSkillData = (): void => {
@@ -181,10 +191,10 @@ export default function Index({ skills, userRatedSkills, clickedUser, userJobrol
       setValidationState(savedData.validationState);
       setShowDetails(savedData.showDetails);
     } else {
-      // Check if this skill is already rated in userRatedSkills
+      // Check if this skill is already rated in localRatedSkills
       const currentSkill = userJobroleSkills[skillIndex];
-      if (currentSkill && userRatedSkills) {
-        const ratedSkill = userRatedSkills.find((rated: any) =>
+      if (currentSkill && localRatedSkills) {
+        const ratedSkill = localRatedSkills.find((rated: any) =>
           rated.skill_id === currentSkill.skill_id
         );
 
@@ -338,6 +348,34 @@ export default function Index({ skills, userRatedSkills, clickedUser, userJobrol
         const result = await response.json();
         console.log("Submission successful:", result);
 
+        // Update rated skills - both local and parent state
+        const newRatedSkill = {
+          skill_id: selectedSkill.skill_id,
+          skill_level: selectedSkillLevel,
+          skill: selectedSkill.skill,
+          category: selectedSkill.category,
+          sub_category: selectedSkill.sub_category,
+          jobrole: selectedSkill.jobrole,
+          description: selectedSkill.description,
+          proficiency_level: selectedSkill.proficiency_level,
+          // Add other necessary properties
+          ...selectedSkill
+        };
+
+        // Update local state
+        setLocalRatedSkills((prev: any[]) => {
+          const filtered = prev.filter((skill: any) => skill.skill_id !== selectedSkill.skill_id);
+          return [...filtered, newRatedSkill];
+        });
+
+        // Update parent state if setter function is provided
+        if (setUserRatedSkills) {
+          setUserRatedSkills((prev: any[]) => {
+            const filtered = prev.filter((skill: any) => skill.skill_id !== selectedSkill.skill_id);
+            return [...filtered, newRatedSkill];
+          });
+        }
+
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
 
@@ -379,7 +417,15 @@ export default function Index({ skills, userRatedSkills, clickedUser, userJobrol
 
   // Conditional Rendering - Show AdminSkillRating if user is rating someone else's skills
   if (String(sessionData.userId) !== String(clickedUser)) {
-    return <AdminSkillRating skills={skills} userRatedSkills={userRatedSkills} SkillLevels={SkillLevels} userJobroleSkills={userJobroleSkills} />;
+    return (
+      <AdminSkillRating 
+        skills={skills} 
+        userRatedSkills={localRatedSkills} 
+        setUserRatedSkills={setLocalRatedSkills}
+        SkillLevels={SkillLevels} 
+        userJobroleSkills={userJobroleSkills} 
+      />
+    );
   }
 
   return (
@@ -411,7 +457,8 @@ export default function Index({ skills, userRatedSkills, clickedUser, userJobrol
           {viewPart === "rated skill" ? (
             <AdminSkillRating
               skills={skills}
-              userRatedSkills={userRatedSkills}
+              userRatedSkills={localRatedSkills}
+              setUserRatedSkills={setLocalRatedSkills}
               SkillLevels={SkillLevels}
               userJobroleSkills={userJobroleSkills}
             />
@@ -429,10 +476,10 @@ export default function Index({ skills, userRatedSkills, clickedUser, userJobrol
                 </h2>
                 <div className="w-full h-0.5 bg-[#686868] mb-8"></div>
 
-                <div className="h-[472px] overflow-y-auto hide-scrollbar">
+                <div className="h-[472px] overflow-y-auto">
                   {userJobroleSkills.map((skill: any, index: any) => {
-                    // Check if this skill is already rated
-                    const isRated = userRatedSkills?.some((rated: any) =>
+                    // Check if this skill is already rated - use localRatedSkills
+                    const isRated = localRatedSkills?.some((rated: any) =>
                       rated.skill_id === skill.skill_id
                     );
 
