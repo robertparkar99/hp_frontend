@@ -11,6 +11,7 @@ import CourseGrid from './components/CourseGrid'
 import Icon from '@/components/AppIcon'
 import { Button } from '../../../components/ui/button'
 import AddCourseDialog from './components/AddCourseDialog'
+import AiCourseDialog from './components/AiCourseDialog'
 import ViewDetail from '../LMS/ViewChepter/ViewDetail'
 
 type Course = {
@@ -65,6 +66,7 @@ const LearningCatalog: React.FC = () => {
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
 
   // ✅ Session data
   const [sessionData, setSessionData] = useState<any>(null)
@@ -161,11 +163,11 @@ const LearningCatalog: React.FC = () => {
           // course.subject_category?.toLowerCase().includes(query) ||
           // course.subject_type?.toLowerCase().includes(query)
           // course.display_name?.toLowerCase().includes(query) ||
-            course.subject_category?.toLowerCase().includes(query) ||
-            course.subject_type?.toLowerCase().includes(query) ||
-            course.title?.toLowerCase().includes(query) || // subject_name
-            course.description?.toLowerCase().includes(query) || // standard_name
-            course.short_name?.toLowerCase().includes(query) // short_name
+          course.subject_category?.toLowerCase().includes(query) ||
+          course.subject_type?.toLowerCase().includes(query) ||
+          course.title?.toLowerCase().includes(query) || // subject_name
+          course.description?.toLowerCase().includes(query) || // standard_name
+          course.short_name?.toLowerCase().includes(query) // short_name
         )
       }
 
@@ -269,17 +271,27 @@ const LearningCatalog: React.FC = () => {
                   {sessionData &&
                     sessionData.user_profile_name &&
                     ["ADMIN", "HR"].includes(sessionData.user_profile_name.toUpperCase()) ? (
-                    <Button
-                  
-                      onClick={() => {
-                        setCourseToEdit(null)
-                        setIsAddDialogOpen(true)
-                      }}
-                      className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
-                    >
-                      <Icon name="Plus" size={16} className="mr-2" />
-                      Create Course
-                    </Button>
+                    <>
+                      <Button
+                        onClick={() => setIsAiDialogOpen(true)}
+                        className="flex items-center gap-2 bg-[#e8f0ff] text-blue-700 hover:bg-blue-100 transition-colors"
+                      >
+                        <span className="mdi mdi-creation text-xl"></span>
+                        Build with AI
+                      </Button>
+
+                      <Button
+
+                        onClick={() => {
+                          setCourseToEdit(null)
+                          setIsAddDialogOpen(true)
+                        }}
+                        className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+                      >
+                        <Icon name="Plus" size={16} className="mr-2" />
+                        Create Course
+                      </Button>
+                    </>
                   ) : null}
 
                   <Button
@@ -334,6 +346,14 @@ const LearningCatalog: React.FC = () => {
             </div>
           </main>
 
+          <AiCourseDialog
+            open={isAiDialogOpen}
+            onOpenChange={setIsAiDialogOpen}
+            onGenerate={(data) => {
+              console.log("🚀 AI should build a course with:", data);
+              // here you can call API to actually generate a course
+            }}
+          />
           {/* Add/Edit Dialog */}
           <AddCourseDialog
             open={isAddDialogOpen}
