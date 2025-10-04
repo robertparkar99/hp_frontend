@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import AdminSkillRating from "./AdminSkillRating";
-import { useRouter } from "next/navigation"; // Use next/navigation for App Router
+import { useRouter } from "next/navigation";
 
 interface Skill {
   ability: any[];
@@ -31,7 +31,7 @@ interface Skill {
 interface JobroleSkilladd1Props {
   skills: Skill[];
   userRatedSkills: any;
-  setUserRatedSkills: React.Dispatch<React.SetStateAction<any[]>>; // Added this prop
+  setUserRatedSkills: React.Dispatch<React.SetStateAction<any[]>>;
   clickedUser: any;
   userJobroleSkills: any;
 }
@@ -59,7 +59,7 @@ interface ProficiencyLevel {
 export default function Index({ 
   skills, 
   userRatedSkills, 
-  setUserRatedSkills, // Added this prop
+  setUserRatedSkills,
   clickedUser, 
   userJobroleSkills 
 }: JobroleSkilladd1Props) {
@@ -97,10 +97,33 @@ export default function Index({
     { title: "attitude", icon: "mdi-emoticon" },
   ]);
 
-  // Local state for rated skills if parent state update doesn't work
-  const [localRatedSkills, setLocalRatedSkills] = useState<any[]>(userRatedSkills || []);
+  // Use localStorage to persist rated skills
+  const [localRatedSkills, setLocalRatedSkills] = useState<any[]>([]);
 
-  // Function to handle navigation to AdminSkillRating
+  // Initialize localRatedSkills from props and localStorage
+  useEffect(() => {
+    const storedRatedSkills = localStorage.getItem(`ratedSkills_${clickedUser}`);
+    if (storedRatedSkills) {
+      try {
+        const parsedSkills = JSON.parse(storedRatedSkills);
+        setLocalRatedSkills(parsedSkills);
+        // Also update parent state
+        setUserRatedSkills(parsedSkills);
+      } catch (error) {
+        console.error("Error parsing stored rated skills:", error);
+      }
+    } else if (userRatedSkills && userRatedSkills.length > 0) {
+      setLocalRatedSkills(userRatedSkills);
+      localStorage.setItem(`ratedSkills_${clickedUser}`, JSON.stringify(userRatedSkills));
+    }
+  }, [userRatedSkills, clickedUser, setUserRatedSkills]);
+
+  // Save to localStorage whenever localRatedSkills changes
+  useEffect(() => {
+    if (localRatedSkills.length > 0) {
+      localStorage.setItem(`ratedSkills_${clickedUser}`, JSON.stringify(localRatedSkills));
+    }
+  }, [localRatedSkills, clickedUser]);
 
   // Load user session data from localStorage
   useEffect(() => {
@@ -149,7 +172,8 @@ export default function Index({
           // Handle different level formats (e.g., "Level 1", "1", "Beginner")
           const levelNumber = ratedSkill.skill_level.replace('Level ', '');
           return level.proficiency_level.includes(levelNumber) ||
-            level.proficiency_type === ratedSkill.skill_level;
+            level.proficiency_type === ratedSkill.skill_level ||
+            level.proficiency_level === ratedSkill.skill_level;
         });
 
         if (levelIndex !== -1) {
@@ -163,9 +187,20 @@ export default function Index({
             setShowDetails(savedData.showDetails);
           }
         }
+      } else {
+        // Reset if skill is not rated
+        setSelectedLevelIndex(null);
+        setSelectedSkillLevel("");
+        setValidationState({
+          knowledge: {},
+          ability: {},
+          behaviour: {},
+          attitude: {},
+        });
+        setShowDetails(false);
       }
     }
-  }, [selectedSkill, localRatedSkills, SkillLevels, currentSkillIndex]);
+  }, [selectedSkill, localRatedSkills, SkillLevels, currentSkillIndex, skillTempData]);
 
   // Save current skill data to temporary storage
   const saveCurrentSkillData = (): void => {
@@ -202,7 +237,8 @@ export default function Index({
           const levelIndex = SkillLevels.findIndex((level: ProficiencyLevel) => {
             const levelNumber = ratedSkill.skill_level.replace('Level ', '');
             return level.proficiency_level.includes(levelNumber) ||
-              level.proficiency_type === ratedSkill.skill_level;
+              level.proficiency_type === ratedSkill.skill_level ||
+              level.proficiency_level === ratedSkill.skill_level;
           });
 
           if (levelIndex !== -1) {
@@ -365,7 +401,12 @@ export default function Index({
         // Update local state
         setLocalRatedSkills((prev: any[]) => {
           const filtered = prev.filter((skill: any) => skill.skill_id !== selectedSkill.skill_id);
-          return [...filtered, newRatedSkill];
+          const updated = [...filtered, newRatedSkill];
+          
+          // Save to localStorage immediately
+          localStorage.setItem(`ratedSkills_${clickedUser}`, JSON.stringify(updated));
+          
+          return updated;
         });
 
         // Update parent state if setter function is provided
@@ -415,6 +456,14 @@ export default function Index({
     loadSkillData(index);
   };
 
+  // Function to clear all rated skills (for testing/debugging)
+  const clearRatedSkills = (): void => {
+    localStorage.removeItem(`ratedSkills_${clickedUser}`);
+    setLocalRatedSkills([]);
+    setUserRatedSkills([]);
+    alert("Rated skills cleared!");
+  };
+
   // Conditional Rendering - Show AdminSkillRating if user is rating someone else's skills
   if (String(sessionData.userId) !== String(clickedUser)) {
     return (
@@ -433,9 +482,17 @@ export default function Index({
       <div className="max-w-7xl mx-auto mt-10">
         {/* Top-right Icons - Positioned higher */}
         <div className="relative">
+          {/* Debug button - remove in production */}
+          {/* <button 
+            onClick={clearRatedSkills}
+            className="absolute -top-15 left-0 bg-red-500 text-white px-2 py-1 rounded text-xs"
+            title="Clear all rated skills (debug)"
+          >
+            Clear Rated Skills
+          </button> */}
+
           {/* Top Right Icons - Moved higher with negative top margin */}
-          <div className="absolute -top-15 right-0 flex gap-5 z-10"> {/* Changed top-4 to -top-8 */}
-            {/* Star Box Icon */}
+          <div className="absolute -top-15 right-0 flex gap-5 z-10">
             <span
               className="star-box-icon mdi mdi-star-box-multiple-outline text-xl cursor-pointer p-2 full bg-yellow-100 text-yellow-600 shadow hover:bg-yellow-200 hover:text-yellow-700 transition-all rounded-md"
               title="Star Box"
@@ -444,12 +501,11 @@ export default function Index({
               }}
             ></span>
 
-            {/* a Icon */}
             <span
               className="chart-bar-icon mdi mdi-chart-bar text-xl cursor-pointer p-2 full bg-blue-100 text-blue-600 shadow hover:bg-blue-200 hover:text-blue-700 transition-all rounded-md"
               title="Admin Skill Rating"
               onClick={() => {
-                setViewPart("rated skill");  // 👈 AdminSkillRating page lai jai
+                setViewPart("rated skill");
               }}
             ></span>
           </div>
@@ -463,12 +519,7 @@ export default function Index({
               userJobroleSkills={userJobroleSkills}
             />
           ) : (
-
-
-            // Rest of your component remains the same
-
             <div className="flex flex-col xl:flex-row gap-6 xl:gap-8">
-
               {/* Left Panel */}
               <div className="w-full xl:w-[280px] min-h-[472px] bg-white rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-2">
                 <h2 className="text-[#23395B] font-bold text-md mb-3" style={{ fontFamily: "Inter, sans-serif" }}>
