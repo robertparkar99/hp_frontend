@@ -241,7 +241,7 @@ export default function Home() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Department Wise Report</h1>
+          <h1 className="text-2xl font-bold text-foreground">Department Wise Attendence Report</h1>
           {/* <p className="text-sm text-muted-foreground mt-1">
                 Manage your organization's information, Department structure.
               </p> */}
@@ -253,6 +253,7 @@ export default function Home() {
         <div className="flex flex-col w-full">
           <label className="block mb-1 font-semibold">From Date</label>
           <DatePicker
+            maxDate={new Date()}
             selected={fromDate}
             onChange={(d) => setFromDate(d)}
             className="border p-2 rounded w-full"
@@ -262,6 +263,7 @@ export default function Home() {
         <div className="flex flex-col w-full">
           <label className="block mb-1 font-semibold">To Date</label>
           <DatePicker
+            maxDate={new Date()}
             selected={toDate}
             onChange={(d) => setToDate(d)}
             className="border p-2 rounded w-full"
