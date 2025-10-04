@@ -195,11 +195,11 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
       <div className="flex gap-4 mt-4 justify-center pt-4 border-t">
         <div className="flex items-center gap-2">
           <div style={{ backgroundColor: "#3B82F6", width: 20, height: 20 }}></div>
-          <span className="text-sm">Highest Rating Possible</span>
+          <span className="text-sm">Current Rating</span>
         </div>
         <div className="flex items-center gap-2">
           <div style={{ backgroundColor: "#1E40AF", width: 20, height: 20 }}></div>
-          <span className="text-sm">Current Rating</span>
+          <span className="text-sm">Highest Rating Possible</span>
         </div>
       </div>
 
@@ -425,11 +425,11 @@ export default function Page({
               <div className="flex gap-4 mt-4 justify-center">
                 <div className="flex items-center gap-2">
                   <div style={{ backgroundColor: "#3B82F6", width: 20, height: 20 }}></div>
-                  <span className="text-sm">Highest Rating Possible</span>
+                  <span className="text-sm">Current Rating</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div style={{ backgroundColor: "#1E40AF", width: 20, height: 20 }}></div>
-                  <span className="text-sm">Current Rating</span>
+                  <span className="text-sm">Highest Rating Possible</span>
                 </div>
               </div>
 
