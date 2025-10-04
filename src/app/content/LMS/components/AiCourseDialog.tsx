@@ -39,7 +39,7 @@ import {
 interface AiCourseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onGenerate: (payload: { topic: string; description: string }) => void;
+  onGenerate: (payload: { topic: string; description: string; apiResponse?: any }) => void;
 }
 
 interface JobRole {
@@ -471,7 +471,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
   const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
   const [criticalWorkFunctions, setCriticalWorkFunctions] = useState<{ id: string; critical_work_function: string }[]>([]);
   const [availableTasks, setAvailableTasks] = useState<{ id: string; task: string }[]>([]);
-  const [availableSkills, setAvailableSkills] = useState<{ id: string; skill: string }[]>([]);
+  const [availableSkills, setAvailableSkills] = useState<{ id: string; skill: string; skill_category?: string }[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingJobRoles, setLoadingJobRoles] = useState(false);
   const [loadingCWF, setLoadingCWF] = useState(false);
@@ -614,54 +614,54 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
     }
   }, [cfg, diverged, industry, isTemplateSelected]);
 
-  function applyTemplate(t: Template) {
-    // Create a new config with ONLY the template structure, not the values
-    const newConfig = {
-      ...DEFAULT_CONFIG,
-      // Don't pre-fill any values from the template - only set the structure
-      jobRole: "", // Empty instead of template value
-      criticalWorkFunction: "", // Empty instead of template value
-      tasks: [], // Empty instead of template values
-      skills: [], // Empty instead of template values
-    };
-    
-    setCfg(newConfig);
-    setActiveTemplate(t.id);
-    
-    // Enable the appropriate dropdowns based on template type
-    if (t.id === "t1") {
-      setEnabledDropdowns({
-        jobRole: true,
-        criticalWorkFunction: true,
-        tasks: false,
-        skills: false
-      });
-      setShowProficiency(false);
-    } else if (t.id === "t2") {
-      setEnabledDropdowns({
-        jobRole: true,
-        criticalWorkFunction: true,
-        tasks: true,
-        skills: false
-      });
-      setShowProficiency(false);
-    } else if (t.id === "t3") {
-      setEnabledDropdowns({
-        jobRole: true,
-        criticalWorkFunction: false,
-        tasks: false,
-        skills: true
-      });
-      setShowProficiency(true);
-    }
-
-    // Enable the configuration and preview sections
-    setIsTemplateSelected(true);
-    setDiverged(false);
-    const newPreview = buildPrompt(newConfig, industry);
-    setPreview(newPreview);
-    setManualPreview(newPreview);
+function applyTemplate(t: Template) {
+  // Create a new config with ONLY the template structure, not the values
+  const newConfig = {
+    ...DEFAULT_CONFIG,
+    // Don't pre-fill any values from the template - only set the structure
+    jobRole: "", // Empty instead of template value
+    criticalWorkFunction: "", // Empty instead of template value
+    tasks: [], // Empty instead of template values
+    skills: [], // Empty instead of template values
+  };
+  
+  setCfg(newConfig);
+  setActiveTemplate(t.id);
+  
+  // Enable the appropriate dropdowns based on template type
+  if (t.id === "t1") {
+    setEnabledDropdowns({
+      jobRole: true,
+      criticalWorkFunction: true,
+      tasks: false,
+      skills: false
+    });
+    setShowProficiency(false);
+  } else if (t.id === "t2") {
+    setEnabledDropdowns({
+      jobRole: true,
+      criticalWorkFunction: true,
+      tasks: true,
+      skills: false  // Skills should be disabled for t2 template
+    });
+    setShowProficiency(false);
+  } else if (t.id === "t3") {
+    setEnabledDropdowns({
+      jobRole: true,
+      criticalWorkFunction: false,
+      tasks: false,
+      skills: true
+    });
+    setShowProficiency(true);
   }
+
+  // Enable the configuration and preview sections
+  setIsTemplateSelected(true);
+  setDiverged(false);
+  const newPreview = buildPrompt(newConfig, industry);
+  setPreview(newPreview);
+  setManualPreview(newPreview);
+}
 
   function handleResync() {
     if (!isTemplateSelected) return;
@@ -671,33 +671,264 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
     setDiverged(false);
   }
 
-  function handleGenerate() {
-    if (!isTemplateSelected) {
-      alert("⚠️ Please select a template first!");
-      return;
-    }
+  // function handleGenerate() {
+  //   if (!isTemplateSelected) {
+  //     alert("⚠️ Please select a template first!");
+  //     return;
+  //   }
 
-    const missing: string[] = [];
-    if (!cfg.department) missing.push("Department");
-    if (!cfg.jobRole) missing.push("Job Role");
-    if (!cfg.criticalWorkFunction && enabledDropdowns.criticalWorkFunction) missing.push("Critical Work Function");
-    if (!cfg.duration) missing.push("Duration");
-    if (!cfg.audience) missing.push("Audience");
+  //   const missing: string[] = [];
+  //   if (!cfg.department) missing.push("Department");
+  //   if (!cfg.jobRole) missing.push("Job Role");
+  //   if (!cfg.criticalWorkFunction && enabledDropdowns.criticalWorkFunction) missing.push("Critical Work Function");
+  //   if (!cfg.duration) missing.push("Duration");
+  //   if (!cfg.audience) missing.push("Audience");
 
-    if (missing.length) {
-      alert(`Please fill: ${missing.join(", ")}`);
-      return;
-    }
+  //   if (missing.length) {
+  //     alert(`Please fill: ${missing.join(", ")}`);
+  //     return;
+  //   }
 
-    console.log("Generating course with config:", cfg);
-    console.log("Final prompt:", manualPreview);
+  //   console.log("Generating course with config:", cfg);
+  //   console.log("Final prompt:", manualPreview);
 
-    if (onGenerate) {
-      onGenerate({ topic: cfg.jobRole, description: manualPreview });
-    }
-    onOpenChange(false);
+  //   if (onGenerate) {
+  //     onGenerate({ topic: cfg.jobRole, description: manualPreview });
+  //   }
+  //   onOpenChange(false);
+  // }
+
+
+// const handleGenerateCourse = async () => {
+//    const formData = new FormData();
+//   if (!isTemplateSelected) {
+//     alert("⚠️ Please select a template first!");
+//     return;
+//   }
+
+//   const missing: string[] = [];
+//   if (!cfg.department) missing.push("Department");
+//   if (!cfg.jobRole) missing.push("Job Role");
+  
+//   // Only require Critical Work Function for templates that use it (t1 and t2)
+//   if (!cfg.criticalWorkFunction && (activeTemplate === "t1" || activeTemplate === "t2")) {
+//     missing.push("Critical Work Function");
+//   }
+  
+//   // Only require Tasks for template t2
+//   if ((cfg.tasks.length === 0 || !cfg.tasks[0]) && activeTemplate === "t2") {
+//     missing.push("Task");
+//   }
+  
+//   // Only require Skills for template t3
+//   if ((cfg.skills.length === 0 || !cfg.skills[0]) && activeTemplate === "t3") {
+//     missing.push("Skill");
+//   }
+
+//   if (missing.length) {
+//     alert(`Please fill: ${missing.join(", ")}`);
+//     return;
+//   }
+
+//   setLoading(true);
+//   setError(null);
+
+//   try {
+//     // Build URL with all parameters as query string
+//     // const baseParams = new URLSearchParams({
+//     //   sub_institute_id: sessionData.sub_institute_id,
+//     //   token: sessionData.token,
+//     //   user_id: sessionData.user_id,
+//     //   user_profile_name: sessionData.user_profile_name,
+//     //   syear: sessionData.syear,
+//     //   industry: sessionData.org_type,
+//     //   department: cfg.department,
+//     // });
+
+//     // Add optional parameters
+//     if (cfg.jobRole) formData.append("job_role", cfg.jobRole);
+//     if (cfg.criticalWorkFunction) formData.append("critical_work_function", cfg.criticalWorkFunction);
+    
+//     // Only add task for t2 template
+//     if (activeTemplate === "t2" && cfg.tasks.length > 0) {
+//       formData.append("key_task", cfg.tasks[0]);
+//     }
+    
+//     // Only add skill for t3 template
+//     if (activeTemplate === "t3" && cfg.skills.length > 0) {
+//       formData.append("skill", cfg.skills[0]);
+//     }
+    
+//     // Add modality
+//     const modality = [
+//       cfg.modality.selfPaced && "Self-paced",
+//       cfg.modality.instructorLed && "Instructor-led",
+//     ].filter(Boolean).join(", ");
+//     if (modality) formData.append("modality", modality);
+
+//     // Add proficiency if shown (only for t3 template)
+//     if (showProficiency && activeTemplate === "t3") {
+//       formData.append("proficiency_target", cfg.proficiencyTarget.toString());
+//     }
+
+//     // Add the prompt as a parameter
+//     formData.append("prompt", encodeURIComponent(manualPreview));
+
+//     const apiUrl = `${sessionData.APP_URL}/AICourseGeneration?sub_institute_id=${sessionData.sub_institute_id}&token=${sessionData.token}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}&syear=${sessionData.syear}&industry=${sessionData.org_type}&department=${encodeURIComponent(cfg.department)}`;
+   
+//     console.log("Calling course generation API:", apiUrl);
+
+//     const response = await fetch(apiUrl, {
+//       method: "GET",
+//       headers: {
+//         "Content-Type": "application/json",
+//         "Authorization": `Bearer ${sessionData.token}`,
+//       },
+//     });
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       throw new Error(`API call failed: ${response.status} - ${errorText}`);
+//     }
+
+//     const result = await response.json();
+//     console.log("Course generation successful:", result);
+
+//     // Call the parent onGenerate callback with the result
+//     if (onGenerate) {
+//       onGenerate({ 
+//         topic: cfg.jobRole, 
+//         description: manualPreview
+//       });
+//     }
+
+//     // Close the dialog
+//     onOpenChange(false);
+
+//   } catch (err) {
+//     const errorMessage = err instanceof Error ? err.message : String(err);
+//     setError(errorMessage);
+//     console.error("Error generating course:", err);
+//     alert(`Failed to generate course: ${errorMessage}`);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+const handleGenerateCourse = async () => {
+  if (!isTemplateSelected) {
+    alert("⚠️ Please select a template first!");
+    return;
   }
 
+  const missing: string[] = [];
+  if (!cfg.department) missing.push("Department");
+  if (!cfg.jobRole) missing.push("Job Role");
+  
+  // Only require Critical Work Function for templates that use it (t1 and t2)
+  if (!cfg.criticalWorkFunction && (activeTemplate === "t1" || activeTemplate === "t2")) {
+    missing.push("Critical Work Function");
+  }
+  
+  // Only require Tasks for template t2
+  if ((cfg.tasks.length === 0 || !cfg.tasks[0]) && activeTemplate === "t2") {
+    missing.push("Task");
+  }
+  
+  // Only require Skills for template t3
+  if ((cfg.skills.length === 0 || !cfg.skills[0]) && activeTemplate === "t3") {
+    missing.push("Skill");
+  }
+
+  if (missing.length) {
+    alert(`Please fill: ${missing.join(", ")}`);
+    return;
+  }
+
+  setLoading(true);
+  setError(null);
+
+  try {
+    // Build all parameters as URLSearchParams for GET request
+    const params = new URLSearchParams({
+      sub_institute_id: sessionData.sub_institute_id,
+      token: sessionData.token,
+      user_id: sessionData.user_id,
+      user_profile_name: sessionData.user_profile_name,
+      syear: sessionData.syear,
+      industry: sessionData.org_type,
+      department: cfg.department,
+      job_role: cfg.jobRole,
+      prompt: manualPreview
+    });
+
+    // Add conditional parameters based on template type
+    if (cfg.criticalWorkFunction) {
+      params.append("critical_work_function", cfg.criticalWorkFunction);
+    }
+    
+    // Only add task for t2 template
+    if (activeTemplate === "t2" && cfg.tasks.length > 0) {
+      params.append("key_task", cfg.tasks[0]);
+    }
+    
+    // Only add skill for t3 template
+    if (activeTemplate === "t3" && cfg.skills.length > 0) {
+      params.append("skill", cfg.skills[0]);
+    }
+    
+    // Add modality
+    const modality = [
+      cfg.modality.selfPaced && "Self-paced",
+      cfg.modality.instructorLed && "Instructor-led",
+    ].filter(Boolean).join(", ");
+    if (modality) params.append("modality", modality);
+
+    // Add proficiency if shown (only for t3 template)
+    if (showProficiency && activeTemplate === "t3") {
+      params.append("proficiency_target", cfg.proficiencyTarget.toString());
+    }
+
+    const apiUrl = `${sessionData.APP_URL}/AICourseGeneration?${params.toString()}`;
+   
+    console.log("Calling course generation API:", apiUrl);
+
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sessionData.token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API call failed: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log("Course generation successful:", result);
+
+    // Call the parent onGenerate callback with the result
+    if (onGenerate) {
+      onGenerate({ 
+        topic: cfg.jobRole, 
+        description: manualPreview
+      });
+    }
+
+    // Close the dialog
+    onOpenChange(false);
+
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    setError(errorMessage);
+    console.error("Error generating course:", err);
+    alert(`Failed to generate course: ${errorMessage}`);
+  } finally {
+    setLoading(false);
+  }
+};
   function addToken(field: "tasks" | "skills", value: string) {
     if (!isTemplateSelected) return;
     setCfg((prev) =>
@@ -851,6 +1082,48 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
 
     fetchSkills();
   }, [cfg.jobRole, sessionData]);
+  // Update the fetchSkills function to include skill_category
+// useEffect(() => {
+//   const fetchSkills = async () => {
+//     if (!cfg.jobRole || !sessionData?.APP_URL) {
+//       setAvailableSkills([]);
+//       return;
+//     }
+
+//     setLoadingSkills(true);
+//     setError(null);
+
+//     try {
+//       const response = await fetch(
+//         `${sessionData.APP_URL}/table_data?table=s_user_skill_jobrole&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&group_by=skill,skill_category&order_by[direction]=desc`,
+//         {
+//           headers: {
+//             Authorization: `Bearer ${sessionData.token}`,
+//             "Content-Type": "application/json",
+//           },
+//         }
+//       );
+
+//       if (!response.ok) {
+//         throw new Error('Failed to fetch skills');
+//       }
+
+//       const data = await response.json();
+//       setAvailableSkills(data);
+//     } catch (err) {
+//       if (err instanceof Error) {
+//         setError(err.message);
+//       } else {
+//         setError(String(err));
+//       }
+//       console.error('Error fetching skills:', err);
+//     } finally {
+//       setLoadingSkills(false);
+//     }
+//   };
+
+//   fetchSkills();
+// }, [cfg.jobRole, sessionData]);
 
   const filteredTemplates = templates.filter((t) =>
     [t.title, t.jobRole, t.criticalWorkFunction, ...t.tasks, ...t.skills]
@@ -864,6 +1137,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
     switch (configSection) {
       case "course-mapping":
         return (
+           <div className="grid flex-1 grid-cols-1 gap-4 overflow-auto p-4">
           <fieldset className="space-y-4 config-content">
             <legend className="px-1 text-sm font-semibold flex items-center gap-2 mb-4">
               <MapPin className="h-4 w-4 text-blue-600" />
@@ -994,10 +1268,12 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
               {loadingSkills && <p className="mt-1 text-xs text-gray-500">Loading skills...</p>}
             </div>
           </fieldset>
+          </div>
         );
 
       case "course-parameters":
         return (
+           <div className="grid flex-1 grid-cols-1 gap-4 overflow-auto p-4">
           <fieldset className="space-y-4 config-content">
             <legend className="px-1 text-sm font-semibold flex items-center gap-2 mb-4">
               <SlidersHorizontal className="h-4 w-4 text-blue-600" />
@@ -1063,6 +1339,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
               </div>
             </div>
           </fieldset>
+          </div>
         );
 
       default:
@@ -1081,9 +1358,9 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
         </DialogHeader>
 
         {/* Directly show the CourseCreatorModule interface */}
-        <div className="flex flex-col bg-slate-50 h-full">
+        <div className="flex flex-col bg-slate-50 max-h-[70vh] overflow-auto">
           {/* Main 3-Panel Layout */}
-          <div className="grid flex-1 grid-cols-1 gap-4 p-4 xl:grid-cols-3 h-[calc(90vh-140px)] overflow-hidden">
+          <div className="grid flex-1 grid-cols-1 gap-4 p-4 xl:grid-cols-3 max-h-[70vh] overflow-auto">
             {/* Left: Templates */}
             <aside className="flex flex-col rounded-2xl border bg-white overflow-hidden">
               <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
@@ -1104,8 +1381,8 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
                   />
                 </div>
               </div>
-              <div className="flex-1 overflow-hidden">
-                <div className="h-full overflow-y-auto smooth-scrollbar px-3 pb-3">
+              <div className="flex-1 overflow-auto px-3 pb-3 scrollbar-hide">
+                <div className="smooth-scrollbar px-3 pb-3 ">
                   {filteredTemplates.length === 0 ? (
                     <div className="rounded-lg border border-dashed p-6 text-center text-sm text-slate-500">
                       No templates match. Adjust filters or clear search.
@@ -1202,9 +1479,9 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
               />
 
               {/* Configuration Content with PROPER SCROLLING */}
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <div className="config-scroll-container h-full">
-                  <div className="p-4">
+              <div className="flex-1 flex-1 gap-4 xl:grid-cols-3 max-h-[70vh] overflow-auto px-1 py-3 scrollbar-hide">
+                <div className="pb-1">
+                  <div className="pb-4">
                     {renderConfigurationContent()}
                   </div>
                 </div>
@@ -1326,7 +1603,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
                 Cancel
               </Button>
               <button
-                onClick={handleGenerate}
+                onClick={handleGenerateCourse}
                 disabled={!isTemplateSelected}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-all duration-200 ${
                   !isTemplateSelected
