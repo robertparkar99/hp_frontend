@@ -7,7 +7,7 @@ const stats = [
     value: "12",
     change: "+2 from yesterday",
     icon: Calendar,
-    color: "text-primary",
+    color: "text-blue-400",
   },
   {
     title: "Active Candidates",
@@ -37,7 +37,7 @@ export function DashboardStats() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat) => (
         <Card key={stat.title} className="widget-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-xl">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {stat.title}
             </CardTitle>
