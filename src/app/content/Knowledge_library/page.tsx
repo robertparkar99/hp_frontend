@@ -147,12 +147,12 @@ const Honeycomb: React.FC = () => {
 
   // Apply column filters
   const columnFilteredData = filteredData.filter((item) =>
-    item.classification_item.toLowerCase().includes(filters.item.toLowerCase()) &&
-    item.classification_category.toLowerCase().includes(filters.category.toLowerCase()) &&
-    item.classification_sub_category.toLowerCase().includes(filters.subCategory.toLowerCase()) &&
-    item.proficiency_level.toLowerCase().includes(filters.proficiency.toLowerCase()) &&
-    item.proficiency_description.toLowerCase().includes(filters.description.toLowerCase())
-  );
+  (item.classification_item || "").toLowerCase().includes(filters.item.toLowerCase()) &&
+  (item.classification_category || "").toLowerCase().includes(filters.category.toLowerCase()) &&
+  (item.classification_sub_category || "").toLowerCase().includes(filters.subCategory.toLowerCase()) &&
+  (item.proficiency_level || "").toLowerCase().includes(filters.proficiency.toLowerCase()) &&
+  (item.proficiency_description || "").toLowerCase().includes(filters.description.toLowerCase())
+);  
 
   // Unique options
   const uniqueCategories = Array.from(
@@ -170,15 +170,17 @@ const Honeycomb: React.FC = () => {
     : [];
 
   const uniqueProficiency = Array.from(
-    new Set(data.map((item) => item.proficiency_level))
-  ).sort((a, b) => {
-    const numA = parseInt(a, 10);
-    const numB = parseInt(b, 10);
-    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-    if (!isNaN(numA)) return -1;
-    if (!isNaN(numB)) return 1;
-    return a.localeCompare(b);
-  });
+  new Set(data.map((item) => item.proficiency_level || ""))
+).sort((a, b) => {
+  const numA = parseInt(a, 10);
+  const numB = parseInt(b, 10);
+
+  if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+  if (!isNaN(numA)) return -1;
+  if (!isNaN(numB)) return 1;
+
+  return (a || "").localeCompare(b || "");
+});
 
   // DataTable columns with search inputs
   const columns: TableColumn<SkillItem>[] = [
