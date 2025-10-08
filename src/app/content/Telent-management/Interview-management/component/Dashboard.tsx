@@ -55,7 +55,7 @@ export function Dashboard() {
   };
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6 p-4 bg-background rounded-xl">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Interview Management Dashboard</h1>
