@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
-import { CornerDownRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { CornerDownRight, ChevronLeft, ChevronRight, Home } from "lucide-react"; // Added Home icon
 import { motion, AnimatePresence } from "framer-motion";
 import { UserProfile } from "./UserProfile"; // UserProfile import करें
 
@@ -444,6 +444,53 @@ const useMenuData = (sessionData: any) => {
     return { sections, loading, error, fetchMenuData };
 };
 
+// Dashboard Section Component
+const DashboardSection = ({
+    isCollapsed,
+    onExpandSidebar,
+}: {
+    isCollapsed: boolean;
+    onExpandSidebar: () => void;
+}) => {
+    const handleDashboardClick = () => {
+        if (isCollapsed) {
+            onExpandSidebar();
+            return;
+        }
+        // Navigate to home page
+        window.location.href = "/";
+    };
+
+    return (
+        <div className="w-full">
+            <div className="w-full h-[60px] relative">
+                <div className="w-full h-[60px] bg-white relative">
+                    <button
+                        type="button"
+                        onClick={handleDashboardClick}
+                        className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors"
+                    >
+                        <div className="flex items-center gap-[20px]">
+                            <Home className="w-[16px] h-[24px] " />
+                            {!isCollapsed && (
+                                <span
+                                    className="text-[#686868] text-[12px] font-medium leading-[18px]"
+                                    style={{
+                                        fontFamily:
+                                            "Roboto, -apple-system, Roboto, Helvetica, sans-serif",
+                                    }}
+                                >
+                                    Dashboard
+                                </span>
+                            )}
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function Sidebar({ mobileOpen, onClose, userSessionData }: SidebarProps) {
     const [open, setOpen] = useState<OpenState>({});
     const [activeSection, setActiveSection] = useState<string>();
@@ -579,6 +626,12 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                         msOverflowStyle: "none",
                     }}
                 >
+                    {/* Dashboard Section - Always at the top */}
+                    <DashboardSection 
+                        isCollapsed={isCollapsed} 
+                        onExpandSidebar={handleExpandSidebar} 
+                    />
+
                     {error ? (
                         <div className="p-4 text-center text-red-500">
                             <p>{error}</p>

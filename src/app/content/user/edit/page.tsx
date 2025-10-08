@@ -29,7 +29,7 @@ export default function HomePage() {
       <div className="mb-5">
       <Header  />
       </div>
-      <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar}  />
+      {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar}  /> */}
         <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
       <EditProfilePage />
       </div>
