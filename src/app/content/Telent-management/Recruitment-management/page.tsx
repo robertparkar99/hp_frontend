@@ -92,7 +92,7 @@ const HRDashboard = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Active":
-        return <Badge className="bg-green-100 text-green-800 text-xs">Active</Badge>;
+        return <Badge className="bg-green-100 text-green-800 text-xs hover:bg-green-200">Active</Badge>;
       case "Draft":
         return <Badge variant="secondary" className="text-xs">Draft</Badge>;
       case "Interview Scheduled":
@@ -152,8 +152,8 @@ const HRDashboard = () => {
         {/* Desktop Header */}
         <div className="hidden lg:flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">HR Dashboard</h1>
-            <p className="text-gray-600 text-sm lg:text-base">Manage job postings and track candidates</p>
+            <h1 className="text-2xl font-bold text-gray-900">HR Dashboard</h1>
+            <p className="text-gray-600 text-sm ">Manage job postings and track candidates</p>
           </div>
           <Button 
             onClick={() => setIsJobFormOpen(true)} 
@@ -315,7 +315,7 @@ const HRDashboard = () => {
               <Card className="border border-gray-200 shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
-                  <Users className="h-4 w-4 text-gray-500" />
+                  <Users className="h-5 w-5 text-gray-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-xl lg:text-2xl font-bold">156</div>
@@ -326,7 +326,7 @@ const HRDashboard = () => {
               <Card className="border border-gray-200 shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <CardTitle className="text-sm font-medium">Interviews Scheduled</CardTitle>
-                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <Calendar className="h-5 w-5 text-gray-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-xl lg:text-2xl font-bold">23</div>
@@ -337,7 +337,7 @@ const HRDashboard = () => {
               <Card className="border border-gray-200 shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                   <CardTitle className="text-sm font-medium">Offers Sent</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-gray-500" />
+                  <CheckCircle className="h-5 w-5 text-gray-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-xl lg:text-2xl font-bold">8</div>

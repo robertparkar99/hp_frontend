@@ -77,12 +77,12 @@ export default function Reports() {
       <div className="flex-1 flex flex-col overflow-hidden">
        
         
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Reports & Analytics</h1>
-                <p className="text-muted-foreground">Generate insights from your talent management data</p>
+                <h1 className="text-xl font-bold text-foreground">Reports & Analytics</h1>
+                <p className="text-muted-foreground text-sm">Generate insights from your talent management data</p>
               </div>
               
               <div className="flex gap-3">
@@ -106,8 +106,8 @@ export default function Reports() {
               <Card className="shadow-card">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <FileText className="h-6 w-6 text-primary" />
+                    <div className="p-2 rounded-lg ">
+                      <FileText className="h-5 w-5 text-blue-400" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">47</div>
@@ -121,7 +121,7 @@ export default function Reports() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-success/10">
-                      <TrendingUp className="h-6 w-6 text-success" />
+                      <TrendingUp className="h-5 w-5 text-success" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">8.4</div>
@@ -135,7 +135,7 @@ export default function Reports() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-warning/10">
-                      <PieChart className="h-6 w-6 text-warning" />
+                      <PieChart className="h-5 w-5 text-warning" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">87%</div>
@@ -149,7 +149,7 @@ export default function Reports() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-accent/10">
-                      <Star className="h-6 w-6 text-accent" />
+                      <Star className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">23</div>

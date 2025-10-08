@@ -926,7 +926,7 @@ const DashboardContent = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Welcome back, {userName.split(' ')[0]}!</h1>
+        <h1 className="text-xl font-bold text-gray-900">Welcome back, {userName.split(' ')[0]}!</h1>
         <p className="text-gray-600 text-sm">
           Here's what's happening with your talent management today.
         </p>

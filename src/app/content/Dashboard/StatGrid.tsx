@@ -1316,7 +1316,7 @@ export default function Dashboard() {
                     <span className="flex items-center mb-1">Action</span>
                     <button
                       onClick={() => setIsAddUserModalOpen(true)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
                     >
                       +
                     </button>
@@ -1592,7 +1592,7 @@ export default function Dashboard() {
                 <h2 className="font-semibold">Course List</h2>
                 <button
                   onClick={() => setOpenDialog(true)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-400 text-white hover:bg-red-600"
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-400 text-white hover:bg-blue-600"
                 >
                   +
                 </button>
