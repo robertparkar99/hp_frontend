@@ -1,5 +1,3 @@
-
-
 'use client'
 
 import React, { useState, useEffect } from 'react'
@@ -272,6 +270,17 @@ const LearningCatalog: React.FC = () => {
                     sessionData.user_profile_name &&
                     ["ADMIN", "HR"].includes(sessionData.user_profile_name.toUpperCase()) ? (
                     <>
+                    <Button
+
+                        onClick={() => {
+                          setCourseToEdit(null)
+                          setIsAddDialogOpen(true)
+                        }}
+                        className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+                      >
+                        <Icon name="Plus" size={16} className="mr-2" />
+                       External Course
+                      </Button>
                       <Button
                         onClick={() => setIsAiDialogOpen(true)}
                         className="flex items-center gap-2 bg-[#e8f0ff] text-blue-700 hover:bg-blue-100 transition-colors"
