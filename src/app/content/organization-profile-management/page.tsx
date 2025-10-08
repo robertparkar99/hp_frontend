@@ -1,7 +1,7 @@
 "use client";
-import {Dashboard} from "@/app/content/organization-dashboard/dashboard/Dashboard";
+import Profile from "@/app/content/organization-profile-management/profile";
 import Header from "@/components/Header/Header";
-import Sidebar from "@/components/SideMenu/Newsidebar";
+
 import { useState, useEffect } from "react";
 
 export default function HomePage() {
@@ -47,7 +47,7 @@ export default function HomePage() {
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} userSessionData={sessionData} /> */}
       <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-3`}>
-        <Dashboard />
+        <Profile />
       </div>
     </>
   );
