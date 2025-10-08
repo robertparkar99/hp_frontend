@@ -1303,15 +1303,25 @@ export default function Index({
         console.log("Submission successful:", result);
 
         // Update rated skills with detailed ratings
-        const newRatedSkill = {
-          skill_id: selectedSkill.skill_id,
+        // const newRatedSkill = {
+        //   skill_id: selectedSkill.skill_id,
+        //   skill_level: selectedSkillLevel,
+        //   skill: selectedSkill.skill,
+        //   category: selectedSkill.category,
+        //   sub_category: selectedSkill.sub_category,
+        //   jobrole: selectedSkill.jobrole,
+        //   description: selectedSkill.description,
+        //   proficiency_level: selectedSkill.proficiency_level,
+        //   detailed_ratings: detailedRatings,
+        //   knowledge_ratings: validationState.knowledge,
+        //   ability_ratings: validationState.ability,
+        //   behaviour_ratings: validationState.behaviour,
+        //   attitude_ratings: validationState.attitude,
+        //   // Add other necessary properties
+        //   ...selectedSkill
+        // };
+          const newRatedSkill = {
           skill_level: selectedSkillLevel,
-          skill: selectedSkill.skill,
-          category: selectedSkill.category,
-          sub_category: selectedSkill.sub_category,
-          jobrole: selectedSkill.jobrole,
-          description: selectedSkill.description,
-          proficiency_level: selectedSkill.proficiency_level,
           detailed_ratings: detailedRatings,
           knowledge_ratings: validationState.knowledge,
           ability_ratings: validationState.ability,
@@ -1393,7 +1403,6 @@ export default function Index({
       <AdminSkillRating 
         skills={skills} 
         userRatedSkills={localRatedSkills} 
-        setUserRatedSkills={setLocalRatedSkills}
         SkillLevels={SkillLevels} 
         userJobroleSkills={userJobroleSkills} 
       />
@@ -1437,7 +1446,6 @@ export default function Index({
             <AdminSkillRating
               skills={skills}
               userRatedSkills={localRatedSkills}
-              setUserRatedSkills={setLocalRatedSkills}
               SkillLevels={SkillLevels}
               userJobroleSkills={userJobroleSkills}
             />

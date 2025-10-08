@@ -834,6 +834,7 @@
 //     </main>
 //   );
 // }
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -956,12 +957,12 @@ const EmptyChartState = () => (
 );
 
 // Fixed renderCircles function
-const renderCircles = (value: number) => {
-  // Ensure value is between 0 and 5
-  const normalizedValue = Math.max(0, Math.min(5, value));
+const renderCircles = (value: number, max: number) => {
+  // Ensure value is between 0 and max, but show all circles up to max
+  const normalizedValue = Math.max(0, Math.min(max, value));
   const full = Math.floor(normalizedValue);
   const half = normalizedValue % 1 !== 0;
-  const empty = 5 - full - (half ? 1 : 0);
+  const empty = max - full - (half ? 1 : 0);
 
   return (
     <div className="flex items-center">
@@ -1197,31 +1198,31 @@ export default function Page({
   }, [userRatedSkills]);
 
   // Fetch rated skills with self_rating and proficiency_level
-  useEffect(() => {
-    const fetchUserRatedSkills = async () => {
-      try {
-        const userData = localStorage.getItem("userData");
-        if (!userData) return;
+  // useEffect(() => {
+  //   const fetchUserRatedSkills = async () => {
+  //     try {
+  //       const userData = localStorage.getItem("userData");
+  //       if (!userData) return;
 
-        const { APP_URL, token, user_id } = JSON.parse(userData);
-        const response = await fetch(
-          `${APP_URL}/user-rated-skills?user_id=${user_id}&token=${token}&include_proficiency=true`
-        );
+  //       const { APP_URL, token, user_id } = JSON.parse(userData);
+  //       const response = await fetch(
+  //         `${APP_URL}/user-rated-skills?user_id=${user_id}&token=${token}&include_proficiency=true`
+  //       );
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Fetched rated skills:", data.userRatedSkills);
-          setUserRatedSkills(data.userRatedSkills || []);
-        }
-      } catch (error) {
-        console.error("Error fetching user rated skills:", error);
-      }
-    };
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         console.log("Fetched rated skills:", data.userRatedSkills);
+  //         setUserRatedSkills(data.userRatedSkills || []);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching user rated skills:", error);
+  //     }
+  //   };
 
-    if (!initialUserRatedSkills || initialUserRatedSkills.length === 0) {
-      fetchUserRatedSkills();
-    }
-  }, [initialUserRatedSkills]);
+  //   if (!initialUserRatedSkills || initialUserRatedSkills.length === 0) {
+  //     fetchUserRatedSkills();
+  //   }
+  // }, [initialUserRatedSkills]);
 
   const calculateOverallSkillIndex = () => {
     if (!userRatedSkills || userRatedSkills.length === 0) return "0.0";
@@ -1670,27 +1671,29 @@ export default function Page({
                         <p>Expected</p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 mt-2 text-xs items-center">
-                        <div className="flex items-center space-x-2">
-                          {renderCircles(selfRating)}
-                          <span className="ml-2 text-sm font-medium">{selfRating}</span>
-                        </div>
+                  <div className="grid grid-cols-2 gap-4 mt-2 text-xs items-center">
+  {/* Self Rating */}
+  <div className="flex items-center space-x-2">
+    {renderCircles(selfRating, SkillLevels.length)}
+    <span className="ml-2 text-sm font-medium">{selfRating}/{SkillLevels.length}</span>
+  </div>
 
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center space-x-2">
-                            {renderCircles(expected)}
-                            <span className="ml-2 text-sm font-medium">{expected}</span>
-                          </div>
+  {/* Expected Rating */}
+  <div className="flex items-center justify-between w-full">
+    <div className="flex items-center space-x-2">
+      {renderCircles(expected, SkillLevels.length)}
+      <span className="ml-2 text-sm font-medium">{expected}/{SkillLevels.length}</span>
+    </div>
 
-                          <span
-                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors 
-                              focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
-                              hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
-                          >
-                            {status}
-                          </span>
-                        </div>
-                      </div>
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors 
+        focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
+        hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
+    >
+      {status}
+    </span>
+  </div>
+</div>
 
                       {/* Add detailed ratings here */}
                       {renderDetailedRatings(ratedSkill)}
