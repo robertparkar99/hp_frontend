@@ -135,7 +135,7 @@ export default function InterviewPanels() {
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="btn-professional flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors">
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2  h-4 w-4" />
               Create Panel
             </Button>
           </DialogTrigger>
@@ -254,12 +254,12 @@ export default function InterviewPanels() {
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t">
+              <div className="flex justify-center space-x-3 pt-4 border-t">
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreatePanel} className="btn-professional">
-                  Create Panel
+                <Button id="submit" onClick={handleCreatePanel} className="px-4 py-2 text-sm rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+                  Submit
                 </Button>
               </div>
             </div>

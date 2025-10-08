@@ -119,12 +119,12 @@ export default function Appraisals() {
       <div className="flex-1 flex flex-col overflow-hidden">
       
         
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto ">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Appraisals & Compensation</h1>
-                <p className="text-muted-foreground">Manage salary adjustments, bonuses, and promotions</p>
+                <h1 className="text-xl font-bold text-foreground">Appraisals & Compensation</h1>
+                <p className="text-muted-foreground text-sm">Manage salary adjustments, bonuses, and promotions</p>
               </div>
             </div>
 
@@ -134,7 +134,7 @@ export default function Appraisals() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-success/10">
-                      <CheckCircle className="h-6 w-6 text-success" />
+                      <CheckCircle className="h-5 w-5 text-success" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">18</div>
@@ -148,7 +148,7 @@ export default function Appraisals() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-warning/10">
-                      <Clock className="h-6 w-6 text-warning" />
+                      <Clock className="h-5 w-5 text-warning" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">7</div>
@@ -161,8 +161,8 @@ export default function Appraisals() {
               <Card className="shadow-card">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <TrendingUp className="h-6 w-6 text-primary" />
+                    <div className="p-2 rounded-lg ">
+                      <TrendingUp className="h-5 w-5 text-blue-400" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">8.5%</div>
@@ -176,11 +176,11 @@ export default function Appraisals() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-accent/10">
-                      <Award className="h-6 w-6 text-accent" />
+                      <Award className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">12</div>
-                      <div className="text-sm text-muted-foreground">Promotions</div>
+                      <div className="text-sm text-black">Promotions</div>
                     </div>
                   </div>
                 </CardContent>

@@ -917,6 +917,7 @@ const handleGenerateCourse = async () => {
       });
     }
 
+          alert("✅ Course generated successfully!");
     // Close the dialog
     onOpenChange(false);
 
@@ -1603,17 +1604,26 @@ const handleGenerateCourse = async () => {
                 Cancel
               </Button>
               <button
-                onClick={handleGenerateCourse}
-                disabled={!isTemplateSelected}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-all duration-200 ${
-                  !isTemplateSelected
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-              >
-                <Play className="h-4 w-4" />
-                Generate Course
-              </button>
+  onClick={handleGenerateCourse}
+  disabled={!isTemplateSelected || loading}
+  className={`rounded-lg px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-all duration-200 ${
+    !isTemplateSelected || loading
+      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+      : "bg-blue-600 text-white hover:bg-blue-700"
+  }`}
+>
+  {loading ? (
+    <>
+      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      Generating...
+    </>
+  ) : (
+    <>
+      <Play className="h-4 w-4" />
+      Generate Course
+    </>
+  )}
+</button>
             </div>
           </footer>
         </div>

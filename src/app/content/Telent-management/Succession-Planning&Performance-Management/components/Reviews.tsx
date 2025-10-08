@@ -79,12 +79,12 @@ export default function Reviews() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* <AppHeader userRole={getRoleDisplay(userRole)} userName={userName} /> */}
         
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto ">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Performance Reviews</h1>
-                <p className="text-muted-foreground">Manage and track employee performance evaluations</p>
+                <h1 className="text-xl font-bold text-foreground">Performance Reviews</h1>
+                <p className="text-muted-foreground text-sm">Manage and track employee performance evaluations</p>
               </div>
               
               <div className="flex gap-3">
@@ -107,7 +107,7 @@ export default function Reviews() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-primary/10">
-                      <CheckCircle className="h-6 w-6 text-primary" />
+                      <CheckCircle className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">24</div>
@@ -121,7 +121,7 @@ export default function Reviews() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-warning/10">
-                      <Clock className="h-6 w-6 text-warning" />
+                      <Clock className="h-5 w-5 text-warning" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">8</div>
@@ -135,7 +135,7 @@ export default function Reviews() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-destructive/10">
-                      <AlertCircle className="h-6 w-6 text-destructive" />
+                      <AlertCircle className="h-5 w-5 text-destructive" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">5</div>
@@ -149,7 +149,7 @@ export default function Reviews() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-success/10">
-                      <Star className="h-6 w-6 text-success" />
+                      <Star className="h-5 w-5 text-success" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">8.3</div>

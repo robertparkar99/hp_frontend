@@ -91,12 +91,12 @@ export default function Profile() {
       <div className="flex-1 flex flex-col overflow-hidden">
      
         
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Profile</h1>
-                <p className="text-muted-foreground">Manage your personal information and career development</p>
+                <h1 className="text-xl font-bold text-foreground">Profile</h1>
+                <p className="text-muted-foreground text-sm">Manage your personal information and career development</p>
               </div>
               
               <Button variant="outline">

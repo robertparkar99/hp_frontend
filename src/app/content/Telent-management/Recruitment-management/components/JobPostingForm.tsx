@@ -263,7 +263,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Job Title */}
             <div className="md:col-span-2 space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Job Title *
+                Job Title {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Input 
                 placeholder="e.g., Senior Full-Stack Developer" 
@@ -279,7 +280,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Department */}
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Department *
+                Department {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Select value={formData.department} onValueChange={(value) => handleInputChange('department', value)}>
                 <SelectTrigger className={errors.department ? "border-red-500" : ""}>
@@ -304,7 +306,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Location */}
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Location *
+                Location {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Input 
                 placeholder="e.g., Remote, New York, NY" 
@@ -320,7 +323,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Employment Type */}
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Employment Type *
+                Employment Type {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Select value={formData.employmentType} onValueChange={(value) => handleInputChange('employmentType', value)}>
                 <SelectTrigger className={errors.employmentType ? "border-red-500" : ""}>
@@ -342,7 +346,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Experience Required */}
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Experience Required *
+                Experience Required {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Select value={formData.experienceRequired} onValueChange={(value) => handleInputChange('experienceRequired', value)}>
                 <SelectTrigger className={errors.experienceRequired ? "border-red-500" : ""}>
@@ -363,7 +368,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Education Requirement */}
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Education Requirement *
+                Education Requirement {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Select value={formData.educationRequirement} onValueChange={(value) => handleInputChange('educationRequirement', value)}>
                 <SelectTrigger className={errors.educationRequirement ? "border-red-500" : ""}>
@@ -386,7 +392,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Priority/Urgency */}
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Priority Level *
+                Priority Level {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Select value={formData.urgency} onValueChange={(value) => handleInputChange('urgency', value)}>
                 <SelectTrigger className={errors.urgency ? "border-red-500" : ""}>
@@ -406,7 +413,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Number of Positions */}
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Number of Positions *
+                Number of Positions {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Input 
                 type="number" 
@@ -424,7 +432,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Salary Range */}
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Minimum Salary ($) *
+                Minimum Salary ($) {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Input 
                 type="number" 
@@ -440,7 +449,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
 
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Maximum Salary ($) *
+                Maximum Salary ($) {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Input 
                 type="number" 
@@ -457,7 +467,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Application Deadline */}
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Application Deadline *
+                Application Deadline {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <div className="relative">
                 <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -477,7 +488,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Skills Required */}
             <div className="md:col-span-2 space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Required Skills *
+                Required Skills {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Textarea 
                 placeholder="e.g., React, TypeScript, Node.js, PostgreSQL, AWS (comma-separated)"
@@ -511,7 +523,8 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             {/* Job Description */}
             <div className="md:col-span-2 space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Job Description *
+                Job Description {" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
               </label>
               <Textarea 
                 placeholder="Provide a detailed job description including responsibilities, requirements, and benefits..."
@@ -528,19 +541,25 @@ const JobPostingForm = ({ open, onOpenChange }: JobPostingFormProps) => {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={handleCancel}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating Job..." : "Create Job Posting"}
-            </Button>
-          </DialogFooter>
+         <DialogFooter className="flex justify-center space-x-4 sm:flex-row sm:justify-center">
+  <Button 
+    type="button" 
+    variant="outline" 
+    onClick={handleCancel}
+    disabled={isSubmitting}
+  >
+    Cancel
+  </Button>
+  <Button 
+    id="submit" 
+    type="submit" 
+    disabled={isSubmitting} 
+    className="px-4 py-2 text-sm rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
+  >
+    {isSubmitting ? "Creating Job..." : "Submit"}
+  </Button>
+</DialogFooter>
+
         </form>
       </DialogContent>
     </Dialog>

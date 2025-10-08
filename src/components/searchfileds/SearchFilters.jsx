@@ -47,7 +47,7 @@ const SearchFilters = ({
   const mergedForm = { ...defaults, ...formData };
 
   const [sections, setSections] = useState([{ label: 'Search Section', value: '' }]);
-  const [standards, setStandards] = useState([{ label: 'Search Standard', value: '' }]);
+  const [standards, setStandards] = useState([{ label: 'Search Department', value: '' }]);
   const [subjects, setSubjects] = useState([{ label: 'Select Subject', value: '' }]);
   const [chapters, setChapters] = useState([{ label: 'Search By Chapter', value: '' }]);
 
@@ -89,8 +89,8 @@ const SearchFilters = ({
         if (cancelled) return;
 
         const arr = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
-        const formatted = [{ label: 'Search Department', value: '' }, ...arr.map(item => ({
-          label: item.title || item.name || `Section ${item.id}`,
+        const formatted = [{ label: 'Search Industry', value: '' }, ...arr.map(item => ({
+          label: item.title || item.name ,
           value: item.id
         }))];
         setSections(formatted);
@@ -113,7 +113,7 @@ const SearchFilters = ({
     let cancelled = false;
     const fetchStandards = async () => {
       if (!mergedForm.searchSection) {
-        setStandards([{ label: 'Search Industry', value: '' }]);
+        setStandards([{ label: 'Search Department', value: '' }]);
         return;
       }
 
@@ -122,7 +122,7 @@ const SearchFilters = ({
         const sessionData = getSessionData();
         if (!sessionData) {
           console.warn('Session data not found.');
-          setStandards([{ label: 'Search Standard', value: '' }]);
+          setStandards([{ label: 'Search Department', value: '' }]);
           return;
         }
 
@@ -134,7 +134,7 @@ const SearchFilters = ({
 
         if (!res.ok) {
           console.error('Standards fetch failed', res.status, await res.text());
-          setStandards([{ label: 'Search Standard', value: '' }]);
+          setStandards([{ label: 'Search Department', value: '' }]);
           return;
         }
 
@@ -144,11 +144,11 @@ const SearchFilters = ({
         let body = data;
         if (data && data.data) body = data.data;
 
-        let formatted = [{ label: 'Search Standard', value: '' }];
+        let formatted = [{ label: 'Search Department', value: '' }];
 
         if (Array.isArray(body)) {
           formatted = [
-            { label: 'Search Standard', value: '' },
+            { label: 'Search Department', value: '' },
             ...body.map(item => ({
               label: item.name || item.title || String(item.id),
               value: item.id
@@ -156,7 +156,7 @@ const SearchFilters = ({
           ];
         } else if (body && typeof body === 'object') {
           formatted = [
-            { label: 'Search Standard', value: '' },
+            { label: 'Search Department', value: '' },
             ...Object.entries(body).map(([id, name]) => ({
               label: String(name),
               value: id
@@ -327,7 +327,7 @@ const SearchFilters = ({
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Select
-          label="Search Department"
+          label="Search Industry"
           value={mergedForm.searchSection}
           onChange={(val) => handleChange('searchSection', val)}
           options={sections}
@@ -335,7 +335,7 @@ const SearchFilters = ({
         />
 
         <Select
-          label="Search Industry"
+          label="Search Department"
           value={mergedForm.searchStandard}
           onChange={(val) => handleChange('searchStandard', val)}
           options={standards}

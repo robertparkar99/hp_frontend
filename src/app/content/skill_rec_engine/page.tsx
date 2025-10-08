@@ -159,13 +159,13 @@ export default function Home() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(to bottom, #f8fafc, #e2e8f0)',
+      // background: 'linear-gradient(to bottom, #f8fafc, #e2e8f0)',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '1rem' }}>
         <header style={{ marginBottom: '3rem' }}>
           <h1 style={{
-            fontSize: '2.5rem',
+            fontSize: '1.5rem',
             fontWeight: '700',
             color: '#1e293b',
             marginBottom: '0.5rem'
@@ -173,7 +173,7 @@ export default function Home() {
             Skill Recommendation Engine
           </h1>
           <p style={{
-            fontSize: '1.125rem',
+            fontSize: '0.875rem',
             color: '#64748b',
             fontWeight: '400'
           }}>
@@ -187,9 +187,9 @@ export default function Home() {
           gap: '1.5rem',
           marginBottom: '3rem'
         }}>
-          <StatCard icon={<Users size={24} />} title="Total Employees" value="2" subtitle="Active employees in system" />
-          <StatCard icon={<Target size={24} />} title="Job Roles" value={JOB_ROLES.length.toString()} subtitle="Available positions" />
-          <StatCard icon={<BookOpen size={24} />} title="Skills Database" value="30" subtitle="Skills in our database" />
+          <StatCard icon={<Users size={20} />} title="Total Employees" value="2" subtitle="Active employees in system" />
+          <StatCard icon={<Target size={20} />} title="Job Roles" value={JOB_ROLES.length.toString()} subtitle="Available positions" />
+          <StatCard icon={<BookOpen size={20} />} title="Skills Database" value="30" subtitle="Skills in our database" />
         </div>
 
         <div style={{
@@ -631,6 +631,7 @@ function StatCard({ icon, title, value, subtitle }: { icon: React.ReactNode; tit
     <div style={{
       background: 'white',
       borderRadius: '12px',
+      border: '1px solid #e2e8f0',
       padding: '1.5rem',
       boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
       transition: 'transform 0.2s, box-shadow 0.2s'
@@ -643,7 +644,7 @@ function StatCard({ icon, title, value, subtitle }: { icon: React.ReactNode; tit
           {icon}
         </div>
       </div>
-      <div style={{ fontSize: '2rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
+      <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
         {value}
       </div>
       <div style={{ fontSize: '0.875rem', color: '#64748b' }}>

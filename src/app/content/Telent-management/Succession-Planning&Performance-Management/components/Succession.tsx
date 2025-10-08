@@ -98,12 +98,12 @@ export default function Succession() {
       <div className="flex-1 flex flex-col overflow-hidden">
        
         
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto ">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Succession Planning</h1>
-                <p className="text-muted-foreground">Identify and develop future leaders for critical roles</p>
+                <h1 className="text-xl font-bold text-foreground">Succession Planning</h1>
+                <p className="text-sm text-muted-foreground">Identify and develop future leaders for critical roles</p>
               </div>
               
               {userRole !== 'employee' && (
@@ -119,8 +119,8 @@ export default function Succession() {
               <Card className="shadow-card">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Target className="h-6 w-6 text-primary" />
+                    <div className="p-2 rounded-lg ">
+                      <Target className="h-5 w-5 text-blue-400" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">24</div>
@@ -134,7 +134,7 @@ export default function Succession() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-success/10">
-                      <Star className="h-6 w-6 text-success" />
+                      <Star className="h-5 w-5 text-success" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">78%</div>
@@ -148,7 +148,7 @@ export default function Succession() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-warning/10">
-                      <Clock className="h-6 w-6 text-warning" />
+                      <Clock className="h-5 w-5 text-warning" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">15</div>
@@ -162,7 +162,7 @@ export default function Succession() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-accent/10">
-                      <TrendingUp className="h-6 w-6 text-accent" />
+                      <TrendingUp className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold">23</div>

@@ -96,10 +96,10 @@ const CandidatePortal = () => {
     <div className="min-h-screen bg-background">
       {/* <Navigation /> */}
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-4">Find Your Next Opportunity</h1>
-          <p className="text-muted-foreground mb-6">
+      <main className="max-w-7xl mx-auto px-4 py-4">
+        <div className="">
+          <h1 className="text-2xl font-bold text-foreground">Find Your Next Opportunity</h1>
+          <p className="text-muted-foreground mb-6 text-sm">
             Discover exciting career opportunities and join our growing team
           </p>
         </div>
