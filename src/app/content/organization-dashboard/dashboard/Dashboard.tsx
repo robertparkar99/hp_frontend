@@ -170,7 +170,7 @@ export function Dashboard() {
   // 🔹 switch view rendering
   if (activeView === "organizationInfo") {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen bg-background p-6 rounded-xl">
         <div className="flex items-center mb-6">
           <Button
             variant="outline"
@@ -193,7 +193,7 @@ export function Dashboard() {
   // 🔹 Render User Management view
   if (activeView === "userManagement") {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen bg-background p-6 rounded-xl">
         <div className="flex items-center mb-6">
           <Button
             variant="outline"
@@ -212,7 +212,7 @@ export function Dashboard() {
   // 🔹 Render Department Structure view
   if (activeView === "departmentStructure") {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen bg-background p-6 rounded-xl">
         <div className="flex items-center mb-6">
           <Button
             variant="outline"
@@ -229,9 +229,9 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background rounded-xl ">
       <div className="flex">
-        <main className="flex-1 p-6 space-y-6 overflow-x-hidden">
+        <main className="flex-1 p-6 rounded-xl space-y-6 overflow-x-hidden">
           {/* Header */}
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-foreground">

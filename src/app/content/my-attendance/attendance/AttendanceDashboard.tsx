@@ -622,9 +622,9 @@ export function AttendanceDashboard() {
     .join(' ');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/30 to-background w-full">
+    <div className="min-h-screen  bg-background rounded-xl w-full">
       {/* Header */}
-      <div className="relative overflow-hidden mt-[-17] mr-[-10] ml-[-10] bg-[#6fb2f2] text-primary-foreground">
+      <div className="relative overflow-hidden rounded-xl bg-[#6fb2f2] text-primary-foreground">
         <div className="absolute inset-0 opacity-20" />
         <div className="relative container mx-auto px-6 py-8">
           <div className="flex items-center justify-between">

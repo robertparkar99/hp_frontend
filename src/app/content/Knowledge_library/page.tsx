@@ -58,8 +58,6 @@ const Honeycomb: React.FC = () => {
   const size = 160;
   const horizontalGap = 10;
   const verticalGap = 20;
-  const verticalSpacing = Math.floor(size * 0.85) + verticalGap;
-  const horizontalShift = Math.floor((size + horizontalGap) / 2);
 
   // Load session data
   useEffect(() => {
@@ -373,33 +371,47 @@ const Honeycomb: React.FC = () => {
         ) : columnFilteredData.length === 0 ? (
           <p className="text-gray-500 text-sm">No skills found</p>
         ) : viewMode === "circle" ? (
-          // Round / Circle View
-          <div className="relative flex justify-center ml-50 mr-50 w-full h-full pl-40">
-            {columnFilteredData.map((item, index) => {
-              const row = Math.floor(index / 4);
-              const col = index % 4;
+              // Round / Circle View (✅ Fixed honeycomb layout + dynamic height)
+              (() => {
+                const radius = size / 2;
+                const circlesPerRow = 4;
+                const rowCount = Math.ceil(columnFilteredData.length / circlesPerRow);
+                const containerHeight =
+                  rowCount * (radius * 1.8 + verticalGap) + radius;
 
-              const x =
-                col * (size + horizontalGap) +
-                (row % 2 === 1 ? horizontalShift : 0);
-              const y = row * verticalSpacing;
+                return (
+                  <div
+                    className="relative flex justify-center ml-50 mr-50 w-full h-full pl-40"
+                    style={{ height: `${containerHeight}px` }}
+                  >
+                    {columnFilteredData.map((item, index) => {
+                  const row = Math.floor(index / circlesPerRow);
+                  const col = index % circlesPerRow;
 
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    width: `${size}px`,
-                    height: `${size}px`,
-                    left: `${x}px`,
-                    top: `${y}px`,
-                  }}
-                  className="absolute rounded-full bg-gradient-to-b from-[#9FD0FF] to-[#50A8FF] border border-[#50A8FF] flex items-center justify-center text-center text-[11px] font-medium text-black p-3 hover:bg-[#f67232] hover:scale-110 transition duration-300"
-                >
-                  {item.classification_item}
-                </div>
-              );
-            })}
-          </div>
+                  const x =
+                    col * (size + horizontalGap) +
+                    (row % 2 === 1 ? (size + horizontalGap) / 2 : 0);
+
+                  const y = row * (radius * 1.8 + verticalGap);
+
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        width: `${size}px`,
+                        height: `${size}px`,
+                        left: `${x}px`,
+                        top: `${y}px`,
+                      }}
+                      className="absolute rounded-full bg-gradient-to-b from-[#9FD0FF] to-[#50A8FF] border border-[#50A8FF] flex items-center justify-center text-center text-[11px] font-medium text-black p-3 hover:bg-[#f67232] hover:scale-110 transition duration-300"
+                    >
+                      {item.classification_item}
+                    </div>
+                  );
+                })}
+              </div>
+                );
+              })()
         ) : (
           // 📋 DataTable View with filters
           <div className="w-full">

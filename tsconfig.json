@@ -33,6 +33,9 @@
     "src/app/content/Libraries/AbilityTaxo.jsx",
     "src/app/content/Libraries/AttitudeTaxo.jsx",
     "src/app/content/skill-library/page.tsx"
-, "src/app/content/HRMS/Payroll/PayrollTypeDialog.jsx"  ],
+,
+"src/app/content/HRMS/Payroll/PayrollTypeDialog.jsx",
+"src/app/content/organization-profile-management/profile.jsx"
+, "src/app/content/Reports/employee/EmployeeDirectory.jsx"],
   "exclude": ["node_modules"]
 }

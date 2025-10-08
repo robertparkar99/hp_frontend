@@ -303,7 +303,7 @@ useEffect(() => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen rounded-xl bg-background flex items-center justify-center">
         <div className="max-w-md p-6 bg-white rounded-lg shadow-md">
           <h2 className="text-xl font-bold text-red-600 mb-4">Error Loading Data</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
@@ -319,10 +319,10 @@ useEffect(() => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background rounded-xl">
       <main className="pb-16">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="mb-8">
+          <div className="mb-8"> 
             <h1 className="text-2xl font-bold text-foreground">Employee Directory</h1>
             <p className="text-muted-foreground mt-2 text-sm">
               Search, filter, and manage workforce information efficiently

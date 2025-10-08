@@ -74,7 +74,7 @@ const LevelResponsibility = () => {
   ];
 
   return (
-    <div className="w-full flex flex-col items-center space-y-8 px-4 py-8">
+    <div className="w-full flex flex-col bg-background rounded-xl items-center space-y-8 px-4 py-8">
       {/* LEVEL SELECTOR BUTTONS */}
       <div className="flex flex-wrap gap-3 mb-6 justify-center">
         {levelsData.map((level) => (
