@@ -7,6 +7,7 @@ import icon from '@/components/AppIcon';
 import { Atom } from "react-loading-indicators"
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
+import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
 import { UserCircle, Search } from "lucide-react";
 
 import {
@@ -145,7 +146,7 @@ export default function Dashboard() {
   const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-
+  const [openAssessmentModal, setOpenAssessmentModal] = useState(false);
 
 
   const toggleSkills = (index: number) => {
@@ -642,7 +643,7 @@ export default function Dashboard() {
   }
   const currentPercent =
     maxLevel > 0 ? Math.min(100, Math.round((currentLevel / maxLevel) * 100)) : 0;
-  
+
 
   return (
     <div className={`h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-60" : "ml-10"}`}>
@@ -1654,6 +1655,12 @@ export default function Dashboard() {
                 <p className="text-gray-500 text-sm">No course</p>
               )}
             </div>
+               <AddCourseDialog
+              open={openDialog}
+              onOpenChange={setOpenDialog}
+              onSave={() => { /* implement save logic if needed */ }}
+              course={null}
+            />
 
             {/* Assessment List */}
             <div className="p-4 bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll">
@@ -1661,7 +1668,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold">Assessment List</h2>
                 <button
-                  onClick={() => setOpenDialog(true)}
+                  onClick={() => setOpenAssessmentModal(true)}
                   className="w-7 h-7 flex items-center justify-center rounded-full bg-blur-400 text-white hover:bg-blue-400"
                 >
                   +
@@ -1724,6 +1731,11 @@ export default function Dashboard() {
                 <p className="text-gray-500 text-sm">No assessment</p>
               )}
             </div>
+            <CreateAssessmentModal
+              isOpen={openAssessmentModal}
+              onClose={() => setOpenAssessmentModal(false)}
+              onSave={() => { /* implement save logic if needed */ }}
+            />
           </div>
         </div>
 

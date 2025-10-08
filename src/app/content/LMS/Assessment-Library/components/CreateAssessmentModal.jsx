@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Icon from '../../../../../components/AppIcon';
 import { Button } from '../../../../../components/ui/button';
 import { Input } from '../../../../../components/ui/input';
-import Select from '../../../../../components/ui/Select';
+import {Select} from '../../../../../components/ui/select';
 import { Checkbox } from '../../../../../components/ui/checkbox';
 import SearchFilters from '../../../../../components/searchfileds/SearchFilters';
 
