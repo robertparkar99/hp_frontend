@@ -205,10 +205,10 @@ const ActivityStream = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white rounded-xl">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
           <p className="text-gray-600 text-sm">Track task progress across your team</p>
         </div>

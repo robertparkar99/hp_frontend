@@ -64,7 +64,7 @@ const SkillLibrary = () => {
   if (isTaxonomyPage) return null;
 
   return (
-    <>
+    <div className="bg-background rounded-xl p-5 min-h-screen">
       <TabsMenu
         tabs={["Skill Library", "Jobrole Library", "Jobrole Task Library", "Knowledge", "Ability", "Attitude", "Behaviour"]}
         activeTab={activeTab}
@@ -108,7 +108,7 @@ const SkillLibrary = () => {
           </>
         )}
       </Suspense>
-    </>
+    </div>
   );
 };
 

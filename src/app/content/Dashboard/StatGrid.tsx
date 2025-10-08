@@ -1,4 +1,3 @@
-
 "use client";
 import { useEffect, useState } from "react";
 import { MoreVertical, ChevronDown, MoreHorizontal, Building2Icon, UsersIcon, MapPinIcon, BriefcaseIcon, CreditCardIcon } from "lucide-react";
@@ -143,7 +142,6 @@ export default function Dashboard() {
   const [skillLevels, setSkillLevels] = useState([]);
 
   const [orgData, setOrgData] = useState<any>(null);
-
   const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
@@ -273,7 +271,6 @@ export default function Dashboard() {
     };
 
     checkSidebarState();
-
     window.addEventListener("sidebarStateChange", checkSidebarState);
 
     return () => {
@@ -478,47 +475,6 @@ export default function Dashboard() {
       });
     }
   }, [orgData, sisterConcerns]);
-  // Add this debug useEffect
-  // useEffect(() => {
-  //   console.log("Current orgData state:", orgData);
-  //   console.log("Current sisterConcerns state:", sisterConcerns);
-  // }, [orgData, sisterConcerns]);
-  // const orgCards = orgData
-  //   ? [
-  //       {
-  //         label: "Legal Name",
-  //         value: orgData.legal_name,
-  //         icon: <Building2Icon className="h-6 w-6 text-blue-600" />,
-  //       },
-  //       // {
-  //       //   label: "CIN",
-  //       //   value: orgData.cin,
-  //       //   icon: <IdentificationIcon className="h-6 w-6 text-green-600" />,
-  //       // },
-  //       {
-  //         label: "PAN",
-  //         value: orgData.pan,
-  //         icon: <CreditCardIcon className="h-6 w-6 text-purple-600" />,
-  //       },
-  //       {
-  //         label: "Industry",
-  //         value: orgData.industry,
-  //         icon: <BriefcaseIcon className="h-6 w-6 text-yellow-600" />,
-  //       },
-  //       {
-  //         label: "Employee Count",
-  //         value: orgData.employee_count,
-  //         icon: <UsersIcon className="h-6 w-6 text-pink-600" />,
-  //       },
-  //       {
-  //         label: "Registered Address",
-  //         value: orgData.registered_address,
-  //         icon: <MapPinIcon className="h-6 w-6 text-red-600" />,
-  //       },
-  //     ]
-  //   : [];
-
-
   // Chart bar color
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -684,16 +640,12 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  // const handleAssignTaskMenu = (employee) => {
-  //   triggerMenuNavigation(employee.id, 'task/taskManagement.tsx');
-  // };
-  // Convert to percent (normalize)
   const currentPercent =
     maxLevel > 0 ? Math.min(100, Math.round((currentLevel / maxLevel) * 100)) : 0;
+  
 
   return (
-    <div className={`h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-0"}`}>
+    <div className={`h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-60" : "ml-10"}`}>
       {/* 🔹 Header: Welcome + Search */}
       <div className="flex items-center justify-between bg-white rounded-xl shadow p-4 mb-6">
 
@@ -818,8 +770,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
-
           {/* Conditional rendering based on user role */}
           {sessionData?.userProfileName === "Admin" ? (
             // Admin view - Skills Heatmap and Matrix
@@ -914,10 +864,6 @@ export default function Dashboard() {
                   Click on any cell to drill down into detailed gap analysis
                 </p>
               </div>
-
-
-
-
               {/* Gap Analysis Dialog */}
               <>
                 {/* Gap Analysis Dialog */}
@@ -1028,9 +974,6 @@ export default function Dashboard() {
                   </DialogContent>
                 </Dialog>
               </>
-
-
-
               {/* Right: Risk & Opportunity Matrix */}
               <div className="bg-white rounded-xl shadow p-4">
                 <h2 className="font-semibold text-lg">Employee Attendance</h2>
@@ -1047,29 +990,6 @@ export default function Dashboard() {
                   <div className="absolute -left-10 ml-5 bottom-0 transform -rotate-90 origin-center text-xs font-medium">
                     Low
                   </div>
-
-                  {/* X-axis label */}
-                  {/* <div className="absolute bottom-0 left-0 -mb-6 text-xs font-medium w-full text-center">
-                      Low Availability
-                    </div> */}
-                  {/* <div className="absolute bottom-0 right-0 -mb-6 text-xs font-medium w-full text-center">
-                      High Availability
-                    </div> */}
-
-                  {/* Quadrants */}
-                  {/* <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-red-50 border-b-2 border-l-2 border-red-200"></div> */}
-                  {/* <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-green-50 border-b-2 border-r-2 border-green-200"></div> */}
-
-                  {/* quadrant labels */}
-                  {/* <div className="absolute top-2 right-2 text-xs font-medium text-red-600">
-                      High Priority
-                      <div className="text-[10px] text-red-500">(High Impact, Scarce)</div>
-                    </div>
-                    <div className="absolute top-2 left-2 text-xs font-medium text-green-600">
-                      Strategic Watch
-                      <div className="text-[10px] text-green-500">(High Impact, Available)</div>
-                    </div> */}
-
                   {/* Data points */}
                   {skillsMatrixData.map((skill, index) => (
                     <div
@@ -1117,9 +1037,6 @@ export default function Dashboard() {
                   Click on any point to view skill details
                 </p>
               </div>
-
-
-
             </div>
           ) : (
 
@@ -1274,9 +1191,6 @@ export default function Dashboard() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-
-
-
               {/* My Growth Opportunities */}
               <div className="bg-white border rounded-xl p-5 w-full col-span-12 -mx-1 px-6">
                 <h2 className="font-semibold text-lg flex items-center gap-2 mb-2">
@@ -1331,40 +1245,6 @@ export default function Dashboard() {
                     <p className="text-gray-500 text-sm">No growth opportunities found</p>
                   )}
                 </div>
-
-                {/* Skills for Data Scientist Role */}
-                {/* <h3 className="font-medium mt-5 mb-2">Skills for Data Scientist Role</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between border rounded-lg p-3">
-                      <div>
-                        <p>AI/ML</p>
-                        <p className="text-xs text-gray-500">Need Expert level</p>
-                      </div>
-                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
-                        3 courses
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between border rounded-lg p-3">
-                      <div>
-                        <p>Cloud Security</p>
-                        <p className="text-xs text-gray-500">Need Intermediate level</p>
-                      </div>
-                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
-                        5 courses
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between border rounded-lg p-3">
-                      <div>
-                        <p>Data Analytics</p>
-                        <p className="text-xs text-gray-500">Need Expert level</p>
-                      </div>
-                      <button className="px-3 py-1 border rounded-lg text-xs font-medium">
-                        4 courses
-                      </button>
-                    </div>
-                  </div> */}
               </div>
             </div>
           )}
@@ -1385,18 +1265,6 @@ export default function Dashboard() {
                     onChange={(e) => handleColumnFilter("full_name", e.target.value)}
                   />
                 </div>
-
-                {/* Mobile Column with Search */}
-                {/* <div className="flex flex-col">
-                <span className="flex items-center mb-1">Mobile</span>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full py-1 text-xs"
-                  onChange={(e) => handleColumnFilter("mobile", e.target.value)}
-                />
-              </div> */}
-
                 {/* Department Column with Search */}
                 <div className="flex flex-col">
                   <span className="flex items-center mb-1">Department</span>
@@ -1588,57 +1456,55 @@ export default function Dashboard() {
 
                   {todayTasks.length > 0 ? (
                     todayTasks.map((task, index) => {
-                       const badgeColors: Record<string, string> = {
+                      const badgeColors: Record<string, string> = {
                         Hard: "text-red-700 bg-red-500 border-red-400",
                         Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
                         Low: "text-green-700 bg-green-500 border-green-400",
                       };
-               
+
                       return (
-                      <div key={index}  className={`mb-4 border-l-2 pl-3 ${
-          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
-        }`}>
-                        {/* Badge */}
-                        <span  className={`text-xs font-semibold px-2 py-1 rounded ${
-            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
-          }`}>
-                          {task.task_type}
-                        </span>
+                        <div key={index} className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+                          }`}>
+                          {/* Badge */}
+                          <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+                            }`}>
+                            {task.task_type}
+                          </span>
 
-                        {/* Title */}
-                        <p className="mt-2">{task.task_title}</p>
+                          {/* Title */}
+                          <p className="mt-2">{task.task_title}</p>
 
-                        {/* Profile */}
-                        <div className="flex items-center gap-2 mt-2">
-                          <img
-                            src={
-                              task.image && task.image !== ""
-                                ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
-                                : placeholderImage
-                            }
-                            alt={task.allocatedUser}
-                            className="w-8 h-8 rounded-full object-cover"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                            }}
-                          />
-                          <div>
-                            <p className="text-sm font-medium">{task.allocatedUser}</p>
-                            <p className="text-xs text-gray-400">
-                              {(() => {
-                                if (!task.task_date) return "";
-                                const d = new Date(task.task_date);
-                                const day = String(d.getDate()).padStart(2, "0");
-                                const month = String(d.getMonth() + 1).padStart(2, "0");
-                                const year = d.getFullYear();
-                                return `${day}-${month}-${year}`;
-                              })()}
-                            </p>
+                          {/* Profile */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <img
+                              src={
+                                task.image && task.image !== ""
+                                  ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                                  : placeholderImage
+                              }
+                              alt={task.allocatedUser}
+                              className="w-8 h-8 rounded-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                              }}
+                            />
+                            <div>
+                              <p className="text-sm font-medium">{task.allocatedUser}</p>
+                              <p className="text-xs text-gray-400">
+                                {(() => {
+                                  if (!task.task_date) return "";
+                                  const d = new Date(task.task_date);
+                                  const day = String(d.getDate()).padStart(2, "0");
+                                  const month = String(d.getMonth() + 1).padStart(2, "0");
+                                  const year = d.getFullYear();
+                                  return `${day}-${month}-${year}`;
+                                })()}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })
+                      )
+                    })
                   ) : (
                     <p className="text-gray-500 text-sm">No tasks for today</p>
                   )}
@@ -1733,60 +1599,57 @@ export default function Dashboard() {
               </div>
 
               {todayTasks.length > 0 ? (
-                todayTasks.map((task, index) =>
-                 {
-                                   // ✅ Define color mapping
-                      const badgeColors: Record<string, string> = {
-                       Hard: "text-red-700 bg-red-500 border-red-400",
-                        Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
-                        Low: "text-green-700 bg-green-500 border-green-400",
-                      };
-            
+                todayTasks.map((task, index) => {
+                  // ✅ Define color mapping
+                  const badgeColors: Record<string, string> = {
+                    Hard: "text-red-700 bg-red-500 border-red-400",
+                    Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                    Low: "text-green-700 bg-green-500 border-green-400",
+                  };
+
                   return (
-                  <div key={index}  className={`mb-4 border-l-2 pl-3 ${
-          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
-        }`}>
-                    {/* Badge */}
-                    <span  className={`text-xs font-semibold px-2 py-1 rounded ${
-            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
-          }`}>
-                      {task.task_type}
-                    </span>
+                    <div key={index} className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+                      }`}>
+                      {/* Badge */}
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+                        }`}>
+                        {task.task_type}
+                      </span>
 
-                    {/* Title */}
-                    <p className="mt-2">{task.task_title}</p>
+                      {/* Title */}
+                      <p className="mt-2">{task.task_title}</p>
 
-                    {/* Profile */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <img
-                        src={
-                          task.image && task.image !== ""
-                            ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
-                            : placeholderImage
-                        }
-                        alt={task.allocatedUser}
-                        className="w-8 h-8 rounded-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                        }}
-                      />
-                      <div>
-                        <p className="text-sm font-medium">{task.allocatedUser}</p>
-                        <p className="text-xs text-gray-400">
-                          {(() => {
-                            if (!task.task_date) return "";
-                            const d = new Date(task.task_date);
-                            const day = String(d.getDate()).padStart(2, "0");
-                            const month = String(d.getMonth() + 1).padStart(2, "0");
-                            const year = d.getFullYear();
-                            return `${day}-${month}-${year}`;
-                          })()}
-                        </p>
+                      {/* Profile */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <img
+                          src={
+                            task.image && task.image !== ""
+                              ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                              : placeholderImage
+                          }
+                          alt={task.allocatedUser}
+                          className="w-8 h-8 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                          }}
+                        />
+                        <div>
+                          <p className="text-sm font-medium">{task.allocatedUser}</p>
+                          <p className="text-xs text-gray-400">
+                            {(() => {
+                              if (!task.task_date) return "";
+                              const d = new Date(task.task_date);
+                              const day = String(d.getDate()).padStart(2, "0");
+                              const month = String(d.getMonth() + 1).padStart(2, "0");
+                              const year = d.getFullYear();
+                              return `${day}-${month}-${year}`;
+                            })()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })
+                  )
+                })
               ) : (
                 <p className="text-gray-500 text-sm">No course</p>
               )}
@@ -1806,60 +1669,57 @@ export default function Dashboard() {
               </div>
 
               {weekTasks.length > 0 ? (
-                weekTasks.map((task, index) =>
-                {  
-                           // ✅ Define color mapping
-                      const badgeColors: Record<string, string> = {
-                       Hard: "text-red-700 bg-red-500 border-red-400",
-                        Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
-                        Low: "text-green-700 bg-green-500 border-green-400",
-                      };
-                  
+                weekTasks.map((task, index) => {
+                  // ✅ Define color mapping
+                  const badgeColors: Record<string, string> = {
+                    Hard: "text-red-700 bg-red-500 border-red-400",
+                    Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                    Low: "text-green-700 bg-green-500 border-green-400",
+                  };
+
                   return (
-                  <div key={index}  className={`mb-4 border-l-2 pl-3 ${
-          badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
-        }`}>
-                    {/* Badge */}
-                    <span  className={`text-xs font-semibold px-2 py-1 rounded ${
-            badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
-          }`}>
-                      {task.task_type}
-                    </span>
+                    <div key={index} className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+                      }`}>
+                      {/* Badge */}
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+                        }`}>
+                        {task.task_type}
+                      </span>
 
-                    {/* Title */}
-                    <p className="mt-2">{task.task_title}</p>
+                      {/* Title */}
+                      <p className="mt-2">{task.task_title}</p>
 
-                    {/* Profile */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <img
-                        src={
-                          task.image && task.image !== ""
-                            ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
-                            : placeholderImage
-                        }
-                        alt={task.allocatedUser}
-                        className="w-8 h-8 rounded-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                        }}
-                      />
-                      <div>
-                        <p className="text-sm font-medium">{task.allocatedUser}</p>
-                        <p className="text-xs text-gray-400">
-                          {(() => {
-                            if (!task.task_date) return "";
-                            const d = new Date(task.task_date);
-                            const day = String(d.getDate()).padStart(2, "0");
-                            const month = String(d.getMonth() + 1).padStart(2, "0");
-                            const year = d.getFullYear();
-                            return `${day}-${month}-${year}`;
-                          })()}
-                        </p>
+                      {/* Profile */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <img
+                          src={
+                            task.image && task.image !== ""
+                              ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                              : placeholderImage
+                          }
+                          alt={task.allocatedUser}
+                          className="w-8 h-8 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                          }}
+                        />
+                        <div>
+                          <p className="text-sm font-medium">{task.allocatedUser}</p>
+                          <p className="text-xs text-gray-400">
+                            {(() => {
+                              if (!task.task_date) return "";
+                              const d = new Date(task.task_date);
+                              const day = String(d.getDate()).padStart(2, "0");
+                              const month = String(d.getMonth() + 1).padStart(2, "0");
+                              const year = d.getFullYear();
+                              return `${day}-${month}-${year}`;
+                            })()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-})
+                  )
+                })
               ) : (
                 <p className="text-gray-500 text-sm">No assessment</p>
               )}
@@ -1869,153 +1729,6 @@ export default function Dashboard() {
 
         {/* Organization Info Card */}
         <div className="col-span-full grid grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* <div className="bg-white rounded-xl shadow p-6">
-            <h2 className="text-2xl font-bold mb-6">Organizations Info</h2>
-
-            {loading ? (
-              <div className="flex justify-center items-center h-40">
-                <Atom color="#525ceaff" size="small" text="" textColor="" />
-              </div>
-            ) : orgData ? (
-              <div className="bg-white rounded-xl shadow-lg p-6 flex items-start space-x-4 max-w-lg">
-                <div className="flex-shrink-0">
-                  {orgData.logo ? (
-                    <img
-                      src={orgData.logo}
-                      alt="Organization Logo"
-                      className="h-16 w-16 rounded-full object-contain border"
-                    />
-                  ) : (
-                    <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                      Logo
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {orgData.legal_name || "N/A"}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-3">{orgData.industry}</p>
-
-                  <div className="space-y-2 text-sm">
-                    <p className="flex items-center gap-2">
-                      <Building2Icon className="h-4 w-4 text-blue-600" />
-                      <span>
-                        <strong>Legal Name:</strong> {orgData.legal_name || "N/A"}
-                      </span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <IdentificationIcon className="h-4 w-4 text-blue-600" />
-                      <span>
-                        <strong>CIN:</strong> {orgData.cin || "N/A"}
-                      </span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <CreditCardIcon className="h-4 w-4 text-green-600" />
-                      <span>
-                        <strong>PAN:</strong> {orgData.pan || "N/A"}
-                      </span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <UsersIcon className="h-4 w-4 text-pink-600" />
-                      <span>
-                        <strong>Employees:</strong> {orgData.employee_count || "N/A"}
-                      </span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <MapPinIcon className="h-4 w-4 text-red-600" />
-                      <span>
-                        <strong>Address:</strong> {orgData.registered_address || "N/A"}
-                      </span>
-                    </p>
-                  </div>
-                  <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition">
-                    View Details
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <p className="text-gray-500">No organization data available.</p>
-            )}
-          </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <h2 className="text-xl font-bold mb-6">Sister Concerns</h2>
-
-            {loading ? (
-              <div className="flex justify-center items-center h-32">
-                <Atom color="#525ceaff" size="small" text="" textColor="" />
-              </div>
-            ) : sisterConcerns && sisterConcerns.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6">
-                {sisterConcerns.map((concern, index) => (
-                  <div
-                    key={index}
-                    className="bg-white rounded-xl shadow-lg p-6 flex items-start space-x-4 max-w-lg"
-                  >
-                    <div className="flex-shrink-0">
-                      {concern.logo ? (
-                        <img
-                          src={concern.logo}
-                          alt="Sister Concern Logo"
-                          className="h-16 w-16 rounded-full object-contain border"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                          }}
-                        />
-                      ) : (
-                        <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                          Logo
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {concern.legal_name || "N/A"}
-                      </h3>
-                      <p className="text-sm text-gray-500 mb-3">{concern.industry}</p>
-
-                      <div className="space-y-2 text-sm">
-                        <p className="flex items-center gap-2">
-                          <Building2Icon className="h-4 w-4 text-blue-600" />
-                          <span>
-                            <strong>Legal Name:</strong> {concern.legal_name || "N/A"}
-                          </span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <span>
-                            <strong>CIN:</strong> {concern.cin || "N/A"}
-                          </span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <CreditCardIcon className="h-4 w-4 text-green-600" />
-                          <span>
-                            <strong>PAN:</strong> {concern.pan || "N/A"}
-                          </span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <UsersIcon className="h-4 w-4 text-pink-600" />
-                          <span>
-                            <strong>Employees:</strong> {concern.employee_count || "N/A"}
-                          </span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <MapPinIcon className="h-4 w-4 text-red-600" />
-                          <span>
-                            <strong>Address:</strong> {concern.registered_address || "N/A"}
-                          </span>
-                        </p>
-                      </div>
-                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition">
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">No sister concerns found.</p>
-            )}
-          </div> */}
         </div>
       </div>
 
@@ -2031,7 +1744,6 @@ export default function Dashboard() {
     </div >
   );
 }
-
 function triggerMenuNavigation(id: string | number, arg1: string) {
   throw new Error("Function not implemented.");
 }

@@ -392,13 +392,13 @@ const geminiChat = async (prompt: string | '') => {
 }
   return (
     <>
-    <div className="mainDiv">
+    <div className="mainDiv bg-background rounded-xl">
       <div className="max-w-6xl mx-auto">
         <div className="rounded-lg h-[fit-content] mb-6">
-          <div className="px-2">
+          <div className="px-1 mb-2">
           <div className="w-full flex justify-between">
                 <div>
-                  <h2 className="text-2xl text-left font-semibold text-foreground">
+                  <h2 className="text-2xl mt-2 text-left font-semibold text-foreground">
                     New Assignment
                   </h2>
                   <p className="text-muted-foreground">

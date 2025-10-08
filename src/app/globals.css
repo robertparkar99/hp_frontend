@@ -98,6 +98,17 @@ body {
   margin-top: 4px;
 }
 
+.ml-75 {
+  margin-left: 280px; /* When sidebar is open */
+}
+
+.ml-20 {
+  margin-left: 80px; /* When sidebar is collapsed */
+}
+
+.transition-all {
+  transition: all 0.3s ease;
+}
 .leftaside {
   position: absolute;
   top: 0;

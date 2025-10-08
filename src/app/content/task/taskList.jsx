@@ -38,7 +38,7 @@ const TaskAssignment = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background rounded-xl">
       <main className="p-4">
           {/* Page Header */}
           <div className="mb-8">

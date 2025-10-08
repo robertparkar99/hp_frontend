@@ -176,7 +176,7 @@ export default function EditProfilePage() {
       {isLoading ? (
         <Loading />
       ) : (
-        <div className="w-full">
+        <div className="min-h-screen bg-background rounded-xl p-2">
           <div className="flex justify-between gap-6 items-center py-2 w-full">
             <div className="backbuttonx flex items-center gap-3">
               <button
