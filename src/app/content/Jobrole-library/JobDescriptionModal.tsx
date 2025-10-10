@@ -78,7 +78,7 @@
 
 //   const fetchSkillsData = async () => {
 //     if (!jobRole || !sessionData.url || !sessionData.token) return;
-    
+
 //     setLoadingSkills(true);
 //     try {
 //       const res = await fetch(
@@ -115,7 +115,7 @@
 
 //   const fetchTasksData = async () => {
 //     if (!jobRole || !sessionData.url || !sessionData.token) return;
-    
+
 //     setLoadingTasks(true);
 //     try {
 //       const params = new URLSearchParams({
@@ -235,7 +235,7 @@
 //                           ))}
 //                         </ul>
 //                       </TableCell>
-                    
+
 //                     </TableRow>
 //                   ))}
 //                 </TableBody>
@@ -296,7 +296,7 @@
 //                     </div>
 //                   </div>
 //                 ))}
-                
+
 //                 {/* Skills Summary Statistics */}
 //                 {/* <div className="mt-6 bg-blue-50 rounded-lg p-4">
 //                   <h4 className="font-semibold mb-3 text-blue-800">Skills Summary</h4>
@@ -332,7 +332,7 @@
 //           </CardContent>
 //         </Card>
 
-      
+
 //       </div>
 //     </div>
 //   );
@@ -432,17 +432,17 @@ export default function JobDescriptionModal({ isOpen, onClose, jobRole }: JobDes
       if (data?.userskillData) {
         const transformedData = Array.isArray(data.userskillData)
           ? data.userskillData.map((item: any) => ({
-              id: item.id,
-              SkillName:
-                typeof item.skillTitle === "object" && item.skillTitle !== null
-                  ? item.skillTitle.title || item.skillTitle.name || String(item.skillTitle)
-                  : String(item.skillTitle || ""),
-              description: String(item.description || item.skillDescription || ""),
-              proficiency_level: String(item.proficiency_level) || "",
-              category: String(item.category || ""),
-              sub_category: String(item.sub_category || ""),
-              skill_id: String(item.skill_id || ""),
-            }))
+            id: item.id,
+            SkillName:
+              typeof item.skillTitle === "object" && item.skillTitle !== null
+                ? item.skillTitle.title || item.skillTitle.name || String(item.skillTitle)
+                : String(item.skillTitle || ""),
+            description: String(item.description || item.skillDescription || ""),
+            proficiency_level: String(item.proficiency_level) || "",
+            category: String(item.category || ""),
+            sub_category: String(item.sub_category || ""),
+            skill_id: String(item.skill_id || ""),
+          }))
           : [];
         setSkillsData(transformedData);
       } else {
@@ -475,18 +475,18 @@ export default function JobDescriptionModal({ isOpen, onClose, jobRole }: JobDes
       if (data?.usertaskData) {
         const transformedData = Array.isArray(data.usertaskData)
           ? data.usertaskData.map((item: any) => ({
-              id: item.id,
-              taskName:
-                typeof item.task === "object" && item.task !== null
-                  ? item.task.title || item.task.name || ""
-                  : String(item.task || ""),
-              critical_work_function: String(
-                item.critical_work_function || item.taskcritical_work_function || ""
-              ),
-              jobrole: String(item.jobrole || jobRole.jobrole || ""),
-              department: String(item.department || item.sector || ""),
-              subDepartment: String(item.subDepartment || item.track || ""),
-            }))
+            id: item.id,
+            taskName:
+              typeof item.task === "object" && item.task !== null
+                ? item.task.title || item.task.name || ""
+                : String(item.task || ""),
+            critical_work_function: String(
+              item.critical_work_function || item.taskcritical_work_function || ""
+            ),
+            jobrole: String(item.jobrole || jobRole.jobrole || ""),
+            department: String(item.department || item.sector || ""),
+            subDepartment: String(item.subDepartment || item.track || ""),
+          }))
           : [];
         setTasksData(transformedData);
       } else {
@@ -606,33 +606,33 @@ export default function JobDescriptionModal({ isOpen, onClose, jobRole }: JobDes
                       <h4 className="font-semibold text-lg mb-3 text-blue-600">{category}</h4>
                       <div className="grid md:grid-cols-2 gap-4">
                         {skills.map((skill, index) => (
-  <div
-    key={skill.id || index}
-    onClick={() => skill.skill_id && handleSkillClick(Number(skill.skill_id))} // ✅ use skill.skill_id here
-    className="border-l-4 border-blue-500 pl-4 py-2 bg-gray-50 rounded-r cursor-pointer hover:bg-blue-50 transition"
-  >
-    <div className="flex justify-between items-start mb-2">
-      <h5 className="font-medium text-gray-800 text-base hover:text-blue-600">
-        {skill.SkillName}
-      </h5>
-      {skill.proficiency_level && (
-        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
-          Level {skill.proficiency_level}
-        </span>
-      )}
-    </div>
-    {skill.description && (
-      <p className="text-sm text-gray-600 mb-2">{skill.description}</p>
-    )}
-    {skill.sub_category && (
-      <div className="flex justify-between items-center">
-        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-          {skill.sub_category}
-        </span>
-      </div>
-    )}
-  </div>
-))}
+                          <div
+                            key={skill.id || index}
+                            onClick={() => skill.skill_id && handleSkillClick(Number(skill.skill_id))} // ✅ use skill.skill_id here
+                            className="border-l-4 border-blue-500 pl-4 py-2 bg-gray-50 rounded-r cursor-pointer hover:bg-blue-50 transition"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <h5 className="font-medium text-gray-800 text-base hover:text-blue-600">
+                                {skill.SkillName}
+                              </h5>
+                              {skill.proficiency_level && (
+                                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                                  Level {skill.proficiency_level}
+                                </span>
+                              )}
+                            </div>
+                            {skill.description && (
+                              <p className="text-sm text-gray-600 mb-2">{skill.description}</p>
+                            )}
+                            {skill.sub_category && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                  {skill.sub_category}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
 
                       </div>
                     </div>
@@ -644,13 +644,15 @@ export default function JobDescriptionModal({ isOpen, onClose, jobRole }: JobDes
         </div>
       </div>
 
-      {/* ✅ Render ViewSkill dialog */}
+      {/* // In your JobDescriptionModal.tsx, update the ViewSkill usage: */}
+
       {isViewSkillOpen && selectedSkillId && (
         <ViewSkill
           skillId={selectedSkillId}
           formType="user"
           onClose={handleCloseViewSkill}
-          onSuccess={() => {}}
+          onSuccess={() => { }}
+          viewMode="kaab-only" // ✅ This will show only KAAB data with proficiency levels
         />
       )}
     </>
