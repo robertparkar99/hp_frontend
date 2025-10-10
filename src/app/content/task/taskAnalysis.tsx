@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Eye } from "lucide-react";
 
 // const DEFAULT_IMAGE =
 //   "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
@@ -195,33 +196,24 @@ export default function TaskDashboard() {
   }, [tasks, filters]);
 
   const columns = [
-    {
-      name: (
-        <div>
-          <div>Task</div>
-          <input
-            type="text"
-            placeholder="Search Task..."
-            className="w-full text-[10px] sm:text-xs p-1"
-            value={filters.task}
-            onChange={(e) => setFilters({ ...filters, task: e.target.value })}
-          />
-        </div>
-      ),
-      cell: (row: TaskData) => (
-        <button
-          onClick={() => {
-            setSelectedTask(row);
-            setIsEditModalOpen(true);
-          }}
-          className="text-left"
-        >
-          {row.tasks[0].type}
-        </button>
-      ),
-      sortable: true,
-      wrap: true,
-    },
+ {
+    name: (
+      <div>
+        <div>Task</div>
+        <input
+          type="text"
+          placeholder="Search Task..."
+          className="w-full text-[10px] sm:text-xs p-1"
+          value={filters.task}
+          onChange={(e) => setFilters({ ...filters, task: e.target.value })}
+        />
+      </div>
+    ),
+    selector: (row: TaskData) => row.tasks[0].type,
+    sortable: true,
+    wrap: true,
+     minWidth: "180px",
+  },
     {
       name: (
         <div>
@@ -240,6 +232,7 @@ export default function TaskDashboard() {
       selector: (row: TaskData) => row.description[0].description,
       sortable: true,
       wrap: true,
+       minWidth: "180px",
     },
     {
       name: (
@@ -257,7 +250,9 @@ export default function TaskDashboard() {
         </div>
       ),
       cell: (row: TaskData) => <EmployeeAvatars employees={row.employees} />,
-      minWidth: "120px",
+      //  sortable: true,
+      // wrap: true,
+      minWidth: "160px",
     },
     {
       name: (
@@ -342,6 +337,24 @@ export default function TaskDashboard() {
       sortable: true,
       minWidth: "150px",
     },
+    {
+    name: "Actions",
+    cell: (row: TaskData) => (
+      <button
+        onClick={() => {
+          setSelectedTask(row);
+          setIsEditModalOpen(true);
+        }}
+        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+        title="View Details"
+      >
+        <Eye className="w-4 h-4 text-blue-400" />
+      </button>
+    ),
+    width: "100px",
+    ignoreRowClick: true,
+    allowOverflow: false,
+  },
   ];
 
   const customStyles = {
@@ -509,7 +522,7 @@ export default function TaskDashboard() {
                             {selectedTask.tasks[0].type}
                           </h2>
                         )}
-                        <button
+                        {/* <button
                           onClick={() =>
                             triggerMenuNavigation("task/taskManagement.jsx")
                           }
@@ -517,7 +530,7 @@ export default function TaskDashboard() {
                         >
                           <span className="mdi mdi-plus text-lg"></span>
                           <span>New Task</span>
-                        </button>
+                        </button> */}
                       </div>
                       <div className="space-y-6">
                         {selectedTask.description[0]?.description && (

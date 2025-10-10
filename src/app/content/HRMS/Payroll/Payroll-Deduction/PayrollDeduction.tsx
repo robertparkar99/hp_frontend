@@ -345,7 +345,7 @@ export default function PayrollDeductionsPage() {
             disabled={loading}
             className="px-6 py-2 rounded-lg flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-14"
           >
-            <Search className="w-5 h-5 mr-2 text-black" />
+            {/* <Search className="w-5 h-5 mr-2 text-black" /> */}
             {loading ? "Searching..." : "Search"}
           </Button>
         </div>

@@ -343,7 +343,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     <img
                     src={formData.personal.image}
                     alt="User icon"
-                    style={{ transform: "translate(34%,28%)" }}
+                    style={{ transform: "translate(28%,21%)" }}
                     className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
                     onError={(e) => {
                       e.currentTarget.src =
@@ -354,7 +354,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     <img
                     src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails.image}`}
                     alt="User icon"
-                    style={{ transform: "translate(34%,28%)" }}
+                    style={{ transform: "translate(28%,21%)" }}
                     className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
                     onError={(e) => {
                       e.currentTarget.src =

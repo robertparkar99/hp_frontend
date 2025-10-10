@@ -285,7 +285,7 @@ export default function Home() {
             disabled={loading || !sessionData.token}
             className="px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 h-9 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
           >
-            <Search className="w-4 h-4 text-black" />
+            {/* <Search className="w-4 h-4 text-black" /> */}
             {loading ? "Loading..." : "Search"}
           </Button>
         </div>

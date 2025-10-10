@@ -218,8 +218,8 @@ const LeaveAuthorization = () => {
                             : [...prev, status]
                         )
                       }
-                      className={`cursor-pointer px-2 py-1 rounded-md ${isSelected
-                        ? "bg-primary text-primary-foreground"
+                      className={`cursor-pointer px-2 py-1  ${isSelected
+                        ? "bg-blue-400 text-primary-foreground"
                         : "hover:bg-muted"
                         }`}
                     >
@@ -231,7 +231,7 @@ const LeaveAuthorization = () => {
             </div>
 
             {/* Search Button */}
-            <div className="flex">
+            <div className="flex ml-7 mt-7">
               <Button
                 onClick={() => {
                   if (leaveStatus.length === 0) {
@@ -241,9 +241,11 @@ const LeaveAuthorization = () => {
                   setHasSearched(true);
                   fetchData();
                 }}
-                className="flex items-center mt-6 gap-2 bg-muted text-black hover:text-white w-full"
+                  className="px-6 py-2 rounded-lg  flex items-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
               >
-                <Search className="h-4 w-4" /> Search
+             
+                   {loading ? "Searching..." : "Search"}
+                {/* <Search className="h-4 w-4" /> Search */}
               </Button>
 
             </div>

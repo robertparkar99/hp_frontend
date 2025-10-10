@@ -529,7 +529,7 @@ export default function DemoMulti() {
           onClick={handleSearch}
           className="flex items-center mb-28 justify-center space-x-2 px-4 py-3 text-sm font-medium  rounded-lg cursor-pointer mb-28 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
         >
-          <Search className="w-4 h-4 text-black" />
+          {/* <Search className="w-4 h-4 text-black" /> */}
           <span className="text-black">Search</span>
         </div>
       </div>

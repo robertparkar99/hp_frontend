@@ -149,86 +149,134 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const formDataPayload = new FormData();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const formDataPayload = new FormData();
 
-      // Main org data
-      formDataPayload.append('legal_name', formData.legal_name);
-      formDataPayload.append('cin', formData.cin);
-      formDataPayload.append('gstin', formData.gstin);
-      formDataPayload.append('pan', formData.pan);
-      formDataPayload.append('registered_address', formData.registered_address);
-      // formDataPayload.append('industry', formData.industry);
-      formDataPayload.append('industry', sessionOrgType || formData.industry);
-      formDataPayload.append('employee_count', formData.employee_count);
-      formDataPayload.append('work_week', formData.work_week);
-      if (formData.logo instanceof File) {
-        formDataPayload.append('logo', formData.logo);
-      }
-
-      // Sister company data in indexed format
-      sisterCompanies.forEach((sister, index) => {
-        formDataPayload.append(`sister_companies[${index}][legal_name]`, sister.legal_name);
-        formDataPayload.append(`sister_companies[${index}][cin]`, sister.cin);
-        formDataPayload.append(`sister_companies[${index}][gstin]`, sister.gstin);
-        formDataPayload.append(`sister_companies[${index}][pan]`, sister.pan);
-        formDataPayload.append(`sister_companies[${index}][registered_address]`, sister.registered_address);
-        // formDataPayload.append(`sister_companies[${index}][industry]`, sister.industry);
-        formDataPayload.append(`sister_companies[${index}][industry]`, sessionOrgType || sister.industry);
-        formDataPayload.append(`sister_companies[${index}][employee_count]`, sister.employee_count);
-        formDataPayload.append(`sister_companies[${index}][work_week]`, sister.work_week);
-        if (sister.logo instanceof File) {
-          formDataPayload.append(`sister_companies[${index}][logo]`, sister.logo);
-        }
-      });
-
-      // Required params
-      formDataPayload.append('token', sessionData.token);
-      formDataPayload.append('formType', 'org_data');
-      formDataPayload.append('type', 'API');
-      formDataPayload.append('sub_institute_id', sessionData.sub_institute_id);
-
-      // Debug log
-      // console.group('📦 Form Data being submitted');
-      // for (let [key, value] of formDataPayload.entries()) {
-      //   if (value instanceof File) {
-      //     console.log(`${key}: File { name: "${value.name}", type: "${value.type}", size: ${value.size} bytes }`);
-      //   } else {
-      //     console.log(`${key}:`, value);
-      //   }
-      // }
-      // console.groupEnd();
-
-      const response = await fetch(`${sessionData.url}/settings/organization_data`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${sessionData.token}` },
-        body: formDataPayload,
-      });
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const responseData = await response.json();
-      onSave?.(responseData);
-      alert(responseData.message);
-    } catch (error) {
-      console.error('Error submitting form:', error);
+    // Main org data
+    formDataPayload.append('legal_name', formData.legal_name);
+    formDataPayload.append('cin', formData.cin);
+    formDataPayload.append('gstin', formData.gstin);
+    formDataPayload.append('pan', formData.pan);
+    formDataPayload.append('registered_address', formData.registered_address);
+    formDataPayload.append('industry', sessionOrgType || formData.industry);
+    formDataPayload.append('employee_count', formData.employee_count);
+    formDataPayload.append('work_week', formData.work_week);
+    
+    // Handle logo file
+    if (formData.logo instanceof File) {
+      formDataPayload.append('logo', formData.logo);
+    } else if (formData.logo) {
+      formDataPayload.append('logo_url', formData.logo);
     }
-  };
+
+    // Sister company data
+    sisterCompanies.forEach((sister, index) => {
+      formDataPayload.append(`sister_companies[${index}][legal_name]`, sister.legal_name);
+      formDataPayload.append(`sister_companies[${index}][cin]`, sister.cin);
+      formDataPayload.append(`sister_companies[${index}][gstin]`, sister.gstin);
+      formDataPayload.append(`sister_companies[${index}][pan]`, sister.pan);
+      formDataPayload.append(`sister_companies[${index}][registered_address]`, sister.registered_address);
+      formDataPayload.append(`sister_companies[${index}][industry]`, sessionOrgType || sister.industry);
+      formDataPayload.append(`sister_companies[${index}][employee_count]`, sister.employee_count);
+      formDataPayload.append(`sister_companies[${index}][work_week]`, sister.work_week);
+      
+      if (sister.logo instanceof File) {
+        formDataPayload.append(`sister_companies[${index}][logo]`, sister.logo);
+      } else if (sister.logo) {
+        formDataPayload.append(`sister_companies[${index}][logo_url]`, sister.logo);
+      }
+    });
+
+    // ✅ FIX 1: Ensure all required parameters are included
+    formDataPayload.append('token', sessionData.token);
+    formDataPayload.append('formType', 'org_data');
+    formDataPayload.append('type', 'API');
+    formDataPayload.append('sub_institute_id', sessionData.sub_institute_id);
+
+    // ✅ DEBUG: Check what's actually in FormData
+    console.log('📦 Form Data being submitted:');
+    for (let [key, value] of formDataPayload.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}: File { name: "${value.name}", type: "${value.type}", size: ${value.size} bytes }`);
+      } else {
+        console.log(`${key}:`, value);
+      }
+    }
+
+    // ✅ FIX 2: Try different approaches for token handling
+
+    // Approach 1: Send token only in FormData (remove Authorization header)
+    const response = await fetch(`${sessionData.url}/settings/organization_data`, {
+      method: 'POST',
+      // ❌ Remove Authorization header when using FormData with token
+      body: formDataPayload,
+    });
+
+    // If Approach 1 doesn't work, try Approach 2:
+    // const response = await fetch(`${sessionData.url}/settings/organization_data?token=${sessionData.token}`, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Authorization': `Bearer ${sessionData.token}`,
+    //   },
+    //   body: formDataPayload,
+    // });
+
+    // If Approach 2 doesn't work, try Approach 3 (URL parameters):
+    // const url = new URL(`${sessionData.url}/settings/organization_data`);
+    // url.searchParams.append('token', sessionData.token);
+    // url.searchParams.append('formType', 'org_data');
+    // url.searchParams.append('type', 'API');
+    // url.searchParams.append('sub_institute_id', sessionData.sub_institute_id);
+    
+    // const response = await fetch(url, {
+    //   method: 'POST',
+    //   body: formDataPayload,
+    // });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Server response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const responseData = await response.json();
+    onSave?.(responseData);
+    alert(responseData.message);
+  } catch (error) {
+    console.error('Error submitting form:', error);
+    alert('Error saving organization data. Please try again.');
+  }
+};
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData((prev) => ({ ...prev, logo: file }));
-      const reader = new FileReader();
-      reader.onload = (e) => setLogoPreview(e.target?.result);
-      reader.readAsDataURL(file);
+ const handleLogoUpload = (e) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    // ✅ Validate file type and size
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload only PNG or JPG images.');
+      return;
     }
-  };
+    
+    if (file.size > maxSize) {
+      alert('File size must be less than 2MB.');
+      return;
+    }
+    
+    setFormData((prev) => ({ ...prev, logo: file }));
+    const reader = new FileReader();
+    reader.onload = (e) => setLogoPreview(e.target?.result);
+    reader.readAsDataURL(file);
+  }
+};
 
   const addSisterCompany = () => {
     setSisterCompanies((prev) => [
@@ -260,20 +308,33 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
     setSisterCompanies(updated);
   };
 
-  const handleSisterLogoUpload = (index, e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const updated = [...sisterCompanies];
-        updated[index].logo = file;
-        updated[index].logoPreview = e.target?.result;
-        setSisterCompanies(updated);
-      };
-      reader.readAsDataURL(file);
+ const handleSisterLogoUpload = (index, e) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    // Same validation as above
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const maxSize = 2 * 1024 * 1024;
+    
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload only PNG or JPG images.');
+      return;
     }
-  };
-
+    
+    if (file.size > maxSize) {
+      alert('File size must be less than 2MB.');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const updated = [...sisterCompanies];
+      updated[index].logo = file;
+      updated[index].logoPreview = e.target?.result;
+      setSisterCompanies(updated);
+    };
+    reader.readAsDataURL(file);
+  }
+};
   const displayValue = (value, placeholder) =>
     value === null || value === '' ? placeholder : value;
 

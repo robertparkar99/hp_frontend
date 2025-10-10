@@ -1,5 +1,7 @@
 // app/layout.tsx
+// import { overflow } from 'html2canvas/dist/types/css/property-descriptors/overflow'
 import './globals.css'
+import { X } from 'lucide-react'
  
 export const metadata = {
   title: 'HP Menu',
@@ -8,7 +10,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (<>
-    <html lang="en">
+    <html lang="en " style={{overflowX:"hidden"}}>
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"></link>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />

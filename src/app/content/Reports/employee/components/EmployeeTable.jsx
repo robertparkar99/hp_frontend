@@ -1,8 +1,6 @@
-
-
-
 "use client";
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import DataTable from "react-data-table-component";
 import Image from "../../../../../components/AppImage";
 import Icon from "../../../../../components/AppIcon";
@@ -56,6 +54,7 @@ const getStatusColor = (status) => {
 };
 
 const EmployeeTable = ({ employees }) => {
+  const router = useRouter();
   const [filters, setFilters] = useState({});
 
   // ✅ Column filter handler
@@ -77,38 +76,33 @@ const EmployeeTable = ({ employees }) => {
     // hook this to server API if needed
   };
 
-  // ✅ View profile navigation - UPDATED with better localStorage handling
-  const handleViewProfileMenu = (employee) => {
-    console.log("👤 Employee ID clicked:", employee.id);
+  // ✅ Handle employee name click - navigate to employee report using router.push
+  const handleEmployeeNameClick = (employee) => {
+    console.log("🔄 Navigating to employee report for:", employee.full_name);
     
-    // Store employee data for the report page with timestamp to avoid conflicts
-    const employeeData = {
-      id: employee.id,
-      full_name: employee.full_name,
-      timestamp: Date.now()
-    };
+    // Store employee ID in multiple locations for redundancy
+    const employeeId = employee.id?.toString() || employee.employee_id?.toString();
     
-    // Store in multiple places for redundancy
-    localStorage.setItem('selectedEmployeeId', employee.id.toString());
-    localStorage.setItem('selectedEmployeeData', JSON.stringify(employeeData));
-    sessionStorage.setItem('selectedEmployeeId', employee.id.toString());
-    
-    console.log("💾 Stored employee ID:", employee.id);
-    
-    // Use setTimeout to ensure localStorage is set before navigation
-    setTimeout(() => {
-      // Trigger navigation to employee report
-      window.dispatchEvent(
-        new CustomEvent('menuSelected', {
-          detail: { 
-            menu: "Reports/employee/EmployeeReport.tsx", 
-            pageType: 'page', 
-            access: "Reports/employee/EmployeeReport.tsx", 
-            pageProps: employee.id || null 
-          },
-        })
-      );
-    }, 100);
+    if (employeeId) {
+      // Store in localStorage (primary)
+      localStorage.setItem('selectedEmployeeId', employeeId);
+      localStorage.setItem('clickedUser', employeeId);
+      
+      // Store in sessionStorage (backup)
+      sessionStorage.setItem('selectedEmployeeId', employeeId);
+      
+      // Store full employee data if needed
+      localStorage.setItem('selectedEmployeeData', JSON.stringify(employee));
+      
+      console.log("✅ Stored employee ID:", employeeId);
+      
+      // ✅ CORRECTED: Navigate to employee report using router.push
+      // Since both files are in the same components folder, use the correct path
+      router.push(`/content/Reports/employeeReport/`);
+      
+    } else {
+      console.error("❌ No employee ID found for:", employee);
+    }
   };
 
   // ✅ Columns config
@@ -162,8 +156,9 @@ const EmployeeTable = ({ employees }) => {
           />
           <div className="min-w-0 space-y-1">
             <button
-              onClick={() => handleViewProfileMenu(row)}
-              className="font-medium text-foreground hover:text-primary transition-smooth block truncate pt-3 cursor-pointer"
+              onClick={() => handleEmployeeNameClick(row)}
+              className="text-left hover:text-primary hover:underline cursor-pointer font-medium text-foreground transition-colors duration-200 block w-full text-start"
+              title={`View ${row.full_name}'s report`}
             >
               {row.full_name}
             </button>

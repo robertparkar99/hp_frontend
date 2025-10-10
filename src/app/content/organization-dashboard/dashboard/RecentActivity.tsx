@@ -20,7 +20,7 @@ export function RecentActivity({ activities }: RecentActivityProps) {
     <Card className="h-100 overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
-          <Clock className="h-5 w-5" />
+          <Clock className="h-5 w-5 text-blue-400" />
           Compliance
         </CardTitle>
       </CardHeader>

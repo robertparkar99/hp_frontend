@@ -170,6 +170,7 @@
 
 'use client';
 import React, { useState } from 'react';
+import { useRouter } from "next/navigation";
 import Image from '../../../../../components/AppImage';
 import Icon from '../../../../../components/AppIcon';
 import { Button } from '../../../../../components/ui/button';
@@ -179,6 +180,7 @@ const fallbackImage =
   "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
 
 const EmployeeCard = ({ employee }) => {
+    const router = useRouter();
   const getSkillLevelColor = (level) => {
     switch (level) {
       case 'Expert': return 'bg-success text-success-foreground';
@@ -197,7 +199,33 @@ const EmployeeCard = ({ employee }) => {
       default: return 'bg-muted';
     }
   };
-
+    const handleEmployeeNameClick = (employee) => {
+    console.log("🔄 Navigating to employee report for:", employee.full_name);
+    
+    // Store employee ID in multiple locations for redundancy
+    const employeeId = employee.id?.toString() || employee.employee_id?.toString();
+    
+    if (employeeId) {
+      // Store in localStorage (primary)
+      localStorage.setItem('selectedEmployeeId', employeeId);
+      localStorage.setItem('clickedUser', employeeId);
+      
+      // Store in sessionStorage (backup)
+      sessionStorage.setItem('selectedEmployeeId', employeeId);
+      
+      // Store full employee data if needed
+      localStorage.setItem('selectedEmployeeData', JSON.stringify(employee));
+      
+      console.log("✅ Stored employee ID:", employeeId);
+      
+      // ✅ CORRECTED: Navigate to employee report using router.push
+      // Since both files are in the same components folder, use the correct path
+      router.push(`/content/Reports/employeeReport/`);
+      
+    } else {
+      console.error("❌ No employee ID found for:", employee);
+    }
+  };
   // 🔹 Function to navigate to taskManagement.tsx
   const handleAssignTaskMenu = (employeeId) => {
     localStorage.setItem("clickedUser", employeeId);
@@ -243,14 +271,21 @@ const EmployeeCard = ({ employee }) => {
           <div className="flex items-start justify-between">
             <div>
               <h3 className="text-lg font-semibold text-foreground truncate">
-                {employee.full_name}
+               
+                  <button
+              onClick={() => handleEmployeeNameClick(employee)}
+              className="text-left hover:text-primary hover:underline cursor-pointer font-medium text-foreground transition-colors duration-200 block w-full text-start"
+              title={`View ${employee.full_name}'s report`}
+            >
+              {employee.full_name}
+            </button>
               </h3>
               <p className="text-sm text-muted-foreground">{employee.mobile}</p>
               <p className="text-sm text-muted-foreground">{employee.profile_name}</p>
             </div>
 
             <div className="flex items-center space-x-2">
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => {
@@ -271,7 +306,7 @@ const EmployeeCard = ({ employee }) => {
                 className="h-8 w-8"
               >
                 <Icon name="Edit" size={16} />
-              </Button>
+              </Button> */}
             </div>
           </div>
 
@@ -312,7 +347,7 @@ const EmployeeCard = ({ employee }) => {
             </div>
 
             {/* 🔹 Assign Task Button */}
-            <Button
+            {/* <Button
               variant="outline"
               size="sm"
               onClick={() => handleAssignTaskMenu(employee.id)}
@@ -320,7 +355,7 @@ const EmployeeCard = ({ employee }) => {
               iconPosition="left"
             >
               Assign Task
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>

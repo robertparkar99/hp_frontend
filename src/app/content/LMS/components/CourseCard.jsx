@@ -208,7 +208,7 @@ const handleViewDetails = () => {
                 <Icon name="Edit" size={14} className="mr-2" /> Edit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDeleteClick}>
-                <Icon name="Trash" size={14} className="mr-2 text-red-600" />
+                <Icon name="Trash" size={14} className="mr-2" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>

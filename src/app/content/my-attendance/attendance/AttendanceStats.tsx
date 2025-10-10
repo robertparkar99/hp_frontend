@@ -57,8 +57,8 @@ export function AttendanceStats({ attendanceRecords, apiData }: AttendanceStatsP
       title: 'Present Days',
       value: `${Math.round(totalHours * 10) / 10}`,
       icon: Clock,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10'
+      color: 'text-blue-400',
+      bgColor: 'bg-blue-400/10'
     },
     {
       title: 'Absent Days',

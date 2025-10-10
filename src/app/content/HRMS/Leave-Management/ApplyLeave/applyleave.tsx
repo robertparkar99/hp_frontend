@@ -335,7 +335,7 @@ const filteredData = useMemo(() => {
     },
     cells: { style: { fontSize: "13px", textAlign: "left" } },
     table: {
-      style: {  overflow: "hidden" },
+      style: {  overflow: "hidden" ,borderRadius: "8px", border: "1px solid #e2e8f0" },
     },
   };
 
