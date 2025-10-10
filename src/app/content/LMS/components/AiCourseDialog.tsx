@@ -76,14 +76,14 @@ type Config = {
 };
 
 const SEED_TEMPLATES: Template[] = [
-  {
-    id: "t1",
-    title: "Job Role → Critical Work Function",
-    jobRole: "Physiotherapist",
-    criticalWorkFunction: "Manage risk and quality",
-    tasks: ["Deliver training"],
-    skills: ["Strategy Development"],
-  },
+  // {
+  //   id: "t1",
+  //   title: "Job Role → Critical Work Function",
+  //   jobRole: "Physiotherapist",
+  //   criticalWorkFunction: "Manage risk and quality",
+  //   tasks: ["Deliver training"],
+  //   skills: ["Strategy Development"],
+  // },
   {
     id: "t2",
     title: "Job Role → Key Task",
@@ -92,14 +92,14 @@ const SEED_TEMPLATES: Template[] = [
     tasks: ["Deliver training"],
     skills: ["Strategy Development"],
   },
-  {
-    id: "t3",
-    title: "Job Role → Skill",
-    jobRole: "Physiotherapist",
-    criticalWorkFunction: "",
-    tasks: [""],
-    skills: ["Strategy Development"],
-  },
+  // {
+  //   id: "t3",
+  //   title: "Job Role → Skill",
+  //   jobRole: "Physiotherapist",
+  //   criticalWorkFunction: "",
+  //   tasks: [""],
+  //   skills: ["Strategy Development"],
+  // },
 ];
 
 const DEFAULT_CONFIG: Config = {
@@ -377,17 +377,17 @@ function getTemplateDisplayFields(template: Template) {
     fields.push(`Job Role: ${template.jobRole}`);
   }
   
-  if (template.id === "t1" && template.criticalWorkFunction && template.criticalWorkFunction !== "") {
-    fields.push(`Critical Work Function: ${template.criticalWorkFunction}`);
-  }
+  // if (template.id === "t1" && template.criticalWorkFunction && template.criticalWorkFunction !== "") {
+  //   fields.push(`Critical Work Function: ${template.criticalWorkFunction}`);
+  // }
   
   if (template.id === "t2" && template.tasks.length > 0 && template.tasks[0] !== "") {
     fields.push(`Tasks: ${template.tasks.join(", ")}`);
   }
   
-  if (template.id === "t3" && template.skills.length > 0 && template.skills[0] !== "") {
-    fields.push(`Skills: ${template.skills.join(", ")}`);
-  }
+  // if (template.id === "t3" && template.skills.length > 0 && template.skills[0] !== "") {
+  //   fields.push(`Skills: ${template.skills.join(", ")}`);
+  // }
   
   return fields;
 }
@@ -825,20 +825,20 @@ const handleGenerateCourse = async () => {
   if (!cfg.department) missing.push("Department");
   if (!cfg.jobRole) missing.push("Job Role");
   
-  // Only require Critical Work Function for templates that use it (t1 and t2)
-  if (!cfg.criticalWorkFunction && (activeTemplate === "t1" || activeTemplate === "t2")) {
-    missing.push("Critical Work Function");
-  }
+  // // Only require Critical Work Function for templates that use it (t1 and t2)
+  // if (!cfg.criticalWorkFunction && (activeTemplate === "t1" || activeTemplate === "t2")) {
+  //   missing.push("Critical Work Function");
+  // }
   
   // Only require Tasks for template t2
   if ((cfg.tasks.length === 0 || !cfg.tasks[0]) && activeTemplate === "t2") {
     missing.push("Task");
   }
   
-  // Only require Skills for template t3
-  if ((cfg.skills.length === 0 || !cfg.skills[0]) && activeTemplate === "t3") {
-    missing.push("Skill");
-  }
+  // // Only require Skills for template t3
+  // if ((cfg.skills.length === 0 || !cfg.skills[0]) && activeTemplate === "t3") {
+  //   missing.push("Skill");
+  // }
 
   if (missing.length) {
     alert(`Please fill: ${missing.join(", ")}`);

@@ -188,17 +188,17 @@ export default function EditProfilePage() {
               </button>
             </div>
 
-            <div className="flex overflow-x-auto lg:overflow-visible px-1 py-1 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg w-full justify-start lg:justify-center gap-2">
+            <div className="flex overflow-x-auto lg:overflow-visible px-1 py-1 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg w-full justify-start lg:justify-center">
               {tabs.map((tab) => (
                 <Button
                   key={tab.id}
                   variant="ghost"
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "rounded-full text-xs sm:text-xs font-medium whitespace-nowrap transition-all duration-200 flex items-center px-2 sm:px-3 py-1 sm:py-1.5 min-w-fit",
+                    "rounded-full text-xs sm:text-xs font-medium whitespace-nowrap transition-all duration-200 flex items-center px-2 sm:px-3 py-1 sm:py-1.5 min-w-fit gap-0",
                     activeTab === tab.id
                       ? "bg-emerald-500 text-white [&>svg]:text-white shadow-md hover:bg-emerald-500"
-                      : "hover:bg-slate-50"
+                      : "hover:bg-slate-50 gap-0"
                   )}
                 >
                   {React.cloneElement(tab.icon, {

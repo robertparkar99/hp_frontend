@@ -232,12 +232,12 @@ const EmployeeTable = ({
             status={row.status}
           />
           <div className="min-w-0 space-y-1">
-            <button
+            {/* <button
               onClick={() => handleViewProfileMenu(row)}
               className="font-medium text-foreground hover:text-primary transition-smooth block truncate pt-3"
-            >
+            > */}
               {row.full_name}
-            </button>
+            {/* </button> */}
             <p className="text-sm text-muted-foreground truncate pb-3">
               {row.email}
             </p>

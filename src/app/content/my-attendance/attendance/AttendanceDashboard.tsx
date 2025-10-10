@@ -678,11 +678,11 @@ export function AttendanceDashboard() {
               size="lg"
               disabled={isProcessing}
               className={`
-                bg-[#f5f5f5] text-[#668a42] hover:bg-gray-200 transition-colors text-xl px-12 py-6 rounded-xl font-bold transform transition-all duration-300
+                bg-[#F9F9F9] text-[#228822] hover:bg-gray-200 transition-colors text-xl px-12 py-6 rounded-xl font-bold transform transition-all duration-300
                 ${isPunchedIn ? 'btn-punch-out' : 'btn-punch-in'}
               `}
             >
-              <Clock className="w-6 h-6 mr-3 " />
+              <Clock className="w-10 h-6 mr-3 " />
               {isPunchedIn ? 'Punch Out' : 'Punch In'}
             </Button>
           </CardContent>

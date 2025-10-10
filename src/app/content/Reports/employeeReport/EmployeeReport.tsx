@@ -1,9 +1,7 @@
-
-
-
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +18,7 @@ import {
   Printer,
   Download,
   GraduationCap,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -88,6 +87,7 @@ type ApiResponse = {
 
 // ==================== COMPONENT ====================
 const EmployeeReport = () => {
+  const router = useRouter();
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [employeeId, setEmployeeId] = useState<string | null>(null);
@@ -104,26 +104,18 @@ const EmployeeReport = () => {
   const handlePrint = () => window.print();
   const handleDownload = () => console.log("Downloading PDF...");
 
-  // 🔹 Back to Employees function - ADD THIS FUNCTION
+  // 🔹 Back to Employees function - USING router.push to go back to employee list
   const handleCloseEmployeeReport = () => {
     console.log("🔙 Navigating back to employee directory...");
 
     // Clear the stored employee data
     localStorage.removeItem('selectedEmployeeId');
     localStorage.removeItem('selectedEmployeeData');
+    localStorage.removeItem('clickedUser');
     sessionStorage.removeItem('selectedEmployeeId');
 
-    // Navigate back to the employee directory using your menu system
-    window.dispatchEvent(
-      new CustomEvent('menuSelected', {
-        detail: {
-          menu: "Reports/employee/page.jsx",
-          pageType: 'page',
-          access: "Reports/employee/page.jsx",
-          pageProps: null
-        },
-      })
-    );
+    // ✅ CORRECTED: Navigate back to employee list using router.push
+    router.push('/content/Reports/employee');
   };
 
   // 🔹 Load session data from localStorage
@@ -148,21 +140,21 @@ const EmployeeReport = () => {
     }
   }, []);
 
-  // 🔹 Get employee ID from localStorage with retry mechanism
+  // 🔹 Get employee ID from localStorage - CORRECTED to prioritize clickedUser
   useEffect(() => {
     const getEmployeeId = () => {
-      // Try multiple storage locations
+      // Try multiple storage locations - prioritize clickedUser
+      const fromClickedUser = localStorage.getItem('clickedUser');
       const fromLocalStorage = localStorage.getItem('selectedEmployeeId');
       const fromSessionStorage = sessionStorage.getItem('selectedEmployeeId');
-      const fromClickedUser = localStorage.getItem('clickedUser');
 
       console.log("🔍 Searching for employee ID:");
+      console.log("  - localStorage clickedUser:", fromClickedUser);
       console.log("  - localStorage selectedEmployeeId:", fromLocalStorage);
       console.log("  - sessionStorage selectedEmployeeId:", fromSessionStorage);
-      console.log("  - localStorage clickedUser:", fromClickedUser);
 
-      // Priority order for employee ID
-      const employeeId = fromLocalStorage || fromSessionStorage || fromClickedUser;
+      // Priority order for employee ID - clickedUser first (as per your navigation pattern)
+      const employeeId = fromClickedUser || fromLocalStorage || fromSessionStorage;
 
       if (employeeId) {
         console.log("✅ Found employee ID:", employeeId);
@@ -182,7 +174,7 @@ const EmployeeReport = () => {
     // Retry mechanism with increasing delays
     const maxRetries = 5;
     if (retryCount < maxRetries) {
-      const retryDelay = Math.min(500 * Math.pow(2, retryCount), 3000); // Exponential backoff
+      const retryDelay = Math.min(500 * Math.pow(2, retryCount), 3000);
       console.log(`🔄 Retrying employee ID fetch in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})`);
 
       const retryTimer = setTimeout(() => {
@@ -278,31 +270,32 @@ const EmployeeReport = () => {
     rejected_count: 0,
   };
 
-  // ✅ Example: find expiring certs (dummy rule: expiring if older than 2 years)
-  const expiringCerts = certificateData.filter((c) => {
-    const created = new Date(c.created_at);
-    const twoYearsAgo = new Date();
-    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-    return created < twoYearsAgo;
-  });
-
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-background rounded-xl ">
       {/* Print Actions */}
-      <div className="print:hidden mb-6 max-w-5xl mx-auto px-6">
+      <div className="print:hidden mb-6 max-w-5xl mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
+               <div className="flex gap-6">
           <Button
             onClick={handleCloseEmployeeReport}
             variant="outline"
+            className="border-0 hover:bg-white text-xl [&_svg]:pointer-events-none [&_svg]:size-6"
           >
-            ← Back to Employees
+            <ArrowLeft size={40}  />
           </Button>
+            <div>
+              <h1 className="text-2xl font-bold pb-1">Employee Report</h1>
+              <p className="text-muted-foreground text-sm">
+                Generated on {new Date().toLocaleDateString()}
+              </p>
+            </div>
+            </div>
           <div className="flex gap-3">
             <Button onClick={handlePrint} variant="outline" className="flex items-center gap-2">
               <Printer className="h-4 w-4" />
               Print Report
             </Button>
-            <Button onClick={handleDownload} className="flex items-center gap-2">
+            <Button onClick={handleDownload} className="flex items-center gap-2 bg-blue-400 hover:bg-blue-500 text-white">
               <Download className="h-4 w-4" />
               Download PDF
             </Button>
@@ -310,18 +303,47 @@ const EmployeeReport = () => {
         </div>
       </div>
 
-      {/* Rest of your EmployeeReport JSX remains the same */}
       {/* Report Container */}
       <div className="max-w-6xl mx-auto bg-card shadow-lg print:shadow-none print:max-w-none">
+        {/* Rest of your EmployeeReport JSX remains the same */}
         {/* Header */}
-        <div className="border-b-2 border-primary/20 p-8 print:p-6">
+        <div className="border-b-2 border-primary/20 px-8 py-2 print:p-6">
           <div className="flex items-start justify-between mb-6">
-            <div>
+            {/* <div>
               <h1 className="text-3xl font-bold">Employee Report</h1>
               <p className="text-muted-foreground">
                 Generated on {new Date().toLocaleDateString()}
               </p>
+            </div> */}
+               <div className="flex items-center gap-6">
+            <Avatar className="h-20 w-20">
+              <img
+                src={employeeData.image || "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"}
+                alt={employeeData.full_name}
+                className="h-full w-full object-cover rounded-full"
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
+                }}
+              />
+            </Avatar>
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold">{employeeData.full_name}</h2>
+              <p className="text-sm text-muted-foreground mb-2">{employeeData.jobrole}</p>
+              <div className="flex items-center gap-4">
+                <Badge
+                  variant={
+                    employeeData.status.toLowerCase() === "active" ? "default" : "secondary"
+                  }
+                >
+                  {employeeData.status}
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  Manager: {employeeData.supervisor_opt}
+                </span>
+              </div>
             </div>
+          </div>
             <div className="text-right text-sm text-muted-foreground">
               <p>Employee ID: {employeeData.employee_no}</p>
               <p>Department ID: {employeeData.department_id}</p>
@@ -329,23 +351,17 @@ const EmployeeReport = () => {
           </div>
 
           {/* Employee Info */}
-          <div className="flex items-center gap-6">
+          {/* <div className="flex items-center gap-6">
             <Avatar className="h-20 w-20">
-              {/* <AvatarImage src={employeeData.image} alt={employeeData.full_name} />
-              <AvatarFallback>
-                {employeeData.full_name.split(" ").map((n) => n[0]).join("")}
-              </AvatarFallback> */}
-              <Avatar className="h-20 w-20">
-                <img
-                  src={employeeData.image || "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"}
-                  alt={employeeData.full_name}
-                  className="h-full w-full object-cover rounded-full"
-                  onError={(e) => {
-                    e.currentTarget.src =
-                      "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
-                  }}
-                />
-              </Avatar>
+              <img
+                src={employeeData.image || "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39"}
+                alt={employeeData.full_name}
+                className="h-full w-full object-cover rounded-full"
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
+                }}
+              />
             </Avatar>
             <div className="flex-1">
               <h2 className="text-2xl font-semibold">{employeeData.full_name}</h2>
@@ -363,7 +379,7 @@ const EmployeeReport = () => {
                 </span>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* ==================== CONTENT ==================== */}
@@ -443,36 +459,12 @@ const EmployeeReport = () => {
                 <h4 className="font-semibold mb-3">Technical Skills</h4>
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2 
                   [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-                  {/* {skillData.length > 0 ? (
-                    skillData.map((skill, index) => (
-                      <div key={index} className="flex items-center justify-between py-2">
-                        <span className="font-medium truncate pr-4">{skill.title}</span>
-                        {skill.proficiency_level !== null ? (
-                          <span
-                            className="flex items-center justify-center 
-               w-6 h-6 text-[12px] font-medium
-               border border-blue-600 text-blue-600
-               rounded-full"
-                          >
-                            {skill.proficiency_level}
-                          </span>
-                        ) : (
-                          <div className="flex justify-end">
-                            <span className="block w-4 h-0.5 bg-gray-400 rounded"></span>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No skills available.</p>
-                  )} */}
                   {skillData.length > 0 ? (
                     skillData
-                      .filter(skill => skill.title) // ✅ Only keep skills with a valid title
+                      .filter(skill => skill.title)
                       .map((skill, index) => (
                         <div key={index} className="flex items-center justify-between py-2">
                           <span className="font-medium truncate pr-4">{skill.title}</span>
-
                           {skill.proficiency_level !== null && (
                             <span
                               className="flex items-center justify-center 
@@ -488,7 +480,6 @@ const EmployeeReport = () => {
                   ) : (
                     <p className="text-sm text-muted-foreground">No skills available.</p>
                   )}
-
                 </div>
               </div>
 
@@ -536,27 +527,27 @@ const EmployeeReport = () => {
                         key={task.id}
                         className="flex items-center justify-between p-2 rounded bg-muted/50"
                       >
-                        {/* Task Title */}
                         <p className="text-sm font-medium w-90 break-words">
                           {task.task_title}
                         </p>
-
-                        {/* Task Status */}
                         <Badge
-                          className={`text-xs capitalize text-center w-24 py-1 truncate
+  className={`text-xs capitalize text-center truncate
     ${task.status === "COMPLETED"
-                              ? "border border-green-400 bg-green-100 text-green-700"
-                              : task.status === "PENDING"
-                                ? "border border-gray-300 bg-gray-100 text-gray-600"
-                                : task.status === "IN-PROGRESS"
-                                  ? "border border-yellow-400 bg-yellow-100 text-yellow-700"
-                                  : "border border-gray-300 bg-gray-100 text-gray-600"
-                            }
+      ? "border border-green-400 bg-green-100 text-green-700 w-24 py-1"
+      : task.status === "PENDING"
+        ? "border border-gray-300 bg-gray-100 text-gray-600 w-24 py-1"
+        : task.status === "IN-PROGRESS"
+          ? "border border-yellow-400 bg-yellow-100 text-yellow-700 w-24 py-1"
+          : "w-10 py-0 border-0 bg-transparent"
+    }
     hover:bg-inherit focus:bg-inherit focus:ring-0 focus:outline-none
   `}
-                        >
-                          {task.status}
-                        </Badge>
+>
+  {task.status === "COMPLETED" || task.status === "PENDING" || task.status === "IN-PROGRESS" 
+    ? task.status 
+    : <div className="w-4 h-0.5 bg-gray-400 rounded mx-auto"></div>
+  }
+</Badge>
                       </div>
                     ))
                   ) : (

@@ -2,13 +2,13 @@
 import React, { useState } from 'react';
 import Icon from '../../../../components/AppIcon';
 import { Button } from '../../../../components/ui/button';
-import dynamic from 'next/dynamic';
+// import dynamic from 'next/dynamic';
 
-// Import your existing AddUserModal component
-const AddUserModal = dynamic(() => import('../AddUserModal'), {
-  ssr: false,
-  loading: () => <p>Loading...</p>
-});
+// // Import your existing AddUserModal component
+// const AddUserModal = dynamic(() => import('../AddUserModal'), {
+//   ssr: false,
+//   loading: () => <p>Loading...</p>
+// });
 
 const StatsSidebar = ({
   stats,
@@ -23,12 +23,12 @@ const StatsSidebar = ({
   userLists = [],
   userDepartmentLists = [], // Add this prop for departments
 }) => {
-  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  // const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   
   return (
     <div className="space-y-6">
       {/* Add User Modal */}
-      {isAddUserModalOpen && (
+      {/* {isAddUserModalOpen && (
         <AddUserModal
           isOpen={isAddUserModalOpen}
           setIsOpen={setIsAddUserModalOpen}
@@ -39,7 +39,7 @@ const StatsSidebar = ({
           userProfiles={userProfiles}
           userLists={userLists}
         />
-      )}
+      )} */}
 
       {/* Overview */}
       <div className="bg-card border border-border rounded-lg p-6">
@@ -61,7 +61,7 @@ const StatsSidebar = ({
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-card border border-border rounded-lg p-6">
+      {/* <div className="bg-card border border-border rounded-lg p-6">
         <h3 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h3>
         <Button
           variant="outline"
@@ -71,7 +71,7 @@ const StatsSidebar = ({
         >
           Add Employee
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

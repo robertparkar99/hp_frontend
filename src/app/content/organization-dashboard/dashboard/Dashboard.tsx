@@ -321,7 +321,7 @@ export function Dashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Activity className="text-primary" />
+                  <Activity className="text-blue-400" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
@@ -331,7 +331,7 @@ export function Dashboard() {
                   className="h-20 flex-col gap-2"
                   onClick={() => setActiveView("organizationInfo")}
                 >
-                  <Users className="h-6 w-6 text-primary" />
+                  <Users className="h-6 w-6 text-blue-400" />
                   <span className="text-sm">Manage Organization</span>
                 </Button>
 
@@ -340,7 +340,7 @@ export function Dashboard() {
                   className="h-20 flex-col gap-2"
                   onClick={() => setActiveView("departmentStructure")}
                 >
-                  <Building2 className="h-6 w-6 text-primary" />
+                  <Building2 className="h-6 w-6 text-blue-400" />
                   <span className="text-sm">Manage Departments</span>
                 </Button>
 
@@ -349,12 +349,12 @@ export function Dashboard() {
                   className="h-20 flex-col gap-2"
                   onClick={() => setActiveView("userManagement")}
                 >
-                  <UserCheck className="h-6 w-6 text-primary" />
+                  <UserCheck className="h-6 w-6 text-blue-400" />
                   <span className="text-sm">Manage Users</span>
                 </Button>
 
                 <Button variant="outline" className="h-20 flex-col gap-2">
-                  <TrendingUp className="h-6 w-6 text-primary" />
+                  <TrendingUp className="h-6 w-6 text-blue-400" />
                   <span className="text-sm">View Analytics</span>
                 </Button>
               </CardContent>
@@ -363,7 +363,7 @@ export function Dashboard() {
             <Card className="h-70 overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AudioLines className="text-primary" />
+                  <AudioLines className="text-blue-400" />
                   Disciplinary
                 </CardTitle>
               </CardHeader>

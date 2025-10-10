@@ -61,7 +61,7 @@ const StatsSidebar = ({
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-card border border-border rounded-lg p-6">
+      {/* <div className="bg-card border border-border rounded-lg p-6">
         <h3 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h3>
         <Button
           variant="outline"
@@ -71,7 +71,7 @@ const StatsSidebar = ({
         >
           Add Employee
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };
