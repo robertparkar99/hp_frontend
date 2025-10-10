@@ -1764,7 +1764,7 @@ const ExternalCourseDialog = ({
           {/* Course Grid */}
           <div className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {getCurrentCourses().map((course) => (
+              {getCurrentCourses().map((course: any) => (
                 <div key={course.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
                   <div className="relative">
                     <img 
