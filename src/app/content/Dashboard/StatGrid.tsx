@@ -796,7 +796,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Heatmap Table */}
-                <div className="overflow-x-auto">
+                <div className="h-88 overflow-x-auto scrollbar-hide">
                   <table className="w-full border-separate border-spacing-1 text-sm">
                     <thead>
                       <tr className="text-left">
@@ -1441,9 +1441,9 @@ export default function Dashboard() {
             <div className="p-4">
               {/* Today's Tasks */}
               {(selectedWidget === "Today Task List" || !selectedWidget) && (
-                <div className="h-66 overflow-y-auto hide-scroll">
+                <div className="h-61 overflow-y-auto hide-scroll">
                   {/* Header with + button */}
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white dark:bg-gray-900">
                     <h2 className="font-semibold">Today's Task Progress</h2>
                     <button
                       onClick={() => {
@@ -1587,9 +1587,9 @@ export default function Dashboard() {
           </div>
           <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
             {/* Course List */}
-            <div className="p-4 bg-white rounded-lg shadow h-110 overflow-y-auto hide-scroll">
+            <div className=" bg-white rounded-lg shadow h-125 overflow-y-auto hide-scroll">
               {/* Header with + button */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="sticky top-0 z-10 flex items-center justify-between mb-4 px-4 pt-2 pb-1 bg-white shadow-sm">
                 <h2 className="font-semibold">Course List</h2>
                 <button
                   onClick={() => setOpenDialog(true)}
@@ -1663,13 +1663,13 @@ export default function Dashboard() {
             />
 
             {/* Assessment List */}
-            <div className="p-4 bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll">
+            <div className="bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll">
               {/* Header with + button */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white px-2 pt-2 pb-1 shadow-sm">
                 <h2 className="font-semibold">Assessment List</h2>
                 <button
                   onClick={() => setOpenAssessmentModal(true)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-blur-400 text-white hover:bg-blue-400"
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-400 text-white hover:bg-blue-400"
                 >
                   +
                 </button>

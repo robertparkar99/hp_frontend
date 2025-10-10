@@ -430,44 +430,137 @@ const FilterSidebar = ({ filters, onFilterChange, onClearAll }) => {
   // 🔹 Fetch data from API
   
 
-    const fetchFilters = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}`
-        );
-        const data = await res.json();
+//     const fetchFilters = async () => {
+//       setLoading(true);
+//       try {
+//         const res = await fetch(
+//           `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}`
+//         );
+//         const data = await res.json();
 
-        if (data?.lms_subject) {
-          const allSubjects = Object.values(data.lms_subject).flat();
+//         if (data?.lms_subject) {
+//           const allSubjects = Object.values(data.lms_subject).flat();
 
-          // Unique categories
-          const uniqueCategories = Array.from(
-            new Set(allSubjects.map((item) => item.content_category).filter(Boolean))
-          ).map((category) => ({
-            id: category.toLowerCase().replace(/\s+/g, '-'),
-            label: category,
-            count: allSubjects.filter((i) => i.content_category === category).length,
-          }));
+//           // Unique categories
+//           // const uniqueCategories = Array.from(
+//           //   new Set(allSubjects.map((item) => item.content_category).filter(Boolean))
+//           // ).map((category) => ({
+//           //   id: category.toLowerCase().replace(/\s+/g, '-'),
+//           //   label: category,
+//           //   count: allSubjects.filter((i) => i.content_category === category).length,
+//           // }));
+//           const categoryMap = {};
 
-          // Unique subject types
-          const uniqueSubjectTypes = Array.from(
-            new Set(allSubjects.map((item) => item.subject_type).filter(Boolean))
-          ).map((type) => ({
-            id: type.toLowerCase().replace(/\s+/g, '-'),
-            label: type,
-            count: allSubjects.filter((i) => i.subject_type === type).length,
-          }));
+// allSubjects.forEach((item) => {
+//   if (!item.content_category) return;
+  
+//   const normalizedKey = item.content_category.toLowerCase().trim();
+  
+//   if (!categoryMap[normalizedKey]) {
+//     categoryMap[normalizedKey] = {
+//       id: normalizedKey.replace(/\s+/g, '-'),
+//       label: item.content_category, // Keep original case
+//       count: 0,
+//     };
+//   }
+  
+//   categoryMap[normalizedKey].count++;
+// });
 
-          setCategories(uniqueCategories);
-          setSubjectTypes(uniqueSubjectTypes);
+// const uniqueCategories = Object.values(categoryMap);
+
+//           // Unique subject types
+//   const uniqueSubjectTypes = Array.from(
+//   new Set(
+//     allSubjects
+//       .map((item) => {
+//         if (!item.subject_type) return null;
+//         return item.subject_type.toLowerCase().trim();
+//       })
+//       .filter(Boolean)
+//   )
+// ).map((lowerCaseType) => {
+//   const matchingItems = allSubjects.filter((item) => {
+//     if (!item.subject_type) return false;
+//     return item.subject_type.toLowerCase().trim() === lowerCaseType;
+//   });
+  
+//   return {
+//     id: lowerCaseType.replace(/\s+/g, '-'),
+//     label: matchingItems[0]?.subject_type, // Use original case from first item
+//     count: matchingItems.length,
+//   };
+// });
+
+//           setCategories(uniqueCategories);
+//           setSubjectTypes(uniqueSubjectTypes);
+//         }
+//       } catch (err) {
+//         console.error('Failed to fetch filters:', err);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+const fetchFilters = async () => {
+  setLoading(true);
+  try {
+    const res = await fetch(
+      `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}`
+    );
+    const data = await res.json();
+
+    if (data?.lms_subject) {
+      const allSubjects = Object.values(data.lms_subject).flat();
+
+      // DEBUG: Check what we're getting
+      console.log('All subject types raw:', allSubjects.map(item => item.subject_type));
+      console.log('All content categories raw:', allSubjects.map(item => item.content_category));
+
+      // Fix for categories - SIMPLE and GUARANTEED to work
+      const categoryMap = {};
+      allSubjects.forEach(item => {
+        if (!item.content_category) return;
+        const key = item.content_category.toLowerCase().trim();
+        if (!categoryMap[key]) {
+          categoryMap[key] = {
+            id: key.replace(/\s+/g, '-'),
+            label: item.content_category,
+            count: 1
+          };
+        } else {
+          categoryMap[key].count++;
         }
-      } catch (err) {
-        console.error('Failed to fetch filters:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      });
+      const uniqueCategories = Object.values(categoryMap);
+      console.log('Unique categories:', uniqueCategories);
+
+      // Fix for subject types - SIMPLE and GUARANTEED to work
+      const subjectTypeMap = {};
+      allSubjects.forEach(item => {
+        if (!item.subject_type) return;
+        const key = item.subject_type.toLowerCase().trim();
+        if (!subjectTypeMap[key]) {
+          subjectTypeMap[key] = {
+            id: key.replace(/\s+/g, '-'),
+            label: item.subject_type,
+            count: 1
+          };
+        } else {
+          subjectTypeMap[key].count++;
+        }
+      });
+      const uniqueSubjectTypes = Object.values(subjectTypeMap);
+      console.log('Unique subject types:', uniqueSubjectTypes);
+
+      setCategories(uniqueCategories);
+      setSubjectTypes(uniqueSubjectTypes);
+    }
+  } catch (err) {
+    console.error('Failed to fetch filters:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
  useEffect(() => {
     if (!sessionData.url) return; // Prevent fetch before session data is set

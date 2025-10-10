@@ -215,7 +215,7 @@ const MyLeave = () => {
   return (
     <div className="space-y-6 min-h-screen bg-background rounded-xl">
       {/* Leave Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {Object.keys(leaveBalance).map((type) => (
           <Card key={type} className="card-simple">
             <CardHeader className="pb-3">
@@ -248,7 +248,7 @@ const MyLeave = () => {
             </CardContent>
           </Card>
         ))}
-      </div>
+      </div> */}
 
       {/* Filters */}
       <Card className="card-simple">

@@ -240,6 +240,16 @@ const TaskManagement = () => {
     setTaskType(type);
   };
 
+  // In TaskManagement.tsx - add this function
+const handleBulkTaskSuccess = () => {
+  setIsEditModalOpen(false);
+  setIsJobroleModel(false);
+  
+  // Optional: Refresh data or show success message
+  alert("Bulk tasks created successfully!");
+  setSelEmployee([]);
+};
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -392,7 +402,7 @@ const geminiChat = async (prompt: string | '') => {
 }
   return (
     <>
-    <div className="mainDiv bg-background rounded-xl">
+    <div className="mainDiv bg-background rounded-xl px-5 py-3">
       <div className="max-w-6xl mx-auto">
         <div className="rounded-lg h-[fit-content] mb-6">
           <div className="px-1 mb-2">
@@ -866,12 +876,17 @@ const geminiChat = async (prompt: string | '') => {
       </div>
     </div>
     {isjobroleModel && (
-        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <Dialog open={isEditModalOpen} onOpenChange={(open) => {
+          setIsEditModalOpen(open);
+          if (!open) {
+            setIsJobroleModel(false);
+          }
+        }}>
         <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto hide-scroll">
           <DialogHeader>
             <DialogTitle>Bulk Task Assignment</DialogTitle>
           </DialogHeader>
-            <TaskListModel taskListArr={taskListArr} ObserverList={ObserverList} sessionData={sessionData} selectedEmployees={selEmployee.join(",")}/>
+            <TaskListModel taskListArr={taskListArr} ObserverList={ObserverList} sessionData={sessionData} selectedEmployees={selEmployee.join(",")}  onSuccess={handleBulkTaskSuccess} />
         </DialogContent>
       </Dialog>
     )}

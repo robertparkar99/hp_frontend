@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo ,useRef} from 'react';
 import EmployeeSelector from "../../../User-Attendance/components/EmployeeSelector";
 import "react-datepicker/dist/react-datepicker.css";
 import DatePicker from "react-datepicker";
@@ -26,6 +26,73 @@ interface SalaryData {
   grossTotal: number;
   status: string;
 }
+
+interface Option {
+  value: string;
+  label: string;
+}
+
+interface EmployeeStatusDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const EmployeeStatusDropdown: React.FC<EmployeeStatusDropdownProps> = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const options: Option[] = [
+    { value: 'All', label: 'All Status' },
+    { value: 'Active', label: 'Active' },
+    { value: 'Inactive', label: 'Inactive' }
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Select Box */}
+      <div
+        className="border border-gray-300 p-2 rounded-md w-full cursor-pointer bg-white hover:bg-gray-50"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {selectedOption?.label || 'Select Status'}
+      </div>
+      
+      {/* Dropdown Options */}
+      {isOpen && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg">
+          {options.map((option) => (
+            <div
+              key={option.value}
+              className={`p-2 cursor-pointer ${
+                value === option.value 
+                  ? 'bg-blue-400 text-white' 
+                  : 'bg-white text-black hover:bg-blue-400 hover:text-white pb-2'
+              }`}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+            >
+              {option.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Editable Input Component
 interface EditableInputProps {
@@ -75,6 +142,7 @@ const SalaryStructure: React.FC = () => {
   const [userHasSearched, setUserHasSearched] = useState(false);
   const [employeeStatus, setEmployeeStatus] = useState<string>('Active');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  
 
   const [sessionData, setSessionData] = useState({
     url: "",
@@ -632,16 +700,11 @@ const SalaryStructure: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-4 items-start w-full lg:w-auto">
           <div className="flex flex-col w-full sm:w-48 mt-8">
             <label className="block text-sm font-medium text-gray-700 mb-2">Employee Status</label>
-            <select
-              value={employeeStatus}
-              onChange={(e) => setEmployeeStatus(e.target.value)}
-              className="border p-2 rounded w-full"
-            >
-              <option value="All">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
+             <EmployeeStatusDropdown
+    value={employeeStatus}
+    onChange={setEmployeeStatus}
+  />
 
-            </select>
           </div>
 
           <Button
@@ -649,7 +712,7 @@ const SalaryStructure: React.FC = () => {
             disabled={loading}
             className="px-6 py-2 rounded-lg flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-14"
           >
-            <Search className="w-5 h-5 mr-2 text-black" />
+            {/* <Search className="w-5 h-5 mr-2 text-black" /> */}
             {loading ? "Searching..." : "Search"}
           </Button>
         </div>
