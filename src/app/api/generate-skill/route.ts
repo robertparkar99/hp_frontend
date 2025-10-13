@@ -36,8 +36,6 @@ Return ONLY a valid JSON object with these keys:
             headers: {
                 "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://yourdomain.com",
-                "X-Title": "Skill Generator",
             },
             body: JSON.stringify({
                 model: "deepseek/deepseek-chat",
