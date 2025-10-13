@@ -121,53 +121,22 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     setShowDropdown(true);
   };
 
-  // Add OpenRouter configuration
-  const OPENROUTER_API_KEY = "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"; // Store this securely
-  const MODEL = "deepseek/deepseek-chat";
+
 
   // Function to generate form content using AI
   const generateFormContent = async (skillName: string, description: string) => {
     try {
-      if (!skillName || !description) return;
-
-      const prompt = `Given a skill named "${skillName}" with description "${description}" in the ${sessionData.orgType || "general"} industry, please generate:
-  1. Most suitable skill category and sub-category
-  2. Related skills
-  3. Custom tags
-  4. Business links
-  5. Learning resources
-  6. Assessment methods
-  7. Required certifications/qualifications
-  8. Typical experience/projects
-  9. Skill mapping
-  
-  Return ONLY a valid JSON object with these keys:
-  {
-    "category": "",
-    "sub_category": "",
-    "related_skills": [],
-    "custom_tags": [],
-    "business_links": "",
-    "learning_resources": "",
-    "assessment_methods": "",
-    "certifications": "",
-    "experience": "",
-    "skill_mapping": ""
-  }`;
-
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const res = await fetch("/api/generate-skill", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: MODEL,
-          messages: [{ role: "user", content: prompt }],
+          skillName,
+          description,
+          orgType: sessionData.orgType
         }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
       if (!data?.choices?.length) throw new Error("Empty AI response");
 
