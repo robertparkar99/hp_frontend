@@ -189,17 +189,19 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       alert("Error generating AI content");
     }
   };
-
+  let aiTimer: NodeJS.Timeout;
   // Modify handleFormChange to trigger AI generation
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-
+    clearTimeout(aiTimer);
     // Trigger AI generation when both skill_name and description are filled
-    if ((name === 'skill_name' || name === 'description') &&
-      formData.skill_name &&
-      formData.description) {
-      generateFormContent(formData.skill_name, formData.description);
+    if ((name === "skill_name" || name === "description")) {
+      aiTimer = setTimeout(() => {
+        if (formData.skill_name && formData.description) {
+          generateFormContent(formData.skill_name, formData.description);
+        }
+      }, 10000);
     }
   };
 
