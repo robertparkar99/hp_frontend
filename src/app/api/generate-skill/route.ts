@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY_AJ || "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"; // Store securely
+const OPENROUTER_API_KEY = "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"; // Store securely
 
 export async function POST(req: Request) {
     try {
