@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -8,6 +6,34 @@ import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Checkbox } from '../../../../components/ui/checkbox';
+
+const skillCategories = [
+  "Cognitive & Thinking",
+  "Compliance & Regulatory",
+  "Digital & Data",
+  "Functional",
+  "Leadership & Management",
+  "Soft",
+  "Technical",
+];
+
+const taskCategories = [
+  "Analysis & Problem Solving",
+  "Client/Stakeholder Interaction",
+  "Compliance & Reporting",
+  "Creative/Innovation",
+  "Customer Success & Aftercare",
+  "Documentation & Knowledge Management",
+  "Learning & Development",
+  "Marketing & Outreach",
+  "Planning & Strategy",
+  "Process & Operations Execution",
+  "Procurement & Resource Management",
+  "Quality Assurance & Improvement",
+  "Risk Management & Incident Response",
+  "Supervision & Team Management",
+  "Technology & Systems Administration",
+];
 
 const SearchToolbar = ({
   searchQuery,
@@ -24,6 +50,9 @@ const SearchToolbar = ({
   const [categories, setCategories] = useState([]);
   const [subjectTypes, setSubjectTypes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedLevel1, setSelectedLevel1] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  
   const advancedRef = useRef(null);
   const moreFilterRef = useRef(null);
 
@@ -56,66 +85,66 @@ const SearchToolbar = ({
   }, []);
 
   // Fetch filters from API
-const fetchFilters = async () => {
-  setLoading(true);
-  try {
-    const res = await fetch(
-      `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}`
-    );
-    const data = await res.json();
+  const fetchFilters = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}`
+      );
+      const data = await res.json();
 
-    if (data?.lms_subject) {
-      const allSubjects = Object.values(data.lms_subject).flat();
+      if (data?.lms_subject) {
+        const allSubjects = Object.values(data.lms_subject).flat();
 
-      // DEBUG: Check what we're getting
-      console.log('All subject types raw:', allSubjects.map(item => item.subject_type));
-      console.log('All content categories raw:', allSubjects.map(item => item.content_category));
+        // DEBUG: Check what we're getting
+        console.log('All subject types raw:', allSubjects.map(item => item.subject_type));
+        console.log('All content categories raw:', allSubjects.map(item => item.content_category));
 
-      // Fix for categories - SIMPLE and GUARANTEED to work
-      const categoryMap = {};
-      allSubjects.forEach(item => {
-        if (!item.content_category) return;
-        const key = item.content_category.toLowerCase().trim();
-        if (!categoryMap[key]) {
-          categoryMap[key] = {
-            id: key.replace(/\s+/g, '-'),
-            label: item.content_category,
-            count: 1
-          };
-        } else {
-          categoryMap[key].count++;
-        }
-      });
-      const uniqueCategories = Object.values(categoryMap);
-      console.log('Unique categories:', uniqueCategories);
+        // Fix for categories - SIMPLE and GUARANTEED to work
+        const categoryMap = {};
+        allSubjects.forEach(item => {
+          if (!item.content_category) return;
+          const key = item.content_category.toLowerCase().trim();
+          if (!categoryMap[key]) {
+            categoryMap[key] = {
+              id: key.replace(/\s+/g, '-'),
+              label: item.content_category,
+              count: 1
+            };
+          } else {
+            categoryMap[key].count++;
+          }
+        });
+        const uniqueCategories = Object.values(categoryMap);
+        console.log('Unique categories:', uniqueCategories);
 
-      // Fix for subject types - SIMPLE and GUARANTEED to work
-      const subjectTypeMap = {};
-      allSubjects.forEach(item => {
-        if (!item.subject_type) return;
-        const key = item.subject_type.toLowerCase().trim();
-        if (!subjectTypeMap[key]) {
-          subjectTypeMap[key] = {
-            id: key.replace(/\s+/g, '-'),
-            label: item.subject_type,
-            count: 1
-          };
-        } else {
-          subjectTypeMap[key].count++;
-        }
-      });
-      const uniqueSubjectTypes = Object.values(subjectTypeMap);
-      console.log('Unique subject types:', uniqueSubjectTypes);
+        // Fix for subject types - SIMPLE and GUARANTEED to work
+        const subjectTypeMap = {};
+        allSubjects.forEach(item => {
+          if (!item.subject_type) return;
+          const key = item.subject_type.toLowerCase().trim();
+          if (!subjectTypeMap[key]) {
+            subjectTypeMap[key] = {
+              id: key.replace(/\s+/g, '-'),
+              label: item.subject_type,
+              count: 1
+            };
+          } else {
+            subjectTypeMap[key].count++;
+          }
+        });
+        const uniqueSubjectTypes = Object.values(subjectTypeMap);
+        console.log('Unique subject types:', uniqueSubjectTypes);
 
-      setCategories(uniqueCategories);
-      setSubjectTypes(uniqueSubjectTypes);
+        setCategories(uniqueCategories);
+        setSubjectTypes(uniqueSubjectTypes);
+      }
+    } catch (err) {
+      console.error('Failed to fetch filters:', err);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error('Failed to fetch filters:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     if (sessionData.sub_institute_id && sessionData.url) {
@@ -142,6 +171,35 @@ const fetchFilters = async () => {
       }))
     },
   ];
+
+  const renderLevel2Buttons = () => {
+    if (!selectedLevel1) return null;
+
+    let categories = [];
+    if (selectedLevel1 === "Skill") categories = skillCategories;
+    else if (selectedLevel1 === "Task") categories = taskCategories;
+    else if (selectedLevel1 === "All") categories = [...skillCategories, ...taskCategories];
+
+    return (
+      <div className="flex flex-wrap justify-center gap-3 mt-4">
+        {categories.map((cat) => (
+          <Button
+            key={cat}
+            variant={selectedCategory === cat ? "default" : "outline"}
+            onClick={() => setSelectedCategory(cat)}
+            className={`rounded-full text-sm transition px-4 py-2 border 
+              ${
+                selectedCategory === cat
+                  ? "bg-blue-300 text-white hover:bg-blue-400"
+                  : "bg-transparent text-foreground border-border hover:border-blue-400 hover:text-blue-400"
+              }`}
+          >
+            {cat}
+          </Button>
+        ))}
+      </div>
+    );
+  };
 
   // ✅ Fixed checkbox render with label text
   const renderFilterGroup = (title, key, options) => (
@@ -248,8 +306,9 @@ const fetchFilters = async () => {
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('grid')}
-              className={`rounded-r-none border-r border-border ${viewMode === "grid" ? "bg-blue-400 text-white hover:bg-blue-500" : "bg-transparent"
-                }`}
+              className={`rounded-r-none border-r border-border ${
+                viewMode === "grid" ? "bg-blue-400 text-white hover:bg-blue-500" : "bg-transparent"
+              }`}
             >
               <Icon name="Grid3X3" size={16} />
             </Button>
@@ -257,14 +316,39 @@ const fetchFilters = async () => {
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('list')}
-              className={`rounded-l-none ${viewMode === "list" ? "bg-blue-400 text-white hover:bg-blue-500" : "bg-transparent"
-                }`}
+              className={`rounded-l-none ${
+                viewMode === "list" ? "bg-blue-400 text-white hover:bg-blue-500" : "bg-transparent"
+              }`}
             >
               <Icon name="List" size={16} />
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Level 1 Buttons (Centered) */}
+      <div className="flex justify-center flex-wrap gap-4 mt-4">
+        {["All", "Skill", "Task"].map((level) => (
+          <Button
+            key={level}
+            variant={selectedLevel1 === level ? "default" : "outline"}
+            onClick={() =>
+              setSelectedLevel1(selectedLevel1 === level ? "" : level) // Toggle
+            }
+            className={`rounded-full text-sm px-6 py-2 transition border 
+              ${
+                selectedLevel1 === level
+                  ? "bg-blue-300 text-white hover:bg-blue-400"
+                  : "bg-transparent text-foreground border-border hover:border-blue-400 hover:text-blue-400"
+              }`}
+          >
+            {level}
+          </Button>
+        ))}
+      </div>
+
+      {/* Level 2 Buttons (Show only after Level 1 selection) */}
+      {renderLevel2Buttons()}
 
       {/* Results Count */}
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
@@ -283,6 +367,7 @@ const fetchFilters = async () => {
           )}
         </div>
 
+        {/* Optional: Quick filter buttons (commented out as in original) */}
         {/* <div className="hidden md:flex items-center space-x-2">
           <span className="text-sm text-muted-foreground mr-2">Quick:</span>
           {categories.slice(0, 4).map((category) => (
@@ -303,3 +388,4 @@ const fetchFilters = async () => {
 };
 
 export default SearchToolbar;
+
