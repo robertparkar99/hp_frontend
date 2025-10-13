@@ -128,36 +128,62 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
   // Function to generate form content using AI
   const generateFormContent = async (skillName: string, description: string) => {
     try {
-      const prompt = `Given a skill named "${skillName}" with description "${description}" in the ${sessionData.orgType} industry, please generate:
-      1. Most suitable skill category and sub-category
-      2. Related skills
-      3. Custom tags
-      4. Business links
-      5. Learning resources
-      6. Assessment methods
-      7. Required certifications/qualifications
-      8. Typical experience/projects
-      9. Skill mapping
-      
-      Format the response as a JSON object with these fields.`;
+      if (!skillName || !description) return;
+
+      const prompt = `Given a skill named "${skillName}" with description "${description}" in the ${sessionData.orgType || "general"} industry, please generate:
+  1. Most suitable skill category and sub-category
+  2. Related skills
+  3. Custom tags
+  4. Business links
+  5. Learning resources
+  6. Assessment methods
+  7. Required certifications/qualifications
+  8. Typical experience/projects
+  9. Skill mapping
+  
+  Return ONLY a valid JSON object with these keys:
+  {
+    "category": "",
+    "sub_category": "",
+    "related_skills": [],
+    "custom_tags": [],
+    "business_links": "",
+    "learning_resources": "",
+    "assessment_methods": "",
+    "certifications": "",
+    "experience": "",
+    "skill_mapping": ""
+  }`;
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": window.location.origin,
         },
         body: JSON.stringify({
           model: MODEL,
-          messages: [{ role: "user", content: prompt }]
-        })
+          messages: [{ role: "user", content: prompt }],
+        }),
       });
 
       const data = await response.json();
-      const aiResponse = JSON.parse(data.choices[0].message.content);
 
-      // Update form data with AI-generated content
+      if (!data?.choices?.length) throw new Error("Empty AI response");
+
+      // Clean and parse JSON safely
+      let content = data.choices[0].message.content.trim();
+      content = content.replace(/```json|```/g, "").trim();
+
+      let aiResponse: any;
+      try {
+        aiResponse = JSON.parse(content);
+      } catch (err) {
+        console.warn("AI returned invalid JSON:", content);
+        return alert("AI returned invalid JSON, please retry.");
+      }
+
+      // Update form data safely
       setFormData(prev => ({
         ...prev,
         category: aiResponse.category || prev.category,
@@ -170,26 +196,19 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
         skill_maps: aiResponse.skill_mapping || prev.skill_maps
       }));
 
-      // Update related skills
-      if (aiResponse.related_skills) {
-        setSelectedSkills(aiResponse.related_skills);
-      }
+      if (Array.isArray(aiResponse.related_skills)) setSelectedSkills(aiResponse.related_skills);
+      if (Array.isArray(aiResponse.custom_tags)) setCustomTags(aiResponse.custom_tags);
+      if (aiResponse.category) await getSubDepartment(aiResponse.category);
 
-      // Update custom tags
-      if (aiResponse.custom_tags) {
-        setCustomTags(aiResponse.custom_tags);
-      }
-
-      // Fetch sub-categories if category is updated
-      if (aiResponse.category) {
-        await getSubDepartment(aiResponse.category);
-      }
     } catch (error) {
       console.error("Error generating form content:", error);
-      alert("Error generating AI content");
+      alert("Error generating AI content. Check console for details.");
     }
   };
+
   let aiTimer: NodeJS.Timeout;
+  generateFormContent("Python Programming", "Learn to write and optimize code in Python for AI applications.");
+
   // Modify handleFormChange to trigger AI generation
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
