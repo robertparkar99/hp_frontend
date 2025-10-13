@@ -121,9 +121,86 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     setShowDropdown(true);
   };
 
+  // Add OpenRouter configuration
+  const OPENROUTER_API_KEY = "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"; // Store this securely
+  const MODEL = "deepseek/deepseek-chat";
+
+  // Function to generate form content using AI
+  const generateFormContent = async (skillName: string, description: string) => {
+    try {
+      const prompt = `Given a skill named "${skillName}" with description "${description}" in the ${sessionData.orgType} industry, please generate:
+      1. Most suitable skill category and sub-category
+      2. Related skills
+      3. Custom tags
+      4. Business links
+      5. Learning resources
+      6. Assessment methods
+      7. Required certifications/qualifications
+      8. Typical experience/projects
+      9. Skill mapping
+      
+      Format the response as a JSON object with these fields.`;
+
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.origin,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+
+      const data = await response.json();
+      const aiResponse = JSON.parse(data.choices[0].message.content);
+
+      // Update form data with AI-generated content
+      setFormData(prev => ({
+        ...prev,
+        category: aiResponse.category || prev.category,
+        sub_category: aiResponse.sub_category || prev.sub_category,
+        business_links: aiResponse.business_links || prev.business_links,
+        learning_resources: aiResponse.learning_resources || prev.learning_resources,
+        assesment_method: aiResponse.assessment_methods || prev.assesment_method,
+        certification_qualifications: aiResponse.certifications || prev.certification_qualifications,
+        experience_project: aiResponse.experience || prev.experience_project,
+        skill_maps: aiResponse.skill_mapping || prev.skill_maps
+      }));
+
+      // Update related skills
+      if (aiResponse.related_skills) {
+        setSelectedSkills(aiResponse.related_skills);
+      }
+
+      // Update custom tags
+      if (aiResponse.custom_tags) {
+        setCustomTags(aiResponse.custom_tags);
+      }
+
+      // Fetch sub-categories if category is updated
+      if (aiResponse.category) {
+        await getSubDepartment(aiResponse.category);
+      }
+    } catch (error) {
+      console.error("Error generating form content:", error);
+      alert("Error generating AI content");
+    }
+  };
+
+  // Modify handleFormChange to trigger AI generation
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Trigger AI generation when both skill_name and description are filled
+    if ((name === 'skill_name' || name === 'description') &&
+      formData.skill_name &&
+      formData.description) {
+      generateFormContent(formData.skill_name, formData.description);
+    }
   };
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -203,7 +280,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
           ✖
         </button>
 
-       {/* header parts start  */}
+        {/* header parts start  */}
         <div className="flex w-full">
           {/* Left: GIF */}
           <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
@@ -213,7 +290,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
           {/* Center Content */}
           <div className="w-[90%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 text-center rounded-r-lg">
             <h2 className="text-gray-800 font-bold text-lg">Add New Skill</h2>
-            <h4 className="text-gray-700 font-semibold text-sm">  
+            <h4 className="text-gray-700 font-semibold text-sm">
               <b>Industry : </b>{sessionData.orgType}
             </h4>
           </div>
@@ -236,10 +313,10 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                 >
                   <option value="">Select Category</option>
                   {categories.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -252,11 +329,11 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                   value={formData.sub_category}
                 >
                   <option value="">Select Sub Category</option>
-                 {subCategories.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
+                  {subCategories.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -302,7 +379,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                       fetchSkills(e.target.value);
                     }}
                     onFocus={() => setShowDropdown(true)}
-                   // onBlur={() => setTimeout(() => setShowDropdown(false), 100)} // Optional: hide dropdown on blur with a delay
+                  // onBlur={() => setTimeout(() => setShowDropdown(false), 100)} // Optional: hide dropdown on blur with a delay
                   />
                   {showDropdown && results.length > 0 && (
                     <ul className="absolute z-[9999] bg-opacity-100 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
