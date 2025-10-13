@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "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"; // Store securely
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY_AJ || "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"; // Store securely
 
 export async function POST(req: Request) {
     try {
@@ -50,3 +50,60 @@ Return ONLY a valid JSON object with these keys:
         return NextResponse.json({ error: "AI generation failed" }, { status: 500 });
     }
 }
+
+
+// export const runtime = "nodejs";
+
+// import { NextResponse } from "next/server";
+
+// const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+// console.log("OpenRouter API Key:", OPENROUTER_API_KEY);
+
+// export async function POST(req: Request) {
+//     console.log("Received POST request at /api/generate-skill");
+//     try {
+//         const bodyText = await req.text();
+//         console.log("Raw request body:", bodyText);
+
+//         // Safe parsing
+//         const { description, orgType } = JSON.parse(bodyText);
+//         console.log("Parsed description:", description);
+//         console.log("Parsed orgType:", orgType);
+
+//         const prompt = `Generate a skill description based on: "${description}" for organization type: "${orgType}".`;
+
+//         const requestBody = {
+//             model: "deepseek/deepseek-chat",
+//             messages: [{ role: "user", content: prompt }],
+//             temperature: 0.7,
+//             max_tokens: 500,
+//         };
+
+//         console.log("Request body to OpenRouter:", JSON.stringify(requestBody));
+
+//         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+//             method: "POST",
+//             headers: {
+//                 "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+//                 "Content-Type": "application/json",
+//             },
+//             body: JSON.stringify(requestBody),
+//         });
+
+//         const text = await response.text();
+//         console.log("OpenRouter response text:", text);
+
+//         let data;
+//         try {
+//             data = JSON.parse(text);
+//         } catch {
+//             data = { error: "Non-JSON response from OpenRouter", raw: text };
+//         }
+
+//         return NextResponse.json(data);
+//     } catch (error) {
+//         console.error("OpenRouter error:", error);
+//         return NextResponse.json({ error: "AI generation failed by AJ" }, { status: 500 });
+//     }
+// }
+
