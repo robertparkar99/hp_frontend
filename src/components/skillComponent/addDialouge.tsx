@@ -124,7 +124,12 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
 
   // Function to generate form content using AI
+  // Remove aiTimer since we'll use a button instead
   const generateFormContent = async (skillName: string, description: string) => {
+    if (!skillName.trim() || !description.trim()) {
+      return alert("Please enter both skill name and description first");
+    }
+
     try {
       const res = await fetch("/api/generate-skill", {
         method: "POST",
@@ -175,22 +180,10 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     }
   };
 
-  let aiTimer: NodeJS.Timeout;
-  generateFormContent("Python Programming", "Learn to write and optimize code in Python for AI applications.");
-
-  // Modify handleFormChange to trigger AI generation
+  // Modify handleFormChange to remove AI generation
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    clearTimeout(aiTimer);
-    // Trigger AI generation when both skill_name and description are filled
-    if ((name === "skill_name" || name === "description")) {
-      aiTimer = setTimeout(() => {
-        if (formData.skill_name && formData.description) {
-          generateFormContent(formData.skill_name, formData.description);
-        }
-      }, 10000);
-    }
   };
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -344,14 +337,27 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
               <div className="relative z-0 w-full mb-5 group text-left">
                 <label htmlFor="description" className="text-left">Skill Description</label><br />
-                <textarea
-                  name="description"
-                  rows={2}
-                  className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
-                  placeholder="Enter Descriptions..."
-                  onChange={handleFormChange}
-                  value={formData.description}
-                ></textarea>
+                <div className="flex gap-2">
+                  <textarea
+                    name="description"
+                    rows={2}
+                    className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
+                    placeholder="Enter Descriptions..."
+                    onChange={handleFormChange}
+                    value={formData.description}
+                  ></textarea>
+                  <button
+                    type="button"
+                    onClick={() => generateFormContent(formData.skill_name, formData.description)}
+                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 h-10 w-50"
+                    title="Generate with AI"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M13.5 4.938l1.563 1.562a4.001 4.001 0 01-5.656 5.656L8.344 13.5a4 4 0 105.656-5.656l-1.563-1.563a5.5 5.5 0 00-7.778 7.778l1.562 1.563a5.5 5.5 0 007.778-7.778z" />
+                    </svg>
+                    AI Generate
+                  </button>
+                </div>
               </div>
             </div>
 
