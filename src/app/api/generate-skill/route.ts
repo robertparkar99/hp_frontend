@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY // Store securely
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "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"; // Store securely
 
 export async function POST(req: Request) {
     try {
+        console.log("Received POST request at /api/generate-skill");
         const { skillName, description, orgType } = await req.json();
-
+        console.log("Parsed skillName:", skillName);
+        console.log("Parsed description:", description);
+        console.log("Parsed orgType:", orgType);
         const prompt = `Given a skill named "${skillName}" with description "${description}" in the "${orgType}" industry, please generate:
         1. Most suitable skill category and sub-category
         2. Related skills
