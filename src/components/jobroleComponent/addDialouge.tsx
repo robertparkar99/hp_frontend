@@ -6,6 +6,7 @@ interface AddDialogProps {
   skillId: number | null;
   onClose: () => void;
   onSuccess: () => void;
+  isOpen: boolean;
 }
 
 interface FormData {
@@ -16,7 +17,7 @@ interface FormData {
   performance_expectation?: string;
 }
 
-const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
+const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
   const [sessionData, setSessionData] = useState({
     url: "",
     token: "",
@@ -120,7 +121,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       alert("Error submitting form");
     }
   };
-
+  if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 h-screen overflow-y-auto hide-scroll">
       <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative my-auto">

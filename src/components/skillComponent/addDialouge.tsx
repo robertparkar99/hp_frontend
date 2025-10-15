@@ -176,7 +176,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
   };
 
   let aiTimer: NodeJS.Timeout;
-  generateFormContent("Python Programming", "Learn to write and optimize code in Python for AI applications.");
+  // generateFormContent("Python Programming", "Learn to write and optimize code in Python for AI applications.");
 
   // Modify handleFormChange to trigger AI generation
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

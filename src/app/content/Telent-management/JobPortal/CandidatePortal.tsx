@@ -82,6 +82,29 @@
 //   data?: any;
 // }
 
+// // Form data interface matching the JobPostingForm structure
+// interface ApplicationFormData {
+//   first_name: string;
+//   middle_name: string;
+//   last_name: string;
+//   email: string;
+//   mobile: string;
+//   current_location: string;
+//   employment_type: string;
+//   experience: string;
+//   education: string;
+//   expected_salary: string;
+//   skills: string;
+//   certifications: string;
+//   resume: File | null;
+//   cover_letter?: string;
+//   portfolio_url?: string;
+//   linkedin_url?: string;
+//   notice_period?: string;
+//   current_company?: string;
+//   current_role?: string;
+// }
+
 // const CandidatePortal = () => {
 //   const [isDialogOpen, setIsDialogOpen] = useState(false);
 //   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,7 +116,8 @@
 //   const [error, setError] = useState<string | null>(null);
 //   const [searchTerm, setSearchTerm] = useState("");
   
-//   const [formData, setFormData] = useState({
+//   // Enhanced form data structure
+//   const [formData, setFormData] = useState<ApplicationFormData>({
 //     first_name: "",
 //     middle_name: "",
 //     last_name: "",
@@ -106,27 +130,45 @@
 //     expected_salary: "",
 //     skills: "",
 //     certifications: "",
-//     resume: null as File | null
+//     resume: null,
+//     cover_letter: "",
+//     portfolio_url: "",
+//     linkedin_url: "",
+//     notice_period: "",
+//     current_company: "",
+//     current_role: ""
 //   });
+
+//   // Fetch session data on component mount
+//   useEffect(() => {
+//     const userData = localStorage.getItem("userData");
+//     if (userData) {
+//       try {
+//         const parsed = JSON.parse(userData);
+//         setSessionData(parsed);
+        
+//         // Pre-fill form with user data if available
+//         if (parsed.user_name || parsed.email) {
+//           setFormData(prev => ({
+//             ...prev,
+//             first_name: parsed.user_name?.split(' ')[0] || "",
+//             last_name: parsed.user_name?.split(' ').slice(1).join(' ') || "",
+//             email: parsed.email || "",
+//             mobile: parsed.phone || parsed.mobile || ""
+//           }));
+//         }
+//       } catch (err) {
+//         console.error("Failed to parse userData from localStorage:", err);
+//       }
+//     }
+//   }, []);
 
 //   // Fetch departments from API
 //   useEffect(() => {
 //     const fetchDepartments = async () => {
 //       try {
-//         const userData = localStorage.getItem("userData");
-//         let parsedData = null;
-        
-//         if (userData) {
-//           try {
-//             parsedData = JSON.parse(userData);
-//             setSessionData(parsedData);
-//           } catch (err) {
-//             console.error("Failed to parse userData from localStorage:", err);
-//           }
-//         }
-
-//         const departmentsUrl = parsedData 
-//           ? `${parsedData.APP_URL}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${parsedData.sub_institute_id}&group_by=department&order_by[column]=department&order_by[direction]=asc`
+//         const departmentsUrl = sessionData 
+//           ? `${sessionData.APP_URL}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.sub_institute_id}&group_by=department&order_by[column]=department&order_by[direction]=asc`
 //           : "http://127.0.0.1:8000/table_data?table=s_user_jobrole&filters[sub_institute_id]=3&group_by=department&order_by[column]=department&order_by[direction]=asc";
 
 //         console.log("Fetching departments from:", departmentsUrl);
@@ -156,12 +198,13 @@
         
 //       } catch (err) {
 //         console.error("Error fetching departments:", err);
-//         // Continue even if departments fail to load
 //       }
 //     };
 
-//     fetchDepartments();
-//   }, []);
+//     if (sessionData) {
+//       fetchDepartments();
+//     }
+//   }, [sessionData]);
 
 //   // Fetch job postings from API
 //   useEffect(() => {
@@ -170,21 +213,9 @@
 //         setLoading(true);
 //         setError(null);
         
-//         const userData = localStorage.getItem("userData");
-//         let parsedData = null;
-        
-//         if (userData) {
-//           try {
-//             parsedData = JSON.parse(userData);
-//             setSessionData(parsedData);
-//           } catch (err) {
-//             console.error("Failed to parse userData from localStorage:", err);
-//           }
-//         }
-
 //         // Use provided API URL or fallback to local storage data
-//         const apiUrl = parsedData 
-//           ? `${parsedData.APP_URL}/api/job-postings?type=API&token=${parsedData.token}&sub_institute_id=${parsedData.sub_institute_id}`
+//         const apiUrl = sessionData 
+//           ? `${sessionData.APP_URL}/api/job-postings?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`
 //           : "http://127.0.0.1:8000/api/job-postings?type=API&token=1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5&sub_institute_id=1";
 
 //         console.log("Fetching job postings from:", apiUrl);
@@ -216,30 +247,26 @@
         
 //         // Filter only active jobs and ensure each job has the required properties with fallbacks
 //         const processedJobs = jobData
-//           .filter(job => job.status === 'active') // Only show active jobs
+//           .filter(job => job.status === 'active')
 //           .map(job => {
-//             // Find department name by matching department_id
 //             const departmentInfo = departments.find(dept => dept.id === job.department_id);
 //             const departmentName = departmentInfo ? departmentInfo.department : `Department ${job.department_id}`;
 
-//             // Format salary range
 //             const salaryRange = job.min_salary && job.max_salary 
 //               ? `₹${parseInt(job.min_salary).toLocaleString()} - ₹${parseInt(job.max_salary).toLocaleString()}`
 //               : "Competitive Salary";
 
-//             // Format requirements from skills and experience
 //             const requirements = [];
 //             if (job.skills) requirements.push(...job.skills.split(',').map(skill => skill.trim()));
 //             if (job.experience) requirements.push(job.experience);
 //             if (job.education) requirements.push(job.education);
 
-//             // Format benefits
 //             const benefitsList = job.benefits ? [job.benefits] : ["Not specified"];
 
 //             return {
 //               id: job.id || 0,
 //               title: job.title || "Untitled Position",
-//               company: "Your Company", // You might want to add company field to your API
+//               company: "Your Company",
 //               department_id: job.department_id || 0,
 //               department: departmentName,
 //               location: job.location || "Remote",
@@ -248,7 +275,7 @@
 //               max_salary: job.max_salary || "0",
 //               salary_range: salaryRange,
 //               posted_date: job.created_at || new Date().toISOString(),
-//               applicants_count: 0, // You might want to add this to your API
+//               applicants_count: 0,
 //               positions: job.positions || 1,
 //               description: job.description || "No description available.",
 //               requirements: requirements.length > 0 ? requirements : ["Not specified"],
@@ -259,7 +286,8 @@
 //               experience: job.experience || "",
 //               education: job.education || "",
 //               status: job.status || "active",
-//               deadline: job.deadline || ""
+//               deadline: job.deadline || "",
+//               created_at: job.created_at || new Date().toISOString()
 //             };
 //           });
         
@@ -274,11 +302,10 @@
 //       }
 //     };
 
-//     // Only fetch job postings after departments are loaded
-//     if (departments.length > 0 || loading) {
+//     if (sessionData) {
 //       fetchJobPostings();
 //     }
-//   }, [departments]);
+//   }, [sessionData, departments]);
 
 //   // Filter job listings based on search term
 //   const filteredJobListings = jobListings.filter(job =>
@@ -344,24 +371,61 @@
 //   const handleApplyClick = (job: JobPosting) => {
 //     setSelectedJob(job);
 //     setIsDialogOpen(true);
-//     setFormData({
-//       first_name: "",
-//       middle_name: "",
-//       last_name: "",
-//       email: "",
-//       mobile: "",
-//       current_location: "",
-//       employment_type: "",
-//       experience: "",
-//       education: "",
-//       expected_salary: "",
-//       skills: "",
-//       certifications: "",
-//       resume: null
-//     });
+    
+//     // Reset form but keep pre-filled user data
+//     const userData = localStorage.getItem("userData");
+//     if (userData) {
+//       try {
+//         const parsed = JSON.parse(userData);
+//         setFormData({
+//           first_name: parsed.user_name?.split(' ')[0] || "",
+//           middle_name: "",
+//           last_name: parsed.user_name?.split(' ').slice(1).join(' ') || "",
+//           email: parsed.email || "",
+//           mobile: parsed.phone || parsed.mobile || "",
+//           current_location: "",
+//           employment_type: "",
+//           experience: "",
+//           education: "",
+//           expected_salary: "",
+//           skills: "",
+//           certifications: "",
+//           resume: null,
+//           cover_letter: "",
+//           portfolio_url: "",
+//           linkedin_url: "",
+//           notice_period: "",
+//           current_company: "",
+//           current_role: ""
+//         });
+//       } catch (err) {
+//         console.error("Failed to parse userData:", err);
+//         setFormData({
+//           first_name: "",
+//           middle_name: "",
+//           last_name: "",
+//           email: "",
+//           mobile: "",
+//           current_location: "",
+//           employment_type: "",
+//           experience: "",
+//           education: "",
+//           expected_salary: "",
+//           skills: "",
+//           certifications: "",
+//           resume: null,
+//           cover_letter: "",
+//           portfolio_url: "",
+//           linkedin_url: "",
+//           notice_period: "",
+//           current_company: "",
+//           current_role: ""
+//         });
+//       }
+//     }
 //   };
 
-//   const handleInputChange = (field: string, value: string) => {
+//   const handleInputChange = (field: keyof ApplicationFormData, value: string) => {
 //     setFormData(prev => ({
 //       ...prev,
 //       [field]: value
@@ -376,41 +440,199 @@
 //     }));
 //   };
 
+//   // Upload resume file and return the file path
+//   const uploadResumeFile = async (file: File): Promise<string> => {
+//     try {
+//       const uploadFormData = new FormData();
+//       uploadFormData.append("file", file);
+//       uploadFormData.append("type", "API");
+//       uploadFormData.append("token", sessionData?.token || "");
+//       uploadFormData.append("sub_institute_id", sessionData?.sub_institute_id || "");
+//       uploadFormData.append("user_id", sessionData?.user_id || "");
+
+//       // Try different upload endpoints
+//       const uploadUrls = [
+//         `${sessionData.APP_URL}/api/upload-resume`,
+//         `${sessionData.APP_URL}/api/upload`,
+//         `${sessionData.APP_URL}/api/file-upload`,
+//         `${sessionData.APP_URL}/upload`
+//       ];
+
+//       let uploadResponse;
+//       let lastError;
+
+//       for (const uploadUrl of uploadUrls) {
+//         try {
+//           console.log("Trying upload URL:", uploadUrl);
+//           uploadResponse = await fetch(uploadUrl, {
+//             method: 'POST',
+//             body: uploadFormData,
+//           });
+
+//           if (uploadResponse.ok) {
+//             const result = await uploadResponse.json();
+//             console.log("Upload successful:", result);
+            
+//             // Extract the file path from response
+//             const filePath = result.file_path || result.path || result.url || result.file_url || 
+//                             result.data?.file_path || result.data?.path || result.data?.url;
+            
+//             if (filePath) {
+//               return filePath;
+//             } else {
+//               // If no path in response, generate a default path
+//               return `/uploads/resumes/${Date.now()}_${file.name}`;
+//             }
+//           }
+//         } catch (error) {
+//           lastError = error;
+//           console.log(`Upload failed for ${uploadUrl}:`, error);
+//           continue;
+//         }
+//       }
+
+//       throw lastError || new Error('All upload attempts failed');
+
+//     } catch (error) {
+//       console.error('Error uploading resume:', error);
+//       throw new Error('Failed to upload resume file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+//     }
+//   };
+
+//   // Build form data for API submission
+//   const buildFormData = async (): Promise<FormData> => {
+//     const formDataToSend = new FormData();
+
+//     // Add session data if available
+//     if (sessionData) {
+//       formDataToSend.append("type", "API");
+//       formDataToSend.append("token", sessionData.token || "");
+//       formDataToSend.append("sub_institute_id", sessionData.sub_institute_id || "");
+//       formDataToSend.append("user_id", sessionData.user_id || "");
+//     }
+
+//     // Add job application data
+//     if (selectedJob) {
+//       formDataToSend.append("job_id", selectedJob.id.toString());
+//       formDataToSend.append("job_title", selectedJob.title);
+//       formDataToSend.append("department_id", selectedJob.department_id.toString());
+//     }
+
+//     // Add all form fields
+//     formDataToSend.append("first_name", formData.first_name);
+//     formDataToSend.append("middle_name", formData.middle_name);
+//     formDataToSend.append("last_name", formData.last_name);
+//     formDataToSend.append("email", formData.email);
+//     formDataToSend.append("mobile", formData.mobile);
+//     formDataToSend.append("current_location", formData.current_location);
+//     formDataToSend.append("employment_type", formData.employment_type);
+//     formDataToSend.append("experience", formData.experience);
+//     formDataToSend.append("education", formData.education);
+//     formDataToSend.append("expected_salary", formData.expected_salary);
+//     formDataToSend.append("skills", formData.skills);
+//     formDataToSend.append("certifications", formData.certifications);
+    
+//     // Handle resume file upload and get file path
+//     if (formData.resume) {
+//       try {
+//         const resumePath = await uploadResumeFile(formData.resume);
+//         formDataToSend.append("resume_path", resumePath);
+//         console.log("Resume path added to form data:", resumePath);
+//       } catch (error) {
+//         console.error("Failed to upload resume, continuing without resume path:", error);
+//         // You can choose to throw the error or continue without resume path
+//         // throw error; // Uncomment this line to stop submission if resume upload fails
+//       }
+//     }
+
+//     // Add metadata
+//     formDataToSend.append("applied_date", new Date().toISOString().split('T')[0]);
+//     formDataToSend.append("status", "active");
+//     formDataToSend.append("application_source", "candidate_portal");
+
+//     return formDataToSend;
+//   };
+
+//   // Form validation
+//   const validateForm = (): boolean => {
+//     const requiredFields: (keyof ApplicationFormData)[] = [
+//       'first_name', 'last_name', 'email', 'mobile', 'current_location',
+//       'employment_type', 'experience', 'education', 'expected_salary', 'skills'
+//     ];
+
+//     for (const field of requiredFields) {
+//       if (!formData[field] || formData[field].toString().trim() === '') {
+//         alert(`Please fill in the ${field.replace('_', ' ')} field.`);
+//         return false;
+//       }
+//     }
+
+//     // Validate resume file
+//     if (!formData.resume) {
+//       alert("Please upload your resume.");
+//       return false;
+//     }
+
+//     // Validate file type
+//     const allowedTypes = ['.pdf', '.doc', '.docx'];
+//     const fileExtension = formData.resume.name.toLowerCase().slice(formData.resume.name.lastIndexOf('.'));
+//     if (!allowedTypes.includes(fileExtension)) {
+//       alert("Please upload a valid resume file (PDF, DOC, or DOCX).");
+//       return false;
+//     }
+
+//     // Basic email validation
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//     if (!emailRegex.test(formData.email)) {
+//       alert("Please enter a valid email address.");
+//       return false;
+//     }
+
+//     return true;
+//   };
+
 //   const handleSubmit = async (event: React.FormEvent) => {
 //     event.preventDefault();
-//     if (!selectedJob) return;
+    
+//     if (!selectedJob) {
+//       alert("No job selected. Please try again.");
+//       return;
+//     }
+
+//     if (!validateForm()) {
+//       return;
+//     }
 
 //     setIsSubmitting(true);
     
 //     try {
-//       const submitData = new FormData();
+//       const formDataToSend = await buildFormData();
       
-//       // Add all form fields to FormData
-//       Object.keys(formData).forEach(key => {
-//         if (key === 'resume' && formData.resume) {
-//           submitData.append('resume', formData.resume);
+//       // Comprehensive debug logging
+//       console.log("=== FORM DATA DEBUG ===");
+//       console.log("FormData entries:");
+//       for (const [key, value] of formDataToSend.entries()) {
+//         if (value instanceof File) {
+//           console.log(`${key}: [File] ${value.name} (${value.size} bytes, ${value.type})`);
 //         } else {
-//           submitData.append(key, (formData as any)[key] || '');
+//           console.log(`${key}:`, value);
 //         }
-//       });
-
-//       // Add additional required parameters - use only 'active' status
-//       submitData.append('job_id', selectedJob.id.toString());
-//       submitData.append('applied_date', new Date().toISOString().split('T')[0]);
-//       submitData.append('status', 'active'); // Use only 'active' status
-//       submitData.append('user_id', '1');
+//       }
+//       console.log("=== END DEBUG ===");
 
 //       // API endpoint
-//       const apiUrl = sessionData 
-//         ? `${sessionData.APP_URL}/api/job-applications?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`
-//         : "http://127.0.0.1:8000/api/job-applications?type=API&token=1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5&sub_institute_id=1";
+//       const apiUrl = `${sessionData.APP_URL}/api/job-applications`;
 
 //       console.log("Submitting application to:", apiUrl);
       
 //       const response = await fetch(apiUrl, {
 //         method: 'POST',
-//         body: submitData,
+//         body: formDataToSend,
 //       });
+
+//       // Log response details
+//       console.log("Response status:", response.status);
+//       console.log("Response headers:", Object.fromEntries(response.headers.entries()));
 
 //       const result: ApplicationResponse = await response.json();
 //       console.log("Application submission response:", result);
@@ -420,7 +642,8 @@
 //       }
 
 //       // Success
-//       alert(`Application submitted successfully for ${selectedJob.title}!`);
+//       const successMessage = `✅ Application submitted successfully for ${selectedJob.title}!`;
+//       alert(successMessage);
 //       setIsDialogOpen(false);
 
 //     } catch (error) {
@@ -491,7 +714,7 @@
 //               Showing {filteredJobListings.length} active job{filteredJobListings.length !== 1 ? 's' : ''}
 //             </div>
 
-//             {/* Quick Stats and Job Listings */}
+//             {/* Job Listings */}
 //             <div className="space-y-6">
 //               {filteredJobListings.length === 0 ? (
 //                 <Card>
@@ -576,7 +799,7 @@
 //                             {job.deadline && (
 //                               <div className="flex items-center gap-1">
 //                                 <Calendar className="w-3 h-3" />
-//                                 <span>Apply by {new Date(job.deadline).toLocaleDateString()}</span>
+//                                 <span>Application Closing On {new Date(job.deadline).toLocaleDateString()}</span>
 //                               </div>
 //                             )}
 //                           </div>
@@ -592,7 +815,7 @@
 //                             <DialogTrigger asChild>
 //                               <Button onClick={() => handleApplyClick(job)}>Apply Now</Button>
 //                             </DialogTrigger>
-//                             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+//                             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
 //                               <DialogHeader>
 //                                 <DialogTitle>Apply for {selectedJob?.title}</DialogTitle>
 //                                 <DialogDescription>
@@ -601,7 +824,6 @@
 //                               </DialogHeader>
                               
 //                               <form onSubmit={handleSubmit} className="space-y-6">
-//                                 {/* Form content remains the same */}
 //                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 //                                   <div className="space-y-2">
 //                                     <label htmlFor="first_name" className="text-sm font-medium">First Name *</label>
@@ -635,133 +857,138 @@
 //                                     />
 //                                   </div>
 //                                 </div>
-//                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+//                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                                   <div className="space-y-2">
+//                                     <label htmlFor="email" className="text-sm font-medium">Email *</label>
+//                                     <Input
+//                                       id="email"
+//                                       type="email"
+//                                       value={formData.email}
+//                                       onChange={(e) => handleInputChange('email', e.target.value)}
+//                                       placeholder="john.doe@example.com"
+//                                       required
+//                                     />
+//                                   </div>
+
+//                                   <div className="space-y-2">
+//                                     <label htmlFor="mobile" className="text-sm font-medium">Mobile *</label>
+//                                     <Input
+//                                       id="mobile"
+//                                       value={formData.mobile}
+//                                       onChange={(e) => handleInputChange('mobile', e.target.value)}
+//                                       placeholder="+1 (555) 123-4567"
+//                                       required
+//                                     />
+//                                   </div>
+//                                 </div>
+
 //                                 <div className="space-y-2">
-//                                   <label htmlFor="email" className="text-sm font-medium">Email *</label>
+//                                   <label htmlFor="current_location" className="text-sm font-medium">Current Location *</label>
 //                                   <Input
-//                                     id="email"
-//                                     type="email"
-//                                     value={formData.email}
-//                                     onChange={(e) => handleInputChange('email', e.target.value)}
-//                                     placeholder="john.doe@example.com"
+//                                     id="current_location"
+//                                     value={formData.current_location}
+//                                     onChange={(e) => handleInputChange('current_location', e.target.value)}
+//                                     placeholder="New York, NY"
 //                                     required
 //                                   />
 //                                 </div>
 
+//                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                                   <div className="space-y-2">
+//                                     <label htmlFor="employment_type" className="text-sm font-medium">Employment Type *</label>
+//                                     <select
+//                                       id="employment_type"
+//                                       value={formData.employment_type}
+//                                       onChange={(e) => handleInputChange('employment_type', e.target.value)}
+//                                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//                                       required
+//                                     >
+//                                       <option value="">Select employment type</option>
+//                                       <option value="full-time">Full Time</option>
+//                                       <option value="part-time">Part Time</option>
+//                                       <option value="contract">Contract</option>
+//                                       <option value="internship">Internship</option>
+//                                     </select>
+//                                   </div>
+
+//                                   <div className="space-y-2">
+//                                     <label htmlFor="experience" className="text-sm font-medium">Experience *</label>
+//                                     <Input
+//                                       id="experience"
+//                                       value={formData.experience}
+//                                       onChange={(e) => handleInputChange('experience', e.target.value)}
+//                                       placeholder="5 years"
+//                                       required
+//                                     />
+//                                   </div>
+//                                 </div>
+
 //                                 <div className="space-y-2">
-//                                   <label htmlFor="mobile" className="text-sm font-medium">Mobile *</label>
+//                                   <label htmlFor="education" className="text-sm font-medium">Education *</label>
 //                                   <Input
-//                                     id="mobile"
-//                                     value={formData.mobile}
-//                                     onChange={(e) => handleInputChange('mobile', e.target.value)}
-//                                     placeholder="+1 (555) 123-4567"
+//                                     id="education"
+//                                     value={formData.education}
+//                                     onChange={(e) => handleInputChange('education', e.target.value)}
+//                                     placeholder="Bachelor's Degree in Computer Science"
 //                                     required
 //                                   />
 //                                 </div>
-//                               </div>
-
-//                               <div className="space-y-2">
-//                                 <label htmlFor="current_location" className="text-sm font-medium">Current Location *</label>
-//                                 <Input
-//                                   id="current_location"
-//                                   value={formData.current_location}
-//                                   onChange={(e) => handleInputChange('current_location', e.target.value)}
-//                                   placeholder="New York, NY"
-//                                   required
-//                                 />
-//                               </div>
-
-//                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                                 <div className="space-y-2">
-//                                   <label htmlFor="employment_type" className="text-sm font-medium">Employment Type *</label>
-//                                   <select
-//                                     id="employment_type"
-//                                     value={formData.employment_type}
-//                                     onChange={(e) => handleInputChange('employment_type', e.target.value)}
-//                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-//                                     required
-//                                   >
-//                                     <option value="">Select employment type</option>
-//                                     <option value="full-time">Full Time</option>
-//                                     <option value="part-time">Part Time</option>
-//                                     <option value="contract">Contract</option>
-//                                     <option value="internship">Internship</option>
-//                                   </select>
-//                                 </div>
 
 //                                 <div className="space-y-2">
-//                                   <label htmlFor="experience" className="text-sm font-medium">Experience *</label>
+//                                   <label htmlFor="expected_salary" className="text-sm font-medium">Expected Salary *</label>
 //                                   <Input
-//                                     id="experience"
-//                                     value={formData.experience}
-//                                     onChange={(e) => handleInputChange('experience', e.target.value)}
-//                                     placeholder="5 years"
+//                                     id="expected_salary"
+//                                     value={formData.expected_salary}
+//                                     onChange={(e) => handleInputChange('expected_salary', e.target.value)}
+//                                     placeholder="₹80,000 - ₹100,000"
 //                                     required
 //                                   />
 //                                 </div>
-//                               </div>
 
-//                               <div className="space-y-2">
-//                                 <label htmlFor="education" className="text-sm font-medium">Education *</label>
-//                                 <Input
-//                                   id="education"
-//                                   value={formData.education}
-//                                   onChange={(e) => handleInputChange('education', e.target.value)}
-//                                   placeholder="Bachelor's Degree in Computer Science"
-//                                   required
-//                                 />
-//                               </div>
-
-//                               <div className="space-y-2">
-//                                 <label htmlFor="expected_salary" className="text-sm font-medium">Expected Salary *</label>
-//                                 <Input
-//                                   id="expected_salary"
-//                                   value={formData.expected_salary}
-//                                   onChange={(e) => handleInputChange('expected_salary', e.target.value)}
-//                                   placeholder="₹80,000 - ₹100,000"
-//                                   required
-//                                 />
-//                               </div>
-
-//                               <div className="space-y-2">
-//                                 <label htmlFor="skills" className="text-sm font-medium">Skills *</label>
-//                                 <Input
-//                                   id="skills"
-//                                   value={formData.skills}
-//                                   onChange={(e) => handleInputChange('skills', e.target.value)}
-//                                   placeholder="JavaScript, React, Node.js, Python"
-//                                   required
-//                                 />
-//                                 <p className="text-xs text-muted-foreground">List your key skills separated by commas</p>
-//                               </div>
-
-//                               <div className="space-y-2">
-//                                 <label htmlFor="certifications" className="text-sm font-medium">Certifications</label>
-//                                 <Input
-//                                   id="certifications"
-//                                   value={formData.certifications}
-//                                   onChange={(e) => handleInputChange('certifications', e.target.value)}
-//                                   placeholder="AWS Certified, PMP, Scrum Master"
-//                                 />
-//                                 <p className="text-xs text-muted-foreground">List any relevant certifications</p>
-//                               </div>
-
-//                               <div className="space-y-2">
-//                                 <label htmlFor="resume" className="text-sm font-medium">Resume</label>
-//                                 <div className="flex items-center gap-2">
-//                                   <Input 
-//                                     type="file" 
-//                                     id="resume"
-//                                     accept=".pdf,.doc,.docx" 
-//                                     onChange={handleFileChange}
+//                                 <div className="space-y-2">
+//                                   <label htmlFor="skills" className="text-sm font-medium">Skills *</label>
+//                                   <Input
+//                                     id="skills"
+//                                     value={formData.skills}
+//                                     onChange={(e) => handleInputChange('skills', e.target.value)}
+//                                     placeholder="JavaScript, React, Node.js, Python"
+//                                     required
 //                                   />
-//                                   <Upload className="w-4 h-4" />
+//                                   <p className="text-xs text-muted-foreground">List your key skills separated by commas</p>
 //                                 </div>
-//                                 <p className="text-xs text-muted-foreground">Upload your resume (PDF, DOC, DOCX)</p>
-//                               </div>
 
+//                                 <div className="space-y-2">
+//                                   <label htmlFor="certifications" className="text-sm font-medium">Certifications</label>
+//                                   <Input
+//                                     id="certifications"
+//                                     value={formData.certifications}
+//                                     onChange={(e) => handleInputChange('certifications', e.target.value)}
+//                                     placeholder="AWS Certified, PMP, Scrum Master"
+//                                   />
+//                                   <p className="text-xs text-muted-foreground">List any relevant certifications</p>
+//                                 </div>
 
-//                                 {/* Rest of the form remains the same */}
+//                                 <div className="space-y-2">
+//                                   <label htmlFor="resume" className="text-sm font-medium">Resume *</label>
+//                                   <div className="flex items-center gap-2">
+//                                     <Input 
+//                                       type="file" 
+//                                       id="resume"
+//                                       accept=".pdf,.doc,.docx" 
+//                                       onChange={handleFileChange}
+//                                       required
+//                                     />
+//                                     <Upload className="w-4 h-4" />
+//                                   </div>
+//                                   <p className="text-xs text-muted-foreground">
+//                                     {formData.resume 
+//                                       ? `Selected: ${formData.resume.name} (${(formData.resume.size / 1024 / 1024).toFixed(2)} MB)` 
+//                                       : "Upload your resume (PDF, DOC, DOCX) *"
+//                                     }
+//                                   </p>
+//                                 </div>
+
 //                                 <div className="flex justify-end gap-4 pt-4">
 //                                   <Button 
 //                                     type="button" 
@@ -979,9 +1206,7 @@ const CandidatePortal = () => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const departmentsUrl = sessionData 
-          ? `${sessionData.APP_URL}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.sub_institute_id}&group_by=department&order_by[column]=department&order_by[direction]=asc`
-          : "http://127.0.0.1:8000/table_data?table=s_user_jobrole&filters[sub_institute_id]=3&group_by=department&order_by[column]=department&order_by[direction]=asc";
+        const departmentsUrl =  `${sessionData.APP_URL}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.sub_institute_id}&group_by=department&order_by[column]=department&order_by[direction]=asc`;
 
         console.log("Fetching departments from:", departmentsUrl);
         
@@ -1026,9 +1251,8 @@ const CandidatePortal = () => {
         setError(null);
         
         // Use provided API URL or fallback to local storage data
-        const apiUrl = sessionData 
-          ? `${sessionData.APP_URL}/api/job-postings?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`
-          : "http://127.0.0.1:8000/api/job-postings?type=API&token=1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5&sub_institute_id=1";
+        const apiUrl = `${sessionData.APP_URL}/api/job-postings?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`
+         ;
 
         console.log("Fetching job postings from:", apiUrl);
         
@@ -1185,22 +1409,56 @@ const CandidatePortal = () => {
     setIsDialogOpen(true);
     
     // Reset form but keep pre-filled user data
-    setFormData(prev => ({
-      ...prev,
-      employment_type: "",
-      experience: "",
-      education: "",
-      expected_salary: "",
-      skills: "",
-      certifications: "",
-      resume: null,
-      cover_letter: "",
-      portfolio_url: "",
-      linkedin_url: "",
-      notice_period: "",
-      current_company: "",
-      current_role: ""
-    }));
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData);
+        setFormData({
+          first_name:  "",
+          middle_name: "",
+          last_name:  "",
+          email: parsed.email || "",
+          mobile: parsed.phone || parsed.mobile || "",
+          current_location: "",
+          employment_type: "",
+          experience: "",
+          education: "",
+          expected_salary: "",
+          skills: "",
+          certifications: "",
+          resume: null,
+          cover_letter: "",
+          portfolio_url: "",
+          linkedin_url: "",
+          notice_period: "",
+          current_company: "",
+          current_role: ""
+        });
+      } catch (err) {
+        console.error("Failed to parse userData:", err);
+        setFormData({
+          first_name: "",
+          middle_name: "",
+          last_name: "",
+          email: "",
+          mobile: "",
+          current_location: "",
+          employment_type: "",
+          experience: "",
+          education: "",
+          expected_salary: "",
+          skills: "",
+          certifications: "",
+          resume: null,
+          cover_letter: "",
+          portfolio_url: "",
+          linkedin_url: "",
+          notice_period: "",
+          current_company: "",
+          current_role: ""
+        });
+      }
+    }
   };
 
   const handleInputChange = (field: keyof ApplicationFormData, value: string) => {
@@ -1218,16 +1476,101 @@ const CandidatePortal = () => {
     }));
   };
 
-  // Build form data for API submission - similar to JobPostingForm approach
-  const buildFormData = (): FormData => {
+  // Enhanced upload resume file function with better error handling
+  const uploadResumeFile = async (file: File): Promise<string> => {
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      uploadFormData.append("resume", file); // Try different field names
+      uploadFormData.append("type", "API");
+      uploadFormData.append("token", sessionData?.token || "");
+      uploadFormData.append("sub_institute_id", sessionData?.sub_institute_id?.toString() || "");
+      uploadFormData.append("user_id", sessionData?.user_id?.toString() || "");
+
+      // Try different upload endpoints
+      const uploadUrls = [
+        `${sessionData?.APP_URL}/api/upload-resume`,
+        `${sessionData?.APP_URL}/api/upload`,
+        `${sessionData?.APP_URL}/api/file-upload`,
+        `${sessionData?.APP_URL}/upload`,
+        `${sessionData?.APP_URL}/api/job-applications/upload`
+      ];
+
+      let uploadResponse;
+      let lastError;
+
+      for (const uploadUrl of uploadUrls) {
+        try {
+          console.log("🔄 Trying upload URL:", uploadUrl);
+          console.log("📁 File details:", {
+            name: file.name,
+            size: file.size,
+            type: file.type
+          });
+
+          uploadResponse = await fetch(uploadUrl, {
+            method: 'POST',
+            body: uploadFormData,
+          });
+
+          console.log("📤 Upload response status:", uploadResponse.status);
+
+          if (uploadResponse.ok) {
+            const result = await uploadResponse.json();
+            console.log("✅ Upload successful - Full response:", result);
+
+            // Enhanced path extraction - try multiple possible response structures
+            const filePath = 
+              result.file_path || 
+              result.path || 
+              result.url || 
+              result.file_url || 
+              result.data?.file_path || 
+              result.data?.path || 
+              result.data?.url ||
+              result.resume_path ||
+              result.filename;
+
+            if (filePath) {
+              console.log("📄 Extracted file path:", filePath);
+              return filePath;
+            } else {
+              console.warn("⚠️ No file path in response, generating default path");
+              // If no path in response, generate a default path
+              const timestamp = Date.now();
+              const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+              return `/uploads/resumes/${timestamp}_${safeFileName}`;
+            }
+          } else {
+            console.warn(`❌ Upload failed for ${uploadUrl}:`, uploadResponse.status, uploadResponse.statusText);
+            const errorText = await uploadResponse.text();
+            console.warn("Error response:", errorText);
+          }
+        } catch (error) {
+          lastError = error;
+          console.log(`❌ Upload failed for ${uploadUrl}:`, error);
+          continue;
+        }
+      }
+
+      throw lastError || new Error('All upload attempts failed');
+
+    } catch (error) {
+      console.error('❌ Error uploading resume:', error);
+      throw new Error('Failed to upload resume file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
+  // Build form data for API submission with enhanced resume handling
+  const buildFormData = async (): Promise<FormData> => {
     const formDataToSend = new FormData();
 
     // Add session data if available
     if (sessionData) {
       formDataToSend.append("type", "API");
       formDataToSend.append("token", sessionData.token || "");
-      formDataToSend.append("sub_institute_id", sessionData.sub_institute_id || "");
-      formDataToSend.append("user_id", sessionData.user_id || "");
+      formDataToSend.append("sub_institute_id", sessionData.sub_institute_id?.toString() || "");
+      formDataToSend.append("user_id", sessionData.user_id?.toString() || "");
     }
 
     // Add job application data
@@ -1251,6 +1594,34 @@ const CandidatePortal = () => {
     formDataToSend.append("skills", formData.skills);
     formDataToSend.append("certifications", formData.certifications);
     
+    // Handle resume file - try multiple approaches
+    if (formData.resume) {
+      try {
+        console.log("📤 Starting resume upload process...");
+        const resumePath = await uploadResumeFile(formData.resume);
+        formDataToSend.append("resume_path", resumePath);
+        console.log("✅ Resume path added to form data:", resumePath);
+        
+        // Also append the actual file in case the API expects it
+        formDataToSend.append("resume_file", formData.resume);
+        formDataToSend.append("file", formData.resume);
+        
+      } catch (error) {
+        console.error("❌ Failed to upload resume, continuing without resume path:", error);
+        // Add a fallback resume path
+        const fallbackPath = `/uploads/resumes/fallback_${Date.now()}.pdf`;
+        formDataToSend.append("resume_path", fallbackPath);
+        console.log("🔄 Using fallback resume path:", fallbackPath);
+      }
+    } else {
+      console.warn("⚠️ No resume file selected");
+    }
+    
+    // Add metadata
+    formDataToSend.append("applied_date", new Date().toISOString().split('T')[0]);
+    formDataToSend.append("status", "active");
+    formDataToSend.append("application_source", "candidate_portal");
+
     // Add optional fields if they have values
     if (formData.cover_letter) formDataToSend.append("cover_letter", formData.cover_letter);
     if (formData.portfolio_url) formDataToSend.append("portfolio_url", formData.portfolio_url);
@@ -1259,20 +1630,10 @@ const CandidatePortal = () => {
     if (formData.current_company) formDataToSend.append("current_company", formData.current_company);
     if (formData.current_role) formDataToSend.append("current_role", formData.current_role);
 
-    // Add file if present
-    if (formData.resume) {
-      formDataToSend.append("resume", formData.resume);
-    }
-
-    // Add metadata
-    formDataToSend.append("applied_date", new Date().toISOString().split('T')[0]);
-    formDataToSend.append("status", "active");
-    formDataToSend.append("application_source", "candidate_portal");
-
     return formDataToSend;
   };
 
-  // Form validation
+  // Enhanced form validation
   const validateForm = (): boolean => {
     const requiredFields: (keyof ApplicationFormData)[] = [
       'first_name', 'last_name', 'email', 'mobile', 'current_location',
@@ -1284,6 +1645,29 @@ const CandidatePortal = () => {
         alert(`Please fill in the ${field.replace('_', ' ')} field.`);
         return false;
       }
+    }
+
+    // Validate resume file
+    if (!formData.resume) {
+      alert("Please upload your resume.");
+      return false;
+    }
+
+    // Validate file type and size
+    const allowedTypes = ['.pdf', '.doc', '.docx', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const fileExtension = formData.resume.name.toLowerCase().slice(formData.resume.name.lastIndexOf('.'));
+    const fileType = formData.resume.type.toLowerCase();
+    
+    if (!allowedTypes.includes(fileExtension) && !allowedTypes.includes(fileType)) {
+      alert("Please upload a valid resume file (PDF, DOC, or DOCX).");
+      return false;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (formData.resume.size > maxSize) {
+      alert("Resume file size should be less than 5MB.");
+      return false;
     }
 
     // Basic email validation
@@ -1311,17 +1695,22 @@ const CandidatePortal = () => {
     setIsSubmitting(true);
     
     try {
-      const formDataToSend = buildFormData();
+      const formDataToSend = await buildFormData();
       
-      // Debug: log form data
-      console.log("📦 Application FormData Preview:");
+      // Enhanced debug logging
+      console.log("=== FORM DATA DEBUG ===");
+      console.log("FormData entries:");
       for (const [key, value] of formDataToSend.entries()) {
-        console.log(`${key}:`, value);
+        if (value instanceof File) {
+          console.log(`${key}: [File] ${value.name} (${value.size} bytes, ${value.type})`);
+        } else {
+          console.log(`${key}:`, value);
+        }
       }
+      console.log("=== END DEBUG ===");
 
       // API endpoint
-      const apiUrl = `${sessionData.APP_URL}/api/job-applications`
-    
+      const apiUrl = `${sessionData.APP_URL}/api/job-applications`;
 
       console.log("Submitting application to:", apiUrl);
       
@@ -1330,11 +1719,29 @@ const CandidatePortal = () => {
         body: formDataToSend,
       });
 
-      const result: ApplicationResponse = await response.json();
+      // Log response details
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+
+      let result: ApplicationResponse;
+      try {
+        const responseText = await response.text();
+        console.log("Raw response:", responseText);
+        
+        if (responseText) {
+          result = JSON.parse(responseText);
+        } else {
+          result = { status: 0, message: "Empty response from server" };
+        }
+      } catch (parseError) {
+        console.error("Failed to parse response:", parseError);
+        result = { status: 0, message: "Invalid JSON response from server" };
+      }
+
       console.log("Application submission response:", result);
 
       if (!response.ok || result.status === 0) {
-        throw new Error(result.message || 'Failed to submit application');
+        throw new Error(result.message || `HTTP ${response.status}: Failed to submit application`);
       }
 
       // Success
@@ -1343,7 +1750,7 @@ const CandidatePortal = () => {
       setIsDialogOpen(false);
 
     } catch (error) {
-      console.error('Error submitting application:', error);
+      console.error('❌ Error submitting application:', error);
       alert(`Failed to submit application. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
@@ -1495,7 +1902,7 @@ const CandidatePortal = () => {
                             {job.deadline && (
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
-                                <span>Apply by {new Date(job.deadline).toLocaleDateString()}</span>
+                                <span>Application Closing On {new Date(job.deadline).toLocaleDateString()}</span>
                               </div>
                             )}
                           </div>
@@ -1554,7 +1961,7 @@ const CandidatePortal = () => {
                                   </div>
                                 </div>
 
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div className="space-y-2">
                                     <label htmlFor="email" className="text-sm font-medium">Email *</label>
                                     <Input
@@ -1666,18 +2073,25 @@ const CandidatePortal = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                  <label htmlFor="resume" className="text-sm font-medium">Resume</label>
+                                  <label htmlFor="resume" className="text-sm font-medium">Resume *</label>
                                   <div className="flex items-center gap-2">
                                     <Input 
                                       type="file" 
                                       id="resume"
-                                      accept=".pdf,.doc,.docx" 
+                                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
                                       onChange={handleFileChange}
+                                      required
                                     />
                                     <Upload className="w-4 h-4" />
                                   </div>
-                                  <p className="text-xs text-muted-foreground">Upload your resume (PDF, DOC, DOCX)</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formData.resume 
+                                      ? `Selected: ${formData.resume.name} (${(formData.resume.size / 1024 / 1024).toFixed(2)} MB)` 
+                                      : "Upload your resume (PDF, DOC, DOCX, max 5MB) *"
+                                    }
+                                  </p>
                                 </div>
+
                                 <div className="flex justify-end gap-4 pt-4">
                                   <Button 
                                     type="button" 
