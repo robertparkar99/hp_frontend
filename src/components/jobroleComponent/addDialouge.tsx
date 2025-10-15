@@ -25,7 +25,6 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     userId: "",
     userProfile: ""
   });
-
   const [departments, setDepartments] = useState<any[]>([]);
   const [subDepartments, setSubDepartments] = useState<any[]>([]);
   const [formData, setFormData] = useState<FormData>({
@@ -54,9 +53,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
   const fetchDepartments = async () => {
     try {
-      const res = await fetch(
-        `${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=department&searchWord=departments`
-      );
+      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=department&searchWord=departments`);
       const data = await res.json();
       setDepartments(data.searchData || []);
     } catch (error) {
@@ -67,9 +64,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
   const fetchSubDepartments = async (department: string) => {
     try {
-      const res = await fetch(
-        `${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=sub_department&searchWord=${encodeURIComponent(department)}`
-      );
+      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=sub_department&searchWord=${encodeURIComponent(department)}`);
       const data = await res.json();
       setSubDepartments(data.searchData || []);
     } catch (error) {
@@ -78,57 +73,11 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     }
   };
 
-  // 🧠 Generate jobrole data using AI
-  const generateJobRoleContent = async (jobrole: string, description: string) => {
-    if (!jobrole.trim() || !description.trim()) {
-      return alert("Please enter both Job Role and Description first");
-    }
-
-    try {
-      const res = await fetch("/api/generate-jobrole", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jobrole,
-          description,
-          orgType: sessionData.orgType,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!data?.choices?.length) throw new Error("Empty AI response");
-
-      let content = data.choices[0].message.content.trim();
-      content = content.replace(/```json|```/g, "").trim();
-
-      let aiResponse: any;
-      try {
-        aiResponse = JSON.parse(content);
-      } catch (err) {
-        console.warn("AI returned invalid JSON:", content);
-        return alert("AI returned invalid JSON, please retry.");
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        department: aiResponse.department || prev.department,
-        subDepartment: aiResponse.sub_department || prev.subDepartment,
-        performance_expectation: aiResponse.performance_expectation || prev.performance_expectation,
-      }));
-
-      if (aiResponse.department) await fetchSubDepartments(aiResponse.department);
-
-    } catch (error) {
-      console.error("Error generating job role content:", error);
-      alert("Error generating AI content. Check console for details.");
-    }
-  };
-
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
+    // If department changes, fetch sub-departments
     if (name === "department" && value) {
       fetchSubDepartments(value);
     }
@@ -140,22 +89,22 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     const payload = {
       ...formData,
       type: "API",
-      method_field: "POST",
+      method_field: 'POST',
       token: sessionData.token,
       sub_institute_id: sessionData.subInstituteId,
       org_type: sessionData.orgType,
       user_profile_name: sessionData.userProfile,
       user_id: sessionData.userId,
-      formType: "user",
+      formType: 'user',
     };
 
     try {
       const res = await fetch(`${sessionData.url}/jobrole_library`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${sessionData.token}`,
-          "Accept": "application/json",
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.token}`,
+          'Accept': 'application/json',
         },
         body: JSON.stringify(payload),
       });
@@ -165,6 +114,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       alert(data.message);
       onSuccess();
       onClose();
+
     } catch (error) {
       console.error("Error submitting form:", error);
       alert("Error submitting form");
@@ -174,113 +124,120 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
   return (
     <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 h-screen overflow-y-auto hide-scroll">
       <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative my-auto">
-        <button onClick={onClose} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">✖</button>
+        <button onClick={onClose} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">
+          ✖
+        </button>
 
-        {/* Header */}
+     {/* header parts start  */}
         <div className="flex w-full">
+          {/* Left: GIF */}
           <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
-            <img src={`/assets/loading/robo_dance.gif`} alt="AI Robo" className="w-full h-auto" />
+            <img src={`/assets/loading/robo_dance.gif`} alt="Loading..." className="w-full h-auto" />
           </div>
+
+          {/* Center Content */}
           <div className="w-[90%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 text-center rounded-r-lg">
-            <h2 className="text-gray-800 font-bold text-lg">Add New Job Role</h2>
-            <h4 className="text-gray-700 font-semibold text-sm">
+            <h2 className="text-gray-800 font-bold text-lg">Add New Jobrole</h2>
+            <h4 className="text-gray-700 font-semibold text-sm">  
               <b>Industry : </b>{sessionData.orgType}
             </h4>
           </div>
         </div>
 
-        <div className="w-full bg-gradient-to-r from-blue-100 to-blue-200 my-2 p-4 text-center rounded-lg">
-          <form onSubmit={handleSubmit}>
-            <div className="grid md:grid-cols-2 md:gap-6">
-              <div className="text-left mb-5">
-                <label htmlFor="department">Department</label><br />
-                <select
+        {/* header parts end  */}
+        <div className="w-[100%] bg-gradient-to-r from-blue-100 to-blue-200 my-2 p-4 text-center rounded-lg gap-4">
+          <form className="w-[100%]" onSubmit={handleSubmit}>
+            {/* Job Role and Location */}
+            <div className="flex gap-4">
+              <div className="relative z-0 w-full mb-5 group text-left">
+                <label htmlFor="department" className="text-left">Jobrole Department</label><br />
+                <input
+                  type="text"
                   name="department"
-                  value={formData.department || ""}
+                  list="departments"
+                  className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+                  placeholder="Search or Add Department..."
                   onChange={handleFormChange}
-                  className="form-select w-full border-2 rounded-lg p-2 border-[var(--color-blue-100)] bg-white text-black focus:border-blue-500"
-                >
-                  <option value="">Select Department</option>
+                  value={formData.department}
+                  required
+                  autoComplete="off"
+                />
+                <datalist id="departments">
                   {departments.map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
                   ))}
-                </select>
+                </datalist>
               </div>
 
-              <div className="text-left mb-5">
-                <label htmlFor="subDepartment">Sub Department</label><br />
-                <select
-                  name="subDepartment"
-                  value={formData.subDepartment || ""}
+              <div className="relative z-0 w-full mb-5 group text-left">
+                <label htmlFor="subDepartment" className="text-left">Jobrole Sub-Department</label><br />
+                <input
+                  type="text"
+                  name="sub_department"
+                  list="subDepartments"
+                  className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+                  placeholder="Search or Add Sub-Department..."
                   onChange={handleFormChange}
-                  className="form-select w-full border-2 rounded-lg p-2 border-[var(--color-blue-100)] bg-white text-black focus:border-blue-500"
-                >
-                  <option value="">Select Sub Department</option>
-                  {subDepartments.map((sub) => (
-                    <option key={sub} value={sub}>{sub}</option>
+                  value={formData.subDepartment}
+                  autoComplete="off"
+                  disabled={!formData.department}
+                />
+                <datalist id="subDepartments">
+                  {subDepartments.map((subDept) => (
+                    <option key={subDept} value={subDept}>
+                      {subDept}
+                    </option>
                   ))}
-                </select>
+                </datalist>
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 md:gap-6">
-              <div className="text-left mb-5">
-                <label htmlFor="jobrole">Job Role</label><br />
+            <div className="flex gap-4">
+              <div className="relative z-0 w-full mb-5 group text-left">
+                <label htmlFor="jobrole" className="text-left">Job Role</label><br />
                 <input
                   type="text"
                   name="jobrole"
-                  value={formData.jobrole}
-                  onChange={handleFormChange}
+                  className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
                   placeholder="Enter Job Role..."
-                  className="w-full border-2 rounded-lg p-2 border-[var(--color-blue-100)] bg-white text-black focus:border-blue-500"
+                  onChange={handleFormChange}
+                  value={formData.jobrole}
                   required
                 />
               </div>
-
-              <div className="text-left mb-5">
-                <label htmlFor="description">Description</label><br />
-                <div className="flex gap-2">
-                  <textarea
-                    name="description"
-                    rows={2}
-                    value={formData.description}
-                    onChange={handleFormChange}
-                    placeholder="Enter Description..."
-                    className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
-                  ></textarea>
-                  <button
-                    type="button"
-                    onClick={() => generateJobRoleContent(formData.jobrole, formData.description)}
-                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 h-10 w-50"
-                    title="Generate with AI"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M13.5 4.938l1.563 1.562a4.001 4.001 0 01-5.656 5.656L8.344 13.5a4 4 0 105.656-5.656l-1.563-1.563a5.5 5.5 0 00-7.778 7.778l1.562 1.563a5.5 5.5 0 007.778-7.778z" />
-                    </svg>
-                    AI Generate
-                  </button>
-                </div>
+              {/* Description */}
+              <div className="relative z-0 w-full mb-5 group text-left">
+                <label htmlFor="description" className="text-left">Jobrole Description</label><br />
+                <textarea
+                  name="description"
+                  rows={3}
+                  className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
+                  placeholder="Enter Job Description..."
+                  onChange={handleFormChange}
+                  value={formData.description}
+                ></textarea>
               </div>
             </div>
 
-            <div className="text-left mb-5">
-              <label htmlFor="performance_expectation">Performance Expectation</label><br />
-              <textarea
-                name="performance_expectation"
-                rows={3}
-                value={formData.performance_expectation || ""}
-                onChange={handleFormChange}
-                placeholder="Enter Performance Expectation..."
-                className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
-              ></textarea>
+            <div className="flex gap-4">
+              <div className="relative z-0 w-full mb-5 group text-left">
+                <label htmlFor="performance_expectation" className="text-left">Performance Expectation</label><br />
+                <textarea
+                  name="performance_expectation"
+                  rows={3}
+                  className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
+                  placeholder="Enter Performance Expectation..."
+                  onChange={handleFormChange}
+                  value={formData.performance_expectation}
+                ></textarea>
+              </div>
+
             </div>
 
-            <button
-              type="submit"
-              className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br 
-              focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-            >
-              Add
+            <button type="submit" className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+              Submit
             </button>
           </form>
         </div>
