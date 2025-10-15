@@ -353,20 +353,46 @@ export default function Index({
     }
   };
 
-  const moveToNextSkill = (): void => {
-    if (currentSkillIndex < userJobroleSkills.length - 1) {
-      saveCurrentSkillData();
-
-      const nextIndex = currentSkillIndex + 1;
-      setCurrentSkillIndex(nextIndex);
-      setSelectedSkill(userJobroleSkills[nextIndex]);
-      setActiveTab("knowledge");
-      loadSkillData(nextIndex);
+ const moveToNextSkill = (): void => {
+  if (currentSkillIndex < userJobroleSkills.length - 1) {
+    const nextIndex = currentSkillIndex + 1;
+    setCurrentSkillIndex(nextIndex);
+    setSelectedSkill(userJobroleSkills[nextIndex]);
+    
+    // Reset for new skill
+    setActiveTab("knowledge");
+    setValidationState({
+      knowledge: {},
+      ability: {},
+      behaviour: {},
+      attitude: {},
+    });
+    setShowDetails(false);
+    setSelectedLevelIndex(null);
+    setSelectedSkillLevel("");
+    
+    // Load existing data if any
+    const nextSkill = userJobroleSkills[nextIndex];
+    const ratedSkill = localRatedSkills.find(
+      (rated: any) => rated.skill_id === nextSkill.skill_id
+    );
+    
+    if (ratedSkill) {
+      setSelectedLevelIndex(SkillLevels.findIndex(level => 
+        level.proficiency_level === ratedSkill.skill_level || 
+        level.proficiency_type === ratedSkill.skill_level
+      ));
+      setSelectedSkillLevel(ratedSkill.skill_level);
+      setValidationState({
+        knowledge: ratedSkill.knowledge || {},
+        ability: ratedSkill.ability || {},
+        behaviour: ratedSkill.behaviour || {},
+        attitude: ratedSkill.attitude || {},
+      });
     }
-
-    setSelectedImage("/image 16.png");
-    setIsProcessing(false);
-  };
+  }
+  setIsProcessing(false);
+};
 
   const moveToPreviousSkill = (): void => {
     if (currentSkillIndex > 0) {
@@ -380,75 +406,65 @@ export default function Index({
     }
   };
 
-  // handleSubmit (replace alert with Dialog)
-  const handleSubmit = async (): Promise<void> => {
-    // Check if at least one level is selected
-    if (selectedLevelIndex === null) {
-      showInfo("Validation", "Please select at least one proficiency level before proceeding.", "error");
-      return;
-    }
 
-    if (!selectedSkill) return;
+const handleSubmit = async (): Promise<void> => {
+  if (selectedLevelIndex === null) {
+    showInfo("Validation", "Please select at least one proficiency level before proceeding.", "error");
+    return;
+  }
 
-    setIsProcessing(true);
-    setOpacity(0);
+  if (!selectedSkill) return;
 
-    setTimeout(() => setSelectedImage("/Illustration.png"), 300);
+  setIsProcessing(true);
 
-    try {
-      // Store skill rating locally instead of saving to database immediately
-      const newRatedSkill = {
-        // skill_id is already included in the spread below, so we skip it here
-        skill_level: selectedSkillLevel,
-        ...selectedSkill,
-        // persist the detailed validation under these keys so bulk save has them
-        knowledge: validationState.knowledge,
-        ability: validationState.ability,
-        behaviour: validationState.behaviour,
-        attitude: validationState.attitude,
-      };
+  try {
+    // Create the rated skill with KAAB data
+    const newRatedSkill = {
+      skill_id: selectedSkill.skill_id,
+      skill_level: selectedSkillLevel,
+      skill: selectedSkill.skill,
+      category: selectedSkill.category,
+      knowledge: validationState.knowledge,
+      ability: validationState.ability,
+      behaviour: validationState.behaviour,
+      attitude: validationState.attitude,
+    };
 
-      // Update local state
-      setLocalRatedSkills((prev: any[]) => {
-        const filtered = prev.filter((skill: any) => skill.skill_id !== selectedSkill.skill_id);
-        const updated = [...filtered, newRatedSkill];
+    console.log("Saving skill:", newRatedSkill);
 
-        // Save to localStorage immediately
-        localStorage.setItem(`ratedSkills_${clickedUser}`, JSON.stringify(updated));
+    // Update local rated skills
+    setLocalRatedSkills(prev => {
+      // Remove existing skill if present
+      const filtered = prev.filter(skill => skill.skill_id !== selectedSkill.skill_id);
+      // Add updated skill
+      const updatedSkills = [...filtered, newRatedSkill];
+      
+      // Update localStorage
+      localStorage.setItem(`ratedSkills_${clickedUser}`, JSON.stringify(updatedSkills));
+      
+      return updatedSkills;
+    });
 
-        return updated;
-      });
+    // Show success message
+    showInfo("Success", "Skill rating saved successfully!", "success");
 
-      // Update parent state if setter function is provided
-      if (setUserRatedSkills) {
-        setUserRatedSkills((prev: any[]) => {
-          const filtered = prev.filter((skill: any) => skill.skill_id !== selectedSkill.skill_id);
-          return [...filtered, newRatedSkill];
-        });
-      }
-
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
-
-      saveCurrentSkillData();
-
+    // Move to next skill
+    setTimeout(() => {
       if (currentSkillIndex < userJobroleSkills.length - 1) {
         moveToNextSkill();
       } else {
-        // All skills have been rated - show validation modal / info dialog
         setIsProcessing(false);
-        setSelectedImage("/image 16.png");
-        setOpacity(1);
-
-        showInfo("All skills rated", "All skills rated! You can review and submit all ratings together later.", "info");
+        showInfo("All Done", "All skills rated! Click 'Validate & Save All' to submit.", "success");
       }
-    } catch (error) {
-      console.error("Error saving skill locally:", error);
-      showInfo("Error", "Error saving skill assessment", "error");
-      setIsProcessing(false);
-      setSelectedImage("/image 16.png");
-    }
-  };
+    }, 1000);
+
+  } catch (error) {
+    console.error("Error saving skill:", error);
+    showInfo("Error", "Error saving skill assessment", "error");
+    setIsProcessing(false);
+  }
+};
+
   // Part 2/3 (continue)
 
   const handleLevelSelect = (index: number, level: ProficiencyLevel): void => {
@@ -465,11 +481,45 @@ export default function Index({
   };
 
   // Function to clear all rated skills (for testing/debugging)
+  // Function to clear all rated skills
   const clearRatedSkills = (): void => {
     localStorage.removeItem(`ratedSkills_${clickedUser}`);
     setLocalRatedSkills([]);
-    setUserRatedSkills([]);
+
+    // Only call setUserRatedSkills if it's provided and is a function
+    if (setUserRatedSkills && typeof setUserRatedSkills === 'function') {
+      setUserRatedSkills([]);
+    } else {
+      console.warn('setUserRatedSkills is not available or not a function');
+    }
+
     showInfo("Cleared", "Rated skills cleared!", "success");
+  };
+
+
+  // Add this helper function to debug your data
+  const debugBulkData = (skillsToSave: any[]) => {
+    console.log("=== BULK DATA DEBUG ===");
+    console.log("Number of skills to save:", skillsToSave.length);
+    console.log("Skills data:", skillsToSave);
+
+    const bulkData = {
+      skills: skillsToSave.map((skill) => ({
+        skill_id: skill.skill_id,
+        skill_level: skill.skill_level,
+        knowledge: skill.knowledge || {},
+        ability: skill.ability || {},
+        behaviour: skill.behaviour || {},
+        attitude: skill.attitude || {},
+        user_id: clickedUser || 0,
+        sub_institute_id: sessionData.subInstituteId,
+      })),
+      user_id: clickedUser || 0,
+      sub_institute_id: sessionData.subInstituteId,
+    };
+
+    console.log("Final bulk data structure:", bulkData);
+    console.log("=== END DEBUG ===");
   };
 
   // ✅ Bulk validation with dialog (called by Save All button)
@@ -478,6 +528,8 @@ export default function Index({
       showInfo("No ratings", "No skills have been rated yet!", "info");
       return;
     }
+    // Debug: check what we're about to send
+    debugBulkData(localRatedSkills);
 
     // Run validation before submitting
     const validation = validateSkillProficiencies(
@@ -521,14 +573,16 @@ export default function Index({
           ability: skill.ability || {},
           behaviour: skill.behaviour || {},
           attitude: skill.attitude || {},
-          userId: clickedUser || 0,
+          user_id: clickedUser || 0,
           sub_institute_id: sessionData.subInstituteId,
         })),
-        userId: clickedUser || 0,
+        user_id: clickedUser || 0,
         sub_institute_id: sessionData.subInstituteId,
       };
 
-      const response = await fetch(`${sessionData.url}/matrix/save-bulk`, {
+      console.log("Sending bulk data:", bulkData);
+
+      const response = await fetch(`${sessionData.url}/skill-matrix/store-bulk`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -540,28 +594,35 @@ export default function Index({
       if (response.ok) {
         const result = await response.json();
         console.log("Bulk submission successful:", result);
+
         // Clear local storage after successful bulk save
         localStorage.removeItem(`ratedSkills_${clickedUser}`);
         setLocalRatedSkills([]);
-        setUserRatedSkills([]);
-        setShowSuccess(true);
-        setTimeout(() => {
-          setShowSuccess(false);
-          showInfo("Success", "All skills have been successfully saved!", "success");
-        }, 2000);
+
+        // Only call setUserRatedSkills if it's provided and is a function
+        if (setUserRatedSkills && typeof setUserRatedSkills === 'function') {
+          setUserRatedSkills([]);
+        } else {
+          console.warn('setUserRatedSkills is not available or not a function');
+        }
+
+        showInfo("Success", "All skills have been successfully saved!", "success");
       } else {
-        console.error("Bulk submission failed:", response.statusText);
-        showInfo("Failed", "Failed to save skill assessments in bulk", "error");
+        const errorText = await response.text();
+        console.error("Bulk submission failed:", response.status, errorText);
+        showInfo("Failed", `Failed to save skill assessments: ${response.statusText}`, "error");
       }
     } catch (error) {
       console.error("Error in bulk submission:", error);
-      showInfo("Error", "Error submitting bulk assessment", "error");
+      showInfo("Error", `Error submitting bulk assessment: ${error instanceof Error ? error.message : 'Unknown error'}`, "error");
     } finally {
       setIsProcessing(false);
       setValidationDialogOpen(false);
       setPendingBulkData(null);
     }
   };
+
+
 
   // Validation Dialog component (replaces confirm/alerts for validation)
   const ValidationDialog = () => (
@@ -614,7 +675,7 @@ export default function Index({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className={`text-lg font-semibold ${infoDialogVariant === "success" ? "text-green-600" :
-              infoDialogVariant === "error" ? "text-red-600" : "text-slate-800"
+            infoDialogVariant === "error" ? "text-red-600" : "text-slate-800"
             }`}>
             {infoDialogTitle}
           </DialogTitle>
@@ -712,50 +773,87 @@ export default function Index({
 
                   <div className="h-[472px] overflow-y-auto">
                     {userJobroleSkills.map((skill: any, index: any) => {
-                      // Check if this skill is already rated - use localRatedSkills
-                      const isRated = localRatedSkills?.some((rated: any) =>
+                      const ratedSkill = localRatedSkills?.find((rated: any) =>
                         rated.skill_id === skill.skill_id
+                      );
+
+                      const hasKAAB = ratedSkill && (
+                        Object.keys(ratedSkill.knowledge || {}).length > 0 ||
+                        Object.keys(ratedSkill.ability || {}).length > 0 ||
+                        Object.keys(ratedSkill.behaviour || {}).length > 0 ||
+                        Object.keys(ratedSkill.attitude || {}).length > 0
                       );
 
                       return (
                         <div
                           key={index}
                           className="relative group cursor-pointer"
-                          onClick={() => handleSkillSelect(skill, index)}
+                          onClick={() => {
+                            // Save current skill data before switching
+                            if (selectedSkill) {
+                              const currentRatedSkill = {
+                                skill_id: selectedSkill.skill_id,
+                                skill_level: selectedSkillLevel,
+                                skill: selectedSkill.skill,
+                                knowledge: validationState.knowledge,
+                                ability: validationState.ability,
+                                behaviour: validationState.behaviour,
+                                attitude: validationState.attitude,
+                              };
+
+                              setLocalRatedSkills(prev => {
+                                const filtered = prev.filter(s => s.skill_id !== selectedSkill.skill_id);
+                                return [...filtered, currentRatedSkill];
+                              });
+                            }
+
+                            // Then switch to new skill
+                            setSelectedSkill(skill);
+                            setCurrentSkillIndex(index);
+
+                            // Load the new skill's data
+                            if (ratedSkill) {
+                              setSelectedLevelIndex(SkillLevels.findIndex(level =>
+                                level.proficiency_level === ratedSkill.skill_level
+                              ));
+                              setSelectedSkillLevel(ratedSkill.skill_level);
+                              setValidationState({
+                                knowledge: ratedSkill.knowledge || {},
+                                ability: ratedSkill.ability || {},
+                                behaviour: ratedSkill.behaviour || {},
+                                attitude: ratedSkill.attitude || {},
+                              });
+                              setShowDetails(true);
+                            } else {
+                              setSelectedLevelIndex(null);
+                              setSelectedSkillLevel("");
+                              setValidationState({
+                                knowledge: {}, ability: {}, behaviour: {}, attitude: {}
+                              });
+                              setShowDetails(false);
+                            }
+                          }}
                         >
-                          <div className="w-[12px] h-[32px] bg-[#47A0FF] rounded-r-[4px] absolute -left-[6px] top-[2px] transition-all duration-300 group-hover:w-full group-hover:left-0 group-hover:rounded-none opacity-100 group-hover:opacity-0 group-hover:delay-[0ms]"></div>
-                          <div
-                            className={`h-[36px] flex items-center transition-all duration-300 ${skill.skill_id === selectedSkill?.skill_id
+                          <div className={`h-[36px] flex items-center transition-all duration-300 ${skill.skill_id === selectedSkill?.skill_id
                               ? "bg-[#47A0FF] text-black"
-                              : isRated
+                              : ratedSkill
                                 ? "bg-green-50 text-green-700 border border-green-200"
                                 : "bg-white group-hover:bg-[#47A0FF] group-hover:text-black"
-                              } mb-1`}
+                            } mb-1`}
                           >
                             <div className="flex items-center justify-between w-full pl-[24px] pr-[8px]">
-                              <span
-                                className={`text-[12px] truncate group-hover:text-black transition-colors duration-300 ${skill.skill_id === selectedSkill?.skill_id
+                              <span className={`text-[12px] truncate ${skill.skill_id === selectedSkill?.skill_id
                                   ? "text-black"
-                                  : isRated
+                                  : ratedSkill
                                     ? "text-green-700"
                                     : "text-[#393939]"
-                                  }`}
-                                style={{ fontFamily: "Inter, sans-serif" }}
+                                }`}
                               >
                                 {skill.skill.length > 20 ? `${skill.skill.slice(0, 20)}...` : skill.skill}
-                                {isRated && " ✓"}
+                                {ratedSkill && (hasKAAB ? " ✓" : " •")}
                               </span>
-                              <svg
-                                width="16"
-                                height="17"
-                                viewBox="0 0 24 25"
-                                fill="none"
-                                className="group-hover:fill-white transition-colors duration-300"
-                              >
-                                <path
-                                  d="M7.84467 21.376C7.55178 21.0831 7.55178 20.6083 7.84467 20.3154L14.5643 13.5957L7.84467 6.87601C7.55178 6.58311 7.55178 6.1083 7.84467 5.8154C8.13756 5.5225 8.61244 5.5225 8.90533 5.8154L16.1553 13.0654C16.4482 13.3583 16.4482 13.8331 16.1553 14.126L8.90533 21.376C8.61244 21.6689 8.13756 21.6689 7.84467 21.376Z"
-                                  fill="#393939"
-                                />
+                              <svg width="16" height="17" viewBox="0 0 24 25" fill="none">
+                                <path d="M7.84467 21.376C7.55178 21.0831 7.55178 20.6083 7.84467 20.3154L14.5643 13.5957L7.84467 6.87601C7.55178 6.58311 7.55178 6.1083 7.84467 5.8154C8.13756 5.5225 8.61244 5.5225 8.90533 5.8154L16.1553 13.0654C16.4482 13.3583 16.4482 13.8331 16.1553 14.126L8.90533 21.376C8.61244 21.6689 8.13756 21.6689 7.84467 21.376Z" fill="#393939" />
                               </svg>
                             </div>
                           </div>
@@ -852,11 +950,12 @@ export default function Index({
                           ← Previous
                         </button>
 
-                        {showSuccess && (
+                        {/* REMOVED: Success message */}
+                        {/* {showSuccess && (
                           <div className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
                             Skill updated successfully!
                           </div>
-                        )}
+                        )} */}
 
                         {/* Next Button - Hide when showDetails is true */}
                         {!showDetails && (
@@ -864,7 +963,7 @@ export default function Index({
                             onClick={handleSubmit}
                             className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md"
                           >
-                            Save & Next →
+                            Next →
                           </button>
                         )}
                       </div>
@@ -968,7 +1067,7 @@ export default function Index({
                           )}
                         </div>
 
-                        {/* ✅ Save & Next Button -> show only on last tab */}
+                        {/* ✅ Next Button -> show only on last tab - UPDATED: Changed from "Save & Next" to "Next" */}
                         {activeTab === attrArray[attrArray.length - 1].title && (
                           <div className="mt-5 flex justify-end">
                             <button
@@ -977,15 +1076,11 @@ export default function Index({
                               title={
                                 selectedLevelIndex === null
                                   ? "Please select a level first"
-                                  : "Click to submit"
+                                  : "Click to go to next skill"
                               }
                               disabled={isProcessing === null}
                             >
-                              {isProcessing
-                                ? "Processing..."
-                                : currentSkillIndex === userJobroleSkills.length - 1
-                                  ? "Complete"
-                                  : "Save & Next"}
+                              Next
                             </button>
                           </div>
                         )}
@@ -1109,12 +1204,6 @@ export default function Index({
       {/* Dialogs */}
       <ValidationDialog />
       <InfoDialog />
-      {/* Success indicator box (kept as existing short UI feedback) */}
-      {showSuccess && (
-        <div className="fixed bottom-28 right-6 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
-          Skill updated successfully!
-        </div>
-      )}
     </>
   );
 }
