@@ -180,7 +180,10 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     }
   };
 
-  // Modify handleFormChange to remove AI generation
+  let aiTimer: NodeJS.Timeout;
+  // generateFormContent("Python Programming", "Learn to write and optimize code in Python for AI applications.");
+
+  // Modify handleFormChange to trigger AI generation
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));

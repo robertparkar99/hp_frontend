@@ -561,27 +561,27 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
         <div className="flex items-center gap-2 flex-wrap">
         
           
-          <Button variant="outline" size="sm" onClick={handleImportDepartments}>
+          <Button variant="outline" size="sm" onClick={handleImportDepartments} title="Import Departments">
             <FileUp className="w-4 h-4" />
            
           </Button>
           
-          <Button variant="outline" size="sm" onClick={handleSettings}>
+          <Button variant="outline" size="sm" onClick={handleSettings} title="Settings">
             <Settings className="w-4 h-4 " />
             
           </Button>
           
-          <Button variant="outline" size="sm" onClick={handleAddCustomFields}>
+          <Button variant="outline" size="sm" onClick={handleAddCustomFields} title="Add Custom Fields">
             <SlidersHorizontal className="w-4 h-4 " />
           
           </Button>
           
-          <Button variant="outline" size="sm" onClick={handleGenerativeAI}>
+          <Button variant="outline" size="sm" onClick={handleGenerativeAI} title="Generative AI Assistant">
             <Sparkles className="w-4 h-4 " />
             
           </Button>
           
-          <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
+          <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)} title='Add Department'>
             <Plus className="w-4 h-4 " />
            
           </Button>
@@ -673,25 +673,25 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
                   </h5>
                     {/* Department-Level Action Buttons */}
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => handleViewDetails(department)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleViewDetails(department)} title="View Details"> 
                     <Eye className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleEditDepartment(department)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleEditDepartment(department)} title="Edit Department">
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleAddSubDepartment(department)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleAddSubDepartment(department)} title="Add Sub-Department">
                     <Plus className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleAssignEmployees(department)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleAssignEmployees(department)} title="Assign Employees">
                     <UserPlus className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleViewAnalytics(department)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleViewAnalytics(department)}  title="View Analytics">
                     <BarChart3 className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDepartmentSettings(department)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleDepartmentSettings(department)}  title="Department Settings">
                     <ShieldCheck className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleAIRecommendation(department)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleAIRecommendation(department)} title="AI Recommendations">
                     <Sparkles className="w-4 h-4" />
                   </Button>
                 </div>
