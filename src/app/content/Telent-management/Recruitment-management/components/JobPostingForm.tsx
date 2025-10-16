@@ -150,10 +150,9 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
 
   // Handle opening AddDialog
   const handleAddNewJobRole = () => {
+    // Close the job posting form and open the AddDialog
     onOpenChange(false);
-    setTimeout(() => {
-      setOpenJobroleModal(true);
-    }, 300);
+    setOpenJobroleModal(true);
   };
 
   // Handle AddDialog close
