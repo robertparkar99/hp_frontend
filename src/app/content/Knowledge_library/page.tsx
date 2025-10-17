@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -158,7 +159,39 @@ const Honeycomb: React.FC = () => {
   }, [category, subCategory, proficiency, data]);
 
   // Get icon for classification item
-
+  // const getItemIcon = (item: string) => {
+  //   const iconProps = { className: "w-4 h-4" };
+    
+  //   if (item?.toLowerCase().includes("programming") || item?.toLowerCase().includes("code")) {
+  //     return <Puzzle {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("analysis") || item?.toLowerCase().includes("analytics")) {
+  //     return <BarChart3 {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("communication") || item?.toLowerCase().includes("writing")) {
+  //     return <MessageSquare {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("management") || item?.toLowerCase().includes("leadership")) {
+  //     return <Target {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("design") || item?.toLowerCase().includes("creative")) {
+  //     return <Lightbulb {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("research")) {
+  //     return <Search {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("education") || item?.toLowerCase().includes("teaching")) {
+  //     return <GraduationCap {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("legal") || item?.toLowerCase().includes("law")) {
+  //     return <Scale {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("document") || item?.toLowerCase().includes("report")) {
+  //     return <FileText {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("book") || item?.toLowerCase().includes("literature")) {
+  //     return <BookOpen {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("note") || item?.toLowerCase().includes("plan")) {
+  //     return <Notebook {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("trend") || item?.toLowerCase().includes("market")) {
+  //     return <TrendingUp {...iconProps} />;
+  //   } else if (item?.toLowerCase().includes("compliance") || item?.toLowerCase().includes("regulation")) {
+  //     return <FileCheck {...iconProps} />;
+  //   }
+    
+  //   return <Brain {...iconProps} />;
+  // };
 
   const customStyles: TableStyles = {
     headCells: {
@@ -193,9 +226,9 @@ const Honeycomb: React.FC = () => {
     (item.proficiency_description || "").toLowerCase().includes(filters.description.toLowerCase())
   );
 
-  // Unique options
+  // Unique options with proper filtering
   const uniqueCategories = Array.from(
-    new Set(data.map((item) => item.classification_category))
+    new Set(data.map((item) => item.classification_category).filter(cat => cat && cat.trim() !== ""))
   );
 
   const filteredSubCategories = category
@@ -204,12 +237,13 @@ const Honeycomb: React.FC = () => {
         data
           .filter((item) => item.classification_category === category)
           .map((item) => item.classification_sub_category)
+          .filter(sub => sub && sub.trim() !== "")
       )
     )
     : [];
 
   const uniqueProficiency = Array.from(
-    new Set(data.map((item) => item.proficiency_level || ""))
+    new Set(data.map((item) => item.proficiency_level || "").filter(prof => prof !== null && prof !== undefined && prof !== ""))
   ).sort((a, b) => {
     const numA = parseInt(a, 10);
     const numB = parseInt(b, 10);
@@ -227,11 +261,9 @@ const Honeycomb: React.FC = () => {
       name: (
         <div className="flex flex-col">
           <span className="flex items-center gap-2">
-
             Item
           </span>
           <div className="relative mt-1">
-
             <input
               type="text"
               placeholder="Search..."
@@ -255,11 +287,9 @@ const Honeycomb: React.FC = () => {
       name: (
         <div className="flex flex-col">
           <span className="flex items-center gap-2">
-
             Category
           </span>
           <div className="relative mt-1">
-
             <input
               type="text"
               placeholder="Search..."
@@ -277,11 +307,9 @@ const Honeycomb: React.FC = () => {
       name: (
         <div className="flex flex-col">
           <span className="flex items-center gap-2">
-
             Sub Category
           </span>
           <div className="relative mt-1">
-
             <input
               type="text"
               placeholder="Search..."
@@ -299,11 +327,9 @@ const Honeycomb: React.FC = () => {
       name: (
         <div className="flex flex-col">
           <span className="flex items-center gap-2">
-
             Proficiency
           </span>
           <div className="relative mt-1">
-
             <input
               type="text"
               placeholder="Search..."
@@ -321,11 +347,9 @@ const Honeycomb: React.FC = () => {
       name: (
         <div className="flex flex-col">
           <span className="flex items-center gap-2">
-
             Description
           </span>
           <div className="relative mt-1">
-
             <input
               type="text"
               placeholder="Search..."
@@ -342,7 +366,6 @@ const Honeycomb: React.FC = () => {
     {
       name: (
         <div className="flex items-center gap-2">
-
           Actions
         </div>
       ),
@@ -358,7 +381,7 @@ const Honeycomb: React.FC = () => {
             <Link className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <Trash2 className="w-4 h-4 text-red-500" />
+            <Trash2 className="w-4 h-4 " />
           </Button>
         </div>
       ),
@@ -397,118 +420,117 @@ const Honeycomb: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Add Knowledge">
                   <Plus className="w-5 h-5 text-gray-600" />
-
                 </button>
                 <button className="flex items-center  px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Import Knowledge">
                   <Upload className="w-5 h-5 text-gray-600" />
-
                 </button>
                 <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Export Knowledge">
                   <Download className="w-5 h-5 text-gray-600" />
-
                 </button>
                 <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Knowledge Analytics">
                   <Sparkles className="w-5 h-5 text-gray-600" />
-
                 </button>
               </div>
             </PopoverContent>
+          </Popover>
+          
+          {/* Filters and View Toggle - Right */}
+          <div className="flex items-center gap-2">
+            {/* Filters */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="p-2 hover:bg-gray-100 rounded-md transition-colors">
+                  <Funnel className="w-5 h-5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-4 space-y-4" align="end">
+                <Select
+                  value={category || "all"}
+                  onValueChange={(value) => {
+                    if (value === "all") {
+                      setCategory("");
+                      setSubCategory("");
+                    } else {
+                      setCategory(value);
+                      setSubCategory("");
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Filter by Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {uniqueCategories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={subCategory || "all"}
+                  onValueChange={(value) => setSubCategory(value === "all" ? "" : value)}
+                  disabled={!category}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Filter by Sub Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sub Categories</SelectItem>
+                    {filteredSubCategories.map((sub) => (
+                      <SelectItem key={sub} value={sub}>
+                        {sub}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={proficiency || "all"}
+                  onValueChange={(value) => setProficiency(value === "all" ? "" : value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Filter by Proficiency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Proficiency Levels</SelectItem>
+                    {uniqueProficiency.map((prof) => (
+                      <SelectItem key={prof} value={prof}>
+                        {prof}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </PopoverContent>
             </Popover>
-            {/* Filters and View Toggle - Right */}
-            <div className="flex items-center gap-2">
-              {/* Filters */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className="p-2 hover:bg-gray-100 rounded-md transition-colors">
-                    <Funnel className="w-5 h-5" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-4 space-y-4" align="end">
-                  <Select
-                    value={category || "all"}
-                    onValueChange={(value) => {
-                      if (value === "all") {
-                        setCategory("");
-                        setSubCategory("");
-                      } else {
-                        setCategory(value);
-                        setSubCategory("");
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Filter by Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {uniqueCategories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
 
-                  <Select
-                    value={subCategory || "all"}
-                    onValueChange={(value) => setSubCategory(value === "all" ? "" : value)}
-                    disabled={!category}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Filter by Sub Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Sub Categories</SelectItem>
-                      {filteredSubCategories.map((sub) => (
-                        <SelectItem key={sub} value={sub}>
-                          {sub}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            {/* View Toggle */}
+            <div className="flex border rounded-md overflow-hidden">
+              <button
+                onClick={() => setViewMode("circle")}
+                className={`px-3 py-2 flex items-center justify-center transition-colors ${
+                  viewMode === "circle"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <Circle className="h-5 w-5" />
+              </button>
 
-                  <Select
-                    value={proficiency || "all"}
-                    onValueChange={(value) => setProficiency(value === "all" ? "" : value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Filter by Proficiency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Proficiency Levels</SelectItem>
-                      {uniqueProficiency.map((prof) => (
-                        <SelectItem key={prof} value={prof}>
-                          {prof}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </PopoverContent>
-              </Popover>
-
-              {/* View Toggle */}
-              <div className="flex border rounded-md overflow-hidden">
-                <button
-                  onClick={() => setViewMode("circle")}
-                  className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "circle"
-                      ? "bg-blue-100 text-blue-600"
-                      : "bg-white text-gray-600 hover:bg-gray-100"
-                    }`}
-                >
-                  <Circle className="h-5 w-5" />
-                </button>
-
-                <button
-                  onClick={() => setViewMode("table")}
-                  className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "table"
-                      ? "bg-blue-100 text-blue-600"
-                      : "bg-white text-gray-600 hover:bg-gray-100"
-                    }`}
-                >
-                  <TableIcon className="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                onClick={() => setViewMode("table")}
+                className={`px-3 py-2 flex items-center justify-center transition-colors ${
+                  viewMode === "table"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <TableIcon className="h-5 w-5" />
+              </button>
             </div>
+          </div>
         </div>
       </div>
 
