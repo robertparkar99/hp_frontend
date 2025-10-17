@@ -106,12 +106,28 @@ type Config = {
 };
 
 const SEED_TEMPLATES: Template[] = [
+   {
+    id: "t1",
+    title: "Job Role → Critical Work Function",
+    jobRole: "Physiotherapist",
+    criticalWorkFunction: "Manage risk and quality",
+    tasks: ["Deliver training"],
+    skills: ["Strategy Development"],
+  },
   {
     id: "t2",
     title: "Job Role → Key Task",
     jobRole: "Physiotherapist",
     criticalWorkFunction: "",
     tasks: ["Deliver training"],
+    skills: ["Strategy Development"],
+  },
+  {
+    id: "t3",
+    title: "Job Role → Skill",
+    jobRole: "Physiotherapist",
+    criticalWorkFunction: "",
+    tasks: [""],
     skills: ["Strategy Development"],
   },
 ];

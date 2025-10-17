@@ -5,8 +5,8 @@ import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import AddDialog from "@/components/skillComponent/addDialouge";
 import { 
-  Trash2, Funnel, Hexagon, Table, Plus, Search, Settings, 
-  Download, Shield, BookOpen, Zap, Brain, Bot, Wand2,
+  Trash, Funnel, Hexagon, Table, Plus, Search, Settings, 
+  Download, Shield, BookOpen, Sparkles, Brain, Bot, Wand2,
   BarChart3, Link2, Compass, RefreshCw,
   CheckSquare, Edit
 } from "lucide-react";
@@ -701,28 +701,28 @@ export default function Page() {
         <div className="flex space-x-1">
           <button
             onClick={() => handleEdit(row)}
-            className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+            className="p-1 text-gray-600 hover:bg-gray-100 rounded"
             title="Edit"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleDelete(row.id)}
-            className="p-1 text-red-600 hover:bg-red-100 rounded"
+            className="p-1 text-gray-600 hover:bg-gray-100 rounded"
             title="Delete"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash className="w-4 h-4" />
           </button>
           <button
             onClick={() => {/* Usage insights logic */}}
-            className="p-1 text-green-600 hover:bg-green-100 rounded"
+            className="p-1 text-gray-600 hover:bg-gray-100 rounded"
             title="Usage Insights"
           >
             <BarChart3 className="w-4 h-4" />
           </button>
           <button
             onClick={() => {/* Link to task logic */}}
-            className="p-1 text-purple-600 hover:bg-purple-100 rounded"
+            className="p-1 text-gray-600 hover:bg-gray-100 rounded"
             title="Link to Task"
           >
             <Link2 className="w-4 h-4" />
@@ -765,8 +765,8 @@ export default function Page() {
             {/* Generative AI Tools */}
             <Popover>
               <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-yellow-100" title="AI Tools">
-                  <Zap className="w-5 h-5 text-yellow-600" />
+                <button className="p-2 rounded-lg hover:bg-gray-100" title="AI Tools">
+                  <Sparkles className="w-5 h-5 text-gray-600" />
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-2" align="end">
@@ -775,7 +775,7 @@ export default function Page() {
                     onClick={handleAISuggest}
                     className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
                   >
-                    <Zap className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4" />
                     AI Suggest
                   </button>
                   <button 
@@ -806,8 +806,8 @@ export default function Page() {
             {/* Add Button with Dropdown */}
             <Popover>
               <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-green-100" title="Add Options">
-                  <Plus className="w-5 h-5 text-green-600" />
+                <button className="p-2 rounded-lg hover:bg-gray-100" title="Add Options">
+                  <Plus className="w-5 h-5 text-gray-600" />
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-2" align="end">
@@ -816,21 +816,21 @@ export default function Page() {
                     onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
                     className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 " />
                     Add New Skill
                   </button>
                   <button 
                     onClick={() => {/* Add custom field logic */}}
                     className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
                   >
-                    <div className="w-4 h-4">🧩</div>
+                    <div className="w-4 h-4 ">🧩</div>
                     Add Custom Field
                   </button>
                   <button 
                     onClick={() => {/* Add from framework logic */}}
                     className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
                   >
-                    <BookOpen className="w-4 h-4" />
+                    <BookOpen className="w-4 h-4 " />
                     Add from Framework
                   </button>
                 </div>
@@ -841,7 +841,7 @@ export default function Page() {
             <Popover>
               <PopoverTrigger asChild>
                 <button className="p-2 rounded-lg hover:bg-gray-100" title="Admin Tools">
-                  <Settings className="w-5 h-5" />
+                  <Settings className="w-5 h-5 text-gray-600" />
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-2" align="end">
@@ -850,27 +850,27 @@ export default function Page() {
                     onClick={() => setDialogOpen({ ...dialogOpen, settings: true })}
                     className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
                   >
-                    <Settings className="w-4 h-4" />
+                    <Settings className="w-4 h-4 " />
                     Settings
                   </button>
                   <button 
                     onClick={() => setDialogOpen({ ...dialogOpen, permissions: true })}
                     className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
                   >
-                    <Shield className="w-4 h-4" />
+                    <Shield className="w-4 h-4 " />
                     Permissions
                   </button>
                   <button 
                     onClick={() => setDialogOpen({ ...dialogOpen, bulkImport: true })}
                     className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
                   >
-                    <Download className="w-4 h-4" />
+                    <Download className="w-4 h-4 " />
                     Bulk Import/Export
                   </button>
                 </div>
               </PopoverContent>
             </Popover>
-
+    
             {/* Filter Button */}
             <Popover>
               <PopoverTrigger asChild>
@@ -1097,7 +1097,7 @@ export default function Page() {
                 onClick={handleBulkDelete}
                 className="flex items-center gap-1 px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash className="w-4 h-4" />
                 Delete Selected
               </button>
               <button className="flex items-center gap-1 px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600">
@@ -1150,7 +1150,7 @@ export default function Page() {
                         <div className="flex gap-2 mt-2">
                           {/* Hexagon Tile Actions */}
                           <button
-                            className="text-blue-600 hover:bg-blue-100 p-1 rounded"
+                            className="text-gray-600 hover:bg-gray-100 p-1 rounded"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEdit(item.skillObj!);
@@ -1160,17 +1160,17 @@ export default function Page() {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            className="text-red-600 hover:bg-red-100 p-1 rounded"
+                            className="text-gray-600 hover:bg-gray-100 p-1 rounded"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(item.skillObj!.id);
                             }}
                             title="Delete"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash className="w-4 h-4" />
                           </button>
                           <button
-                            className="text-green-600 hover:bg-green-100 p-1 rounded"
+                            className="text-gray-600 hover:bg-gary-100 p-1 rounded"
                             onClick={(e) => {
                               e.stopPropagation();
                               // Usage insights logic
@@ -1180,7 +1180,7 @@ export default function Page() {
                             <BarChart3 className="w-4 h-4" />
                           </button>
                           <button
-                            className="text-purple-600 hover:bg-purple-100 p-1 rounded"
+                            className="text-gray-600 hover:bg-gray-100 p-1 rounded"
                             onClick={(e) => {
                               e.stopPropagation();
                               // Link to task logic

@@ -1,7 +1,23 @@
+
 // "use client";
 // import React, { useEffect, useState } from "react";
 // import { Atom } from "react-loading-indicators";
-// import { Funnel, Square, Table } from "lucide-react";
+// import { 
+//   Funnel, 
+//   Square, 
+//   Table, 
+//   Copy, 
+//   Edit, 
+//   Trash, 
+//   Sparkles, 
+//   Plus, 
+//   SlidersHorizontal, 
+//   ListChecks, 
+//   Download, 
+//   Settings, 
+//   HelpCircle ,
+//   Search
+// } from "lucide-react";
 // import {
 //   Select,
 //   SelectContent,
@@ -21,7 +37,6 @@
 //   DialogHeader,
 //   DialogTitle,
 // } from "@/components/ui/dialog";
-// import { FaEdit, FaTrash } from "react-icons/fa";
 // import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 
 // type JobRoleTask = {
@@ -54,6 +69,9 @@
 //     userId: "",
 //   });
 //   const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
+//   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
+//   const [showSettingsModal, setShowSettingsModal] = useState(false);
+//   const [searchTerm, setSearchTerm] = useState<string>("");
 
 //   // ✅ View toggle state
 //   const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
@@ -142,49 +160,6 @@
 //     }
 //   };
 
-//   if (loading) {
-//     return (
-//       <div className="flex justify-center items-center h-screen">
-//         <Atom color="#525ceaff" size="medium" text="" textColor="" />
-//       </div>
-//     );
-//   }
-
-//   // Unique filters
-//   const uniqueDepartments = Array.from(
-//     new Set(data.map((d) => d.track || ""))
-//   )
-//     .filter(Boolean)
-//     .sort();
-
-//   const uniqueJobroles = Array.from(
-//     new Set(
-//       data.filter((d) => d.track === selectedDept).map((d) => d.jobrole || "")
-//     )
-//   )
-//     .filter(Boolean)
-//     .sort();
-
-//   const uniqueFunctions = Array.from(
-//     new Set(
-//       data
-//         .filter(
-//           (d) => d.track === selectedDept && d.jobrole === selectedJobrole
-//         )
-//         .map((d) => d.critical_work_function || "")
-//     )
-//   )
-//     .filter(Boolean)
-//     .sort();
-
-//   // Filtered grid data
-//   const filteredData = data.filter(
-//     (item) =>
-//       item.track === selectedDept &&
-//       item.jobrole === selectedJobrole &&
-//       item.critical_work_function === selectedFunction
-//   );
-
 //   // Handle select changes
 //   const handleDepartmentChange = (val: string) => {
 //     setSelectedDept(val);
@@ -267,6 +242,113 @@
 //       alert("Error deleting task");
 //     }
 //   };
+
+//   // Action handlers for new buttons
+//   const handleAISuggest = () => {
+//     alert("AI Suggestions feature coming soon!");
+//   };
+
+//   const handleAddJobRole = () => {
+//     alert("Add Job Role feature coming soon!");
+//   };
+
+//   const handleCustomFields = () => {
+//     alert("Custom Fields feature coming soon!");
+//   };
+
+//   const handleBulkActions = () => {
+//     alert("Bulk Actions feature coming soon!");
+//   };
+
+//   const handleExport = () => {
+//     alert("Export feature coming soon!");
+//   };
+
+//   const handleCloneTask = async (id: number) => {
+//     if (!id) return;
+//     try {
+//       // Find the task to clone
+//       const taskToClone = data.find(item => item.id === id);
+//       if (!taskToClone) {
+//         alert("Task not found!");
+//         return;
+//       }
+
+//       // Create a clone of the task
+//       const clonedTask = {
+//         ...taskToClone,
+//         task: `${taskToClone.task} (Copy)`,
+//         id: undefined // Remove ID to create new record
+//       };
+
+//       // Send POST request to create cloned task
+//       const res = await fetch(
+//         `${sessionData.url}/jobrole_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=tasks`,
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${sessionData.token}`,
+//           },
+//           body: JSON.stringify(clonedTask),
+//         }
+//       );
+
+//       const result = await res.json();
+//       if (result.success) {
+//         alert("Task cloned successfully!");
+//         fetchData(); // Refresh data
+//       } else {
+//         alert("Error cloning task: " + result.message);
+//       }
+//     } catch (error) {
+//       console.error("Error cloning task:", error);
+//       alert("Error cloning task");
+//     }
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="flex justify-center items-center h-screen">
+//         <Atom color="#525ceaff" size="medium" text="" textColor="" />
+//       </div>
+//     );
+//   }
+
+//   // Unique filters
+//   const uniqueDepartments = Array.from(
+//     new Set(data.map((d) => d.track || ""))
+//   )
+//     .filter(Boolean)
+//     .sort();
+
+//   const uniqueJobroles = Array.from(
+//     new Set(
+//       data.filter((d) => d.track === selectedDept).map((d) => d.jobrole || "")
+//     )
+//   )
+//     .filter(Boolean)
+//     .sort();
+
+//   const uniqueFunctions = Array.from(
+//     new Set(
+//       data
+//         .filter(
+//           (d) => d.track === selectedDept && d.jobrole === selectedJobrole
+//         )
+//         .map((d) => d.critical_work_function || "")
+//     )
+//   )
+//     .filter(Boolean)
+//     .sort();
+
+//   // Filtered grid data
+//   const filteredData = data.filter(
+//     (item) =>
+//       item.track === selectedDept &&
+//       item.jobrole === selectedJobrole &&
+//       item.critical_work_function === selectedFunction
+//   );
 
 //   // ✅ DataTable Columns
 //   const columns: TableColumn<JobRoleTask>[] = [
@@ -358,23 +440,28 @@
 //     {
 //       name: "Actions",
 //       cell: (row) => (
-        
 //         <div className="flex space-x-2">
 //           <button
 //             onClick={() => handleEditClick(row.id, row.jobrole)}
 //             className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
 //           >
-//             <span className="mdi mdi-pencil"></span>
+//             <Edit size={14} />
+//           </button>
+//           <button
+//             onClick={() => handleCloneTask(row.id)}
+//             className="bg-green-500 hover:bg-green-700 text-white text-xs py-1 px-2 rounded"
+//           >
+//             <Copy size={14} />
 //           </button>
 //           <button
 //             onClick={() => handleDeleteClick(row.id)}
 //             className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
 //           >
-//             <span className="mdi mdi-delete"></span>
+//             <Trash size={14} />
 //           </button>
 //         </div>
 //       ),
-//       width: "120px",
+//       width: "140px",
 //     },
 //   ];
 
@@ -413,104 +500,197 @@
 //     <>
 //       <div className="min-h-screen p-4">
 //         {/* Top filter + Toggle */}
-//         <div className="flex justify-end mb-6">
-//           {/* Filters */}
-//           <Popover>
-//             <PopoverTrigger asChild>
-//               <button className="p-3">
-//                 <Funnel className="w-5 h-5" />
-//               </button>
-//             </PopoverTrigger>
-//             <PopoverContent className="w-80 mr-10 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
-//               <div className="space-y-4">
-//                 <div>
-//                   <label className="block text-sm font-medium mb-2">
-//                     Department
-//                   </label>
-//                   <Select
-//                     value={selectedDept}
-//                     onValueChange={handleDepartmentChange}
-//                   >
-//                     <SelectTrigger className="w-full">
-//                       <SelectValue placeholder="Select Department" />
-//                     </SelectTrigger>
-//                     <SelectContent>
-//                       {uniqueDepartments.map((dept, idx) => (
-//                         <SelectItem key={idx} value={dept}>
-//                           {dept}
-//                         </SelectItem>
-//                       ))}
-//                     </SelectContent>
-//                   </Select>
-//                 </div>
-//                 <div>
-//                   <label className="block text-sm font-medium mb-2">
-//                     Job Role
-//                   </label>
-//                   <Select
-//                     value={selectedJobrole}
-//                     onValueChange={handleJobroleChange}
-//                   >
-//                     <SelectTrigger className="w-full">
-//                       <SelectValue placeholder="Select Jobrole" />
-//                     </SelectTrigger>
-//                     <SelectContent>
-//                       {uniqueJobroles.map((role, idx) => (
-//                         <SelectItem key={idx} value={role}>
-//                           {role}
-//                         </SelectItem>
-//                       ))}
-//                     </SelectContent>
-//                   </Select>
-//                 </div>
-//                 <div>
-//                   <label className="block text-sm font-medium mb-2">
-//                     Work Function
-//                   </label>
-//                   <Select
-//                     value={selectedFunction}
-//                     onValueChange={setSelectedFunction}
-//                   >
-//                     <SelectTrigger className="w-full">
-//                       <SelectValue placeholder="Select Function" />
-//                     </SelectTrigger>
-//                     <SelectContent>
-//                       {uniqueFunctions.map((func, idx) => (
-//                         <SelectItem key={idx} value={func}>
-//                           {func}
-//                         </SelectItem>
-//                       ))}
-//                     </SelectContent>
-//                   </Select>
-//                 </div>
-//               </div>
-//             </PopoverContent>
-//           </Popover>
+//        {/* Top filter + Toggle */}
+// <div className="flex justify-between items-center mb-6 ">
+//   {/* Search Bar - Left */}
+//   <div className="flex-1 max-w-md">
+//     <div className="relative">
+//       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+//       <input
+//         type="text"
+//         placeholder="Search jobrole task, categories, or proficiency levels..."
+//         value={searchTerm}
+//         onChange={(e) => setSearchTerm(e.target.value)}
+//         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+//       />
+//     </div>
+//   </div>
 
-//           {/* ✅ Icon Toggle */}
-//           <div className="flex border rounded-md overflow-hidden">
-//             <button
-//               onClick={() => setViewMode("myview")}
-//               className={`px-3 py-2 flex items-center justify-center transition-colors ${
-//                 viewMode === "myview"
-//                   ? "bg-blue-100 text-blue-600"
-//                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-//               }`}
+//   {/* Action Buttons - Center */}
+//   <div className="flex items-center space-x-1 mx-4">
+//     {/* Generative AI Assistant */}
+//     <button 
+//       onClick={handleAISuggest}
+//       className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+//       title="AI Suggestions"
+//     >
+//       <Sparkles className="w-5 h-5 text-gray-600" />
+//     </button>
+
+//     {/* Add Job Role */}
+//     <button 
+//       onClick={handleAddJobRole}
+//       className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+//       title="Add Job Role"
+//     >
+//       <Plus className="w-5 h-5 text-gray-600" />
+//     </button>
+
+//     {/* Custom Fields */}
+//     <button 
+//       onClick={handleCustomFields}
+//       className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+//       title="Custom Fields"
+//     >
+//       <SlidersHorizontal className="w-5 h-5 text-gray-600" />
+//     </button>
+
+//     {/* Bulk Actions */}
+//     {selectedTasks.length > 0 && (
+//       <button 
+//         onClick={handleBulkActions}
+//         className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+//         title="Bulk Actions"
+//       >
+//         <ListChecks className="w-5 h-5 text-gray-600" />
+//       </button>
+//     )}
+
+//     {/* Export */}
+//     <button 
+//       onClick={handleExport}
+//       className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+//       title="Export"
+//     >
+//       <Download className="w-5 h-5 text-gray-600" />
+//     </button>
+
+//     {/* Settings */}
+//     <button 
+//       onClick={() => setShowSettingsModal(true)}
+//       className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+//       title="Settings"
+//     >
+//       <Settings className="w-5 h-5 text-gray-600" />
+//     </button>
+
+//     {/* Help */}
+//     <button 
+//       className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+//       title="Help"
+//     >
+//       <HelpCircle className="w-5 h-5 text-gray-600" />
+//     </button>
+  
+
+//   {/* Filter + View Toggle - Right */}
+//   <div className="flex items-center space-x-2">
+//     {/* Filter */}
+//     <Popover>
+//       <PopoverTrigger asChild>
+//         <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
+//           <Funnel className="w-5 h-5" />
+//         </button>
+//       </PopoverTrigger>
+//       <PopoverContent className="w-80 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
+//         <div className="space-y-4">
+//           <div>
+//             <label className="block text-sm font-medium mb-2">
+//               Department
+//             </label>
+//             <Select
+//               value={selectedDept}
+//               onValueChange={handleDepartmentChange}
 //             >
-//               <Square className="h-5 w-5" />
-//             </button>
-//             <button
-//               onClick={() => setViewMode("table")}
-//               className={`px-3 py-2 flex items-center justify-center transition-colors ${
-//                 viewMode === "table"
-//                   ? "bg-blue-100 text-blue-600"
-//                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-//               }`}
+//               <SelectTrigger className="w-full">
+//                 <SelectValue placeholder="Select Department" />
+//               </SelectTrigger>
+//               <SelectContent>
+//                 {uniqueDepartments.map((dept, idx) => (
+//                   <SelectItem key={idx} value={dept}>
+//                     {dept}
+//                   </SelectItem>
+//                 ))}
+//               </SelectContent>
+//             </Select>
+//           </div>
+          
+//           <div>
+//             <label className="block text-sm font-medium mb-2">
+//               Job Role
+//             </label>
+//             <Select
+//               value={selectedJobrole}
+//               onValueChange={handleJobroleChange}
 //             >
-//               <Table className="h-5 w-5" />
-//             </button>
+//               <SelectTrigger className="w-full">
+//                 <SelectValue placeholder="Select Jobrole" />
+//               </SelectTrigger>
+//               <SelectContent>
+//                 {uniqueJobroles.map((role, idx) => (
+//                   <SelectItem key={idx} value={role}>
+//                     {role}
+//                   </SelectItem>
+//                 ))}
+//               </SelectContent>
+//             </Select>
+//           </div>
+//           <div>
+//             <label className="block text-sm font-medium mb-2">
+//               Work Function
+//             </label>
+//             <Select
+//               value={selectedFunction}
+//               onValueChange={setSelectedFunction}
+//             >
+//               <SelectTrigger className="w-full">
+//                 <SelectValue placeholder="Select Function" />
+//               </SelectTrigger>
+//               <SelectContent>
+//                 {uniqueFunctions.map((func, idx) => (
+//                   <SelectItem key={idx} value={func}>
+//                     {func}
+//                   </SelectItem>
+//                 ))}
+//               </SelectContent>
+//             </Select>
 //           </div>
 //         </div>
+//       </PopoverContent>
+//     </Popover>
+
+//     {/* View Toggle */}
+//     <div className="flex border rounded-md overflow-hidden">
+//       <button
+//         onClick={() => setViewMode("myview")}
+//         className={`px-3 py-2 flex items-center justify-center transition-colors ${
+//           viewMode === "myview"
+//             ? "bg-blue-100 text-blue-600 border-blue-300"
+//             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+//         }`}
+//       >
+//         <Square className="h-5 w-5" />
+//       </button>
+//       <button
+//         onClick={() => setViewMode("table")}
+//         className={`px-3 py-2 flex items-center justify-center transition-colors ${
+//           viewMode === "table"
+//             ? "bg-blue-100 text-blue-600 border-blue-300"
+//             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+//         }`}
+//       >
+//         <Table className="h-5 w-5" />
+//       </button>
+//     </div>
+//   </div>
+// </div>
+// </div>
+
+
+
+
+
+
 
 //         {/* ✅ Toggle between Card View and Table View */}
 //         {viewMode === "myview" ? (
@@ -546,16 +726,23 @@
 
 //                 <div className="flex justify-end p-2 mt-[-6]">
 //                   <button
-//                     className="p-2 hover:text-blue-600"
+//                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
 //                     onClick={() => handleEditClick(item.id, item.jobrole)}
 //                   >
-//                     <FaEdit />
+//                     <Edit size={16}/>
 //                   </button>
 //                   <button
-//                     className="p-2 hover:text-red-600"
+//                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
+//                     onClick={() => handleCloneTask(item.id)}
+//                     title="Clone"
+//                   >
+//                     <Copy size={16} />
+//                   </button>
+//                   <button
+//                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
 //                     onClick={() => handleDeleteClick(item.id)}
 //                   >
-//                     <FaTrash />
+//                     <Trash size={16}/>
 //                   </button>
 //                 </div>
 //               </div>
@@ -622,14 +809,25 @@
 //           </DialogContent>
 //         </Dialog>
 //       )}
+
+//       {/* Settings Modal */}
+//       {showSettingsModal && (
+//         <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+//           <DialogContent className="max-w-md">
+//             <DialogHeader>
+//               <DialogTitle>Settings</DialogTitle>
+//             </DialogHeader>
+//             <div className="p-4">
+//               <p className="text-gray-600">Settings feature coming soon!</p>
+//             </div>
+//           </DialogContent>
+//         </Dialog>
+//       )}
 //     </>
 //   );
 // };
 
 // export default CriticalWorkFunctionGrid;
-
-
-
 
 
 "use client";
@@ -639,32 +837,18 @@ import {
   Funnel, 
   Square, 
   Table, 
+  Copy, 
+  Edit, 
+  Trash, 
+  Sparkles, 
+  Plus, 
+  SlidersHorizontal, 
+  ListChecks, 
+  Download, 
+  Settings, 
+  HelpCircle ,
   Search,
-  PlusCircle,
-  Settings,
-  Sparkles,
-  Download,
-  ListChecks,
-  HelpCircle,
-  LayoutGrid,
-  History,
-  Copy,
-  Edit,
-  Trash2,
-  Plus,
-  Filter,
-  ZoomIn,
-  SlidersHorizontal,
-  Wand2,
-  Bot,
-  Brain,
-  CheckSquare,
-  FileDown,
-  Info,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  
+  MoreHorizontal
 } from "lucide-react";
 import {
   Select,
@@ -685,7 +869,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FaEdit, FaTrash } from "react-icons/fa";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 
 type JobRoleTask = {
@@ -718,6 +901,9 @@ const CriticalWorkFunctionGrid = () => {
     userId: "",
   });
   const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
+  const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // ✅ View toggle state
   const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
@@ -730,12 +916,8 @@ const CriticalWorkFunctionGrid = () => {
     performance_expectation: "",
   });
 
-  // ✅ New state for additional features
-  const [showAIModal, setShowAIModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showCustomFieldModal, setShowCustomFieldModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
+  // ✅ New state for dropdown menu
+  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
 
   // Load session data
   useEffect(() => {
@@ -752,6 +934,20 @@ const CriticalWorkFunctionGrid = () => {
       });
     }
   }, []);
+
+  // ✅ Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isActionsMenuOpen) {
+        setIsActionsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isActionsMenuOpen]);
 
   // Fetch data after sessionData is ready
   useEffect(() => {
@@ -812,77 +1008,6 @@ const CriticalWorkFunctionGrid = () => {
       setLoading(false);
     }
   };
-
-  // ✅ New handler functions
-  const handleAISuggest = () => {
-    setShowAIModal(true);
-    // AI suggestion logic would go here
-  };
-
-  const handleAddJobRole = () => {
-    // Add new job role logic
-    console.log("Add new job role");
-  };
-
-  const handleExport = () => {
-    // Export logic
-    console.log("Export data");
-  };
-
-  const handleBulkActions = () => {
-    // Bulk actions logic
-    console.log("Bulk actions", selectedTasks);
-  };
-
-  const handleCustomFields = () => {
-    setShowCustomFieldModal(true);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
-      </div>
-    );
-  }
-
-  // Unique filters
-  const uniqueDepartments = Array.from(
-    new Set(data.map((d) => d.track || ""))
-  )
-    .filter(Boolean)
-    .sort();
-
-  const uniqueJobroles = Array.from(
-    new Set(
-      data.filter((d) => d.track === selectedDept).map((d) => d.jobrole || "")
-    )
-  )
-    .filter(Boolean)
-    .sort();
-
-  const uniqueFunctions = Array.from(
-    new Set(
-      data
-        .filter(
-          (d) => d.track === selectedDept && d.jobrole === selectedJobrole
-        )
-        .map((d) => d.critical_work_function || "")
-    )
-  )
-    .filter(Boolean)
-    .sort();
-
-  // Filtered grid data with search
-  const filteredData = data.filter(
-    (item) =>
-      item.track === selectedDept &&
-      item.jobrole === selectedJobrole &&
-      item.critical_work_function === selectedFunction &&
-      (searchQuery === "" || 
-        item.task.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.critical_work_function.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
 
   // Handle select changes
   const handleDepartmentChange = (val: string) => {
@@ -967,30 +1092,135 @@ const CriticalWorkFunctionGrid = () => {
     }
   };
 
-  const handleCloneTask = (id: number) => {
-    // Clone task logic
-    console.log("Clone task:", id);
+  // Action handlers for new buttons
+  const handleAISuggest = () => {
+    setIsActionsMenuOpen(false);
+    alert("AI Suggestions feature coming soon!");
   };
+
+  const handleAddJobRole = () => {
+    setIsActionsMenuOpen(false);
+    alert("Add Job Role feature coming soon!");
+  };
+
+  const handleCustomFields = () => {
+    setIsActionsMenuOpen(false);
+    alert("Custom Fields feature coming soon!");
+  };
+
+  const handleBulkActions = () => {
+    setIsActionsMenuOpen(false);
+    alert("Bulk Actions feature coming soon!");
+  };
+
+  const handleExport = () => {
+    setIsActionsMenuOpen(false);
+    alert("Export feature coming soon!");
+  };
+
+  const handleSettings = () => {
+    setIsActionsMenuOpen(false);
+    setShowSettingsModal(true);
+  };
+
+  const handleHelp = () => {
+    setIsActionsMenuOpen(false);
+    alert("Help feature coming soon!");
+  };
+
+  const handleCloneTask = async (id: number) => {
+    if (!id) return;
+    try {
+      // Find the task to clone
+      const taskToClone = data.find(item => item.id === id);
+      if (!taskToClone) {
+        alert("Task not found!");
+        return;
+      }
+
+      // Create a clone of the task
+      const clonedTask = {
+        ...taskToClone,
+        task: `${taskToClone.task} (Copy)`,
+        id: undefined // Remove ID to create new record
+      };
+
+      // Send POST request to create cloned task
+      const res = await fetch(
+        `${sessionData.url}/jobrole_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=tasks`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sessionData.token}`,
+          },
+          body: JSON.stringify(clonedTask),
+        }
+      );
+
+      const result = await res.json();
+      if (result.success) {
+        alert("Task cloned successfully!");
+        fetchData(); // Refresh data
+      } else {
+        alert("Error cloning task: " + result.message);
+      }
+    } catch (error) {
+      console.error("Error cloning task:", error);
+      alert("Error cloning task");
+    }
+  };
+
+  // Toggle actions menu
+  const toggleActionsMenu = () => {
+    setIsActionsMenuOpen(!isActionsMenuOpen);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+      </div>
+    );
+  }
+
+  // Unique filters
+  const uniqueDepartments = Array.from(
+    new Set(data.map((d) => d.track || ""))
+  )
+    .filter(Boolean)
+    .sort();
+
+  const uniqueJobroles = Array.from(
+    new Set(
+      data.filter((d) => d.track === selectedDept).map((d) => d.jobrole || "")
+    )
+  )
+    .filter(Boolean)
+    .sort();
+
+  const uniqueFunctions = Array.from(
+    new Set(
+      data
+        .filter(
+          (d) => d.track === selectedDept && d.jobrole === selectedJobrole
+        )
+        .map((d) => d.critical_work_function || "")
+    )
+  )
+    .filter(Boolean)
+    .sort();
+
+  // Filtered grid data
+  const filteredData = data.filter(
+    (item) =>
+      item.track === selectedDept &&
+      item.jobrole === selectedJobrole &&
+      item.critical_work_function === selectedFunction
+  );
 
   // ✅ DataTable Columns
   const columns: TableColumn<JobRoleTask>[] = [
-    {
-      name: "Select",
-      cell: (row) => (
-        <input
-          type="checkbox"
-          checked={selectedTasks.includes(row.id)}
-          onChange={(e) => {
-            if (e.target.checked) {
-              setSelectedTasks([...selectedTasks, row.id]);
-            } else {
-              setSelectedTasks(selectedTasks.filter(id => id !== row.id));
-            }
-          }}
-        />
-      ),
-      width: "60px",
-    },
     {
       name: (
         <div className="flex flex-col">
@@ -1082,24 +1312,21 @@ const CriticalWorkFunctionGrid = () => {
         <div className="flex space-x-2">
           <button
             onClick={() => handleEditClick(row.id, row.jobrole)}
-            className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-            title="Edit"
+            className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
           >
-            <Edit size={16} />
+            <Edit size={14} />
           </button>
           <button
             onClick={() => handleCloneTask(row.id)}
-            className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-            title="Clone"
+            className="bg-green-500 hover:bg-green-700 text-white text-xs py-1 px-2 rounded"
           >
-            <Copy size={16} />
+            <Copy size={14} />
           </button>
           <button
             onClick={() => handleDeleteClick(row.id)}
-            className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-            title="Delete"
+            className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
           >
-            <Trash2 size={16} />
+            <Trash size={14} />
           </button>
         </div>
       ),
@@ -1141,190 +1368,210 @@ const CriticalWorkFunctionGrid = () => {
   return (
     <>
       <div className="min-h-screen p-4">
-        {/* Top Action Bar */}
-        <div className="flex justify-between items-center mb-6">
-          {/* Left side - Search */}
-          <div className="relative w-80">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <input
-              type="text"
-              placeholder="Search tasks, functions..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+        {/* Top filter + Toggle */}
+   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+  {/* Search Bar - Left */}
+  <div className="flex-1 max-w-md">
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+      <input
+        type="text"
+        placeholder="Search jobrole task, categories, or proficiency levels..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      />
+    </div>
+  </div>
 
-          {/* Right side - Action Icons */}
-          <div className="flex items-center">
-            {/* Filter Popover */}
-            <Popover>
-              <PopoverTrigger asChild>
-                {/* <button className="p-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Filter">
-                  <Filter className="w-5 h-5" />
-                </button> */}
-              </PopoverTrigger>
-              <PopoverContent className="w-80 mr-10 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Department
-                    </label>
-                    <Select
-                      value={selectedDept}
-                      onValueChange={handleDepartmentChange}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueDepartments.map((dept, idx) => (
-                          <SelectItem key={idx} value={dept}>
-                            {dept}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Job Role
-                    </label>
-                    <Select
-                      value={selectedJobrole}
-                      onValueChange={handleJobroleChange}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Jobrole" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueJobroles.map((role, idx) => (
-                          <SelectItem key={idx} value={role}>
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Work Function
-                    </label>
-                    <Select
-                      value={selectedFunction}
-                      onValueChange={setSelectedFunction}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Function" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueFunctions.map((func, idx) => (
-                          <SelectItem key={idx} value={func}>
-                            {func}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+  {/* Right Section - More Icon + Filter + View Toggle */}
+  <div className="flex items-center space-x-2">
+    {/* Consolidated Actions Dropdown */}
+    <div className="relative">
+      <button 
+        onClick={toggleActionsMenu}
+        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        title="More Actions"
+      >
+        <MoreHorizontal className="w-5 h-5 text-gray-600" />
+      </button>
 
+      {/* Horizontal Dropdown Menu */}
+      {isActionsMenuOpen && (
+        <div 
+          className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex gap-1">
             {/* Generative AI Assistant */}
             <button 
               onClick={handleAISuggest}
-              className="p-3 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg transition-colors"
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               title="AI Suggestions"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-5 h-5 text-gray-600" />
             </button>
 
             {/* Add Job Role */}
             <button 
               onClick={handleAddJobRole}
-              className="p-3 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               title="Add Job Role"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5 text-gray-600" />
             </button>
 
             {/* Custom Fields */}
             <button 
               onClick={handleCustomFields}
-              className="p-3 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               title="Custom Fields"
             >
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className="w-5 h-5 text-gray-600" />
             </button>
 
             {/* Bulk Actions */}
             {selectedTasks.length > 0 && (
               <button 
                 onClick={handleBulkActions}
-                className="p-3 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors"
+                className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Bulk Actions"
               >
-                <ListChecks className="w-4 h-4" />
+                <ListChecks className="w-5 h-5 text-gray-600" />
               </button>
             )}
 
             {/* Export */}
             <button 
               onClick={handleExport}
-              className="p-3 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               title="Export"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-5 h-5 text-gray-600" />
             </button>
 
             {/* Settings */}
             <button 
-              onClick={() => setShowSettingsModal(true)}
-              className="p-3 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              onClick={handleSettings}
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               title="Settings"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-5 h-5 text-gray-600" />
             </button>
 
             {/* Help */}
             <button 
-              className="p-3 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              onClick={handleHelp}
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               title="Help"
             >
-              <HelpCircle className="w-4 h-4" />
+              <HelpCircle className="w-5 h-5 text-gray-600" />
             </button>
-            <button className="p-3 text-gray-600 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="Filter">
-                  <Filter className="w-4 h-4" />
-                </button>
-
-            {/* View Toggle */}
-            <div className="flex border rounded-md overflow-hidden ml-2">
-              <button
-                onClick={() => setViewMode("myview")}
-                className={`px-3 py-2 flex items-center justify-center transition-colors ${
-                  viewMode === "myview"
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-                title="Grid View"
-              >
-                <LayoutGrid className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                className={`px-3 py-2 flex items-center justify-center transition-colors ${
-                  viewMode === "table"
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-                title="Table View"
-              >
-                <Table className="h-5 w-5" />
-              </button>
-            </div>
           </div>
         </div>
+      )}
+    </div>
 
+    {/* Filter */}
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
+          <Funnel className="w-5 h-5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Department
+            </label>
+            <Select
+              value={selectedDept}
+              onValueChange={handleDepartmentChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Department" />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueDepartments.map((dept, idx) => (
+                  <SelectItem key={idx} value={dept}>
+                    {dept}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Job Role
+            </label>
+            <Select
+              value={selectedJobrole}
+              onValueChange={handleJobroleChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Jobrole" />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueJobroles.map((role, idx) => (
+                  <SelectItem key={idx} value={role}>
+                    {role}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Work Function
+            </label>
+            <Select
+              value={selectedFunction}
+              onValueChange={setSelectedFunction}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Function" />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueFunctions.map((func, idx) => (
+                  <SelectItem key={idx} value={func}>
+                    {func}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+
+    {/* View Toggle */}
+    <div className="flex border rounded-md overflow-hidden">
+      <button
+        onClick={() => setViewMode("myview")}
+        className={`px-3 py-2 flex items-center justify-center transition-colors ${
+          viewMode === "myview"
+            ? "bg-blue-100 text-blue-600 border-blue-300"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
+      >
+        <Square className="h-5 w-5" />
+      </button>
+      <button
+        onClick={() => setViewMode("table")}
+        className={`px-3 py-2 flex items-center justify-center transition-colors ${
+          viewMode === "table"
+            ? "bg-blue-100 text-blue-600 border-blue-300"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
+      >
+        <Table className="h-5 w-5" />
+      </button>
+    </div>
+  </div>
+</div>
+ 
         {/* ✅ Toggle between Card View and Table View */}
         {viewMode === "myview" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1357,13 +1604,12 @@ const CriticalWorkFunctionGrid = () => {
                   </p>
                 </div>
 
-                <div className="flex justify-end p-2 space-x-1">
+                <div className="flex justify-end p-2 mt-[-6]">
                   <button
-                    className="p-2 text-gray-600 hover:bg-geay-50 rounded transition-colors"
+                    className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                     onClick={() => handleEditClick(item.id, item.jobrole)}
-                    title="Edit"
                   >
-                    <Edit size={16} />
+                    <Edit size={16}/>
                   </button>
                   <button
                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
@@ -1375,9 +1621,8 @@ const CriticalWorkFunctionGrid = () => {
                   <button
                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                     onClick={() => handleDeleteClick(item.id)}
-                    title="Delete"
                   >
-                    <Trash2 size={16} />
+                    <Trash size={16}/>
                   </button>
                 </div>
               </div>
@@ -1445,48 +1690,19 @@ const CriticalWorkFunctionGrid = () => {
         </Dialog>
       )}
 
-      {/* AI Suggestions Modal */}
-      <Dialog open={showAIModal} onOpenChange={setShowAIModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-600" />
-              AI Task Suggestions
-            </DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <p className="text-gray-600 mb-4">
-              AI will suggest tasks based on your current selection:
-            </p>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p><strong>Department:</strong> {selectedDept}</p>
-              <p><strong>Job Role:</strong> {selectedJobrole}</p>
-              <p><strong>Critical Work Function:</strong> {selectedFunction}</p>
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Settings</DialogTitle>
+            </DialogHeader>
+            <div className="p-4">
+              <p className="text-gray-600">Settings feature coming soon!</p>
             </div>
-            <button className="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-              Generate Suggestions
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Custom Fields Modal */}
-      <Dialog open={showCustomFieldModal} onOpenChange={setShowCustomFieldModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <SlidersHorizontal className="w-5 h-5 text-orange-600" />
-              Add Custom Fields
-            </DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <p className="text-gray-600 mb-4">
-              Add custom metadata fields to your tasks:
-            </p>
-            {/* Custom field form would go here */}
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 };
