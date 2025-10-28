@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "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"; // Store securely
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || " "; // Store securely
 
 export async function POST(req: Request) {
     try {
         const { jobroleName, description, orgType } = await req.json();
-        
+
         const prompt = `Given a job role named "${jobroleName}" with description "${description}" in the "${orgType}" industry, please generate:
         1. Most suitable department and sub-department
         2. Performance expectations
