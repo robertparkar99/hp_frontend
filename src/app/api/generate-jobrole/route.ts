@@ -4,9 +4,10 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || " "; // Store secur
 
 export async function POST(req: Request) {
     try {
-        const { jobroleName, description, orgType } = await req.json();
+        const { jobrole, description, orgType } = await req.json();
+        console.log("Received data:", { jobrole, description, orgType });
 
-        const prompt = `Given a job role named "${jobroleName}" with description "${description}" in the "${orgType}" industry, please generate:
+        const prompt = `Given a job role named "${jobrole}" with description "${description}" in the "${orgType}" industry, please generate:
         1. Most suitable department and sub-department
         2. Performance expectations
         3. Related job roles
