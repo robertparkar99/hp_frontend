@@ -1383,13 +1383,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
         </DialogContent>
       </Dialog>
 
-      {/* AddDialog Component */}
-      <AddDialog
-        isOpen={openJobroleModal}
-        onClose={handleAddDialogClose}
-        skillId={null}
-        onSuccess={handleAddDialogSuccess}
-      />
+
     </>
   );
 };
