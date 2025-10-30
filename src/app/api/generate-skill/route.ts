@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "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"; // Store securely
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || " "; // Store securely in env file
 
 export async function POST(req: Request) {
     try {
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
 // import { NextResponse } from "next/server";
 
 // const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-// console.log("OpenRouter API Key:", OPENROUTER_API_KEY);
+
 
 // export async function POST(req: Request) {
 //     console.log("Received POST request at /api/generate-skill");
