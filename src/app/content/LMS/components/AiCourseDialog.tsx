@@ -106,7 +106,7 @@ type Config = {
 };
 
 const SEED_TEMPLATES: Template[] = [
-   {
+  {
     id: "t1",
     title: "Job Role → Critical Work Function",
     jobRole: "Physiotherapist",
@@ -923,12 +923,43 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
   }, [cfg.department, sessionData, activeTemplate]);
 
   // Function to check and auto-switch to course parameters
+  // const checkAndSwitchToParameters = (field: string, value: string) => {
+  //   if (!isTemplateSelected || !activeTemplate) return;
+
+  //   let shouldSwitch = false;
+
+  //   if (activeTemplate === "t2") {
+  //     // For t2 template: Department + Job Role + Critical Work Function + Task
+  //     shouldSwitch =
+  //       Boolean(cfg.department) &&
+  //       Boolean(cfg.jobRole) &&
+  //       Boolean(cfg.criticalWorkFunction) &&
+  //       Boolean(value) &&
+  //       field === "tasks";
+  //   }
+
+  //   if (shouldSwitch) {
+  //     // Switch to course parameters after a small delay for better UX
+  //     setTimeout(() => {
+  //       setConfigSection("course-parameters");
+  //     }, 500);
+  //   }
+  // };
+  // Function to check and auto-switch to course parameters for all templates
+  // Function to check and auto-switch to course parameters for all templates
   const checkAndSwitchToParameters = (field: string, value: string) => {
     if (!isTemplateSelected || !activeTemplate) return;
 
     let shouldSwitch = false;
 
-    if (activeTemplate === "t2") {
+    if (activeTemplate === "t1") {
+      // For t1 template: Department + Job Role + Critical Work Function
+      shouldSwitch =
+        Boolean(cfg.department) &&
+        Boolean(cfg.jobRole) &&
+        Boolean(value) && // This is the critical work function value
+        field === "criticalWorkFunction";
+    } else if (activeTemplate === "t2") {
       // For t2 template: Department + Job Role + Critical Work Function + Task
       shouldSwitch =
         Boolean(cfg.department) &&
@@ -936,16 +967,25 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
         Boolean(cfg.criticalWorkFunction) &&
         Boolean(value) &&
         field === "tasks";
+    } else if (activeTemplate === "t3") {
+      // For t3 template: Department + Job Role + Skill
+      shouldSwitch =
+        Boolean(cfg.department) &&
+        Boolean(cfg.jobRole) &&
+        Boolean(value) &&
+        field === "skills";
     }
+
+    console.log(`Auto-switch check: Template=${activeTemplate}, Field=${field}, Value=${value}, ShouldSwitch=${shouldSwitch}`);
 
     if (shouldSwitch) {
       // Switch to course parameters after a small delay for better UX
       setTimeout(() => {
         setConfigSection("course-parameters");
+        console.log(`Auto-switched to course parameters for template ${activeTemplate}`);
       }, 500);
     }
   };
-
   // OpenRouter API Integration - UPDATED with your actual API key
   const handleGenerateCourseOutline = async () => {
     if (!isTemplateSelected) {
@@ -1521,6 +1561,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
                   onChange={(e) => {
                     const newValue = e.target.value;
                     setCfg({ ...cfg, criticalWorkFunction: newValue });
+                    checkAndSwitchToParameters("criticalWorkFunction", newValue);
                   }}
                   disabled={!isTemplateSelected || !cfg.jobRole || loadingCWF || !enabledDropdowns.criticalWorkFunction}
                   className={`w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${!isTemplateSelected || !enabledDropdowns.criticalWorkFunction ? "bg-gray-100 cursor-not-allowed opacity-60" : ""
@@ -1535,7 +1576,6 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
                 </select>
                 {loadingCWF && <p className="mt-1 text-xs text-gray-500">Loading critical work functions...</p>}
               </div>
-
               {/* Tasks Dropdown */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -1562,7 +1602,6 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
                 </select>
                 {loadingTasks && <p className="mt-1 text-xs text-gray-500">Loading tasks...</p>}
               </div>
-
               {/* Skills Dropdown */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -1574,6 +1613,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
                   onChange={(e) => {
                     const newValue = e.target.value;
                     setCfg({ ...cfg, skills: [newValue] });
+                    checkAndSwitchToParameters("skills", newValue);
                   }}
                   disabled={!isTemplateSelected || !cfg.jobRole || loadingSkills || !enabledDropdowns.skills}
                   className={`w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${!isTemplateSelected || !enabledDropdowns.skills ? "bg-gray-100 cursor-not-allowed opacity-60" : ""

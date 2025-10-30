@@ -367,12 +367,12 @@ if (onClose) {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={handleCloseQuestionBank}
               className="flex items-center gap-2"
             >
-              <Icon name="ArrowLeft" size={16} />
-              Back to Modules
+              <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }}  />
+             
             </Button>
           </div>
           <QuestionBank
@@ -390,14 +390,13 @@ if (onClose) {
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
-        <Button
-          variant="outline"
-          onClick={handleCloseModule}
-          className="flex items-center gap-2"
-        >
-          <Icon name="ArrowLeft" size={16} />
-          Back to Course
-        </Button>
+       <Button
+  variant="ghost"
+  onClick={handleCloseModule}
+  className="flex items-center"
+>
+  <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }} />
+</Button>
         <div className="flex items-center justify-between mt-8 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">

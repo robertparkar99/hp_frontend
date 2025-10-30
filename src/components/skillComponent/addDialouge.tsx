@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 
 interface AddDialogProps {
-  skillId: number | null;
+  // skillId: number | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -77,7 +77,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}`
     );
     const data = await res.json();
-    // setCategories(data.skillData || []);
+    
     setProficiencyLevels(data.proficiency_levels || []);
   };
   const fetchDepartments = async () => {
@@ -91,11 +91,6 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     }
   };
   const getSubDepartment = async (category: string) => {
-    // const res = await fetch(
-    //   `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&category=${category}`
-    // );
-    // const data = await res.json();
-    // setSubCategories(data.skillData || []);
     try {
       const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=sub_category&searchWord=${encodeURIComponent(category)}`);
       const data = await res.json();
@@ -286,7 +281,8 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="category" className="text-left">Skill Category</label><br />
+                <label htmlFor="category" className="text-left">Skill Category{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label><br />
                 <select
                   name="category"
                   className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black" // Changed w-3/3 to w-full
@@ -326,7 +322,8 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="skill_name" className="text-left">Skill Name</label><br />
+                <label htmlFor="skill_name" className="text-left">Skill Name{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label><br />
                 <input
                   type="text"
                   name="skill_name"
