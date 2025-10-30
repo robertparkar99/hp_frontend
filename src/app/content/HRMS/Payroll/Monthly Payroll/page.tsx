@@ -1,5 +1,5 @@
 "use client";
-import ActivityStream from "@/app/content/task/activityStream";
+import MonthlyPayrollPage from "@/app/content/HRMS/Payroll/Monthly Payroll/MonthlyPayroll";
 import Header from "@/components/Header/Header";
 import Sidebar from "@/components/SideMenu/Newsidebar";
 import { useState, useEffect } from "react";
@@ -31,7 +31,7 @@ export default function HomePage() {
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
       <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
-        <ActivityStream />
+        <MonthlyPayrollPage/>
       </div>
     </>
   );
