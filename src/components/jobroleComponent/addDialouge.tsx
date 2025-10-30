@@ -151,7 +151,8 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
             {/* Job Role and Location */}
             <div className="flex gap-4">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="department" className="text-left">Jobrole Department</label><br />
+                <label htmlFor="department" className="text-left">Jobrole Department{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label><br />
                 <input
                   type="text"
                   name="department"
@@ -197,7 +198,8 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
 
             <div className="flex gap-4">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="jobrole" className="text-left">Job Role</label><br />
+                <label htmlFor="jobrole" className="text-left">Job Role{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label><br />
                 <input
                   type="text"
                   name="jobrole"

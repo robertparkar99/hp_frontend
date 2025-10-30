@@ -146,7 +146,7 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
       </div>
 
       {/* Action Button */}
-      <div className="pt-4 border-t border-border">
+      {/* <div className="pt-4 border-t border-border">
         <Button
           variant="default"
           fullWidth
@@ -157,7 +157,19 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
           {assessment.status !== 'Closed' && 'Start Assessment'}
           {assessment.status === 'Closed' && 'Closed Assessment'}
         </Button>
-      </div>
+      </div> */}
+    <div className="pt-4 border-t border-border">
+  {assessment.status !== 'Closed' && (
+    <Button
+      variant="default"
+      fullWidth
+      onClick={() => onStartAssessment(assessment)}
+      className='px-4 py-1 rounded-full bg-green-600 text-white shadow hover:bg-green-700 h-8 text-xs font-medium'
+    >
+      Start Assessment
+    </Button>
+  )}
+</div>
     </div>
   );
 };

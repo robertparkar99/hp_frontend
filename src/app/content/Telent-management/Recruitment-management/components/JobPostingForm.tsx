@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -109,6 +110,7 @@ interface JobPostingFormProps {
 }
 
 const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFormProps) => {
+   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
@@ -152,7 +154,9 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
   const handleAddNewJobRole = () => {
     // Close the job posting form and open the AddDialog
     onOpenChange(false);
-    setOpenJobroleModal(true);
+    // setOpenJobroleModal(true);
+     router.push("/content/Jobrole-library");
+    
   };
 
   // Handle AddDialog close

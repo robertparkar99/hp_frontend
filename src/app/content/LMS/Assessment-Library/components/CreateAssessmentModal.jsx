@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Icon from '../../../../../components/AppIcon';
 import { Button } from '../../../../../components/ui/button';
 import { Input } from '../../../../../components/ui/input';
-import {Select} from '../../../../../components/ui/select';
+import { Select } from '../../../../../components/ui/select';
 import { Checkbox } from '../../../../../components/ui/checkbox';
 import SearchFilters from '../../../../../components/searchfileds/SearchFilters';
 
@@ -291,7 +291,23 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
               <Input value={formData.examDescription} onChange={e => handleChange('examDescription', e.target.value)} />
             </div>
 
-            <Select
+            <div>
+              <label className="block text-sm font-medium mb-1">Attempt Allowed <span className="text-red-500">*</span></label>
+              <select
+                value={formData.attemptAllowed}
+                onChange={e => handleChange("attemptAllowed", e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Attempts</option>
+                <option value="Unlimited">Unlimited</option>
+                {Array.from({ length: 10 }, (_, i) => (
+                  <option key={i + 1} value={String(i + 1)}>
+                    {i + 1}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* <Select
               label="Attempt Allowed *"
               value={formData.attemptAllowed}
               onChange={v => handleChange("attemptAllowed", v)}
@@ -302,7 +318,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
                   label: String(i + 1),
                 })),
               ]}
-            />
+            /> */}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -324,10 +340,29 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium mb-1">Allowed Time (mins) <span className="text-red-500">*</span></label>
               <Input type="number" value={formData.allowedTime} onChange={e => handleChange("allowedTime", e.target.value)} />
+            </div> */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Allowed Time (mins) <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="number"
+                value={formData.allowedTime}
+                onChange={e => {
+                  const value = Math.min(20, parseInt(e.target.value) || 0);
+                  handleChange("allowedTime", value);
+                }}
+                min="0"
+                max="20"
+              />
+              {formData.allowedTime > 20 && (
+                <p className="text-red-500 text-xs mt-1">Maximum allowed time is 20 minutes</p>
+              )}
             </div>
+
             <div>
               <label className="block mb-1">Assesment Type</label>
               <div className="flex items-center space-x-4">
@@ -350,22 +385,22 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
                 onCheckedChange={(checked) => handleChange("shuffleQuestions", checked)}
                 className={`border-gray-300 rounded-sm 
     ${formData.shuffleQuestions ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`}
-              />  
+              />
               <span>Shuffle Question</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox checked={formData.showFeedback} onCheckedChange={checked => handleChange('showFeedback', checked)}  className={`border-gray-300 rounded-sm 
-    ${formData.showFeedback ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`}/>
+              <Checkbox checked={formData.showFeedback} onCheckedChange={checked => handleChange('showFeedback', checked)} className={`border-gray-300 rounded-sm 
+    ${formData.showFeedback ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`} />
               <span>Show Feedback</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox checked={formData.show} onCheckedChange={checked => handleChange('show', checked)}  className={`border-gray-300 rounded-sm 
-    ${formData.show ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`}/>
+              <Checkbox checked={formData.show} onCheckedChange={checked => handleChange('show', checked)} className={`border-gray-300 rounded-sm 
+    ${formData.show ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`} />
               <span>Show</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox checked={formData.showRightAnswerAfterResult} onCheckedChange={checked => handleChange('showRightAnswerAfterResult', checked)}  className={`border-gray-300 rounded-sm 
-    ${formData.showRightAnswerAfterResult ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`}/>
+              <Checkbox checked={formData.showRightAnswerAfterResult} onCheckedChange={checked => handleChange('showRightAnswerAfterResult', checked)} className={`border-gray-300 rounded-sm 
+    ${formData.showRightAnswerAfterResult ? "bg-blue-400 border-blue-400" : "bg-white border-blue-600"}`} />
               <span>Show Right Answer after Result</span>
             </div>
           </div>
