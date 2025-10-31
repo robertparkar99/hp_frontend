@@ -1005,14 +1005,14 @@
 //       }
 
 //       // 🔑 YOUR ACTUAL OPENROUTER API KEY
-//       const openRouterApiKey = "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";
+//       const process.env.NEXT_PUBLIC_OPENROUTER_API_KEY = "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";
 
 //       // Validate API key
-//       if (!openRouterApiKey) {
+//       if (!process.env.NEXT_PUBLIC_OPENROUTER_API_KEY) {
 //         throw new Error("OpenRouter API key not configured");
 //       }
 
-//       if (!openRouterApiKey.startsWith('sk-or-v1-')) {
+//       if (!process.env.NEXT_PUBLIC_OPENROUTER_API_KEY.startsWith('sk-or-v1-')) {
 //         throw new Error("Invalid API key format");
 //       }
 
@@ -1047,7 +1047,7 @@
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
-//           "Authorization": `Bearer ${openRouterApiKey}`,
+//           "Authorization": `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
 //           "HTTP-Referer": window.location.origin,
 //           "X-Title": "AI Course Generator"
 //         },
@@ -3046,14 +3046,13 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
       }
 
       // 🔑 USE ENVIRONMENT VARIABLE FOR API KEY
-      const openRouterApiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-
+      console.log("Using OpenRouter API Key: ", process.env.NEXT_PUBLIC_OPENROUTER_API_KEY ? "Configured" : "Not Configured");
       // Validate API key
-      if (!openRouterApiKey) {
+      if (!process.env.NEXT_PUBLIC_OPENROUTER_API_KEY) {
         throw new Error("OpenRouter API key not configured. Please check your environment variables.");
       }
 
-      if (!openRouterApiKey.startsWith('sk-or-v1-')) {
+      if (!process.env.NEXT_PUBLIC_OPENROUTER_API_KEY.startsWith('sk-or-v1-')) {
         throw new Error("Course Outline Generation failed");
       }
 
@@ -3088,7 +3087,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${openRouterApiKey}`,
+          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
           "HTTP-Referer": window.location.origin,
           "X-Title": "AI Course Generator"
         },
@@ -3182,7 +3181,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
       tasks: [], // Empty instead of template values
       skills: [], // Empty instead of template values
     };
-
+    // console.log("Openrouter Key : ", process.env.NEXT_PUBLIC_OPENROUTER_API_KEY);
     setCfg(newConfig);
     setActiveTemplate(t.id);
 
