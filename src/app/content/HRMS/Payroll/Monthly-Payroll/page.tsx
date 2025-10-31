@@ -1,5 +1,5 @@
 "use client";
-import MonthlyPayrollPage from "@/app/content/HRMS/Payroll/Monthly Payroll/MonthlyPayroll";
+import MonthlyPayrollPage from "@/app/content/HRMS/Payroll/Monthly-Payroll/MonthlyPayroll";
 import Header from "@/components/Header/Header";
 import Sidebar from "@/components/SideMenu/Newsidebar";
 import { useState, useEffect } from "react";
