@@ -1,3 +1,6 @@
+
+
+
 // 'use client';
 
 // import React, { useState, useRef, useEffect } from 'react';
@@ -6,34 +9,6 @@
 // import { Input } from '../../../../components/ui/input';
 // import { Select } from '@/components/ui/select';
 // import { Checkbox } from '../../../../components/ui/checkbox';
-
-// const skillCategories = [
-//   "Cognitive & Thinking",
-//   "Compliance & Regulatory",
-//   "Digital & Data",
-//   "Functional",
-//   "Leadership & Management",
-//   "Soft",
-//   "Technical",
-// ];
-
-// const taskCategories = [
-//   "Analysis & Problem Solving",
-//   "Client/Stakeholder Interaction",
-//   "Compliance & Reporting",
-//   "Creative/Innovation",
-//   "Customer Success & Aftercare",
-//   "Documentation & Knowledge Management",
-//   "Learning & Development",
-//   "Marketing & Outreach",
-//   "Planning & Strategy",
-//   "Process & Operations Execution",
-//   "Procurement & Resource Management",
-//   "Quality Assurance & Improvement",
-//   "Risk Management & Incident Response",
-//   "Supervision & Team Management",
-//   "Technology & Systems Administration",
-// ];
 
 // const SearchToolbar = ({
 //   searchQuery,
@@ -52,55 +27,168 @@
 //   const [loading, setLoading] = useState(false);
 //   const [selectedLevel1, setSelectedLevel1] = useState('');
 //   const [selectedCategory, setSelectedCategory] = useState('');
-  
-//   const advancedRef = useRef(null);
-//   const moreFilterRef = useRef(null);
-
-//   // Session data
+//   const [skillCategories, setSkillCategories] = useState([]);
+//   const [taskCategories, setTaskCategories] = useState([]);
+//   const [apiError, setApiError] = useState(null);
 //   const [sessionData, setSessionData] = useState({
 //     url: "",
 //     token: "",
 //     sub_institute_id: "",
 //     user_id: "",
 //     syear: "",
-//     user_profile_name: ""
+//     user_profile_name: "",
+//     org_type: ""
 //   });
+
+//   const advancedRef = useRef(null);
+//   const moreFilterRef = useRef(null);
 
 //   // Load session info from localStorage
 //   useEffect(() => {
 //     const userData = localStorage.getItem("userData");
 //     if (userData) {
-//       const { APP_URL, token, sub_institute_id, user_id, syear, user_profile_name } =
+//       const { APP_URL, token, sub_institute_id, user_id, syear, user_profile_name, org_type } =
 //         JSON.parse(userData);
 
+//       // Ensure URL has proper format
+//       let formattedUrl = APP_URL || '';
+//       if (formattedUrl && !formattedUrl.endsWith('/')) {
+//         formattedUrl += '/';
+//       }
+
 //       setSessionData({
-//         url: APP_URL,
+//         url: formattedUrl,
 //         token,
 //         sub_institute_id,
 //         user_id,
 //         syear: syear || "",
-//         user_profile_name: user_profile_name || ""
+//         user_profile_name: user_profile_name || "",
+//         org_type: org_type || ""
 //       });
 //     }
 //   }, []);
 
-//   // Fetch filters from API
-//   const fetchFilters = async () => {
+//   // API URLs - constructed after sessionData is loaded
+//   const SKILL_API_URL = sessionData.url && sessionData.token 
+//     ? `${sessionData.url}search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&org_type=${encodeURIComponent(sessionData.org_type)}&searchType=skillTaxonomy&searchWord=skillTaxonomy`
+//     : null;
+
+//   const TASK_API_URL = sessionData.url && sessionData.token
+//     ? `${sessionData.url}api/job-role-tasks?type=API&sub_institute_id=${sessionData.sub_institute_id}&token=${sessionData.token}`
+//     : null;
+
+//   // Fetch skill categories
+//   const fetchSkillCategories = async () => {
+//     if (!SKILL_API_URL) {
+//       setApiError("Skill API URL not available");
+//       return;
+//     }
+
+//     try {
+//       setLoading(true);
+//       setApiError(null);
+      
+//       // Validate URL format
+//       if (!SKILL_API_URL.startsWith('http')) {
+//         throw new Error(`Invalid API URL: ${SKILL_API_URL}`);
+//       }
+
+//       const response = await fetch(SKILL_API_URL);
+      
+//       if (!response.ok) {
+//         throw new Error(`HTTP error! status: ${response.status}`);
+//       }
+      
+//       const data = await response.json();
+      
+//       // Extract category names from the API response
+//       if (Array.isArray(data)) {
+//         const categories = data.map(item => item.category_name).filter(Boolean);
+//         setSkillCategories(categories);
+//       } else {
+//         console.warn("Unexpected API response format for skills:", data);
+//         setSkillCategories([]);
+//       }
+//     } catch (err) {
+//       console.error("Error fetching skill categories:", err);
+//       setApiError("Failed to load skill categories: " + err.message);
+//       setSkillCategories([]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Fetch task categories
+//   const fetchTaskCategories = async () => {
+//     if (!TASK_API_URL) {
+//       setApiError("Task API URL not available");
+//       return;
+//     }
+
+//     try {
+//       setLoading(true);
+//       setApiError(null);
+      
+//       // Validate URL format
+//       if (!TASK_API_URL.startsWith('http')) {
+//         throw new Error(`Invalid API URL: ${TASK_API_URL}`);
+//       }
+
+//       const response = await fetch(TASK_API_URL);
+      
+//       if (!response.ok) {
+//         throw new Error(`HTTP error! status: ${response.status}`);
+//       }
+      
+//       const data = await response.json();
+      
+//       // Extract task categories from the API response
+//       if (data && Array.isArray(data.data)) {
+//         const categories = data.data.map(item => item.task_category).filter(Boolean);
+//         // Remove duplicates
+//         const uniqueCategories = [...new Set(categories)];
+//         setTaskCategories(uniqueCategories);
+//       } else {
+//         console.warn("Unexpected API response format for tasks:", data);
+//         setTaskCategories([]);
+//       }
+//     } catch (err) {
+//       console.error("Error fetching task categories:", err);
+//       setApiError("Failed to load task categories: " + err.message);
+//       setTaskCategories([]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Fetch categories when selectedLevel1 changes and sessionData is available
+//   useEffect(() => {
+//     if (!sessionData.token || !sessionData.url) {
+//       return; // Wait for session data to be loaded
+//     }
+
+//     if (selectedLevel1 === "Skill" && skillCategories.length === 0) {
+//       fetchSkillCategories();
+//     } else if (selectedLevel1 === "Task" && taskCategories.length === 0) {
+//       fetchTaskCategories();
+//     } else if (selectedLevel1 === "All" && (skillCategories.length === 0 || taskCategories.length === 0)) {
+//       Promise.all([fetchSkillCategories(), fetchTaskCategories()]);
+//     }
+//   }, [selectedLevel1, sessionData]);
+
+//   // Fetch course filters from API
+//   const fetchCourseFilters = async () => {
 //     setLoading(true);
 //     try {
 //       const res = await fetch(
-//         `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}`
+//         `${sessionData.url}lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}`
 //       );
 //       const data = await res.json();
 
 //       if (data?.lms_subject) {
 //         const allSubjects = Object.values(data.lms_subject).flat();
 
-//         // DEBUG: Check what we're getting
-//         console.log('All subject types raw:', allSubjects.map(item => item.subject_type));
-//         console.log('All content categories raw:', allSubjects.map(item => item.content_category));
-
-//         // Fix for categories - SIMPLE and GUARANTEED to work
+//         // Process categories
 //         const categoryMap = {};
 //         allSubjects.forEach(item => {
 //           if (!item.content_category) return;
@@ -116,9 +204,8 @@
 //           }
 //         });
 //         const uniqueCategories = Object.values(categoryMap);
-//         console.log('Unique categories:', uniqueCategories);
 
-//         // Fix for subject types - SIMPLE and GUARANTEED to work
+//         // Process subject types
 //         const subjectTypeMap = {};
 //         allSubjects.forEach(item => {
 //           if (!item.subject_type) return;
@@ -134,13 +221,12 @@
 //           }
 //         });
 //         const uniqueSubjectTypes = Object.values(subjectTypeMap);
-//         console.log('Unique subject types:', uniqueSubjectTypes);
 
 //         setCategories(uniqueCategories);
 //         setSubjectTypes(uniqueSubjectTypes);
 //       }
 //     } catch (err) {
-//       console.error('Failed to fetch filters:', err);
+//       console.error('Failed to fetch course filters:', err);
 //     } finally {
 //       setLoading(false);
 //     }
@@ -148,29 +234,30 @@
 
 //   useEffect(() => {
 //     if (sessionData.sub_institute_id && sessionData.url) {
-//       fetchFilters();
+//       fetchCourseFilters();
 //     }
 //   }, [sessionData]);
 
-//   // Dynamic filters based on API data
-//   const filtersList = [
-//     {
-//       title: 'Categories',
-//       key: 'categories',
-//       options: categories.map(cat => ({
-//         id: cat.id,
-//         label: `${cat.label} (${cat.count})`
-//       }))
-//     },
-//     {
-//       title: 'Course Types',
-//       key: 'subjectTypes',
-//       options: subjectTypes.map(type => ({
-//         id: type.id,
-//         label: `${type.label} (${type.count})`
-//       }))
-//     },
-//   ];
+//   const handleLevel1Select = (level) => {
+//     if (selectedLevel1 === level) {
+//       // Deselect if same level is clicked again
+//       setSelectedLevel1("");
+//       setSelectedCategory("");
+//     } else {
+//       setSelectedLevel1(level);
+//       setSelectedCategory("");
+//     }
+//   };
+
+//   const handleCategorySelect = (category) => {
+//     if (selectedCategory === category) {
+//       // Deselect if same category is clicked again
+//       setSelectedCategory("");
+//     } else {
+//       setSelectedCategory(category);
+//       // You can add additional logic here to filter assessments based on the selected category
+//     }
+//   };
 
 //   const renderLevel2Buttons = () => {
 //     if (!selectedLevel1) return null;
@@ -180,13 +267,43 @@
 //     else if (selectedLevel1 === "Task") categories = taskCategories;
 //     else if (selectedLevel1 === "All") categories = [...skillCategories, ...taskCategories];
 
+//     if (loading) {
+//       return (
+//         <div className="flex justify-center mt-4">
+//           <div className="text-muted-foreground flex items-center">
+//             <Icon name="Loader" size={16} className="mr-2 animate-spin" />
+//             Loading categories...
+//           </div>
+//         </div>
+//       );
+//     }
+
+//     if (apiError) {
+//       return (
+//         <div className="flex justify-center mt-4">
+//           <div className="text-destructive text-sm flex items-center">
+//             <Icon name="AlertCircle" size={16} className="mr-2" />
+//             {apiError}
+//           </div>
+//         </div>
+//       );
+//     }
+
+//     if (categories.length === 0 && !loading) {
+//       return (
+//         <div className="flex justify-center mt-4">
+//           <div className="text-muted-foreground text-sm">No categories available</div>
+//         </div>
+//       );
+//     }
+
 //     return (
 //       <div className="flex flex-wrap justify-center gap-3 mt-4">
-//         {categories.map((cat) => (
+//         {categories.map((cat, index) => (
 //           <Button
-//             key={cat}
+//             key={index}
 //             variant={selectedCategory === cat ? "default" : "outline"}
-//             onClick={() => setSelectedCategory(cat)}
+//             onClick={() => handleCategorySelect(cat)}
 //             className={`rounded-full text-sm transition px-4 py-2 border 
 //               ${
 //                 selectedCategory === cat
@@ -239,6 +356,26 @@
 //     return () => document.removeEventListener('mousedown', handleClickOutside);
 //   }, []);
 
+//   // Dynamic filters based on API data
+//   const filtersList = [
+//     {
+//       title: 'Categories',
+//       key: 'categories',
+//       options: categories.map(cat => ({
+//         id: cat.id,
+//         label: `${cat.label} (${cat.count})`
+//       }))
+//     },
+//     {
+//       title: 'Course Types',
+//       key: 'subjectTypes',
+//       options: subjectTypes.map(type => ({
+//         id: type.id,
+//         label: `${type.label} (${type.count})`
+//       }))
+//     },
+//   ];
+
 //   return (
 //     <div className="bg-card border border-border rounded-lg p-4 mb-6 relative">
 //       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
@@ -247,7 +384,7 @@
 //             <Input
 //               type="search"
 //               placeholder="Search courses by title,department,shortname,course type..."
-//               value={searchQuery}
+//               value={searchQuery || ""}
 //               onChange={(e) => onSearchChange(e.target.value)}
 //               className="pl-10 pr-10"
 //             />
@@ -273,6 +410,25 @@
 //           {/* Filters Dropdown */}
 //           <div className="flex items-center gap-3 relative">
 //             <div className="relative" ref={advancedRef}>
+
+//               <Button variant="ghost" size="icon" title="Settings / Manage Fields">
+//               <Icon name="Settings" size={18} />
+//             </Button>
+//             <Button variant="ghost" size="icon" title="Refresh Catalog">
+//               <Icon name="RotateCcw" size={18} />
+//             </Button>
+            
+
+//             <Button variant="ghost" size="icon" title="AI Insights / Reports">
+//               <Icon name="BarChart3" size={18} />
+//             </Button>
+//             <Button variant="ghost" size="icon" title="Share / Publish Module">
+//               <Icon name="Share2" size={18} />
+//             </Button>
+//             <Button variant="ghost" size="icon" title="Help / Info">
+//               <Icon name="CircleHelp" size={18} />
+//             </Button>
+
 //               <Button
 //                 variant="outline"
 //                 size="sm"
@@ -287,7 +443,7 @@
 //                 Filters
 //                 {loading && <span className="ml-2">...</span>}
 //               </Button>
-
+               
 //               {isAdvancedOpen && (
 //                 <div className="absolute mt-2 left-0 z-50 w-[360px] bg-background border border-border shadow-lg rounded-md p-4 flex flex-col gap-6 max-h-96 overflow-y-auto">
 //                   {filtersList.map((section) =>
@@ -332,17 +488,19 @@
 //           <Button
 //             key={level}
 //             variant={selectedLevel1 === level ? "default" : "outline"}
-//             onClick={() =>
-//               setSelectedLevel1(selectedLevel1 === level ? "" : level) // Toggle
-//             }
+//             onClick={() => handleLevel1Select(level)}
 //             className={`rounded-full text-sm px-6 py-2 transition border 
 //               ${
 //                 selectedLevel1 === level
 //                   ? "bg-blue-300 text-white hover:bg-blue-400"
 //                   : "bg-transparent text-foreground border-border hover:border-blue-400 hover:text-blue-400"
 //               }`}
+//             disabled={loading || !sessionData.token}
 //           >
 //             {level}
+//             {loading && selectedLevel1 === level && (
+//               <Icon name="Loader" size={14} className="ml-2 animate-spin" />
+//             )}
 //           </Button>
 //         ))}
 //       </div>
@@ -366,29 +524,12 @@
 //             'No courses found'
 //           )}
 //         </div>
-
-//         {/* Optional: Quick filter buttons (commented out as in original) */}
-//         {/* <div className="hidden md:flex items-center space-x-2">
-//           <span className="text-sm text-muted-foreground mr-2">Quick:</span>
-//           {categories.slice(0, 4).map((category) => (
-//             <Button
-//               key={category.id}
-//               variant="outline"
-//               size="sm"
-//               onClick={() => onSearchChange(category.label)}
-//               className="h-7 px-3 text-xs"
-//             >
-//               {category.label}
-//             </Button>
-//           ))}
-//         </div> */}
 //       </div>
 //     </div>
 //   );
 // };
 
 // export default SearchToolbar;
-
 
 'use client';
 
@@ -420,13 +561,13 @@ const SearchToolbar = ({
   const [taskCategories, setTaskCategories] = useState([]);
   const [apiError, setApiError] = useState(null);
   const [sessionData, setSessionData] = useState({
-    url: "",
-    token: "",
-    sub_institute_id: "",
-    user_id: "",
-    syear: "",
-    user_profile_name: "",
-    org_type: ""
+    url: '',
+    token: '',
+    sub_institute_id: '',
+    user_id: '',
+    syear: '',
+    user_profile_name: '',
+    org_type: '',
   });
 
   const advancedRef = useRef(null);
@@ -434,12 +575,18 @@ const SearchToolbar = ({
 
   // Load session info from localStorage
   useEffect(() => {
-    const userData = localStorage.getItem("userData");
+    const userData = localStorage.getItem('userData');
     if (userData) {
-      const { APP_URL, token, sub_institute_id, user_id, syear, user_profile_name, org_type } =
-        JSON.parse(userData);
+      const {
+        APP_URL,
+        token,
+        sub_institute_id,
+        user_id,
+        syear,
+        user_profile_name,
+        org_type,
+      } = JSON.parse(userData);
 
-      // Ensure URL has proper format
       let formattedUrl = APP_URL || '';
       if (formattedUrl && !formattedUrl.endsWith('/')) {
         formattedUrl += '/';
@@ -450,57 +597,59 @@ const SearchToolbar = ({
         token,
         sub_institute_id,
         user_id,
-        syear: syear || "",
-        user_profile_name: user_profile_name || "",
-        org_type: org_type || ""
+        syear: syear || '',
+        user_profile_name: user_profile_name || '',
+        org_type: org_type || '',
       });
     }
   }, []);
 
-  // API URLs - constructed after sessionData is loaded
-  const SKILL_API_URL = sessionData.url && sessionData.token 
-    ? `${sessionData.url}search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&org_type=${encodeURIComponent(sessionData.org_type)}&searchType=skillTaxonomy&searchWord=skillTaxonomy`
-    : null;
+  // API URLs
+  const SKILL_API_URL =
+    sessionData.url && sessionData.token
+      ? `${sessionData.url}search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&org_type=${encodeURIComponent(
+          sessionData.org_type
+        )}&searchType=skillTaxonomy&searchWord=skillTaxonomy`
+      : null;
 
-  const TASK_API_URL = sessionData.url && sessionData.token
-    ? `${sessionData.url}api/job-role-tasks?type=API&sub_institute_id=${sessionData.sub_institute_id}&token=${sessionData.token}`
-    : null;
+  const TASK_API_URL =
+    sessionData.url && sessionData.token
+      ? `${sessionData.url}api/job-role-tasks?type=API&sub_institute_id=${sessionData.sub_institute_id}&token=${sessionData.token}`
+      : null;
 
   // Fetch skill categories
   const fetchSkillCategories = async () => {
     if (!SKILL_API_URL) {
-      setApiError("Skill API URL not available");
+      setApiError('Skill API URL not available');
       return;
     }
 
     try {
       setLoading(true);
       setApiError(null);
-      
-      // Validate URL format
+
       if (!SKILL_API_URL.startsWith('http')) {
         throw new Error(`Invalid API URL: ${SKILL_API_URL}`);
       }
 
       const response = await fetch(SKILL_API_URL);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
-      // Extract category names from the API response
+
       if (Array.isArray(data)) {
-        const categories = data.map(item => item.category_name).filter(Boolean);
+        const categories = data.map((item) => item.category_name).filter(Boolean);
         setSkillCategories(categories);
       } else {
-        console.warn("Unexpected API response format for skills:", data);
+        console.warn('Unexpected API response format for skills:', data);
         setSkillCategories([]);
       }
     } catch (err) {
-      console.error("Error fetching skill categories:", err);
-      setApiError("Failed to load skill categories: " + err.message);
+      console.error('Error fetching skill categories:', err);
+      setApiError('Failed to load skill categories: ' + err.message);
       setSkillCategories([]);
     } finally {
       setLoading(false);
@@ -510,62 +659,60 @@ const SearchToolbar = ({
   // Fetch task categories
   const fetchTaskCategories = async () => {
     if (!TASK_API_URL) {
-      setApiError("Task API URL not available");
+      setApiError('Task API URL not available');
       return;
     }
 
     try {
       setLoading(true);
       setApiError(null);
-      
-      // Validate URL format
+
       if (!TASK_API_URL.startsWith('http')) {
         throw new Error(`Invalid API URL: ${TASK_API_URL}`);
       }
 
       const response = await fetch(TASK_API_URL);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
-      // Extract task categories from the API response
+
       if (data && Array.isArray(data.data)) {
-        const categories = data.data.map(item => item.task_category).filter(Boolean);
-        // Remove duplicates
+        const categories = data.data.map((item) => item.task_category).filter(Boolean);
         const uniqueCategories = [...new Set(categories)];
         setTaskCategories(uniqueCategories);
       } else {
-        console.warn("Unexpected API response format for tasks:", data);
+        console.warn('Unexpected API response format for tasks:', data);
         setTaskCategories([]);
       }
     } catch (err) {
-      console.error("Error fetching task categories:", err);
-      setApiError("Failed to load task categories: " + err.message);
+      console.error('Error fetching task categories:', err);
+      setApiError('Failed to load task categories: ' + err.message);
       setTaskCategories([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch categories when selectedLevel1 changes and sessionData is available
+  // Load filters on level change
   useEffect(() => {
-    if (!sessionData.token || !sessionData.url) {
-      return; // Wait for session data to be loaded
-    }
+    if (!sessionData.token || !sessionData.url) return;
 
-    if (selectedLevel1 === "Skill" && skillCategories.length === 0) {
+    if (selectedLevel1 === 'Skill' && skillCategories.length === 0) {
       fetchSkillCategories();
-    } else if (selectedLevel1 === "Task" && taskCategories.length === 0) {
+    } else if (selectedLevel1 === 'Task' && taskCategories.length === 0) {
       fetchTaskCategories();
-    } else if (selectedLevel1 === "All" && (skillCategories.length === 0 || taskCategories.length === 0)) {
+    } else if (
+      selectedLevel1 === 'All' &&
+      (skillCategories.length === 0 || taskCategories.length === 0)
+    ) {
       Promise.all([fetchSkillCategories(), fetchTaskCategories()]);
     }
   }, [selectedLevel1, sessionData]);
 
-  // Fetch course filters from API
+  // Fetch course filters
   const fetchCourseFilters = async () => {
     setLoading(true);
     try {
@@ -577,16 +724,15 @@ const SearchToolbar = ({
       if (data?.lms_subject) {
         const allSubjects = Object.values(data.lms_subject).flat();
 
-        // Process categories
         const categoryMap = {};
-        allSubjects.forEach(item => {
+        allSubjects.forEach((item) => {
           if (!item.content_category) return;
           const key = item.content_category.toLowerCase().trim();
           if (!categoryMap[key]) {
             categoryMap[key] = {
               id: key.replace(/\s+/g, '-'),
               label: item.content_category,
-              count: 1
+              count: 1,
             };
           } else {
             categoryMap[key].count++;
@@ -594,16 +740,15 @@ const SearchToolbar = ({
         });
         const uniqueCategories = Object.values(categoryMap);
 
-        // Process subject types
         const subjectTypeMap = {};
-        allSubjects.forEach(item => {
+        allSubjects.forEach((item) => {
           if (!item.subject_type) return;
           const key = item.subject_type.toLowerCase().trim();
           if (!subjectTypeMap[key]) {
             subjectTypeMap[key] = {
               id: key.replace(/\s+/g, '-'),
               label: item.subject_type,
-              count: 1
+              count: 1,
             };
           } else {
             subjectTypeMap[key].count++;
@@ -629,22 +774,19 @@ const SearchToolbar = ({
 
   const handleLevel1Select = (level) => {
     if (selectedLevel1 === level) {
-      // Deselect if same level is clicked again
-      setSelectedLevel1("");
-      setSelectedCategory("");
+      setSelectedLevel1('');
+      setSelectedCategory('');
     } else {
       setSelectedLevel1(level);
-      setSelectedCategory("");
+      setSelectedCategory('');
     }
   };
 
   const handleCategorySelect = (category) => {
     if (selectedCategory === category) {
-      // Deselect if same category is clicked again
-      setSelectedCategory("");
+      setSelectedCategory('');
     } else {
       setSelectedCategory(category);
-      // You can add additional logic here to filter assessments based on the selected category
     }
   };
 
@@ -652,9 +794,9 @@ const SearchToolbar = ({
     if (!selectedLevel1) return null;
 
     let categories = [];
-    if (selectedLevel1 === "Skill") categories = skillCategories;
-    else if (selectedLevel1 === "Task") categories = taskCategories;
-    else if (selectedLevel1 === "All") categories = [...skillCategories, ...taskCategories];
+    if (selectedLevel1 === 'Skill') categories = skillCategories;
+    else if (selectedLevel1 === 'Task') categories = taskCategories;
+    else if (selectedLevel1 === 'All') categories = [...skillCategories, ...taskCategories];
 
     if (loading) {
       return (
@@ -691,14 +833,13 @@ const SearchToolbar = ({
         {categories.map((cat, index) => (
           <Button
             key={index}
-            variant={selectedCategory === cat ? "default" : "outline"}
+            variant={selectedCategory === cat ? 'default' : 'outline'}
             onClick={() => handleCategorySelect(cat)}
-            className={`rounded-full text-sm transition px-4 py-2 border 
-              ${
-                selectedCategory === cat
-                  ? "bg-blue-300 text-white hover:bg-blue-400"
-                  : "bg-transparent text-foreground border-border hover:border-blue-400 hover:text-blue-400"
-              }`}
+            className={`rounded-full text-sm transition px-4 py-2 border ${
+              selectedCategory === cat
+                ? 'bg-blue-300 text-white hover:bg-blue-400'
+                : 'bg-transparent text-foreground border-border hover:border-blue-400 hover:text-blue-400'
+            }`}
           >
             {cat}
           </Button>
@@ -707,7 +848,7 @@ const SearchToolbar = ({
     );
   };
 
-  // ✅ Fixed checkbox render with label text
+  // Checkbox filter group
   const renderFilterGroup = (title, key, options) => (
     <div key={key} className="flex flex-col gap-2">
       <h4 className="font-medium text-foreground">{title}</h4>
@@ -745,35 +886,36 @@ const SearchToolbar = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Dynamic filters based on API data
   const filtersList = [
     {
       title: 'Categories',
       key: 'categories',
-      options: categories.map(cat => ({
+      options: categories.map((cat) => ({
         id: cat.id,
-        label: `${cat.label} (${cat.count})`
-      }))
+        label: `${cat.label} (${cat.count})`,
+      })),
     },
     {
       title: 'Course Types',
       key: 'subjectTypes',
-      options: subjectTypes.map(type => ({
+      options: subjectTypes.map((type) => ({
         id: type.id,
-        label: `${type.label} (${type.count})`
-      }))
+        label: `${type.label} (${type.count})`,
+      })),
     },
   ];
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6 relative">
+      {/* Search + Toolbar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+        {/* Search box */}
         <div className="flex-1 lg:max-w-md">
           <div className="relative">
             <Input
               type="search"
-              placeholder="Search courses by title,department,shortname,course type..."
-              value={searchQuery || ""}
+              placeholder="Search courses by title, department, shortname, course type..."
+              value={searchQuery || ''}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-10 pr-10"
             />
@@ -795,10 +937,30 @@ const SearchToolbar = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          {/* Filters Dropdown */}
-          <div className="flex items-center gap-3 relative">
+        {/* Toolbar actions */}
+        <div className="flex items-center space-x-1">
+          <div className="flex items-center gap-1 relative">
             <div className="relative" ref={advancedRef}>
+              <Button variant="ghost" size="icon" title="Settings / Manage Fields">
+                <Icon name="Settings" size={18} />
+              </Button>
+
+              <Button variant="ghost" size="icon" title="Refresh Catalog">
+                <Icon name="RotateCcw" size={18} />
+              </Button>
+
+              <Button variant="ghost" size="icon" title="AI Insights / Reports">
+                <Icon name="BarChart3" size={18} />
+              </Button>
+
+              <Button variant="ghost" size="icon" title="Share / Publish Module">
+                <Icon name="Share2" size={18} />
+              </Button>
+
+              <Button variant="ghost" size="icon" title="Help / Info">
+                <Icon name="CircleHelp" size={18} />
+              </Button>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -817,9 +979,9 @@ const SearchToolbar = ({
               {isAdvancedOpen && (
                 <div className="absolute mt-2 left-0 z-50 w-[360px] bg-background border border-border shadow-lg rounded-md p-4 flex flex-col gap-6 max-h-96 overflow-y-auto">
                   {filtersList.map((section) =>
-                    section.options.length > 0 ? (
-                      renderFilterGroup(section.title, section.key, section.options)
-                    ) : null
+                    section.options.length > 0
+                      ? renderFilterGroup(section.title, section.key, section.options)
+                      : null
                   )}
                 </div>
               )}
@@ -833,17 +995,22 @@ const SearchToolbar = ({
               size="sm"
               onClick={() => onViewModeChange('grid')}
               className={`rounded-r-none border-r border-border ${
-                viewMode === "grid" ? "bg-blue-400 text-white hover:bg-blue-500" : "bg-transparent"
+                viewMode === 'grid'
+                  ? 'bg-blue-400 text-white hover:bg-blue-500'
+                  : 'bg-transparent'
               }`}
             >
               <Icon name="Grid3X3" size={16} />
             </Button>
+
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('list')}
               className={`rounded-l-none ${
-                viewMode === "list" ? "bg-blue-400 text-white hover:bg-blue-500" : "bg-transparent"
+                viewMode === 'list'
+                  ? 'bg-blue-400 text-white hover:bg-blue-500'
+                  : 'bg-transparent'
               }`}
             >
               <Icon name="List" size={16} />
@@ -852,19 +1019,18 @@ const SearchToolbar = ({
         </div>
       </div>
 
-      {/* Level 1 Buttons (Centered) */}
+      {/* Level 1 Buttons */}
       <div className="flex justify-center flex-wrap gap-4 mt-4">
-        {["All", "Skill", "Task"].map((level) => (
+        {['All', 'Skill', 'Task'].map((level) => (
           <Button
             key={level}
-            variant={selectedLevel1 === level ? "default" : "outline"}
+            variant={selectedLevel1 === level ? 'default' : 'outline'}
             onClick={() => handleLevel1Select(level)}
-            className={`rounded-full text-sm px-6 py-2 transition border 
-              ${
-                selectedLevel1 === level
-                  ? "bg-blue-300 text-white hover:bg-blue-400"
-                  : "bg-transparent text-foreground border-border hover:border-blue-400 hover:text-blue-400"
-              }`}
+            className={`rounded-full text-sm px-6 py-2 transition border ${
+              selectedLevel1 === level
+                ? 'bg-blue-300 text-white hover:bg-blue-400'
+                : 'bg-transparent text-foreground border-border hover:border-blue-400 hover:text-blue-400'
+            }`}
             disabled={loading || !sessionData.token}
           >
             {level}
@@ -875,18 +1041,20 @@ const SearchToolbar = ({
         ))}
       </div>
 
-      {/* Level 2 Buttons (Show only after Level 1 selection) */}
+      {/* Level 2 Buttons */}
       {renderLevel2Buttons()}
 
-      {/* Results Count */}
+      {/* Results count */}
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
         <div className="text-sm text-muted-foreground">
           {resultsCount > 0 ? (
             <>
-              Showing <span className="font-medium text-foreground">{resultsCount}</span> courses
+              Showing{' '}
+              <span className="font-medium text-foreground">{resultsCount}</span> courses
               {searchQuery && (
                 <>
-                  {' '}for "<span className="font-medium text-foreground">{searchQuery}</span>"
+                  {' '}
+                  for "<span className="font-medium text-foreground">{searchQuery}</span>"
                 </>
               )}
             </>

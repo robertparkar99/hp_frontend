@@ -1,8 +1,19 @@
+
+
 import React from 'react';
 import Icon from '../../../../../components/AppIcon';
 import { Button } from '../../../../../components/ui/button';
 
-const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
+const AssessmentCard = ({
+  assessment,
+  onStartAssessment,
+  onViewDetails,
+  onEdit,
+  onDelete,
+  onPreview,
+  onShare,
+  onSchedule,
+}) => {
   const getDifficultyColor = (difficulty) => {
     switch (difficulty.toLowerCase()) {
       case 'easy':
@@ -29,31 +40,12 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
     }
   };
 
-  const getStatusIcon = (status, active) => {
-    if (active === 0) {
-      return { icon: 'Circle', color: 'text-gray-400' }; // inactive always gray
-    }
-
-    // if active === 1, fall back to status-based logic
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return { icon: 'CheckCircle', color: 'text-green-600' };
-      case 'in progress':
-        return { icon: 'Clock', color: 'text-yellow-600' };
-      case 'failed':
-        return { icon: 'XCircle', color: 'text-red-600' };
-      default:
-        return { icon: 'Circle', color: 'text-gray-400' };
-    }
-  };
-
-  // usage:
-  const statusInfo = getStatusIcon(assessment.status, assessment.active);
-
-  const isDeadlineUrgent = assessment.deadline && new Date(assessment.deadline) <= new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const isDeadlineUrgent =
+    assessment.deadline &&
+    new Date(assessment.deadline) <= new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 shadow-soft hover:shadow-elevated transition-smooth">
+    <div className="bg-card border border-border rounded-lg p-6 shadow-soft hover:shadow-elevated transition-smooth relative">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
@@ -61,34 +53,34 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
             {assessment.title}
           </h3>
           <div className="flex flex-wrap gap-2 mb-3">
-            <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getCategoryColor(assessment.category)}`}>
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-md border ${getCategoryColor(
+                assessment.category
+              )}`}
+            >
               {assessment.category}
             </span>
-            <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getDifficultyColor(assessment.subject)}`}>
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-md border ${getDifficultyColor(
+                assessment.subject
+              )}`}
+            >
               {assessment.subject}
             </span>
           </div>
         </div>
+
+        {/* Status dot */}
         <div className="flex items-center space-x-2 ml-4">
-          {/* <Button
-    variant="ghost"
-    size="icon"
-    onClick={() => onViewDetails(assessment)}
-    className="hover:bg-muted"
-  >
-    <Icon
-      name="Info"
-      size={20}
-      className="text-black" // stays black, no hover color change
-    />
-  </Button> */}
-
-         <span className={`h-[15px] w-[15px] rounded-full ${assessment.status !== 'Closed' ? 'bg-success' : 'bg-[#ddd]'} border-1`}></span>
-
+          <span
+            className={`h-[12px] w-[12px] rounded-full ${
+              assessment.status !== 'Closed' ? 'bg-green-500' : 'bg-gray-400'
+            }`}
+          />
         </div>
       </div>
 
-      {/* Assessment Details */}
+      {/* Details */}
       <div className="space-y-3 mb-4">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center space-x-1">
@@ -107,69 +99,91 @@ const AssessmentCard = ({ assessment, onStartAssessment, onViewDetails }) => {
           </p>
         )}
 
-        {/* Progress Bar for In Progress */}
-        {assessment.status === 'In Progress' && assessment.progress !== undefined && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Progress</span>
-              <span>{assessment.progress}%</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div
-                className="bg-primary h-2 rounded-full transition-smooth"
-                style={{ width: `${assessment.progress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Best Score for Completed */}
-        {assessment.status === 'Completed' && assessment.bestScore !== undefined && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Best Score:</span>
-            <span className="font-medium text-foreground">{assessment.bestScore}%</span>
-          </div>
-        )}
-
-        {/* Deadline Warning */}
         {assessment.deadline && (
-          <div className={`flex items-center space-x-2 text-sm ${isDeadlineUrgent ? 'text-red-600' : 'text-muted-foreground'}`}>
+          <div
+            className={`flex items-center space-x-2 text-sm ${
+              isDeadlineUrgent ? 'text-red-600' : 'text-muted-foreground'
+            }`}
+          >
             <Icon name="Calendar" size={16} />
             <span>Due: {new Date(assessment.deadline).toLocaleDateString()}</span>
-            {isDeadlineUrgent && (
-              <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-md">
-                Closed
-              </span>
-            )}
           </div>
         )}
       </div>
 
-      {/* Action Button */}
-      {/* <div className="pt-4 border-t border-border">
-        <Button
-          variant="default"
-          fullWidth
-          onClick={() => onStartAssessment(assessment)}
-          disabled={assessment.status === 'Closed'}
+      {/* 🔹 Actions Toolbar */}
+      <div className="flex justify-between items-center pt-3 border-t border-border">
+        {/* Left-side: icon actions */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            title="View details"
+            onClick={() => onViewDetails?.(assessment)}
+          >
+            <Icon name="Eye" size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Edit assessment"
+            onClick={() => onEdit?.(assessment)}
+          >
+            <Icon name="Edit" size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Preview questions"
+            onClick={() => onPreview?.(assessment)}
+          >
+            <Icon name="ListChecks" size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Share / Assign"
+            onClick={() => onShare?.(assessment)}
+          >
+            <Icon name="Share2" size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Timer / Schedule"
+            onClick={() => onSchedule?.(assessment)}
+          >
+            <Icon name="Clock" size={16} />
+          </Button>
+       
 
-        >
-          {assessment.status !== 'Closed' && 'Start Assessment'}
-          {assessment.status === 'Closed' && 'Closed Assessment'}
-        </Button>
-      </div> */}
-    <div className="pt-4 border-t border-border">
-  {assessment.status !== 'Closed' && (
-    <Button
-      variant="default"
-      fullWidth
-      onClick={() => onStartAssessment(assessment)}
-      className='px-4 py-1 rounded-full bg-green-600 text-white shadow hover:bg-green-700 h-8 text-xs font-medium'
-    >
-      Start Assessment
-    </Button>
-  )}
-</div>
+       
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Delete assessment"
+            onClick={() => onDelete?.(assessment)}
+          >
+            <Icon name="Trash2" size={16} className="text-red-600" />
+          </Button>
+        </div>
+      </div>
+
+      {/* 🔹 Separate Start Assessment button */}
+      {assessment.status !== 'Closed' && (
+        <div className="mt-4 flex justify-start">
+          <Button
+            variant="default"
+            size="sm"
+            className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded-full"
+            onClick={() => onStartAssessment?.(assessment)}
+            title="Start assessment"
+          >
+            <Icon name="Play" size={14} />
+            Start Assessment
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
