@@ -13,10 +13,10 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import "./triangle.css"; // custom CSS
 import { Atom } from "react-loading-indicators";
-import { 
-  Funnel, 
-  LayoutGrid, 
-  Table, 
+import {
+  Funnel,
+  LayoutGrid,
+  Table,
   TriangleDashed,
   Search,
   Plus,
@@ -31,7 +31,7 @@ import {
   Tag,
   HelpCircle,
   ListChecks,
-  MoreHorizontal
+  MoreVertical
 } from "lucide-react";
 import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
@@ -217,7 +217,7 @@ export default function Page() {
         </div>
       ),
       selector: (row) => row.classification_item,
-      sortable: true, 
+      sortable: true,
     },
     {
       name: (
@@ -277,19 +277,19 @@ export default function Page() {
       name: "Actions",
       cell: (row) => (
         <div className="flex gap-2">
-          <button 
+          <button
             className="p-1 text-blue-600 hover:bg-blue-50 rounded"
             title="View Details"
           >
             <Eye className="w-4 h-4" />
           </button>
-          <button 
+          <button
             className="p-1 text-green-600 hover:bg-green-50 rounded"
             title="Edit"
           >
             <Edit3 className="w-4 h-4" />
           </button>
-          <button 
+          <button
             className="p-1 text-red-600 hover:bg-red-50 rounded"
             title="Delete"
           >
@@ -337,8 +337,8 @@ export default function Page() {
       {/* Header with Title and Action Buttons */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Ability Library</h1>
-        
-     
+
+
       </div>
 
       {/* Search Bar and Filters */}
@@ -354,117 +354,116 @@ export default function Page() {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
-              <div className="flex items-center gap-1">
-                       <Popover>
-                            <PopoverTrigger asChild>
-                              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                                <MoreHorizontal className="w-5 h-5 text-gray-600" />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              align="end"
-                              className="w-auto p-4 bg-white shadow-xl rounded-xl"
-                            >
-   {/* Action Buttons - All in one line */}
-        <div className="flex items-center gap-3">
-          {/* Bulk Actions */}
-          <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Bulk Actions">
-            <ListChecks className="w-5 h-5 text-gray-600" />
-           
-          </button>
-
-          {/* Export/Import */}
-          <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Export">
-            <Download className="w-5 h-5 text-gray-600" />
-
-          </button>
-          
-          <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Import">
-            <Upload className="w-5 h-5 text-gray-600" />
-           
-          </button>
-
-          {/* Add New Ability */}
-          <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Add New Ability">
-            <Plus className="w-5 h-5 text-gray-600" />
-           
-          </button>
-
-          {/* AI Suggestions */}
-          <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="AI Suggestions">
-            <Sparkles className="w-5 h-5 text-gray-600" />
-           
-          </button>
-
-          {/* Analytics */}
-          <button className="flex items-center px-2 py-2 hover:bg-gray-200  rounded-md text-sm" title="Analytics">
-            <BarChart3 className="w-5 h-5 text-gray-600" />
-
-          </button>
-
-          {/* Settings */}
-          <button className="p-2 hover:bg-gray-200 rounded-md" title="Settings">
-            <Settings className="w-5 h-5 text-gray-600" />
-          </button>
-
-          {/* Help */}
-          <button className="p-2 hover:bg-gray-200 rounded-md" title="Help">
-            <HelpCircle className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-         </PopoverContent>
-                  </Popover>
         <div className="flex items-center gap-1">
-          {/* Funnel Filter Popover */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md">
-                <Funnel className="w-5 h-5 " />
-                
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[280px] p-4 space-y-4" align="end">
-              <Filters
-                categories={categories}
-                subCategories={subCategories}
-                skills={skills}
-                loadingOptions={loadingOptions}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                selectedSubCategory={selectedSubCategory}
-                setSelectedSubCategory={setSelectedSubCategory}
-                selectedLevel={selectedLevel}
-                setSelectedLevel={setSelectedLevel}
-              />
-            </PopoverContent>
-          </Popover>
 
-          {/* View Toggle */}
-          <div className="flex border rounded-md overflow-hidden">
-            <button
-              onClick={() => setViewMode("triangle")}
-              className={`px-3 py-2 flex items-center justify-center ${
-                viewMode === "triangle"
-                  ? "bg-blue-100 text-blue-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-              title="Triangle View"
-            >
-              <TriangleDashed className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => setViewMode("table")}
-              className={`px-3 py-2 flex items-center justify-center ${
-                viewMode === "table"
-                  ? "bg-blue-100 text-blue-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-              title="Table View"
-            >
-              <Table className="h-5 w-5" />
-            </button>
+          <div className="flex items-center gap-1">
+            {/* Funnel Filter Popover */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md">
+                  <Funnel className="w-5 h-5 " />
+
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-4 space-y-4" align="end">
+                <Filters
+                  categories={categories}
+                  subCategories={subCategories}
+                  skills={skills}
+                  loadingOptions={loadingOptions}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  selectedSubCategory={selectedSubCategory}
+                  setSelectedSubCategory={setSelectedSubCategory}
+                  selectedLevel={selectedLevel}
+                  setSelectedLevel={setSelectedLevel}
+                />
+              </PopoverContent>
+            </Popover>
+
+            {/* View Toggle */}
+            <div className="flex border rounded-md overflow-hidden">
+              <button
+                onClick={() => setViewMode("triangle")}
+                className={`px-3 py-2 flex items-center justify-center ${viewMode === "triangle"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                title="Triangle View"
+              >
+                <TriangleDashed className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setViewMode("table")}
+                className={`px-3 py-2 flex items-center justify-center ${viewMode === "table"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                title="Table View"
+              >
+                <Table className="h-5 w-5" />
+              </button>
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <MoreVertical className="w-5 h-5 text-gray-600" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-auto p-4 bg-white shadow-xl rounded-xl"
+              >
+                {/* Action Buttons - All in one line */}
+                <div className="flex items-center gap-3">
+                  {/* Bulk Actions */}
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Bulk Actions">
+                    <ListChecks className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+                  {/* Export/Import */}
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Export">
+                    <Download className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Import">
+                    <Upload className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+                  {/* Add New Ability */}
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Add New Ability">
+                    <Plus className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+                  {/* AI Suggestions */}
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="AI Suggestions">
+                    <Sparkles className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+                  {/* Analytics */}
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200  rounded-md text-sm" title="Analytics">
+                    <BarChart3 className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+                  {/* Settings */}
+                  <button className="p-2 hover:bg-gray-200 rounded-md" title="Settings">
+                    <Settings className="w-5 h-5 text-gray-600" />
+                  </button>
+
+                  {/* Help */}
+                  <button className="p-2 hover:bg-gray-200 rounded-md" title="Help">
+                    <HelpCircle className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
-        </div>
         </div>
       </div>
 

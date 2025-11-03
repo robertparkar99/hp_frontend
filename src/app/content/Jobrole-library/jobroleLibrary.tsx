@@ -34,7 +34,7 @@ import {
   AlertCircle,
   Bot,
   Filter,
-  MoreHorizontal
+  MoreVertical
 } from "lucide-react";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import JobDescriptionModal from "./JobDescriptionModal";
@@ -441,6 +441,42 @@ export default function HomePage() {
         </div>
 
         <div className="flex items-center flex-wrap gap-1">
+          
+
+          {/* Add New Jobrole */}
+          <button
+            className="hover:bg-gray-100 px-2 py-2 flex items-center justify-center transition-colors rounded-md "
+            onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
+            title="Add New Job Role"
+          >
+            <Plus className="h-5 w-5 text-gray-600" />
+          </button>
+
+          {/* ✅ View Mode Toggle */}
+          <div className="flex border rounded-md overflow-hidden">
+            <button
+              onClick={() => setViewMode("myview")}
+              className={`px-3 py-2 flex items-center justify-center transition-colors ${
+                viewMode === "myview"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+              title="Card View"
+            >
+              <Square className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`px-3 py-2 flex items-center justify-center transition-colors ${
+                viewMode === "table"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+              title="Table View"
+            >
+              <Table className="h-4 w-4" />
+            </button>
+          </div>
           {/* Global Actions - Horizontal dropdown */}
           <div className="relative">
             <button
@@ -448,7 +484,7 @@ export default function HomePage() {
               className="p-2 hover:bg-gray-100 rounded transition-colors"
               title="More Actions"
             >
-              <MoreHorizontal className="h-5 w-5 text-gray-600" />
+              <MoreVertical className="h-5 w-5 text-gray-600" />
             </button>
 
             {/* Horizontal Dropdown Menu */}
@@ -517,41 +553,6 @@ export default function HomePage() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
-
-          {/* Add New Jobrole */}
-          <button
-            className="hover:bg-gray-100 px-2 py-2 flex items-center justify-center transition-colors rounded-md "
-            onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
-            title="Add New Job Role"
-          >
-            <Plus className="h-5 w-5 text-gray-600" />
-          </button>
-
-          {/* ✅ View Mode Toggle */}
-          <div className="flex border rounded-md overflow-hidden">
-            <button
-              onClick={() => setViewMode("myview")}
-              className={`px-3 py-2 flex items-center justify-center transition-colors ${
-                viewMode === "myview"
-                  ? "bg-blue-100 text-blue-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-              title="Card View"
-            >
-              <Square className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("table")}
-              className={`px-3 py-2 flex items-center justify-center transition-colors ${
-                viewMode === "table"
-                  ? "bg-blue-100 text-blue-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-              title="Table View"
-            >
-              <Table className="h-4 w-4" />
-            </button>
           </div>
         </div>
       </div>
