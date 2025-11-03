@@ -293,9 +293,9 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
       formDataToSend.append("transfer_type", formData.deposit.transfer_type);
 
       // Additional fields from your example
-      formDataToSend.append("jobtitle_id", "0");
+      formDataToSend.append("jobtitle_id", formData.personal.jobrole); // For jobrole ID
       formDataToSend.append("load", "6");
-      formDataToSend.append("department_id", "1");
+     
       formDataToSend.append("submit", "Update");
 
       const response = await fetch(

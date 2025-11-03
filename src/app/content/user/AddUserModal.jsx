@@ -234,7 +234,8 @@ export default function AddUserModal({
       formDataToSend.append("amount", formData.deposit.amount);
       formDataToSend.append("transfer_type", formData.deposit.transfer_type);
       //fix jobtitle_id remove hardcode
-      formDataToSend.append("jobtitle_id", formData.personal.jobrole);
+      // formDataToSend.append("jobtitle_id", formData.personal.jobrole);
+        formDataToSend.append("jobtitle_id", formData.personal.jobrole); // For jobrole ID
       formDataToSend.append("submit", "Update");
 
       const response = await fetch(
