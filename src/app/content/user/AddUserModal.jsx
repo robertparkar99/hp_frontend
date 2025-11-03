@@ -25,10 +25,48 @@ export default function AddUserModal({
   isOpen,
   setIsOpen,
   sessionData,
+  userJobroleLists,
+  userDepartmentLists,
   userLOR,
   userProfiles: initialUserProfiles = [],
   userLists,
 }) {
+
+  const [fetchedUserProfiles, setFetchedUserProfiles] = useState(initialUserProfiles);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+
+  useEffect(() => {
+    if (!sessionData?.APP_URL) return;
+
+    const fetchProfiles = async () => {
+      setLoadingProfiles(true);
+      try {
+        const response = await fetch(
+          `${sessionData.APP_URL}/table_data?table=tbluserprofilemaster&filters[sub_institute_id]=${sessionData.sub_institute_id || 1
+          }&filters[status]=1`,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch profiles");
+
+        const result = await response.json();
+
+        // ✅ Your API already returns an array of objects
+        setFetchedUserProfiles(result || []);
+      } catch (error) {
+        console.error("Error fetching user profiles:", error);
+        setFetchedUserProfiles([]);
+      } finally {
+        setLoadingProfiles(false);
+      }
+    };
+
+    fetchProfiles();
+  }, [sessionData]);
+
   const [formData, setFormData] = useState({
     personal: {
       name_suffix: "",
@@ -86,143 +124,6 @@ export default function AddUserModal({
       transfer_type: "",
     },
   });
-  const [fetchedUserProfiles, setFetchedUserProfiles] = useState(initialUserProfiles);
-  const [fetchedDepartments, setFetchedDepartments] = useState([]);
-  const [fetchedJobRoles, setFetchedJobRoles] = useState([]);
-  const [loadingProfiles, setLoadingProfiles] = useState(false);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
-  const [loadingJobRoles, setLoadingJobRoles] = useState(false);
-
-  // Fetch user profiles
-  useEffect(() => {
-    if (!sessionData?.APP_URL) return;
-
-    const fetchProfiles = async () => {
-      setLoadingProfiles(true);
-      try {
-        const response = await fetch(
-          `${sessionData.APP_URL}/table_data?table=tbluserprofilemaster&filters[sub_institute_id]=${sessionData.sub_institute_id || 1
-          }&filters[status]=1`,
-          {
-            method: "GET",
-            headers: { Accept: "application/json" },
-          }
-        );
-
-        if (!response.ok) throw new Error("Failed to fetch profiles");
-
-        const result = await response.json();
-        setFetchedUserProfiles(result || []);
-      } catch (error) {
-        console.error("Error fetching user profiles:", error);
-        setFetchedUserProfiles([]);
-      } finally {
-        setLoadingProfiles(false);
-      }
-    };
-
-    fetchProfiles();
-  }, [sessionData]);
-
-  // Fetch departments from the new API
-  useEffect(() => {
-    if (!sessionData?.APP_URL || !sessionData?.sub_institute_id || !sessionData?.org_type) return;
-
-    const fetchDepartments = async () => {
-      setLoadingDepartments(true);
-      try {
-        const apiUrl = `${sessionData.APP_URL}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[industries]=${sessionData.org_type}&group_by=department&order_by[column]=department&order_by[direction]=asc`;
-        console.log("Fetching departments from:", apiUrl);
-
-        const response = await fetch(apiUrl, {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch departments");
-
-        const result = await response.json();
-        console.log("Departments API response:", result);
-
-        // Transform the data to match your expected format
-        const departments = Array.isArray(result)
-          ? result.map((dept, index) => ({
-            id: dept.department_id || index + 1,
-            name: dept.department || `Department ${index + 1}`,
-          }))
-          : [];
-
-        setFetchedDepartments(departments);
-      } catch (error) {
-        console.error("Error fetching departments:", error);
-        setFetchedDepartments([]);
-      } finally {
-        setLoadingDepartments(false);
-      }
-    };
-
-    fetchDepartments();
-  }, [sessionData]);
-
-  // Fetch job roles when department changes
-  useEffect(() => {
-    const fetchJobRoles = async () => {
-      if (!formData.personal.department || !sessionData?.APP_URL || !sessionData?.sub_institute_id || !sessionData?.org_type) {
-        setFetchedJobRoles([]);
-        return;
-      }
-
-      setLoadingJobRoles(true);
-      try {
-        // Find the selected department name
-        const selectedDepartment = fetchedDepartments.find(
-          dept => String(dept.id) === formData.personal.department
-        );
-
-        if (!selectedDepartment) {
-          setFetchedJobRoles([]);
-          return;
-        }
-
-        const apiUrl = `${sessionData.APP_URL}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[industries]=${sessionData.org_type}&filters[department]=${encodeURIComponent(selectedDepartment.name)}&group_by=jobrole&order_by[column]=jobrole&order_by[direction]=asc`;
-        console.log("Fetching job roles from:", apiUrl);
-
-        const response = await fetch(apiUrl, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch job roles");
-
-        const result = await response.json();
-        console.log("Job roles response:", result);
-
-        // Transform the data to match your expected format
-        const jobRoles = Array.isArray(result)
-          ? result.map((jobrole, index) => ({
-            id: jobrole.jobrole_id || index + 1,
-            name: jobrole.jobrole || `Job Role ${index + 1}`,
-          }))
-          : [];
-
-        setFetchedJobRoles(jobRoles);
-
-        // Reset jobrole selection when department changes
-        handleInputChange("personal", "jobrole", "");
-      } catch (error) {
-        console.error("Error fetching job roles:", error);
-        setFetchedJobRoles([]);
-      } finally {
-        setLoadingJobRoles(false);
-      }
-    };
-
-    fetchJobRoles();
-  }, [formData.personal.department, sessionData, fetchedDepartments]);
-
-
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -248,25 +149,6 @@ export default function AddUserModal({
 
     handleInputChange("attendance", "working_days", currentDays);
   };
-  const handleDepartmentChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      personal: {
-        ...prev.personal,
-        department: value,
-        jobrole: "", // optional: reset job role when department changes
-      },
-    }));
-  };
-  const handleJobRoleChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      personal: {
-        ...prev.personal,
-        jobrole: value,
-      },
-    }));
-  };
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0] || null;
@@ -291,8 +173,9 @@ export default function AddUserModal({
       formDataToSend.append("created_by", sessionData.user_id || "");
 
       formDataToSend.append("name_suffix", formData.personal.name_suffix);
-      formDataToSend.append("user_name", formData.personal.first_name);
+      formDataToSend.append("user_name", formData.personal.first_name); // required
       formDataToSend.append("first_name", formData.personal.first_name);
+
       formDataToSend.append("middle_name", formData.personal.middle_name);
       formDataToSend.append("last_name", formData.personal.last_name);
       formDataToSend.append("email", formData.personal.email);
@@ -303,7 +186,7 @@ export default function AddUserModal({
       formDataToSend.append("allocated_standards", formData.personal.jobrole);
       formDataToSend.append("subject_ids", formData.personal.responsibility_level);
       formDataToSend.append("gender", formData.personal.gender);
-      formDataToSend.append("user_profile_id", formData.personal.user_profile_id);
+      formDataToSend.append("user_profile_id", formData.personal.user_profile_id); // required
       formDataToSend.append("join_year", formData.personal.join_year);
       formDataToSend.append("status", formData.personal.status);
 
@@ -350,10 +233,8 @@ export default function AddUserModal({
       formDataToSend.append("ifsc_code", formData.deposit.ifsc);
       formDataToSend.append("amount", formData.deposit.amount);
       formDataToSend.append("transfer_type", formData.deposit.transfer_type);
-
+      //fix jobtitle_id remove hardcode
       formDataToSend.append("jobtitle_id", formData.personal.jobrole);
-      formDataToSend.append("load", "6");
-
       formDataToSend.append("submit", "Update");
 
       const response = await fetch(
@@ -381,6 +262,8 @@ export default function AddUserModal({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-4xl overflow-y-auto max-h-[95vh]">
+
+
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Personal Information */}
           <section>
@@ -491,95 +374,46 @@ export default function AddUserModal({
                   required
                 />
               </div>
-
-              {/* Department Field */}
               <div>
                 <Label>Department <span className="text-red-500">*</span></Label>
-                {/* <Select
+                <Select
                   value={formData.personal.department}
                   onValueChange={(val) =>
                     handleInputChange("personal", "department", val)
                   }
-                  disabled={loadingDepartments}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder={
-                      loadingDepartments ? "Loading departments..." : "Select Department"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fetchedDepartments.map((department) => (
-                      <SelectItem key={department.id} value={String(department.id)}>
-                        {department.name}
-                      </SelectItem>
-                    ))}
-                    {fetchedDepartments.length === 0 && !loadingDepartments && (
-                      <SelectItem value="" disabled>No departments found</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select> */}
-                <Select onValueChange={handleDepartmentChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Department" />
                   </SelectTrigger>
                   <SelectContent>
-                    {fetchedDepartments
-                      ?.filter(dep => dep?.id && dep?.name)
-                      .map(dep => (
-                        <SelectItem key={dep.id} value={String(dep.id)}>
-                          {dep.name}
-                        </SelectItem>
-                      ))}
+                    {userDepartmentLists.map((department) => (
+                      <SelectItem key={department.id} value={String(department.id)}>
+                        {department.name || department.department} {/* safe fallback */}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-
               </div>
 
-              {/* Job Role Field - Dependent on Department */}
               <div>
                 <Label>Job Role</Label>
-                {/* <Select
+                <Select
                   value={formData.personal.jobrole}
                   onValueChange={(val) =>
                     handleInputChange("personal", "jobrole", val)
                   }
-                  disabled={loadingJobRoles || !formData.personal.department}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={
-                      !formData.personal.department 
-                        ? "Select department first" 
-                        : loadingJobRoles 
-                        ? "Loading job roles..." 
-                        : "Select Jobrole"
-                    } />
+                    <SelectValue placeholder="Select Jobrole" />
                   </SelectTrigger>
                   <SelectContent>
-                    {fetchedJobRoles.map((jobrole) => (
+                    {userJobroleLists.map((jobrole) => (
                       <SelectItem key={jobrole.id} value={String(jobrole.id)}>
-                        {jobrole.name}
+                        {jobrole.name || jobrole.jobrole} {/* safe fallback */}
                       </SelectItem>
                     ))}
-                    {fetchedJobRoles.length === 0 && !loadingJobRoles && formData.personal.department && (
-                      <SelectItem value="" disabled>No job roles found</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select> */}
-                <Select onValueChange={handleJobRoleChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Job Role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fetchedJobRoles
-                      ?.filter(role => role?.id && role?.name)
-                      .map(role => (
-                        <SelectItem key={role.id} value={String(role.id)}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
                   </SelectContent>
                 </Select>
-
               </div>
 
               <div>
@@ -630,12 +464,9 @@ export default function AddUserModal({
                   onValueChange={(val) =>
                     handleInputChange("personal", "user_profile_id", val)
                   }
-                  disabled={loadingProfiles}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={
-                      loadingProfiles ? "Loading profiles..." : "Select Profile"
-                    } />
+                    <SelectValue placeholder="Select Profile" />
                   </SelectTrigger>
                   <SelectContent>
                     {fetchedUserProfiles.map((profile) => (
@@ -643,13 +474,9 @@ export default function AddUserModal({
                         {profile.profile_name || profile.name || profile.full_name || "Unnamed"}
                       </SelectItem>
                     ))}
-                    {fetchedUserProfiles.length === 0 && !loadingProfiles && (
-                      <SelectItem value="" disabled>No profiles found</SelectItem>
-                    )}
                   </SelectContent>
                 </Select>
               </div>
-
               <div>
                 <Label>Joining Year</Label>
                 <Input
@@ -978,4 +805,4 @@ export default function AddUserModal({
       </DialogContent>
     </Dialog>
   );
-} 
+}
