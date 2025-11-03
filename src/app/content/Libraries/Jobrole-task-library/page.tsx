@@ -848,7 +848,7 @@ import {
   Settings, 
   HelpCircle ,
   Search,
-  MoreHorizontal
+  MoreVertical
 } from "lucide-react";
 import {
   Select,
@@ -1387,90 +1387,7 @@ const CriticalWorkFunctionGrid = () => {
   {/* Right Section - More Icon + Filter + View Toggle */}
   <div className="flex items-center space-x-2">
     {/* Consolidated Actions Dropdown */}
-    <div className="relative">
-      <button 
-        onClick={toggleActionsMenu}
-        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-        title="More Actions"
-      >
-        <MoreHorizontal className="w-5 h-5 text-gray-600" />
-      </button>
-
-      {/* Horizontal Dropdown Menu */}
-      {isActionsMenuOpen && (
-        <div 
-          className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex gap-1">
-            {/* Generative AI Assistant */}
-            <button 
-              onClick={handleAISuggest}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="AI Suggestions"
-            >
-              <Sparkles className="w-5 h-5 text-gray-600" />
-            </button>
-
-            {/* Add Job Role */}
-            <button 
-              onClick={handleAddJobRole}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Add Job Role"
-            >
-              <Plus className="w-5 h-5 text-gray-600" />
-            </button>
-
-            {/* Custom Fields */}
-            <button 
-              onClick={handleCustomFields}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Custom Fields"
-            >
-              <SlidersHorizontal className="w-5 h-5 text-gray-600" />
-            </button>
-
-            {/* Bulk Actions */}
-            {selectedTasks.length > 0 && (
-              <button 
-                onClick={handleBulkActions}
-                className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Bulk Actions"
-              >
-                <ListChecks className="w-5 h-5 text-gray-600" />
-              </button>
-            )}
-
-            {/* Export */}
-            <button 
-              onClick={handleExport}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Export"
-            >
-              <Download className="w-5 h-5 text-gray-600" />
-            </button>
-
-            {/* Settings */}
-            <button 
-              onClick={handleSettings}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Settings"
-            >
-              <Settings className="w-5 h-5 text-gray-600" />
-            </button>
-
-            {/* Help */}
-            <button 
-              onClick={handleHelp}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Help"
-            >
-              <HelpCircle className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+   
 
     {/* Filter */}
     <Popover>
@@ -1568,6 +1485,91 @@ const CriticalWorkFunctionGrid = () => {
       >
         <Table className="h-5 w-5" />
       </button>
+    </div>
+
+     <div className="relative">
+      <button 
+        onClick={toggleActionsMenu}
+        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        title="More Actions"
+      >
+        <MoreVertical className="w-5 h-5 text-gray-600" />
+      </button>
+
+      {/* Horizontal Dropdown Menu */}
+      {isActionsMenuOpen && (
+        <div 
+          className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex gap-1">
+            {/* Generative AI Assistant */}
+            <button 
+              onClick={handleAISuggest}
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="AI Suggestions"
+            >
+              <Sparkles className="w-5 h-5 text-gray-600" />
+            </button>
+
+            {/* Add Job Role */}
+            <button 
+              onClick={handleAddJobRole}
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Add Job Role"
+            >
+              <Plus className="w-5 h-5 text-gray-600" />
+            </button>
+
+            {/* Custom Fields */}
+            <button 
+              onClick={handleCustomFields}
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Custom Fields"
+            >
+              <SlidersHorizontal className="w-5 h-5 text-gray-600" />
+            </button>
+
+            {/* Bulk Actions */}
+            {selectedTasks.length > 0 && (
+              <button 
+                onClick={handleBulkActions}
+                className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Bulk Actions"
+              >
+                <ListChecks className="w-5 h-5 text-gray-600" />
+              </button>
+            )}
+
+            {/* Export */}
+            <button 
+              onClick={handleExport}
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Export"
+            >
+              <Download className="w-5 h-5 text-gray-600" />
+            </button>
+
+            {/* Settings */}
+            <button 
+              onClick={handleSettings}
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Settings"
+            >
+              <Settings className="w-5 h-5 text-gray-600" />
+            </button>
+
+            {/* Help */}
+            <button 
+              onClick={handleHelp}
+              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Help"
+            >
+              <HelpCircle className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   </div>
 </div>

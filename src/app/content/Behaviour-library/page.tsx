@@ -744,7 +744,7 @@ import {
   Star,
   Share2,
   FilterX,
-  MoreHorizontal
+  MoreVertical
 } from "lucide-react";
 import { Atom } from "react-loading-indicators";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
@@ -1092,78 +1092,7 @@ const BehaviourGrid = () => {
         </div>
 
         <div className="flex items-center gap-1">
-          {/* Action Icons Dropdown */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <MoreHorizontal className="w-5 h-5 text-gray-600" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-auto p-4 bg-white shadow-xl rounded-xl"
-            >
-              <div className="flex items-center gap-3">
-                {/* Add New Behavior */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Add New Behavior"
-                >
-                  <Plus className="w-5 h-5 text-gray-600" />
-                </button>
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <Settings className="w-5 h-5 text-gray-600" />
-              </button>
-                {/* Add Custom Fields */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Add Custom Fields"
-                >
-                  <ListPlus className="w-5 h-5 text-gray-600" />
-                </button>
-
-                {/* AI Suggestions */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="AI Suggestions"
-                >
-                  <Sparkles className="w-5 h-5 text-gray-600" />
-                </button>
-
-                {/* Analytics */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Analytics & Insights"
-                >
-                  <BarChart3 className="w-5 h-5 text-gray-600" />
-                </button>
-
-                {/* Compare */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Compare Behaviors"
-                >
-                  <LayoutGrid className="w-5 h-5 text-gray-600" />
-                </button>
-
-                {/* Favorites */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Favorites"
-                >
-                  <Star className="w-5 h-5 text-gray-600" />
-                </button>
-
-                {/* Share */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Share & Collaborate"
-                >
-                  <Share2 className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+       
 
           {/* Utility Icons Dropdown */}
           <Popover>
@@ -1256,6 +1185,78 @@ const BehaviourGrid = () => {
               <Table className="h-5 w-5" />
             </button>
           </div>
+             {/* Action Icons Dropdown */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-auto p-4 bg-white shadow-xl rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                {/* Add New Behavior */}
+                <button
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Add New Behavior"
+                >
+                  <Plus className="w-5 h-5 text-gray-600" />
+                </button>
+              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <Settings className="w-5 h-5 text-gray-600" />
+              </button>
+                {/* Add Custom Fields */}
+                <button
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Add Custom Fields"
+                >
+                  <ListPlus className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {/* AI Suggestions */}
+                <button
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="AI Suggestions"
+                >
+                  <Sparkles className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {/* Analytics */}
+                <button
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Analytics & Insights"
+                >
+                  <BarChart3 className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {/* Compare */}
+                <button
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Compare Behaviors"
+                >
+                  <LayoutGrid className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {/* Favorites */}
+                <button
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Favorites"
+                >
+                  <Star className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {/* Share */}
+                <button
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Share & Collaborate"
+                >
+                  <Share2 className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

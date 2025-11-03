@@ -15,9 +15,9 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { 
-  Funnel, LayoutGrid, Table, Plus, Download, Upload, 
-  Sparkles, Settings, Eye, Pencil, Trash2, Copy , Search,MoreHorizontal
+import {
+  Funnel, LayoutGrid, Table, Plus, Download, Upload,
+  Sparkles, Settings, Eye, Pencil, Trash2, Copy, Search, MoreVertical
 } from "lucide-react";
 import { Atom } from "react-loading-indicators";
 import { motion } from "framer-motion";
@@ -323,109 +323,108 @@ export default function Index() {
   return (
     <>
       {/* 🔽 Enhanced Top Action Bar */}
-    <div className="flex p-4 justify-between items-center mb-6">
-  {/* Left side - Search Bar */}
-  <div className="relative w-96">
-    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-    <input
-      type="text"
-      placeholder="Search attitude, categories, or proficiency levels..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-    />
-  </div>
+      <div className="flex p-4 justify-between items-center mb-6">
+        {/* Left side - Search Bar */}
+        <div className="relative w-96">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search attitude, categories, or proficiency levels..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
 
-  {/* Right side - Actions and Controls */}
-  <div className="flex items-center gap-1">
-     <Popover>
-                <PopoverTrigger asChild>
-                  <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                    <MoreHorizontal className="w-5 h-5 text-gray-600" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align="end"
-                  className="w-auto p-4 bg-white shadow-xl rounded-xl"
-                >
-                  <div className="flex items-center gap-3">
-    {/* Add New Attitude */}
-    <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Add New Attitude">
-      <Plus className="w-5 h-5 text-gray-600" />
-    </button>
+        {/* Right side - Actions and Controls */}
+        <div className="flex items-center gap-1">
 
-    {/* AI Suggestions */}
-    <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Get AI Suggestions">
-      <Sparkles className="w-5 h-5 text-gray-600" />
-    </button>
+          {/* Filter Popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 rounded-lg hover:bg-gray-50" title="Filter">
+                <Funnel className="w-5 h-5 text-gray-600" />
+              </button>
+            </PopoverTrigger>
 
-    {/* Import/Export */}
-    <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Import from CSV">
-      <Upload className="w-5 h-5 text-gray-600" />
-    </button>
-    <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Export to CSV">
-      <Download className="w-5 h-5 text-gray-600" />
-    </button>
+            <PopoverContent
+              align="end"
+              className="w-[300px] p-6 bg-white shadow-xl rounded-xl flex flex-col gap-4"
+            >
+              <Filters
+                categories={categories}
+                subCategories={subCategories}
+                skills={skills}
+                loadingOptions={loadingOptions}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedSubCategory={selectedSubCategory}
+                setSelectedSubCategory={setSelectedSubCategory}
+                selectedLevel={selectedLevel}
+                setSelectedLevel={setSelectedLevel}
+              />
+            </PopoverContent>
+          </Popover>
 
-    {/* Settings */}
-    <button className="p-2 rounded-lg hover:bg-gray-100" title="Settings">
-      <Settings className="w-5 h-5 text-gray-600" />
-    </button>
-    </div>
-</PopoverContent>
-   </Popover>
-    {/* Filter Popover */}
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className="p-2 rounded-lg hover:bg-gray-50" title="Filter">
-          <Funnel className="w-5 h-5 text-gray-600" />
-        </button>
-      </PopoverTrigger>
+          {/* View Toggle */}
+          <div className="flex border rounded-md overflow-hidden">
+            <button
+              onClick={() => setViewMode("cards")}
+              className={`px-3 py-2 flex items-center justify-center ${viewMode === "cards"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+            >
+              <LayoutGrid className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`px-3 py-2 flex items-center justify-center ${viewMode === "table"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+            >
+              <Table className="h-5 w-5" />
+            </button>
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-auto p-4 bg-white shadow-xl rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                {/* Add New Attitude */}
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Add New Attitude">
+                  <Plus className="w-5 h-5 text-gray-600" />
+                </button>
 
-      <PopoverContent
-        align="end"
-        className="w-[300px] p-6 bg-white shadow-xl rounded-xl flex flex-col gap-4"
-      >
-        <Filters
-          categories={categories}
-          subCategories={subCategories}
-          skills={skills}
-          loadingOptions={loadingOptions}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          selectedSubCategory={selectedSubCategory}
-          setSelectedSubCategory={setSelectedSubCategory}
-          selectedLevel={selectedLevel}
-          setSelectedLevel={setSelectedLevel}
-        />
-      </PopoverContent>
-    </Popover>
+                {/* AI Suggestions */}
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Get AI Suggestions">
+                  <Sparkles className="w-5 h-5 text-gray-600" />
+                </button>
 
-    {/* View Toggle */}
-    <div className="flex border rounded-md overflow-hidden">
-      <button
-        onClick={() => setViewMode("cards")}
-        className={`px-3 py-2 flex items-center justify-center ${
-          viewMode === "cards"
-            ? "bg-blue-100 text-blue-600"
-            : "bg-white text-gray-600 hover:bg-gray-100"
-        }`}
-      >
-        <LayoutGrid className="h-5 w-5" />
-      </button>
-      <button
-        onClick={() => setViewMode("table")}
-        className={`px-3 py-2 flex items-center justify-center ${
-          viewMode === "table"
-            ? "bg-blue-100 text-blue-600"
-            : "bg-white text-gray-600 hover:bg-gray-100"
-        }`}
-      >
-        <Table className="h-5 w-5" />
-      </button>
-    </div>
-  </div>
-</div>
+                {/* Import/Export */}
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Import from CSV">
+                  <Upload className="w-5 h-5 text-gray-600" />
+                </button>
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Export to CSV">
+                  <Download className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {/* Settings */}
+                <button className="p-2 rounded-lg hover:bg-gray-100" title="Settings">
+                  <Settings className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
 
 
       {/* 🔽 Switch View */}
@@ -588,7 +587,7 @@ function CardGrid({
             transition={{ duration: 0.3 }}
             className={`w-full h-[200px] bg-white border-2 border-[#C5DFFF] shadow-md shadow-black/20 p-5 flex flex-col ${borderRadius} relative group`}
           >
-           
+
 
             {/* Title */}
             <motion.h2
@@ -629,7 +628,7 @@ function CardGrid({
               </div>
             )}
 
-             {/* Card Actions - Top Right */}
+            {/* Card Actions - Top Right */}
             <div className="absolute bottom-3 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <button className="p-1 hover:bg-gray-100 rounded" title="View Details">
                 <Eye className="w-4 h-4 text-gray-600" />
