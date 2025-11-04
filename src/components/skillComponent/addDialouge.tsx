@@ -125,6 +125,14 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       return alert("Please enter both skill name and description first");
     }
 
+    if (!formData.category.trim()) {
+      return alert("Please select a Skill Category first");
+    }
+
+    if (!formData.sub_category.trim()) {
+      return alert("Please select a Skill Sub Category first");
+    }
+
     try {
       const res = await fetch("/api/generate-skill", {
         method: "POST",

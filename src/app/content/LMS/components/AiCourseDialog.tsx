@@ -2103,21 +2103,9 @@ import {
   Loader2
 } from "lucide-react";
 
-interface AiCourseDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onGenerate: (payload: { topic: string; description: string; apiResponse?: any }) => void;
-}
-
-interface JobRole {
-  id: string;
-  jobrole: string;
-}
-
-interface Department {
-  id: string;
-  department: string;
-}
+// Import types and buildPrompt function
+import { Config, Template, Department, JobRole, AiCourseDialogProps } from "./Types";
+import { buildDynamicPrompt } from "./CoursePromptBuilder";
 
 // AI Models data
 const aiModels = [
@@ -2144,30 +2132,6 @@ const aiModels = [
   { id: "qwen/qwen2.5-vl-72b-instruct", name: "Qwen VL 72B", contextWindow: 128000, price: "FREE", type: "text-only", notes: "Vision model. Use for text only." },
   { id: "meta-llama/llama-4-maverick", name: "LLaMA 4 Maverick", contextWindow: 8192, price: "FREE", type: "experimental", notes: "Unstable, early release." }
 ];
-
-// Types for Course Creator Module
-type Template = {
-  id: string;
-  title: string;
-  jobRole: string;
-  criticalWorkFunction: string;
-  tasks: string[];
-  skills: string[];
-};
-
-type Config = {
-  department: string;
-  jobRole: string;
-  criticalWorkFunction: string;
-  tasks: string[];
-  skills: string[];
-  audience: "Student" | "Intern" | "Junior" | "Mid" | "Senior" | "";
-  proficiencyTarget: number;
-  duration: "1h" | "2h" | "Half-day" | "1-day" | "Multi-day" | "";
-  modality: { selfPaced: boolean; instructorLed: boolean; };
-  outcomes: string[];
-  aiModel: string;
-};
 
 const SEED_TEMPLATES: Template[] = [
   {
@@ -2209,145 +2173,6 @@ const DEFAULT_CONFIG: Config = {
   outcomes: [],
   aiModel: "deepseek/deepseek-chat-v3.1",
 };
-
-// Enhanced prompt builder that creates a structured JSON object
-function buildPrompt(cfg: Config, industry: string) {
-  const modality = [
-    cfg.modality.selfPaced && "Self-paced",
-    cfg.modality.instructorLed && "Instructor-led",
-  ]
-    .filter(Boolean)
-    .join(", ");
-
-  const keyTask = cfg.tasks.length > 0 ? cfg.tasks[0] : " - ";
-  const primarySkill = cfg.skills.length > 0 ? cfg.skills[0] : " - ";
-
-  // Create a structured course prompt object
-  const coursePromptObject = {
-    instruction: "You are an expert L&D Manager. Design a complete 10-slide instructional training course that provides a guide to complete the Key Task successfully.",
-    input_variables: {
-      industry: industry || " - ",
-      department: cfg.department || " - ",
-      job_role: cfg.jobRole || " - ",
-      critical_work_function: cfg.criticalWorkFunction || " - ",
-      key_task: keyTask || " - ",
-      modality: modality || " - "
-    },
-    output_format: {
-      total_slides: 10,
-      slide_structure: "Each slide = 1 instructional unit",
-      bullet_points_per_slide: "3–5 (under 40 words each)",
-      language: "Instructional, practical, professional",
-      style: "Formal, structured, competency-based",
-      visuals: "No visuals or design styling",
-      repetition: "No repetition — ensure uniqueness per slide",
-      tone: modality.includes("Self-paced") ? "Direct, learner-led tone; emphasis on individual reflection" : "Include facilitator cues, group discussion prompts"
-    },
-    slide_structure: [
-      {
-        slide: 1,
-        title: "Title Slide",
-        content: [
-          `Industry: ${industry || " - "}`,
-          `Department: ${cfg.department || " - "}`,
-          `Job role: ${cfg.jobRole || " - "}`,
-          `Key Task: ${keyTask || " - "}`,
-          `Critical Work Function: ${cfg.criticalWorkFunction || " - "}`,
-          `Modality: ${modality || " - "}`
-        ]
-      },
-      {
-        slide: 2,
-        title: "Learning Objectives & Modality Instructions",
-        content: [
-          `Targeted outcomes for mastering this Key task: ${keyTask || " - "}`,
-          "Importance of monitoring and evaluation",
-          modality.includes("Self-paced") ? "Tips for self-driven navigation and checks" : "Facilitator guidance and session flow overview"
-        ]
-      },
-      {
-        slide: 3,
-        title: "Task Contextualization",
-        content: [
-          `Role of the Key Task: ${keyTask} within the Critical Work Function: ${cfg.criticalWorkFunction || " - "}`,
-          `Industry Context: ${industry || " - "}`,
-          "Dependencies and prerequisites",
-          "Stakeholders or systems involved"
-        ]
-      },
-      {
-        slide: 4,
-        title: "Performance Expectations",
-        content: [
-          "Key success indicators",
-          "Task standards and KPIs",
-          "Timeliness and quality dimensions"
-        ]
-      },
-      {
-        slide: 5,
-        title: "Monitoring Indicators",
-        content: [
-          "Observable checkpoints",
-          "Red flags to watch for",
-          "Sample field-level evidence"
-        ]
-      },
-      {
-        slide: 6,
-        title: "Tools & Methods for Monitoring",
-        content: [
-          "Digital or manual tools",
-          "Logging and feedback techniques",
-          "Real-time vs retrospective tracking"
-        ]
-      },
-      {
-        slide: 7,
-        title: "Data Capture & Reporting",
-        content: [
-          "How to document outcomes",
-          "Structured logs or templates",
-          "Communicating progress or deviations"
-        ]
-      },
-      {
-        slide: 8,
-        title: "Common Pitfalls & Risk Management",
-        content: [
-          `Frequent errors during task: ${keyTask || " - "} execution`,
-          "Preventive and corrective strategies",
-          "Escalation criteria"
-        ]
-      },
-      {
-        slide: 9,
-        title: "Best Practice Walkthrough",
-        content: [
-          `Example scenario of successful task: ${keyTask || " - "} monitoring`,
-          "Highlighting decision points",
-          modality.includes("Instructor-led") ? "Facilitator questions for discussion" : "Reflection prompts for learner"
-        ]
-      },
-      {
-        slide: 10,
-        title: "Completion Criteria & Evaluation",
-        content: [
-          `Final checks for task: ${keyTask || " - "} closure`,
-          "Quality assurance checkpoints",
-          modality.includes("Self-paced") ? "Self-assessment checklist" : "Facilitator sign-off checklist"
-        ]
-      }
-    ],
-    requirements: [
-      "Ensure each slide has 3-5 bullet points with clear, actionable content under 40 words each",
-      "Focus on practical successful task completion strategies",
-      "Maintain professional instructional tone throughout"
-    ]
-  };
-
-  return JSON.stringify(coursePromptObject, null, 2);
-}
 
 // Reusable UI Components
 function Checkbox({
@@ -3057,8 +2882,8 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
         throw new Error("Course Outline Generation failed");
       }
 
-      // Use the buildPrompt function to create the course prompt
-      const coursePrompt = buildPrompt(cfg, industry);
+      // Use the dynamic build prompt function that selects the appropriate version
+      const coursePrompt = buildDynamicPrompt(cfg, industry, activeTemplate || undefined);
 
       // Prepare the data for OpenRouter API
       const requestData = {
@@ -3083,6 +2908,10 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
 
       console.log("🔄 Making API call to OpenRouter...");
       console.log("Using model:", selectedModel.name);
+      console.log("Using template:", activeTemplate);
+      console.log("Critical Work Function:", cfg.criticalWorkFunction);
+      console.log("Skills:", cfg.skills);
+      console.log("Proficiency Target:", cfg.proficiencyTarget);
 
       const response = await monitorAPICall("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -3224,7 +3053,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
 
   function handleResync() {
     if (!isTemplateSelected) return;
-    const p = buildPrompt(cfg, industry);
+    const p = buildDynamicPrompt(cfg, industry, activeTemplate || undefined);
     setPreview(p);
     setManualPreview(p);
     setDiverged(false);
@@ -3297,6 +3126,10 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
 
       console.log("Calling course generation API:", apiUrl);
       console.log("Selected AI Model:", cfg.aiModel);
+      console.log("Active Template:", activeTemplate);
+      console.log("Critical Work Function:", cfg.criticalWorkFunction);
+      console.log("Skills:", cfg.skills);
+      console.log("Proficiency Target:", cfg.proficiencyTarget);
 
       const response = await fetch(apiUrl, {
         method: "GET",
@@ -3784,6 +3617,12 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
                 <div className="text-xs text-gray-500 text-center mt-2 space-y-1">
                   <p>This will generate a 10-slide course outline using {aiModels.find(m => m.id === cfg.aiModel)?.name}</p>
                   <p className="text-green-600 font-medium">Uses OpenRouter API with selected model</p>
+                  {cfg.criticalWorkFunction && (
+                    <p className="text-blue-600 font-medium">Focus: {cfg.criticalWorkFunction}</p>
+                  )}
+                  {cfg.skills.length > 0 && cfg.skills[0] && (
+                    <p className="text-purple-600 font-medium">Skill: {cfg.skills[0]} (Target: {cfg.proficiencyTarget}/6)</p>
+                  )}
                 </div>
 
               </div>

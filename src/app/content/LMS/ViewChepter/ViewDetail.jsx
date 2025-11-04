@@ -424,6 +424,7 @@ if (onClose) {
         {courseDetails && (
           <CourseHero
             course={formatCourseForHero()}
+            sessionData={sessionData}
             onStartCourse={() => console.log("Start course")}
             onContinueCourse={() => console.log("Continue course")}
           />

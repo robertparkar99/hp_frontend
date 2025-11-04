@@ -35,7 +35,7 @@ import {
   Scale,
   FileCheck,
   TrendingUp,
-  MoreHorizontal
+  MoreVertical
 } from "lucide-react";
 
 import {
@@ -407,32 +407,7 @@ const Honeycomb: React.FC = () => {
 
         {/* Action Buttons - Center */}
         <div className="flex items-center gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <MoreHorizontal className="w-5 h-5 text-gray-600" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-auto p-2 bg-white shadow-xl rounded-xl"
-            >
-              <div className="flex items-center gap-2">
-                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Add Knowledge">
-                  <Plus className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="flex items-center  px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Import Knowledge">
-                  <Upload className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Export Knowledge">
-                  <Download className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Knowledge Analytics">
-                  <Sparkles className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+         
           
           {/* Filters and View Toggle - Right */}
           <div className="flex items-center gap-2">
@@ -530,6 +505,33 @@ const Honeycomb: React.FC = () => {
                 <TableIcon className="h-5 w-5" />
               </button>
             </div>
+
+             <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-auto p-2 bg-white shadow-xl rounded-xl"
+            >
+              <div className="flex items-center gap-2">
+                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Add Knowledge">
+                  <Plus className="w-5 h-5 text-gray-600" />
+                </button>
+                <button className="flex items-center  px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Import Knowledge">
+                  <Upload className="w-5 h-5 text-gray-600" />
+                </button>
+                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Export Knowledge">
+                  <Download className="w-5 h-5 text-gray-600" />
+                </button>
+                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Knowledge Analytics">
+                  <Sparkles className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
           </div>
         </div>
       </div>

@@ -84,6 +84,14 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       return alert("Please enter both Job Role and Description first");
     }
 
+    if (!formData.department) {
+      return alert("Please select a Department first");
+    }
+
+    if (!formData.subDepartment) {
+      return alert("Please select a Sub Department first");
+    }
+
     try {
       const res = await fetch("/api/generate-jobrole", {
         method: "POST",

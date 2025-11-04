@@ -69,7 +69,7 @@ const AssessmentLibrary = () => {
   useEffect(() => {
     const userData = localStorage.getItem('userData');
     if (userData) {
-      const { APP_URL, token, sub_institute_id, org_type, user_id,user_profile_name } = JSON.parse(userData);
+      const { APP_URL, token, sub_institute_id, org_type, user_id, user_profile_name } = JSON.parse(userData);
       setSessionData({
         url: APP_URL,
         token,
@@ -151,49 +151,49 @@ const AssessmentLibrary = () => {
   //   return filtered;
   // }, [assessments, searchQuery, filters]);
   const filteredAssessments = useMemo(() => {
-  return assessments.filter((item) => {
-    // Search query filter
-    if (searchQuery && !item.title?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return assessments.filter((item) => {
+      // Search query filter
+      if (searchQuery && !item.title?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
 
-    // Category filter
-    if (filters.category !== 'all' && item.category !== filters.category) return false;
+      // Category filter
+      if (filters.category !== 'all' && item.category !== filters.category) return false;
 
-    // Difficulty filter
-    if (filters.difficulty !== 'all' && item.difficulty !== filters.difficulty) return false;
+      // Difficulty filter
+      if (filters.difficulty !== 'all' && item.difficulty !== filters.difficulty) return false;
 
-    // Status filter
-    if (filters.status !== 'all' && item.status?.toLowerCase() !== filters.status?.toLowerCase()) return false;
+      // Status filter
+      if (filters.status !== 'all' && item.status?.toLowerCase() !== filters.status?.toLowerCase()) return false;
 
-    // Show only available
-    if (filters.showAvailableOnly && item.status !== 'Available') return false;
+      // Show only available
+      if (filters.showAvailableOnly && item.status !== 'Available') return false;
 
-    // Optionally deadline / subject filter if you added dropdowns for them
-    if (filters.deadline && item.deadline !== filters.deadline) return false;
-    if (filters.subject && item.subject !== filters.subject) return false;
+      // Optionally deadline / subject filter if you added dropdowns for them
+      if (filters.deadline && item.deadline !== filters.deadline) return false;
+      if (filters.subject && item.subject !== filters.subject) return false;
 
-    return true;
-  });
-}, [assessments, filters, searchQuery]);
+      return true;
+    });
+  }, [assessments, filters, searchQuery]);
 
   console.log('Filtered Assessments:', filteredAssessments);
   // ✅ Stats
- const stats = useMemo(() => {
-  const today = new Date();
+  const stats = useMemo(() => {
+    const today = new Date();
 
-  let total = assessments.length;
-  let active = assessments.filter(a => a.status === 'Available').length;
-  let inactive = assessments.filter(a => a.status === 'Closed').length;
-  let recent = assessments.filter(a => a.deadline && new Date(a.deadline) <= today).length;
-  let upcoming = assessments.filter(a => a.deadline && new Date(a.deadline) > today).length;
+    let total = assessments.length;
+    let active = assessments.filter(a => a.status === 'Available').length;
+    let inactive = assessments.filter(a => a.status === 'Closed').length;
+    let recent = assessments.filter(a => a.deadline && new Date(a.deadline) <= today).length;
+    let upcoming = assessments.filter(a => a.deadline && new Date(a.deadline) > today).length;
 
-  return {
-    total,
-    notAttempted: active,
-    inProgress: inactive,
-    completed: recent,
-    failed: upcoming
-  };
-}, [assessments]);
+    return {
+      total,
+      notAttempted: active,
+      inProgress: inactive,
+      completed: recent,
+      failed: upcoming
+    };
+  }, [assessments]);
 
   // ✅ Handlers for the new buttons
   const handleImportQuestions = () => {
@@ -276,17 +276,41 @@ const AssessmentLibrary = () => {
                 <Icon name="Upload" size={16} />
                 Export Results
               </Button> */}
+             <div className="flex items-center">
+  <Button
+    variant="ghost"
+    size="icon"
+    className="text-muted-foreground hover:text-foreground"
+    title="Info / Help"
+  >
+    <Icon name="Info" size={16} />
+  </Button>
+
+  {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) && (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="flex items-center gap-1 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 transition-colors"
+      title="create Assessment with AI"
+      onClick={() => console.log('AI Build Assessment clicked')}
+    >
+      <Icon name="Sparkles" size={16} />
+    </Button>
+  )}
+</div>
+
+              
 
               {/* Create Assessment Button */}
               {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
-              <Button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
-              >
-                <Icon name="Plus" size={16} />
-                Create Assessment
-              </Button>
-                ):null}
+                <Button
+                  onClick={() => setShowCreateModal(true)}
+                  className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+                >
+                  <Icon name="Plus" size={16} />
+                  Create Assessment
+                </Button>
+              ) : null}
             </div>
           </div>
 
@@ -296,64 +320,64 @@ const AssessmentLibrary = () => {
             <p className="text-red-500">{error}</p>
           ) : (
             <>
-                  <AssessmentStats stats={stats} />
+              <AssessmentStats stats={stats} />
 
-                  {/* Search & Filter */}
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 my-4 w-full">
-                    <div className="flex-1 w-full">
-                      <SearchBar
-                        searchQuery={searchQuery}
-                        onSearchChange={setSearchQuery}
-                        onToggleFilters={() => !isDesktop && setIsFilterPanelOpen(true)}
-                        isMobile={!isDesktop}
+              {/* Search & Filter */}
+              <div className="flex flex-col sm:flex-row gap-1 sm:gap-1 my-4 w-full">
+                <div className="flex-1 w-full">
+                  <SearchBar
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    onToggleFilters={() => !isDesktop && setIsFilterPanelOpen(true)}
+                    isMobile={!isDesktop}
+                  />
+                </div>
+
+                {isDesktop && (
+                  <Popover className="relative flex-shrink-0">
+                    <Popover.Button className="inline-flex items-center gap-2 text-sm font-medium px-4 py-3 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                      <Icon name="Filter" size={16} />
+                      Filter
+                    </Popover.Button>
+                    <Popover.Panel className="absolute z-50 right-0 mt-2 bg-white dark:bg-background border border-border rounded-md shadow-lg w-80">
+                      <FilterPanel
+                        filters={filters}
+                        onFiltersChange={setFilters}
+                        isOpen={true}
+                        onClose={() => { }}
+                        isMobile={false}
+                        assessments={assessments}
                       />
-                    </div>
+                    </Popover.Panel>
+                  </Popover>
+                )}
+              </div>
 
-                    {isDesktop && (
-                      <Popover className="relative flex-shrink-0">
-                        <Popover.Button className="inline-flex items-center gap-2 text-sm font-medium px-4 py-3 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
-                          <Icon name="Filter" size={16} />
-                          Filter
-                        </Popover.Button>
-                        <Popover.Panel className="absolute z-50 right-0 mt-2 bg-white dark:bg-background border border-border rounded-md shadow-lg w-80">
-                          <FilterPanel
-                            filters={filters}
-                            onFiltersChange={setFilters}
-                            isOpen={true}
-                            onClose={() => { }}
-                            isMobile={false}
-                            assessments={assessments}
-                          />
-                        </Popover.Panel>
-                      </Popover>
-                    )}
+              {/* Assessments Grid */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg sm:text-xl font-semibold">
+                  {filteredAssessments.length} Assessment{filteredAssessments.length !== 1 && 's'}
+                </h2>
+              </div>
+
+              {filteredAssessments.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredAssessments.map((a) => (
+                    <AssessmentCard
+                      key={a.id}
+                      assessment={a}
+                      onStartAssessment={handleStartAssessment}
+                      onViewDetails={handleViewDetails}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icon name="Search" size={28} className="text-muted-foreground" />
                   </div>
-
-                  {/* Assessments Grid */}
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg sm:text-xl font-semibold">
-                      {filteredAssessments.length} Assessment{filteredAssessments.length !== 1 && 's'}
-                    </h2>
-                  </div>
-
-                  {filteredAssessments.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {filteredAssessments.map((a) => (
-                        <AssessmentCard
-                          key={a.id}
-                          assessment={a}
-                          onStartAssessment={handleStartAssessment}
-                          onViewDetails={handleViewDetails}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Icon name="Search" size={28} className="text-muted-foreground" />
-                      </div>
-                      <h3 className="text-base sm:text-lg font-semibold mb-2">No assessments found</h3>
-                      {/* <Button
+                  <h3 className="text-base sm:text-lg font-semibold mb-2">No assessments found</h3>
+                  {/* <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
@@ -369,9 +393,9 @@ const AssessmentLibrary = () => {
                         >
                           Clear All Filters
                         </Button> */}
-                      </div>
-                  )}
-                </>
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>

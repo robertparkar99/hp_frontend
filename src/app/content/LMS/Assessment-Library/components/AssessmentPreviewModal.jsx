@@ -182,7 +182,7 @@ const AssessmentPreviewModal = ({ assessment, isOpen, onClose, onStartAssessment
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button 
+          {/* <Button 
             variant="default" 
             onClick={() => {
               onStartAssessment(assessment);
@@ -194,7 +194,7 @@ const AssessmentPreviewModal = ({ assessment, isOpen, onClose, onStartAssessment
             {assessment.status === 'In Progress' && 'Continue Assessment'}
             {assessment.status === 'Completed' && 'Retake Assessment'}
             {assessment.status === 'Failed' && 'Retry Assessment'}
-          </Button>
+          </Button> */}
         </div>
       </div>
     </div>
