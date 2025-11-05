@@ -1315,12 +1315,12 @@ export default function Dashboard() {
                 <div className="flex flex-col items-center justify-center">
                   <div className="flex items-center justify-between w-full">
                     <span className="flex items-center mb-1">Action</span>
-                    <button
+                    {/* <button
                       onClick={() => setIsAddUserModalOpen(true)}
                       className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
                     >
                       +
-                    </button>
+                    </button> */}
                     {isAddUserModalOpen && (
                       <AddUserModal
                         isOpen={isAddUserModalOpen}
