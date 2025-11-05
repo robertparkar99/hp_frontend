@@ -1673,7 +1673,8 @@ const HRDashboard = () => {
 
     try {
       // Add filter to exclude soft-deleted records
-      const apiUrl = `${sessionData.APP_URL}/api/job-postings?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&filter[deleted_at]=null`;
+      const apiUrl = `${sessionData.APP_URL}/api/job-postings?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`;
+      
 
       console.log("Fetching job postings from:", apiUrl);
 

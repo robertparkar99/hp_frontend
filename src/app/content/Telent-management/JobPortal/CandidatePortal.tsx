@@ -1254,7 +1254,7 @@ const CandidatePortal = () => {
         const apiUrl = `${sessionData.APP_URL}/api/job-postings?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`
          ;
 
-        console.log("Fetching job postings from:", apiUrl);
+        console.log("jobportal Fetching job postings from:", apiUrl);
         
         const response = await fetch(apiUrl);
         
@@ -1263,7 +1263,7 @@ const CandidatePortal = () => {
         }
 
         const result: ApiResponse = await response.json();
-        console.log("Job Postings API Response:", result);
+        console.log("job portal Job Postings API Response:", result);
         
         // Handle different possible response structures
         let jobData: JobPosting[] = [];
