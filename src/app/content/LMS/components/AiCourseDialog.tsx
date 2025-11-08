@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -11,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { buildDynamicPrompt } from "./CoursePromptBuilder";
+
 import {
   BookOpen,
   Plus,
@@ -98,11 +99,8 @@ type Config = {
   criticalWorkFunction: string;
   tasks: string[];
   skills: string[];
-  audience: "Student" | "Intern" | "Junior" | "Mid" | "Senior" | "";
   proficiencyTarget: number;
-  duration: "1h" | "2h" | "Half-day" | "1-day" | "Multi-day" | "";
   modality: { selfPaced: boolean; instructorLed: boolean; };
-  outcomes: string[];
   aiModel: string;
 };
 
@@ -139,11 +137,8 @@ const DEFAULT_CONFIG: Config = {
   criticalWorkFunction: "",
   tasks: [],
   skills: [],
-  audience: "",
   proficiencyTarget: 3,
-  duration: "",
   modality: { selfPaced: true, instructorLed: false },
-  outcomes: [],
   aiModel: "deepseek/deepseek-chat-v3.1",
 };
 
@@ -167,7 +162,7 @@ function buildPrompt(cfg: Config, industry: string) {
       department: cfg.department || " - ",
       job_role: cfg.jobRole || " - ",
       critical_work_function: cfg.criticalWorkFunction || " - ",
-      key_task: keyTask || " - ",
+      key_task: cfg.tasks || " - ",
       modality: modality || " - "
     },
     output_format: {
@@ -188,7 +183,7 @@ function buildPrompt(cfg: Config, industry: string) {
           `Industry: ${industry || " - "}`,
           `Department: ${cfg.department || " - "}`,
           `Job role: ${cfg.jobRole || " - "}`,
-          `Key Task: ${keyTask || " - "}`,
+          `Key Task: ${cfg.tasks || " - "}`,
           `Critical Work Function: ${cfg.criticalWorkFunction || " - "}`,
           `Modality: ${modality || " - "}`
         ]
@@ -197,7 +192,7 @@ function buildPrompt(cfg: Config, industry: string) {
         slide: 2,
         title: "Learning Objectives & Modality Instructions",
         content: [
-          `Targeted outcomes for mastering this Key task: ${keyTask || " - "}`,
+          `Targeted outcomes for mastering this Key task: ${cfg.tasks || " - "}`,
           "Importance of monitoring and evaluation",
           modality.includes("Self-paced") ? "Tips for self-driven navigation and checks" : "Facilitator guidance and session flow overview"
         ]
@@ -206,7 +201,7 @@ function buildPrompt(cfg: Config, industry: string) {
         slide: 3,
         title: "Task Contextualization",
         content: [
-          `Role of the Key Task: ${keyTask} within the Critical Work Function: ${cfg.criticalWorkFunction || " - "}`,
+          `Role of the Key Task: ${cfg.tasks} within the Critical Work Function: ${cfg.criticalWorkFunction || " - "}`,
           `Industry Context: ${industry || " - "}`,
           "Dependencies and prerequisites",
           "Stakeholders or systems involved"
@@ -252,7 +247,7 @@ function buildPrompt(cfg: Config, industry: string) {
         slide: 8,
         title: "Common Pitfalls & Risk Management",
         content: [
-          `Frequent errors during task: ${keyTask || " - "} execution`,
+          `Frequent errors during task: ${cfg.tasks || " - "} execution`,
           "Preventive and corrective strategies",
           "Escalation criteria"
         ]
@@ -261,7 +256,7 @@ function buildPrompt(cfg: Config, industry: string) {
         slide: 9,
         title: "Best Practice Walkthrough",
         content: [
-          `Example scenario of successful task: ${keyTask || " - "} monitoring`,
+          `Example scenario of successful task: ${cfg.tasks || " - "} monitoring`,
           "Highlighting decision points",
           modality.includes("Instructor-led") ? "Facilitator questions for discussion" : "Reflection prompts for learner"
         ]
@@ -270,7 +265,7 @@ function buildPrompt(cfg: Config, industry: string) {
         slide: 10,
         title: "Completion Criteria & Evaluation",
         content: [
-          `Final checks for task: ${keyTask || " - "} closure`,
+          `Final checks for task: ${cfg.tasks || " - "} closure`,
           "Quality assurance checkpoints",
           modality.includes("Self-paced") ? "Self-assessment checklist" : "Facilitator sign-off checklist"
         ]
@@ -812,6 +807,9 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
   // New state to track if template is selected
   const [isTemplateSelected, setIsTemplateSelected] = useState(false);
 
+  // NEW: State to store all CWF tasks for template t1
+  const [allCwfTasks, setAllCwfTasks] = useState<string[]>([]);
+
   // Add smooth scrollbar styles to document
   useEffect(() => {
     const styleElement = document.createElement('style');
@@ -964,6 +962,196 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
     }
   };
 
+  // Fetch critical work functions when job role changes
+  useEffect(() => {
+    const fetchCriticalWorkFunctions = async () => {
+      if (!cfg.jobRole || !sessionData?.APP_URL) {
+        setCriticalWorkFunctions([]);
+        return;
+      }
+
+      setLoadingCWF(true);
+      setError(null);
+
+      try {
+        const response = await fetch(
+          `${sessionData.APP_URL}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&group_by=critical_work_function&order_by[direction]=desc`,
+          {
+            headers: {
+              Authorization: `Bearer ${sessionData.token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch critical work functions');
+        }
+
+        const data = await response.json();
+        setCriticalWorkFunctions(data);
+        console.log("Critical Work Functions response:", data);
+
+        // Only reset critical work function if it's not from a template
+        if (!activeTemplate) {
+          setCfg(prev => ({ ...prev, criticalWorkFunction: '' }));
+        }
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError(String(err));
+        }
+        console.error('Error fetching critical work functions:', err);
+      } finally {
+        setLoadingCWF(false);
+      }
+    };
+
+    fetchCriticalWorkFunctions();
+  }, [cfg.jobRole, sessionData, activeTemplate]);
+
+  // Fetch tasks when job role OR critical work function changes - UPDATED to store all CWF tasks
+ // Add this useEffect to debug allCwfTasks state changes
+useEffect(() => {
+  console.log("🔄 allCwfTasks state changed:", allCwfTasks);
+}, [allCwfTasks]);
+
+// Update the task fetching useEffect
+useEffect(() => {
+  const fetchTasks = async () => {
+    if (!cfg.jobRole || !cfg.criticalWorkFunction || !sessionData?.APP_URL) {
+      setAvailableTasks([]);
+      setAllCwfTasks([]);
+      console.log("❌ fetchTasks: Missing required fields");
+      return;
+    }
+
+    setLoadingTasks(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `${sessionData.APP_URL}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&filters[critical_work_function]=${encodeURIComponent(cfg.criticalWorkFunction)}&group_by=task&order_by[direction]=desc`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks');
+      }
+
+      const data = await response.json();
+      setAvailableTasks(data);
+
+      // ✅ Extract all task names and store in allCwfTasks
+      const taskNames = data.map((task: any) => task.task).filter((task: string) => task && task.trim() !== "");
+      console.log("✅ Fetched tasks for allCwfTasks:", taskNames);
+      setAllCwfTasks(taskNames);
+
+      // Auto-refresh preview when tasks are loaded
+      if (isTemplateSelected && activeTemplate === "t1" && taskNames.length > 0) {
+        console.log("🔄 Auto-refreshing preview with new tasks");
+        setTimeout(() => {
+          const p = buildDynamicPrompt(cfg, industry, activeTemplate, taskNames);
+          setPreview(p);
+          setManualPreview(p);
+        }, 100);
+      }
+
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(String(err));
+      }
+      console.error('Error fetching tasks:', err);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+  fetchTasks();
+}, [cfg.jobRole, cfg.criticalWorkFunction, sessionData, activeTemplate]);
+
+// Update handleResync function
+// function handleResync() {
+//   if (!isTemplateSelected) return;
+  
+//   console.log("🔄 handleResync - allCwfTasks:", allCwfTasks);
+//   console.log("🔄 handleResync - activeTemplate:", activeTemplate);
+  
+//   // Small delay to ensure state is updated
+//   setTimeout(() => {
+//     const p = buildDynamicPrompt(cfg, industry, activeTemplate || undefined, allCwfTasks);
+//     setPreview(p);
+//     setManualPreview(p);
+//     setDiverged(false);
+//   }, 100);
+// }
+
+// Add this useEffect to auto-refresh preview when allCwfTasks changes
+// Add this useEffect to auto-refresh preview when allCwfTasks changes
+useEffect(() => {
+  if (isTemplateSelected && activeTemplate === "t1" && allCwfTasks.length > 0) {
+    console.log("🔄 Auto-refreshing preview with allCwfTasks:", allCwfTasks);
+    console.log("🔄 Auto-refreshing preview - allCwfTasks length:", allCwfTasks.length);
+    
+    // Small delay to ensure state is properly updated
+    setTimeout(() => {
+      const p = buildDynamicPrompt(cfg, industry, activeTemplate, allCwfTasks);
+      console.log("🔄 Generated preview with tasks:", p.includes("Key Tasks:") ? "YES" : "NO");
+      setPreview(p);
+      setManualPreview(p);
+    }, 100);
+  }
+}, [allCwfTasks, isTemplateSelected, activeTemplate, cfg, industry]);
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      if (!cfg.jobRole || !sessionData?.APP_URL) {
+        setAvailableSkills([]);
+        return;
+      }
+
+      setLoadingSkills(true);
+      setError(null);
+
+      try {
+        const response = await fetch(
+          `${sessionData.APP_URL}/table_data?table=s_user_skill_jobrole&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&group_by=skill&order_by[direction]=desc`,
+          {
+            headers: {
+              Authorization: `Bearer ${sessionData.token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch skills');
+        }
+
+        const data = await response.json();
+        setAvailableSkills(data);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError(String(err));
+        }
+        console.error('Error fetching skills:', err);
+      } finally {
+        setLoadingSkills(false);
+      }
+    };
+
+    fetchSkills();
+  }, [cfg.jobRole, sessionData]);
+
   // OpenRouter API Integration - UPDATED to use environment variable
   const handleGenerateCourseOutline = async () => {
     if (!isTemplateSelected) {
@@ -979,10 +1167,39 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
       const selectedModel = aiModels.find(model => model.id === cfg.aiModel);
       if (!selectedModel) throw new Error("Selected AI model not found");
 
+      // ✅ FIX: Use all CWF tasks for template t1, selected task for other templates
+      let tasksToUse: string[];
+      if (activeTemplate === "t1") {
+        
+        // For template t1, use all tasks from the selected CWF
+        tasksToUse = allCwfTasks.length > 0 ? allCwfTasks : cfg.tasks;
+        console.log("Using all CWF tasks for template t1:", tasksToUse);
+      } else {
+        // For other templates, use the selected task
+        tasksToUse = cfg.tasks;
+      }
+
+      // Create a new config with the appropriate tasks
+      const cfgWithTasks = {
+        ...cfg,
+        tasks: tasksToUse
+      };
+
+      console.log("🔧 Task Debug in Generation:", {
+        activeTemplate,
+        allCwfTasks: allCwfTasks,
+        originalCfgTasks: cfg.tasks,
+        finalTasks: cfgWithTasks.tasks
+      });
+
       const response = await fetch("/api/generate-outline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cfg, industry, aiModel: cfg.aiModel }),
+        body: JSON.stringify({ 
+          cfg: cfgWithTasks,
+          industry, 
+          aiModel: cfg.aiModel 
+        }),
       });
 
       // ✅ Read response only once
@@ -1004,7 +1221,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
       setDiverged(true);
       setLastUsedModel(selectedModel.name);
 
-      // Call parent onGenerate callback
+      // Call parent onGenerate callback with the updated config
       if (onGenerate) {
         onGenerate({
           topic: cfg.jobRole,
@@ -1016,7 +1233,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
               department: cfg.department,
               jobRole: cfg.jobRole,
               criticalWorkFunction: cfg.criticalWorkFunction,
-              tasks: cfg.tasks,
+              tasks: cfgWithTasks.tasks, // Use the appropriate tasks
               skills: cfg.skills,
               modality: cfg.modality,
               proficiencyTarget: cfg.proficiencyTarget,
@@ -1034,7 +1251,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
                 department: cfg.department,
                 jobRole: cfg.jobRole,
                 criticalWorkFunction: cfg.criticalWorkFunction,
-                tasks: cfg.tasks,
+                tasks: cfgWithTasks.tasks, // Use the appropriate tasks
                 skills: cfg.skills,
                 modality: cfg.modality
               }
@@ -1064,7 +1281,6 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
       setOutlineLoading(false);
     }
   };
-
 
   function applyTemplate(t: Template) {
     // Create a new config with ONLY the template structure, not the values
@@ -1114,11 +1330,13 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
     setPreview("Select a template and click 'Generate Course Outline with AI' to create slides.");
     setManualPreview("Select a template and click 'Generate Course Outline with AI' to create slides.");
     setLastUsedModel("");
+    // Clear all CWF tasks when switching templates
+    setAllCwfTasks([]);
   }
 
   function handleResync() {
     if (!isTemplateSelected) return;
-    const p = buildPrompt(cfg, industry);
+    const p = buildDynamicPrompt(cfg, industry, activeTemplate || undefined);
     setPreview(p);
     setManualPreview(p);
     setDiverged(false);
@@ -1147,6 +1365,17 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
     setError(null);
 
     try {
+      // ✅ FIX: Use all CWF tasks for template t1, selected task for other templates
+      let finalTasks: string[];
+      if (activeTemplate === "t1") {
+        // For template t1, use all tasks from the selected CWF
+        finalTasks = allCwfTasks.length > 0 ? allCwfTasks : cfg.tasks;
+        console.log("Using all CWF tasks for template t1 in course generation:", finalTasks);
+      } else {
+        // For other templates, use the selected task
+        finalTasks = cfg.tasks;
+      }
+
       const params = new URLSearchParams({
         sub_institute_id: sessionData.sub_institute_id,
         token: sessionData.token,
@@ -1165,9 +1394,13 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
         params.append("critical_work_function", cfg.criticalWorkFunction);
       }
 
-      // Only add task for t2 template
-      if (activeTemplate === "t2" && cfg.tasks.length > 0) {
-        params.append("key_task", cfg.tasks[0]);
+      // ✅ FIX: Add appropriate tasks based on template type
+      if (activeTemplate === "t1" && finalTasks.length > 0) {
+        // For t1, add all CWF tasks
+        params.append("key_task", finalTasks.join(", "));
+      } else if (activeTemplate === "t2" && finalTasks.length > 0) {
+        // For t2, add selected task
+        params.append("key_task", finalTasks[0]);
       }
 
       // Only add skill for t3 template
@@ -1191,6 +1424,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
 
       console.log("Calling course generation API:", apiUrl);
       console.log("Selected AI Model:", cfg.aiModel);
+      console.log("Tasks being sent:", finalTasks); // Debug log
 
       const response = await fetch(apiUrl, {
         method: "GET",
@@ -1245,143 +1479,6 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
       [field]: prev[field].filter((v) => v !== value),
     }));
   }
-
-  // Fetch critical work functions when job role changes
-  useEffect(() => {
-    const fetchCriticalWorkFunctions = async () => {
-      if (!cfg.jobRole || !sessionData?.APP_URL) {
-        setCriticalWorkFunctions([]);
-        return;
-      }
-
-      setLoadingCWF(true);
-      setError(null);
-
-      try {
-        const response = await fetch(
-          `${sessionData.APP_URL}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&group_by=critical_work_function&order_by[direction]=desc`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionData.token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch critical work functions');
-        }
-
-        const data = await response.json();
-        setCriticalWorkFunctions(data);
-
-        // Only reset critical work function if it's not from a template
-        if (!activeTemplate) {
-          setCfg(prev => ({ ...prev, criticalWorkFunction: '' }));
-        }
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError(String(err));
-        }
-        console.error('Error fetching critical work functions:', err);
-      } finally {
-        setLoadingCWF(false);
-      }
-    };
-
-    fetchCriticalWorkFunctions();
-  }, [cfg.jobRole, sessionData, activeTemplate]);
-
-  // Fetch tasks when job role OR critical work function changes
-  useEffect(() => {
-    const fetchTasks = async () => {
-      if (!cfg.jobRole || !cfg.criticalWorkFunction || !sessionData?.APP_URL) {
-        setAvailableTasks([]);
-        return;
-      }
-
-      setLoadingTasks(true);
-      setError(null);
-      try {
-        const response = await fetch(
-          `${sessionData.APP_URL}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&filters[critical_work_function]=${encodeURIComponent(cfg.criticalWorkFunction)}&group_by=task&order_by[direction]=desc`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionData.token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch tasks');
-        }
-
-        const data = await response.json();
-        setAvailableTasks(data);
-
-        // Only reset tasks if they're not from a template
-        if (!activeTemplate && cfg.tasks.length > 0) {
-          setCfg(prev => ({ ...prev, tasks: [] }));
-        }
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError(String(err));
-        }
-        console.error('Error fetching tasks:', err);
-      } finally {
-        setLoadingTasks(false);
-      }
-    };
-
-    fetchTasks();
-  }, [cfg.jobRole, cfg.criticalWorkFunction, sessionData, activeTemplate]);
-
-  useEffect(() => {
-    const fetchSkills = async () => {
-      if (!cfg.jobRole || !sessionData?.APP_URL) {
-        setAvailableSkills([]);
-        return;
-      }
-
-      setLoadingSkills(true);
-      setError(null);
-
-      try {
-        const response = await fetch(
-          `${sessionData.APP_URL}/table_data?table=s_user_skill_jobrole&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&group_by=skill&order_by[direction]=desc`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionData.token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch skills');
-        }
-
-        const data = await response.json();
-        setAvailableSkills(data);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError(String(err));
-        }
-        console.error('Error fetching skills:', err);
-      } finally {
-        setLoadingSkills(false);
-      }
-    };
-
-    fetchSkills();
-  }, [cfg.jobRole, sessionData]);
 
   const filteredTemplates = templates.filter((t) =>
     [t.title, t.jobRole, t.criticalWorkFunction, ...t.tasks, ...t.skills]
@@ -1511,58 +1608,87 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
                 </select>
                 {loadingCWF && <p className="mt-1 text-xs text-gray-500">Loading critical work functions...</p>}
               </div>
-              {/* Tasks Dropdown */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Tasks
-                </label>
-                <select
-                  value={cfg.tasks[0] || ""}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setCfg({ ...cfg, tasks: [newValue] });
-                    checkAndSwitchToParameters("tasks", newValue);
-                  }}
-                  disabled={!isTemplateSelected || !cfg.jobRole || !cfg.criticalWorkFunction || loadingTasks || !enabledDropdowns.tasks}
-                  className={`w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${!isTemplateSelected || !enabledDropdowns.tasks ? "bg-gray-100 cursor-not-allowed opacity-60" : ""
-                    }`}
-                >
-                  <option value="">-- Select Task --</option>
-                  {availableTasks.map((task: any) => (
-                    <option key={task.id} value={task.task}>
-                      {task.task}
-                    </option>
-                  ))}
-                </select>
-                {loadingTasks && <p className="mt-1 text-xs text-gray-500">Loading tasks...</p>}
-              </div>
-              {/* Skills Dropdown */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                  <Target className="h-4 w-4" />
-                  Skills
-                </label>
-                <select
-                  value={cfg.skills[0] || ""}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setCfg({ ...cfg, skills: [newValue] });
-                    checkAndSwitchToParameters("skills", newValue);
-                  }}
-                  disabled={!isTemplateSelected || !cfg.jobRole || loadingSkills || !enabledDropdowns.skills}
-                  className={`w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${!isTemplateSelected || !enabledDropdowns.skills ? "bg-gray-100 cursor-not-allowed opacity-60" : ""
-                    }`}
-                >
-                  <option value="">-- Select Skill --</option>
-                  {availableSkills.map((skillItem: any) => (
-                    <option key={skillItem.id} value={skillItem.skill}>
-                      {skillItem.skill}
-                    </option>
-                  ))}
-                </select>
-                {loadingSkills && <p className="mt-1 text-xs text-gray-500">Loading skills...</p>}
-              </div>
+
+              {/* Tasks Dropdown - Only for template t2 */}
+              {activeTemplate === "t2" && (
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Tasks
+                  </label>
+                  <select
+                    value={cfg.tasks[0] || ""}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      console.log("Selected task:", newValue); // Debug log
+                      setCfg({ ...cfg, tasks: [newValue] });
+                      checkAndSwitchToParameters("tasks", newValue);
+                    }}
+                    disabled={!isTemplateSelected || !cfg.jobRole || !cfg.criticalWorkFunction || loadingTasks || !enabledDropdowns.tasks}
+                    className={`w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${!isTemplateSelected || !enabledDropdowns.tasks ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+                  >
+                    <option value="">-- Select Task --</option>
+                    {availableTasks.map((task: any) => (
+                      <option key={task.id} value={task.task}>
+                        {task.task}
+                      </option>
+                    ))}
+                  </select>
+                  {loadingTasks && <p className="mt-1 text-xs text-gray-500">Loading tasks...</p>}
+                </div>
+              )}
+
+              {/* Skills Dropdown - Only for template t3 */}
+              {activeTemplate === "t3" && (
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <Target className="h-4 w-4" />
+                    Skills
+                  </label>
+                  <select
+                    value={cfg.skills[0] || ""}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setCfg({ ...cfg, skills: [newValue] });
+                      checkAndSwitchToParameters("skills", newValue);
+                    }}
+                    disabled={!isTemplateSelected || !cfg.jobRole || loadingSkills || !enabledDropdowns.skills}
+                    className={`w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${!isTemplateSelected || !enabledDropdowns.skills ? "bg-gray-100 cursor-not-allowed opacity-60" : ""
+                      }`}
+                  >
+                    <option value="">-- Select Skill --</option>
+                    {availableSkills.map((skillItem: any) => (
+                      <option key={skillItem.id} value={skillItem.skill}>
+                        {skillItem.skill}
+                      </option>
+                    ))}
+                  </select>
+                  {loadingSkills && <p className="mt-1 text-xs text-gray-500">Loading skills...</p>}
+                </div>
+              )}
+
+              {/* Display all CWF tasks for template t1 */}
+              {activeTemplate === "t1" && allCwfTasks.length > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="text-sm font-medium text-blue-800 mb-2 flex items-center gap-2">
+                    <ListChecks className="h-4 w-4" />
+                    All Tasks for Selected Critical Work Function:
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {allCwfTasks.map((task, index) => (
+                      <span 
+                        key={index} 
+                        className="inline-block bg-white px-2 py-1 rounded text-xs text-blue-700 border border-blue-300"
+                      >
+                        {task}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-blue-600 mt-2">
+                    Total: {allCwfTasks.length} task(s) found - These will be used in course generation
+                  </p>
+                </div>
+              )}
             </fieldset>
           </div>
         );
@@ -1808,6 +1934,7 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
                     setManualPreview("Select a template and click 'Generate Course Outline with AI' to create slides.");
                     setLastUsedModel("");
                     setApiPayload("");
+                    setAllCwfTasks([]); // Clear all CWF tasks
                   }}
                   disabled={!isTemplateSelected}
                   className={`text-sm flex items-center gap-1 transition-all duration-200 ${!isTemplateSelected
