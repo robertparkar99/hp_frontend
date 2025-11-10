@@ -11,15 +11,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import AddDialog from "@/components/jobroleComponent/addDialouge";
 import EditDialog from "@/components/jobroleComponent/editDialouge";
 import { Atom } from "react-loading-indicators";
-import { 
-  Edit, 
-  Trash, 
-  Eye, 
-  Square, 
-  Table, 
+import {
+  Funnel,
+  Edit,
+  Trash,
+  Eye,
+  Square,
+  Table,
   Plus,
   Search,
   SlidersHorizontal,
@@ -60,7 +67,7 @@ export default function HomePage() {
   const [selectedDept, setSelectedDept] = useState<string>("All Departments");
   const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  
+
   // State for modals
   const [dialogOpen, setDialogOpen] = useState({
     view: false,
@@ -218,11 +225,11 @@ export default function HomePage() {
       : roles.filter((role) => role.department === selectedDept);
 
   // ✅ Apply search on filtered roles
- const searchedRoles = filteredRoles.filter(
-  (role) =>
-    (role.jobrole || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (role.description || "").toLowerCase().includes(searchTerm.toLowerCase())
-);
+  const searchedRoles = filteredRoles.filter(
+    (role) =>
+      (role.jobrole || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (role.description || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
 
   // ✅ Column search state
@@ -231,14 +238,14 @@ export default function HomePage() {
   }>({ jobrole: "", department: "", description: "", performance_expectation: "" });
 
   // ✅ Filter data based on column search
- const columnFilteredRoles = searchedRoles.filter((role) => {
-  return (
-    (role.jobrole || "").toLowerCase().includes((columnFilters.jobrole || "").toLowerCase()) &&
-    (role.department || "").toLowerCase().includes((columnFilters.department || "").toLowerCase()) &&
-    (role.description || "").toLowerCase().includes((columnFilters.description || "").toLowerCase()) &&
-    (role.performance_expectation || "").toLowerCase().includes((columnFilters.performance_expectation || "").toLowerCase())
-  );
-});
+  const columnFilteredRoles = searchedRoles.filter((role) => {
+    return (
+      (role.jobrole || "").toLowerCase().includes((columnFilters.jobrole || "").toLowerCase()) &&
+      (role.department || "").toLowerCase().includes((columnFilters.department || "").toLowerCase()) &&
+      (role.description || "").toLowerCase().includes((columnFilters.description || "").toLowerCase()) &&
+      (role.performance_expectation || "").toLowerCase().includes((columnFilters.performance_expectation || "").toLowerCase())
+    );
+  });
 
 
   // ✅ DataTable columns with column search inputs
@@ -301,6 +308,7 @@ export default function HomePage() {
       selector: (row) => row.description,
       sortable: false,
       wrap: true,
+      width: "320px",
     },
     {
       name: (
@@ -323,7 +331,7 @@ export default function HomePage() {
       selector: (row) => row.performance_expectation,
       sortable: false,
       wrap: true,
-      width: "160px",
+      width: "170px",
     },
     {
       name: "Actions",
@@ -347,20 +355,14 @@ export default function HomePage() {
           </button>
           {/* Skill Mapping Button */}
           <button
-            onClick={() => {/* Add skill mapping functionality */}}
+            onClick={() => {/* Add skill mapping functionality */ }}
             className="bg-purple-500 hover:bg-purple-700 text-white text-xs p-1.5 rounded transition-colors"
             title="View Skill Mapping"
           >
             <GitMerge size={14} />
           </button>
           {/* JD Preview Button */}
-          <button
-            onClick={() => {/* Add JD preview functionality */}}
-            className="bg-indigo-500 hover:bg-indigo-700 text-white text-xs p-1.5 rounded transition-colors"
-            title="Preview JD Template"
-          >
-            <FileText size={14} />
-          </button>
+
           {/* Delete Button */}
           <button
             onClick={() => handleDeleteClick(row.id)}
@@ -371,7 +373,7 @@ export default function HomePage() {
           </button>
         </div>
       ),
-      width: "260px"
+      width: "170px"
     },
   ];
 
@@ -402,11 +404,11 @@ export default function HomePage() {
 
   return (
     <div className="pt-6 sm:px-4 px-2 bg-background rounded-xl ">
-      {/* 🔝 Top bar */} 
+      {/* 🔝 Top bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <div className="flex-1 max-w-md">
           {/* Department Filter */}
-          <div className="w-60">
+          {/* <div className="w-60">
             <Select
               onValueChange={(val) => {
                 setSelectedDept(val);
@@ -425,10 +427,10 @@ export default function HomePage() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
 
           {/* Search Bar */}
-          <div className="relative w-60">
+          <div className="relative ">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
@@ -441,37 +443,61 @@ export default function HomePage() {
         </div>
 
         <div className="flex items-center flex-wrap gap-1">
-          
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
+                        <Funnel className="w-5 h-5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Department
+                          </label>
+<Select
+              onValueChange={(val) => {
+                setSelectedDept(val);
+                setSelected(null);
+              }}
+              defaultValue="All Departments"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by department" />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((dept) => (
+                  <SelectItem key={dept} value={dept}>
+                    {dept}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+                        </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+                  
 
-          {/* Add New Jobrole */}
-          <button
-            className="hover:bg-gray-100 px-2 py-2 flex items-center justify-center transition-colors rounded-md "
-            onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
-            title="Add New Job Role"
-          >
-            <Plus className="h-5 w-5 text-gray-600" />
-          </button>
 
           {/* ✅ View Mode Toggle */}
           <div className="flex border rounded-md overflow-hidden">
             <button
               onClick={() => setViewMode("myview")}
-              className={`px-3 py-2 flex items-center justify-center transition-colors ${
-                viewMode === "myview"
+              className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "myview"
                   ? "bg-blue-100 text-blue-600"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+                }`}
               title="Card View"
             >
               <Square className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode("table")}
-              className={`px-3 py-2 flex items-center justify-center transition-colors ${
-                viewMode === "table"
+              className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "table"
                   ? "bg-blue-100 text-blue-600"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+                }`}
               title="Table View"
             >
               <Table className="h-4 w-4" />
@@ -499,13 +525,22 @@ export default function HomePage() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex gap-1">
+                    {/* Add New Jobrole */}
+                    <button
+                      className="hover:bg-gray-100 px-2 py-2 flex items-center justify-center transition-colors rounded-md "
+                      onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
+                      title="Add New Job Role"
+                    >
+                      <Plus className="h-5 w-5 text-gray-600" />
+                    </button>
+
                     <button
                       onClick={() => {
                         setDialogOpen({ ...dialogOpen, import: true });
                         setIsActionsMenuOpen(false);
                       }}
                       className="p-2 hover:bg-gray-100 rounded transition-colors"
-                      title="Import Job Roles (CSV/XLSX)"
+                      title="Import Job Roles "
                     >
                       <Upload className="h-5 w-5 text-gray-600" />
                     </button>
@@ -515,7 +550,7 @@ export default function HomePage() {
                         setIsActionsMenuOpen(false);
                       }}
                       className="p-2 hover:bg-gray-100 rounded transition-colors"
-                      title="Export Job Roles (CSV/XLSX)"
+                      title="Export Job Roles"
                     >
                       <Download className="h-5 w-5 text-gray-600" />
                     </button>
@@ -525,19 +560,9 @@ export default function HomePage() {
                         setIsActionsMenuOpen(false);
                       }}
                       className="p-2 hover:bg-gray-100 rounded transition-colors"
-                      title="Job Role Settings"
+                      title="Settings"
                     >
                       <Settings className="h-5 w-5 text-gray-600" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        /* Add AI generation functionality */
-                        setIsActionsMenuOpen(false);
-                      }}
-                      className="p-2 hover:bg-gray-100 rounded transition-colors"
-                      title="Generate Job Role Using AI"
-                    >
-                      <Sparkles className="h-5 w-5 text-gray-600" />
                     </button>
                     <button
                       onClick={() => {
@@ -611,7 +636,7 @@ export default function HomePage() {
             const isSelected = selected === role.id;
             const isInactive = role.status === "inactive";
             const isAIGenerated = role.related_jobrole?.includes("ai") || role.jobrole_category?.includes("ai");
-            
+
             return (
               <motion.div
                 key={role.id}
@@ -656,35 +681,30 @@ export default function HomePage() {
                       onClick={(e) => e.stopPropagation()}
                     >
                       {/* View Button */}
-                      <button 
+                      <button
                         onClick={() => handleView(role.id)}
                         title="View Job Role Details"
                       >
                         <Eye className="text-white hover:text-gray-200" size={14} />
                       </button>
                       {/* Edit Button */}
-                      <button 
+                      <button
                         onClick={() => handleEdit(role.id)}
                         title="Edit Job Role"
                       >
                         <Edit className="text-white hover:text-gray-200" size={14} />
                       </button>
                       {/* Skill Mapping Button */}
-                      <button 
-                        onClick={() => {/* Add skill mapping functionality */}}
+                      <button
+                        onClick={() => {/* Add skill mapping functionality */ }}
                         title="View Skill Mapping"
                       >
                         <GitMerge className="text-white hover:text-gray-200" size={14} />
                       </button>
                       {/* JD Preview Button */}
-                      <button 
-                        onClick={() => {/* Add JD preview functionality */}}
-                        title="Preview JD Template"
-                      >
-                        <FileText className="text-white hover:text-gray-200" size={14} />
-                      </button>
+                     
                       {/* Delete Button */}
-                      <button 
+                      <button
                         onClick={() => handleDeleteClick(role.id)}
                         title="Delete Job Role"
                       >
@@ -715,8 +735,8 @@ export default function HomePage() {
                           title={role.description}
                         >
                           <span className="font-bold">Description:</span>{" "}
-                          {role.description} 
-                         </p>
+                          {role.description}
+                        </p>
                       </div>
                     </div>
                   </motion.div>

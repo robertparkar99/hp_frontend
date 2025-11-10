@@ -335,11 +335,7 @@ export default function Page() {
   return (
     <div className="p-4">
       {/* Header with Title and Action Buttons */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Ability Library</h1>
-
-
-      </div>
+    
 
       {/* Search Bar and Filters */}
       <div className="flex justify-between items-center mb-4">
@@ -416,24 +412,7 @@ export default function Page() {
               >
                 {/* Action Buttons - All in one line */}
                 <div className="flex items-center gap-3">
-                  {/* Bulk Actions */}
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Bulk Actions">
-                    <ListChecks className="w-5 h-5 text-gray-600" />
-
-                  </button>
-
-                  {/* Export/Import */}
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Export">
-                    <Download className="w-5 h-5 text-gray-600" />
-
-                  </button>
-
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Import">
-                    <Upload className="w-5 h-5 text-gray-600" />
-
-                  </button>
-
-                  {/* Add New Ability */}
+                                    {/* Add New Ability */}
                   <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Add New Ability">
                     <Plus className="w-5 h-5 text-gray-600" />
 
@@ -445,21 +424,39 @@ export default function Page() {
 
                   </button>
 
+                  {/* Bulk Actions */}
+
+                  {/* Export/Import */}
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Export abilities">
+                    <Download className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Import abilities">
+                    <Upload className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+
                   {/* Analytics */}
                   <button className="flex items-center px-2 py-2 hover:bg-gray-200  rounded-md text-sm" title="Analytics">
                     <BarChart3 className="w-5 h-5 text-gray-600" />
 
                   </button>
-
+                  <button className="p-2 hover:bg-gray-200 rounded-md" title="Help">
+                    <HelpCircle className="w-5 h-5 text-gray-600" />
+                  </button>
                   {/* Settings */}
                   <button className="p-2 hover:bg-gray-200 rounded-md" title="Settings">
                     <Settings className="w-5 h-5 text-gray-600" />
                   </button>
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Bulk Actions">
+                    <ListChecks className="w-5 h-5 text-gray-600" />
+
+                  </button>
 
                   {/* Help */}
-                  <button className="p-2 hover:bg-gray-200 rounded-md" title="Help">
-                    <HelpCircle className="w-5 h-5 text-gray-600" />
-                  </button>
+
                 </div>
               </PopoverContent>
             </Popover>

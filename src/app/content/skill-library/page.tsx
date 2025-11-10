@@ -4,11 +4,11 @@ import React, { useEffect, useState } from "react";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import AddDialog from "@/components/skillComponent/addDialouge";
-import { 
-  Trash, Funnel, Hexagon, Table, Plus, Search, Settings, 
+import {
+  Trash, Funnel, Hexagon, Table, Plus, Search, Settings,
   Download, Shield, BookOpen, Sparkles, Brain, Bot, Wand2,
-  BarChart3, Link2, Compass, RefreshCw,
-  CheckSquare, Edit
+  BarChart3, Link2, Compass, RefreshCw, MoreVertical,
+  CheckSquare, Edit, Upload
 } from "lucide-react";
 import {
   Select,
@@ -102,6 +102,7 @@ export default function Page() {
     settings: false,
     permissions: false,
     bulkImport: false,
+    import: false,
   });
 
   const [refreshKey, setRefreshKey] = useState(0);
@@ -134,6 +135,29 @@ export default function Page() {
   // Form validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Combined actions menu state
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+
+  // Toggle function for the actions menu
+  const toggleActionsMenu = () => {
+    setShowActionsMenu(!showActionsMenu);
+  };
+
+  // Close actions menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.actions-menu') && !target.closest('.actions-menu-trigger')) {
+        setShowActionsMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
@@ -159,7 +183,7 @@ export default function Page() {
 
       try {
         const apiUrl = `${sessionData.url}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[industries]=${sessionData.orgType}&group_by=department&order_by[column]=department&order_by[direction]=asc`;
-        
+
         const response = await fetch(apiUrl, {
           headers: {
             Authorization: `Bearer ${sessionData.token}`,
@@ -176,7 +200,7 @@ export default function Page() {
           id: dept.id ? String(dept.id) : String(index + 1),
           department: dept.department
         }));
-        
+
         setDepartments(transformedDepartments);
       } catch (err) {
         console.error("Error fetching departments:", err);
@@ -216,13 +240,13 @@ export default function Page() {
 
         const data = await response.json();
         console.log("Job roles response:", data);
-        
+
         // Transform the data to match JobRole interface
         const transformedJobRoles = data.map((role: any, index: number) => ({
           id: role.id ? String(role.id) : String(index + 1),
           jobrole: role.jobrole
         }));
-        
+
         setJobRoles(transformedJobRoles);
         setSelectedJobRole(undefined); // Reset job role selection when department changes
         setJobRoleSkills([]); // Clear job role skills when department changes
@@ -258,7 +282,7 @@ export default function Page() {
       try {
         // Get the selected job role
         const selectedRole = jobRoles.find(role => role.id === selectedJobRole);
-        
+
         if (!selectedRole) {
           setJobRoleSkills([]);
           return;
@@ -281,30 +305,30 @@ export default function Page() {
 
         const data = await response.json();
         console.log("Job role skills response:", data);
-        
+
         // Transform the data according to the API response structure
         let transformedSkills: JobRoleSkill[] = [];
-        
+
         if (data?.userskillData) {
           transformedSkills = Array.isArray(data.userskillData)
             ? data.userskillData.map((item: any, index: number) => ({
-                id: item.id ? String(item.id) : String(Math.random() + index),
-                SkillName:
-                  typeof item.skillTitle === "object" && item.skillTitle !== null
-                    ? item.skillTitle.title || item.skillTitle.name || String(item.skillTitle)
-                    : String(item.skillTitle || ""),
-                description: String(item.description || item.skillDescription || ""),
-                proficiency_level: String(item.proficiency_level) || "",
-                category: String(item.category || ""),
-                sub_category: String(item.sub_category || ""),
-                skill_id: String(item.skill_id || ""),
-              }))
+              id: item.id ? String(item.id) : String(Math.random() + index),
+              SkillName:
+                typeof item.skillTitle === "object" && item.skillTitle !== null
+                  ? item.skillTitle.title || item.skillTitle.name || String(item.skillTitle)
+                  : String(item.skillTitle || ""),
+              description: String(item.description || item.skillDescription || ""),
+              proficiency_level: String(item.proficiency_level) || "",
+              category: String(item.category || ""),
+              sub_category: String(item.sub_category || ""),
+              skill_id: String(item.skill_id || ""),
+            }))
             : [];
         }
-        
+
         // Filter out empty skills
         transformedSkills = transformedSkills.filter(skill => skill.SkillName && skill.SkillName.trim().length > 0);
-        
+
         setJobRoleSkills(transformedSkills);
         console.log("Transformed job role skills:", transformedSkills);
 
@@ -436,8 +460,8 @@ export default function Page() {
 
   // Multi-select handlers
   const toggleSkillSelection = (skillId: number) => {
-    setSelectedSkills(prev => 
-      prev.includes(skillId) 
+    setSelectedSkills(prev =>
+      prev.includes(skillId)
         ? prev.filter(id => id !== skillId)
         : [...prev, skillId]
     );
@@ -455,18 +479,22 @@ export default function Page() {
   // AI Actions
   const handleAISuggest = () => {
     alert("AI Suggestions: This will recommend related skills based on current filters");
+    setShowActionsMenu(false);
   };
 
   const handleSkillGenerator = () => {
     alert("Skill Generator: This will generate new skills using AI");
+    setShowActionsMenu(false);
   };
 
   const handleAIDescriptionFill = () => {
     alert("AI Description Fill: This will autocomplete skill descriptions");
+    setShowActionsMenu(false);
   };
 
   const handleAutoMatch = () => {
     alert("Auto-Match: This will automatically map skills to job roles");
+    setShowActionsMenu(false);
   };
 
   // Dropdown options
@@ -503,7 +531,7 @@ export default function Page() {
 
     // Otherwise, show filtered user skills
     let filteredSkills = userSkills.filter((s) => {
-      const matchesSearch = searchTerm === "" || 
+      const matchesSearch = searchTerm === "" ||
         s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (s.description || "").toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -681,7 +709,7 @@ export default function Page() {
         </div>
       ),
       selector: (row) => row.proficiency_level || "-",
-      sortable: true, 
+      sortable: true,
       width: "120px"
     },
     {
@@ -714,14 +742,14 @@ export default function Page() {
             <Trash className="w-4 h-4" />
           </button>
           <button
-            onClick={() => {/* Usage insights logic */}}
+            onClick={() => {/* Usage insights logic */ }}
             className="p-1 text-gray-600 hover:bg-gray-100 rounded"
             title="Usage Insights"
           >
             <BarChart3 className="w-4 h-4" />
           </button>
           <button
-            onClick={() => {/* Link to task logic */}}
+            onClick={() => {/* Link to task logic */ }}
             className="p-1 text-gray-600 hover:bg-gray-100 rounded"
             title="Link to Task"
           >
@@ -762,115 +790,8 @@ export default function Page() {
 
           {/* Right: Main Action Icons */}
           <div className="flex gap-2 items-center">
-            {/* Generative AI Tools */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-gray-100" title="AI Tools">
-                  <Sparkles className="w-5 h-5 text-gray-600" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-2" align="end">
-                <div className="space-y-1">
-                  <button 
-                    onClick={handleAISuggest}
-                    className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    AI Suggest
-                  </button>
-                  <button 
-                    onClick={handleSkillGenerator}
-                    className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <Brain className="w-4 h-4" />
-                    Skill Generator
-                  </button>
-                  <button 
-                    onClick={handleAIDescriptionFill}
-                    className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <Bot className="w-4 h-4" />
-                    AI Description Fill
-                  </button>
-                  <button 
-                    onClick={handleAutoMatch}
-                    className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <Wand2 className="w-4 h-4" />
-                    Auto-Match
-                  </button>
-                </div>
-              </PopoverContent>
-            </Popover>
 
-            {/* Add Button with Dropdown */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-gray-100" title="Add Options">
-                  <Plus className="w-5 h-5 text-gray-600" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-2" align="end">
-                <div className="space-y-1">
-                  <button 
-                    onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
-                    className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <Plus className="w-4 h-4 " />
-                    Add New Skill
-                  </button>
-                  <button 
-                    onClick={() => {/* Add custom field logic */}}
-                    className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <div className="w-4 h-4 ">🧩</div>
-                    Add Custom Field
-                  </button>
-                  <button 
-                    onClick={() => {/* Add from framework logic */}}
-                    className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <BookOpen className="w-4 h-4 " />
-                    Add from Framework
-                  </button>
-                </div>
-              </PopoverContent>
-            </Popover>
 
-            {/* Admin Tools */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-gray-100" title="Admin Tools">
-                  <Settings className="w-5 h-5 text-gray-600" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-2" align="end">
-                <div className="space-y-1">
-                  <button 
-                    onClick={() => setDialogOpen({ ...dialogOpen, settings: true })}
-                    className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <Settings className="w-4 h-4 " />
-                    Settings
-                  </button>
-                  <button 
-                    onClick={() => setDialogOpen({ ...dialogOpen, permissions: true })}
-                    className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <Shield className="w-4 h-4 " />
-                    Permissions
-                  </button>
-                  <button 
-                    onClick={() => setDialogOpen({ ...dialogOpen, bulkImport: true })}
-                    className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <Download className="w-4 h-4 " />
-                    Bulk Import/Export
-                  </button>
-                </div>
-              </PopoverContent>
-            </Popover>
-    
             {/* Filter Button */}
             <Popover>
               <PopoverTrigger asChild>
@@ -914,7 +835,7 @@ export default function Page() {
                 </Select>
 
                 {/* Job Role Filter */}
-                <Select 
+                <Select
                   value={selectedJobRole || "all"}
                   onValueChange={(value) => {
                     if (value === "all") {
@@ -927,7 +848,7 @@ export default function Page() {
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={loadingJobRoles ? "Loading job titles..." : "Select job title"}>
-                      {selectedJobRole && jobRoles.length > 0 
+                      {selectedJobRole && jobRoles.length > 0
                         ? jobRoles.find(role => role.id === selectedJobRole)?.jobrole || "Select job title"
                         : "Select job title"
                       }
@@ -1062,25 +983,107 @@ export default function Page() {
             <div className="flex border rounded-md overflow-hidden">
               <button
                 onClick={() => setViewMode("hexagon")}
-                className={`px-3 py-2 flex items-center justify-center transition-colors ${
-                  viewMode === "hexagon"
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "hexagon"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
               >
                 <Hexagon className="h-5 w-5" />
               </button>
 
               <button
                 onClick={() => setViewMode("table")}
-                className={`px-3 py-2 flex items-center justify-center transition-colors ${
-                  viewMode === "table"
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "table"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
               >
                 <Table className="h-5 w-5" />
               </button>
+            </div>
+            {/* Combined Actions Menu */}
+            <div className="relative">
+              <button
+                onClick={toggleActionsMenu}
+                className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                title="More Actions"
+              >
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+
+              {showActionsMenu && (
+                <div className="absolute right-0 top-12 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 actions-menu">
+                  {/* AI Tools Section */}
+                  <div className="p-3 border-b border-gray-100">
+                    {/* Add Options Section */}
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, add: true });
+                        setShowActionsMenu(false);
+                      }}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Add New Skill"
+                    >
+                      <Plus className="w-5 h-5 text-gray-600" />
+
+                    </button>
+
+                    <button
+                      onClick={handleAutoMatch}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Auto-Match"
+                    >
+                      <Wand2 className="w-5 h-5 text-gray-600" />
+
+                    </button>
+
+
+                    <button
+                      onClick={() => {
+                        /* Add from framework logic */
+                        setShowActionsMenu(false);
+                      }}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="add from Framework"
+                    >
+                      <BookOpen className="w-5 h-5 text-gray-600" />
+
+                    </button>
+
+
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, import: true });
+                        setShowActionsMenu(false);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded transition-colors"
+                      title="Bulk skill Import"
+                    >
+                      <Upload className="h-5 w-5 text-gray-600" />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, bulkImport: true });
+                        setShowActionsMenu(false);
+                      }}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Bulk skill Export"
+                    >
+                      <Download className="w-5 h-5 text-gray-600" />
+
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, settings: true });
+                        setShowActionsMenu(false);
+                      }}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Settings"
+                    >
+                      <Settings className="w-5 h-5 text-gray-600" />
+
+                    </button>
+
+                  </div>
+                </div>
+
+              )}
             </div>
           </div>
         </div>
@@ -1227,7 +1230,7 @@ export default function Page() {
                   <Compass className="w-4 h-4" />
                   Guided Tour
                 </button>
-                <button 
+                <button
                   onClick={() => setRefreshKey(prev => prev + 1)}
                   className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
                 >

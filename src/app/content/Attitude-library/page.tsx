@@ -409,10 +409,10 @@ export default function Index() {
                 </button>
 
                 {/* Import/Export */}
-                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Import from CSV">
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Import ">
                   <Upload className="w-5 h-5 text-gray-600" />
                 </button>
-                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Export to CSV">
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Export ">
                   <Download className="w-5 h-5 text-gray-600" />
                 </button>
 

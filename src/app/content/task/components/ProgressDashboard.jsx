@@ -866,7 +866,11 @@ const ProgressDashboard = () => {
               ? task.task_type === 'Low'
               : true;
 
-      const matchesStatus = statusFilter === 'all' || task.status.toUpperCase() === statusFilter;
+      // const matchesStatus = statusFilter === 'all' || task.status.toUpperCase() === statusFilter;
+      const matchesStatus =
+  statusFilter === 'all' ||
+  (task.status && task.status.toUpperCase() === statusFilter);
+
       const matchesDepartment = departmentFilter === 'all' || task.department === departmentFilter;
       const matchesJobrole = jobroleFilter === 'all' || task.jobrole === jobroleFilter;
 
@@ -1321,10 +1325,10 @@ const ProgressDashboard = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
+        {/* <div>
           <h2 className="text-xl font-semibold text-foreground">Assignment Progress</h2>
           <p className="text-muted-foreground text-sm">Track and monitor task assignment progress</p>
-        </div>
+        </div> */}
 
         <div className="flex items-center space-x-3">
           <Select
