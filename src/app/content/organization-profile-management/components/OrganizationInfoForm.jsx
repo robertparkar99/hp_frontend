@@ -350,7 +350,8 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-sm font-medium">Legal Name</label>
+              <label className="block text-sm font-medium">Legal Name{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <Input
                 value={displayValue(formData.legal_name, '')}
                 placeholder="Enter legal organization name"
@@ -359,7 +360,8 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-medium">CIN (Corporate Identification Number)</label>
+              <label className="block text-sm font-medium">CIN (Corporate Identification Number){" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <Input
                 value={displayValue(formData.cin, '')}
                 placeholder="Enter 21-digit CIN"
@@ -379,7 +381,8 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-medium">PAN</label>
+              <label className="block text-sm font-medium">PAN{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <Input
                 value={displayValue(formData.pan, '')}
                 placeholder="Enter 10-digit PAN"
@@ -426,7 +429,8 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
               </select> */}
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-medium">Employee Count</label>
+              <label className="block text-sm font-medium">Employee Count{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <select
                 value={displayValue(formData.employee_count, '')}
                 onChange={(e) => handleInputChange('employee_count', e.target.value)}
@@ -444,7 +448,8 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium">Work Week</label>
+            <label className="block text-sm font-medium">Work Week{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
             <select
               value={displayValue(formData.work_week, '')}
               onChange={(e) => handleInputChange('work_week', e.target.value)}
@@ -461,7 +466,8 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium">Registered Address</label>
+            <label className="block text-sm font-medium">Registered Address{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
             <Input
               value={displayValue(formData.registered_address, '')}
               placeholder="Enter complete registered address"

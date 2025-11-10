@@ -1604,7 +1604,7 @@ export default function Dashboard() {
                   // ✅ Define color mapping
                   const badgeColors: Record<string, string> = {
                     Hard: "text-red-700 bg-red-500 border-red-400",
-                    Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                    Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
                     Low: "text-green-700 bg-green-500 border-green-400",
                   };
 
@@ -1680,7 +1680,7 @@ export default function Dashboard() {
                   // ✅ Define color mapping
                   const badgeColors: Record<string, string> = {
                     Hard: "text-red-700 bg-red-500 border-red-400",
-                    Medium: "text-yellow-700 bg-yellow-400 border-yellow-400",
+                    Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
                     Low: "text-green-700 bg-green-500 border-green-400",
                   };
 

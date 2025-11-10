@@ -701,7 +701,8 @@ const SystemConfiguration = () => {
         {/* Department */}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Department{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <select
             value={formData.departmentId}
             onChange={(e) => handleChange('departmentId', e.target.value)}
@@ -717,7 +718,8 @@ const SystemConfiguration = () => {
 
         {/* Employee */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <select
             value={formData.employeeId}
             onChange={(e) => handleChange('employeeId', e.target.value)}
@@ -733,7 +735,8 @@ const SystemConfiguration = () => {
 
         {/* Incident Date-Time */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Incident Date-Time</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Incident Date-Time{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <input
             type="datetime-local"
             value={formData.incidentDateTime}
@@ -745,7 +748,8 @@ const SystemConfiguration = () => {
 
         {/* Location */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Location{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <input
             type="text"
             value={formData.location}
@@ -757,7 +761,8 @@ const SystemConfiguration = () => {
 
         {/* Misconduct Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type of Misconduct</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Type of Misconduct{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <select
             value={formData.misconductType}
             onChange={(e) => handleChange('misconductType', e.target.value)}
@@ -775,7 +780,8 @@ const SystemConfiguration = () => {
 
         {/* Description */}
         <div className="md:col-span-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description of Incident</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description of Incident{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <textarea
             value={formData.description}
             onChange={(e) => handleChange('description', e.target.value)}
@@ -808,7 +814,8 @@ const SystemConfiguration = () => {
 
           {/* Action Taken */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
             <select
               value={formData.actionTaken}
               onChange={(e) => handleChange('actionTaken', e.target.value)}
@@ -902,7 +909,8 @@ const SystemConfiguration = () => {
           <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 p-4">
             {/* Department */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Department{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <select
                 value={editFormData.departmentId}
                 onChange={(e) => handleEditChange('departmentId', e.target.value)}
@@ -934,7 +942,8 @@ const SystemConfiguration = () => {
 
             {/* Incident Date-Time */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Incident Date-Time</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Incident Date-Time{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <input
                 type="datetime-local"
                 value={editFormData.incidentDateTime}
@@ -946,7 +955,8 @@ const SystemConfiguration = () => {
 
             {/* Location */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <input
                 type="text"
                 value={editFormData.location}
@@ -958,7 +968,8 @@ const SystemConfiguration = () => {
 
             {/* Misconduct Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type of Misconduct</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Type of Misconduct{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <select
                 value={editFormData.misconductType}
                 onChange={(e) => handleEditChange('misconductType', e.target.value)}
@@ -976,7 +987,8 @@ const SystemConfiguration = () => {
 
             {/* Description */}
             <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description of Incident</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description of Incident{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <textarea
                 value={editFormData.description}
                 onChange={(e) => handleEditChange('description', e.target.value)}
@@ -989,7 +1001,8 @@ const SystemConfiguration = () => {
             <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Witness */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Witness</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Witness{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
                 <select
                   value={editFormData.witnessIds}   // ensure string
                   onChange={(e) => handleEditChange("witnessIds", e.target.value)}
@@ -1009,7 +1022,8 @@ const SystemConfiguration = () => {
 
               {/* Action Taken */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
                 <select
                   value={editFormData.actionTaken}
                   onChange={(e) => handleEditChange('actionTaken', e.target.value)}
