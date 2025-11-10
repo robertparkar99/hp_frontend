@@ -1,7 +1,8 @@
 import { Config } from "./Types";
 
-// Enhanced prompt builder that creates a structured JSON object with Critical Work Function focus
-export function buildPrompt(cfg: Config, industry: string) {
+// Enhanced prompt builder that creates a structured JSON object 
+
+export function buildPrompt(cfg: Config, industry: string, allCwfTasks: string[] = []) {
   const modality = [
     cfg.modality.selfPaced && "Self-paced",
     cfg.modality.instructorLed && "Instructor-led",
@@ -10,9 +11,39 @@ export function buildPrompt(cfg: Config, industry: string) {
     .join(", ");
 
   const criticalWorkFunction = cfg.criticalWorkFunction || " - ";
+  
+  console.log("🔍 buildPrompt - allCwfTasks parameter:", allCwfTasks);
+  console.log("🔍 buildPrompt - allCwfTasks length:", allCwfTasks?.length);
+  console.log("🔍 buildPrompt - cfg.tasks:", cfg.tasks);
+  
+  // ✅ FIXED: Better logic for task selection
+  let formattedKeyTasks: string;
+  
+  // Check if we should use all CWF tasks (for template t1)
+  const shouldUseAllCwfTasks = allCwfTasks && Array.isArray(allCwfTasks) && allCwfTasks.length > 0;
+  
+  if (shouldUseAllCwfTasks) {
+    // Use all tasks from the CWF
+    formattedKeyTasks = allCwfTasks.join(", ");
+    console.log("✅ Using all CWF tasks:", formattedKeyTasks);
+  } else if (cfg.tasks && cfg.tasks.length > 0) {
+    // Check if we have any valid tasks in cfg.tasks
+    const validTasks = cfg.tasks.filter(task => task && task.trim() !== "");
+    if (validTasks.length > 0) {
+      formattedKeyTasks = validTasks.join(", ");
+      console.log("✅ Using selected tasks:", formattedKeyTasks);
+    } else {
+      formattedKeyTasks = " - ";
+      console.log("❌ No valid tasks in cfg.tasks, using default");
+    }
+  } else {
+    formattedKeyTasks = " - ";
+    console.log("❌ No tasks available, using default");
+  }
 
-  // Create a structured course prompt object with enhanced focus on critical work function
-  // Using ONLY department, jobRole, and criticalWorkFunction from course mapping
+  console.log("🔧 Final formattedKeyTasks:", formattedKeyTasks);
+
+  // Rest of your function remains the same...
   const coursePromptObject = {
     instruction: `You are an expert L&D Manager. Design a complete 10-slide instructional training course that provides a comprehensive guide to mastering the Critical Work Function: "${criticalWorkFunction}".`,
     input_variables: {
@@ -20,9 +51,9 @@ export function buildPrompt(cfg: Config, industry: string) {
       department: cfg.department || " - ",
       job_role: cfg.jobRole || " - ",
       critical_work_function: criticalWorkFunction,
-      modality: modality || " - "
+      key_tasks: formattedKeyTasks, 
+      modality: modality || " - ",
     },
-    
     output_format: {
       total_slides: 10,
       slide_structure: "Each slide = 1 instructional unit",
@@ -31,13 +62,15 @@ export function buildPrompt(cfg: Config, industry: string) {
       style: "Formal, structured, competency-based",
       visuals: "No visuals or design styling",
       repetition: "No repetition — ensure uniqueness per slide",
-      tone: modality.includes("Self-paced") ? "Direct, learner-led tone; emphasis on individual reflection" : "Include facilitator cues, group discussion prompts",
+      tone: modality.includes("Self-paced")
+        ? "Direct, learner-led tone; emphasis on individual reflection"
+        : "Include facilitator cues, group discussion prompts",
       response_format: `EXACT OUTPUT FORMAT REQUIRED:
 Slide 1: Title Slide
 - Industry: [industry]
 - Department: [department]  
 - Job role: [job role]
-- Key Task: [critical work function]
+- Key Tasks: [key tasks]
 - Critical Work Function: [critical work function]
 - Modality: [modality]
 
@@ -47,7 +80,7 @@ Slide 2: [title]
 - [bullet point 3]
 - [bullet point 4]
 
-[Continue for all 10 slides with exact same format]`
+[Continue for all 10 slides with exact same format]`,
     },
     slide_structure: [
       {
@@ -57,121 +90,99 @@ Slide 2: [title]
           `Industry: ${industry || " - "}`,
           `Department: ${cfg.department || " - "}`,
           `Job role: ${cfg.jobRole || " - "}`,
-          `Key Task: ${criticalWorkFunction}`,
+          `Key Tasks: ${formattedKeyTasks}`,
           `Critical Work Function: ${criticalWorkFunction}`,
-          `Modality: ${modality || " - "}`
-        ]
+          `Modality: ${modality || " - "}`,
+        ],
       },
       {
         slide: 2,
-        title: "Critical Work Function & Strategic Objectives",
+        title: "Learning Objectives & Modality Instructions",
         content: [
-          `Understanding the Critical Work Function: ${criticalWorkFunction}`,
-          `Strategic importance for ${cfg.department || "the department"}`,
-          `Role-specific relevance for ${cfg.jobRole || "the job role"}`,
-          modality.includes("Self-paced") ? "Self-assessment framework for mastery" : "Facilitator-led learning objectives"
+          `Targeted outcomes for mastering these Key tasks: ${formattedKeyTasks}`,
+          "Importance of monitoring and evaluation",
+          modality.includes("Self-paced") ? "Tips for self-driven navigation and checks" : "Facilitator guidance and session flow overview"
         ]
       },
       {
         slide: 3,
-        title: "Departmental Context & Organizational Alignment",
+        title: "Task Contextualization",
         content: [
-          `${cfg.department || "Department"} context for ${criticalWorkFunction}`,
-          `How ${criticalWorkFunction} supports organizational goals`,
-          "Cross-functional dependencies and collaborations",
-          "Strategic value and business impact"
+          `Role of the Key Tasks: ${formattedKeyTasks} within the Critical Work Function: ${criticalWorkFunction}`,
+          `Industry Context: ${industry || " - "}`,
+          "Dependencies and prerequisites",
+          "Stakeholders or systems involved"
         ]
       },
       {
         slide: 4,
-        title: "Job Role Integration & Performance Standards",
+        title: "Performance Expectations",
         content: [
-          `${cfg.jobRole || "Job role"} responsibilities in ${criticalWorkFunction}`,
-          "Performance expectations and quality standards",
-          "Key success indicators and metrics",
-          "Compliance and regulatory requirements"
+          "Key success indicators",
+          "Task standards and KPIs",
+          "Timeliness and quality dimensions"
         ]
       },
       {
         slide: 5,
-        title: "Critical Work Function Framework & Methodology",
+        title: "Monitoring Indicators",
         content: [
-          `Core components of ${criticalWorkFunction}`,
-          "Methodologies and approaches",
-          "Best practices and standards",
-          "Quality assurance processes"
+          "Observable checkpoints",
+          "Red flags to watch for",
+          "Sample field-level evidence"
         ]
       },
       {
         slide: 6,
-        title: "Tools & Systems for Critical Work Function Excellence",
+        title: "Tools & Methods for Monitoring",
         content: [
-          `Essential tools for ${criticalWorkFunction}`,
-          "Technology platforms and systems",
-          "Documentation and knowledge management",
-          "Integration with departmental workflows"
+          "Digital or manual tools",
+          "Logging and feedback techniques",
+          "Real-time vs retrospective tracking"
         ]
       },
       {
         slide: 7,
-        title: "Performance Monitoring & Quality Assurance",
+        title: "Data Capture & Reporting",
         content: [
-          `Monitoring framework for ${criticalWorkFunction}`,
-          "Quality indicators and performance metrics",
-          "Continuous improvement mechanisms",
-          "Audit and compliance tracking"
+          "How to document outcomes",
+          "Structured logs or templates",
+          "Communicating progress or deviations"
         ]
       },
       {
         slide: 8,
-        title: "Risk Management & Problem Resolution",
+        title: "Common Pitfalls & Risk Management",
         content: [
-          `Common challenges in ${criticalWorkFunction}`,
-          "Risk identification and assessment",
-          "Problem-solving methodologies",
-          "Escalation and resolution protocols"
+          `Frequent errors during tasks: ${formattedKeyTasks} execution`,
+          "Preventive and corrective strategies",
+          "Escalation criteria"
         ]
       },
       {
         slide: 9,
-        title: "Excellence & Best Practices in Critical Work Function",
+        title: "Best Practice Walkthrough",
         content: [
-          `Industry best practices for ${criticalWorkFunction}`,
-          "Innovation and improvement opportunities",
-          "Success stories and case studies",
-          modality.includes("Instructor-led") ? "Group exercises: Applying best practices" : "Self-reflection: Excellence development"
+          `Example scenario of successful tasks: ${formattedKeyTasks} monitoring`,
+          "Highlighting decision points",
+          modality.includes("Instructor-led") ? "Facilitator questions for discussion" : "Reflection prompts for learner"
         ]
       },
       {
         slide: 10,
-        title: "Mastery Assessment & Professional Development",
+        title: "Completion Criteria & Evaluation",
         content: [
-          `Competency assessment for ${criticalWorkFunction}`,
-          "Performance evaluation criteria",
-          "Career advancement pathways",
-          modality.includes("Self-paced") ? "Personal development action plan" : "Certification and mastery validation"
+          `Final checks for tasks: ${formattedKeyTasks} closure`,
+          "Quality assurance checkpoints",
+          modality.includes("Self-paced") ? "Self-assessment checklist" : "Facilitator sign-off checklist"
         ]
       }
     ],
     requirements: [
       "Ensure each slide has 3-5 bullet points with clear, actionable content under 40 words each",
-      "Use '-' prefix for all bullet points - do not use asterisks (*)",
-      "Follow EXACT output format: 'Slide X: Title' followed by bullet points starting with '-'",
-      "Include slide number and title in the response as shown in the format",
-      "Maintain strong focus on the Critical Work Function context throughout all slides",
-      "Emphasize departmental and job role relevance",
-      "Connect Critical Work Function mastery to organizational success",
-      "Maintain professional instructional tone with emphasis on competency development",
-      "Include practical examples relevant to the department and job role"
-    ],
-    critical_work_function_emphasis: {
-      primary_focus: criticalWorkFunction,
-      integration_approach: "Weave Critical Work Function context throughout all instructional content",
-      departmental_alignment: `Focus on ${cfg.department || "departmental"} application`,
-      job_role_specificity: `Tailor content for ${cfg.jobRole || "the specific job role"}`,
-      competency_development: "Focus on developing competencies that support the Critical Work Function",
-      performance_linkage: "Clearly link Critical Work Function mastery to job performance"
-    }
+      "Focus on practical successful task completion strategies",
+      "Maintain professional instructional tone throughout"
+    ]
   };
 
   return JSON.stringify(coursePromptObject, null, 2);
@@ -215,7 +226,7 @@ export function buildSkillPrompt(cfg: Config, industry: string) {
       target_proficiency_level: targetProficiencyDescription,
       modality: modality || " - "
     },
-   
+
     output_format: {
       total_slides: 10,
       slide_structure: "Each slide = 1 instructional unit",
@@ -388,9 +399,10 @@ export function buildPromptWithoutCWF(cfg: Config, industry: string) {
       industry: industry || " - ",
       department: cfg.department || " - ",
       job_role: cfg.jobRole || " - ",
+      key_task: cfg.tasks || " - ",
       modality: modality || " - "
     },
-    
+
     output_format: {
       total_slides: 10,
       slide_structure: "Each slide = 1 instructional unit",
@@ -405,6 +417,7 @@ Slide 1: Title Slide
 - Industry: [industry]
 - Department: [department]  
 - Job role: [job role]
+- Key Task: [key task]
 - Modality: [modality]
 - Focus: Professional excellence for [job role]
 
@@ -534,15 +547,33 @@ Slide 2: [title]
 }
 
 // Main build prompt function that selects the appropriate version based on template
-export function buildDynamicPrompt(cfg: Config, industry: string, templateId?: string) {
+export function buildDynamicPrompt(cfg: Config, industry: string, templateId?: string, allCwfTasks: string[] = []) {
+  console.log("🚀 buildDynamicPrompt called with:", {
+    templateId,
+    tasks: cfg.tasks,
+    skills: cfg.skills,
+    criticalWorkFunction: cfg.criticalWorkFunction,
+    allCwfTasks: allCwfTasks,
+    allCwfTasksLength: allCwfTasks?.length
+  });
+  
   // Use CWF-focused prompt for templates that include critical work function
   if (templateId === "t1" || cfg.criticalWorkFunction) {
-    return buildPrompt(cfg, industry);
+    console.log("📋 Using CWF-focused prompt with all tasks");
+    console.log("📋 All CWF tasks being passed:", allCwfTasks);
+    return buildPrompt(cfg, industry, allCwfTasks);
   }
   // Use skill-focused prompt for skill templates
   if (templateId === "t3" || (cfg.skills.length > 0 && cfg.skills[0])) {
+    console.log("📋 Using skill-focused prompt");
     return buildSkillPrompt(cfg, industry);
   }
+  // Use task-focused prompt for t2 template
+  if (templateId === "t2" || (cfg.tasks.length > 0 && cfg.tasks[0])) {
+    console.log("📋 Using task-focused prompt");
+    return buildPrompt(cfg, industry); // Use the same CWF prompt but tasks will be the focus
+  }
   // Use non-CWF prompt for other templates or when no specific focus is specified
+  console.log("📋 Using non-CWF prompt");
   return buildPromptWithoutCWF(cfg, industry);
 }
