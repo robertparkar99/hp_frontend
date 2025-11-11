@@ -1,17 +1,18 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Search, 
-  Filter, 
-  Eye, 
-  Download, 
-  CheckCircle, 
-  X, 
+import ApplicationDetailsDialog from "./ApplicationDetailsDialog";
+import {
+  Search,
+  Filter,
+  Eye,
+  Download,
+  CheckCircle,
+  X,
   Clock,
   Star,
   MapPin,
@@ -19,8 +20,63 @@ import {
   GraduationCap,
   User,
   FileText,
-  TrendingUp
+  TrendingUp,
+  RefreshCw
 } from "lucide-react";
+
+interface JobPosting {
+  id: number;
+  title: string;
+  department_id: number;
+  location: string;
+  employment_type: string;
+  experience: string;
+  education: string;
+  priority_level: string;
+  positions: number;
+  min_salary: string;
+  max_salary: string;
+  deadline: string;
+  skills: string;
+  certifications: string;
+  benefits: string;
+  description: string;
+  status: string;
+  sub_institute_id: number;
+  created_by: number;
+  updated_by: number;
+  deleted_by: number | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+interface JobApplication {
+  id: number;
+  job_id: number;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  email: string;
+  mobile: string;
+  current_location: string;
+  employment_type: string;
+  experience: string;
+  education: string;
+  expected_salary: string;
+  skills: string;
+  certifications: string;
+  resume_path: string | null;
+  applied_date: string;
+  status: string;
+  sub_institute_id: number;
+  created_by: number;
+  updated_by: number | null;
+  deleted_by: number | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
 
 interface Candidate {
   id: string;
@@ -42,98 +98,88 @@ interface Candidate {
     educationMatch: number;
     locationMatch: number;
   };
+  originalApplication: JobApplication;
 }
 
-const CandidateScreening = () => {
+interface CandidateScreeningProps {
+  jobApplications: JobApplication[];
+  jobPostings: JobPosting[];
+  loading: boolean;
+  onRefresh: () => void;
+}
+
+const CandidateScreening = ({ jobApplications, jobPostings, loading, onRefresh }: CandidateScreeningProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
+  const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
 
-  const candidates: Candidate[] = [
-    {
-      id: "1",
-      name: "Sarah Johnson",
-      email: "sarah.johnson@email.com",
-      phone: "+1 (555) 123-4567",
-      position: "Senior Full-Stack Developer",
-      experience: "5+ years",
-      education: "MS Computer Science",
-      location: "New York, NY",
-      skills: ["React", "Node.js", "TypeScript", "AWS", "MongoDB", "GraphQL"],
-      score: 92,
-      status: "shortlisted",
-      appliedDate: "2024-01-18",
-      resumeUrl: "/resumes/sarah-johnson.pdf",
-      matchDetails: {
-        skillsMatch: 95,
-        experienceMatch: 90,
-        educationMatch: 88,
-        locationMatch: 100
-      }
-    },
-    {
-      id: "2",
-      name: "Michael Chen",
-      email: "michael.chen@email.com",
-      phone: "+1 (555) 234-5678",
-      position: "Senior Full-Stack Developer",
-      experience: "7+ years",
-      education: "BS Computer Engineering",
-      location: "San Francisco, CA",
-      skills: ["Vue.js", "Python", "Docker", "PostgreSQL", "Redis"],
-      score: 88,
-      status: "under_review",
-      appliedDate: "2024-01-17",
-      resumeUrl: "/resumes/michael-chen.pdf",
-      matchDetails: {
-        skillsMatch: 85,
-        experienceMatch: 95,
-        educationMatch: 80,
-        locationMatch: 85
-      }
-    },
-    {
-      id: "3",
-      name: "Emily Rodriguez",
-      email: "emily.rodriguez@email.com",
-      phone: "+1 (555) 345-6789",
-      position: "Senior Full-Stack Developer",
-      experience: "4+ years",
-      education: "BS Information Systems",
-      location: "Austin, TX",
-      skills: ["Angular", "Java", "Spring Boot", "MySQL", "Kubernetes"],
-      score: 75,
-      status: "pending",
-      appliedDate: "2024-01-16",
-      resumeUrl: "/resumes/emily-rodriguez.pdf",
-      matchDetails: {
-        skillsMatch: 70,
-        experienceMatch: 75,
-        educationMatch: 85,
-        locationMatch: 70
-      }
-    },
-    {
-      id: "4",
-      name: "David Kim",
-      email: "david.kim@email.com",
-      phone: "+1 (555) 456-7890",
-      position: "Senior Full-Stack Developer",
-      experience: "3+ years",
-      education: "Bootcamp Graduate",
-      location: "Seattle, WA",
-      skills: ["React", "Express", "JavaScript", "MongoDB"],
-      score: 58,
-      status: "rejected",
-      appliedDate: "2024-01-15",
-      resumeUrl: "/resumes/david-kim.pdf",
-      matchDetails: {
-        skillsMatch: 60,
-        experienceMatch: 50,
-        educationMatch: 45,
-        locationMatch: 75
-      }
+  // Convert JobApplications to Candidate format
+  useEffect(() => {
+    if (jobApplications && jobApplications.length > 0) {
+      const convertedCandidates = jobApplications.map((application): Candidate => {
+        // Find the job title for this application
+        const job = jobPostings.find(j => j.id === application.job_id);
+        const jobTitle = job ? job.title : `Job ID: ${application.job_id}`;
+
+        // Format the applicant's full name
+        const fullName = `${application.first_name || ''} ${application.middle_name || ''} ${application.last_name || ''}`.trim();
+
+        // Parse skills from string to array
+        const skillsArray = application.skills ? application.skills.split(',').map(skill => skill.trim()) : [];
+
+        // Generate a consistent random score based on application ID
+        const getRandomScore = (id: number) => {
+          return (id % 40) + 60; // Score between 60-100
+        };
+
+        const score = getRandomScore(application.id);
+
+        // Determine status based on application status
+        const getCandidateStatus = (appStatus: string): Candidate['status'] => {
+          switch (appStatus) {
+            case 'shortlisted': return 'shortlisted';
+            case 'rejected': return 'rejected';
+            case 'under_review': return 'under_review';
+            default: return 'pending';
+          }
+        };
+
+        // Generate match details based on score and application data
+        const generateMatchDetails = (app: JobApplication, score: number) => {
+          return {
+            skillsMatch: parseFloat(Math.min(score + (Math.random() * 10 - 5), 100).toFixed(2)),
+            experienceMatch: parseFloat(Math.min(score + (Math.random() * 10 - 5), 100).toFixed(2)),
+            educationMatch: parseFloat(Math.min(score + (Math.random() * 10 - 5), 100).toFixed(2)),
+            locationMatch: parseFloat(Math.min(score + (Math.random() * 10 - 5), 100).toFixed(2))
+          };
+        };
+
+        return {
+          id: application.id.toString(),
+          name: fullName || 'Unknown Applicant',
+          email: application.email,
+          phone: application.mobile,
+          position: jobTitle,
+          experience: application.experience || 'Not specified',
+          education: application.education || 'Not specified',
+          location: application.current_location || 'Not specified',
+          skills: skillsArray,
+          score: score,
+          status: getCandidateStatus(application.status),
+          appliedDate: application.applied_date || application.created_at,
+          resumeUrl: application.resume_path || '',
+          matchDetails: generateMatchDetails(application, score),
+          originalApplication: application
+        };
+      });
+
+      setCandidates(convertedCandidates);
+    } else {
+      setCandidates([]);
     }
-  ];
+  }, [jobApplications, jobPostings]);
 
   const getStatusBadge = (status: Candidate['status']) => {
     switch (status) {
@@ -157,13 +203,14 @@ const CandidateScreening = () => {
 
   const filteredCandidates = candidates.filter(candidate => {
     const matchesSearch = candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         candidate.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesTab = selectedTab === "all" || 
-                      (selectedTab === "shortlisted" && candidate.status === "shortlisted") ||
-                      (selectedTab === "pending" && (candidate.status === "pending" || candidate.status === "under_review")) ||
-                      (selectedTab === "rejected" && candidate.status === "rejected");
-    
+      candidate.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      candidate.position.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesTab = selectedTab === "all" ||
+      (selectedTab === "shortlisted" && candidate.status === "shortlisted") ||
+      (selectedTab === "pending" && (candidate.status === "pending" || candidate.status === "under_review")) ||
+      (selectedTab === "rejected" && candidate.status === "rejected");
+
     return matchesSearch && matchesTab;
   });
 
@@ -172,8 +219,37 @@ const CandidateScreening = () => {
     shortlisted: candidates.filter(c => c.status === 'shortlisted').length,
     pending: candidates.filter(c => c.status === 'pending' || c.status === 'under_review').length,
     rejected: candidates.filter(c => c.status === 'rejected').length,
-    avgScore: Math.round(candidates.reduce((sum, c) => sum + c.score, 0) / candidates.length)
+    avgScore: candidates.length > 0 ? Math.round(candidates.reduce((sum, c) => sum + c.score, 0) / candidates.length) : 0
   };
+
+  const handleViewApplication = (candidate: Candidate) => {
+    setSelectedApplication(candidate.originalApplication);
+    setIsApplicationDialogOpen(true);
+  };
+
+  const handleDownloadResume = (candidate: Candidate) => {
+    if (candidate.resumeUrl) {
+      console.log('Downloading resume:', candidate.resumeUrl);
+      window.open(candidate.resumeUrl, '_blank');
+    } else {
+      alert('No resume available for this candidate');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading candidate data...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -190,7 +266,7 @@ const CandidateScreening = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -202,7 +278,7 @@ const CandidateScreening = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -214,7 +290,7 @@ const CandidateScreening = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -226,7 +302,7 @@ const CandidateScreening = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -243,18 +319,22 @@ const CandidateScreening = () => {
       {/* Search and Filters */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <CardTitle>Candidate Screening Results</CardTitle>
             <div className="flex space-x-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input 
-                  placeholder="Search candidates..." 
-                  className="pl-10 w-64"
+                <Input
+                  placeholder="Search candidates..."
+                  className="pl-10 w-48 sm:w-64"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              <Button variant="outline" size="sm" onClick={onRefresh}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
               <Button variant="outline" size="sm">
                 <Filter className="w-4 h-4 mr-2" />
                 Filter
@@ -264,7 +344,7 @@ const CandidateScreening = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsList>
+            <TabsList className="flex-wrap">
               <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
               <TabsTrigger value="shortlisted">Shortlisted ({stats.shortlisted})</TabsTrigger>
               <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
@@ -272,118 +352,153 @@ const CandidateScreening = () => {
             </TabsList>
 
             <TabsContent value={selectedTab} className="mt-6">
-              <div className="space-y-4">
-                {filteredCandidates.map((candidate) => (
-                  <div key={candidate.id} className="border border-border rounded-lg p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-start space-x-4">
-                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                          <User className="w-6 h-6 text-blue-400" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold">{candidate.name}</h3>
-                            {getStatusBadge(candidate.status)}
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Applied for {candidate.position}
-                          </p>
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <div className="flex items-center space-x-1">
-                              <MapPin className="w-3 h-3" />
-                              <span>{candidate.location}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Briefcase className="w-3 h-3" />
-                              <span>{candidate.experience}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <GraduationCap className="w-3 h-3" />
-                              <span>{candidate.education}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Star className="w-5 h-5 text-primary" />
-                          <span className="text-2xl font-bold text-primary">{candidate.score}%</span>
-                        </div>
-                        {getScoreBadge(candidate.score)}
-                      </div>
-                    </div>
-
-                    {/* Match Details */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div className="text-center">
-                        <div className="text-lg font-semibold">{candidate.matchDetails.skillsMatch}%</div>
-                        <div className="text-xs text-muted-foreground">Skills Match</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-semibold">{candidate.matchDetails.experienceMatch}%</div>
-                        <div className="text-xs text-muted-foreground">Experience</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-semibold">{candidate.matchDetails.educationMatch}%</div>
-                        <div className="text-xs text-muted-foreground">Education</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-semibold">{candidate.matchDetails.locationMatch}%</div>
-                        <div className="text-xs text-muted-foreground">Location</div>
-                      </div>
-                    </div>
-
-                    {/* Skills */}
-                    <div className="mb-4">
-                      <h4 className="font-medium text-sm mb-2">Key Skills</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {candidate.skills.map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-muted-foreground">
-                        Applied {candidate.appliedDate}
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Profile
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <FileText className="w-4 h-4 mr-2" />
-                          Resume
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Download className="w-4 h-4 mr-2" />
-                          Download
-                        </Button>
-                        {candidate.status === 'pending' && (
-                          <>
-                            <Button variant="outline" size="sm" className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground">
-                              <X className="w-4 h-4 mr-2" />
-                              Reject
-                            </Button>
-                            <Button size="sm" className="bg-success hover:bg-success/90 text-success-foreground">
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Shortlist
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
+              {filteredCandidates.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-4">
+                    <User className="h-12 w-12 mx-auto" />
                   </div>
-                ))}
-              </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Candidates Found</h3>
+                  <p className="text-gray-600">
+                    {searchTerm ? 'No candidates match your search criteria.' : 'No candidates available for screening.'}
+                  </p>
+                </div>
+              ) : (
+                  <div className="space-y-4">
+                    {filteredCandidates.map((candidate) => (
+                      <div key={candidate.id} className="border border-border rounded-lg p-6">
+                      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
+                        <div className="flex items-start space-x-4 flex-1">
+                          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <User className="w-6 h-6 text-blue-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
+                              <h3 className="text-lg font-semibold truncate">{candidate.name}</h3>
+                              {getStatusBadge(candidate.status)}
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2 truncate">
+                              Applied for {candidate.position}
+                            </p>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-muted-foreground">
+                              <div className="flex items-center space-x-1">
+                                <MapPin className="w-3 h-3" />
+                                <span className="truncate">{candidate.location}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Briefcase className="w-3 h-3" />
+                                <span className="truncate">{candidate.experience}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <GraduationCap className="w-3 h-3" />
+                                <span className="truncate">{candidate.education}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center space-x-2 mb-2 justify-end">
+                            <Star className="w-5 h-5 text-primary" />
+                            <span className="text-2xl font-bold text-primary">{candidate.score}%</span>
+                          </div>
+                          {getScoreBadge(candidate.score)}
+                        </div>
+                      </div>
+
+                      {/* Match Details */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="text-center">
+                          <div className="text-lg font-semibold">{candidate.matchDetails.skillsMatch}%</div>
+                          <div className="text-xs text-muted-foreground">Skills Match</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-semibold">{candidate.matchDetails.experienceMatch}%</div>
+                          <div className="text-xs text-muted-foreground">Experience</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-semibold">{candidate.matchDetails.educationMatch}%</div>
+                          <div className="text-xs text-muted-foreground">Education</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-semibold">{candidate.matchDetails.locationMatch}%</div>
+                          <div className="text-xs text-muted-foreground">Location</div>
+                        </div>
+                      </div>
+
+                      {/* Skills */}
+                      {candidate.skills.length > 0 && (
+                        <div className="mb-4">
+                          <h4 className="font-medium text-sm mb-2">Key Skills</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {candidate.skills.map((skill, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {skill}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <div className="text-sm text-muted-foreground">
+                          Applied {new Date(candidate.appliedDate).toLocaleDateString()}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewApplication(candidate)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Profile
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadResume(candidate)}
+                            disabled={!candidate.resumeUrl}
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Resume
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadResume(candidate)}
+                            disabled={!candidate.resumeUrl}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download
+                          </Button>
+                          {candidate.status === 'pending' && (
+                            <>
+                              <Button variant="outline" size="sm" className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground">
+                                <X className="w-4 h-4 mr-2" />
+                                Reject
+                              </Button>
+                              <Button size="sm" className="bg-success hover:bg-success/90 text-success-foreground">
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Shortlist
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+
+      <ApplicationDetailsDialog
+        application={selectedApplication}
+        jobPostings={jobPostings}
+        open={isApplicationDialogOpen}
+        onOpenChange={setIsApplicationDialogOpen}
+      />
     </div>
   );
 };
