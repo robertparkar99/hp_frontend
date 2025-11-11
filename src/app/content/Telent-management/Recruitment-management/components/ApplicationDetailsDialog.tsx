@@ -137,14 +137,14 @@ const ApplicationDetailsDialog = ({
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Application Details
             </DialogTitle>
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               onClick={() => onOpenChange(false)}
               className="h-8 w-8 p-0"
             >
               <X className="h-4 w-4" />
-            </Button>
+            </Button> */}
           </div>
         </DialogHeader>
 

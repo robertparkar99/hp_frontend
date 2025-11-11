@@ -708,10 +708,10 @@ const CandidatePortal = () => {
         </div>
 
         <Tabs defaultValue="jobs" className="space-y-6">
-          <TabsList className="bg-[#EFF4FF]">
+          {/* <TabsList className="bg-[#EFF4FF]">
             <TabsTrigger value="jobs">Browse Jobs</TabsTrigger>
             <TabsTrigger value="upload">Upload Resume</TabsTrigger>
-          </TabsList>
+          </TabsList> */}
 
           <TabsContent value="jobs" className="space-y-6">
             {/* Search Bar */}

@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -34,7 +36,39 @@ export default function AddUserModal({
 
   const [fetchedUserProfiles, setFetchedUserProfiles] = useState(initialUserProfiles);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [existingEmails, setExistingEmails] = useState([]);
 
+  // Fetch existing users' emails for validation
+  useEffect(() => {
+    if (!sessionData?.APP_URL) return;
+
+    const fetchExistingEmails = async () => {
+      try {
+        const response = await fetch(
+          `${sessionData.APP_URL}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.sub_institute_id || 1}`,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch existing users");
+
+        const result = await response.json();
+
+        // Extract emails from existing users
+        const emails = result.map(user => user.email?.toLowerCase().trim());
+        setExistingEmails(emails || []);
+      } catch (error) {
+        console.error("Error fetching existing emails:", error);
+        setExistingEmails([]);
+      }
+    };
+
+    fetchExistingEmails();
+  }, [sessionData]);
+
+  // Fetch user profiles
   useEffect(() => {
     if (!sessionData?.APP_URL) return;
 
@@ -53,8 +87,6 @@ export default function AddUserModal({
         if (!response.ok) throw new Error("Failed to fetch profiles");
 
         const result = await response.json();
-
-        // ✅ Your API already returns an array of objects
         setFetchedUserProfiles(result || []);
       } catch (error) {
         console.error("Error fetching user profiles:", error);
@@ -126,6 +158,7 @@ export default function AddUserModal({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
   const handleInputChange = (section, field, value) => {
     setFormData((prev) => ({
@@ -135,6 +168,17 @@ export default function AddUserModal({
         [field]: value,
       },
     }));
+
+    // Clear email error when user starts typing
+    if (field === "email") {
+      setEmailError("");
+    }
+  };
+
+  // Email validation function
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   const handleCheckboxChange = (day) => {
@@ -159,8 +203,26 @@ export default function AddUserModal({
     }
   };
 
+  const checkEmailExists = (email) => {
+    const normalizedEmail = email.toLowerCase().trim();
+    return existingEmails.includes(normalizedEmail);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate email format
+    if (!validateEmail(formData.personal.email)) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+
+    // Check if email already exists
+    if (checkEmailExists(formData.personal.email)) {
+      alert("An employee with this email address already exists. Please use a different email.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -173,9 +235,8 @@ export default function AddUserModal({
       formDataToSend.append("created_by", sessionData.user_id || "");
 
       formDataToSend.append("name_suffix", formData.personal.name_suffix);
-      formDataToSend.append("user_name", formData.personal.first_name); // required
+      formDataToSend.append("user_name", formData.personal.first_name);
       formDataToSend.append("first_name", formData.personal.first_name);
-
       formDataToSend.append("middle_name", formData.personal.middle_name);
       formDataToSend.append("last_name", formData.personal.last_name);
       formDataToSend.append("email", formData.personal.email);
@@ -186,7 +247,7 @@ export default function AddUserModal({
       formDataToSend.append("allocated_standards", formData.personal.jobrole);
       formDataToSend.append("subject_ids", formData.personal.responsibility_level);
       formDataToSend.append("gender", formData.personal.gender);
-      formDataToSend.append("user_profile_id", formData.personal.user_profile_id); // required
+      formDataToSend.append("user_profile_id", formData.personal.user_profile_id);
       formDataToSend.append("join_year", formData.personal.join_year);
       formDataToSend.append("status", formData.personal.status);
 
@@ -233,9 +294,7 @@ export default function AddUserModal({
       formDataToSend.append("ifsc_code", formData.deposit.ifsc);
       formDataToSend.append("amount", formData.deposit.amount);
       formDataToSend.append("transfer_type", formData.deposit.transfer_type);
-      //fix jobtitle_id remove hardcode
-      // formDataToSend.append("jobtitle_id", formData.personal.jobrole);
-        formDataToSend.append("jobtitle_id", formData.personal.jobrole); // For jobrole ID
+      formDataToSend.append("jobtitle_id", formData.personal.jobrole);
       formDataToSend.append("submit", "Update");
 
       const response = await fetch(
@@ -263,8 +322,6 @@ export default function AddUserModal({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-4xl overflow-y-auto max-h-[95vh]">
-
-
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Personal Information */}
           <section>
@@ -337,7 +394,11 @@ export default function AddUserModal({
                     handleInputChange("personal", "email", e.target.value)
                   }
                   required
+                  className={emailError ? "border-red-500" : ""}
                 />
+                {emailError && (
+                  <p className="text-red-500 text-sm mt-1">{emailError}</p>
+                )}
               </div>
 
               <div>
@@ -353,6 +414,7 @@ export default function AddUserModal({
                 />
               </div>
 
+              {/* Rest of the form remains the same */}
               <div>
                 <Label>Birthdate</Label>
                 <Input
@@ -375,6 +437,7 @@ export default function AddUserModal({
                   required
                 />
               </div>
+
               <div>
                 <Label>Department <span className="text-red-500">*</span></Label>
                 <Select
