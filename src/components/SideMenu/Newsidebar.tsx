@@ -3,7 +3,8 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { CornerDownRight, ChevronLeft, ChevronRight, Home } from "lucide-react"; // Added Home icon
 import { motion, AnimatePresence } from "framer-motion";
-import { UserProfile } from "./UserProfile"; // UserProfile import करें
+import { UserProfile } from "./UserProfile"; 
+import GlobalFooter from "./GlobalFooter"; // Import GlobalFooter
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -668,6 +669,8 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                     )}
                 </div>
             </aside>
+            { /* Global Footer with Chatbot */ }
+             <GlobalFooter />
         </>
     );
 }

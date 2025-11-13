@@ -8,6 +8,38 @@ const data = [
   { type: "Other", planned: 15, unplanned: 8 },
 ];
 
+// Custom Tooltip component
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-3">
+        <p className="font-semibold text-gray-900 text-sm mb-2">{label}</p>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <span className="text-xs text-gray-600">Planned</span>
+            </div>
+            <span className="font-medium text-gray-900 text-xs">
+              {payload[0].value}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+              <span className="text-xs text-gray-600">Unplanned</span>
+            </div>
+            <span className="font-medium text-gray-900 text-xs">
+              {payload[1].value}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export const LeaveChart = () => {
   return (
     <Card className="h-full">
@@ -47,26 +79,8 @@ export const LeaveChart = () => {
               width={30} // Fixed width for YAxis
             />
             <Tooltip 
-              contentStyle={{
-                backgroundColor: "white",
-                border: "1px solid #e5e7eb",
-                borderRadius: "6px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                fontSize: "12px",
-                padding: "8px 12px",
-              }}
-              labelStyle={{ 
-                color: "#111827", 
-                fontWeight: "bold",
-                fontSize: "12px",
-                marginBottom: "4px"
-              }}
-              itemStyle={{ 
-                color: "#374151",
-                fontSize: "11px",
-                padding: "2px 0"
-              }}
-              formatter={(value) => [`${value}`, ""]}
+              content={<CustomTooltip />}
+              cursor={{ fill: 'rgba(243, 244, 246, 0.5)' }}
             />
             <Legend 
               verticalAlign="top"
