@@ -264,7 +264,7 @@ const MyLearningDashboard: React.FC = () => {
       
       <main className="pt-16 pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <Breadcrumb />
+          {/* <Breadcrumb /> */}
           
           {/* Page Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">

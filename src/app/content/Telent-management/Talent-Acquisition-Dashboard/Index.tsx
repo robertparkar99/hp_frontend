@@ -229,9 +229,9 @@ const Index = () => {
                 Real-time hiring pipeline and team performance insights
               </p>
             </div>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+            {/* <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
               Export Report
-            </Button>
+            </Button> */}
           </div>
         </div>
       </header>
