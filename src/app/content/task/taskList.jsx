@@ -44,7 +44,7 @@ const TaskAssignment = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Task Assignment</h1>
+              <h1 className="text-2xl font-bold text-foreground">Task Progress Assignment</h1>
                 <p className="text-muted-foreground text-sm">
                   Assign learning tasks, assessments, and development activities to employees
                 </p>
