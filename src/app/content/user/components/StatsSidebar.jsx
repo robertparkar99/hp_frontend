@@ -45,10 +45,10 @@ const StatsSidebar = ({
       <div className="bg-card border border-border rounded-lg p-6">
         <h3 className="text-xl font-semibold text-foreground mb-4">Overview</h3>
         <div className="space-y-4">
-          <div className="flex justify-between">
+          {/* <div className="flex justify-between">
             <span>Total Employees</span>
             <span>{stats.totalEmployees}</span>
-          </div>
+          </div> */}
           <div className="flex justify-between">
             <span>Active</span>
             <span>{stats.activeEmployees}</span>

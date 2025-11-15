@@ -581,7 +581,7 @@
 //     >
 //       <HelpCircle className="w-5 h-5 text-gray-600" />
 //     </button>
-  
+
 
 //   {/* Filter + View Toggle - Right */}
 //   <div className="flex items-center space-x-2">
@@ -614,7 +614,7 @@
 //               </SelectContent>
 //             </Select>
 //           </div>
-          
+
 //           <div>
 //             <label className="block text-sm font-medium mb-2">
 //               Job Role
@@ -833,22 +833,23 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Atom } from "react-loading-indicators";
-import { 
-  Funnel, 
-  Square, 
-  Table, 
-  Copy, 
-  Edit, 
-  Trash, 
-  Sparkles, 
-  Plus, 
-  SlidersHorizontal, 
-  ListChecks, 
-  Download, 
-  Settings, 
-  HelpCircle ,
+import {
+  Funnel,
+  Square,
+  Table,
+  Copy,
+  Edit,
+  Trash,
+  Sparkles,
+  Plus,
+  SlidersHorizontal,
+  ListChecks,
+  Download,
+  Settings,
+  HelpCircle,
   Search,
-  MoreVertical
+  MoreVertical,
+  Upload
 } from "lucide-react";
 import {
   Select,
@@ -1117,7 +1118,10 @@ const CriticalWorkFunctionGrid = () => {
     setIsActionsMenuOpen(false);
     alert("Export feature coming soon!");
   };
-
+const handleImport = () => {
+    setIsActionsMenuOpen(false);
+    alert("Import feature coming soon!");
+  };
   const handleSettings = () => {
     setIsActionsMenuOpen(false);
     setShowSettingsModal(true);
@@ -1369,211 +1373,201 @@ const CriticalWorkFunctionGrid = () => {
     <>
       <div className="min-h-screen p-4">
         {/* Top filter + Toggle */}
-   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-  {/* Search Bar - Left */}
-  <div className="flex-1 max-w-md">
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-      <input
-        type="text"
-        placeholder="Search jobrole task, categories, or proficiency levels..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      />
-    </div>
-  </div>
-
-  {/* Right Section - More Icon + Filter + View Toggle */}
-  <div className="flex items-center space-x-2">
-    {/* Consolidated Actions Dropdown */}
-   
-
-    {/* Filter */}
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
-          <Funnel className="w-5 h-5" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Department
-            </label>
-            <Select
-              value={selectedDept}
-              onValueChange={handleDepartmentChange}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Department" />
-              </SelectTrigger>
-              <SelectContent>
-                {uniqueDepartments.map((dept, idx) => (
-                  <SelectItem key={idx} value={dept}>
-                    {dept}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+          {/* Search Bar - Left */}
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search jobrole task, categories, or proficiency levels..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Job Role
-            </label>
-            <Select
-              value={selectedJobrole}
-              onValueChange={handleJobroleChange}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Jobrole" />
-              </SelectTrigger>
-              <SelectContent>
-                {uniqueJobroles.map((role, idx) => (
-                  <SelectItem key={idx} value={role}>
-                    {role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Work Function
-            </label>
-            <Select
-              value={selectedFunction}
-              onValueChange={setSelectedFunction}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Function" />
-              </SelectTrigger>
-              <SelectContent>
-                {uniqueFunctions.map((func, idx) => (
-                  <SelectItem key={idx} value={func}>
-                    {func}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
 
-    {/* View Toggle */}
-    <div className="flex border rounded-md overflow-hidden">
-      <button
-        onClick={() => setViewMode("myview")}
-        className={`px-3 py-2 flex items-center justify-center transition-colors ${
-          viewMode === "myview"
-            ? "bg-blue-100 text-blue-600 border-blue-300"
-            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-        }`}
-      >
-        <Square className="h-5 w-5" />
-      </button>
-      <button
-        onClick={() => setViewMode("table")}
-        className={`px-3 py-2 flex items-center justify-center transition-colors ${
-          viewMode === "table"
-            ? "bg-blue-100 text-blue-600 border-blue-300"
-            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-        }`}
-      >
-        <Table className="h-5 w-5" />
-      </button>
-    </div>
+          {/* Right Section - More Icon + Filter + View Toggle */}
+          <div className="flex items-center space-x-2">
+            {/* Consolidated Actions Dropdown */}
 
-     <div className="relative">
-      <button 
-        onClick={toggleActionsMenu}
-        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-        title="More Actions"
-      >
-        <MoreVertical className="w-5 h-5 text-gray-600" />
-      </button>
 
-      {/* Horizontal Dropdown Menu */}
-      {isActionsMenuOpen && (
-        <div 
-          className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex gap-1">
-            {/* Generative AI Assistant */}
-            <button 
-              onClick={handleAISuggest}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="AI Suggestions"
-            >
-              <Sparkles className="w-5 h-5 text-gray-600" />
-            </button>
+            {/* Filter */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
+                  <Funnel className="w-5 h-5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Department
+                    </label>
+                    <Select
+                      value={selectedDept}
+                      onValueChange={handleDepartmentChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {uniqueDepartments.map((dept, idx) => (
+                          <SelectItem key={idx} value={dept}>
+                            {dept}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            {/* Add Job Role */}
-            <button 
-              onClick={handleAddJobRole}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Add Job Role"
-            >
-              <Plus className="w-5 h-5 text-gray-600" />
-            </button>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Job Role
+                    </label>
+                    <Select
+                      value={selectedJobrole}
+                      onValueChange={handleJobroleChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Jobrole" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {uniqueJobroles.map((role, idx) => (
+                          <SelectItem key={idx} value={role}>
+                            {role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Work Function
+                    </label>
+                    <Select
+                      value={selectedFunction}
+                      onValueChange={setSelectedFunction}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Function" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {uniqueFunctions.map((func, idx) => (
+                          <SelectItem key={idx} value={func}>
+                            {func}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
-            {/* Custom Fields */}
-            <button 
-              onClick={handleCustomFields}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Custom Fields"
-            >
-              <SlidersHorizontal className="w-5 h-5 text-gray-600" />
-            </button>
-
-            {/* Bulk Actions */}
-            {selectedTasks.length > 0 && (
-              <button 
-                onClick={handleBulkActions}
-                className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Bulk Actions"
+            {/* View Toggle */}
+            <div className="flex border rounded-md overflow-hidden">
+              <button
+                onClick={() => setViewMode("myview")}
+                className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "myview"
+                  ? "bg-blue-100 text-blue-600 border-blue-300"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
               >
-                <ListChecks className="w-5 h-5 text-gray-600" />
+                <Square className="h-5 w-5" />
               </button>
-            )}
+              <button
+                onClick={() => setViewMode("table")}
+                className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "table"
+                  ? "bg-blue-100 text-blue-600 border-blue-300"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+              >
+                <Table className="h-5 w-5" />
+              </button>
+            </div>
 
-            {/* Export */}
-            <button 
-              onClick={handleExport}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Export"
-            >
-              <Download className="w-5 h-5 text-gray-600" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={toggleActionsMenu}
+                className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                title="More Actions"
+              >
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
 
-            {/* Settings */}
-            <button 
-              onClick={handleSettings}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Settings"
-            >
-              <Settings className="w-5 h-5 text-gray-600" />
-            </button>
+              {/* Horizontal Dropdown Menu */}
+              {isActionsMenuOpen && (
+                <div
+                  className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex gap-1">
+                    {/* Generative AI Assistant */}
+                    <button
+                      onClick={handleAISuggest}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="AI Suggestions"
+                    >
+                      <Sparkles className="w-5 h-5 text-gray-600" />
+                    </button>
 
-            {/* Help */}
-            <button 
-              onClick={handleHelp}
-              className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Help"
-            >
-              <HelpCircle className="w-5 h-5 text-gray-600" />
-            </button>
+                  
+
+                    {/* Bulk Actions */}
+                    {selectedTasks.length > 0 && (
+                      <button
+                        onClick={handleBulkActions}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Bulk Actions"
+                      >
+                        <ListChecks className="w-5 h-5 text-gray-600" />
+                      </button>
+                    )}
+
+
+                    <button
+                      onClick={handleImport}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Import jobrole task"
+                    >
+                      <Upload className="w-5 h-5 text-gray-600" />
+                    </button>
+                    {/* Export */}
+                    <button
+                      onClick={handleExport}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Export jobrole task"
+                    >
+                      <Download className="w-5 h-5 text-gray-600" />
+                    </button>
+
+                    {/* Settings */}
+                    <button
+                      onClick={handleSettings}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Settings"
+                    >
+                      <Settings className="w-5 h-5 text-gray-600" />
+                    </button>
+
+                    {/* Help */}
+                    <button
+                      onClick={handleHelp}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Help"
+                    >
+                      <HelpCircle className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      )}
-    </div>
-  </div>
-</div>
- 
+
         {/* ✅ Toggle between Card View and Table View */}
         {viewMode === "myview" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1611,20 +1605,14 @@ const CriticalWorkFunctionGrid = () => {
                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                     onClick={() => handleEditClick(item.id, item.jobrole)}
                   >
-                    <Edit size={16}/>
+                    <Edit size={16} />
                   </button>
-                  <button
-                    className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                    onClick={() => handleCloneTask(item.id)}
-                    title="Clone"
-                  >
-                    <Copy size={16} />
-                  </button>
+
                   <button
                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                     onClick={() => handleDeleteClick(item.id)}
                   >
-                    <Trash size={16}/>
+                    <Trash size={16} />
                   </button>
                 </div>
               </div>

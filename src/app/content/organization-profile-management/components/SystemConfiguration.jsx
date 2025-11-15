@@ -678,7 +678,8 @@ const SystemConfiguration = () => {
         className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white shadow border border-gray-200 p-6 rounded-lg mb-10"
       >
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Name{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <input
             type="text"
             value={formData.name}
@@ -689,7 +690,8 @@ const SystemConfiguration = () => {
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <textarea
             value={formData.description}
             onChange={(e) => handleChange("description", e.target.value)}
@@ -699,7 +701,8 @@ const SystemConfiguration = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Department{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <select
             value={formData.departmentName}
             onChange={(e) => handleChange("departmentName", e.target.value)}
@@ -716,14 +719,15 @@ const SystemConfiguration = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <select
             value={formData.assignedTo}
             onChange={(e) => handleChange("assignedTo", e.target.value)}
             className="w-full border border-gray-300 rounded-md px-3 py-2"
             required
           >
-            <option value="">Select User</option>
+            <option value="">Select Employee </option>
             {userOptions.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.name}
@@ -733,7 +737,8 @@ const SystemConfiguration = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Due Date{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <input
             type="date"
             value={formData.dueDate}
@@ -744,7 +749,8 @@ const SystemConfiguration = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Frequency{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <select
             value={formData.frequency}
             onChange={(e) => handleChange("frequency", e.target.value)}
@@ -765,7 +771,8 @@ const SystemConfiguration = () => {
         {formData.frequency === "Custom" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Custom Frequency Date
+              Custom Frequency Date{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
             </label>
             <input
               type="date"
@@ -856,7 +863,8 @@ const SystemConfiguration = () => {
             className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4"
           >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <input
                 type="text"
                 value={editFormData.name}
@@ -867,7 +875,8 @@ const SystemConfiguration = () => {
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
+                Description{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
               </label>
               <textarea
                 value={editFormData.description}
@@ -877,7 +886,8 @@ const SystemConfiguration = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Department{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <select
                 value={editFormData.departmentName}
                 onChange={(e) => handleEditChange("departmentName", e.target.value)}
@@ -893,7 +903,8 @@ const SystemConfiguration = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <select
                 value={editFormData.assignedTo}
                 onChange={(e) => handleEditChange("assignedTo", e.target.value)}
@@ -909,7 +920,8 @@ const SystemConfiguration = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <input
                 type="date"
                 value={editFormData.dueDate}
@@ -920,7 +932,8 @@ const SystemConfiguration = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Frequency{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <select
                 value={editFormData.frequency}
                 onChange={(e) => handleEditChange("frequency", e.target.value)}
@@ -941,7 +954,8 @@ const SystemConfiguration = () => {
             {editFormData.frequency === "Custom" && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Custom Frequency Date
+                  Custom Frequency Date{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <input
                   type="date"

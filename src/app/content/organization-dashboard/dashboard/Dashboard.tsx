@@ -292,7 +292,7 @@ export function Dashboard() {
             <MetricCard
               title="Compliance"
               value={loading ? "..." : data?.total_complainces?.toString() || "0"}
-              change={{ value: "-3 from last week", type: "negative" }}
+              // change={{ value: "-3 from last week", type: "negative" }}
               icon={ShieldCheck}
               description="Awaiting management approval"
             />
@@ -300,7 +300,7 @@ export function Dashboard() {
             <MetricCard
               title="Disciplinary"
               value={loading ? "..." : data?.total_disciplinary?.toString() || "0"}
-              change={{ value: "+2 vs last quarter", type: "positive" }}
+              // change={{ value: "+2 vs last quarter", type: "positive" }}
               icon={AudioLines}
               description="Active disciplinary actions"
             />

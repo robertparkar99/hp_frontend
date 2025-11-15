@@ -347,7 +347,7 @@
 //   return (
 //     <>
 //       {/* 🔽 Top Action Bar */}
-     
+
 //       {/* 🔽 Search Bar (Conditional) */}
 //       {showSearch && (
 //         <div className="px-4 mb-4">
@@ -471,10 +471,10 @@
 //             <HelpCircle className="w-5 h-5 text-gray-600" />
 //           </button>
 //         </div>
-     
 
 
-      
+
+
 
 //         <Popover>
 //           <PopoverTrigger asChild>
@@ -780,6 +780,16 @@ const BehaviourGrid = () => {
 
   const [sessionData, setSessionData] = useState<SessionData>({});
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [favorites, setFavorites] = useState<{ [key: number]: boolean }>({});
+
+
+  const handleClick = (id: number) => {
+    setFavorites((prev) => ({
+      ...prev,
+      [id]: !prev[id], // toggle only that card’s star
+    }));
+  };
+
 
   const [columnFilters, setColumnFilters] = useState({
     classification_item: "",
@@ -897,6 +907,15 @@ const BehaviourGrid = () => {
     selectedSubCategory,
     sessionData.sub_institute_id,
   ]);
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem("favorites");
+    if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+  }, [favorites]);
+
 
   // ---------- Clear all filters ----------
   const clearAllFilters = () => {
@@ -1092,7 +1111,7 @@ const BehaviourGrid = () => {
         </div>
 
         <div className="flex items-center gap-1">
-       
+
 
           {/* Utility Icons Dropdown */}
           <Popover>
@@ -1165,27 +1184,25 @@ const BehaviourGrid = () => {
           <div className="flex border rounded-md overflow-hidden">
             <button
               onClick={() => setViewMode("cards")}
-              className={`px-3 py-2 flex items-center justify-center ${
-                viewMode === "cards"
+              className={`px-3 py-2 flex items-center justify-center ${viewMode === "cards"
                   ? "bg-blue-100 text-blue-600"
                   : "bg-white text-gray-600 hover:bg-gray-100"
-              }`}
+                }`}
             >
               <Square className="h-5 w-5" />
             </button>
 
             <button
               onClick={() => setViewMode("table")}
-              className={`px-3 py-2 flex items-center justify-center ${
-                viewMode === "table"
+              className={`px-3 py-2 flex items-center justify-center ${viewMode === "table"
                   ? "bg-blue-100 text-blue-600"
                   : "bg-white text-gray-600 hover:bg-gray-100"
-              }`}
+                }`}
             >
               <Table className="h-5 w-5" />
             </button>
           </div>
-             {/* Action Icons Dropdown */}
+          {/* Action Icons Dropdown */}
           <Popover>
             <PopoverTrigger asChild>
               <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -1203,16 +1220,6 @@ const BehaviourGrid = () => {
                   title="Add New Behavior"
                 >
                   <Plus className="w-5 h-5 text-gray-600" />
-                </button>
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <Settings className="w-5 h-5 text-gray-600" />
-              </button>
-                {/* Add Custom Fields */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Add Custom Fields"
-                >
-                  <ListPlus className="w-5 h-5 text-gray-600" />
                 </button>
 
                 {/* AI Suggestions */}
@@ -1241,10 +1248,22 @@ const BehaviourGrid = () => {
 
                 {/* Favorites */}
                 <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                   title="Favorites"
+                                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+
                 >
-                  <Star className="w-5 h-5 text-gray-600" />
+                  <Star
+                    className="w-5 h-5 text-gray-600"/>
+                </button>
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Settings className="w-5 h-5 text-gray-600" />
+                </button>
+                {/* Add Custom Fields */}
+                <button
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  title="Add Custom Fields"
+                >
+                  <ListPlus className="w-5 h-5 text-gray-600" />
                 </button>
 
                 {/* Share */}
@@ -1281,9 +1300,20 @@ const BehaviourGrid = () => {
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   {/* Favorite Star */}
-                  <button className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* <button className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Star className="w-4 h-4 text-gray-400 hover:text-yellow-500" />
-                  </button>
+                  </button> */}
+<button
+  onClick={() => handleClick(card.id)}
+  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+>
+  <Star
+    className={`w-4 h-4 transition-colors duration-200 ${
+      favorites[card.id] ? "text-yellow-500 fill-yellow-500" : "text-gray-400"
+    }`}
+  />
+</button>
+
 
                   <h3
                     className="text-blue-800 font-bold text-[16px] mb-3 pr-6 truncate"
