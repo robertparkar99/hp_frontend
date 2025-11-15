@@ -927,12 +927,12 @@ const CandidatePortal = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                  <label htmlFor="current_location" className="text-sm font-medium">Current Location *</label>
+                                  <label htmlFor="current_location" className="text-sm font-medium">Preferred Location *</label>
                                   <Input
                                     id="current_location"
                                     value={formData.current_location}
                                     onChange={(e) => handleInputChange('current_location', e.target.value)}
-                                    placeholder="New York, NY"
+                                    placeholder="Surat, Mumbai"
                                     required
                                   />
                                 </div>

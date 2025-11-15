@@ -460,7 +460,7 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>Job Role</Label>
+                <Label>Job Role<span className="text-red-500">*</span></Label>
                 <Select
                   value={formData.personal.jobrole}
                   onValueChange={(val) =>
