@@ -305,10 +305,10 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Import */}
-          <Button variant="outline" size="sm" onClick={handleImport} title='Import All Department'>
+          {/* <Button variant="outline" size="sm" onClick={handleImport} title='Import All Department'>
             <Icon name="FileUp" size={16} />
 
-          </Button>
+          </Button> */}
 
           {/* Settings */}
           <Button variant="outline" size="sm" title='settings'>
