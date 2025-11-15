@@ -12,7 +12,7 @@ const OrganizationProfileManagement = () => {
 
   const tabs = [
     { id: 'info', label: 'Organization Info', icon: 'Building2' },
-    { id: 'structure', label: 'Department Structure', icon: 'Users' },
+    { id: 'structure', label: 'Department Management', icon: 'Users' },
     { id: 'config', label: 'Compliance Management', icon: 'Settings' },
     // { id: 'audit', label: 'Organization Handbook', icon: 'FileText' },
     { id: 'disciplinary', label: 'Disciplinary Management', icon: 'FileText' }

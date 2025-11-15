@@ -1023,7 +1023,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
                   <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <Input
-                  placeholder="e.g., Remote, New York, NY"
+                  placeholder="e.g., Surat, Mumbai"
                   value={formData.location}
                   onChange={(e) => handleInputChange('location', e.target.value)}
                   className={errors.location ? "border-red-500" : ""}

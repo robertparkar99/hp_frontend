@@ -288,7 +288,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-4">
 
-          <h3 className="text-xl font-semibold text-foreground">Department Structure</h3>
+          {/* <h3 className="text-xl font-semibold text-foreground">Department Structure</h3> */}
 
           
             {/* Search */}
@@ -298,7 +298,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
                 placeholder="Search departments..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-48"
+              className="pl-9 w-88"
               />
             </div>
           
