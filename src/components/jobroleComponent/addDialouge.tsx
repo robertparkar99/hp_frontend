@@ -78,7 +78,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     }
   };
 
-  // 🧠 Generate jobrole data using AI
+  // 🧠 Generate jobrole data using AI by AJ
   const generateJobRoleContent = async (jobrole: string, description: string) => {
     if (!jobrole.trim() || !description.trim()) {
       return alert("Please enter both Job Role and Description first");
