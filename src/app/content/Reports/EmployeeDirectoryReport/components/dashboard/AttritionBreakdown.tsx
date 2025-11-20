@@ -1,6 +1,3 @@
-
-
-
 import { Card } from "@/components/ui/card";
 import { attritionData } from "../../data/mockData";
 import { AlertCircle } from "lucide-react";
