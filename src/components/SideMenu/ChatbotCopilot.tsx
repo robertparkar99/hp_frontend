@@ -457,7 +457,7 @@ export default function ChatbotCopilot({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed ${positionClasses[position]} z-50 w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center group backdrop-blur-sm border border-white/20`}
+        className={`fixed ${positionClasses[position]} z-50 w-13 h-13 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center group backdrop-blur-sm border border-white/20`}
         style={{
           animation: 'float 3s ease-in-out infinite'
         }}
