@@ -431,7 +431,7 @@ export default function AddUserModal({
       formDataToSend.append("ifsc_code", formData.deposit.ifsc);
       formDataToSend.append("amount", formData.deposit.amount);
       formDataToSend.append("transfer_type", formData.deposit.transfer_type);
-      formDataToSend.append("jobtitle_id", formData.personal.jobrole);
+      // formDataToSend.append("jobtitle_id", formData.personal.jobrole);
       formDataToSend.append("submit", "Update");
 
       const response = await fetch(
@@ -735,7 +735,7 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>User Profile</Label>
+                <Label>User Profile <span className="text-red-500">*</span></Label>
                 <Select
                   value={formData.personal.user_profile_id}
                   onValueChange={(val) =>
