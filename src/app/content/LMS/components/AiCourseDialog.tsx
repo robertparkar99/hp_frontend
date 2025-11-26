@@ -810,6 +810,21 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
   // NEW: State to store all CWF tasks for template t1
   const [allCwfTasks, setAllCwfTasks] = useState<string[]>([]);
 
+  // State for Create Template functionality
+  const [showCreateTemplate, setShowCreateTemplate] = useState(false);
+  const [createTemplateData, setCreateTemplateData] = useState({
+    name: "",
+    templateStructure: ""
+  });
+  const [customTemplates, setCustomTemplates] = useState<Template[]>([]);
+
+  // Template structure options
+  const templateStructureOptions = [
+    { value: "critical_work_function", label: "Critical Work Function", icon: ListChecks },
+    { value: "key_task", label: "Key Task", icon: CheckCircle2 },
+    { value: "skill", label: "Skill", icon: Target }
+  ];
+
   // Add smooth scrollbar styles to document
   useEffect(() => {
     const styleElement = document.createElement('style');
@@ -949,6 +964,18 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
         Boolean(cfg.jobRole) &&
         Boolean(value) &&
         field === "skills";
+    } else if (activeTemplate?.startsWith('custom_')) {
+      // Handle custom templates
+      const template = [...templates, ...customTemplates].find(t => t.id === activeTemplate);
+      const structure = (template as any)?.templateStructure;
+
+      if (structure === 'critical_work_function') {
+        shouldSwitch = Boolean(cfg.department) && Boolean(cfg.jobRole) && Boolean(value) && field === "criticalWorkFunction";
+      } else if (structure === 'key_task') {
+        shouldSwitch = Boolean(cfg.department) && Boolean(cfg.jobRole) && Boolean(cfg.criticalWorkFunction) && Boolean(value) && field === "tasks";
+      } else if (structure === 'skill') {
+        shouldSwitch = Boolean(cfg.department) && Boolean(cfg.jobRole) && Boolean(value) && field === "skills";
+      }
     }
 
     console.log(`Auto-switch check: Template=${activeTemplate}, Field=${field}, Value=${value}, ShouldSwitch=${shouldSwitch}`);
@@ -1012,103 +1039,103 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
   }, [cfg.jobRole, sessionData, activeTemplate]);
 
   // Fetch tasks when job role OR critical work function changes - UPDATED to store all CWF tasks
- // Add this useEffect to debug allCwfTasks state changes
-useEffect(() => {
-  console.log("🔄 allCwfTasks state changed:", allCwfTasks);
-}, [allCwfTasks]);
+  // Add this useEffect to debug allCwfTasks state changes
+  useEffect(() => {
+    console.log("🔄 allCwfTasks state changed:", allCwfTasks);
+  }, [allCwfTasks]);
 
-// Update the task fetching useEffect
-useEffect(() => {
-  const fetchTasks = async () => {
-    if (!cfg.jobRole || !cfg.criticalWorkFunction || !sessionData?.APP_URL) {
-      setAvailableTasks([]);
-      setAllCwfTasks([]);
-      console.log("❌ fetchTasks: Missing required fields");
-      return;
-    }
+  // Update the task fetching useEffect
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (!cfg.jobRole || !cfg.criticalWorkFunction || !sessionData?.APP_URL) {
+        setAvailableTasks([]);
+        setAllCwfTasks([]);
+        console.log("❌ fetchTasks: Missing required fields");
+        return;
+      }
 
-    setLoadingTasks(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        `${sessionData.APP_URL}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&filters[critical_work_function]=${encodeURIComponent(cfg.criticalWorkFunction)}&group_by=task&order_by[direction]=desc`,
-        {
-          headers: {
-            Authorization: `Bearer ${sessionData.token}`,
-            "Content-Type": "application/json",
-          },
+      setLoadingTasks(true);
+      setError(null);
+      try {
+        const response = await fetch(
+          `${sessionData.APP_URL}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&filters[critical_work_function]=${encodeURIComponent(cfg.criticalWorkFunction)}&group_by=task&order_by[direction]=desc`,
+          {
+            headers: {
+              Authorization: `Bearer ${sessionData.token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch tasks');
         }
-      );
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch tasks');
+        const data = await response.json();
+        setAvailableTasks(data);
+
+        // ✅ Extract all task names and store in allCwfTasks
+        const taskNames = data.map((task: any) => task.task).filter((task: string) => task && task.trim() !== "");
+        console.log("✅ Fetched tasks for allCwfTasks:", taskNames);
+        setAllCwfTasks(taskNames);
+
+        // Auto-refresh preview when tasks are loaded
+        if (isTemplateSelected && activeTemplate === "t1" && taskNames.length > 0) {
+          console.log("🔄 Auto-refreshing preview with new tasks");
+          setTimeout(() => {
+            const p = buildDynamicPrompt(cfg, industry, activeTemplate, taskNames);
+            setPreview(p);
+            setManualPreview(p);
+          }, 100);
+        }
+
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError(String(err));
+        }
+        console.error('Error fetching tasks:', err);
+      } finally {
+        setLoadingTasks(false);
       }
+    };
 
-      const data = await response.json();
-      setAvailableTasks(data);
+    fetchTasks();
+  }, [cfg.jobRole, cfg.criticalWorkFunction, sessionData, activeTemplate]);
 
-      // ✅ Extract all task names and store in allCwfTasks
-      const taskNames = data.map((task: any) => task.task).filter((task: string) => task && task.trim() !== "");
-      console.log("✅ Fetched tasks for allCwfTasks:", taskNames);
-      setAllCwfTasks(taskNames);
+  // Update handleResync function
+  // function handleResync() {
+  //   if (!isTemplateSelected) return;
 
-      // Auto-refresh preview when tasks are loaded
-      if (isTemplateSelected && activeTemplate === "t1" && taskNames.length > 0) {
-        console.log("🔄 Auto-refreshing preview with new tasks");
-        setTimeout(() => {
-          const p = buildDynamicPrompt(cfg, industry, activeTemplate, taskNames);
-          setPreview(p);
-          setManualPreview(p);
-        }, 100);
-      }
+  //   console.log("🔄 handleResync - allCwfTasks:", allCwfTasks);
+  //   console.log("🔄 handleResync - activeTemplate:", activeTemplate);
 
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError(String(err));
-      }
-      console.error('Error fetching tasks:', err);
-    } finally {
-      setLoadingTasks(false);
+  //   // Small delay to ensure state is updated
+  //   setTimeout(() => {
+  //     const p = buildDynamicPrompt(cfg, industry, activeTemplate || undefined, allCwfTasks);
+  //     setPreview(p);
+  //     setManualPreview(p);
+  //     setDiverged(false);
+  //   }, 100);
+  // }
+
+  // Add this useEffect to auto-refresh preview when allCwfTasks changes
+  // Add this useEffect to auto-refresh preview when allCwfTasks changes
+  useEffect(() => {
+    if (isTemplateSelected && activeTemplate === "t1" && allCwfTasks.length > 0) {
+      console.log("🔄 Auto-refreshing preview with allCwfTasks:", allCwfTasks);
+      console.log("🔄 Auto-refreshing preview - allCwfTasks length:", allCwfTasks.length);
+
+      // Small delay to ensure state is properly updated
+      setTimeout(() => {
+        const p = buildDynamicPrompt(cfg, industry, activeTemplate, allCwfTasks);
+        console.log("🔄 Generated preview with tasks:", p.includes("Key Tasks:") ? "YES" : "NO");
+        setPreview(p);
+        setManualPreview(p);
+      }, 100);
     }
-  };
-
-  fetchTasks();
-}, [cfg.jobRole, cfg.criticalWorkFunction, sessionData, activeTemplate]);
-
-// Update handleResync function
-// function handleResync() {
-//   if (!isTemplateSelected) return;
-  
-//   console.log("🔄 handleResync - allCwfTasks:", allCwfTasks);
-//   console.log("🔄 handleResync - activeTemplate:", activeTemplate);
-  
-//   // Small delay to ensure state is updated
-//   setTimeout(() => {
-//     const p = buildDynamicPrompt(cfg, industry, activeTemplate || undefined, allCwfTasks);
-//     setPreview(p);
-//     setManualPreview(p);
-//     setDiverged(false);
-//   }, 100);
-// }
-
-// Add this useEffect to auto-refresh preview when allCwfTasks changes
-// Add this useEffect to auto-refresh preview when allCwfTasks changes
-useEffect(() => {
-  if (isTemplateSelected && activeTemplate === "t1" && allCwfTasks.length > 0) {
-    console.log("🔄 Auto-refreshing preview with allCwfTasks:", allCwfTasks);
-    console.log("🔄 Auto-refreshing preview - allCwfTasks length:", allCwfTasks.length);
-    
-    // Small delay to ensure state is properly updated
-    setTimeout(() => {
-      const p = buildDynamicPrompt(cfg, industry, activeTemplate, allCwfTasks);
-      console.log("🔄 Generated preview with tasks:", p.includes("Key Tasks:") ? "YES" : "NO");
-      setPreview(p);
-      setManualPreview(p);
-    }, 100);
-  }
-}, [allCwfTasks, isTemplateSelected, activeTemplate, cfg, industry]);
+  }, [allCwfTasks, isTemplateSelected, activeTemplate, cfg, industry]);
 
   useEffect(() => {
     const fetchSkills = async () => {
@@ -1170,7 +1197,7 @@ useEffect(() => {
       // ✅ FIX: Use all CWF tasks for template t1, selected task for other templates
       let tasksToUse: string[];
       if (activeTemplate === "t1") {
-        
+
         // For template t1, use all tasks from the selected CWF
         tasksToUse = allCwfTasks.length > 0 ? allCwfTasks : cfg.tasks;
         console.log("Using all CWF tasks for template t1:", tasksToUse);
@@ -1195,10 +1222,10 @@ useEffect(() => {
       const response = await fetch("/api/generate-outline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           cfg: cfgWithTasks,
-          industry, 
-          aiModel: cfg.aiModel 
+          industry,
+          aiModel: cfg.aiModel
         }),
       });
 
@@ -1296,31 +1323,66 @@ useEffect(() => {
     setCfg(newConfig);
     setActiveTemplate(t.id);
 
-    // Enable the appropriate dropdowns based on template type
-    if (t.id === "t1") {
-      setEnabledDropdowns({
-        jobRole: true,
-        criticalWorkFunction: true,
-        tasks: false,
-        skills: false
-      });
-      setShowProficiency(false);
-    } else if (t.id === "t2") {
-      setEnabledDropdowns({
-        jobRole: true,
-        criticalWorkFunction: true,
-        tasks: true,
-        skills: false  // Skills should be disabled for t2 template
-      });
-      setShowProficiency(false);
-    } else if (t.id === "t3") {
-      setEnabledDropdowns({
-        jobRole: true,
-        criticalWorkFunction: false,
-        tasks: false,
-        skills: true
-      });
-      setShowProficiency(true);
+    // Handle custom templates differently
+    if (t.id.startsWith('custom_')) {
+      // Get the structure type from the template
+      const templateStructure = (t as any).templateStructure;
+
+      if (templateStructure === 'critical_work_function') {
+        // Critical Work Function template: Department, Job Role, Critical Work Function
+        setEnabledDropdowns({
+          jobRole: true,
+          criticalWorkFunction: true,
+          tasks: false,
+          skills: false
+        });
+        setShowProficiency(false);
+      } else if (templateStructure === 'key_task') {
+        // Key Task template: Department, Job Role, Critical Work Function, Key Task
+        setEnabledDropdowns({
+          jobRole: true,
+          criticalWorkFunction: true,
+          tasks: true,
+          skills: false
+        });
+        setShowProficiency(false);
+      } else if (templateStructure === 'skill') {
+        // Skill template: Department, Job Role, Skill
+        setEnabledDropdowns({
+          jobRole: true,
+          criticalWorkFunction: false,
+          tasks: false,
+          skills: true
+        });
+        setShowProficiency(true);
+      }
+    } else {
+      // Handle predefined templates
+      if (t.id === "t1") {
+        setEnabledDropdowns({
+          jobRole: true,
+          criticalWorkFunction: true,
+          tasks: false,
+          skills: false
+        });
+        setShowProficiency(false);
+      } else if (t.id === "t2") {
+        setEnabledDropdowns({
+          jobRole: true,
+          criticalWorkFunction: true,
+          tasks: true,
+          skills: false  // Skills should be disabled for t2 template
+        });
+        setShowProficiency(false);
+      } else if (t.id === "t3") {
+        setEnabledDropdowns({
+          jobRole: true,
+          criticalWorkFunction: false,
+          tasks: false,
+          skills: true
+        });
+        setShowProficiency(true);
+      }
     }
 
     // Enable the configuration and preview sections
@@ -1367,10 +1429,10 @@ useEffect(() => {
     try {
       // ✅ FIX: Use all CWF tasks for template t1, selected task for other templates
       let finalTasks: string[];
-      if (activeTemplate === "t1") {
-        // For template t1, use all tasks from the selected CWF
+      if (activeTemplate === "t1" || (activeTemplate?.startsWith('custom_') && shouldShowCWF() && !shouldShowTasks())) {
+      // For template t1 or custom critical work function template, use all tasks from the selected CWF
         finalTasks = allCwfTasks.length > 0 ? allCwfTasks : cfg.tasks;
-        console.log("Using all CWF tasks for template t1 in course generation:", finalTasks);
+        console.log("Using all CWF tasks for template in course generation:", finalTasks);
       } else {
         // For other templates, use the selected task
         finalTasks = cfg.tasks;
@@ -1395,16 +1457,16 @@ useEffect(() => {
       }
 
       // ✅ FIX: Add appropriate tasks based on template type
-      if (activeTemplate === "t1" && finalTasks.length > 0) {
-        // For t1, add all CWF tasks
+      if ((activeTemplate === "t1" || (activeTemplate?.startsWith('custom_') && shouldShowCWF() && !shouldShowTasks())) && finalTasks.length > 0) {
+      // For t1 or custom critical work function template, add all CWF tasks
         params.append("key_task", finalTasks.join(", "));
-      } else if (activeTemplate === "t2" && finalTasks.length > 0) {
-        // For t2, add selected task
+      } else if ((activeTemplate === "t2" || (activeTemplate?.startsWith('custom_') && shouldShowTasks())) && finalTasks.length > 0) {
+        // For t2 or custom key task template, add selected task
         params.append("key_task", finalTasks[0]);
       }
 
-      // Only add skill for t3 template
-      if (activeTemplate === "t3" && cfg.skills.length > 0) {
+      // Only add skill for t3 template or custom skill template
+      if ((activeTemplate === "t3" || (activeTemplate?.startsWith('custom_') && shouldShowSkills())) && cfg.skills.length > 0) {
         params.append("skill", cfg.skills[0]);
       }
 
@@ -1415,8 +1477,8 @@ useEffect(() => {
       ].filter(Boolean).join(", ");
       if (modality) params.append("modality", modality);
 
-      // Add proficiency if shown (only for t3 template)
-      if (showProficiency && activeTemplate === "t3") {
+      // Add proficiency if shown (only for t3 template or custom skill template)
+      if (showProficiency && (activeTemplate === "t3" || (activeTemplate?.startsWith('custom_') && shouldShowSkills()))) {
         params.append("proficiency_target", cfg.proficiencyTarget.toString());
       }
 
@@ -1480,7 +1542,76 @@ useEffect(() => {
     }));
   }
 
-  const filteredTemplates = templates.filter((t) =>
+  // Create Template functionality
+  const handleCreateTemplate = () => {
+    if (!createTemplateData.name.trim() || !createTemplateData.templateStructure) {
+      setError("Please provide both name and template structure");
+      return;
+    }
+
+    // Generate a unique ID for the new template
+    const newTemplateId = `custom_${Date.now()}`;
+
+    // Create new template based on structure
+    const newTemplate: Template = {
+      id: newTemplateId,
+      title: createTemplateData.name,
+      jobRole: "",
+      criticalWorkFunction: "", // Will be determined by structure type
+      tasks: [],
+      skills: [],
+      // Store the structure type in a way that can be retrieved later
+      templateStructure: createTemplateData.templateStructure
+    } as Template & { templateStructure: string };
+
+    // Add to custom templates
+    setCustomTemplates(prev => [...prev, newTemplate]);
+
+    // Reset form
+    setCreateTemplateData({ name: "", templateStructure: "" });
+    setShowCreateTemplate(false);
+    setSuccess("Template created successfully!");
+  };
+
+  const handleCancelCreateTemplate = () => {
+    setCreateTemplateData({ name: "", templateStructure: "" });
+    setShowCreateTemplate(false);
+  };
+
+  // Helper function to check if template should show tasks dropdown
+  const shouldShowTasks = () => {
+    if (activeTemplate === "t2") return true;
+    if (activeTemplate?.startsWith('custom_')) {
+      const template = [...templates, ...customTemplates].find(t => t.id === activeTemplate);
+      const structure = (template as any)?.templateStructure;
+      return structure === 'key_task';
+    }
+    return false;
+  };
+
+  // Helper function to check if template should show skills dropdown
+  const shouldShowSkills = () => {
+    if (activeTemplate === "t3") return true;
+    if (activeTemplate?.startsWith('custom_')) {
+      const template = [...templates, ...customTemplates].find(t => t.id === activeTemplate);
+      const structure = (template as any)?.templateStructure;
+      return structure === 'skill';
+    }
+    return false;
+  };
+
+  // Helper function to check if template should show critical work function
+  const shouldShowCWF = () => {
+    if (activeTemplate === "t1" || activeTemplate === "t2") return true;
+    if (activeTemplate?.startsWith('custom_')) {
+      const template = [...templates, ...customTemplates].find(t => t.id === activeTemplate);
+      const structure = (template as any)?.templateStructure;
+      return structure === 'critical_work_function' || structure === 'key_task';
+    }
+    return false;
+  };
+
+  const filteredTemplates = [...templates, ...customTemplates].filter((t) =>
     [t.title, t.jobRole, t.criticalWorkFunction, ...t.tasks, ...t.skills]
       .join(" ")
       .toLowerCase()
@@ -1609,8 +1740,8 @@ useEffect(() => {
                 {loadingCWF && <p className="mt-1 text-xs text-gray-500">Loading critical work functions...</p>}
               </div>
 
-              {/* Tasks Dropdown - Only for template t2 */}
-              {activeTemplate === "t2" && (
+              {/* Tasks Dropdown - For templates that require tasks */}
+              {shouldShowTasks() && (
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                     <CheckCircle2 className="h-4 w-4" />
@@ -1638,8 +1769,8 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* Skills Dropdown - Only for template t3 */}
-              {activeTemplate === "t3" && (
+              {/* Skills Dropdown - For templates that require skills */}
+              {shouldShowSkills() && (
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                     <Target className="h-4 w-4" />
@@ -1667,8 +1798,8 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* Display all CWF tasks for template t1 */}
-              {activeTemplate === "t1" && allCwfTasks.length > 0 && (
+              {/* Display all CWF tasks for templates that need all tasks */}
+              {(activeTemplate === "t1" || (activeTemplate?.startsWith('custom_') && shouldShowCWF() && !shouldShowTasks())) && allCwfTasks.length > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <h4 className="text-sm font-medium text-blue-800 mb-2 flex items-center gap-2">
                     <ListChecks className="h-4 w-4" />
@@ -1676,8 +1807,8 @@ useEffect(() => {
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {allCwfTasks.map((task, index) => (
-                      <span 
-                        key={index} 
+                      <span
+                        key={index}
                         className="inline-block bg-white px-2 py-1 rounded text-xs text-blue-700 border border-blue-300"
                       >
                         {task}
@@ -1818,7 +1949,19 @@ useEffect(() => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden p-0">
+      <DialogContent
+        className="
+    w-[95vw]
+    max-w-full
+    md:max-w-4xl
+    lg:max-w-6xl
+    xl:max-w-7xl
+    max-h-[90vh]
+
+    p-0 overflow-hidden 
+    rounded-xl
+  "
+      >
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-blue-600" />
@@ -1837,7 +1980,19 @@ useEffect(() => {
         {/* Directly show the CourseCreatorModule interface */}
         <div className="flex flex-col bg-slate-50 max-h-[70vh] overflow-auto">
           {/* Main 3-Panel Layout */}
-          <div className="grid flex-1 grid-cols-1 gap-4 p-4 xl:grid-cols-3 max-h-[70vh] overflow-auto">
+          <div
+            className="
+    grid flex-1 gap-4 p-4
+
+    grid-cols-1
+    sm:grid-cols-1
+    md:grid-cols-3
+    xl:grid-cols-3
+
+    max-h-[70vh] overflow-auto
+  "
+          >
+
             {/* Left: Templates */}
             <aside className="flex flex-col rounded-2xl border bg-white overflow-hidden">
               <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
@@ -1845,7 +2000,69 @@ useEffect(() => {
                   <LayoutTemplate className="h-5 w-5 text-blue-600" />
                   Templates
                 </h2>
+                <button
+                  onClick={() => setShowCreateTemplate(!showCreateTemplate)}
+                  className="text-xs bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                >
+                  <Plus className="h-3 w-3" />
+                  Create
+                </button>
               </div>
+
+              {/* Create Template Form */}
+              {showCreateTemplate && (
+                <div className="p-3 border-b bg-blue-50">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Template Name
+                      </label>
+                      <input
+                        type="text"
+                        value={createTemplateData.name}
+                        onChange={(e) => setCreateTemplateData(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Enter template name..."
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Template Structure
+                      </label>
+                      <select
+                        value={createTemplateData.templateStructure}
+                        onChange={(e) => setCreateTemplateData(prev => ({ ...prev, templateStructure: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select structure type...</option>
+                        {templateStructureOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleCreateTemplate}
+                        disabled={!createTemplateData.name.trim() || !createTemplateData.templateStructure}
+                        className="flex-1 bg-green-600 text-white px-3 py-2 text-xs rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Create Template
+                      </button>
+                      <button
+                        onClick={handleCancelCreateTemplate}
+                        className="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="p-3 shrink-0">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -1880,11 +2097,25 @@ useEffect(() => {
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <div className="font-medium text-sm text-gray-900">{t.title}</div>
+                                <div className="flex items-center gap-2">
+                                  <div className="font-medium text-sm text-gray-900">{t.title}</div>
+                                  {t.id.startsWith('custom_') && (
+                                    <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">
+                                      Custom
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="mt-2 text-xs text-gray-600 space-y-1">
                                   {displayFields.map((field, index) => (
                                     <div key={index}>{field}</div>
                                   ))}
+                                  {t.id.startsWith('custom_') && (
+                                    <div className="text-purple-600 font-medium">
+                                      Structure: {templateStructureOptions.find(opt =>
+                                        opt.value === (t as any).templateStructure
+                                      )?.label || 'Unknown'}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                               <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 mt-1" />
@@ -1908,13 +2139,16 @@ useEffect(() => {
             </aside>
 
             {/* Middle: Configuration with Toggle Menu - FIXED SCROLLING */}
-            <section className={`flex flex-col rounded-2xl border overflow-hidden ${!isTemplateSelected ? "bg-gray-50" : "bg-white"
+            <section className={`flex flex-col rounded-2xl border overflow-hidden min-h-[200px] md:min-h-[300px] max-h-[70vh]  ${!isTemplateSelected ? "bg-gray-50" : "bg-white"
               }`}>
+              {/* <div className="flex overflow-y-auto"> */}
+
               <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
                 <h2 className="text-base font-semibold flex items-center gap-2">
                   <Settings className="h-5 w-5 text-blue-600" />
-                  Configuration Options
+                  Configuration
                 </h2>
+                <div className="flex items-center gap-2 text-xs">
                 <button
                   onClick={() => {
                     if (!isTemplateSelected) return;
@@ -1935,18 +2169,22 @@ useEffect(() => {
                     setLastUsedModel("");
                     setApiPayload("");
                     setAllCwfTasks([]); // Clear all CWF tasks
+                      // Clear create template form if open
+                      setShowCreateTemplate(false);
+                      setCreateTemplateData({ name: "", templateStructure: "" });
                   }}
                   disabled={!isTemplateSelected}
-                  className={`text-sm flex items-center gap-1 transition-all duration-200 ${!isTemplateSelected
-                    ? "text-gray-400 cursor-not-allowed"
-                    : "text-slate-600 hover:text-slate-900"
+                    className={`rounded-md border px-2 py-1 flex items-center gap-1 transition-all duration-200 ${!isTemplateSelected
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "hover:bg-slate-50"
                     }`}
                 >
-                  <RotateCcw className="h-4 w-4" />
+                    <RotateCcw className="h-3 w-3" />
                   Clear
-                </button>
+                  </button>
+                </div>
               </div>
-
+              {/* </div> */}
               {/* Toggle Menu */}
               <ConfigurationToggle
                 activeSection={configSection}
@@ -1955,7 +2193,7 @@ useEffect(() => {
               />
 
               {/* Configuration Content with PROPER SCROLLING */}
-              <div className="flex-1 flex-1 gap-4 xl:grid-cols-3 max-h-[70vh] overflow-auto px-1 py-3 scrollbar-hide">
+              <div className="flex-1 gap-4 grid overflow-auto px-1 py-3 scrollbar-hide">
                 <div className="pb-1">
                   <div className="pb-4">
                     {renderConfigurationContent()}
@@ -1965,12 +2203,13 @@ useEffect(() => {
             </section>
 
             {/* Right: Course Outline Preview - UPDATED */}
-            <section className={`flex flex-col rounded-2xl border overflow-hidden ${!isTemplateSelected ? "bg-gray-50" : "bg-white"
+            <section className={`flex flex-col rounded-2xl border overflow-hidden min-h-[200px] md:min-h-[300px] max-h-[70vh] ${!isTemplateSelected ? "bg-gray-50" : "bg-white"
               }`}>
+              {/* <div className="flex overflow-y-auto"> */}
               <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
                 <h2 className="text-base font-semibold flex items-center gap-2">
                   <Eye className="h-5 w-5 text-blue-600" />
-                  Course Outline Preview
+                  Preview
                 </h2>
                 <div className="flex items-center gap-2 text-xs">
                   {/* Action buttons */}
@@ -2003,7 +2242,7 @@ useEffect(() => {
                   </button>
                 </div>
               </div>
-
+              {/* </div> */}
               {/* Preview Content */}
               <div className="flex-1 overflow-hidden">
                 <div className={`h-full w-full p-3 font-mono text-sm leading-6 overflow-auto smooth-scrollbar ${!isTemplateSelected ? "bg-gray-100 cursor-not-allowed opacity-60" : "bg-slate-50"
@@ -2018,14 +2257,14 @@ useEffect(() => {
                     </div>
                   ) : (
                     <textarea
-                      value={manualPreview}
+                        value={manualPreview} 
                       onChange={(e) => {
                         if (!isTemplateSelected) return;
                         setManualPreview(e.target.value);
                         setDiverged(e.target.value !== preview);
                       }}
                       disabled={!isTemplateSelected || outlineLoading}
-                      className="h-full w-full resize-none rounded-lg border border-gray-300 p-3 font-mono text-sm leading-6 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-transparent"
+                        className="h-full w-full min-h-[150px] md:min-h-[250px] resize-none rounded-lg border border-gray-300 p-3 font-mono text-sm leading-6 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-transparent"
                       aria-label="Course outline editor"
                     />
                   )}
