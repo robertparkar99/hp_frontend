@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 
 interface AddDialogProps {
   skillId: number | null;
+  isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
