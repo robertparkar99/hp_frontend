@@ -140,17 +140,44 @@ export default function HomePage() {
 
       setRoles(data);
 
-      const uniqueDepts = Array.from(
-        new Set(data.map((r) => r.department).filter(Boolean))
-      ).sort((a, b) => a.localeCompare(b));
+      // const uniqueDepts = Array.from(
+      //   new Set(data.map((r) => r.department).filter(Boolean))
+      // ).sort((a, b) => a.localeCompare(b));
 
-      setDepartments(["All Departments", ...uniqueDepts]);
+      // setDepartments(["All Departments", ...uniqueDepts]);
     } catch (error) {
       console.error("❌ Error fetching roles:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // ✅ NEW: Fetch department list from new API
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await fetch(
+          `https://hp.triz.co.in/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
+        );
+        const json = await res.json();
+
+        console.log("Fetched departments:", json);
+
+        if (json?.data && typeof json.data === "object") {
+          const deptList = Object.keys(json.data); // <-- FIX
+
+          setDepartments(["All Departments", ...deptList]);
+        }
+      } catch (error) {
+        console.error("❌ Department fetch error:", error);
+      }
+    };
+
+    if (sessionData.subInstituteId) fetchDepartments();
+  }, [sessionData.subInstituteId]);
+
+
+
 
   useEffect(() => {
     fetchData();
@@ -441,41 +468,43 @@ export default function HomePage() {
         </div>
 
         <div className="flex items-center flex-wrap gap-1">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
-                        <Funnel className="w-5 h-5" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Department
-                          </label>
-<Select
-              onValueChange={(val) => {
-                setSelectedDept(val);
-                setSelected(null);
-              }}
-              defaultValue="All Departments"
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {dept}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-                        </div>
-          </div>
-        </PopoverContent>
-      </Popover>
-                  
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
+                <Funnel className="w-5 h-5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Department
+                  </label>
+                  <Select
+                    onValueChange={(val) => {
+                      setSelectedDept(val);
+                      setSelected(null);
+                    }}
+                    defaultValue="All Departments"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by department" />
+                    </SelectTrigger>
+
+                    <SelectContent className="max-h-60 w-70 overflow-y-auto">
+                      {departments.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
 
 
           {/* ✅ View Mode Toggle */}
@@ -483,8 +512,8 @@ export default function HomePage() {
             <button
               onClick={() => setViewMode("myview")}
               className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "myview"
-                  ? "bg-blue-100 text-blue-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                ? "bg-blue-100 text-blue-600"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               title="Card View"
             >
@@ -493,8 +522,8 @@ export default function HomePage() {
             <button
               onClick={() => setViewMode("table")}
               className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "table"
-                  ? "bg-blue-100 text-blue-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                ? "bg-blue-100 text-blue-600"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               title="Table View"
             >
@@ -700,7 +729,7 @@ export default function HomePage() {
                         <GitMerge className="text-white hover:text-gray-200" size={14} />
                       </button>
                       {/* JD Preview Button */}
-                     
+
                       {/* Delete Button */}
                       <button
                         onClick={() => handleDeleteClick(role.id)}
