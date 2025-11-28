@@ -23,8 +23,10 @@ import {
   CheckCircle2,
   Cpu,
   AlertCircle,
-  Loader2
+  Loader2,
+  Play
 } from "lucide-react";
+import loading from "@/components/utils/loading";
 
 interface ConfigurationModalProps {
   isOpen: boolean;
@@ -354,16 +356,18 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [diverged, setDiverged] = React.useState(false);
   const [manualPreview, setManualPreview] = React.useState("Click 'Generate Course Outline with AI' to create slides.");
   const [outlineLoading, setOutlineLoading] = useState(false);
+  const [courseLoading, setCourseLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const [sessionData, setSessionData] = useState<any>(null);
   const [industry, setIndustry] = useState<string>("");
+  const [generatedUrls, setGeneratedUrls] = useState<{ exportUrl?: string; gammaUrl?: string } | null>(null);
 
   // State for Create Template functionality
- 
+
   // Template structure options
-  
+
   // Add smooth scrollbar styles to document
   useEffect(() => {
     const styleElement = document.createElement('style');
@@ -410,7 +414,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       const selectedModel = aiModels.find(model => model.id === cfg.aiModel);
       if (!selectedModel) throw new Error("Selected AI model not found");
 
-      const response = await fetch("/api/generate-outline", {
+      const response = await fetch("/api/generate-outline-new", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -462,11 +466,64 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     }
   };
 
-  
+  // Generate Course using Gamma API
+  const handleGenerateCourse = async () => {
+    if (!manualPreview || manualPreview === "Click 'Generate Course Outline with AI' to create slides.") {
+      setError("⚠️ No course outline available! Please generate a course outline first.");
+      return;
+    }
+
+    setCourseLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch("/api/generate-course", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inputText: manualPreview
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Course generation failed");
+      }
+
+      console.log("✅ Course generated successfully:", data);
+
+      // Store the generated URLs
+      setGeneratedUrls({
+        exportUrl: data.data?.exportUrl,
+        gammaUrl: data.data?.gammaUrl
+      });
+
+      setSuccess("✅ Course presentation generated successfully!");
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("Error generating course:", err);
+
+      setError("❌ Failed to generate course presentation. Please try again.");
+    } finally {
+      setCourseLoading(false);
+    }
+  };
 
   function handleResync() {
     setDiverged(false);
   }
+
+  // Handle View Course button
+  const handleViewCourse = () => {
+    if (generatedUrls?.exportUrl) {
+      window.open(generatedUrls.exportUrl, '_blank');
+    } else if (generatedUrls?.gammaUrl) {
+      window.open(generatedUrls.gammaUrl, '_blank');
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -675,6 +732,48 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
               </div>
             </section>
           </div>
+
+          <footer className="sticky bottom-0 border-t bg-white px-4 py-3 shrink-0">
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                variant="outline"
+                // onClick={() => onOpenChange(false)}
+                className="transition-all duration-200"
+              >
+                Cancel
+              </Button>
+              {generatedUrls && (
+                <button
+                  onClick={handleViewCourse}
+                  className="rounded-lg px-4 py-2 text-sm font-semibold flex items-center gap-2 bg-green-600 text-white hover:bg-green-700 transition-all duration-200"
+                >
+                  <Eye className="h-4 w-4" />
+                  View Course
+                </button>
+              )}
+              <button
+                onClick={handleGenerateCourse}
+                disabled={!jsonObject || outlineLoading || courseLoading}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-all duration-200 ${!jsonObject || outlineLoading || courseLoading
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
+              >
+                {courseLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating Course...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4" />
+                    Generate Course
+                  </>
+                )}
+              </button>
+            </div>
+          </footer>
+
         </div>
       </DialogContent>
     </Dialog>
