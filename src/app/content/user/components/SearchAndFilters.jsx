@@ -46,7 +46,7 @@ const SearchAndFilters = ({
 
     const fetchDepartmentsAndJobRoles = async () => {
       try {
-        const url = `https://hp.triz.co.in/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`;
+        const url = `${sessionData.APP_URL}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`;
 
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Error fetching departments: ${res.status}`);
