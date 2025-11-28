@@ -252,7 +252,7 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole
                 Critical Work Functions & Key Tasks
               </CardTitle>
 
-              <Button onClick={() => setShowRadios(true)}>
+              <Button onClick={() => setShowRadios(true)} className="bg-blue-400 text-white hover:bg-blue-500">
                 Build Course with AI
               </Button>
             </CardHeader>
@@ -298,7 +298,7 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole
                         {showRadios && (
                           <TableCell>
                             {selectedFunction === criticalFunction && (
-                              <Button onClick={() => {
+                              <Button className="bg-green-400 text-white hover:bg-green-500" onClick={() => {
                                 // Calculate tasksByFunction locally
                                 const tasksByFunction = tasksData.reduce((acc, task) => {
                                   const fn = task.critical_work_function || "Uncategorized";
