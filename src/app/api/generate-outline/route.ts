@@ -4,39 +4,39 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
     try {
         // Parse input from frontend
-        const { cfg, industry, aiModel } = await req.json();
+        const { jsonObject, modality, aiModel } = await req.json();
 
         // Validate server-side API key (never exposed to client)
         const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || " ";
 
 
-        // Dynamically build course prompt (mirroring your buildPrompt logic)
-        const modality = [
-            cfg?.modality?.selfPaced && "Self-paced",
-            cfg?.modality?.instructorLed && "Instructor-led",
+        // Dynamically build course prompt using jsonObject and modality
+        const modalityString = [
+            modality?.selfPaced && "Self-paced",
+            modality?.instructorLed && "Instructor-led",
         ]
             .filter(Boolean)
             .join(", ");
 
-        const keyTask = cfg?.tasks?.length > 0 ? cfg.tasks[0] : "-";
-        const criticalWorkFunction = cfg?.criticalWorkFunction || "-";
+        const keyTask = jsonObject?.tasks?.length > 0 ? jsonObject.tasks[0] : "-";
+        const criticalWorkFunction = jsonObject?.criticalWorkFunction || "-";
 
         const coursePrompt = {
             instruction:
                 "You are an expert instructional designer and L&D specialist. Create a structured 10-slide course based on the provided context.",
             input_variables: {
-                industry: industry || "-",
-                department: cfg.department || "-",
-                job_role: cfg.jobRole || "-",
+                industry: jsonObject?.industry || "-",
+                department: jsonObject?.department || "-",
+                job_role: jsonObject?.jobRole || "-",
                 critical_work_function: criticalWorkFunction,
                 key_task: keyTask,
-                modality: modality || "-",
+                modality: modalityString || "-",
             },
             output_format: {
                 total_slides: 10,
                 bullet_points_per_slide: "3–5 (under 40 words each)",
                 style: "Formal, structured, competency-based",
-                tone: modality.includes("Self-paced")
+                tone: modalityString.includes("Self-paced")
                     ? "Direct, learner-led tone"
                     : "Facilitator-focused guidance",
             },

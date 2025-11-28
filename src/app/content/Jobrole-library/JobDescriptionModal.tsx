@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import ViewSkill from "@/components/skillComponent/viewDialouge"; // ✅ import ViewSkill
 
 type JobRole = {
@@ -40,10 +41,11 @@ type Task = {
 type JobDescriptionModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  onConfig: (jsonObject: any) => void;
   jobRole: JobRole | null;
 };
 
-export default function JobDescriptionModal({ isOpen, onClose, jobRole }: JobDescriptionModalProps) {
+export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole }: JobDescriptionModalProps) {
   const [skillsData, setSkillsData] = useState<Skill[]>([]);
   const [tasksData, setTasksData] = useState<Task[]>([]);
   const [loadingSkills, setLoadingSkills] = useState(true);
@@ -58,6 +60,38 @@ export default function JobDescriptionModal({ isOpen, onClose, jobRole }: JobDes
   // ✅ New state for ViewSkill modal
   const [selectedSkillId, setSelectedSkillId] = useState<number | null>(null);
   const [isViewSkillOpen, setIsViewSkillOpen] = useState(false);
+
+  // State for selected critical work function
+  const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
+
+  // Log JSON object when critical work function is selected
+  useEffect(() => {
+    if (selectedFunction && jobRole && sessionData.orgType) {
+      // Calculate tasksByFunction locally
+      const tasksByFunction = tasksData.reduce((acc, task) => {
+        const fn = task.critical_work_function || "Uncategorized";
+        if (!acc[fn]) acc[fn] = [];
+        acc[fn].push(task);
+        return acc;
+      }, {} as Record<string, Task[]>);
+
+      const tasksForFunction = tasksByFunction[selectedFunction] || [];
+      const keyTasks = tasksForFunction.map(task => task.taskName);
+
+      const jsonObject = {
+        industry: sessionData.orgType,
+        department: jobRole.department,
+        jobrole: jobRole.jobrole,
+        critical_work_function: selectedFunction,
+        key_tasks: keyTasks
+      };
+
+      console.log("Selected Critical Work Function Data:", JSON.stringify(jsonObject, null, 2));
+    }
+  }, [selectedFunction, jobRole, sessionData.orgType, tasksData]);
+
+  // State to show/hide radio buttons
+  const [showRadios, setShowRadios] = useState(false);
 
   // Load session data
   useEffect(() => {
@@ -137,16 +171,16 @@ export default function JobDescriptionModal({ isOpen, onClose, jobRole }: JobDes
         const transformedData = Array.isArray(data.usertaskData)
           ? data.usertaskData.map((item: any) => ({
             id: item.id,
+            industry: sessionData.orgType || "",
+            department: String(item.subDepartment || item.track || ""),
+            jobrole: String(item.jobrole || jobRole.jobrole || ""),
+            critical_work_function: String(
+              item.critical_work_function || item.taskcritical_work_function || ""
+            ),
             taskName:
               typeof item.task === "object" && item.task !== null
                 ? item.task.title || item.task.name || ""
                 : String(item.task || ""),
-            critical_work_function: String(
-              item.critical_work_function || item.taskcritical_work_function || ""
-            ),
-            jobrole: String(item.jobrole || jobRole.jobrole || ""),
-            department: String(item.department || item.sector || ""),
-            subDepartment: String(item.subDepartment || item.track || ""),
           }))
           : [];
         setTasksData(transformedData);
@@ -213,8 +247,14 @@ export default function JobDescriptionModal({ isOpen, onClose, jobRole }: JobDes
 
           {/* 🧩 Critical Work Functions */}
           <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Critical Work Functions & Key Tasks</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between w-full px-4">
+              <CardTitle className="text-lg font-bold">
+                Critical Work Functions & Key Tasks
+              </CardTitle>
+
+              <Button onClick={() => setShowRadios(true)}>
+                Build Course with AI
+              </Button>
             </CardHeader>
             <CardContent>
               {loadingTasks ? (
@@ -227,13 +267,26 @@ export default function JobDescriptionModal({ isOpen, onClose, jobRole }: JobDes
                 <Table>
                   <TableHeader>
                     <TableRow>
+                          {showRadios && <TableHead>Select</TableHead>}
                       <TableHead>Critical Work Functions</TableHead>
                       <TableHead>Key Tasks</TableHead>
+                          {showRadios && <TableHead>Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {Object.entries(tasksByFunction).map(([criticalFunction, tasks], idx) => (
                       <TableRow key={idx}>
+                        {showRadios && (
+                          <TableCell>
+                            <input
+                              type="radio"
+                              name="criticalFunction"
+                              value={criticalFunction}
+                              checked={selectedFunction === criticalFunction}
+                              onChange={() => setSelectedFunction(criticalFunction)}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell className="font-semibold">{criticalFunction}</TableCell>
                         <TableCell>
                           <ul className="list-disc ml-4 space-y-1 text-sm">
@@ -242,6 +295,34 @@ export default function JobDescriptionModal({ isOpen, onClose, jobRole }: JobDes
                             ))}
                           </ul>
                         </TableCell>
+                        {showRadios && (
+                          <TableCell>
+                            {selectedFunction === criticalFunction && (
+                              <Button onClick={() => {
+                                // Calculate tasksByFunction locally
+                                const tasksByFunction = tasksData.reduce((acc, task) => {
+                                  const fn = task.critical_work_function || "Uncategorized";
+                                  if (!acc[fn]) acc[fn] = [];
+                                  acc[fn].push(task);
+                                  return acc;
+                                }, {} as Record<string, Task[]>);
+
+                                const tasksForFunction = tasksByFunction[selectedFunction] || [];
+                                const keyTasks = tasksForFunction.map(task => task.taskName);
+
+                                const jsonObject = {
+                                  industry: sessionData.orgType,
+                                  department: jobRole.department,
+                                  jobrole: jobRole.jobrole,
+                                  critical_work_function: selectedFunction,
+                                  key_tasks: keyTasks
+                                };
+
+                                onConfig(jsonObject);
+                              }}>Configuration</Button>
+                            )}
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
