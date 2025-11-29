@@ -381,73 +381,73 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
     if (!botMessage) {
       throw new Error('Failed to save bot message');
     }
-    if (!shouldUseFallback(intent.intent)) {
-      const errorDetails = `Intent: ${intent.intent}, Confidence: ${intent.confidence}, Reasoning: ${intent.reasoning}`;
-      const errorMessage = `An unexpected error occurred. Details: ${errorDetails}`;
-  
-      const botMessage = await saveMessage(
-          conversationId,
-          'bot',
-          errorMessage,
-          intent.intent,
-          undefined,
-          undefined,
-          true,
-          errorDetails
-      );
+    //   if (!shouldUseFallback(intent.intent)) {
+    //     const errorDetails = `Intent: ${intent.intent}, Confidence: ${intent.confidence}, Reasoning: ${intent.reasoning}`;
+    //     const errorMessage = `An unexpected error occurred. Details: ${errorDetails}`;
+
+    //     const botMessage = await saveMessage(
+    //         conversationId,
+    //         'bot',
+    //         errorMessage,
+    //         intent.intent,
+    //         undefined,
+    //         undefined,
+    //         true,
+    //         errorDetails
+    //     );
+    //     if (!botMessage) {
+    //         throw new Error('Failed to save bot message');
+    //     }
+
+    //     return {
+    //         answer: errorMessage,
+    //         conversationId,
+    //         id: botMessage.id,
+    //         intent: intent.intent,
+    //         error: 'UNKNOWN',
+    //         recoverable: false,
+    //         suggestion: 'Please contact support with the above details.',
+    //         canEscalate: true
+    //     };
+    // }
+    // if (shouldUseFallback(intent.intent)) {
+    try {
+      const fallbackMessages = request.conversationHistory ? [...request.conversationHistory] : [];
+      fallbackMessages.push({ role: 'user', content: request.query });
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.LLM_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-chat',
+          messages: [
+            { role: 'system', content: 'You are a friendly assistant. Answer normally in plain English. Maintain conversation context.' },
+            ...fallbackMessages
+          ]
+        })
+      });
+
+      const data = await response.json();
+      const fallbackAnswer = data.choices?.[0]?.message?.content?.trim() || errorMessage;
+
+      const botMessage = await saveMessage(conversationId, 'bot', fallbackAnswer, intent.intent);
       if (!botMessage) {
-          throw new Error('Failed to save bot message');
+        throw new Error('Failed to save bot message');
       }
-  
       return {
-          answer: errorMessage,
-          conversationId,
-          id: botMessage.id,
-          intent: intent.intent,
-          error: 'UNKNOWN',
-          recoverable: false,
-          suggestion: 'Please contact support with the above details.',
-          canEscalate: true
+        answer: fallbackAnswer,
+        conversationId,
+        id: botMessage.id,
+        intent: intent.intent,
+        canEscalate: true
       };
-  }
-    if (shouldUseFallback(intent.intent)) {
-      try {
-        const fallbackMessages = request.conversationHistory ? [...request.conversationHistory] : [];
-        fallbackMessages.push({ role: 'user', content: request.query });
-
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.LLM_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'deepseek/deepseek-chat',
-            messages: [
-              { role: 'system', content: 'You are a friendly assistant. Answer normally in plain English. Maintain conversation context.' },
-              ...fallbackMessages
-            ]
-          })
-        });
-
-        const data = await response.json();
-        const fallbackAnswer = data.choices?.[0]?.message?.content?.trim() || errorMessage;
-
-        const botMessage = await saveMessage(conversationId, 'bot', fallbackAnswer, intent.intent);
-        if (!botMessage) {
-          throw new Error('Failed to save bot message');
-        }
-        return {
-          answer: fallbackAnswer,
-          conversationId,
-          id: botMessage.id,
-          intent: intent.intent,
-          canEscalate: true
-        };
-      } catch (fallbackError) {
-        console.error('Fallback LLM failed:', fallbackError);
-      }
+    } catch (fallbackError) {
+      console.error('Fallback LLM failed:', fallbackError);
     }
+    // }
 
     return {
       answer: errorMessage,
