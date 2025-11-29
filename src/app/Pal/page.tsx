@@ -9,7 +9,7 @@ export default function SkilldashboardPage() {
       <iframe
         src="https://learningagent-kxvkny4y8p5ud4abjappvx7.streamlit.app/"
         className="w-full h-full border-0"
-        allow="fullscreen; clipboard-read; clipboard-write"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-downloads"
       />
     </div>
   );

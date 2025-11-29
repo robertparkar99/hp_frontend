@@ -96,7 +96,7 @@ const SubMenuItem = ({
             return;
         }
 
-        if (item.page_type === "url" && item.access_link) {
+        if (item.page_type === "link" && item.access_link) {
             window.open(item.access_link, "_blank");
         } else if (item.page_type === "page" && item.access_link) {
             const normalizedLink = item.access_link.startsWith("/")
