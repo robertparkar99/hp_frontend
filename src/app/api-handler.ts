@@ -1,18 +1,18 @@
-// src/app/api-handler.ts
+
 import { classifyIntent, shouldRouteToAction, shouldUseFallback } from "@/lib1/intent-classifier";
-import { sanitizeQuery, validateQuerySafety } from "@/lib1/sanitizer";
-import { parseError, formatErrorResponse, shouldRetry } from "@/lib1/error-handler";
-import { getRoleContext, canAccessData, getDataAccessFilter } from "@/lib1/role-context";
-import { logEvent, logQuery, logLLMCall, formatDebugTrace } from "@/lib1/observability";
-import {
-  createConversation,
-  getConversationBySessionId,
-  saveMessage,
-  getConversationHistory,
-  updateConversationStatus
-} from "@/lib1/conversation-persistence";
-import { createEscalation } from "@/lib1/escalation-service";
-import { v4 as uuidv4 } from 'uuid';
+ import { sanitizeQuery, validateQuerySafety } from "@/lib1/sanitizer";
+ import { parseError, formatErrorResponse, shouldRetry } from "@/lib1/error-handler";
+ import { getRoleContext, canAccessData, getDataAccessFilter } from "@/lib1/role-context";
+ import { logEvent, logQuery, logLLMCall, formatDebugTrace } from "@/lib1/observability";
+ import {
+   createConversation,
+   getConversationBySessionId,
+   saveMessage,
+   getConversationHistory,
+   updateConversationStatus
+ } from "@/lib1/conversation-persistence";
+ import { createEscalation } from "@/lib1/escalation-service";
+ import { v4 as uuidv4 } from 'uuid';
 
 interface ChatRequest {
   query: string;
@@ -111,49 +111,555 @@ Return only the SQL query without explanations.`;
 //   return data.results || [];
 // }
 // -----------------------------------------
-async function executeSQLQuery(sql: string): Promise<any[]> {
-  // Parse simple SQL patterns
-  const regex = /SELECT\s+(.+)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+))?/i;
-  const match = sql.match(regex);
 
-  if (!match) throw new Error("Unsupported SQL format for API translation.");
+// ---------------------------
+// BEGIN REPLACEMENT: API LAYER
+// ---------------------------
 
-  const table = match[2];
-  const whereClause = match[3];
+/**
+ * Helper: table alias map (common English -> actual DB table)
+ * Extend this map as you discover more shorthand words used in NL prompts.
+ */
+const tableAliasMap: Record<string, string> = {
+  // menus
+  "menu": "tblmenumaster",
+  "menus": "tblmenumaster",
 
-  // Build API params
-  const params = new URLSearchParams();
-  params.append("table", table);
+  // lms
+  "course": "lms_course_master",
+  "courses": "lms_course_master",
+  "module": "chapter_master",
+  "modules": "chapter_master",
+  "content": "content_master",
+  "questionpaper": "question_paper",
+  "question_paper": "question_paper",
 
-  // Convert WHERE filters into API filters:
-  // Example SQL: WHERE parent_id = 0 AND status = 1
-  if (whereClause) {
-    const conditions = whereClause.split(/AND/i).map(c => c.trim());
-    for (const cond of conditions) {
-      const [key, value] = cond.split("=").map(s => s.trim().replace(/['"]/g, ""));
-      params.append(`filters[${key}]`, value);
+  // hrms / users
+  "user": "tbluser",
+  "users": "tbluser",
+  "staff": "tbluser",
+  "employee": "tbluser",
+  "profile": "tbluserprofilemaster",
+  "department": "hrms_departments",
+  "departments": "hrms_departments",
+
+  // standard/common tables found in doc
+  "standard": "standard",
+  "section": "academic_section",
+  "subject": "subject_master",
+  "question": "question_master",
+
+  // payroll / salary
+  "salary": "employee_salary_structure",
+  "payroll": "monthly_payroll",
+
+  // skills / jobrole
+  "skill": "skill_library",
+  "skills": "skill_library",
+  "skill_category": "skill_category",
+  "jobrole": "jobroleOccupation",
+  "jobroles": "jobroleOccupation",
+  "task": "jobroleTask",
+  "tasks": "jobroleTask",
+
+  // neo4j / graph
+  "industry": "s_industries",
+  "industries": "s_industries",
+
+  // fallback short forms
+  "menu_master": "tblmenumaster",
+  "chapter": "chapter_master",
+
+  // add more as you discover shorthand words used by users...
+};
+/**
+ * HP API registry (module-wise). These are taken from your HP APIs.docx
+ * - Key: logical endpoint / table name
+ * - Value: { method, urlTemplate, defaultParams }.
+ *
+ * NOTE: The doc shows both local (127.0.0.1:8000) and production (hp.triz.co.in / erp.triz.co.in).
+ * We will prefer production (hp.triz.co.in) when available; local is kept for dev fallback.
+ *
+ * Add more endpoints from the doc into this map as you require.
+ *
+ * (Cited from HP APIs.docx examples / modules). 
+ */
+const hpApiMap: Record<string, { method: "GET" | "POST"; url: string }> = {
+  // -----------------------
+  // Existing / previously included endpoints (keep as-is)
+  // -----------------------
+  "table_data": { method: "GET", url: "https://hp.triz.co.in/table_data" },
+
+  // LMS module (existing)
+  "chapter_master": { method: "GET", url: "https://hp.triz.co.in/lms/chapter_master" },
+  "chapter_master_create": { method: "POST", url: "https://hp.triz.co.in/lms/chapter_master" },
+  "content_master": { method: "POST", url: "https://hp.triz.co.in/lms/content_master" },
+  "create_content_master": { method: "GET", url: "https://hp.triz.co.in/lms/create_content_master" },
+  "question_chapter_master": { method: "GET", url: "https://hp.triz.co.in/lms/question_chapter_master" },
+  "question_master": { method: "POST", url: "https://hp.triz.co.in/lms/question_master" },
+
+  // AI / Gemini (existing)
+  "gemini_chat": { method: "POST", url: "https://hp.triz.co.in/gemini_chat" },
+  "AICourseGeneration": { method: "GET", url: "https://hp.triz.co.in/AICourseGeneration" },
+  "gammaContent": { method: "GET", url: "http://127.0.0.1:8000/gammaContent" },
+
+  // Dashboard / misc (existing)
+  "dashboard": { method: "GET", url: "https://hp.triz.co.in/dashboard" },
+
+  // ERP endpoints (existing)
+  "lms_data_erp": { method: "GET", url: "https://erp.triz.co.in/lms_data" },
+
+  // Job / Talent (existing)
+  "job_applications": { method: "GET", url: "https://hp.triz.co.in/api/job-applications" },
+
+  // Auth (existing)
+  "forget-password": { method: "POST", url: "https://hp.triz.co.in/forget-password" },
+  "reset-password": { method: "POST", url: "https://hp.triz.co.in/reset-password" },
+
+  // -----------------------
+  // MISSING APIs ADDED (from PDF) — group: HRMS
+  // -----------------------
+  "hrms_departments": { method: "GET", url: "https://hp.triz.co.in/table_data?table=hrms_departments" },
+  "hrms_department_add": { method: "POST", url: "https://hp.triz.co.in/hrms/add_department" },
+
+  "hrms_attendance": { method: "GET", url: "https://hp.triz.co.in/hrms/attendance" },
+  "hrms_attendance_update": { method: "POST", url: "https://hp.triz.co.in/hrms/update_user_att" },
+  "hrms_punch_out": { method: "POST", url: "https://hp.triz.co.in/hrms-out-time/store" },
+
+  "hrms_leave_type": { method: "GET", url: "https://hp.triz.co.in/leave-type" },
+  "hrms_leave_type_add": { method: "POST", url: "https://hp.triz.co.in/leave-type" },
+  "hrms_leave_apply": { method: "POST", url: "https://hp.triz.co.in/leave-apply" },
+  "hrms_leave_summary_report": { method: "GET", url: "https://hp.triz.co.in/leave-summary-report" },
+  "hrms_leave_authorization": { method: "POST", url: "https://hp.triz.co.in/leave-authorisation/store" },
+
+  "hrms_holiday_get": { method: "GET", url: "https://hp.triz.co.in/hrms/holiday" },
+  "hrms_holiday_add": { method: "POST", url: "https://hp.triz.co.in/hrms/holiday" },
+
+  // Payroll
+  "employee_salary_structure": { method: "GET", url: "https://hp.triz.co.in/employee-salary-structure" },
+  "employee_salary_structure_store": { method: "POST", url: "https://hp.triz.co.in/employee-salary-structure/store" },
+  "payroll_deduction": { method: "GET", url: "https://hp.triz.co.in/payroll-deduction" },
+  "monthly_payroll": { method: "GET", url: "https://hp.triz.co.in/monthly-payroll-report" },
+  "monthly_payroll_store": { method: "POST", url: "https://hp.triz.co.in/monthly-payroll-store" },
+
+  // -----------------------
+  // Skill Library
+  // -----------------------
+  "skill_library": { method: "GET", url: "https://erp.triz.co.in/lms/skill_library" },
+  "skill_library_create": { method: "POST", url: "https://erp.triz.co.in/lms/skill_library" },
+  "skill_category": { method: "GET", url: "https://erp.triz.co.in/lms/skill_library/create" },
+  "skill_knowledge_ability": { method: "GET", url: "https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability" },
+  "proficiency_levels": { method: "GET", url: "https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability&group_by=proficiency_level" },
+  "skill_attribute_taxonomy": { method: "POST", url: "https://hp.triz.co.in/skill_library/attributes_taxonomy" },
+
+  // -----------------------
+  // JobRole & Occupation
+  // -----------------------
+  "jobroleOccupation": { method: "GET", url: "https://erp.triz.co.in/skill/jobroleOccupation" },
+  "jobroleOccupation_create": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleOccupation" },
+  "jobroleOccupation_update": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleOccupation/{id}" },
+  "jobroleOccupation_delete": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleOccupation/{id}/delete" },
+
+  "jobroleSkill": { method: "GET", url: "https://erp.triz.co.in/skill/jobroleSkill" },
+  "jobroleSkill_create": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleSkill" },
+  "jobroleSkill_update": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleSkill/{id}" },
+
+  "jobroleTask": { method: "GET", url: "https://erp.triz.co.in/skill/jobroleTask" },
+  "jobroleTask_create": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleTask" },
+
+  // -----------------------
+  // LMS - other / exam / question paper
+  // -----------------------
+  "course_master": { method: "GET", url: "https://hp.triz.co.in/lms/course_master" },
+  "question_paper_search": { method: "GET", url: "https://hp.triz.co.in/question_paper/search_question" },
+  "question_paper_store": { method: "POST", url: "https://hp.triz.co.in/lms/question_paper/storeData" },
+  "online_exam": { method: "GET", url: "https://hp.triz.co.in/lms/online_exam" },
+  "online_exam_submit": { method: "POST", url: "https://hp.triz.co.in/lms/online_exam" },
+
+  // -----------------------
+  // Compliance
+  // -----------------------
+  "compliance_list": { method: "GET", url: "https://erp.triz.co.in/api/compliance/list" },
+  "compliance_create": { method: "POST", url: "https://erp.triz.co.in/api/compliance/create" },
+  "compliance_update": { method: "POST", url: "https://erp.triz.co.in/api/compliance/update/{id}" },
+  "compliance_delete": { method: "POST", url: "https://erp.triz.co.in/api/compliance/delete/{id}" },
+
+  // -----------------------
+  // Talent / Job Posting
+  // -----------------------
+  "job_postings": { method: "GET", url: "https://hp.triz.co.in/api/job-postings" },
+  "job_posting_create": { method: "POST", url: "https://hp.triz.co.in/api/job-postings" },
+  "job_posting_update": { method: "POST", url: "https://hp.triz.co.in/api/job-postings/{id}" },
+  // "job_posting_delete": { method: "DELETE", url: "https://hp.triz.co.in/api/job-postings/{id}" },
+
+  // -----------------------
+  // Organization / Department
+  // -----------------------
+  "s_user_jobrole": { method: "GET", url: "https://hp.triz.co.in/table_data?table=s_user_jobrole" },
+  "s_industries": { method: "GET", url: "https://hp.triz.co.in/table_data?table=s_industries" },
+  "department_master": { method: "GET", url: "https://hp.triz.co.in/hrms/add_department" },
+
+  // -----------------------
+  // Neo4J / Graph
+  // -----------------------
+  "neo_industries": { method: "GET", url: "https://hp.triz.co.in/api/industries" },
+  "neo_industry_departments": { method: "GET", url: "https://hp.triz.co.in/api/industry/{slug}/departments" },
+  "neo_jobroles": { method: "GET", url: "https://hp.triz.co.in/api/department/{slug}/jobroles" },
+  "neo_skills": { method: "GET", url: "http://127.0.0.1:8000/api/jobrole/{name}/skills" },
+
+  // -----------------------
+  // Reports / misc direct endpoints
+  // -----------------------
+  "task_analysis_report": { method: "GET", url: "https://hp.triz.co.in/task_analysis_report" },
+  "employee_report": { method: "GET", url: "https://hp.triz.co.in/user/employee_report" },
+  "organization_dashboard": { method: "GET", url: "https://hp.triz.co.in/organization_dashboard" },
+
+  // -----------------------
+  // Fallback Generic endpoints (dev local)
+  // -----------------------
+  "local_table_data": { method: "GET", url: "http://127.0.0.1:8000/table_data" },
+  "local_gammaContent": { method: "GET", url: "http://127.0.0.1:8000/gammaContent" }
+};
+
+/**
+ * Build a URL with query parameters
+ */
+function buildUrl(baseUrl: string, params?: Record<string, string | number | undefined>) {
+  if (!params) return baseUrl;
+  const u = new URL(baseUrl);
+  // use provided params; skip undefined
+  Object.entries(params).forEach(([k, v]) => {
+    if (v === undefined || v === null) return;
+    // If value is an object/array, convert to bracket notation where appropriate
+    if (Array.isArray(v)) {
+      v.forEach((val, idx) => u.searchParams.append(`${k}[${idx}]`, String(val)));
+    } else {
+      u.searchParams.append(k, String(v));
+    }
+  });
+  return u.toString();
+}
+
+/**
+ * Call HP API with appropriate method & headers.
+ * Most HP APIs use token as a query param; but we keep Authorization header fallback.
+ */
+
+
+async function callHpApi(method: "GET" | "POST", url: string, params?: Record<string, any>, body?: any) {
+  const finalUrl = method === "GET" ? buildUrl(url, params) : buildUrl(url, params);
+  const fetchOptions: RequestInit = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      // if you prefer token in header uncomment below and set env var
+      // "Authorization": `Bearer ${process.env.HP_API_BEARER}`
+    }
+  };
+
+ if (method === "POST") {
+  // If caller provides params.body, send it
+  if (params?.body) {
+    fetchOptions.body = JSON.stringify(params.body);
+  } else if (body) {
+    fetchOptions.body = JSON.stringify(body);
+  } else {
+    // send empty body if not provided
+    fetchOptions.body = JSON.stringify({});
+  }
+}
+
+
+  const res = await fetch(finalUrl, fetchOptions);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`HP API call failed ${res.status} ${res.statusText} - ${text}`);
+  }
+  // Parse JSON (most endpoints return JSON)
+  const data = await res.json().catch(async () => {
+    // if not json, try text
+    const t = await res.text().catch(() => "");
+    return { raw: t };
+  });
+  return data;
+}
+
+/**
+ * Very small SQL parser helper: extract SELECT fields, FROM table, WHERE clause, ORDER BY, GROUP BY, LIMIT
+ * Returns fragments or null
+ */
+function parseSQLFragments(sql: string) {
+  if (!sql || typeof sql !== "string") return null;
+  const rSelect = /SELECT\s+(.+?)\s+FROM\s+/i;
+  const rFrom = /FROM\s+`?([\w\.]+)`?/i;
+  const rWhere = /WHERE\s+(.+?)(?:ORDER\s+BY|GROUP\s+BY|LIMIT|$)/i;
+  const rOrder = /ORDER\s+BY\s+([\w\.\s,]+)(?:\s+(ASC|DESC))?/i;
+  const rGroup = /GROUP\s+BY\s+([\w\.\s,]+)/i;
+  const rLimit = /LIMIT\s+(\d+)/i;
+
+  const selectMatch = sql.match(rSelect);
+  const fromMatch = sql.match(rFrom);
+  const whereMatch = sql.match(rWhere);
+  const orderMatch = sql.match(rOrder);
+  const groupMatch = sql.match(rGroup);
+  const limitMatch = sql.match(rLimit);
+
+  return {
+    select: selectMatch ? selectMatch[1].trim() : undefined,
+    table: fromMatch ? fromMatch[1].trim() : undefined,
+    where: whereMatch ? whereMatch[1].trim() : undefined,
+    order_by: orderMatch ? orderMatch[1].trim() : undefined,
+    order_dir: orderMatch && orderMatch[2] ? orderMatch[2].trim().toUpperCase() : undefined,
+    group_by: groupMatch ? groupMatch[1].trim() : undefined,
+    limit: limitMatch ? Number(limitMatch[1]) : undefined
+  };
+}
+
+/**
+ * Parse simple WHERE expressions like:
+ *  parent_id = 0 AND status = 1
+ *  parent_id='0' AND status IN (1,2)
+ * Returns { filters: Record<string,string|number|Array<string|number>> }
+ */
+function parseWhereToFilters(whereClause?: string) {
+  if (!whereClause) return {};
+  // split by AND for now (doc shows simple filters)
+  const parts = whereClause.split(/\s+AND\s+/i).map(p => p.trim()).filter(Boolean);
+  const filters: Record<string, any> = {};
+  for (const part of parts) {
+    // handle IN (...) and = and LIKE
+    const inMatch = part.match(/(\w+)\s+IN\s*\((.+)\)/i);
+    if (inMatch) {
+      const key = inMatch[1];
+      const vals = inMatch[2].split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
+      filters[key] = vals;
+      continue;
+    }
+    const eqMatch = part.match(/(\w+)\s*=\s*('?[^']+'?|\"?[^\"]+\"?|\d+)/i);
+    if (eqMatch) {
+      const key = eqMatch[1];
+      const raw = eqMatch[2].trim().replace(/^['"]|['"]$/g, '');
+      // coerce numeric strings to numbers when appropriate
+      const num = Number(raw);
+      filters[key] = isNaN(num) ? raw : num;
+      continue;
+    }
+    const likeMatch = part.match(/(\w+)\s+LIKE\s+'(.+)'/i);
+    if (likeMatch) {
+      filters[likeMatch[1]] = likeMatch[2];
+      continue;
+    }
+    // fallback: try to split by space
+    const fallback = part.split(/\s+/);
+    if (fallback.length >= 3) {
+      const key = fallback[0];
+      const val = fallback.slice(2).join(' ').replace(/^['"]|['"]$/g, '');
+      filters[key] = val;
+    }
+  }
+  return filters;
+}
+
+/**
+ * Try to infer a table name from natural language if SQL didn't contain FROM
+ */
+function inferTableFromNL(nl: string): string | undefined {
+  if (!nl) return undefined;
+  const text = nl.toLowerCase();
+  for (const [alias, table] of Object.entries(tableAliasMap)) {
+    const pattern = new RegExp(`\\b${alias}\\b`, "i");
+    if (pattern.test(text)) return table;
+  }
+  return undefined;
+}
+
+/**
+ * Main executeSQLQuery replacement:
+ * - Accepts generated SQL and original NL query (for fallback inference).
+ * - Determines the correct HP endpoint for the requested table or intent.
+ * - Constructs params and calls the endpoint.
+ *
+ * Note: This function is intentionally conservative: it avoids executing mutating SQL
+ * (DROP/DELETE/etc.) — validateSQL() still runs upstream.
+ */
+async function executeSQLQuery(sql: string, originalQuery?: string): Promise<any[]> {
+  // 1) Try to parse SQL fragments
+  const fragments = parseSQLFragments(sql || "");
+  let table = fragments?.table;
+
+  // ---- FIX: APPLY alias map IMMEDIATELY ----
+  if (table && tableAliasMap[table.toLowerCase()]) {
+    table = tableAliasMap[table.toLowerCase()];
+  }
+  const whereClause = fragments?.where;
+  const order_by = fragments?.order_by;
+  const order_dir = fragments?.order_dir;
+  const group_by = fragments?.group_by;
+  const limit = fragments?.limit;
+
+  // 2) If no table found in SQL, try to infer from original natural-language query
+// Additional fallback: Use alias map keys
+if (!table && originalQuery) {
+  const words = originalQuery.toLowerCase().split(/\s+/);
+  for (const w of words) {
+    if (tableAliasMap[w]) {
+      table = tableAliasMap[w];
+      break;
+    }
+  }
+}
+
+
+  // 3) If still no table, but SQL contains only a WHERE (LLM might have returned "WHERE ...")
+  if (!table && fragments && fragments.where) {
+    // attempt to detect table from WHERE keys by checking common table columns
+    // basic heuristic: common column names -> table mapping (expandable)
+    const heuristicColumnMap: Record<string, string> = {
+      parent_id: "tblmenumaster",
+      sub_institute_id: "tblmenumaster",
+      sort_order: "tblmenumaster",
+      status: "tblmenumaster",
+      user_id: "tbluser",
+      employee_id: "tbluser",
+      subject_id: "chapter_master",
+      chapter_id: "chapter_master",
+      standard_id: "chapter_master",
+      // extend this map as needed
+    };
+    const keys = Object.keys(parseWhereToFilters(fragments.where));
+    for (const k of keys) {
+      if (heuristicColumnMap[k]) {
+        table = heuristicColumnMap[k];
+        break;
+      }
     }
   }
 
-  const url = `https://hp.triz.co.in/table_data?${params.toString()}`;
+  // 4) If still no table, throw a helpful error
+  if (!table) {
+    throw new Error("Could not determine target table for query. Please mention the table name (for example 'tblmenumaster' or say 'menus').");
+  }
 
-  console.log("🔥 Translated API URL:", url);
+  // 5) Normalize table name (strip schema if present)
+  table = table.split('.').pop() as string;
 
-  // Call your real DB API
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
+  // 6) Build filters from WHERE clause
+  const filters = parseWhereToFilters(whereClause);
 
-  if (!response.ok) throw new Error("Database API failed");
+  // 7) Map table -> API endpoint
+  // Default: call /table_data?table=<table>&filters[...] (common pattern in doc)
+  // But for some tables or intents, call dedicated endpoints (e.g., chapter_master)
+  let apiEntry = undefined;
 
-  const data = await response.json();
-
-  // Your API returns data directly
-  return data;
+  // exact matches in registry
+  if (hpApiMap[table]) {
+    apiEntry = hpApiMap[table];
+  }
+  // Fallback match: remove "-" and "_" from both sides
+if (!apiEntry) {
+  const cleanedTable = table.toLowerCase().replace(/[-_]/g, "");
+  apiEntry = Object.entries(hpApiMap).find(([key]) =>
+    key.toLowerCase().replace(/[-_]/g, "") === cleanedTable
+  )?.[1];
 }
+
+
+  // known special table -> endpoint mapping
+  const specialTableToEntryKey: Record<string, string> = {
+    "chapter_master": "chapter_master",
+    "content_master": "content_master",
+    "question_chapter_master": "question_chapter_master",
+    "question_master": "question_master",
+    "dashboard": "dashboard",
+    // add other direct mappings if present in hpApiMap
+  };
+
+  if (!apiEntry && specialTableToEntryKey[table] && hpApiMap[specialTableToEntryKey[table]]) {
+    apiEntry = hpApiMap[specialTableToEntryKey[table]];
+  }
+
+  // Default fallback: generic table_data endpoint
+  if (!apiEntry) {
+    apiEntry = hpApiMap["table_data"];
+  }
+
+  // 8) Construct API params using doc's expected query params style
+  const params: Record<string, any> = {};
+  // default required common params (the doc uses token, sub_institute_id etc.)
+  // prefer passing env vars if available
+  if (process.env.HP_API_TOKEN) params["token"] = process.env.HP_API_TOKEN;
+  if (process.env.HP_SUB_INSTITUTE_ID) params["sub_institute_id"] = process.env.HP_SUB_INSTITUTE_ID;
+  // incorporate filters from WHERE
+  if (Object.keys(filters).length > 0) {
+    params["table"] = table; // ensure table param is present for table_data
+    for (const [k, v] of Object.entries(filters)) {
+      // API expects filters[key]=value
+      if (Array.isArray(v)) {
+    v.forEach((val, idx) => {
+        params[`filters[${k}][${idx}]`] = val;
+    });
+} else {
+    params[`filters[${k}]`] = v;
+}
+
+    }
+  } else {
+    // If no filters but SQL had SELECT * FROM table (no where), still pass table
+    params["table"] = table;
+  }
+
+  // incorporate order_by / group_by / limit if present (many endpoints accept these params)
+  if (order_by) {
+    params["order_by[column]"] = order_by;
+    if (order_dir) params["order_by[direction]"] = order_dir.toLowerCase();
+  }
+  if (group_by) {
+    params["group_by"] = group_by;
+  }
+  if (typeof limit === "number") {
+    params["limit"] = limit;
+  }
+
+  // doc examples often include type=API and user context - add if provided in ENV
+  params["type"] = params["type"] || "API";
+  if (process.env.HP_USER_ID) params["user_id"] = params["user_id"] || process.env.HP_USER_ID;
+  if (process.env.HP_SYEAR) params["syear"] = params["syear"] || process.env.HP_SYEAR;
+  if (!params["token"] && process.env.HP_API_TOKEN_FALLBACK) params["token"] = process.env.HP_API_TOKEN_FALLBACK;
+
+  // 9) Final call: some hpApiMap entries are POST endpoints expecting query params for create/update
+  try {
+    // If the API is exactly 'table_data' or similar, call with GET; if special and method POST, call POST
+    const method = apiEntry.method;
+    // If table_data, use GET with built params as querystring
+    if (apiEntry === hpApiMap["table_data"]) {
+      // build URL and call
+      const data = await callHpApi("GET", apiEntry.url, params);
+      // many table_data responses are arrays or {data: ...}; normalize
+      if (Array.isArray(data)) return data;
+      if (data?.results) return data.results;
+      if (data?.data) return data.data;
+      return data;
+    } else {
+      // For special endpoints, we may need to pass specific param names from doc
+      // Example: chapter_master expects standard_id, subject_id etc.
+      // We'll pass our params and let API handle extras.
+      const data = await callHpApi(method, apiEntry.url, params, undefined);
+      // Normalize response
+      if (Array.isArray(data)) return data;
+      if (data?.results) return data.results;
+      if (data?.data) return data.data;
+      return data;
+    }
+  } catch (err) {
+    // rethrow with additional context so upper layers know which URL failed
+    throw new Error(`executeSQLQuery failed for table=${table}: ${(err as Error).message}`);
+  }
+}     
+
+// -------------------------
+// END REPLACEMENT: API LAYER
+// -------------------------
+
 
 
 async function generateInsights(query: string, sql: string, results: any[]): Promise<string> {
@@ -298,7 +804,7 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
           throw new Error('SQL validation failed - contains dangerous keywords');
         }
 
-        results = await executeSQLQuery(sql);
+        results = await executeSQLQuery(sql, request.query);
         const execTime = Date.now() - startTime;
 
         await logQuery(conversationId, 'data_retrieval', sql, execTime, true);
@@ -307,7 +813,7 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
 
         const tables = extractTablesFromSQL(sql);
 
-        const botMessage = await saveMessage(
+        await saveMessage(
           conversationId,
           'bot',
           answer,
@@ -316,9 +822,6 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
           tables,
           false
         );
-        if (!botMessage) {
-          throw new Error('Failed to save bot message');
-        }
 
         if (debugModeEnabled) {
           const trace = formatDebugTrace(intent.intent, sql, execTime, results);
@@ -328,7 +831,6 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
         return {
           answer,
           conversationId,
-          id: botMessage.id,
           intent: intent.intent,
           sql,
           tables_used: tables,
@@ -368,7 +870,7 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
       metadata: { error: errorCtx, intent: intent.intent }
     });
 
-    const botMessage = await saveMessage(
+    await saveMessage(
       conversationId,
       'bot',
       errorMessage,
@@ -378,38 +880,31 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
       true,
       errorCtx.message
     );
-    if (!botMessage) {
-      throw new Error('Failed to save bot message');
-    }
     if (!shouldUseFallback(intent.intent)) {
       const errorDetails = `Intent: ${intent.intent}, Confidence: ${intent.confidence}, Reasoning: ${intent.reasoning}`;
       const errorMessage = `An unexpected error occurred. Details: ${errorDetails}`;
-  
-      const botMessage = await saveMessage(
-          conversationId,
-          'bot',
-          errorMessage,
-          intent.intent,
-          undefined,
-          undefined,
-          true,
-          errorDetails
+
+      await saveMessage(
+        conversationId,
+        'bot',
+        errorMessage,
+        intent.intent,
+        undefined,
+        undefined,
+        true,
+        errorDetails
       );
-      if (!botMessage) {
-          throw new Error('Failed to save bot message');
-      }
-  
+
       return {
-          answer: errorMessage,
-          conversationId,
-          id: botMessage.id,
-          intent: intent.intent,
-          error: 'UNKNOWN',
-          recoverable: false,
-          suggestion: 'Please contact support with the above details.',
-          canEscalate: true
+        answer: errorMessage,
+        conversationId,
+        intent: intent.intent,
+        error: 'UNKNOWN',
+        recoverable: false,
+        suggestion: 'Please contact support with the above details.',
+        canEscalate: true
       };
-  }
+    }
     if (shouldUseFallback(intent.intent)) {
       try {
         const fallbackMessages = request.conversationHistory ? [...request.conversationHistory] : [];
