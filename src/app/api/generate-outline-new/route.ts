@@ -4,26 +4,32 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
     try {
         // Parse input from frontend
-        const { cfg, industry, aiModel } = await req.json();
-
+        const { jsonObject, modality, aiModel } = await req.json();
         // Validate server-side API key (never exposed to client)
-        const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || " ";
-
-
-        // Dynamically build course prompt (mirroring your buildPrompt logic)
-        const modality = [
-            cfg?.modality?.selfPaced && "Self-paced",
-            cfg?.modality?.instructorLed && "Instructor-led",
+        const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+        console.log("AI API KEY 28112025 : ", OPENROUTER_API_KEY);
+        console.log("jsonobject", jsonObject);
+        // Dynamically build course prompt using jsonObject and modality
+        const modalityString = [
+            modality?.selfPaced && "Self-paced",
+            modality?.instructorLed && "Instructor-led",
         ]
             .filter(Boolean)
             .join(", ");
 
-        const keyTask = cfg?.tasks?.length > 0 ? cfg.tasks[0] : "-";
-        const criticalWorkFunction = cfg?.criticalWorkFunction || "-";
+        const keyTask = jsonObject?.key_tasks?.length > 0 ? jsonObject.key_tasks : "-";
+        const criticalWorkFunction = jsonObject?.critical_work_function || "-";
+        const industry = jsonObject?.industry || "-";
+        const department = jsonObject?.department || "-";
+        const jobRole = jsonObject?.jobrole || "-";
+        console.log("jobrole", jobRole);
+        console.log("keyTask", keyTask);
+        console.log("criticalWorkFunction", criticalWorkFunction);
 
         const coursePrompt = {
             instruction:
-                `You are an expert instructional designer and L&D manager belonging to ${industry} industry & specialized in ${cfg.department}. Design a complete 10-slide ${modality} training course that provides comprehensive, competency-based guide to mastering ${keyTask} within ${criticalWorkFunction} for ${cfg.jobRole} in ${cfg.department}.`,
+                `You are an expert instructional designer and L&D manager belonging to industry: ${industry} & specialized in department: ${department}. Design a complete 10-slide ${modalityString} training course that provides comprehensive, competency-based guide to mastering key tasks: ${keyTask} within critical work function: ${criticalWorkFunction} for job role: ${jobRole} in department: ${department}.`,
+
             output_format: {
                 total_slides: 10,
                 slide_structure: [
@@ -33,14 +39,13 @@ export async function POST(req: Request) {
                 presentation_structure: [
                     {
                         "slide": 1,
-                        "title": "Title Slide",
+                        "title": `Training course for Mastering ${jobRole}`,
                         "content": [
-                            `Industry: ${industry}`,
-                            `Department: ${cfg.department}`,
-                            `Job role: ${cfg.jobRole}`,
-                            `Key Tasks: ${keyTask}`,
-                            `Critical Work Function: ${criticalWorkFunction}`,
-                            `Modality: ${modality}`
+                            `Overview of key tasks: ${keyTask}`,
+                            `Relevance to critical work function: ${criticalWorkFunction}`,
+                            `Industry context: ${industry}`,
+                            `Department: ${department}`,
+                            `Modality: ${modalityString}`
                         ]
                     },
                     {
@@ -148,9 +153,7 @@ export async function POST(req: Request) {
                 style: "Formal, structured, competency-based",
                 visuals: "no visuals or design styling",
                 repetition: "no repetition of content across slides",
-                tone: modality.includes("Self-paced")
-                    ? "Direct, learner-led tone"
-                    : "Facilitator-focused guidance",
+                tone: `${modalityString}`,
             },
         };
 
@@ -183,30 +186,42 @@ export async function POST(req: Request) {
                 },
             ],
             max_tokens: 4000,
-            temperature: 0.7,
-            top_p: 0.9,
+            temperature: 0.0,
+            top_p: 0.0,
+            top_k: 1,
+            frequency_penalty: 0.0,
+            presence_penalty: 0.0,
+            repetition_penalty: 0.0,
+            seed: 12345,
         };
 
         console.log("🚀 Sending request to OpenRouter with model:", aiModel);
 
         // Call OpenRouter API
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                "Content-Type": "application/json",
-                "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-                "X-Title": "AI Course Generator",
-            },
-            body: JSON.stringify(requestData),
-        });
+        const response = await fetch(
+            "https://openrouter.ai/api/v1/chat/completions",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+                    "X-Title": "AI Course Generator",
+                },
+                body: JSON.stringify(requestData),
+            }
+        );
 
         // Handle errors from OpenRouter
         if (!response.ok) {
             const errorText = await response.text();
             console.error("❌ OpenRouter API Error:", errorText);
+
             return NextResponse.json(
-                { error: `OpenRouter API call failed (${response.status})`, details: errorText },
+                {
+                    error: `OpenRouter API call failed (${response.status})`,
+                    details: errorText,
+                },
                 { status: response.status }
             );
         }
@@ -214,6 +229,7 @@ export async function POST(req: Request) {
         // Parse result
         const text = await response.text();
         let result: any;
+
         try {
             result = JSON.parse(text);
         } catch {
@@ -221,11 +237,15 @@ export async function POST(req: Request) {
             result = { rawText: text };
         }
 
-        const generatedContent = result?.choices?.[0]?.message?.content || result?.rawText;
+        const generatedContent =
+            result?.choices?.[0]?.message?.content || result?.rawText;
 
         if (!generatedContent) {
             return NextResponse.json(
-                { error: "No content generated by the AI model.", raw: result },
+                {
+                    error: "No content generated by the AI model.",
+                    raw: result,
+                },
                 { status: 500 }
             );
         }
@@ -235,11 +255,15 @@ export async function POST(req: Request) {
             model: aiModel,
             content: generatedContent,
         });
-
     } catch (error: any) {
         console.error("⚠️ Server-side course generation error:", error);
+
         return NextResponse.json(
-            { error: error.message || "Internal server error during course generation." },
+            {
+                error:
+                    error.message ||
+                    "Internal server error during course generation.",
+            },
             { status: 500 }
         );
     }
