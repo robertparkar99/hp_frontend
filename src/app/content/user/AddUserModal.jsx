@@ -11,8 +11,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
-
 import {
   Select,
   SelectTrigger,
@@ -22,7 +20,6 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AddUserModal({
   isOpen,
@@ -34,15 +31,45 @@ export default function AddUserModal({
   userProfiles: initialUserProfiles = [],
   userLists,
 }) {
-  const [fetchedUserProfiles, setFetchedUserProfiles] =
-    useState(initialUserProfiles);
+
+  const [fetchedUserProfiles, setFetchedUserProfiles] = useState(initialUserProfiles);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [existingEmails, setExistingEmails] = useState([]);
-  const [showPassword, setShowPassword] = useState(false);
-  const [serverError, setServerError] = useState("");
-  const [departmentOptions, setDepartmentOptions] = useState([]);
-  const [jobroleOptions, setJobroleOptions] = useState([]);
-  const [loadingJobroles, setLoadingJobroles] = useState(false);
+
+  const [deptJobroles, setDeptJobroles] = useState([]);
+  const [jobrolesByDept, setJobrolesByDept] = useState([]);
+
+  useEffect(() => {
+    const fetchDeptAndJobroles = async () => {
+      try {
+        const res = await fetch(`${sessionData.APP_URL}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`);
+        const json = await res.json();
+
+        const data = json?.data || {};
+
+        // Create Department List
+        const departments = Object.keys(data).map((deptName) => {
+          const firstJob = data[deptName][0];
+          return {
+            id: firstJob.department_id,
+            name: deptName
+          };
+        });
+
+        setDeptJobroles(departments);
+        setJobrolesByDept(data);
+
+      } catch (error) {
+        console.error("Error fetching departments/jobroles:", error);
+      }
+    };
+
+    if (sessionData?.sub_institute_id) {
+      fetchDeptAndJobroles();
+    }
+  }, [sessionData]);
+
+
   // Fetch existing users' emails for validation
   useEffect(() => {
     if (!sessionData?.APP_URL) return;
@@ -50,11 +77,7 @@ export default function AddUserModal({
     const fetchExistingEmails = async () => {
       try {
         const response = await fetch(
-          `${
-            sessionData.APP_URL
-          }/table_data?table=tbluser&filters[sub_institute_id]=${
-            sessionData.sub_institute_id || 1
-          }`,
+          `${sessionData.APP_URL}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.sub_institute_id || 1}`,
           {
             method: "GET",
             headers: { Accept: "application/json" },
@@ -66,7 +89,7 @@ export default function AddUserModal({
         const result = await response.json();
 
         // Extract emails from existing users
-        const emails = result.map((user) => user.email?.toLowerCase().trim());
+        const emails = result.map(user => user.email?.toLowerCase().trim());
         setExistingEmails(emails || []);
       } catch (error) {
         console.error("Error fetching existing emails:", error);
@@ -85,10 +108,7 @@ export default function AddUserModal({
       setLoadingProfiles(true);
       try {
         const response = await fetch(
-          `${
-            sessionData.APP_URL
-          }/table_data?table=tbluserprofilemaster&filters[sub_institute_id]=${
-            sessionData.sub_institute_id || 1
+          `${sessionData.APP_URL}/table_data?table=tbluserprofilemaster&filters[sub_institute_id]=${sessionData.sub_institute_id || 1
           }&filters[status]=1`,
           {
             method: "GET",
@@ -110,56 +130,7 @@ export default function AddUserModal({
 
     fetchProfiles();
   }, [sessionData]);
-  // ================================
-  // FETCH DEPARTMENTS FROM NEW API
-  // ================================
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const res = await fetch(
-          `${sessionData.APP_URL}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`
-        );
 
-        const json = await res.json();
-        if (json.status && json.data) {
-          // departments come as keys in data object
-          const departments = Object.keys(json.data).map((deptName) => ({
-            department_name: deptName,
-            department_id: json.data[deptName][0]?.department_id,
-          }));
-          setDepartmentOptions(departments);
-        }
-      } catch (e) {
-        console.error("Failed to load departments", e);
-      }
-    };
-
-    if (sessionData?.sub_institute_id) fetchDepartments();
-  }, [sessionData]);
-
-  // =============================================
-  // FETCH JOBROLES WHEN DEPARTMENT IS SELECTED
-  // =============================================
-  const fetchJobrolesByDepartment = async (departmentId) => {
-    setLoadingJobroles(true);
-    try {
-      const res = await fetch(
-        `${sessionData.APP_URL}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}&department_id=${departmentId}`
-      );
-
-      const json = await res.json();
-      if (json.status && json.data) {
-        setJobroleOptions(json.data);
-      } else {
-        setJobroleOptions([]);
-      }
-    } catch (e) {
-      console.error("Failed to load jobroles", e);
-      setJobroleOptions([]);
-    } finally {
-      setLoadingJobroles(false);
-    }
-  };
   const [formData, setFormData] = useState({
     personal: {
       name_suffix: "",
@@ -235,36 +206,13 @@ export default function AddUserModal({
       setEmailError("");
     }
   };
+
   // Email validation function
   const validateEmail = (email) => {
-    const trimmed = email.toLowerCase().trim();
-    // must contain '@'
-    if (!trimmed.includes("@")) return false;
-    // allow only gmail.com domain
-    const allowedDomain = "gmail.com";
-    // split email
-    const parts = trimmed.split("@");
-    if (parts.length !== 2) return false;
-    const domain = parts[1];
-    // If domain is EXACTLY gmail.com → valid
-    if (domain === allowedDomain) {
-      return true;
-    }
-    // If domain STARTS with gmail.com but has extra (e.g. gmail.com.xyz) → invalid
-    if (domain.startsWith(allowedDomain)) {
-      return false;
-    }
-    // any other domain → invalid
-    return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
-  const validatePassword = (password) => {
-    // Minimum 8 chars, at least:
-    // 1 uppercase, 1 lowercase, 1 digit, 1 special character
-    const regex =
-      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&^()_+\-={}[\]|:;"'<>,./]).{8,}$/;
 
-    return regex.test(password);
-  };
   const handleCheckboxChange = (day) => {
     const currentDays = [...formData.attendance.working_days];
     const index = currentDays.indexOf(day);
@@ -297,15 +245,13 @@ export default function AddUserModal({
 
     // Validate email format
     if (!validateEmail(formData.personal.email)) {
-      alert("Only valid gmail.com email addresses are allowed.");
+      alert("Please enter a valid email address.");
       return;
     }
 
     // Check if email already exists
     if (checkEmailExists(formData.personal.email)) {
-      alert(
-        "An employee with this email address already exists. Please use a different email."
-      );
+      alert("An employee with this email address already exists. Please use a different email.");
       return;
     }
 
@@ -315,10 +261,7 @@ export default function AddUserModal({
       const formDataToSend = new FormData();
 
       formDataToSend.append("type", "API");
-      formDataToSend.append(
-        "sub_institute_id",
-        sessionData.sub_institute_id || ""
-      );
+      formDataToSend.append("sub_institute_id", sessionData.sub_institute_id || "");
       formDataToSend.append("user_id", sessionData.user_id || "");
       formDataToSend.append("_token", sessionData.token || "");
       formDataToSend.append("created_by", sessionData.user_id || "");
@@ -334,15 +277,9 @@ export default function AddUserModal({
       formDataToSend.append("mobile", formData.personal.mobile);
       formDataToSend.append("department_id", formData.personal.department);
       formDataToSend.append("allocated_standards", formData.personal.jobrole);
-      formDataToSend.append(
-        "subject_ids",
-        formData.personal.responsibility_level
-      );
+      formDataToSend.append("subject_ids", formData.personal.responsibility_level);
       formDataToSend.append("gender", formData.personal.gender);
-      formDataToSend.append(
-        "user_profile_id",
-        formData.personal.user_profile_id
-      );
+      formDataToSend.append("user_profile_id", formData.personal.user_profile_id);
       formDataToSend.append("join_year", formData.personal.join_year);
       formDataToSend.append("status", formData.personal.status);
 
@@ -360,70 +297,28 @@ export default function AddUserModal({
 
       formDataToSend.append("supervisor_opt", formData.reporting.subordinate);
       formDataToSend.append("employee_id", formData.reporting.employee_name);
-      formDataToSend.append(
-        "reporting_method",
-        formData.reporting.reporting_method
-      );
+      formDataToSend.append("reporting_method", formData.reporting.reporting_method);
 
-      formDataToSend.append(
-        "monday",
-        formData.attendance.working_days.includes("Mon") ? "1" : "0"
-      );
-      formDataToSend.append(
-        "tuesday",
-        formData.attendance.working_days.includes("Tue") ? "1" : "0"
-      );
-      formDataToSend.append(
-        "wednesday",
-        formData.attendance.working_days.includes("Wed") ? "1" : "0"
-      );
-      formDataToSend.append(
-        "thursday",
-        formData.attendance.working_days.includes("Thu") ? "1" : "0"
-      );
-      formDataToSend.append(
-        "friday",
-        formData.attendance.working_days.includes("Fri") ? "1" : "0"
-      );
-      formDataToSend.append(
-        "saturday",
-        formData.attendance.working_days.includes("Sat") ? "1" : "0"
-      );
+      formDataToSend.append("monday", formData.attendance.working_days.includes("Mon") ? "1" : "0");
+      formDataToSend.append("tuesday", formData.attendance.working_days.includes("Tue") ? "1" : "0");
+      formDataToSend.append("wednesday", formData.attendance.working_days.includes("Wed") ? "1" : "0");
+      formDataToSend.append("thursday", formData.attendance.working_days.includes("Thu") ? "1" : "0");
+      formDataToSend.append("friday", formData.attendance.working_days.includes("Fri") ? "1" : "0");
+      formDataToSend.append("saturday", formData.attendance.working_days.includes("Sat") ? "1" : "0");
       formDataToSend.append("sunday", "0");
 
       formDataToSend.append("monday_in_date", formData.attendance.monday_in);
       formDataToSend.append("monday_out_date", formData.attendance.monday_out);
       formDataToSend.append("tuesday_in_date", formData.attendance.tuesday_in);
-      formDataToSend.append(
-        "tuesday_out_date",
-        formData.attendance.tuesday_out
-      );
-      formDataToSend.append(
-        "wednesday_in_date",
-        formData.attendance.wednesday_in
-      );
-      formDataToSend.append(
-        "wednesday_out_date",
-        formData.attendance.wednesday_out
-      );
-      formDataToSend.append(
-        "thursday_in_date",
-        formData.attendance.thursday_in
-      );
-      formDataToSend.append(
-        "thursday_out_date",
-        formData.attendance.thursday_out
-      );
+      formDataToSend.append("tuesday_out_date", formData.attendance.tuesday_out);
+      formDataToSend.append("wednesday_in_date", formData.attendance.wednesday_in);
+      formDataToSend.append("wednesday_out_date", formData.attendance.wednesday_out);
+      formDataToSend.append("thursday_in_date", formData.attendance.thursday_in);
+      formDataToSend.append("thursday_out_date", formData.attendance.thursday_out);
       formDataToSend.append("friday_in_date", formData.attendance.friday_in);
       formDataToSend.append("friday_out_date", formData.attendance.friday_out);
-      formDataToSend.append(
-        "saturday_in_date",
-        formData.attendance.saturday_in
-      );
-      formDataToSend.append(
-        "saturday_out_date",
-        formData.attendance.saturday_out
-      );
+      formDataToSend.append("saturday_in_date", formData.attendance.saturday_in);
+      formDataToSend.append("saturday_out_date", formData.attendance.saturday_out);
 
       formDataToSend.append("bank_name", formData.deposit.bank_name);
       formDataToSend.append("branch_name", formData.deposit.branch_name);
@@ -443,35 +338,18 @@ export default function AddUserModal({
         }
       );
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => null);
-        setServerError(err?.message || "Failed to add user.");
-        setIsSubmitting(false);
-        return;
-      }
+      if (!response.ok) throw new Error("Failed to add user");
 
       const result = await response.json();
-      if (result.status === "error" || result.error) {
-        setServerError(result.message || "Something went wrong.");
-        setIsSubmitting(false);
-        return;
-      }
+      alert(result.message || "User added successfully!");
       setIsOpen(false);
     } catch (error) {
       console.error("Error adding user:", error);
-      setServerError("Failed to add user. Please try again.");
+      alert("Failed to add user. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
-  {
-    serverError && (
-      <Alert variant="destructive" className="border-red-500 bg-red-50">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{serverError}</AlertDescription>
-      </Alert>
-    );
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -504,9 +382,7 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>
-                  First Name <span className="text-red-500">*</span>
-                </Label>
+                <Label>First Name <span className="text-red-500">*</span></Label>
                 <Input
                   placeholder="Enter First Name"
                   value={formData.personal.first_name}
@@ -529,9 +405,7 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>
-                  Last Name <span className="text-red-500">*</span>
-                </Label>
+                <Label>Last Name <span className="text-red-500">*</span></Label>
                 <Input
                   placeholder="Enter Last Name"
                   value={formData.personal.last_name}
@@ -543,26 +417,14 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>
-                  Email <span className="text-red-500">*</span>
-                </Label>
+                <Label>Email <span className="text-red-500">*</span></Label>
                 <Input
                   type="email"
-                  placeholder="example@gmail.com"
+                  placeholder="example@domain.com"
                   value={formData.personal.email}
                   onChange={(e) =>
                     handleInputChange("personal", "email", e.target.value)
                   }
-                  onBlur={(e) => {
-                    const val = e.target.value;
-                    if (!validateEmail(val)) {
-                      setEmailError(
-                        "Only valid gmail.com email addresses are allowed."
-                      );
-                    } else {
-                      setEmailError("");
-                    }
-                  }}
                   required
                   className={emailError ? "border-red-500" : ""}
                 />
@@ -571,40 +433,17 @@ export default function AddUserModal({
                 )}
               </div>
 
-              <div className="relative">
-                <Label>
-                  Password <span className="text-red-500">*</span>
-                </Label>
+              <div>
+                <Label>Password <span className="text-red-500">*</span></Label>
                 <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Example@123"
+                  type="password"
+                  placeholder="Password"
                   value={formData.personal.plain_password}
                   onChange={(e) =>
-                    handleInputChange(
-                      "personal",
-                      "plain_password",
-                      e.target.value
-                    )
+                    handleInputChange("personal", "plain_password", e.target.value)
                   }
-                  onBlur={(e) => {
-                    if (!validatePassword(e.target.value)) {
-                      alert(
-                        "Password must contain minimum 8 characters, including uppercase, lowercase, number, and a special character."
-                      );
-                    }
-                  }}
                   required
-                  className="pr-10"
                 />
-
-                {/* Eye Icon Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-11 h-10 w-5 transform -translate-y-1/2 text-gray-600"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
               </div>
 
               {/* Rest of the form remains the same */}
@@ -620,9 +459,7 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>
-                  Mobile <span className="text-red-500">*</span>
-                </Label>
+                <Label>Mobile <span className="text-red-500">*</span></Label>
                 <Input
                   placeholder="Mobile Number"
                   value={formData.personal.mobile}
@@ -634,63 +471,48 @@ export default function AddUserModal({
               </div>
 
               <div>
-                <Label>
-                  Department <span className="text-red-500">*</span>
-                </Label>
-
+                <Label>Department <span className="text-red-500">*</span></Label>
                 <Select
                   value={formData.personal.department}
-                  onValueChange={(val) => {
-                    handleInputChange("personal", "department", val);
-                    handleInputChange("personal", "jobrole", ""); // reset jobrole
-                    fetchJobrolesByDepartment(val);
-                  }}
+                  onValueChange={(val) =>
+                    handleInputChange("personal", "department", val)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Department" />
                   </SelectTrigger>
-
-                  <SelectContent>
-                    {departmentOptions.map((dept) => (
-                      <SelectItem
-                        key={dept.department_id}
-                        value={String(dept.department_id)}
-                      >
-                        {dept.department_name}
+                  <SelectContent className="w-100">
+                    {deptJobroles.map((department) => (
+                      <SelectItem key={department.id} value={String(department.id)}>
+                        {department.name}
                       </SelectItem>
                     ))}
+
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>
-                  Job Role <span className="text-red-500">*</span>
-                </Label>
-
+                <Label>Job Role<span className="text-red-500">*</span></Label>
                 <Select
                   value={formData.personal.jobrole}
                   onValueChange={(val) =>
                     handleInputChange("personal", "jobrole", val)
                   }
-                  disabled={loadingJobroles || jobroleOptions.length === 0}
                 >
                   <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        loadingJobroles ? "Loading..." : "Select Jobrole"
-                      }
-                    />
+                    <SelectValue placeholder="Select Job Role" />
                   </SelectTrigger>
 
-                  <SelectContent>
-                    {jobroleOptions.map((job) => (
+                  <SelectContent className="w-100">
+                    {(jobrolesByDept[deptJobroles.find(d => d.id == formData.personal.department)?.name] || []).map((job) => (
                       <SelectItem key={job.id} value={String(job.id)}>
                         {job.jobrole}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+
               </div>
 
               <div>
@@ -748,10 +570,7 @@ export default function AddUserModal({
                   <SelectContent>
                     {fetchedUserProfiles.map((profile) => (
                       <SelectItem key={profile.id} value={String(profile.id)}>
-                        {profile.profile_name ||
-                          profile.name ||
-                          profile.full_name ||
-                          "Unnamed"}
+                        {profile.profile_name || profile.name || profile.full_name || "Unnamed"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -831,11 +650,7 @@ export default function AddUserModal({
                   placeholder="Enter Temporary Address"
                   value={formData.address.user_address2}
                   onChange={(e) =>
-                    handleInputChange(
-                      "address",
-                      "user_address2",
-                      e.target.value
-                    )
+                    handleInputChange("address", "user_address2", e.target.value)
                   }
                 />
               </div>
@@ -913,8 +728,7 @@ export default function AddUserModal({
                   <SelectContent>
                     {userLists.map((user) => (
                       <SelectItem key={user.id} value={String(user.id)}>
-                        {user.full_name ||
-                          `${user.first_name} ${user.last_name}`}
+                        {user.full_name || `${user.first_name} ${user.last_name}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -987,11 +801,7 @@ export default function AddUserModal({
                     <Input
                       type="time"
                       onChange={(e) =>
-                        handleInputChange(
-                          "attendance",
-                          item.out,
-                          e.target.value
-                        )
+                        handleInputChange("attendance", item.out, e.target.value)
                       }
                     />
                   </div>
@@ -1083,11 +893,7 @@ export default function AddUserModal({
           </section>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>

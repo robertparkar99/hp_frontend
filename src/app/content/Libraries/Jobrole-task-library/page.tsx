@@ -1,5 +1,6 @@
+//src/app/content/Libraries/Jobrole-task-library/page.tsx
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Atom } from "react-loading-indicators";
 import {
   Funnel,
@@ -74,6 +75,13 @@ const CriticalWorkFunctionGrid = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
 
+
+  // Header shrinking
+  const [headerShrunk, setHeaderShrunk] = useState(false);
+
+  // Content section ref
+  const contentRef = useRef<HTMLElement>(null);
+
   // ✅ View toggle state
   const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
 
@@ -118,6 +126,23 @@ const CriticalWorkFunctionGrid = () => {
     };
   }, [isActionsMenuOpen]);
 
+  // Header shrinking on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (contentRef.current && contentRef.current.scrollTop > 100) {
+        setHeaderShrunk(true);
+      } else {
+        setHeaderShrunk(false);
+      }
+    };
+
+    const contentElement = contentRef.current;
+    if (contentElement) {
+      contentElement.addEventListener('scroll', handleScroll);
+      return () => contentElement.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
   // Fetch data after sessionData is ready
   useEffect(() => {
     if (!sessionData.url || !sessionData.subInstituteId) return;
@@ -125,6 +150,7 @@ const CriticalWorkFunctionGrid = () => {
   }, [sessionData]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const res = await fetch(
         `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[sector]=${sessionData.orgType}&order_by[direction]=desc&group_by=task`,
@@ -137,40 +163,7 @@ const CriticalWorkFunctionGrid = () => {
       const json: JobRoleTask[] = await res.json();
       setData(json);
 
-      if (json.length > 0) {
-        const depts = Array.from(new Set(json.map((d) => d.track || "")))
-          .filter(Boolean)
-          .sort();
-        const defaultDept = depts[0] || "";
-
-        const jobroles = Array.from(
-          new Set(
-            json
-              .filter((d) => d.track === defaultDept)
-              .map((d) => d.jobrole || "")
-          )
-        )
-          .filter(Boolean)
-          .sort();
-        const defaultJobrole = jobroles[0] || "";
-
-        const functions = Array.from(
-          new Set(
-            json
-              .filter(
-                (d) => d.track === defaultDept && d.jobrole === defaultJobrole
-              )
-              .map((d) => d.critical_work_function || "")
-          )
-        )
-          .filter(Boolean)
-          .sort();
-        const defaultFunc = functions[0] || "";
-
-        setSelectedDept(defaultDept);
-        setSelectedJobrole(defaultJobrole);
-        setSelectedFunction(defaultFunc);
-      }
+      // Don't set any default filters to show all tasks on load
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -188,31 +181,12 @@ const CriticalWorkFunctionGrid = () => {
       .sort();
     const firstJobrole = jobroles[0] || "";
     setSelectedJobrole(firstJobrole);
-
-    const functions = Array.from(
-      new Set(
-        data
-          .filter((d) => d.track === val && d.jobrole === firstJobrole)
-          .map((d) => d.critical_work_function || "")
-      )
-    )
-      .filter(Boolean)
-      .sort();
-    setSelectedFunction(functions[0] || "");
+    // Don't auto-select function to allow showing all
   };
 
   const handleJobroleChange = (val: string) => {
     setSelectedJobrole(val);
-    const functions = Array.from(
-      new Set(
-        data
-          .filter((d) => d.track === selectedDept && d.jobrole === val)
-          .map((d) => d.critical_work_function || "")
-      )
-    )
-      .filter(Boolean)
-      .sort();
-    setSelectedFunction(functions[0] || "");
+    // Don't auto-select function to allow showing all
   };
 
   // Edit/Delete functions
@@ -363,32 +337,40 @@ const handleImport = () => {
     .filter(Boolean)
     .sort();
 
-  const uniqueJobroles = Array.from(
-    new Set(
-      data.filter((d) => d.track === selectedDept).map((d) => d.jobrole || "")
-    )
-  )
-    .filter(Boolean)
-    .sort();
-
-  const uniqueFunctions = Array.from(
-    new Set(
-      data
-        .filter(
-          (d) => d.track === selectedDept && d.jobrole === selectedJobrole
+  const uniqueJobroles = selectedDept
+    ? Array.from(
+        new Set(
+          data.filter((d) => d.track === selectedDept).map((d) => d.jobrole || "")
         )
-        .map((d) => d.critical_work_function || "")
-    )
-  )
-    .filter(Boolean)
-    .sort();
+      )
+      .filter(Boolean)
+      .sort()
+    : Array.from(new Set(data.map((d) => d.jobrole || "")))
+      .filter(Boolean)
+      .sort();
+
+  const uniqueFunctions = selectedDept && selectedJobrole
+    ? Array.from(
+        new Set(
+          data
+            .filter(
+              (d) => d.track === selectedDept && d.jobrole === selectedJobrole
+            )
+            .map((d) => d.critical_work_function || "")
+        )
+      )
+      .filter(Boolean)
+      .sort()
+    : Array.from(new Set(data.map((d) => d.critical_work_function || "")))
+      .filter(Boolean)
+      .sort();
 
   // Filtered grid data
   const filteredData = data.filter(
     (item) =>
-      item.track === selectedDept &&
-      item.jobrole === selectedJobrole &&
-      item.critical_work_function === selectedFunction
+      (!selectedDept || item.track === selectedDept) &&
+      (!selectedJobrole || item.jobrole === selectedJobrole) &&
+      (!selectedFunction || item.critical_work_function === selectedFunction)
   );
 
   // ✅ DataTable Columns
@@ -539,9 +521,10 @@ const handleImport = () => {
 
   return (
     <>
-      <div className="min-h-screen p-4">
-        {/* Top filter + Toggle */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+      <div className="min-h-screen overflow-y-auto scrollbar-hide">
+        <div className={`p-4 transition-all duration-300 ${headerShrunk ? 'p-2' : 'p-4'}`}>
+          {/* Top filter + Toggle */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
           {/* Search Bar - Left */}
           <div className="flex-1 max-w-md">
             <div className="relative">
@@ -613,7 +596,7 @@ const handleImport = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">
-                      Work Function
+                     Critical Work Function
                     </label>
                     <Select
                       value={selectedFunction}
@@ -734,6 +717,7 @@ const handleImport = () => {
               )}
             </div>
           </div>
+        </div>
         </div>
 
         {/* ✅ Toggle between Card View and Table View */}
