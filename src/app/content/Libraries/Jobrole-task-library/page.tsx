@@ -174,15 +174,10 @@ const CriticalWorkFunctionGrid = () => {
   // Handle select changes
   const handleDepartmentChange = (val: string) => {
     setSelectedDept(val);
-    const jobroles = Array.from(
-      new Set(data.filter((d) => d.track === val).map((d) => d.jobrole || ""))
-    )
-      .filter(Boolean)
-      .sort();
-    const firstJobrole = jobroles[0] || "";
-    setSelectedJobrole(firstJobrole);
-    // Don't auto-select function to allow showing all
+    setSelectedJobrole("");        // ❌ do not auto-select jobrole
+    setSelectedFunction("");       // reset function filter
   };
+
 
   const handleJobroleChange = (val: string) => {
     setSelectedJobrole(val);
@@ -260,7 +255,7 @@ const CriticalWorkFunctionGrid = () => {
     setIsActionsMenuOpen(false);
     alert("Export feature coming soon!");
   };
-const handleImport = () => {
+  const handleImport = () => {
     setIsActionsMenuOpen(false);
     alert("Import feature coming soon!");
   };
@@ -339,26 +334,27 @@ const handleImport = () => {
 
   const uniqueJobroles = selectedDept
     ? Array.from(
-        new Set(
-          data.filter((d) => d.track === selectedDept).map((d) => d.jobrole || "")
-        )
+      new Set(
+        data
+          .filter((d) => d.track === selectedDept)
+          .map((d) => d.jobrole || "")
       )
+    )
       .filter(Boolean)
       .sort()
-    : Array.from(new Set(data.map((d) => d.jobrole || "")))
-      .filter(Boolean)
-      .sort();
+    : [];
+
 
   const uniqueFunctions = selectedDept && selectedJobrole
     ? Array.from(
-        new Set(
-          data
-            .filter(
-              (d) => d.track === selectedDept && d.jobrole === selectedJobrole
-            )
-            .map((d) => d.critical_work_function || "")
-        )
+      new Set(
+        data
+          .filter(
+            (d) => d.track === selectedDept && d.jobrole === selectedJobrole
+          )
+          .map((d) => d.critical_work_function || "")
       )
+    )
       .filter(Boolean)
       .sort()
     : Array.from(new Set(data.map((d) => d.critical_work_function || "")))
@@ -366,12 +362,14 @@ const handleImport = () => {
       .sort();
 
   // Filtered grid data
-  const filteredData = data.filter(
-    (item) =>
-      (!selectedDept || item.track === selectedDept) &&
-      (!selectedJobrole || item.jobrole === selectedJobrole) &&
-      (!selectedFunction || item.critical_work_function === selectedFunction)
-  );
+  const filteredData = data.filter((item) => {
+    if (selectedDept && item.track !== selectedDept) return false;
+    if (selectedJobrole && item.jobrole !== selectedJobrole) return false;
+    if (selectedFunction && item.critical_work_function !== selectedFunction)
+      return false;
+    return true;
+  });
+
 
   // ✅ DataTable Columns
   const columns: TableColumn<JobRoleTask>[] = [
@@ -525,199 +523,199 @@ const handleImport = () => {
         <div className={`p-4 transition-all duration-300 ${headerShrunk ? 'p-2' : 'p-4'}`}>
           {/* Top filter + Toggle */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-          {/* Search Bar - Left */}
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search jobrole task, categories, or proficiency levels..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          {/* Right Section - More Icon + Filter + View Toggle */}
-          <div className="flex items-center space-x-2">
-            {/* Consolidated Actions Dropdown */}
-
-
-            {/* Filter */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
-                  <Funnel className="w-5 h-5" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Department
-                    </label>
-                    <Select
-                      value={selectedDept}
-                      onValueChange={handleDepartmentChange}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueDepartments.map((dept, idx) => (
-                          <SelectItem key={idx} value={dept}>
-                            {dept}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Job Role
-                    </label>
-                    <Select
-                      value={selectedJobrole}
-                      onValueChange={handleJobroleChange}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Jobrole" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueJobroles.map((role, idx) => (
-                          <SelectItem key={idx} value={role}>
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                     Critical Work Function
-                    </label>
-                    <Select
-                      value={selectedFunction}
-                      onValueChange={setSelectedFunction}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Function" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {uniqueFunctions.map((func, idx) => (
-                          <SelectItem key={idx} value={func}>
-                            {func}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* View Toggle */}
-            <div className="flex border rounded-md overflow-hidden">
-              <button
-                onClick={() => setViewMode("myview")}
-                className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "myview"
-                  ? "bg-blue-100 text-blue-600 border-blue-300"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-              >
-                <Square className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "table"
-                  ? "bg-blue-100 text-blue-600 border-blue-300"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-              >
-                <Table className="h-5 w-5" />
-              </button>
+            {/* Search Bar - Left */}
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search jobrole task, categories, or proficiency levels..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
             </div>
 
-            <div className="relative">
-              <button
-                onClick={toggleActionsMenu}
-                className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                title="More Actions"
-              >
-                <MoreVertical className="w-5 h-5 text-gray-600" />
-              </button>
+            {/* Right Section - More Icon + Filter + View Toggle */}
+            <div className="flex items-center space-x-2">
+              {/* Consolidated Actions Dropdown */}
 
-              {/* Horizontal Dropdown Menu */}
-              {isActionsMenuOpen && (
-                <div
-                  className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex gap-1">
-                    {/* Generative AI Assistant */}
-                    <button
-                      onClick={handleAISuggest}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="AI Suggestions"
-                    >
-                      <Sparkles className="w-5 h-5 text-gray-600" />
-                    </button>
 
-                  
-
-                    {/* Bulk Actions */}
-                    {selectedTasks.length > 0 && (
-                      <button
-                        onClick={handleBulkActions}
-                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Bulk Actions"
+              {/* Filter */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
+                    <Funnel className="w-5 h-5" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-6 bg-white shadow-xl border border-gray-200 rounded-xl">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Department
+                      </label>
+                      <Select
+                        value={selectedDept}
+                        onValueChange={handleDepartmentChange}
                       >
-                        <ListChecks className="w-5 h-5 text-gray-600" />
-                      </button>
-                    )}
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select Department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {uniqueDepartments.map((dept, idx) => (
+                            <SelectItem key={idx} value={dept}>
+                              {dept}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-
-                    <button
-                      onClick={handleImport}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Import jobrole task"
-                    >
-                      <Upload className="w-5 h-5 text-gray-600" />
-                    </button>
-                    {/* Export */}
-                    <button
-                      onClick={handleExport}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Export jobrole task"
-                    >
-                      <Download className="w-5 h-5 text-gray-600" />
-                    </button>
-
-                    {/* Settings */}
-                    <button
-                      onClick={handleSettings}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Settings"
-                    >
-                      <Settings className="w-5 h-5 text-gray-600" />
-                    </button>
-
-                    {/* Help */}
-                    <button
-                      onClick={handleHelp}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Help"
-                    >
-                      <HelpCircle className="w-5 h-5 text-gray-600" />
-                    </button>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Job Role
+                      </label>
+                      <Select
+                        value={selectedJobrole}
+                        onValueChange={handleJobroleChange}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select Jobrole" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {uniqueJobroles.map((role, idx) => (
+                            <SelectItem key={idx} value={role}>
+                              {role}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Critical Work Function
+                      </label>
+                      <Select
+                        value={selectedFunction}
+                        onValueChange={setSelectedFunction}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select Function" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {uniqueFunctions.map((func, idx) => (
+                            <SelectItem key={idx} value={func}>
+                              {func}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
-              )}
+                </PopoverContent>
+              </Popover>
+
+              {/* View Toggle */}
+              <div className="flex border rounded-md overflow-hidden">
+                <button
+                  onClick={() => setViewMode("myview")}
+                  className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "myview"
+                    ? "bg-blue-100 text-blue-600 border-blue-300"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                >
+                  <Square className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "table"
+                    ? "bg-blue-100 text-blue-600 border-blue-300"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                >
+                  <Table className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="relative">
+                <button
+                  onClick={toggleActionsMenu}
+                  className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="More Actions"
+                >
+                  <MoreVertical className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {/* Horizontal Dropdown Menu */}
+                {isActionsMenuOpen && (
+                  <div
+                    className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex gap-1">
+                      {/* Generative AI Assistant */}
+                      <button
+                        onClick={handleAISuggest}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="AI Suggestions"
+                      >
+                        <Sparkles className="w-5 h-5 text-gray-600" />
+                      </button>
+
+
+
+                      {/* Bulk Actions */}
+                      {selectedTasks.length > 0 && (
+                        <button
+                          onClick={handleBulkActions}
+                          className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Bulk Actions"
+                        >
+                          <ListChecks className="w-5 h-5 text-gray-600" />
+                        </button>
+                      )}
+
+
+                      <button
+                        onClick={handleImport}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Import jobrole task"
+                      >
+                        <Upload className="w-5 h-5 text-gray-600" />
+                      </button>
+                      {/* Export */}
+                      <button
+                        onClick={handleExport}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Export jobrole task"
+                      >
+                        <Download className="w-5 h-5 text-gray-600" />
+                      </button>
+
+                      {/* Settings */}
+                      <button
+                        onClick={handleSettings}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Settings"
+                      >
+                        <Settings className="w-5 h-5 text-gray-600" />
+                      </button>
+
+                      {/* Help */}
+                      <button
+                        onClick={handleHelp}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Help"
+                      >
+                        <HelpCircle className="w-5 h-5 text-gray-600" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
         </div>
 
         {/* ✅ Toggle between Card View and Table View */}
