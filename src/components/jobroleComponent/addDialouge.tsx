@@ -54,11 +54,34 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
   const fetchDepartments = async () => {
     try {
-      const res = await fetch(
-        `${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=department&searchWord=departments`
-      );
+      const apiUrl = `https://hp.triz.co.in/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`;
+
+      const res = await fetch(apiUrl, {
+        headers: sessionData.token
+          ? { Authorization: `Bearer ${sessionData.token}` }
+          : {},
+      });
+
       const data = await res.json();
-      setDepartments(data.searchData || []);
+
+      if (!data?.data) {
+        setDepartments([]);
+        return;
+      }
+
+      const deptArray: any[] = [];
+
+      // Extract unique Department list
+      Object.entries(data.data).forEach(([deptName, jobroles]: any) => {
+        if (Array.isArray(jobroles) && jobroles.length > 0) {
+          deptArray.push({
+            id: jobroles[0].department_id,
+            department_name: deptName,
+          });
+        }
+      });
+
+      setDepartments(deptArray);
     } catch (error) {
       console.error("Error fetching departments:", error);
       alert("Failed to load departments");
@@ -210,9 +233,12 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                 >
                   <option value="">Select Department</option>
                   {departments.map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <option key={dept.id} value={dept.department_name}>
+                      {dept.department_name}
+                    </option>
                   ))}
                 </select>
+
               </div>
 
               <div className="text-left mb-5">

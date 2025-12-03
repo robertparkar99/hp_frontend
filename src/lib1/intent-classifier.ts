@@ -57,5 +57,5 @@ export function shouldRouteToAction(intent: QueryIntent): boolean {
 }
 
 export function shouldUseFallback(intent: QueryIntent): boolean {
-  return intent === 'support' || intent === 'unclear' || intent === 'data_retrieval';
+  return intent === 'support' || intent === 'unclear';
 }
