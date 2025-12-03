@@ -1,3 +1,4 @@
+// jobdiscriptionmodal
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,7 +7,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import ViewSkill from "@/components/skillComponent/viewDialouge"; // ✅ import ViewSkill
 
 type JobRole = {
-  id: number;
+  id: number; 
   industries: string;
   department: string;
   sub_department: string;

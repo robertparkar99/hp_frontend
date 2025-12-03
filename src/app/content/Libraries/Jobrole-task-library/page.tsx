@@ -40,6 +40,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import ConfigurationModal from "../../Jobrole-library/ConfigurationModal";
 
 type JobRoleTask = {
   id: number;
@@ -74,6 +75,9 @@ const CriticalWorkFunctionGrid = () => {
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedRadio, setSelectedRadio] = useState<number | null>(null);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [configJsonObject, setConfigJsonObject] = useState<any>(null);
 
 
   // Header shrinking
@@ -727,7 +731,27 @@ const CriticalWorkFunctionGrid = () => {
                 className="relative group overflow-hidden rounded-3xl shadow-lg border-2 border-blue-200 hover:border-blue-300 transition-all duration-300 flex flex-col"
               >
                 <div className="absolute z-[10] right-0 bottom-0 w-[1px] h-[1px] bg-[#B7DAFF] rounded-[0px_50px_0px_15px] transition-all duration-500 group-hover:w-full group-hover:h-full group-hover:rounded-[15px] group-hover:opacity-[0.5] pointer-events-none"></div>
-
+                {/* ⭐ Radio Button (Top Right) */}
+                <div className="absolute top-2 right-5 z-20">
+                  <input
+                    type="radio"
+                    name="taskSelection"
+                    checked={selectedRadio === item.id}
+                    onChange={() => {
+                      setSelectedRadio(item.id);
+                      const jsonObject = {
+                        industry: sessionData.orgType,
+                        department: item.track,
+                        jobrole: item.jobrole,
+                        critical_work_function: item.critical_work_function,
+                        key_tasks: item.task
+                      };
+                      console.log(jsonObject);
+                      setConfigJsonObject(jsonObject);
+                    }}
+                    className="h-3 w-3 cursor-pointer"
+                  />
+                </div>
                 <div className="relative z-10 p-6 flex-1">
                   <h3
                     className="text-lg font-bold text-gray-900 mb-2 leading-tight truncate cursor-pointer hover:text-blue-600 transition-colors"
@@ -751,6 +775,16 @@ const CriticalWorkFunctionGrid = () => {
                 </div>
 
                 <div className="flex justify-end p-2 mt-[-6]">
+
+                  {/* Configure Button (Only visible if this card is selected by radio) */}
+                  {selectedRadio === item.id && (
+                    <button
+                      className="p-2 text-white bg-blue-400 hover:bg-blue-400 rounded transition-colors text-gray-600"
+                      onClick={() => setIsConfigModalOpen(true)}
+                    >
+                      Configuration
+                    </button>
+                  )}
                   <button
                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
                     onClick={() => handleEditClick(item.id, item.jobrole)}
@@ -842,6 +876,15 @@ const CriticalWorkFunctionGrid = () => {
             </div>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Configuration Modal */}
+      {configJsonObject && (
+        <ConfigurationModal
+          isOpen={isConfigModalOpen}
+          onClose={() => setIsConfigModalOpen(false)}
+          jsonObject={configJsonObject}
+        />
       )}
     </>
   );

@@ -3,10 +3,19 @@
 import React, { useState, useEffect } from "react";
 import { Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { se } from "date-fns/locale";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Employee {
   id: number;
   name: string;
+  first_name: string;
   employee_no: string;
 }
 
@@ -48,9 +57,10 @@ const SalaryCertificate: React.FC = () => {
   const [loadingGenerate, setLoadingGenerate] = useState(false);
 
   const [sessionData, setSessionData] = useState({
-    url: "http://127.0.0.1:8000",
+    url: "",
     token: "",
     subInstituteId: "",
+    userId: "",
   });
 
   const years = ["2024", "2025", "2026"];
@@ -59,11 +69,12 @@ const SalaryCertificate: React.FC = () => {
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
-      const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+      const { APP_URL, token, sub_institute_id, user_id } = JSON.parse(userData);
       setSessionData({
         url: APP_URL,
         token,
         subInstituteId: sub_institute_id,
+        userId: user_id,
       });
     }
   }, []);
@@ -74,26 +85,19 @@ const SalaryCertificate: React.FC = () => {
       if (!sessionData.token || !sessionData.subInstituteId) return;
       try {
         setLoadingDepartments(true);
-        const params = new URLSearchParams({
-          token: sessionData.token,
-          type: "API",
-          sub_institute_id: sessionData.subInstituteId,
+
+        const res = await fetch(`${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`);
+        const json = await res.json();
+
+        const list = Object.entries(json.data || {}).map(([deptName, jobRoles]) => {
+          const deptId = (jobRoles as any[])[0]?.department_id;
+          const name = (jobRoles as any[])[0]?.department_name || deptName;
+          return { id: deptId?.toString(), name };
         });
-
-        const res = await fetch(`${sessionData.url}/hrms-salary-certificate?${params}`);
-        const data: ApiResponse = await res.json();
-
-        if (data.departments && typeof data.departments === "object") {
-          const deptArray: Department[] = Object.entries(data.departments).map(([id, name]) => ({
-            id,
-            name,
-          }));
-          setDepartments(deptArray);
-        } else {
-          setDepartments([]);
-        }
+        setDepartments(list);
       } catch (err) {
         console.error("Error fetching departments:", err);
+        setDepartments([]);
       } finally {
         setLoadingDepartments(false);
       }
@@ -104,31 +108,22 @@ const SalaryCertificate: React.FC = () => {
   // Fetch Employees when department changes
   useEffect(() => {
     const fetchEmployees = async () => {
-      if (!selectedDepartment) {
+      if (!selectedDepartment || !sessionData.url || !sessionData.subInstituteId) {
         setEmployees([]);
         return;
       }
       try {
         setLoadingEmployees(true);
-        const params = new URLSearchParams({
-          token: sessionData.token,
-          type: "API",
-          sub_institute_id: sessionData.subInstituteId,
-          department_id: selectedDepartment,
-        });
 
-        const res = await fetch(`${sessionData.url}/hrms-salary-certificate?${params}`);
-        const data: ApiResponse = await res.json();
+        const res = await fetch(`${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${selectedDepartment}&user_id=${sessionData.userId}`);
+        const json = await res.json();
 
-        if (data.employees) {
-          if (Array.isArray(data.employees)) setEmployees(data.employees);
-          else if (typeof data.employees === "object")
-            setEmployees(Object.values(data.employees) as Employee[]);
-        } else {
-          setEmployees([]);
-        }
+        const list = Array.isArray(json) ? json : json.data ?? [];
+        setEmployees(list);
+        console.log("Employees for department", selectedDepartment, list);
       } catch (err) {
         console.error("Error fetching employees:", err);
+        setEmployees([]);
       } finally {
         setLoadingEmployees(false);
       }
@@ -226,42 +221,46 @@ const SalaryCertificate: React.FC = () => {
         {/* Department */}
         <div>
           <label className="block mb-2 font-semibold">Department *</label>
-          <select
+          <Select
             value={selectedDepartment}
-            onChange={(e) => {
-              setSelectedDepartment(e.target.value);
+            onValueChange={(value) => {
+              setSelectedDepartment(value);
               setSelectedEmployee("");
             }}
             disabled={loadingDepartments}
-            className="w-full p-3 border rounded-md"
           >
-            <option value="">Select Department</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-          {loadingDepartments && <p>Loading departments...</p>}
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={loadingDepartments ? "Loading..." : "Select Department"} />
+            </SelectTrigger>
+            <SelectContent className="w-200">
+              {departments.map((d) => (
+                <SelectItem key={d.id} value={d.id}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Employee */}
         <div>
           <label className="block mb-2 font-semibold">Employee *</label>
-          <select
+          <Select
             value={selectedEmployee}
-            onChange={(e) => setSelectedEmployee(e.target.value)}
+            onValueChange={setSelectedEmployee}
             disabled={!selectedDepartment || loadingEmployees}
-            className="w-full p-3 border rounded-md"
           >
-            <option value="">Select Employee</option>
-            {employees.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name} ({e.employee_no})
-              </option>
-            ))}
-          </select>
-          {loadingEmployees && <p>Loading employees...</p>}
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={loadingEmployees ? "Loading..." : "Select Employee"} />
+            </SelectTrigger>
+            <SelectContent >
+              {employees.map((e) => (
+                <SelectItem key={e.id} value={e.id.toString()}>
+                  {e.first_name}{e.employee_no ? ` (${e.employee_no})` : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Month (Multi-select) */}
