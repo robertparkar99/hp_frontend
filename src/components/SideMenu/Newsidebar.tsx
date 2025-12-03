@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { CornerDownRight, ChevronLeft, ChevronRight, Home } from "lucide-react"; // Added Home icon
 import { motion, AnimatePresence } from "framer-motion";
-import { UserProfile } from "./UserProfile"; 
+import { UserProfile } from "./UserProfile";
 import GlobalFooter from "./GlobalFooter"; // Import GlobalFooter
 
 interface SidebarProps {
@@ -26,7 +27,14 @@ interface SubItem {
     key: string;
     label: string;
     icon: React.ReactNode;
-    subItems?: { key: string; label: string; page_type?: string; access_link?: string }[];
+    page_type?: string;
+    access_link?: string;
+    subItems?: {
+        key: string;
+        label: string;
+        page_type?: string;
+        access_link?: string;
+    }[];
 }
 
 interface SectionItem {
@@ -79,13 +87,27 @@ const SubMenuItem = ({
     hasSubItems = false,
     isCollapsed,
     onExpandSidebar,
+    isActive,
+    onSetActiveSub,
+    onSetActiveSubSub,
+    activeSubSubItem,
+    router,
+    sectionKey,
+    onSetActiveSection,
 }: {
-    item: SubItem & { page_type?: string; access_link?: string };
+    item: SubItem;
     isExpanded: boolean;
     onToggle: () => void;
     hasSubItems?: boolean;
     isCollapsed: boolean;
     onExpandSidebar: () => void;
+    isActive: boolean;
+    onSetActiveSub: (key: string | undefined) => void;
+    onSetActiveSubSub: (key: string | undefined) => void;
+    activeSubSubItem?: string;
+    router: any;
+    sectionKey: string;
+    onSetActiveSection: (key: string) => void;
 }) => {
     const handleClick = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -95,30 +117,57 @@ const SubMenuItem = ({
             onExpandSidebar();
             return;
         }
-        //url insted of link 
+        //url insted of link
         if (item.page_type === "link" && item.access_link) {
             window.open(item.access_link, "_blank");
+            onSetActiveSection(sectionKey);
+            onSetActiveSub(item.key);
+            localStorage.setItem("activeSection", sectionKey);
+            localStorage.setItem("activeSubItem", item.key);
+            localStorage.removeItem("activeSubSubItem");
         } else if (item.page_type === "page" && item.access_link) {
             const normalizedLink = item.access_link.startsWith("/")
                 ? item.access_link
                 : `/${item.access_link}`;
-            window.location.href = normalizedLink;
+            router.push(normalizedLink);
+            onSetActiveSection(sectionKey);
+            onSetActiveSub(item.key);
+            localStorage.setItem("activeSection", sectionKey);
+            localStorage.setItem("activeSubItem", item.key);
+            localStorage.removeItem("activeSubSubItem");
         } else if (hasSubItems) {
             onToggle();
+            onSetActiveSection(sectionKey);
+            onSetActiveSub(item.key);
+            localStorage.setItem("activeSection", sectionKey);
+            localStorage.setItem("activeSubItem", item.key);
+            localStorage.removeItem("activeSubSubItem");
         }
     };
-
+    
     const handleSubItemClick = (e: React.MouseEvent, subItem: any) => {
         e.preventDefault();
         e.stopPropagation();
 
         if (subItem.page_type === "url" && subItem.access_link) {
             window.open(subItem.access_link, "_blank");
+            onSetActiveSection(sectionKey);
+            onSetActiveSub(item.key);
+            onSetActiveSubSub(subItem.key);
+            localStorage.setItem("activeSection", sectionKey);
+            localStorage.setItem("activeSubItem", item.key);
+            localStorage.setItem("activeSubSubItem", subItem.key);
         } else if (subItem.page_type === "page" && subItem.access_link) {
             const normalizedLink = subItem.access_link.startsWith("/")
                 ? subItem.access_link
                 : `/${subItem.access_link}`;
-            window.location.href = normalizedLink;
+            router.push(normalizedLink);
+            onSetActiveSection(sectionKey);
+            onSetActiveSub(item.key);
+            onSetActiveSubSub(subItem.key);
+            localStorage.setItem("activeSection", sectionKey);
+            localStorage.setItem("activeSubItem", item.key);
+            localStorage.setItem("activeSubSubItem", subItem.key);
         }
     };
 
@@ -134,7 +183,7 @@ const SubMenuItem = ({
                 <div className="w-[240px] bg-white rounded-[10px] transition-all overflow-hidden">
                     <button
                         onClick={handleClick}
-                        className="w-full h-[40px] flex items-center justify-between px-[15px] hover:bg-gray-50 transition-colors"
+                        className={`w-full h-[40px] flex items-center justify-between px-[15px] transition-colors ${isActive ? 'bg-blue-200 border-l-4 border-blue-500' : 'hover:bg-gray-50'}`}
                     >
                         <div className="flex items-center gap-[20px]">
                             {item.icon}
@@ -177,10 +226,14 @@ const SubMenuItem = ({
                                     exit={{ height: 0, opacity: 0 }}
                                     transition={{ duration: 0.3, ease: "easeInOut" }}
                                 >
-                                    {item.subItems.map((subItem: any) => (
+                                    {item.subItems.map((subItem: any, subSubIndex: number) => (
                                         <button
-                                            key={subItem.key}
-                                            className="flex items-center gap-[30px] py-2 cursor-pointer w-full text-left hover:bg-gray-50 px-2 rounded"
+                                            key={`subsub-${subSubIndex}-${subItem.key}`}
+                                            className={`flex items-center gap-[30px] py-2 cursor-pointer w-full text-left px-2 rounded 
+                                                ${(activeSubSubItem === subItem.key || subItem.access_link === router?.pathname) 
+                                                    ? 'bg-blue-200 border-l-4 border-blue-500' 
+                                                    : 'hover:bg-gray-50'
+                                                }`}
                                             onClick={(e) => handleSubItemClick(e, subItem)}
                                         >
                                             <CornerDownRight className="text-gray-400" />
@@ -214,6 +267,12 @@ const Section = ({
     onSubToggle,
     isCollapsed,
     onExpandSidebar,
+    activeSubItem,
+    activeSubSubItem,
+    onSetActiveSub,
+    onSetActiveSubSub,
+    router,
+    onSetActiveSection,
 }: {
     section: SectionItem;
     isActive: boolean;
@@ -223,6 +282,12 @@ const Section = ({
     onSubToggle: (subKey: string) => void;
     isCollapsed: boolean;
     onExpandSidebar: () => void;
+    activeSubItem?: string;
+    activeSubSubItem?: string;
+    onSetActiveSub: (key: string | undefined) => void;
+    onSetActiveSubSub: (key: string | undefined) => void;
+    router: any;
+    onSetActiveSection: (key: string) => void;
 }) => {
     const handleClick = () => {
         if (isCollapsed) {
@@ -323,15 +388,22 @@ const Section = ({
 
             {!isCollapsed && isActive && open && (
                 <div className="pb-4">
-                    {section.subItems.map((subItem) => (
+                    {section.subItems.map((subItem, subIndex) => (
                         <SubMenuItem
-                            key={subItem.key}
+                            key={`sub-${subIndex}-${subItem.key}`}
                             item={subItem}
                             isExpanded={subOpen[subItem.key] || false}
                             onToggle={() => onSubToggle(subItem.key)}
                             hasSubItems={!!subItem.subItems && subItem.subItems.length > 0}
                             isCollapsed={isCollapsed}
                             onExpandSidebar={onExpandSidebar}
+                            isActive={activeSubItem === subItem.key}
+                            onSetActiveSub={onSetActiveSub}
+                            onSetActiveSubSub={onSetActiveSubSub}
+                            activeSubSubItem={activeSubSubItem}
+                            router={router}
+                            sectionKey={section.key}
+                            onSetActiveSection={onSetActiveSection}
                         />
                     ))}
                 </div>
@@ -444,20 +516,36 @@ const useMenuData = (sessionData: any) => {
 
     return { sections, loading, error, fetchMenuData };
 };
-
+const DASHBOARD_KEY = "___dashboard___";
 // Dashboard Section Component
 const DashboardSection = ({
     isCollapsed,
     onExpandSidebar,
+    activeSection,
+    onSetActiveSection,
+    onSetActiveSub,
+    onSetActiveSubSub,
 }: {
     isCollapsed: boolean;
     onExpandSidebar: () => void;
+    activeSection?: string;
+    onSetActiveSection: (key: string) => void;
+    onSetActiveSub: (key: string | undefined) => void;
+    onSetActiveSubSub: (key: string | undefined) => void;
 }) => {
+    const isActive = activeSection === DASHBOARD_KEY;
+
     const handleDashboardClick = () => {
         if (isCollapsed) {
             onExpandSidebar();
             return;
         }
+        onSetActiveSection(DASHBOARD_KEY);
+        onSetActiveSub(undefined);
+        onSetActiveSubSub(undefined);
+        localStorage.setItem("activeSection", DASHBOARD_KEY);
+        localStorage.removeItem("activeSubItem");
+        localStorage.removeItem("activeSubSubItem");
         // Navigate to home page
         window.location.href = "/";
     };
@@ -465,36 +553,69 @@ const DashboardSection = ({
     return (
         <div className="w-full">
             <div className="w-full h-[60px] relative">
-                <div className="w-full h-[60px] bg-white relative">
-                    <button
-                        type="button"
-                        onClick={handleDashboardClick}
-                        className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors"
+                {isActive ? (
+                    <div
+                        className="mx-[15px] mt-[20px] h-[50px] flex items-center justify-center rounded-[15px]"
+                        style={{ background: "#007BE5" }}
                     >
-                        <div className="flex items-center gap-[20px]">
-                            <Home className="w-[16px] h-[24px] " />
-                            {!isCollapsed && (
-                                <span
-                                    className="text-[#686868] text-[12px] font-medium leading-[18px]"
-                                    style={{
-                                        fontFamily:
-                                            "Roboto, -apple-system, Roboto, Helvetica, sans-serif",
-                                    }}
-                                >
-                                    Dashboard
-                                </span>
-                            )}
-                        </div>
-                    </button>
-                </div>
+                        <button
+                            type="button"
+                            onClick={handleDashboardClick}
+                            className="w-full h-full flex items-center justify-between px-[11px] transition-colors rounded-[15px]"
+                        >
+                            <div className="flex items-center gap-[15px]">
+                                <div className="w-[30px] h-[30px] bg-white rounded-full flex items-center justify-center">
+                                    <Home className="w-[16px] h-[24px] text-white" />
+                                </div>
+                                {!isCollapsed && (
+                                    <span
+                                        className="text-white text-[12px] font-medium leading-[18px]"
+                                        style={{
+                                            fontFamily:
+                                                "Roboto, -apple-system, Roboto, Helvetica, sans-serif",
+                                        }}
+                                    >
+                                        Dashboard
+                                    </span>
+                                )}
+                            </div>
+                        </button>
+                    </div>
+                ) : (
+                    <div className="w-full h-[60px] bg-white relative">
+                        <button
+                            type="button"
+                            onClick={handleDashboardClick}
+                            className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="flex items-center gap-[20px]">
+                                <Home className="w-[16px] h-[24px]" />
+                                {!isCollapsed && (
+                                    <span
+                                        className="text-[#686868] text-[12px] font-medium leading-[18px]"
+                                        style={{
+                                            fontFamily:
+                                                "Roboto, -apple-system, Roboto, Helvetica, sans-serif",
+                                        }}
+                                    >
+                                        Dashboard
+                                    </span>
+                                )}
+                            </div>
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
 export default function Sidebar({ mobileOpen, onClose, userSessionData }: SidebarProps) {
+    const router = useRouter();
     const [open, setOpen] = useState<OpenState>({});
     const [activeSection, setActiveSection] = useState<string>();
+    const [activeSubItem, setActiveSubItem] = useState<string>();
+    const [activeSubSubItem, setActiveSubSubItem] = useState<string>();
     const [subOpen, setSubOpen] = useState<SubOpenState>({});
     const [sessionData, setSessionData] = useState({
         url: "",
@@ -511,7 +632,7 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
 
     const { sections, loading, error, fetchMenuData } = useMenuData(sessionData);
 
-    // Initialize collapse state from localStorage
+    // Initialize collapse state and active states from localStorage
     useEffect(() => {
         const stored = localStorage.getItem("sidebarOpen");
         if (stored !== null) {
@@ -519,7 +640,58 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         } else {
             localStorage.setItem("sidebarOpen", String(!isCollapsed));
         }
+
+        const storedActiveSection = localStorage.getItem("activeSection");
+        if (storedActiveSection) {
+            setActiveSection(storedActiveSection);
+        }
+
+        const storedActiveSubItem = localStorage.getItem("activeSubItem");
+        if (storedActiveSubItem) {
+            setActiveSubItem(storedActiveSubItem);
+        }
+
+        const storedActiveSubSubItem = localStorage.getItem("activeSubSubItem");
+        if (storedActiveSubSubItem) {
+            setActiveSubSubItem(storedActiveSubSubItem);
+        }
     }, []);
+    const [initialized, setInitialized] = useState(false);
+
+useEffect(() => {
+    if (initialized === true) return; 
+    if (!sections.length) return;
+
+    const currentPath = window.location.pathname;
+    const normalizePath = (path: string = "") =>
+        "/" + path.replace(/^\/+/, "").replace(/\/+$/, "");
+    
+    for (const section of sections) {
+        for (const l2 of section.subItems) {
+
+            if (normalizePath(l2.access_link) === currentPath) {
+                setActiveSection(section.key);
+                setActiveSubItem(l2.key);
+                setOpen(o => ({ ...o, [section.key]: true }));
+                setSubOpen(s => ({ ...s, [l2.key]: true }));
+                setInitialized(true);
+                return;
+            }
+
+            for (const l3 of (l2.subItems || [])) {
+                if (normalizePath(l3.access_link) === currentPath) {
+                    setActiveSection(section.key);
+                    setActiveSubItem(l2.key);
+                    setActiveSubSubItem(l3.key);
+                    setOpen(o => ({ ...o, [section.key]: true }));
+                    setSubOpen(s => ({ ...s, [l2.key]: true }));
+                    setInitialized(true);
+                    return;
+                }
+            }
+        }
+    }
+}, [sections]);
 
     // Persist sidebar state
     useEffect(() => {
@@ -566,10 +738,25 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
     const handleSectionToggle = (key: string) => {
         setOpen((o) => ({ ...o, [key]: !o[key] }));
         setActiveSection(key);
+        setActiveSubItem(undefined);
+        setActiveSubSubItem(undefined);
+        localStorage.setItem("activeSection", key);
+        localStorage.removeItem("activeSubItem");
+        localStorage.removeItem("activeSubSubItem");
     };
 
     const handleSubToggle = (subKey: string) => {
         setSubOpen((s) => ({ ...s, [subKey]: !s[subKey] }));
+        // Find the section key for this subKey
+        const section = sections.find(s => s.subItems.some(sub => sub.key === subKey));
+        if (section) {
+            setActiveSection(section.key);
+            setActiveSubItem(subKey);
+            setActiveSubSubItem(undefined);
+            localStorage.setItem("activeSection", section.key);
+            localStorage.setItem("activeSubItem", subKey);
+            localStorage.removeItem("activeSubSubItem");
+        }
     };
 
     const handleToggle = () => {
@@ -628,9 +815,13 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                     }}
                 >
                     {/* Dashboard Section - Always at the top */}
-                    <DashboardSection 
-                        isCollapsed={isCollapsed} 
-                        onExpandSidebar={handleExpandSidebar} 
+                    <DashboardSection
+                        isCollapsed={isCollapsed}
+                        onExpandSidebar={handleExpandSidebar}
+                        activeSection={activeSection}
+                        onSetActiveSection={setActiveSection}
+                        onSetActiveSub={setActiveSubItem}
+                        onSetActiveSubSub={setActiveSubSubItem}
                     />
 
                     {error ? (
@@ -653,17 +844,23 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                             <p className="mt-4">Please wait...</p>
                         </div>
                     ) : (
-                        sections.map((section) => (
+                        sections.map((section, index) => (
                             <Section
-                                key={section.key}
+                                key={`section-${index}-${section.key}`}
                                 section={section}
-                                isActive={activeSection === section.key}
+                                isActive={activeSection === section.key && activeSection !== DASHBOARD_KEY}
                                 open={!!open[section.key]}
                                 onToggle={() => handleSectionToggle(section.key)}
                                 subOpen={subOpen}
                                 onSubToggle={handleSubToggle}
                                 isCollapsed={isCollapsed}
                                 onExpandSidebar={handleExpandSidebar}
+                                activeSubItem={activeSubItem}
+                                activeSubSubItem={activeSubSubItem}
+                                onSetActiveSub={setActiveSubItem}
+                                onSetActiveSubSub={setActiveSubSubItem}
+                                router={router}
+                                onSetActiveSection={setActiveSection}
                             />
                         ))
                     )}
