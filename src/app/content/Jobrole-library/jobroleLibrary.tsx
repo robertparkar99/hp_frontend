@@ -82,8 +82,6 @@ export default function HomePage() {
 
   const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
   const [jobDescriptionModalOpen, setJobDescriptionModalOpen] = useState(false);
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [configJsonObject, setConfigJsonObject] = useState<any>(null);
 
   // ✅ New state for dropdown menu
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
@@ -645,21 +643,9 @@ export default function HomePage() {
         <JobDescriptionModal
           isOpen={jobDescriptionModalOpen}
           onClose={handleCloseJobDescriptionModal}
-          onConfig={(jsonObject) => {
-            setJobDescriptionModalOpen(false);
-            setConfigJsonObject(jsonObject);
-            setIsConfigModalOpen(true);
-          }}
           jobRole={getSelectedJobRoleData()}
         />
       )}
-
-      {/* Configuration Modal */}
-      <ConfigurationModal
-        isOpen={isConfigModalOpen}
-        onClose={() => setIsConfigModalOpen(false)}
-        jsonObject={configJsonObject}
-      />
 
       {/* Loader / No Data */}
       {loading ? (
