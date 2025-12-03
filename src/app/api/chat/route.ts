@@ -9,7 +9,7 @@ function corsHeaders() {
     };
 }
 
-// OPTIONS handler (browser preflight)
+// OPTIONS handler (browser preflight by AJ)
 export async function OPTIONS() {
     return new Response(null, {
         status: 204,
