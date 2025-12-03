@@ -182,7 +182,10 @@ const filteredData = useMemo(() => {
         />
       </div>
     ),
-    selector: (row: any) => row.leave_type_name || row.employee || "-",
+    selector: (row: any) => {
+      const leaveType = leaveTypes.find((lt) => lt.id.toString() === row.user_id?.toString());
+      return leaveType?.leave_type || row.leaveType || "-";
+    },
     sortable: true,
     wrap: true,
   },
@@ -418,16 +421,20 @@ const filteredData = useMemo(() => {
 
   // Fetch departments
   useEffect(() => {
-    if (!sessionData.url || !sessionData.subInstituteId) return;
+    if (!sessionData.subInstituteId) return;
     const fetchDepartments = async () => {
       setLoadingDepts(true);
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=hrms_departments&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
+          `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
         );
         if (!res.ok) throw new Error(`Depts fetch failed: ${res.status}`);
         const json = await res.json();
-        const list = normalizeList(json);
+        const list = Object.entries(json.data || {}).map(([deptName, jobRoles]) => {
+          const deptId = (jobRoles as any[])[0]?.department_id;
+          const department = (jobRoles as any[])[0]?.department_name || deptName;
+          return { id: deptId, department };
+        });
         setDepartments(list);
       } catch (err) {
         console.error("Failed to fetch departments:", err);
@@ -454,12 +461,13 @@ const filteredData = useMemo(() => {
       setLoadingEmps(true);
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${formData.department_id}`
+          `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${formData.department_id}&user_id=${sessionData.userId}`
         );
         if (!res.ok) throw new Error(`Emps fetch failed: ${res.status}`);
         const json = await res.json();
         const list = normalizeList(json);
         setEmployees(list);
+        console.log("Employees for department", formData.department_id, list);
       } catch (err) {
         console.error("Failed to fetch employees:", err);
         toast({
@@ -495,15 +503,6 @@ const filteredData = useMemo(() => {
 
         const list = json.leaveHistory || [];
         setSubmittedData(list);
-
-        if (json.departments) {
-          setDepartments(
-            Object.entries(json.departments).map(([id, name]) => ({
-              id,
-              department: name,
-            }))
-          );
-        }
       } catch (err) {
         console.error("Failed to fetch leave applications:", err);
         toast({
@@ -528,6 +527,7 @@ const filteredData = useMemo(() => {
         employee_id: "",
         employee: "",
       }));
+    
       return;
     }
 
@@ -726,7 +726,7 @@ const filteredData = useMemo(() => {
                         placeholder={loadingDepts ? "Loading..." : "Select department"}
                       />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="w-140">
                       {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id?.toString()}>
                           {dept.department}

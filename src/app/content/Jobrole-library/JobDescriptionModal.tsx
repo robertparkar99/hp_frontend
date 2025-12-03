@@ -1,3 +1,4 @@
+// jobdiscriptionmodal
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import ViewSkill from "@/components/skillComponent/viewDialouge"; // ✅ import ViewSkill
 
 type JobRole = {
-  id: number;
+  id: number; 
   industries: string;
   department: string;
   sub_department: string;

@@ -500,7 +500,37 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         gammaUrl: data.data?.gammaUrl
       });
 
-      setSuccess("✅ Course presentation generated successfully!");
+      // Save generated course to Course Library
+      const generatedCourse = {
+        id: Date.now(), // Use timestamp as unique ID
+        subject_id: Date.now(),
+        standard_id: Date.now(),
+        title: jsonObject?.jobrole || "Generated Course",
+        description: manualPreview?.substring(0, 100) + "..." || "AI-generated course content",
+        thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop", // Default course image
+        contentType: "presentation",
+        category: "AI Generated",
+        difficulty: "intermediate",
+        short_name: "AI Course",
+        subject_type: "Training",
+        progress: 0,
+        instructor: "AI Assistant",
+        isNew: true,
+        isMandatory: false,
+        display_name: jsonObject?.jobrole || "Generated Course",
+        sort_order: "1",
+        status: "1",
+        subject_category: "AI Generated",
+        external_url: data.data?.exportUrl || data.data?.gammaUrl,
+        platform: "Gamma"
+      };
+
+      // Save to localStorage for Course Library
+      const existingCourses = JSON.parse(localStorage.getItem("generatedCourses") || "[]");
+      existingCourses.push(generatedCourse);
+      localStorage.setItem("generatedCourses", JSON.stringify(existingCourses));
+
+      setSuccess("✅ Course presentation generated successfully! Added to Course Library.");
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -527,7 +557,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-full md:max-w-6xl lg:max-w-7xl xl:max-w-7xl max-h-[90vh] p-0 overflow-hidden rounded-xl">
+      <DialogContent className="w-[95vw] max-w-full md:max-w-6xl lg:max-w-7xl xl:max-w-7xl max-h-[90vh] p-0 overflow-auto rounded-xl smooth-scrollbar">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-blue-600" />
@@ -675,7 +705,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                   <Eye className="h-5 w-5 text-blue-600" />
                   Preview
                 </h2>
-                <div className="flex items-center gap-2 text-xs">
+                {/* <div className="flex items-center gap-2 text-xs">
                   {diverged && (
                     <button
                       onClick={handleResync}
@@ -702,7 +732,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                     <Copy className="h-3 w-3" />
                     Copy
                   </button>
-                </div>
+                </div> */}
               </div>
 
               {/* Preview Content */}

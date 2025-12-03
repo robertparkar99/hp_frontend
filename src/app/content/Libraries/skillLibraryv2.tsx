@@ -20,6 +20,8 @@ import Jobrole from "../Jobrole-library/jobroleLibrary";
 import JobroleTask from "./Jobrole-task-library/page";
 import JobroleTaxonomy from "../jobrole-taxonomy/page";
 import JobroleTAskTaxonomy from "./jobroleTaskTaxo";
+import CourseLibrary from "./CourseLibrary";
+import ViewDetail from "../LMS/ViewChepter/ViewDetail";
 // ✅ Loader Component
 const Loader = () => (
   <div className="flex justify-center items-center h-screen">
@@ -42,6 +44,9 @@ const SkillLibrary = () => {
   const [activeTab, setActiveTab] = useState("Skill Library");
   const [openPage, setOpenPage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [subjectId, setSubjectId] = useState(0);
+  const [standardId, setStandardId] = useState(0);
   const pathname = usePathname();
 
   // If user navigates to /taxonomy, hide the tabs
@@ -61,12 +66,29 @@ const SkillLibrary = () => {
     setOpenPage(null);
   };
 
+  const handleViewDetails = (subject_id: number, standard_id: number) => {
+    if (subject_id && standard_id) {
+      setSubjectId(subject_id);
+      setStandardId(standard_id);
+      setIsViewOpen(true);
+    }
+  };
+
+  const handleCloseViewDetail = () => {
+    setIsViewOpen(false);
+  };
+
   if (isTaxonomyPage) return null;
+
+  // If ViewDetail is open, show only that
+  if (isViewOpen) {
+    return <ViewDetail subject_id={subjectId} standard_id={standardId} onClose={handleCloseViewDetail} />;
+  }
 
   return (
     <div className="bg-background rounded-xl p-5 min-h-screen">
       <TabsMenu
-        tabs={["Skill Library", "Jobrole Library", "Jobrole Task Library", "Knowledge", "Ability", "Attitude", "Behaviour"]}
+        tabs={["Skill Library", "Jobrole Library", "Jobrole Task Library", "Knowledge", "Ability", "Attitude", "Behaviour", "Course Library"]}
         activeTab={activeTab}
         onTabChange={handleTabChange}
         openPage={openPage}
@@ -105,6 +127,7 @@ const SkillLibrary = () => {
             {activeTab === "Ability" && <Ability/>}
             {activeTab === "Attitude" && <Attitude />}
             {activeTab === "Behaviour" && <Behaviour />}
+            {activeTab === "Course Library" && <CourseLibrary onViewDetails={handleViewDetails} />}
           </>
         )}
       </Suspense>

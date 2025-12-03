@@ -138,19 +138,23 @@ const HolidayMaster = () => {
 
   // Fetch departments
   useEffect(() => {
-    if (!sessionData.url || !sessionData.subInstituteId || !sessionData.token) return;
+    if (!sessionData.subInstituteId || !sessionData.token) return;
 
     const fetchDepartments = async () => {
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=hrms_departments&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
+          `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
         );
 
         if (!res.ok) throw new Error(`Department API error! status: ${res.status}`);
 
         const json = await res.json();
-        const deptData: Department[] = Array.isArray(json) ? json : json.data ?? [];
-        setDepartments(deptData);
+        const list = Object.entries(json.data || {}).map(([deptName, jobRoles]) => {
+          const deptId = (jobRoles as any[])[0]?.department_id;
+          const department = (jobRoles as any[])[0]?.department_name || deptName;
+          return { id: deptId, department };
+        });
+        setDepartments(list);
       } catch (err) {
         console.error("Failed to fetch departments", err);
       }
