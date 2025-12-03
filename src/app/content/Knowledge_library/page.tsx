@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import ViewKnowledge from "@/components/KnowledgeComponent/viewDialouge";
 import {
   Funnel,
   Circle,
@@ -90,6 +91,12 @@ const Honeycomb: React.FC = () => {
 
   // 🔑 View toggle state
   const [viewMode, setViewMode] = useState<"circle" | "table">("circle");
+
+  // Dialog states
+  const [activeKnowledge, setActiveKnowledge] = useState<SkillItem | null>(null);
+  const [dialogOpen, setDialogOpen] = useState({
+    view: false,
+  });
 
   // Circle layout
   const size = 160;
@@ -579,7 +586,11 @@ const Honeycomb: React.FC = () => {
                         left: `${x}px`,
                         top: `${y}px`,
                       }}
-                      className="absolute rounded-full bg-gradient-to-b from-[#9FD0FF] to-[#50A8FF] border border-[#50A8FF] flex flex-col items-center justify-center text-center text-[11px] font-medium text-black p-3 hover:bg-[#f67232] hover:scale-110 transition duration-300"
+                      className="absolute rounded-full bg-gradient-to-b from-[#9FD0FF] to-[#50A8FF] border border-[#50A8FF] flex flex-col items-center justify-center text-center text-[11px] font-medium text-black p-3 hover:bg-[#f67232] hover:scale-110 transition duration-300 cursor-pointer"
+                      onClick={() => {
+                        setActiveKnowledge(item);
+                        setDialogOpen({ view: true });
+                      }}
                     >
                       <div className="mb-2">
                         {/* {getItemIcon(item.classification_item)} */}
@@ -607,6 +618,18 @@ const Honeycomb: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Dialogs */}
+      {dialogOpen.view && activeKnowledge && (
+        <ViewKnowledge
+          knowledgeId={activeKnowledge.id}
+          onClose={() => {
+            setDialogOpen({ view: false });
+            setActiveKnowledge(null);
+          }}
+          onSuccess={() => {}}
+        />
+      )}
     </>
   );
 };
