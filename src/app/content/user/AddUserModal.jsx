@@ -36,6 +36,40 @@ export default function AddUserModal({
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [existingEmails, setExistingEmails] = useState([]);
 
+  const [deptJobroles, setDeptJobroles] = useState([]);
+  const [jobrolesByDept, setJobrolesByDept] = useState([]);
+
+  useEffect(() => {
+    const fetchDeptAndJobroles = async () => {
+      try {
+        const res = await fetch(`${sessionData.APP_URL}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`);
+        const json = await res.json();
+
+        const data = json?.data || {};
+
+        // Create Department List
+        const departments = Object.keys(data).map((deptName) => {
+          const firstJob = data[deptName][0];
+          return {
+            id: firstJob.department_id,
+            name: deptName
+          };
+        });
+
+        setDeptJobroles(departments);
+        setJobrolesByDept(data);
+
+      } catch (error) {
+        console.error("Error fetching departments/jobroles:", error);
+      }
+    };
+
+    if (sessionData?.sub_institute_id) {
+      fetchDeptAndJobroles();
+    }
+  }, [sessionData]);
+
+
   // Fetch existing users' emails for validation
   useEffect(() => {
     if (!sessionData?.APP_URL) return;
@@ -447,12 +481,13 @@ export default function AddUserModal({
                   <SelectTrigger>
                     <SelectValue placeholder="Select Department" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {userDepartmentLists.map((department) => (
+                  <SelectContent className="w-100">
+                    {deptJobroles.map((department) => (
                       <SelectItem key={department.id} value={String(department.id)}>
-                        {department.name || department.department} {/* safe fallback */}
+                        {department.name}
                       </SelectItem>
                     ))}
+
                   </SelectContent>
                 </Select>
               </div>
@@ -466,16 +501,18 @@ export default function AddUserModal({
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Jobrole" />
+                    <SelectValue placeholder="Select Job Role" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {userJobroleLists.map((jobrole) => (
-                      <SelectItem key={jobrole.id} value={String(jobrole.id)}>
-                        {jobrole.name || jobrole.jobrole} {/* safe fallback */}
+
+                  <SelectContent className="w-100">
+                    {(jobrolesByDept[deptJobroles.find(d => d.id == formData.personal.department)?.name] || []).map((job) => (
+                      <SelectItem key={job.id} value={String(job.id)}>
+                        {job.jobrole}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+
               </div>
 
               <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import AddDialog from "@/components/skillComponent/addDialouge";
@@ -87,6 +87,9 @@ export default function Page() {
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
   const [selectedSkills, setSelectedSkills] = useState<number[]>([]); // Multi-select
 
+  const [deptJobroleMap, setDeptJobroleMap] = useState<Record<string, string[]>>({});
+
+
   const [sessionData, setSessionData] = useState({
     url: "",
     token: "",
@@ -106,6 +109,7 @@ export default function Page() {
   });
 
   const [refreshKey, setRefreshKey] = useState(0);
+
 
   // 🔑 View Mode
   const [viewMode, setViewMode] = useState<"hexagon" | "table">("hexagon");
@@ -137,6 +141,12 @@ export default function Page() {
 
   // Combined actions menu state
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+
+  // Header shrinking state
+  const [headerShrunk, setHeaderShrunk] = useState(false);
+
+  // Ref for content section
+  const contentRef = useRef<HTMLElement>(null);
 
   // Toggle function for the actions menu
   const toggleActionsMenu = () => {
@@ -176,97 +186,79 @@ export default function Page() {
     }
   }, []);
 
-  // Fetch departments
+  // Header shrinking on scroll
   useEffect(() => {
-    const fetchDepartments = async () => {
-      if (!sessionData.url) return;
-
-      try {
-        const apiUrl = `${sessionData.url}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[industries]=${sessionData.orgType}&group_by=department&order_by[column]=department&order_by[direction]=asc`;
-
-        const response = await fetch(apiUrl, {
-          headers: {
-            Authorization: `Bearer ${sessionData.token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch departments: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const transformedDepartments = data.map((dept: any, index: number) => ({
-          id: dept.id ? String(dept.id) : String(index + 1),
-          department: dept.department
-        }));
-
-        setDepartments(transformedDepartments);
-      } catch (err) {
-        console.error("Error fetching departments:", err);
+    const handleScroll = () => {
+      if (contentRef.current && contentRef.current.scrollTop > 100) {
+        setHeaderShrunk(true);
+      } else {
+        setHeaderShrunk(false);
       }
     };
 
-    fetchDepartments();
-  }, [sessionData]);
+    const contentElement = contentRef.current;
+    if (contentElement) {
+      contentElement.addEventListener('scroll', handleScroll);
+      return () => contentElement.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
+  // Fetch departments
+ useEffect(() => {
+  const fetchDeptAndRoles = async () => {
+    try {
+      const response = await fetch(
+        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
+      );
+      const json = await response.json();
+
+      if (!json.status) return;
+
+      const deptNames = Object.keys(json.data);
+
+      // Save department list
+      setDepartments(
+        deptNames.map((name, index) => ({
+          id: String(index),
+          department: name,
+        }))
+      );
+
+      // Save department → job roles mapping
+      setDeptJobroleMap(json.data);
+
+    } catch (err) {
+      console.error("Error fetching department + jobroles:", err);
+    }
+  };
+
+  if (sessionData.subInstituteId) fetchDeptAndRoles();
+}, [sessionData]);
+
 
   // Fetch job roles based on selected department from filters
-  useEffect(() => {
-    const fetchJobRoles = async () => {
-      if (!selectedDepartment || !sessionData.url || !sessionData.subInstituteId) {
-        setJobRoles([]);
-        setSelectedJobRole(undefined);
-        return;
-      }
+useEffect(() => {
+  if (!selectedDepartment) {
+    setJobRoles([]);
+    return;
+  }
 
-      setLoadingJobRoles(true);
-      setError(null);
+  const roles = deptJobroleMap[selectedDepartment] || [];
 
-      try {
-        const apiUrl = `${sessionData.url}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[industries]=${sessionData.orgType}&filters[department]=${encodeURIComponent(selectedDepartment)}&group_by=jobrole&order_by[column]=jobrole&order_by[direction]=asc`;
-        console.log("Fetching job roles from:", apiUrl);
+  // FIX: Convert API objects into dropdown-safe values
+  setJobRoles(
+    roles.map((roleObj: any, index) => ({
+      id: String(roleObj.id || index),
+      jobrole: roleObj.jobrole || "",
+      description: roleObj.description || "",
+      jobrole_category: roleObj.jobrole_category || "",
+      department_id: roleObj.department_id || "",
+      department_name: roleObj.department_name || ""
+    }))
+  );
+}, [selectedDepartment, deptJobroleMap]);
 
-        const response = await fetch(apiUrl, {
-          headers: {
-            Authorization: `Bearer ${sessionData.token}`,
-            "Content-Type": "application/json",
-          },
-        });
 
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Failed to fetch job roles: ${response.status} - ${text}`);
-        }
-
-        const data = await response.json();
-        console.log("Job roles response:", data);
-
-        // Transform the data to match JobRole interface
-        const transformedJobRoles = data.map((role: any, index: number) => ({
-          id: role.id ? String(role.id) : String(index + 1),
-          jobrole: role.jobrole
-        }));
-
-        setJobRoles(transformedJobRoles);
-        setSelectedJobRole(undefined); // Reset job role selection when department changes
-        setJobRoleSkills([]); // Clear job role skills when department changes
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        console.error("Error fetching job roles:", err);
-        setJobRoles([]);
-      } finally {
-        setLoadingJobRoles(false);
-      }
-    };
-
-    if (selectedDepartment) {
-      fetchJobRoles();
-    } else {
-      setJobRoles([]);
-      setSelectedJobRole(undefined);
-      setJobRoleSkills([]);
-    }
-  }, [selectedDepartment, sessionData]);
 
   // Fetch job role skills when job role is selected
   useEffect(() => {
@@ -372,59 +364,54 @@ export default function Page() {
   };
 
   // Fetch API Data
-  useEffect(() => {
-    async function fetchData() {
-      if (!sessionData.url) return;
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `${sessionData.url}/skill_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&category=&sub_category=`
-        );
-        const data = await res.json();
+  const fetchData = async () => {
+    if (!sessionData.url) return;
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${sessionData.url}/skill_library?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&category=&sub_category=`
+      );
+      const data = await res.json();
 
-        const userTree = data?.userTree || {};
-        let userSkillsArr: Skill[] = data?.userSkills || [];
+      const userTree = data?.userTree || {};
+      let userSkillsArr: Skill[] = data?.userSkills || [];
 
-        // Sort skills ascending by title
-        userSkillsArr = userSkillsArr.sort((a, b) => a.title.localeCompare(b.title));
+      // Sort skills ascending by title
+      userSkillsArr = userSkillsArr.sort((a, b) => a.title.localeCompare(b.title));
 
-        const parsedCategories: Category[] = Object.entries(userTree).map(
-          ([categoryName, subCatObj]) => {
-            const subcategories: SubCategory[] = Object.entries(
-              subCatObj as Record<string, any[]>
-            ).map(([subName, skillsArr]) => {
-              const skills: Skill[] = (skillsArr as any[]).map((s) => ({
-                id: s.id,
-                title: s.title,
-                description: s.description,
-                department: s.department,
-                category: s.category,
-                sub_category: s.sub_category,
-                proficiency_level: s.proficiency_level,
-                usage_count: Math.floor(Math.random() * 50), // Mock data
-                last_updated: new Date().toISOString().split('T')[0], // Mock data
-              }));
-              return { name: subName, skills };
-            });
+      const parsedCategories: Category[] = Object.entries(userTree).map(
+        ([categoryName, subCatObj]) => {
+          const subcategories: SubCategory[] = Object.entries(
+            subCatObj as Record<string, any[]>
+          ).map(([subName, skillsArr]) => {
+            const skills: Skill[] = (skillsArr as any[]).map((s) => ({
+              id: s.id,
+              title: s.title,
+              description: s.description,
+              department: s.department,
+              category: s.category,
+              sub_category: s.sub_category,
+              proficiency_level: s.proficiency_level,
+              usage_count: Math.floor(Math.random() * 50), // Mock data
+              last_updated: new Date().toISOString().split('T')[0], // Mock data
+            }));
+            return { name: subName, skills };
+          });
 
-            return { name: categoryName, subcategories };
-          }
-        );
-
-        setCategories(parsedCategories);
-        setUserSkills(userSkillsArr);
-
-        // Set default category on first load
-        if (userSkillsArr.length > 0 && !selectedCategory) {
-          setSelectedCategory(userSkillsArr[0].category);
+          return { name: categoryName, subcategories };
         }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
+      );
 
+      setCategories(parsedCategories);
+      setUserSkills(userSkillsArr);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [sessionData, refreshKey]);
 
@@ -544,23 +531,12 @@ export default function Page() {
       );
     });
 
-    // Default page load → first category skills
-    if (
-      !selectedDepartment &&
-      !selectedCategory &&
-      !selectedSubcategory &&
-      !selectedProficiency &&
-      userSkills.length > 0 &&
-      searchTerm === ""
-    ) {
-      const firstCategory = userSkills[0].category;
-      filteredSkills = userSkills.filter((s) => s.category === firstCategory);
-    }
 
     return filteredSkills;
   };
 
   const displaySkills = getDisplaySkills();
+
 
   // Apply column-wise filters for table view
   const columnFilteredSkills = displaySkills.filter((s) =>
@@ -771,7 +747,7 @@ export default function Page() {
   return (
     <>
       {/* Top Bar with Search, Filters, and Action Icons */}
-      <div className="p-4 flex flex-col gap-4 mb-6">
+      <div className={`flex flex-col gap-4 mb-6 transition-all duration-300 ${headerShrunk ? 'p-2' : 'p-4'}`}>
         {/* First Row: Search and Main Actions */}
         <div className="flex justify-between items-center">
           {/* Left: Search */}
@@ -824,13 +800,14 @@ export default function Page() {
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Filter by Department" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className= "max-h-60 w-73">
                     <SelectItem value="all">All Departments</SelectItem>
-                    {departmentOptions.map((dept, idx) => (
-                      <SelectItem key={idx} value={dept}>
-                        {dept}
-                      </SelectItem>
-                    ))}
+                    {departments.map((dept) => (
+  <SelectItem key={dept.id} value={dept.department}>
+    {dept.department}
+  </SelectItem>
+))}
+
                   </SelectContent>
                 </Select>
 
@@ -847,12 +824,12 @@ export default function Page() {
                   disabled={!selectedDepartment || loadingJobRoles}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder={loadingJobRoles ? "Loading job titles..." : "Select job title"}>
+                    {/* <SelectValue placeholder={loadingJobRoles ? "Loading job titles..." : "Select job title"}>
                       {selectedJobRole && jobRoles.length > 0
                         ? jobRoles.find(role => role.id === selectedJobRole)?.jobrole || "Select job title"
                         : "Select job title"
                       }
-                    </SelectValue>
+                    </SelectValue> */}
                   </SelectTrigger>
                   <SelectContent>
                     {loadingJobRoles ? (
@@ -860,11 +837,11 @@ export default function Page() {
                     ) : jobRoles.length > 0 ? (
                       <>
                         <SelectItem value="all">All Job Roles</SelectItem>
-                        {jobRoles.map((role: JobRole) => (
-                          <SelectItem key={role.id} value={role.id}>
-                            {role.jobrole}
-                          </SelectItem>
-                        ))}
+                       {jobRoles.map((role) => (
+  <SelectItem key={role.id} value={role.id}>
+    {role.jobrole}
+  </SelectItem>
+))}
                       </>
                     ) : (
                       <SelectItem value="no-roles" disabled>
@@ -1114,9 +1091,9 @@ export default function Page() {
 
       {/* Content Section */}
       <div className="flex gap-6 flex-col">
-        <section className="w-full h-screen overflow-y-auto scrollbar-hide flex items-start justify-center">
+        <section ref={contentRef} className="w-full h-screen overflow-y-auto scrollbar-hide">
           {loading || (selectedJobRole && loadingJobRoleSkills) ? (
-            <div className="flex justify-start items-center h-screen">
+            <div className="flex justify-center items-center h-screen">
               <Atom color="#525ceaff" size="medium" text="" textColor="" />
             </div>
           ) : columnFilteredSkills.length === 0 ? (
@@ -1275,7 +1252,6 @@ export default function Page() {
 
         {dialogOpen.add && (
           <AddDialog
-            skillId={0}
             onClose={() => setDialogOpen({ ...dialogOpen, add: false })}
             onSuccess={() => {
               setDialogOpen({ ...dialogOpen, add: false });
