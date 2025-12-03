@@ -367,12 +367,12 @@ if (onClose) {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={handleCloseQuestionBank}
               className="flex items-center gap-2"
             >
-              <Icon name="ArrowLeft" size={16} />
-              Back to Modules
+              <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }}  />
+             
             </Button>
           </div>
           <QuestionBank
@@ -390,20 +390,19 @@ if (onClose) {
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
-        <Button
-          variant="outline"
-          onClick={handleCloseModule}
-          className="flex items-center gap-2"
-        >
-          <Icon name="ArrowLeft" size={16} />
-          Back to Course
-        </Button>
+       <Button
+  variant="ghost"
+  onClick={handleCloseModule}
+  className="flex items-center"
+>
+  <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }} />
+</Button>
         <div className="flex items-center justify-between mt-8 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-2xl font-bold text-foreground">
               Module Catalog
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-sm">
               Browse and manage Module
             </p>
           </div>
@@ -414,9 +413,9 @@ if (onClose) {
               setChapterToDelete(null)
               setIsAddDialogOpen(true)
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
           >
-            <Icon name="Plus" size={16} /> Add Module
+            <Icon name="Plus" size={16} /> Create Module
           </Button>
   ):null}
         </div>
@@ -425,6 +424,7 @@ if (onClose) {
         {courseDetails && (
           <CourseHero
             course={formatCourseForHero()}
+            sessionData={sessionData}
             onStartCourse={() => console.log("Start course")}
             onContinueCourse={() => console.log("Continue course")}
           />

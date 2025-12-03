@@ -1,6 +1,7 @@
 "use client";
-import React, { useState } from "react";
-import { Clock, Calendar, AlertCircle, User } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import DataTable from "react-data-table-component";
+import { Clock, Calendar, AlertCircle, User, ChevronUp, ChevronDown, Search } from "lucide-react";
 import { AttendanceRecord, Employee } from "../types/attendance";
 import { format, parseISO } from "date-fns";
 
@@ -35,12 +36,29 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
   fromDate,
   toDate,
 }) => {
-  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [selectedRows, setSelectedRows] = useState<AttendanceRecord[]>([]);
   const [editedRecords, setEditedRecords] = useState<Record<string, AttendanceRecord>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredRecords, setFilteredRecords] = useState<AttendanceRecord[]>([]);
+  // const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
-  const getEmployee = (employeeId: string): Employee | undefined => {
-    return employees.find((emp) => emp.id === employeeId);
-  };
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+
+const handleColumnFilter = (columnKey: string, value: string) => {
+  setColumnFilters(prev => ({
+    ...prev,
+    [columnKey]: value
+  }));
+};
+
+
+
+  // const getEmployee = (employeeId: string): Employee | undefined => {
+  //   return employees.find((emp) => emp.id === employeeId);
+  // };
+   const getEmployee = (employeeId: string): Employee | undefined => {
+     return employees.find((emp) => emp.id === employeeId);
+   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -71,30 +89,110 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
     }
   };
 
-  let filteredRecords = selectedEmployee
+// Then update your filteredRecords logic to include column filtering
+useMemo(() => {
+  let result = selectedEmployee
     ? records.filter((record) => record.employeeId === selectedEmployee.id)
     : records;
 
   if (fromDate) {
-    filteredRecords = filteredRecords.filter(
+    result = result.filter(
       (rec) => new Date(rec.date) >= new Date(fromDate)
     );
   }
   if (toDate) {
-    filteredRecords = filteredRecords.filter(
+    result = result.filter(
       (rec) => new Date(rec.date) <= new Date(toDate)
     );
   }
 
-  const sortedRecords = filteredRecords.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  // Apply search filter
+  if (searchTerm) {
+    result = result.filter(record => {
+      const employee = getEmployee(record.employeeId);
+      return (
+        employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.punchIn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.punchOut?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  }
+
+  // Apply column filters
+  if (Object.keys(columnFilters).length > 0) {
+    result = result.filter(record => {
+      const employee = getEmployee(record.employeeId);
+      
+      return Object.entries(columnFilters).every(([key, filterValue]) => {
+        if (!filterValue) return true;
+        
+        switch (key) {
+          case 'srno':
+            // This would need to be handled differently as it's based on index
+            return true;
+          case 'employee':
+            return employee?.name?.toLowerCase().includes(filterValue.toLowerCase()) || false;
+          case 'date':
+            return format(parseISO(record.date), "MMM dd, yyyy").toLowerCase().includes(filterValue.toLowerCase());
+          case 'punchIn':
+            return record.punchIn?.toLowerCase().includes(filterValue.toLowerCase()) || false;
+          case 'punchOut':
+            return record.punchOut?.toLowerCase().includes(filterValue.toLowerCase()) || false;
+          case 'totalHours':
+            return record.totalHours?.toString().includes(filterValue) || false;
+          case 'status':
+            return record.status.toLowerCase().includes(filterValue.toLowerCase());
+          default:
+            return true;
+        }
+      });
+    });
+  }
+
+  setFilteredRecords(result);
+}, [records, employees, selectedEmployee, fromDate, toDate, searchTerm, columnFilters]);
+
+  // Filter records based on selected employee and date range
+  // useMemo(() => {
+  //   let result = selectedEmployee
+  //     ? records.filter((record) => record?.employeeId === selectedEmployee?.id)
+  //     : records;
+
+  //   if (fromDate) {
+  //     result = result.filter(
+  //       (rec) => new Date(rec.date) >= new Date(fromDate)
+  //     );
+  //   }
+  //   if (toDate) {
+  //     result = result.filter(
+  //       (rec) => new Date(rec.date) <= new Date(toDate)
+  //     );
+  //   }
+
+  //   // Apply search filter
+  //   if (searchTerm) {
+  //     result = result.filter(record => {
+  //       const employee = getEmployee(record.employeeId);
+  //       return (
+  //         employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //         record.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //         record.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //         record.punchIn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //         record.punchOut?.toLowerCase().includes(searchTerm.toLowerCase())
+  //       );
+  //     });
+  //   }
+
+  //   setFilteredRecords(result);
+  // }, [records, employees, selectedEmployee, fromDate, toDate, searchTerm]);
 
   const handleCheckboxChange = (record: AttendanceRecord) => {
     setSelectedRows((prev) =>
-      prev.includes(record.id)
-        ? prev.filter((id) => id !== record.id)
-        : [...prev, record.id]
+      prev.some(r => r.id === record.id)
+        ? prev.filter((r) => r.id !== record.id)
+        : [...prev, record]
     );
     setEditedRecords((prev) => ({
       ...prev,
@@ -117,14 +215,402 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
   };
 
   const handleUpdate = () => {
-    const updated = selectedRows.map((id) => editedRecords[id]);
+    const updated = selectedRows.map((record) => editedRecords[record.id] || record);
     if (onUpdateRecords) onUpdateRecords(updated);
+    setSelectedRows([]);
+    setEditedRecords({});
   };
 
+  const customStyles = {
+      headCells: {
+        style: {
+          fontSize: "14px",
+          backgroundColor: "#D1E7FF",
+          color: "black",
+          whiteSpace: "nowrap",
+          textAlign: "left",
+        },
+      },
+      cells: { style: { fontSize: "13px", textAlign: "left" } },
+      table: {
+        style: { border: "1px solid #ddd", borderRadius: "20px", overflow: "hidden" },
+      },
+  };
+
+  // const columns = [
+  //   {
+  //     name: "Sr. No",
+  //     selector: (row: AttendanceRecord, index: number) => index + 1,
+  //     width: "80px",
+  //     cell: (row: AttendanceRecord, index: number) => {
+  //       const isSelected = selectedRows.some(r => r.id === row.id);
+  //       return (
+  //         <div className="flex items-center">
+  //           <input
+  //             type="checkbox"
+  //             checked={isSelected}
+  //             onChange={() => handleCheckboxChange(row)}
+  //             className="mr-2"
+  //           />
+  //           {index + 1}
+  //         </div>
+  //       );
+  //     },
+  //   },
+  //   {
+  //     name: "Employee",
+  //     selector: (row: AttendanceRecord) => getEmployee(row.employeeId)?.name || "Unknown Employee",
+  //     sortable: true,
+  //     cell: (row: AttendanceRecord) => {
+  //       const employee = getEmployee(row.employeeId);
+  //       return (
+  //         <div className="flex items-center">
+  //           <img
+  //             className="h-8 w-8 rounded-full"
+  //             src={getAvatarUrl(employee?.avatar)}
+  //             alt={employee?.name}
+  //             onError={(e) => {
+  //               (e.target as HTMLImageElement).src = fallbackImg;
+  //             }}
+  //           />
+  //           <div className="ml-3">
+  //             <div className="text-sm font-medium text-gray-900">
+  //               {employee?.name || "Unknown Employee"}
+  //             </div>
+  //           </div>
+  //         </div>
+  //       );
+  //     },
+  //   },
+  //   {
+  //     name: "Date",
+  //     selector: (row: AttendanceRecord) => row.date,
+  //     sortable: true,
+  //     cell: (row: AttendanceRecord) => (
+  //       <div className="text-sm text-gray-900">
+  //         {format(parseISO(row.date), "MMM dd, yyyy")}
+  //       </div>
+  //     ),
+  //   },
+  //   {
+  //     name: "Punch In",
+  //     selector: (row: AttendanceRecord) => row.punchIn || "-",
+  //     sortable: true,
+  //     cell: (row: AttendanceRecord) => {
+  //       const isSelected = selectedRows.some(r => r.id === row.id);
+  //       const edited = editedRecords[row.id] || row;
+        
+  //       return isSelected ? (
+  //         <input
+  //           type="time"
+  //           value={edited.punchIn || ""}
+  //           onChange={(e) =>
+  //             handleFieldChange(row.id, "punchIn", e.target.value)
+  //           }
+  //           className="border rounded px-2 py-1 text-sm"
+  //         />
+  //       ) : (
+  //         <span className="text-sm text-gray-900">{row.punchIn || "-"}</span>
+  //       );
+  //     },
+  //   },
+  //   {
+  //     name: "Punch Out",
+  //     selector: (row: AttendanceRecord) => row.punchOut || "-",
+  //     sortable: true,
+  //     cell: (row: AttendanceRecord) => {
+  //       const isSelected = selectedRows.some(r => r.id === row.id);
+  //       const edited = editedRecords[row.id] || row;
+        
+  //       return isSelected ? (
+  //         <input
+  //           type="time"
+  //           value={edited.punchOut || ""}
+  //           onChange={(e) =>
+  //             handleFieldChange(row.id, "punchOut", e.target.value)
+  //           }
+  //           className="border rounded px-2 py-1 text-sm"
+  //         />
+  //       ) : (
+  //         <span className="text-sm text-gray-900">{row.punchOut || "-"}</span>
+  //       );
+  //     },
+  //   },
+  //   {
+  //     name: "Total Hours",
+  //     selector: (row: AttendanceRecord) => row.totalHours || 0,
+  //     sortable: true,
+  //     cell: (row: AttendanceRecord) => (
+  //       <div className="text-sm text-gray-900">
+  //         {row.totalHours ? `${row.totalHours}h` : "-"}
+  //       </div>
+  //     ),
+  //   },
+  //   {
+  //     name: "Status",
+  //     selector: (row: AttendanceRecord) => row.status,
+  //     sortable: true,
+  //     cell: (row: AttendanceRecord) => (
+  //       <span
+  //         className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+  //           row.status
+  //         )}`}
+  //       >
+  //         {getStatusIcon(row.status)}
+  //         <span className="capitalize">
+  //           {row.status.replace("-", " ")}
+  //         </span>
+  //       </span>
+  //     ),
+  //   },
+  // ];
+
+  const columns = [
+  {
+    name: (
+      <div>
+        <div>Sr No.</div>
+        <input
+          type="text"
+          placeholder="Search..."
+          onChange={(e) => handleColumnFilter("srno", e.target.value)}
+          style={{
+            width: "100%",
+            padding: "4px",
+            fontSize: "12px",
+            border: "1px solid #ddd",
+            borderRadius: "3px",
+            marginTop: "5px"
+          }}
+        />
+      </div>
+    ),
+    selector: (row: AttendanceRecord, index: number) => index + 1,
+    width: "120px",
+    cell: (row: AttendanceRecord, index: number) => {
+      const isSelected = selectedRows.some(r => r.id === row.id);
+      return (
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => handleCheckboxChange(row)}
+            className="mr-2"
+          />
+          {index + 1}
+        </div>
+      );
+    },
+    sortable: true,
+  },
+  {
+    name: (
+      <div>
+        <div>Employee</div>
+        <input
+          type="text"
+          placeholder="Search..."
+          onChange={(e) => handleColumnFilter("employee", e.target.value)}
+          style={{
+            width: "100%",
+            padding: "4px",
+            fontSize: "12px",
+        
+            marginTop: "5px"
+          }}
+        />
+      </div>
+    ),
+    selector: (row: AttendanceRecord) => getEmployee(row.employeeId)?.name || "Unknown Employee",
+    sortable: true,
+    cell: (row: AttendanceRecord) => {
+      const employee = getEmployee(row.employeeId);
+      return (
+        <div className="flex items-center">
+          <img
+            className="h-8 w-8 rounded-full"
+            src={getAvatarUrl(employee?.avatar)}
+            alt={employee?.name}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = fallbackImg;
+            }}
+          />
+          <div className="ml-3">
+            <div className="text-sm font-medium text-gray-900">
+              {employee?.name || "Unknown Employee"}
+            </div>
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    name: (
+      <div>
+        <div>Date</div>
+        <input
+          type="text"
+          placeholder="Search..."
+          onChange={(e) => handleColumnFilter("date", e.target.value)}
+          style={{
+            width: "100%",
+            padding: "4px",
+            fontSize: "12px",
+           
+            marginTop: "5px"
+          }}
+        />
+      </div>
+    ),
+    selector: (row: AttendanceRecord) => row.date,
+    sortable: true,
+    cell: (row: AttendanceRecord) => (
+      <div className="text-sm text-gray-900">
+        {format(parseISO(row.date), "MMM dd, yyyy")}
+      </div>
+    ),
+  },
+  {
+    name: (
+      <div>
+        <div>Punch In</div>
+        <input
+          type="text"
+          placeholder="Search..."
+          onChange={(e) => handleColumnFilter("punchIn", e.target.value)}
+          style={{
+            width: "100%",
+            padding: "4px",
+            fontSize: "12px",
+           
+            marginTop: "5px"
+          }}
+        />
+      </div>
+    ),
+    selector: (row: AttendanceRecord) => row.punchIn || "-",
+    sortable: true,
+    cell: (row: AttendanceRecord) => {
+      const isSelected = selectedRows.some(r => r.id === row.id);
+      const edited = editedRecords[row.id] || row;
+      
+      return isSelected ? (
+        <input
+          type="time"
+          value={edited.punchIn || ""}
+          onChange={(e) =>
+            handleFieldChange(row.id, "punchIn", e.target.value)
+          }
+          className="border rounded px-2 py-1 text-sm"
+        />
+      ) : (
+        <span className="text-sm text-gray-900">{row.punchIn || "-"}</span>
+      );
+    },
+  },
+  {
+    name: (
+      <div>
+        <div>Punch Out</div>
+        <input
+          type="text"
+          placeholder="Search..."
+          onChange={(e) => handleColumnFilter("punchOut", e.target.value)}
+          style={{
+            width: "100%",
+            padding: "4px",
+            fontSize: "12px",
+          
+            marginTop: "5px"
+          }}
+        />
+      </div>
+    ),
+    selector: (row: AttendanceRecord) => row.punchOut || "-",
+    sortable: true,
+    cell: (row: AttendanceRecord) => {
+      const isSelected = selectedRows.some(r => r.id === row.id);
+      const edited = editedRecords[row.id] || row;
+      
+      return isSelected ? (
+        <input
+          type="time"
+          value={edited.punchOut || ""}
+          onChange={(e) =>
+            handleFieldChange(row.id, "punchOut", e.target.value)
+          }
+          className="border rounded px-2 py-1 text-sm"
+        />
+      ) : (
+        <span className="text-sm text-gray-900">{row.punchOut || "-"}</span>
+      );
+    },
+  },
+  {
+    name: (
+      <div>
+        <div>Total Hours</div>
+        <input
+          type="text"
+          placeholder="Search..."
+          onChange={(e) => handleColumnFilter("totalHours", e.target.value)}
+          style={{
+            width: "100%",
+            padding: "4px",
+            fontSize: "12px",
+            
+            marginTop: "5px"
+          }}
+        />
+      </div>
+    ),
+    selector: (row: AttendanceRecord) => row.totalHours || 0,
+    sortable: true,
+    cell: (row: AttendanceRecord) => (
+      <div className="text-sm text-gray-900">
+        {row.totalHours ? `${row.totalHours}h` : "-"}
+      </div>
+    ),
+  },
+  {
+    name: (
+      <div>
+        <div>Status</div>
+        <input
+          type="text"
+          placeholder="Search..."
+          onChange={(e) => handleColumnFilter("status", e.target.value)}
+          style={{
+            width: "100%",
+            padding: "4px",
+            fontSize: "12px",
+            
+            marginTop: "5px"
+          }}
+        />
+      </div>
+    ),
+    selector: (row: AttendanceRecord) => row.status,
+    sortable: true,
+    cell: (row: AttendanceRecord) => (
+      <span
+        className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+          row.status
+        )}`}
+      >
+        {getStatusIcon(row.status)}
+        <span className="capitalize">
+          {row.status.replace("-", " ")}
+        </span>
+      </span>
+    ),
+  },
+];
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-100 flex flex-col">
+    <div className=" h-100 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="flex items-center justify-between p-6 ">
         <div className="flex items-center space-x-3">
           <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
             <Calendar className="w-5 h-5 text-green-600" />
@@ -137,148 +623,48 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
             </h3>
           </div>
         </div>
+        
+        {/* Search */}
+        {/* <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search records..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div> */}
       </div>
 
-      {/* Records */}
+      {/* DataTable */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50 sticky top-0 z-10">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Sr. No
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Employee
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Punch In
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Punch Out
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total Hours
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {sortedRecords.map((record, index) => {
-              const employee = getEmployee(record.employeeId);
-              const isSelected = selectedRows.includes(record.id);
-              const edited = editedRecords[record.id] || record;
-
-              return (
-                <tr key={record.id} className="hover:bg-gray-50 transition-colors">
-                  {/* Sr. No + Checkbox */}
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleCheckboxChange(record)}
-                      className="mr-2"
-                    />
-                    {index + 1}
-                  </td>
-
-                  {/* Employee */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <img
-                        className="h-8 w-8 rounded-full"
-                        src={getAvatarUrl(employee?.avatar)}
-                        alt={employee?.name}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = fallbackImg;
-                        }}
-                      />
-                      <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">
-                          {employee?.name || "Unknown Employee"}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Date */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {format(parseISO(record.date), "MMM dd, yyyy")}
-                  </td>
-
-                  {/* Punch In */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {isSelected ? (
-                      <input
-                        type="time"
-                        value={edited.punchIn || ""}
-                        onChange={(e) =>
-                          handleFieldChange(record.id, "punchIn", e.target.value)
-                        }
-                        className="border rounded px-2 py-1"
-                      />
-                    ) : (
-                      record.punchIn || "-"
-                    )}
-                  </td>
-
-                  {/* Punch Out */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {isSelected ? (
-                      <input
-                        type="time"
-                        value={edited.punchOut || ""}
-                        onChange={(e) =>
-                          handleFieldChange(record.id, "punchOut", e.target.value)
-                        }
-                        className="border rounded px-2 py-1"
-                      />
-                    ) : (
-                      record.punchOut || "-"
-                    )}
-                  </td>
-
-                  {/* Total Hours */}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {record.totalHours ? `${record.totalHours}h` : "-"}
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                        record.status
-                      )}`}
-                    >
-                      {getStatusIcon(record.status)}
-                      <span className="capitalize">
-                        {record.status.replace("-", " ")}
-                      </span>
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-
-        {sortedRecords.length === 0 && (
-          <div className="text-center py-12">
-            <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              No attendance records
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {selectedEmployee
-                ? `No records found for ${selectedEmployee.name}`
-                : "No attendance records available"}
-            </p>
-          </div>
-        )}
+        <DataTable
+          columns={columns}
+          data={filteredRecords}
+          customStyles={customStyles}
+          pagination
+          paginationPerPage={10}
+          paginationRowsPerPageOptions={[10, 25, 50]}
+          highlightOnHover
+          responsive
+          noDataComponent={
+            <div className="text-center py-12">
+              <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                No attendance records
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {selectedEmployee
+                  ? `No records found for ${selectedEmployee.name}`
+                  : "No attendance records available"}
+              </p>
+            </div>
+          }
+          persistTableHead
+        />
       </div>
 
       {/* Update Button */}
@@ -288,7 +674,7 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
             onClick={handleUpdate}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
           >
-            Update Selected
+            Update Selected ({selectedRows.length})
           </button>
         </div>
       )}

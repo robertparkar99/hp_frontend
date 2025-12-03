@@ -9,7 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import dynamic from "next/dynamic";
+import Icon from '@/components/AppIcon';
+
 
 const ExcelExportButton = dynamic(
   () =>
@@ -119,24 +128,49 @@ const SystemConfiguration = () => {
     }
   };
 
+  // const fetchDepartments = async () => {
+  //   try {
+  //     const res = await fetch(
+  //       `${sessionData.url}/table_data?table=hrms_departments&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`
+  //     );
+  //     const data = await res.json();
+  //     if (Array.isArray(data)) {
+  //       setDepartmentOptions(
+  //         data.map((dept) => ({
+  //           id: dept.id,
+  //           name: dept.department || "Unnamed Department",
+  //         }))
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching departments:", error);
+  //   }
+  // };
+
   const fetchDepartments = async () => {
     try {
       const res = await fetch(
-        `${sessionData.url}/table_data?table=hrms_departments&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`
+        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`
       );
+
       const data = await res.json();
-      if (Array.isArray(data)) {
+
+      if (data.status && data.data) {
+        // API returns an object with department names as keys
+        const deptNames = Object.keys(data.data);
+
         setDepartmentOptions(
-          data.map((dept) => ({
-            id: dept.id,
-            name: dept.department || "Unnamed Department",
+          deptNames.map((name, index) => ({
+            id: index + 1,
+            name: name,   // Department name (like "Administrative Support")
           }))
         );
       }
     } catch (error) {
-      console.error("Error fetching departments:", error);
+      console.error("Error fetching new department list:", error);
     }
   };
+
 
   const fetchComplianceData = async () => {
     try {
@@ -156,13 +190,13 @@ const SystemConfiguration = () => {
   const filteredData = dataList.filter((item, index) => {
     return Object.entries(filters).every(([key, filterValue]) => {
       if (!filterValue) return true;
-      
+
       // Handle serial number search
       if (key === 'srno') {
         const serialNumber = index + 1;
         return serialNumber.toString().toLowerCase().includes(filterValue.toLowerCase());
       }
-      
+
       // Handle other columns
       const cellValue = item[key] ? item[key].toString().toLowerCase() : '';
       return cellValue.includes(filterValue.toLowerCase());
@@ -387,7 +421,7 @@ const SystemConfiguration = () => {
       alert("An error occurred while submitting data.");
     }
   };
-  
+
   const handleColumnFilter = (columnKey, value) => {
     setFilters(prev => ({
       ...prev,
@@ -401,7 +435,7 @@ const SystemConfiguration = () => {
     allUsers.forEach(user => {
       userMap[user.id] = user.name;
     });
-   
+
     const csv = [
       [
         "Sr No.",
@@ -446,8 +480,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -469,8 +502,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -491,8 +523,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -513,8 +544,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -536,8 +566,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -565,8 +594,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -588,8 +616,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -610,8 +637,7 @@ const SystemConfiguration = () => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              border: "1px solid #ddd",
-              borderRadius: "3px",
+
               marginTop: "5px"
             }}
           />
@@ -641,15 +667,15 @@ const SystemConfiguration = () => {
         <div className="flex space-x-2">
           <button
             onClick={() => row.id && handleEditClick(row.id)}
-            className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
+            className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-2 px-2 rounded"
           >
-            <span className="mdi mdi-pencil"></span>
+            <Icon name="Edit" size={14} />
           </button>
           <button
             onClick={() => row.id && handleDeleteClick(row.id)}
-            className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
+            className="bg-red-500 hover:bg-red-700 text-white text-xs py-2 px-2 rounded"
           >
-            <span className="mdi mdi-delete"></span>
+            <Icon name="Trash2" size={14} />
           </button>
         </div>
       ),
@@ -684,7 +710,8 @@ const SystemConfiguration = () => {
         className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white shadow border border-gray-200 p-6 rounded-lg mb-10"
       >
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Name{" "}
+            <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <input
             type="text"
             value={formData.name}
@@ -695,7 +722,8 @@ const SystemConfiguration = () => {
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description{" "}
+            <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <textarea
             value={formData.description}
             onChange={(e) => handleChange("description", e.target.value)}
@@ -705,31 +733,40 @@ const SystemConfiguration = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-          <select
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Department{" "}
+            <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
+          </label>
+          <Select
             value={formData.departmentName}
-            onChange={(e) => handleChange("departmentName", e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
-            required
+            onValueChange={(value) => handleChange("departmentName", value)}
           >
-            <option value="">Select Department</option>
-            {departmentOptions.map((dept) => (
-              <option key={dept.id} value={dept.name}>
-                {dept.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Department" />
+            </SelectTrigger>
+            <SelectContent position="popper"
+              side="bottom"
+              avoidCollisions={false}
+              className="max-h-60 w-[var(--radix-select-trigger-width)]"
+            >
+              {departmentOptions.map((dept) => (
+                <SelectItem key={dept.id} value={dept.name}>
+                  {dept.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To{" "}
+            <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <select
             value={formData.assignedTo}
             onChange={(e) => handleChange("assignedTo", e.target.value)}
             className="w-full border border-gray-300 rounded-md px-3 py-2"
             required
           >
-            <option value="">Select User</option>
+            <option value="">Select Employee </option>
             {userOptions.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.name}
@@ -739,7 +776,8 @@ const SystemConfiguration = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Due Date{" "}
+            <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <input
             type="date"
             value={formData.dueDate}
@@ -750,7 +788,8 @@ const SystemConfiguration = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Frequency{" "}
+            <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <select
             value={formData.frequency}
             onChange={(e) => handleChange("frequency", e.target.value)}
@@ -771,7 +810,8 @@ const SystemConfiguration = () => {
         {formData.frequency === "Custom" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Custom Frequency Date
+              Custom Frequency Date{" "}
+              <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
             </label>
             <input
               type="date"
@@ -803,7 +843,7 @@ const SystemConfiguration = () => {
 
       {/* Data Table */}
       <div className="mt-2">
-         <div className="flex justify-between items-center mb-4 py-4">
+        <div className="flex justify-between items-center mb-4 py-4">
           <div className="space-x-4">
             {/* Pagination controls if needed */}
           </div>
@@ -862,7 +902,8 @@ const SystemConfiguration = () => {
             className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4"
           >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <input
                 type="text"
                 value={editFormData.name}
@@ -873,7 +914,8 @@ const SystemConfiguration = () => {
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
+                Description{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
               </label>
               <textarea
                 value={editFormData.description}
@@ -883,7 +925,8 @@ const SystemConfiguration = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Department{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <select
                 value={editFormData.departmentName}
                 onChange={(e) => handleEditChange("departmentName", e.target.value)}
@@ -899,7 +942,8 @@ const SystemConfiguration = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <select
                 value={editFormData.assignedTo}
                 onChange={(e) => handleEditChange("assignedTo", e.target.value)}
@@ -915,7 +959,8 @@ const SystemConfiguration = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <input
                 type="date"
                 value={editFormData.dueDate}
@@ -926,7 +971,8 @@ const SystemConfiguration = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Frequency{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <select
                 value={editFormData.frequency}
                 onChange={(e) => handleEditChange("frequency", e.target.value)}
@@ -947,7 +993,8 @@ const SystemConfiguration = () => {
             {editFormData.frequency === "Custom" && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Custom Frequency Date
+                  Custom Frequency Date{" "}
+                  <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <input
                   type="date"

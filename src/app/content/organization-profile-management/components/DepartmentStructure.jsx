@@ -10,7 +10,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
   const [departments, setDepartments] = useState([]);
   const [newDepartment, setNewDepartment] = useState({ name: '' });
   const [editDepartment, setEditDepartment] = useState(null);
-  const [editSubDepartment, setEditSubDepartment] = useState(null); // NEW
+  const [editSubDepartment, setEditSubDepartment] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [sessionData, setSessionData] = useState({
     url: '',
@@ -20,6 +20,14 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
     userId: '',
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  // New state for toolbar actions
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [showDepartmentDetails, setShowDepartmentDetails] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showPermissions, setShowPermissions] = useState(false);
+  const [showAIRecommendations, setShowAIRecommendations] = useState(false);
 
   // Load session data from localStorage
   useEffect(() => {
@@ -79,6 +87,14 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
       setIsLoading(false);
     }
   };
+
+  // Filter departments based on search query
+  const filteredDepartments = departments.filter(dept =>
+    dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    dept.subdepartments?.some(sub =>
+      sub.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
 
   // Add department
   const handleAddDepartment = async () => {
@@ -144,19 +160,19 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
         prev.map((dept) =>
           dept.id === editDepartment.id
             ? {
-                ...dept,
-                name: editDepartment.name.trim(),
-                subdepartments: editDepartment.newSubdepartment?.trim()
-                  ? [
-                      ...dept.subdepartments,
-                      {
-                        id: Date.now(),
-                        name: editDepartment.newSubdepartment.trim(),
-                        employees: 0,
-                      },
-                    ]
-                  : dept.subdepartments,
-              }
+              ...dept,
+              name: editDepartment.name.trim(),
+              subdepartments: editDepartment.newSubdepartment?.trim()
+                ? [
+                  ...dept.subdepartments,
+                  {
+                    id: Date.now(),
+                    name: editDepartment.newSubdepartment.trim(),
+                    employees: 0,
+                  },
+                ]
+                : dept.subdepartments,
+            }
             : dept
         )
       );
@@ -193,13 +209,13 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
         prev.map((dept) =>
           dept.name === editSubDepartment.departmentName
             ? {
-                ...dept,
-                subdepartments: dept.subdepartments.map((sub) =>
-                  sub.name === editSubDepartment.oldName
-                    ? { ...sub, name: editSubDepartment.newName.trim() }
-                    : sub
-                ),
-              }
+              ...dept,
+              subdepartments: dept.subdepartments.map((sub) =>
+                sub.name === editSubDepartment.oldName
+                  ? { ...sub, name: editSubDepartment.newName.trim() }
+                  : sub
+              ),
+            }
             : dept
         )
       );
@@ -210,6 +226,56 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
     }
   };
 
+  // Add sub-department
+  const handleAddSubDepartment = (department) => {
+    setEditDepartment({
+      ...department,
+      oldName: department.name,
+      newSubdepartment: '',
+    });
+    setShowAddForm(false);
+  };
+
+  // View department details
+  const handleViewDetails = (department) => {
+    setSelectedDepartment(department);
+    setShowDepartmentDetails(true);
+  };
+
+  // Show analytics for department
+  const handleShowAnalytics = (department) => {
+    setSelectedDepartment(department);
+    setShowAnalytics(true);
+  };
+
+  // Show permissions for department
+  const handleShowPermissions = (department) => {
+    setSelectedDepartment(department);
+    setShowPermissions(true);
+  };
+
+  // Show AI recommendations
+  const handleShowAIRecommendations = (department = null) => {
+    setSelectedDepartment(department);
+    setShowAIRecommendations(true);
+  };
+
+  // Import department data (placeholder function)
+  const handleImport = () => {
+    // This would typically open a file dialog and process CSV/Excel
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.xlsx,.xls';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        alert(`Selected file: ${file.name}. Import functionality would be implemented here.`);
+        // Process the file here
+      }
+    };
+    input.click();
+  };
+
   const handleSave = () => {
     onSave?.(departments);
   };
@@ -218,13 +284,65 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
 
   return (
     <div className="bg-card border border-border rounded-lg p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-foreground">Department Structure</h3>
-        <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
-          Add Department
-        </Button>
+      {/* Top Toolbar Area */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <div className="flex items-center gap-4">
+
+          {/* <h3 className="text-xl font-semibold text-foreground">Department Structure</h3> */}
+
+          
+            {/* Search */}
+            <div className="relative">
+              <Icon name="Search" size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Search departments..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-88"
+              />
+            </div>
+          
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Import */}
+          {/* <Button variant="outline" size="sm" onClick={handleImport} title='Import All Department'>
+            <Icon name="FileUp" size={16} />
+
+          </Button> */}
+
+          {/* Settings */}
+          <Button variant="outline" size="sm" title='settings'>
+            <Icon name="Settings" size={16} />
+
+          </Button>
+
+          {/* Add Custom Fields */}
+          <Button variant="outline" size="sm" title='Coustom Fields'>
+            <Icon name="SlidersHorizontal" size={16} />
+
+          </Button>
+
+          {/* AI Assistant */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleShowAIRecommendations()}
+            
+            title='AI Assistant'
+          >
+            <Icon name="Sparkles" size={16} />
+
+          </Button>
+
+          {/* Add Department */}
+          <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)} title='Add Department'>
+            <Icon name="Plus" size={16} />
+
+          </Button>
+        </div>
+
       </div>
+
 
       {/* Add Department Form */}
       {showAddForm && (
@@ -236,11 +354,11 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
             placeholder="Department Name"
           />
           <div className="flex justify-end space-x-3 mt-4">
-            <Button variant="outline" size="sm" onClick={() => setShowAddForm(false)}>
+            <Button id='cancel' variant="outline" size="sm" onClick={() => setShowAddForm(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleAddDepartment}>
-              Add Department
+            <Button size="sm" id='submit' onClick={handleAddDepartment} className="px-5 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+              Submit
             </Button>
           </div>
         </div>
@@ -270,8 +388,8 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
             <Button variant="outline" size="sm" onClick={() => setEditDepartment(null)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleEditSave}>
-              Save Changes
+            <Button id="update" size="sm" onClick={handleEditSave} className="px-5 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+              Update
             </Button>
           </div>
         </div>
@@ -292,8 +410,8 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
             <Button variant="outline" size="sm" onClick={() => setEditSubDepartment(null)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleEditSubDepartmentSave}>
-              Save Changes
+            <Button size="sm" id="update" onClick={handleEditSubDepartmentSave} className="px-5 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+              Update
             </Button>
           </div>
         </div>
@@ -301,11 +419,11 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
 
       {/* Department List */}
       <div className="space-y-4">
-        {departments.map((department) => (
+        {filteredDepartments.map((department) => (
           <div key={department.id} className="border border-border rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
-                <Icon name="Building2" size={20} className="text-primary" />
+                <Icon name="Building2" size={20} className="text-blue-400" />
                 <div>
                   <h4 className="font-medium text-foreground">{department.name}</h4>
                   <p className="text-sm text-muted-foreground">
@@ -313,21 +431,91 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
                   </p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setEditDepartment({
-                    ...department,
-                    oldName: department.name,
-                    newSubdepartment: '',
-                  });
-                  setShowAddForm(false);
-                }}
-                className="text-muted-foreground hover:text-primary"
-              >
-                <Icon name="Pencil" size={16} />
-              </Button>
+
+              {/* Department-Level Actions */}
+              <div className="flex items-center space-x-1">
+                {/* View Details */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleViewDetails(department)}
+                 
+                  title="View Details"
+                >
+                  <Icon name="Eye" size={16} />
+                </Button>
+
+                {/* Edit Department */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setEditDepartment({
+                      ...department,
+                      oldName: department.name,
+                      newSubdepartment: '',
+                    });
+                    setShowAddForm(false);
+                  }}
+                                    title="Edit Department"
+                >
+                  <Icon name="Edit3" size={16} />
+                </Button>
+
+                {/* Add Sub-department */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleAddSubDepartment(department)}
+                  
+                  title="Add Sub-department"
+                >
+                  <Icon name="Plus" size={16} />
+                </Button>
+
+                {/* Assign Employees */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  
+                  title="Assign Employees"
+                >
+                  <Icon name="UserPlus" size={16} />
+                </Button>
+
+                {/* Analytics */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleShowAnalytics(department)}
+                  
+                  title="Analytics"
+                >
+                  <Icon name="BarChart3" size={16} />
+                </Button>
+
+                {/* Permissions */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleShowPermissions(department)}
+                  
+                  title="Permissions"
+                >
+                  <Icon name="ShieldCheck" size={16} />
+                </Button>
+
+                {/* AI Recommendations */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleShowAIRecommendations(department)}
+                  
+                  title="AI Recommendations"
+                >
+                  <Icon name="Sparkles" size={16} />
+                </Button>
+              </div>
             </div>
 
             {department.subdepartments?.length > 0 && (
@@ -366,10 +554,76 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
         ))}
       </div>
 
+      {/* Modals for various actions */}
+      {showDepartmentDetails && selectedDepartment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Department Details</h3>
+            <div className="space-y-3">
+              <p><strong>Name:</strong> {selectedDepartment.name}</p>
+              <p><strong>Employees:</strong> {selectedDepartment.employees}</p>
+              <p><strong>Sub-departments:</strong> {selectedDepartment.subdepartments?.length || 0}</p>
+            </div>
+            <div className="flex justify-end mt-6">
+              <Button onClick={() => setShowDepartmentDetails(false)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAnalytics && selectedDepartment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Analytics - {selectedDepartment.name}</h3>
+            <div className="space-y-3 text-sm">
+              <p>Employee count: {selectedDepartment.employees}</p>
+              <p>Sub-departments: {selectedDepartment.subdepartments?.length || 0}</p>
+              <p>Analytics data would be displayed here...</p>
+            </div>
+            <div className="flex justify-end mt-6">
+              <Button onClick={() => setShowAnalytics(false)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPermissions && selectedDepartment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Permissions - {selectedDepartment.name}</h3>
+            <div className="space-y-3 text-sm">
+              <p>Permission settings would be configured here...</p>
+            </div>
+            <div className="flex justify-end mt-6">
+              <Button onClick={() => setShowPermissions(false)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAIRecommendations && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              AI Assistant {selectedDepartment ? `- ${selectedDepartment.name}` : ''}
+            </h3>
+            <div className="space-y-3 text-sm">
+              <p>AI recommendations for organizational structure would appear here...</p>
+              <p>• Suggested sub-departments</p>
+              <p>• Optimal team sizes</p>
+              <p>• Role recommendations</p>
+            </div>
+            <div className="flex justify-end mt-6">
+              <Button onClick={() => setShowAIRecommendations(false)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="flex justify-end space-x-3 mt-6">
         <Button variant="outline">Cancel</Button>
-        <Button onClick={handleSave} loading={loading}>
+        <Button onClick={handleSave} loading={loading} className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
           Save Structure
         </Button>
       </div>

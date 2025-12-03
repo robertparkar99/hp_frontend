@@ -21,7 +21,6 @@ const AddContentDialog = ({
   courseDisplayName,
   standard_id,
   subject_id,
-
 }) => {
   // Dynamic mapping fields
   const [mappings, setMappings] = useState([
@@ -48,6 +47,9 @@ const AddContentDialog = ({
   const [tagInput, setTagInput] = useState("");
   const [display, setDisplay] = useState(true);
   const [loading, setLoading] = useState(false);
+
+  // Validation state
+  const [errors, setErrors] = useState({});
 
   // Fetch mapping types
   useEffect(() => {
@@ -171,6 +173,58 @@ const AddContentDialog = ({
     return tagsArray.filter(tag => tag !== "LMS_ERP" && tag.trim() !== "");
   };
 
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Validate mapping types - at least one mapping type is required
+    const hasValidMapping = mappings.some(mapping => mapping.mappingType && mapping.mappingValue);
+    if (!hasValidMapping) {
+      newErrors.mappings = "At least one mapping type and value is required";
+    }
+
+    // Validate content type
+    if (!contentType) {
+      newErrors.contentType = "File upload type is required";
+    }
+
+    // Validate file or link based on content type
+    if (contentType === "link") {
+      if (!fileLink.trim()) {
+        newErrors.fileLink = "Link is required for link type content";
+      } else if (!isValidUrl(fileLink)) {
+        newErrors.fileLink = "Please enter a valid URL";
+      }
+    } else if (contentType && contentType !== "link") {
+      if (!file && (!content || !content.filename)) {
+        newErrors.file = "File is required for this content type";
+      }
+    }
+
+    // Validate title
+    if (!title.trim()) {
+      newErrors.title = "Title is required";
+    }
+
+    // Validate category
+    if (!category) {
+      newErrors.category = "Content category is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // URL validation helper
+  const isValidUrl = (string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
   // Prefill when editing
   useEffect(() => {
     const prefillFormData = async () => {
@@ -264,6 +318,7 @@ const AddContentDialog = ({
         setCategory("");
         setTags([]);
         setDisplay(true);
+        setErrors({});
       }
     };
 
@@ -279,6 +334,11 @@ const AddContentDialog = ({
       await fetchMappingValues(value);
     }
     setMappings(updated);
+    
+    // Clear mapping errors when user makes changes
+    if (errors.mappings) {
+      setErrors(prev => ({ ...prev, mappings: "" }));
+    }
   };
 
   const handleAddMapping = () => {
@@ -390,8 +450,31 @@ const AddContentDialog = ({
     }
   };
 
+  // Check if form can be submitted
+  const canSubmit = () => {
+    const hasValidMapping = mappings.some(mapping => mapping.mappingType && mapping.mappingValue);
+    const hasContentType = !!contentType;
+    const hasTitle = !!title.trim();
+    const hasCategory = !!category;
+    
+    // Check file/link requirements
+    let hasValidFile = true;
+    if (contentType === "link") {
+      hasValidFile = !!fileLink.trim() && isValidUrl(fileLink);
+    } else if (contentType && contentType !== "link") {
+      hasValidFile = !!file || !!(content && content.filename);
+    }
+
+    return hasValidMapping && hasContentType && hasTitle && hasCategory && hasValidFile;
+  };
+
   // Add handler
   const handleAddContent = async () => {
+    if (!validateForm()) {
+      alert("Please fill all required fields correctly");
+      return;
+    }
+
     try {
       setLoading(true);
       const formData = buildFormData();
@@ -409,7 +492,7 @@ const AddContentDialog = ({
       }
 
       const result = await res.json();
-    alert("Content added successfully");
+      alert("Content added successfully");
 
       if (onSave) onSave(result);
       onOpenChange(false);
@@ -423,6 +506,11 @@ const AddContentDialog = ({
 
   // Edit handler
   const handleEditContent = async () => {
+    if (!validateForm()) {
+      alert("Please fill all required fields correctly");
+      return;
+    }
+
     try {
       setLoading(true);
       const formData = buildFormData();
@@ -441,7 +529,6 @@ const AddContentDialog = ({
       }
 
       const result = await res.json();
-
       alert("Content updated successfully");
 
       if (onSave) onSave(result);
@@ -466,7 +553,7 @@ const AddContentDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl w-full">
         <DialogHeader>
-          <DialogTitle>{content ? "Edit Content" : "Add Content"}</DialogTitle>
+          <DialogTitle>{content ? "Edit Content" : "Create Content"}</DialogTitle>
         </DialogHeader>
         <div className="max-h-[70vh] overflow-y-auto scrollbar-hide pr-2">
           <div className="flex flex-col space-y-4">
@@ -481,14 +568,14 @@ const AddContentDialog = ({
                   <div className="col-span-5">
                     <label className="block text-sm font-medium mb-1">
                       Mapping Type{" "}
-                <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
+                      <span className="mdi mdi-asterisk text-[10px] text-danger"></span> 
                     </label>
                     <select
                       value={map.mappingType}
                       onChange={(e) =>
                         handleChange(index, "mappingType", e.target.value)
                       }
-                      className="border p-2 rounded w-full"
+                      className={`border p-2 rounded w-full ${errors.mappings && !map.mappingType ? 'border-red-500' : ''}`}
                       required
                     >
                       <option value="">Select Mapping Type</option>
@@ -502,14 +589,16 @@ const AddContentDialog = ({
                   <div className="col-span-5">
                     <label className="block text-sm font-medium mb-1">
                       Mapping Value
+                      <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                     </label>
                     <select
                       value={map.mappingValue}
                       onChange={(e) =>
                         handleChange(index, "mappingValue", e.target.value)
                       }
-                      className="border p-2 rounded w-full"
+                      className={`border p-2 rounded w-full ${errors.mappings && !map.mappingValue ? 'border-red-500' : ''}`}
                       disabled={!map.mappingType}
+                      required
                     >
                       <option value="">Select Mapping Value</option>
                       {availableValues.map((val) => (
@@ -545,18 +634,24 @@ const AddContentDialog = ({
                 </div>
               );
             })}
+            {errors.mappings && (
+              <p className="text-red-500 text-sm -mt-2">{errors.mappings}</p>
+            )}
 
             {/* File Upload Section */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
                   File Upload Type{" "}
-                <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
+                  <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <select
                   value={contentType}
-                  onChange={(e) => setContentType(e.target.value)}
-                  className="border p-2 rounded w-full"
+                  onChange={(e) => {
+                    setContentType(e.target.value);
+                    if (errors.contentType) setErrors(prev => ({ ...prev, contentType: "" }));
+                  }}
+                  className={`border p-2 rounded w-full ${errors.contentType ? 'border-red-500' : ''}`}
                   required
                 >
                   <option value="">Select Type</option>
@@ -567,28 +662,47 @@ const AddContentDialog = ({
                   <option value="mp3">Audio (MP3)</option>
                   <option value="link">Link</option>
                 </select>
+                {errors.contentType && (
+                  <p className="text-red-500 text-sm mt-1">{errors.contentType}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">
                   {contentType === "link" ? "Enter Link" : "Upload"}
                 </label>
                 {contentType === "link" ? (
-                  <input
-                    type="text"
-                    value={fileLink}
-                    onChange={(e) => setFileLink(e.target.value)}
-                    placeholder="https://example.com/resource"
-                    className="border p-2 rounded w-full"
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      value={fileLink}
+                      onChange={(e) => {
+                        setFileLink(e.target.value);
+                        if (errors.fileLink) setErrors(prev => ({ ...prev, fileLink: "" }));
+                      }}
+                      placeholder="https://example.com/resource"
+                      className={`border p-2 rounded w-full ${errors.fileLink ? 'border-red-500' : ''}`}
+                    />
+                    {errors.fileLink && (
+                      <p className="text-red-500 text-sm mt-1">{errors.fileLink}</p>
+                    )}
+                  </div>
                 ) : (
-                  <input
-                    type="file"
-                    accept={getAcceptTypes()}
-                    onChange={(e) => setFile(e.target.files[0])}
-                    className="border p-2 rounded w-full"
-                  />
+                  <div>
+                    <input
+                      type="file"
+                      accept={getAcceptTypes()}
+                      onChange={(e) => {
+                        setFile(e.target.files[0]);
+                        if (errors.file) setErrors(prev => ({ ...prev, file: "" }));
+                      }}
+                      className={`border p-2 rounded w-full ${errors.file ? 'border-red-500' : ''}`}
+                    />
+                    {errors.file && (
+                      <p className="text-red-500 text-sm mt-1">{errors.file}</p>
+                    )}
+                  </div>
                 )}
-                {content && content.filename && !file && contentType !== "link" && (
+{                content && content.filename && !file && contentType !== "link" && (
                   <p className="text-xs text-gray-500 mt-1">
                     Current file:{" "}
                     <a
@@ -601,13 +715,9 @@ const AddContentDialog = ({
                     </a>
                   </p>
                 )}
-                {/* {content && content.filename && !file && contentType !== "link" && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Current file: {content.filename}
-                  </p>
-                )} */}
               </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium mb-1">
                 Title{" "}
@@ -617,12 +727,18 @@ const AddContentDialog = ({
                 type="text"
                 placeholder="Title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="border p-2 rounded w-full"
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (errors.title) setErrors(prev => ({ ...prev, title: "" }));
+                }}
+                className={`border p-2 rounded w-full ${errors.title ? 'border-red-500' : ''}`}
                 required
-
               />
+              {errors.title && (
+                <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+              )}
             </div>
+
             <div>
               <label className="block text-sm font-medium mb-1">
                 Description
@@ -634,12 +750,7 @@ const AddContentDialog = ({
                 className="border p-2 rounded w-full"
               />
             </div>
-            {/* <textarea
-              placeholder="Prompt"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="border p-2 rounded w-full"
-            /> */}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -657,12 +768,15 @@ const AddContentDialog = ({
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Content Category{" "}
-                <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
+                  <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="border p-2 rounded w-full"
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    if (errors.category) setErrors(prev => ({ ...prev, category: "" }));
+                  }}
+                  className={`border p-2 rounded w-full ${errors.category ? 'border-red-500' : ''}`}
                   required
                 >
                   <option value="">Select Category</option>
@@ -672,8 +786,12 @@ const AddContentDialog = ({
                     </option>
                   ))}
                 </select>
+                {errors.category && (
+                  <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+                )}
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Tags</label>
@@ -716,20 +834,17 @@ const AddContentDialog = ({
               Display
             </label>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
+            <div className="flex justify-end gap-2 pt-4 ">
+              <Button 
+                onClick={handleSave} 
+                disabled={loading || !canSubmit()} 
+                className="mt-4 mx-auto text-sm px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={loading} className="mt-4 mx-auto px-4 py-2 text-sm">
                 {loading
                   ? "Saving..."
                   : content
-                    ? "Update Content"
-                    : "Add Content"}
+                    ? "Update"
+                    : "Submit"}
               </Button>
             </div>
           </div>

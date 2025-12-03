@@ -150,7 +150,7 @@ const AddChepterDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl w-full">
         <DialogHeader>
-          <DialogTitle>{course ? "Edit Module" : "Add Module"}</DialogTitle>
+          <DialogTitle>{course ? "Edit Module" : "Create Module"}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col space-y-4">
@@ -218,9 +218,9 @@ const AddChepterDialog = ({
           <Button
             onClick={course ? handleEditChapter : handleAddChapter}
             disabled={loading}
-            className="mt-4 mx-auto px-4 py-2 text-sm"
+            className="mt-4 mx-auto px-4 py-2 text-sm rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
           >
-            {loading ? "Saving..." : course ? "Update Module" : "Add Module"}
+            {loading ? "Saving..." : course ? "Update " : "Submit"}
           </Button>
         </div>
       </DialogContent>

@@ -16,9 +16,10 @@ import KnowledgeLibrary from "../Knowledge_library/page";
 import Behaviour from "../Behaviour-library/page";
 import Attitude from "../Attitude-library/page";
 import Ability from "../ability-library/page";
-import Jobrole from "../Jobrole-library/page";
+import Jobrole from "../Jobrole-library/jobroleLibrary";
 import JobroleTask from "./Jobrole-task-library/page";
 import JobroleTaxonomy from "../jobrole-taxonomy/page";
+import JobroleTAskTaxonomy from "./jobroleTaskTaxo";
 // ✅ Loader Component
 const Loader = () => (
   <div className="flex justify-center items-center h-screen">
@@ -63,7 +64,7 @@ const SkillLibrary = () => {
   if (isTaxonomyPage) return null;
 
   return (
-    <>
+    <div className="bg-background rounded-xl p-5 min-h-screen">
       <TabsMenu
         tabs={["Skill Library", "Jobrole Library", "Jobrole Task Library", "Knowledge", "Ability", "Attitude", "Behaviour"]}
         activeTab={activeTab}
@@ -81,6 +82,7 @@ const SkillLibrary = () => {
             {openPage === "JobroleTaxonomy" && (
               <JobroleTaxonomy />
             )}
+            {openPage === "JobroleTaskTaxonomy" && <JobroleTAskTaxonomy />}
             {openPage === "Knowledge" && (
               <KnowledgeTax onSave={() => handleSaveAndClose("Knowledge Taxonomy")} loading={false} />
             )}
@@ -106,7 +108,7 @@ const SkillLibrary = () => {
           </>
         )}
       </Suspense>
-    </>
+    </div>
   );
 };
 

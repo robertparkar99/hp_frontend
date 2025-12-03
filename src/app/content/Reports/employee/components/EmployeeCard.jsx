@@ -1,10 +1,16 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from "next/navigation";
 import Image from '../../../../../components/AppImage';
 import Icon from '../../../../../components/AppIcon';
 import { Button } from '../../../../../components/ui/button';
 
-const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
+// ✅ Define fallback image once
+const fallbackImage =
+  "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
+
+const EmployeeCard = ({ employee }) => {
+    const router = useRouter();
   const getSkillLevelColor = (level) => {
     switch (level) {
       case 'Expert': return 'bg-success text-success-foreground';
@@ -23,8 +29,34 @@ const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
       default: return 'bg-muted';
     }
   };
-
-  // 🔹 Function to navigate to taskManagement.tsx like your reference code
+    const handleEmployeeNameClick = (employee) => {
+    console.log("🔄 Navigating to employee report for:", employee.full_name);
+    
+    // Store employee ID in multiple locations for redundancy
+    const employeeId = employee.id?.toString() || employee.employee_id?.toString();
+    
+    if (employeeId) {
+      // Store in localStorage (primary)
+      localStorage.setItem('selectedEmployeeId', employeeId);
+      localStorage.setItem('clickedUser', employeeId);
+      
+      // Store in sessionStorage (backup)
+      sessionStorage.setItem('selectedEmployeeId', employeeId);
+      
+      // Store full employee data if needed
+      localStorage.setItem('selectedEmployeeData', JSON.stringify(employee));
+      
+      console.log("✅ Stored employee ID:", employeeId);
+      
+      // ✅ CORRECTED: Navigate to employee report using router.push
+      // Since both files are in the same components folder, use the correct path
+      router.push(`/content/Reports/employeeReport/`);
+      
+    } else {
+      console.error("❌ No employee ID found for:", employee);
+    }
+  };
+  // 🔹 Function to navigate to taskManagement.tsx
   const handleAssignTaskMenu = (employeeId) => {
     localStorage.setItem("clickedUser", employeeId);
     const menu = "task/taskManagement.tsx";
@@ -41,20 +73,26 @@ const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
     );
   };
 
+  // ✅ Safe image state with fallback
+  const [imgSrc, setImgSrc] = useState(
+    employee.image && employee.image.trim()
+      ? employee.image.startsWith("http")
+        ? employee.image
+        : `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}`
+      : fallbackImage
+  );
+
   return (
     <div className="bg-card border border-border rounded-lg p-6 hover:shadow-card transition-smooth">
       <div className="flex items-start space-x-4">
         <div className="relative">
           <Image
-            src={
-              employee.image && employee.image.trim()
-                ? employee.image.startsWith('http')
-                  ? employee.image // already a full URL, use as-is
-                  : `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}`
-                : 'https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39'
-            }
-            alt={employee.full_name || 'Employee'}
+            src={imgSrc}
+            alt={employee.full_name || "Employee"}
+            width={40}
+            height={40}
             className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
+            onError={() => setImgSrc(fallbackImage)} // ✅ fallback if fetch fails
           />
           <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card ${getStatusColor(employee.status)}`} />
         </div>
@@ -63,14 +101,21 @@ const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
           <div className="flex items-start justify-between">
             <div>
               <h3 className="text-lg font-semibold text-foreground truncate">
-                {employee.full_name}
+               
+                  <button
+              onClick={() => handleEmployeeNameClick(employee)}
+              className="text-left hover:text-primary hover:underline cursor-pointer font-medium text-foreground transition-colors duration-200 block w-full text-start"
+              title={`View ${employee.full_name}'s report`}
+            >
+              {employee.full_name}
+            </button>
               </h3>
               <p className="text-sm text-muted-foreground">{employee.mobile}</p>
               <p className="text-sm text-muted-foreground">{employee.profile_name}</p>
             </div>
 
             <div className="flex items-center space-x-2">
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => {
@@ -91,7 +136,7 @@ const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
                 className="h-8 w-8"
               >
                 <Icon name="Edit" size={16} />
-              </Button>
+              </Button> */}
             </div>
           </div>
 
@@ -127,16 +172,12 @@ const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center text-sm text-foreground">
               <span className="mr-2">Status:</span>
-              <span
-                className={`inline-block w-2.5 h-2.5 rounded-full ${getStatusColor(
-                  employee.status
-                )}`}
-              ></span>
+              <span className={`inline-block w-2.5 h-2.5 rounded-full ${getStatusColor(employee.status)}`} />
               <span className="ml-2">{employee.status}</span>
             </div>
 
-            {/* 🔹 Assign Task Button with Navigation */}
-            <Button
+            {/* 🔹 Assign Task Button */}
+            {/* <Button
               variant="outline"
               size="sm"
               onClick={() => handleAssignTaskMenu(employee.id)}
@@ -144,7 +185,7 @@ const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
               iconPosition="left"
             >
               Assign Task
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>
@@ -153,3 +194,4 @@ const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
 };
 
 export default EmployeeCard;
+

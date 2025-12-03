@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,8 +12,8 @@ import { format } from 'date-fns';
 interface AttendanceRecord {
   id: string;
   date: string;
-  punchIn: string | null;   // raw ISO string
-  punchOut: string | null;  // raw ISO string
+  punchIn: string | null;
+  punchOut: string | null;
   totalHours: number | null;
   status: 'present' | 'absent' | 'active';
   employeeName?: string;
@@ -36,7 +37,7 @@ interface ApiResponse {
   presentDays: number;
   absentDays: number;
   percentege: number;
-  attendanceData: ApiAttendance[];
+  attendanceData?: ApiAttendance[]; // 👈 make optional
 }
 
 // ✅ Convert API timestamp_diff → decimal hours
@@ -47,8 +48,9 @@ const parseHours = (diff: string | null): number => {
   return Math.round(total * 100) / 100;
 };
 
-// ✅ Map API → local records (keep raw timestamps)
-const mapApiToRecords = (data: ApiAttendance[]): AttendanceRecord[] => {
+// ✅ Map API → local records
+const mapApiToRecords = (data?: ApiAttendance[]): AttendanceRecord[] => {
+  if (!data || !Array.isArray(data)) return [];
   return data.map(item => ({
     id: item.id.toString(),
     date: format(new Date(item.day), 'EEE, MMM do'),
@@ -149,7 +151,7 @@ export function AttendanceDashboard() {
 
   // ✅ Update punch state based on API data
   useEffect(() => {
-    if (!apiData) return;
+    if (!apiData?.attendanceData) return;
 
     const records = mapApiToRecords(apiData.attendanceData);
 
@@ -157,7 +159,7 @@ export function AttendanceDashboard() {
       const latest = records[0];
       if (latest.punchIn && !latest.punchOut) {
         setIsPunchedIn(true);
-        setPunchInTime(new Date(latest.punchIn)); // ✅ raw timestamp works now
+        setPunchInTime(new Date(latest.punchIn));
       } else {
         setIsPunchedIn(false);
         setPunchInTime(null);
@@ -254,8 +256,10 @@ export function AttendanceDashboard() {
   const currentDate = format(currentTime, 'EEEE, MMMM do, yyyy');
   const currentTimeStr = format(currentTime, 'hh:mm:ss a');
 
-  // ✅ Records always from API (backend is source of truth)
-  const allRecords: AttendanceRecord[] = apiData ? mapApiToRecords(apiData.attendanceData) : [];
+  // ✅ Records always from API (safe)
+  const allRecords: AttendanceRecord[] = apiData?.attendanceData
+    ? mapApiToRecords(apiData.attendanceData)
+    : [];
 
   // ✅ Full employee name
   const fullName = [sessionData.firstName, sessionData.middleName, sessionData.lastName]
@@ -263,9 +267,9 @@ export function AttendanceDashboard() {
     .join(' ');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/30 to-background">
+    <div className="min-h-screen  bg-background rounded-xl w-full">
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-primary/90 to-primary text-primary-foreground">
+      <div className="relative overflow-hidden rounded-xl bg-[#6fb2f2] text-primary-foreground">
         <div className="absolute inset-0 opacity-20" />
         <div className="relative container mx-auto px-6 py-8">
           <div className="flex items-center justify-between">
@@ -319,11 +323,11 @@ export function AttendanceDashboard() {
               size="lg"
               disabled={isProcessing}
               className={`
-                text-xl px-12 py-6 rounded-xl font-bold transform transition-all duration-300
+                bg-[#F9F9F9] text-[#228822] hover:bg-gray-200 transition-colors text-xl px-12 py-6 rounded-xl font-bold transform transition-all duration-300
                 ${isPunchedIn ? 'btn-punch-out' : 'btn-punch-in'}
               `}
             >
-              <Clock className="w-6 h-6 mr-3" />
+              <Clock className="w-10 h-6 mr-3 " />
               {isPunchedIn ? 'Punch Out' : 'Punch In'}
             </Button>
           </CardContent>

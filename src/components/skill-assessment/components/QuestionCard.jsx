@@ -235,9 +235,9 @@ const QuestionCard = ({
         </Button>
 
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" iconName="Save" iconPosition="left">
+          {/* <Button variant="ghost" iconName="Save" iconPosition="left">
             Save Progress
-          </Button>
+          </Button> */}
           <Button
             variant="default"
             onClick={onNext}

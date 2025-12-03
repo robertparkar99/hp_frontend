@@ -38,27 +38,27 @@ const TaskAssignment = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background rounded-xl">
       <main className="p-4">
           {/* Page Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Task Assignment</h1>
-                <p className="text-muted-foreground">
+              <h1 className="text-2xl font-bold text-foreground">Task Progress Assignment</h1>
+                <p className="text-muted-foreground text-sm">
                   Assign learning tasks, assessments, and development activities to employees
                 </p>
               </div>
               
               <div className="flex items-center space-x-2">
-                <Button
+                {/* <Button
                   variant="outline"
                   size="sm"
                   iconName="Download"
                   iconPosition="left"
                 >
                   Export Data
-                </Button>
+                </Button> */}
                 {/* <Button
                   variant="outline"
                   size="sm"

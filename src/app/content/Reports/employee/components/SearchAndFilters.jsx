@@ -1,8 +1,67 @@
+
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Icon from '../../../../../components/AppIcon';
 import { Button } from '../../../../../components/ui/button';
 import { Input } from '../../../../../components/ui/input';
+
+// Custom Select Component
+const CustomSelect = ({ label, options, value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  return (
+    <div className="flex flex-col">
+      <label className="mb-1 text-sm font-medium">{label}</label>
+      <div className="relative" ref={dropdownRef}>
+        {/* Select Box */}
+        <div
+          className="border border-border rounded-md px-3 py-2 cursor-pointer bg-white hover:border-blue-400 transition-colors flex justify-between items-center "
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <span>{selectedOption?.label || 'Select...'}</span>
+          <Icon name="ChevronDown" size={16} className="text-gray-500" />
+        </div>
+        
+        {/* Dropdown Options */}
+        {isOpen && (
+          <div className="absolute z-10 w-full mt-1 bg-white border border-border rounded shadow-lg max-h-60 overflow-y-auto">
+            {options
+              .filter(opt => opt && opt.value != null)
+              .map((opt, index) => (
+                <div
+                  key={index}
+                  className={`px-3 py-2 cursor-pointer ${
+                    value === opt.value 
+                      ? 'bg-blue-400 text-white' 
+                      : 'bg-white text-black hover:bg-blue-400 hover:text-white'
+                  }`}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const SearchAndFilters = ({
   searchTerm,
@@ -133,22 +192,12 @@ const SearchAndFilters = ({
   };
 
   const renderSelect = (label, options, value, keyName) => (
-    <div className="flex flex-col">
-      <label className="mb-1 text-sm font-medium">{label}</label>
-      <select
-        value={value}
-        onChange={e => onFilterChange(keyName, e.target.value)}
-        className="border border-border rounded px-3 py-2"
-      >
-        {options
-          .filter(opt => opt && opt.value != null)
-          .map((opt, index) => (
-            <option key={index} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-      </select>
-    </div>
+    <CustomSelect
+      label={label}
+      options={options}
+      value={value}
+      onChange={(newValue) => onFilterChange(keyName, newValue)}
+    />
   );
 
   return (
@@ -202,7 +251,7 @@ const SearchAndFilters = ({
               return (
                 <div
                   key={key}
-                  className="flex items-center space-x-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
+                  className="flex items-center space-x-2 bg-blue-400/10 text-blue-400 px-3 py-1 rounded-full text-sm"
                 >
                   <span>{getFilterLabel(key, value)}</span>
                   <button

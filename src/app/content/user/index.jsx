@@ -1,3 +1,5 @@
+
+
 'use client';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import QuickActionMenu from '../../../components/ui/QuickActionMenu';
@@ -7,6 +9,12 @@ import EmployeeCard from './components/EmployeeCard';
 import StatsSidebar from './components/StatsSidebar';
 import EmployeeProfileModal from './components/EmployeeProfileModal';
 import PaginationControls from './components/PaginationControls';
+import { Button } from '../../../components/ui/button';
+import dynamic from 'next/dynamic';
+  const AddUserModal = dynamic(() => import('./AddUserModal'), {
+    ssr: false,
+    loading: () => <p>Loading...</p>
+  });
 
 const EmployeeDirectory = () => {
   const [sessionData, setSessionData] = useState({});
@@ -33,14 +41,17 @@ const EmployeeDirectory = () => {
   const [userLists, setUserLists] = useState([]);
   const [userLOR, setUserLOR] = useState([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [userProfiles, setUserProfiles] = useState([]);
+
 
   // Load session data once from localStorage
-useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('userData');
       if (userData) {
-        const { APP_URL, token, sub_institute_id, org_type,user_id,user_profile_name,syear } = JSON.parse(userData);
-        setSessionData({ APP_URL, token, sub_institute_id,org_type, user_id,user_profile_name,syear});
+        const { APP_URL, token, sub_institute_id, org_type, user_id, user_profile_name, syear } = JSON.parse(userData);
+        setSessionData({ APP_URL, token, sub_institute_id, org_type, user_id, user_profile_name, syear });
       }
     }
   }, []);
@@ -54,10 +65,10 @@ useEffect(() => {
   }, [sessionData]);
 
   useEffect(() => {
-  if (sessionData.APP_URL && sessionData.token) {
-    fetchAllData();
-  }
-}, [sessionData.APP_URL, sessionData.token]);
+    if (sessionData.APP_URL && sessionData.token) {
+      fetchAllData();
+    }
+  }, [sessionData.APP_URL, sessionData.token]);
 
   const fetchAllData = async () => {
     try {
@@ -70,8 +81,7 @@ useEffect(() => {
       setUserLOR(data.levelOfResponsibility || data.levelOfResponsbility || []);
       setUserLists(data.data || []);
       setUserDepartmentLists(data.departments || []);
-      // console.log('User Job Role Lists:', data.jobroleList || []);
-
+      setUserProfiles(data.userProfiles || []);
     } catch (err) {
       console.error('Error fetching industries:', err);
     }
@@ -154,9 +164,9 @@ useEffect(() => {
           skill.name?.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
-      const matchesDepartment = !filters.department || employee.department === filters.department;
+      const matchesDepartment = !filters.department || employee.department_name === filters.department;
       const matchesJobRole = !filters.jobRole || employee.jobRole === filters.jobRole;
-      const matchesLocation = !filters.location || employee.location === filters.location;
+      const matchesLocation = !filters.location || employee.address === filters.location;
       const matchesSkill = !filters.skill || (employee.skills || []).some((skill) => skill.name === filters.skill);
       const matchesStatus = !filters.status || employee.status === filters.status;
 
@@ -303,163 +313,197 @@ useEffect(() => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen rounded-xl bg-background flex items-center justify-center">
         <div className="max-w-md p-6 bg-white rounded-lg shadow-md">
           <h2 className="text-xl font-bold text-red-600 mb-4">Error Loading Data</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
-          <button
+          <Button
             onClick={fetchEmployees}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary-dark transition-colors"
           >
             Retry
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="pb-16">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Employee Directory</h1>
-            <p className="text-muted-foreground mt-2">
+ 
+    <div className="min-h-screen bg-background rounded-xl">
+  <main className="pb-16">
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mb-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Employee Directory</h1>
+            <p className="text-muted-foreground mt-2 text-sm">
               Search, filter, and manage workforce information efficiently
             </p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="justify-start"
+            onClick={() => setIsAddUserModalOpen(true)}
+          >
+            Add Employee
+          </Button>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-            <div className="xl:hidden">
-              <StatsSidebar
-                stats={stats}
-                sessionData={sessionData}
-                userJobroleLists={userJobroleLists}
-                userLOR={userLOR}
-                userDepartmentLists={userDepartmentLists}
-                userLists={userLists}
-                selectedCount={selectedEmployees.length}
-                onBulkAssignTask={handleBulkAssignTask}
-                onBulkExport={handleBulkExport}
-                onBulkSkillAssessment={handleBulkSkillAssessment}
-              />
+      {/* Add User Modal */}
+      {isAddUserModalOpen && (
+        <AddUserModal
+          isOpen={isAddUserModalOpen}
+          setIsOpen={setIsAddUserModalOpen}
+          sessionData={sessionData}
+          userJobroleLists={userJobroleLists}
+          userLOR={userLOR}
+          userDepartmentLists={userDepartmentLists}
+          userProfiles={userProfiles}
+          userLists={userLists}
+        />
+      )}
+
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-3">
+        <div className="xl:hidden">
+          <StatsSidebar
+            stats={stats}
+            sessionData={sessionData}
+            userJobroleLists={userJobroleLists}
+            userLOR={userLOR}
+            userDepartmentLists={userDepartmentLists}
+            userLists={userLists}
+            selectedCount={selectedEmployees.length}
+            onBulkAssignTask={handleBulkAssignTask}
+            onBulkExport={handleBulkExport}
+            onBulkSkillAssessment={handleBulkSkillAssessment}
+          />
+        </div>
+
+        <div className="xl:col-span-3 space-y-6">
+          <SearchAndFilters
+            searchTerm={searchTerm}
+            sessionData={sessionData}
+            onSearchChange={handleSearchChange}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+            onExport={handleExport}
+            showAdvancedFilters={showAdvancedFilters}
+            setShowAdvancedFilters={setShowAdvancedFilters}
+          />
+
+          {!loading && (
+            <div className="flex justify-between items-center text-sm text-muted-foreground">
+              <div>
+                Showing {paginatedEmployees.length} of {sortedEmployees.length} employees
+                {selectedEmployees.length > 0 && (
+                  <span className="ml-2 text-primary">({selectedEmployees.length} selected)</span>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className={`p-2 rounded-md transition-smooth ${viewMode === 'table' ? 'bg-blue-400 text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
+                  </svg>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className={`p-2 rounded-md transition-smooth ${viewMode === 'cards' ? 'bg-blue-400 text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                </Button>
+              </div>
             </div>
+          )}
 
-            <div className="xl:col-span-3 space-y-6">
-              <SearchAndFilters
-                searchTerm={searchTerm}
-                sessionData={sessionData}
-                onSearchChange={handleSearchChange}
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={handleClearFilters}
-                onExport={handleExport}
-                showAdvancedFilters={showAdvancedFilters}
-                setShowAdvancedFilters={setShowAdvancedFilters}
-              />
+        
+        </div>
 
-              {!loading && (
-                <div className="flex justify-between items-center text-sm text-muted-foreground">
-                  <div>
-                    Showing {paginatedEmployees.length} of {sortedEmployees.length} employees
-                    {selectedEmployees.length > 0 && (
-                      <span className="ml-2 text-primary">({selectedEmployees.length} selected)</span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setViewMode('table')}
-                      className={`p-2 rounded-md transition-smooth ${viewMode === 'table' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setViewMode('cards')}
-                      className={`p-2 rounded-md transition-smooth ${viewMode === 'cards' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {loading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  <span className="ml-2 text-muted-foreground">Loading employees...</span>
-                </div>
-              ) : viewMode === 'table' ? (
-                <EmployeeTable
-                  employees={paginatedEmployees}
-                  selectedEmployees={selectedEmployees}
-                  onSelectEmployee={handleSelectEmployee}
-                  onSelectAll={handleSelectAll}
-                  onSort={handleSort}
-                  sortConfig={sortConfig}
+        <div className="hidden xl:block">
+          <StatsSidebar
+            stats={stats}
+            sessionData={sessionData}
+            userJobroleLists={userJobroleLists}
+            userLOR={userLOR}
+            userLists={userLists}
+            userDepartmentLists={userDepartmentLists}
+            selectedCount={selectedEmployees.length}
+            onBulkAssignTask={handleBulkAssignTask}
+            onBulkExport={handleBulkExport}
+            onBulkSkillAssessment={handleBulkSkillAssessment}
+          />
+        </div>
+      </div>
+        {/* Loading and content moved INSIDE the grid */}
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-2 text-muted-foreground">Loading employees...</span>
+            </div>
+          ) : viewMode === 'table' ? (
+            <EmployeeTable
+              employees={paginatedEmployees}
+              selectedEmployees={selectedEmployees}
+              onSelectEmployee={handleSelectEmployee}
+              onSelectAll={handleSelectAll}
+              onSort={handleSort}
+              sortConfig={sortConfig}
+              onViewProfile={handleViewProfile}
+              onAssignTask={handleAssignTask}
+              onEdit={handleEdit}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6">
+              {paginatedEmployees.map((employee) => (
+                <EmployeeCard
+                  key={employee.id}
+                  employee={employee}
                   onViewProfile={handleViewProfile}
                   onAssignTask={handleAssignTask}
                   onEdit={handleEdit}
                 />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6">
-                  {paginatedEmployees.map((employee) => (
-                    <EmployeeCard
-                      key={employee.id}
-                      employee={employee} x
-                      onViewProfile={handleViewProfile}
-                      onAssignTask={handleAssignTask}
-                      onEdit={handleEdit}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {totalPages > 1 && (
-                <PaginationControls
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={sortedEmployees.length}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={handlePageChange}
-                  onItemsPerPageChange={handleItemsPerPageChange}
-                />
-              )}
+              ))}
             </div>
+          )}
 
-            <div className="hidden xl:block">
-              <StatsSidebar
-                stats={stats}
-                sessionData={sessionData}
-                userJobroleLists={userJobroleLists}
-                userLOR={userLOR}
-                userLists={userLists}
-                userDepartmentLists={userDepartmentLists}
-                selectedCount={selectedEmployees.length}
-                onBulkAssignTask={handleBulkAssignTask}
-                onBulkExport={handleBulkExport}
-                onBulkSkillAssessment={handleBulkSkillAssessment}
-              />
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <EmployeeProfileModal
-        employee={selectedEmployee}
-        isOpen={showProfileModal}
-        onClose={handleCloseProfile}
-        onAssignTask={handleAssignTask}
-        onEdit={handleEdit}
-      />
-
-      {/* <QuickActionMenu /> */}
+          {/* Pagination moved INSIDE the grid */}
+          {totalPages > 1 && (
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={sortedEmployees.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          )}
     </div>
+  </main>
+
+  <EmployeeProfileModal
+    employee={selectedEmployee}
+    isOpen={showProfileModal}
+    onClose={handleCloseProfile}
+    onAssignTask={handleAssignTask}
+    onEdit={handleEdit}
+  />
+
+  {/* <QuickActionMenu /> */}
+</div>
   );
 };
 

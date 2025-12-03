@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState, useMemo } from 'react';
 import Icon from '@/components/AppIcon';
 import Button from '@/components/taskComponent/ui/Button';
 import Select from '@/components/taskComponent/ui/Select';
 import Input from '@/components/taskComponent/ui/Input';
+import DataTable from 'react-data-table-component';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +25,7 @@ const ProgressDashboard = () => {
   const [currentTask, setCurrentTask] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [filters, setFilters] = useState({});
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -139,8 +142,18 @@ const ProgressDashboard = () => {
     { value: 'rejected', label: 'Rejected' },
   ];
 
+  // Filter data based on all active filters
   const filteredData = useMemo(() => {
     return allData.filter(task => {
+      // Apply column filters first
+      const matchesColumnFilters = Object.entries(filters).every(([key, filterValue]) => {
+        if (!filterValue) return true;
+        
+        const cellValue = task[key] ? task[key].toString().toLowerCase() : '';
+        return cellValue.includes(filterValue.toLowerCase());
+      });
+
+      // Then apply the existing filters
       const matchesTime = timeFilter === 'all'
         ? true
         : timeFilter === 'High'
@@ -151,15 +164,17 @@ const ProgressDashboard = () => {
               ? task.task_type === 'Low'
               : true;
 
-      const matchesStatus = statusFilter === 'all' || task.status.toUpperCase() === statusFilter;
+      // const matchesStatus = statusFilter === 'all' || task.status.toUpperCase() === statusFilter;
+      const matchesStatus =
+  statusFilter === 'all' ||
+  (task.status && task.status.toUpperCase() === statusFilter);
 
       const matchesDepartment = departmentFilter === 'all' || task.department === departmentFilter;
-
       const matchesJobrole = jobroleFilter === 'all' || task.jobrole === jobroleFilter;
 
-      return matchesTime && matchesStatus && matchesDepartment && matchesJobrole;
+      return matchesColumnFilters && matchesTime && matchesStatus && matchesDepartment && matchesJobrole;
     });
-  }, [allData, timeFilter, statusFilter, departmentFilter, jobroleFilter]);
+  }, [allData, timeFilter, statusFilter, departmentFilter, jobroleFilter, filters]);
 
   const stats = useMemo(() => {
     const total = filteredData.length;
@@ -174,8 +189,8 @@ const ProgressDashboard = () => {
         change: '',
         trend: 'up',
         icon: 'FileText',
-        color: 'text-primary bg-[#e9e9e9]',
-        digit : 'text-primary',
+        color: 'text-blue-400 bg-[#e9e9e9]',
+        digit : 'text-blue-400',
       },
       {
         label: 'Completed',
@@ -329,13 +344,289 @@ const ProgressDashboard = () => {
     }));
   };
 
+  const handleColumnFilter = (columnKey, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [columnKey]: value
+    }));
+  };
+
+  // Define DataTable columns
+  const columns = [
+    {
+      name: (
+        <div>
+          <div>Task</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("task_title", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.task_title,
+      sortable: true,
+      cell: row => (
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+            <Icon name={getTypeIcon(row.type)} size={20} className="text-blue-400" />
+          </div>
+          <div>
+            <h4 className="font-medium text-foreground">{row.task_title}</h4>
+            <p className="text-xs text-muted-foreground">by {row.ALLOCATOR}</p>
+          </div>
+        </div>
+      ),
+      minWidth: "250px"
+    },
+    {
+      name: (
+        <div>
+          <div>Assigned To</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("ALLOCATED_TO", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.ALLOCATED_TO,
+      sortable: true,
+      minWidth: "150px"
+    },
+    {
+      name: (
+        <div>
+          <div>Department</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("department", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.department,
+      sortable: true,
+      minWidth: "150px"
+    },
+    {
+      name: (
+        <div>
+          <div>Jobrole</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.jobrole,
+      sortable: true,
+      minWidth: "150px"
+    },
+    {
+      name: (
+        <div>
+          <div>Due Date</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("task_date", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.task_date,
+      sortable: true,
+      minWidth: "120px"
+    },
+    {
+      name: (
+        <div>
+          <div>Progress</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("status", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.status,
+      sortable: true,
+      cell: row => (
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(row.status)}`}>
+          {row.status}
+        </span>
+      ),
+      minWidth: "140px"
+    },
+    {
+      name: (
+        <div>
+          <div>Task Type</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("task_type", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.task_type,
+      sortable: true,
+      cell: row => (
+        <div className="flex items-center space-x-1">
+          <div className={`w-2 h-2 rounded-full ${getPriorityColor(row.task_type).replace('text-', 'bg-')}`} />
+          <span className={`text-xs font-medium ${getPriorityColor(row.task_type)}`}>
+            {row.task_type.charAt(0).toUpperCase() + row.task_type.slice(1)}
+          </span>
+        </div>
+      ),
+      minWidth: "120px"
+    },
+    {
+      name: (
+        <div>
+          <div>Approve Status</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("approve_status", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              border: "1px solid #ddd",
+              borderRadius: "3px",
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.approve_status,
+      sortable: true,
+      cell: row => (
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getApproveStatusColor(row.approve_status)}`}>
+          {row.approve_status ? row.approve_status.charAt(0).toUpperCase() + row.approve_status.slice(1).toUpperCase() : 'PENDING'}
+        </span>
+      ),
+      minWidth: "150px"
+    },
+    {
+      name: "Actions",
+      cell: row => (
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
+            onClick={() => handleEditClick(row)}
+          >
+            <Icon name="Edit" size={14} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
+            onClick={() => {
+              if (window.confirm('Are you sure you want to delete this task?')) {
+                handleDeleteTask(row.id);
+              }
+            }}
+          >
+            <Icon name="Trash2" size={14} />
+          </Button>
+        </div>
+      ),
+      ignoreRowClick: true,
+      button: true,
+      minWidth: "100px"
+    },
+  ];
+
+  const customStyles = {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
+      },
+    },
+    cells: { 
+      style: { 
+        fontSize: "13px", 
+        textAlign: "left",
+        padding: "16px",
+      } 
+    },
+    table: {
+      style: { border: "1px solid #ddd", borderRadius: "8px", overflow: "hidden" },
+    },
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-foreground">Assignment Progress</h2>
-          <p className="text-muted-foreground">Track and monitor task assignment progress</p>
-        </div>
+        {/* <div>
+          <h2 className="text-xl font-semibold text-foreground">Assignment Progress</h2>
+          <p className="text-muted-foreground text-sm">Track and monitor task assignment progress</p>
+        </div> */}
 
         <div className="flex items-center space-x-3">
           <Select
@@ -380,7 +671,7 @@ const ProgressDashboard = () => {
                 <Icon name={stat.icon} size={24} />
               </div>
               <div className={`flex items-center`}>
-               <h3 className={`text-2xl font-bold text-foreground ${stat.digit}`}>{stat.value}</h3>
+               <h3 className={`text-2xl font-bold ${stat.digit}`}>{stat.value}</h3>
               </div>
             </div>
             <div className="mt-4">
@@ -390,112 +681,27 @@ const ProgressDashboard = () => {
         ))}
       </div>
 
-      <div className="bg-card border border-border rounded-lg">
-        <div className="p-6 border-b border-border">
+      <div className="bg-card ">
+        <div className="p-3">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-foreground">Task Assignments</h3>
-            {/* <Button variant="ghost" size="sm" iconName="MoreHorizontal" iconPosition="left">
-              View All
-            </Button> */}
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/30">
-              <tr>
-                <th className="text-left p-4 text-sm font-medium text-foreground">Task</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Assigned To</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Department</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Jobrole</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Due Date</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground"style={{ whiteSpace: 'nowrap' }}>Progress</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground" style={{ whiteSpace: 'nowrap' }}>Task Type</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground"style={{ whiteSpace: 'nowrap' }}>Approve Status</th>
-                <th className="text-left p-4 text-sm font-medium text-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((assignment) => (
-                <tr key={assignment.id} className="border-b border-border hover:bg-muted/30 transition-smooth">
-                  <td className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <Icon name={getTypeIcon(assignment.type)} size={16} className="text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-foreground">{assignment.task_title}</h4>
-                        <p className="text-xs text-muted-foreground">by {assignment.ALLOCATOR}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-sm text-foreground">{assignment.ALLOCATED_TO}</span>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-sm text-foreground">{assignment.department}</span>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-sm text-foreground">{assignment.jobrole}</span>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-sm text-foreground">{assignment.task_date}</span>
-                  </td>
-                  <td className="p-4">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(assignment.status)}`} style={{ whiteSpace: 'nowrap' }}>
-                      {assignment.status}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center space-x-1">
-                      <div className={`w-2 h-2 rounded-full ${getPriorityColor(assignment.task_type).replace('text-', 'bg-')}`} />
-                      <span className={`text-xs font-medium ${getPriorityColor(assignment.task_type)}`} style={{ whiteSpace: 'nowrap' }}>
-                        {assignment.task_type.charAt(0).toUpperCase() + assignment.task_type.slice(1)}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getApproveStatusColor(assignment.approve_status)}`} style={{ whiteSpace: 'nowrap' }}>
-                      {assignment.approve_status ? assignment.approve_status.charAt(0).toUpperCase() + assignment.approve_status.slice(1).toUpperCase() : 'PENDING'}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleEditClick(assignment)}
-                      >
-                        <Icon name="Edit" size={14} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-error hover:bg-error/10"
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this task?')) {
-                            handleDeleteTask(assignment.id);
-                          }
-                        }}
-                      >
-                        <Icon name="Trash2" size={14} />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filteredData.length === 0 && (
-                <tr>
-                  <td colSpan="9" className="p-4 text-center text-muted-foreground">
-                    No tasks found for selected filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <DataTable
+            columns={columns}
+            data={filteredData}
+            customStyles={customStyles}
+            pagination
+            highlightOnHover
+            responsive
+            noDataComponent={<div className="p-4 text-center text-muted-foreground">No tasks found for selected filters.</div>}
+            persistTableHead
+          />
         </div>
       </div>
 
+      {/* Edit Dialog - remains the same */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto hide-scroll">
           <DialogHeader>
@@ -504,7 +710,8 @@ const ProgressDashboard = () => {
 
           {currentTask && (
             <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* ... rest of the edit form remains the same ... */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Input
                     label="Task Title"
@@ -681,11 +888,11 @@ const ProgressDashboard = () => {
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsEditModalOpen(false)} className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-gray-500 to-gray-700 hover:from-gray-600 hover:to-gray-800 shadow-md disabled:opacity-60"> 
+              <DialogFooter className="flex justify-center space-x-4" style={{ display: 'flex', justifyContent: "center"}}>
+                <Button id="cancel" variant="outline" onClick={() => setIsEditModalOpen(false)} > 
                   Cancel
                 </Button>
-                <Button type="submit" className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60">
+                <Button id="update" type="submit"  className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60">
                   Update
                 </Button>
               </DialogFooter>

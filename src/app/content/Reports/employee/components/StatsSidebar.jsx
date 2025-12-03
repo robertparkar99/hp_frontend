@@ -43,7 +43,7 @@ const StatsSidebar = ({
 
       {/* Overview */}
       <div className="bg-card border border-border rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Overview</h3>
+        <h3 className="text-xl font-semibold text-foreground mb-4">Overview</h3>
         <div className="space-y-4">
           <div className="flex justify-between">
             <span>Total Employees</span>
@@ -61,8 +61,8 @@ const StatsSidebar = ({
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
+      {/* <div className="bg-card border border-border rounded-lg p-6">
+        <h3 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h3>
         <Button
           variant="outline"
           size="sm"
@@ -71,7 +71,7 @@ const StatsSidebar = ({
         >
           Add Employee
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

@@ -1,10 +1,14 @@
+ // Dashboard.tsx - Updated code
 "use client";
 
 import { useEffect, useState } from "react";
 import { MetricCard } from "./MetricCard";
+import Icon from "@/components/AppIcon"
 import { OrganizationTree } from "./OrganizationTree";
 import { RecentActivity } from "./RecentActivity";
-import OrganizationProfileManagement from "@/app/content/organization-profile-management"; // 🔹 import component
+import OrganizationInfoForm from "@/app/content/organization-profile-management/components/OrganizationInfoForm";
+import UserManagement from "@/app/content/user";
+import DepartmentStructure from "@/app/content/organization-profile-management/components/DepartmentStructure"; // Import Department Structure component
 import {
   Users,
   Building2,
@@ -53,11 +57,30 @@ type DashboardData = {
   departments: Record<string, unknown>;
   complainceData: any[];
   discliplinaryManagement: DisciplinaryItem[];
+  org_data?: Array<{ // Add this optional property
+    id: number;
+    legal_name: string;
+    cin: string;
+    gstin: string;
+    pan: string;
+    registered_address: string;
+    industry: string;
+    employee_count: string;
+    work_week: string;
+    logo: string;
+    sub_institute_id: number;
+    created_by: number | null;
+    updated_by: number | null;
+    created_at: string;
+    updated_at: string;
+  }>;
 };
+
 
 export function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+
   const [sessionData, setSessionData] = useState<{
     url: string;
     token: string;
@@ -67,7 +90,7 @@ export function Dashboard() {
   } | null>(null);
 
   // 🔹 current view state
-  const [activeView, setActiveView] = useState<"dashboard" | "manageUsers">(
+  const [activeView, setActiveView] = useState<"dashboard" | "organizationInfo" | "userManagement" | "departmentStructure">(
     "dashboard"
   );
 
@@ -129,49 +152,155 @@ export function Dashboard() {
         : false,
     })) || [];
 
+  const getOrganizationName = () => {
+    try {
+      // Check if org_data exists and has at least one item with legal_name
+      if (data?.org_data && data.org_data.length > 0 && data.org_data[0].legal_name) {
+        return data.org_data[0].legal_name;
+      }
+
+      // Fallback to message or default
+      return data?.message || "Organization Name";
+    } catch (error) {
+      console.error("Error getting organization name:", error);
+      return data?.message || "Organization Name";
+    }
+  };
+
   // 🔹 switch view rendering
-  if (activeView === "manageUsers") {
-    return <OrganizationProfileManagement />;
+  if (activeView === "organizationInfo") {
+    return (
+      <div className="min-h-screen bg-background p-6 rounded-xl">
+        <div className="flex items-center mb-6">
+          <Button
+            variant="outline"
+            onClick={() => setActiveView("dashboard")}
+            className="mr-4"
+          >
+            <Icon name="ArrowLeft" size={16} />
+          </Button>
+          <h1 className="text-2xl font-bold">Organization Information</h1>
+        </div>
+        <OrganizationInfoForm
+          onSave={() => {
+            setActiveView("dashboard");
+          }}
+        />
+      </div>
+    );
+  }
+
+  // 🔹 Render User Management view
+  if (activeView === "userManagement") {
+    return (
+      <div className="min-h-screen bg-background p-6 rounded-xl">
+        <div className="flex items-center mb-6">
+          <Button
+            variant="outline"
+            onClick={() => setActiveView("dashboard")}
+            className="mr-4"
+          >
+            <Icon name="ArrowLeft" size={16} />
+          </Button>
+          <h1 className="text-2xl font-bold">User Management</h1>
+        </div>
+        <UserManagement />
+      </div>
+    );
+  }
+
+  // 🔹 Render Department Structure view
+  if (activeView === "departmentStructure") {
+    return (
+      <div className="min-h-screen bg-background p-6 rounded-xl">
+        <div className="flex items-center mb-6">
+          <Button
+            variant="outline"
+            onClick={() => setActiveView("dashboard")}
+            className="mr-4"
+          >
+            <Icon name="ArrowLeft" size={16} />
+          </Button>
+          <h1 className="text-2xl font-bold">Department Structure</h1>
+        </div>
+        <DepartmentStructure onSave="" />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background rounded-xl ">
       <div className="flex">
-        <main className="flex-1 p-6 space-y-6 overflow-x-hidden">
+        <main className="flex-1 p-6 rounded-xl space-y-6 overflow-x-hidden">
           {/* Header */}
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-foreground">
               Organization Dashboard
             </h1>
+            {/* 🔹 Organization Name on the Right */}
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold text-primary">
+                {loading ? "Loading..." : getOrganizationName()}
+              </span>
+
+              {/* Edit Button */}
+              <button
+                onClick={() => setActiveView("organizationInfo")}
+                className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
+              >
+                <span className="mdi mdi-pencil"></span>
+              </button>
+            </div>
           </div>
 
           {/* Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <MetricCard
-              title="Total Employees"
-              value={loading ? "..." : data?.total_employees?.toString() || "0"}
-              change={{ value: "+12 this month", type: "positive" }}
-              icon={Users}
-              description="Active users in the organization"
-            />
-            <MetricCard
-              title="Departments"
-              value={loading ? "..." : data?.total_departments?.toString() || "0"}
-              change={{ value: "+1 this month", type: "positive" }}
-              icon={Building2}
-              description="Active departments and teams"
-            />
+            <div className="relative">
+              <MetricCard
+                title="Total Employees"
+                value={loading ? "..." : data?.total_employees?.toString() || "0"}
+                // change={{ value: "+12 this month", type: "positive" }}
+                icon={Users}
+                description="Active users in the organization"
+              />
+
+              {/* Eye Icon in top-right */}
+              <button
+                onClick={() => setActiveView("userManagement")}
+                className="absolute top-3 right-3 text-gray-500 hover:text-blue-600"
+              >
+                <Icon name="Eye" size={20} />
+              </button>
+            </div>
+
+            <div className="relative">
+              <MetricCard
+                title="Departments"
+                value={loading ? "..." : data?.total_departments?.toString() || "0"}
+                // change={{ value: "+1 this month", type: "positive" }}
+                icon={Building2}
+                description="Active departments and teams"
+              />
+              <button
+                onClick={() => setActiveView("departmentStructure")}
+                className="absolute top-3 right-3 text-gray-500 hover:text-blue-600"
+              >
+                <Icon name="Eye" size={20} />
+              </button>
+            </div>
+
             <MetricCard
               title="Compliance"
               value={loading ? "..." : data?.total_complainces?.toString() || "0"}
-              change={{ value: "-3 from last week", type: "negative" }}
+              // change={{ value: "-3 from last week", type: "negative" }}
               icon={ShieldCheck}
               description="Awaiting management approval"
             />
+
             <MetricCard
               title="Disciplinary"
               value={loading ? "..." : data?.total_disciplinary?.toString() || "0"}
-              change={{ value: "+2 vs last quarter", type: "positive" }}
+              // change={{ value: "+2 vs last quarter", type: "positive" }}
               icon={AudioLines}
               description="Active disciplinary actions"
             />
@@ -192,31 +321,40 @@ export function Dashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Activity className="text-primary" />
+                  <Activity className="text-blue-400" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
-                {/* 🔹 Render component instead of routing */}
                 <Button
                   variant="outline"
                   className="h-20 flex-col gap-2"
-                  onClick={() => setActiveView("manageUsers")}
+                  onClick={() => setActiveView("organizationInfo")}
                 >
-                  <Users className="h-6 w-6 text-primary" />
+                  <Users className="h-6 w-6 text-blue-400" />
+                  <span className="text-sm">Manage Organization</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-20 flex-col gap-2"
+                  onClick={() => setActiveView("departmentStructure")}
+                >
+                  <Building2 className="h-6 w-6 text-blue-400" />
+                  <span className="text-sm">Manage Departments</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-20 flex-col gap-2"
+                  onClick={() => setActiveView("userManagement")}
+                >
+                  <UserCheck className="h-6 w-6 text-blue-400" />
                   <span className="text-sm">Manage Users</span>
                 </Button>
 
                 <Button variant="outline" className="h-20 flex-col gap-2">
-                  <Building2 className="h-6 w-6 text-primary" />
-                  <span className="text-sm">Edit Structure</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex-col gap-2">
-                  <UserCheck className="h-6 w-6 text-primary" />
-                  <span className="text-sm">Assign Roles</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex-col gap-2">
-                  <TrendingUp className="h-6 w-6 text-primary" />
+                  <TrendingUp className="h-6 w-6 text-blue-400" />
                   <span className="text-sm">View Analytics</span>
                 </Button>
               </CardContent>
@@ -225,7 +363,7 @@ export function Dashboard() {
             <Card className="h-70 overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AudioLines className="text-primary" />
+                  <AudioLines className="text-blue-400" />
                   Disciplinary
                 </CardTitle>
               </CardHeader>
@@ -248,9 +386,8 @@ export function Dashboard() {
                     </div>
                     <div className="text-right">
                       <p
-                        className={`text-sm font-medium ${
-                          dept.positive ? "text-success" : "text-muted-foreground"
-                        }`}
+                        className={`text-sm font-medium ${dept.positive ? "text-success" : "text-muted-foreground"
+                          }`}
                       >
                         {dept.change}
                       </p>
@@ -268,4 +405,3 @@ export function Dashboard() {
     </div>
   );
 }
-  

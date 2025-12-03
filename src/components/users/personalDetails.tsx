@@ -12,6 +12,7 @@ interface userDetailsprops {
   userProfiles: any | [];
   userLists: any | [];
   sessionData: any | [];
+  fullJobroleData?: any;
   onUpdate?: () => void;
 }
 type TabId = "personal" | "address" | "reporting" | "attendance" | "deposit";
@@ -24,6 +25,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
   userProfiles,
   userLists,
   sessionData,
+  fullJobroleData,
   onUpdate,
 }) => {
   // Form state
@@ -40,7 +42,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
         ? new Date(userDetails.birthdate).toISOString().split("T")[0]
         : "",
       mobile: userDetails?.mobile || "",
-      department: userDetails?.department_id || "",
+     department: userDetails?.department_id || "",
       jobrole: userDetails?.allocated_standards || "",
       responsibility_level: userDetails?.subject_ids || "",
       gender: userDetails?.gender || "M",
@@ -97,6 +99,50 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeSection, setActiveSection] = useState<TabId>("personal");
   const [toggleState, setToggleState] = useState(false);
+  const [filteredJobroles, setFilteredJobroles] = useState<any[]>([]);
+
+  // ensure we have a safe reference to fullJobroleData from props
+  // Update this useEffect to work with department IDs
+useEffect(() => {
+  if (!fullJobroleData) {
+    setFilteredJobroles([]);
+    return;
+  }
+
+  const selectedDeptId = formData.personal.department;
+
+  if (!selectedDeptId) {
+    setFilteredJobroles([]);
+    return;
+  }
+
+  // STEP 1: find department_name from API using department_id
+  let departmentName = "";
+  
+  Object.keys(fullJobroleData).forEach((deptName) => {
+    const first = fullJobroleData[deptName][0];
+    if (first.department_id == selectedDeptId) {
+      departmentName = deptName;
+    }
+  });
+
+  // STEP 2: get job roles for that department
+  if (departmentName && fullJobroleData[departmentName]) {
+    const roles = fullJobroleData[departmentName];
+
+    const normalized = roles.map((r: any) =>
+      typeof r === "string" ? { id: r, jobrole: r } : r
+    );
+
+    setFilteredJobroles(normalized);
+  } else {
+    setFilteredJobroles([]);
+  }
+}, [formData.personal.department, fullJobroleData]);
+
+
+  
+
 
   const tabs = [
     {
@@ -163,45 +209,46 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
     handleInputChange("attendance", "working_days", currentDays);
   };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  setLoading(true);
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append("type", "API");
+    formDataToSend.append("_method", "PUT");
+    formDataToSend.append(
+      "sub_institute_id",
+      sessionData?.subInstituteId || ""
+    );
+    formDataToSend.append("user_id", sessionData?.userId || "");
+    formDataToSend.append("_token", sessionData?.token || "");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setLoading(true);
-    try {
-      // Prepare the data in the required format
-      const formDataToSend = new FormData();
-      formDataToSend.append("type", "API");
-      formDataToSend.append("_method", "PUT");
-      formDataToSend.append(
-        "sub_institute_id",
-        sessionData?.subInstituteId || ""
-      );
-      formDataToSend.append("user_id", sessionData?.userId || "");
-      formDataToSend.append("_token", sessionData?.token || "");
-
-      // Personal data
-      formDataToSend.append("name_suffix", formData.personal.name_suffix);
-      formDataToSend.append("first_name", formData.personal.first_name);
-      formDataToSend.append("middle_name", formData.personal.middle_name);
-      formDataToSend.append("last_name", formData.personal.last_name);
-      formDataToSend.append("email", formData.personal.email);
-      formDataToSend.append("mobile", formData.personal.mobile);
-      formDataToSend.append("department_id", formData.personal.department);
-      formDataToSend.append("allocated_standards", formData.personal.jobrole);
-      formDataToSend.append(
-        "subject_ids",
-        formData.personal.responsibility_level
-      );
-      formDataToSend.append("gender", formData.personal.gender);
-      formDataToSend.append(
-        "user_profile_id",
-        formData.personal.user_profile_id
-      );
-      formDataToSend.append("join_year", formData.personal.join_year);
-      formDataToSend.append("status", formData.personal.status);
-      formDataToSend.append("password", formData.personal.plain_password);
-      formDataToSend.append("birthdate", formData.personal.birthdate);
+    // Personal data - ensure department_id is the ID, not name
+    formDataToSend.append("name_suffix", formData.personal.name_suffix);
+    formDataToSend.append("first_name", formData.personal.first_name);
+    formDataToSend.append("middle_name", formData.personal.middle_name);
+    formDataToSend.append("last_name", formData.personal.last_name);
+    formDataToSend.append("email", formData.personal.email);
+    formDataToSend.append("mobile", formData.personal.mobile);
+    
+    // This is the critical fix - ensure department_id is the ID
+    formDataToSend.append("department_id", formData.personal.department);
+    
+    formDataToSend.append("allocated_standards", formData.personal.jobrole);
+    formDataToSend.append(
+      "subject_ids",
+      formData.personal.responsibility_level
+    );
+    formDataToSend.append("gender", formData.personal.gender);
+    formDataToSend.append(
+      "user_profile_id",
+      formData.personal.user_profile_id
+    );
+    formDataToSend.append("join_year", formData.personal.join_year);
+    formDataToSend.append("status", formData.personal.status);
+    formDataToSend.append("password", formData.personal.plain_password);
+    formDataToSend.append("birthdate", formData.personal.birthdate);
 
       // Only append the image file if it exists (new upload)
       if (formData.personal.imageFile) {
@@ -293,41 +340,41 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
       formDataToSend.append("transfer_type", formData.deposit.transfer_type);
 
       // Additional fields from your example
-      formDataToSend.append("jobtitle_id", "0");
-      formDataToSend.append("load", "6");
-      formDataToSend.append("department_id", "1");
-      formDataToSend.append("submit", "Update");
+      // formDataToSend.append("jobtitle_id", formData.personal.jobrole); // For jobrole ID
+      formDataToSend.append("department_id", formData.personal.department);
+    
+    formDataToSend.append("load", "6");
+    formDataToSend.append("submit", "Update");
 
-      const response = await fetch(
-        `${sessionData?.url}/user/add_user/${userDetails?.id}`,
-        {
-          method: "POST", // Using POST with _method=PUT
-          body: formDataToSend,
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to update user");
+    const response = await fetch(
+      `${sessionData?.url}/user/add_user/${userDetails?.id}`,
+      {
+        method: "POST",
+        body: formDataToSend,
+        headers: {
+          Accept: "application/json",
+        },
       }
+    );
 
-      const result = await response.json();
-      setLoading(false);
-      alert(result.message);
-      if (onUpdate) {
-        onUpdate();
-      }
-      console.log("Update successful:", result);
-    } catch (error) {
-      console.error("Error updating user:", error);
-      setLoading(false);
-    } finally {
-      setIsSubmitting(false);
+    if (!response.ok) {
+      throw new Error("Failed to update user");
     }
-  };
 
+    const result = await response.json();
+    setLoading(false);
+    alert(result.message);
+    if (onUpdate) {
+      onUpdate();
+    }
+    console.log("Update successful:", result);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    setLoading(false);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   return (
     <>
       {isLoading ? (
@@ -341,28 +388,28 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                 <div className="rounded-lg">
                   {formData.personal.image.startsWith("blob:") ? (
                     <img
-                    src={formData.personal.image}
-                    alt="User icon"
-                    style={{ transform: "translate(34%,28%)" }}
-                    className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
-                    onError={(e) => {
-                      e.currentTarget.src =
-                        "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
-                    }}
-                  />
+                      src={formData.personal.image}
+                      alt="User icon"
+                      style={{ transform: "translate(28%,21%)" }}
+                      className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
+                      onError={(e) => {
+                        e.currentTarget.src =
+                          "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
+                      }}
+                    />
                   ) : (
                     <img
-                    src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails.image}`}
-                    alt="User icon"
-                    style={{ transform: "translate(34%,28%)" }}
-                    className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
-                    onError={(e) => {
-                      e.currentTarget.src =
-                        "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
-                    }}
-                  />
+                      src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails.image}`}
+                      alt="User icon"
+                      style={{ transform: "translate(28%,21%)" }}
+                      className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
+                      onError={(e) => {
+                        e.currentTarget.src =
+                          "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
+                      }}
+                    />
                   )}
-                  
+
                 </div>
                 <div
                   className="header-content"
@@ -393,22 +440,19 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
               {tabs.map((item) => (
                 <div
                   key={item.id}
-                  className={`cursor-pointer transition-colors duration-200 px-3 py-2 border-b-1 border-[1px solid rgba(71, 160, 255, 0.1)] ${
-                    activeSection === item.id
-                      ? "bg-[#47a0ff]"
-                      : "bg-white text-gray-600 hover:bg-blue-100"
-                  }`}
+                  className={`cursor-pointer transition-colors duration-200 px-3 py-2 border-b-1 border-[1px solid rgba(71, 160, 255, 0.1)] ${activeSection === item.id
+                    ? "bg-[#47a0ff]"
+                    : "bg-white text-gray-600 hover:bg-blue-100"
+                    }`}
                   onClick={() => handleTabClick(item.id as TabId, item.href)}
                 >
                   <i
-                    className={`${item.icon} ${
-                      activeSection === item.id ? "text-white" : "text-gray-600"
-                    } w-5 h-5 mr-2`}
+                    className={`${item.icon} ${activeSection === item.id ? "text-white" : "text-gray-600"
+                      } w-5 h-5 mr-2`}
                   ></i>
                   <span
-                    className={`${
-                      activeSection === item.id ? "text-white" : "text-gray-600"
-                    }`}
+                    className={`${activeSection === item.id ? "text-white" : "text-gray-600"
+                      }`}
                   >
                     {item.href ? (
                       <a href={item.href} onClick={(e) => e.preventDefault()}>
@@ -430,14 +474,14 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                   {activeSection === "personal"
                     ? "Personal Information"
                     : activeSection === "address"
-                    ? "Address Information"
-                    : activeSection === "reporting"
-                    ? "Reporting & Attendance Information"
-                    : activeSection === "attendance"
-                    ? "Attendance Information"
-                    : activeSection === "deposit"
-                    ? "Deposit Information"
-                    : ""}
+                      ? "Address Information"
+                      : activeSection === "reporting"
+                        ? "Reporting & Attendance Information"
+                        : activeSection === "attendance"
+                          ? "Attendance Information"
+                          : activeSection === "deposit"
+                            ? "Deposit Information"
+                            : ""}
                 </h2>
                 <div className="title-underline"></div>
 
@@ -560,9 +604,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                         <i
-                          className={`fa fa-eye${
-                            toggleState ? "-slash" : ""
-                          } absolute right-3 top-8 cursor-pointer text-gray-500 hover:text-gray-700`}
+                          className={`fa fa-eye${toggleState ? "-slash" : ""
+                            } absolute right-3 top-8 cursor-pointer text-gray-500 hover:text-gray-700`}
                           onClick={() => setToggleState(!toggleState)}
                         ></i>
                       </div>
@@ -608,70 +651,69 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     {/* Department Section */}
                     <div className="form-row">
-                      <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
-                          Department
-                        </label>
-                        <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
-                          value={formData.personal.department}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "personal",
-                              "department",
-                              e.target.value
-                            )
-                          }
-                        >
-                          <option value="">Select Department</option>
-                          {userdepartment && userdepartment.length > 0 ? (
-                            userdepartment.map((department: any) => (
-                              <option key={department.id} value={department.id}>
-                                {department.department}
-                              </option>
-                            ))
-                          ) : (
-                            <option value="" disabled>
-                              No department available
-                            </option>
-                          )}
-                        </select>
-                      </div>
-                      <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
-                          Job Role
-                        </label>
-                        <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
-                          value={formData.personal.jobrole}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "personal",
-                              "jobrole",
-                              e.target.value
-                            )
-                          }
-                        >
-                          <option value="">Select Jobrole</option>
-                          {userJobroleLists && userJobroleLists.length > 0 ? (
-                            userJobroleLists.map((jobrole: any) => (
-                              <option
-                                key={jobrole.id}
-                                value={jobrole.id}
-                                selected={
-                                  userDetails?.allocated_standards == jobrole.id
-                                }
-                              >
-                                {jobrole.jobrole}
-                              </option>
-                            ))
-                          ) : (
-                            <option value="" disabled>
-                              No job roles available
-                            </option>
-                          )}
-                        </select>
-                      </div>
+  
+<div className="input-field">
+  <label className="block mb-1 text-sm font-medium text-gray-700">
+    Department
+  </label>
+<select
+  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+  value={formData.personal.department}
+  onChange={(e) =>
+    handleInputChange(
+      "personal",
+      "department",
+      Number(e.target.value) // ensure numeric ID
+    )
+  }
+>
+  <option value="">Select Department</option>
+
+  {/* Build department dropdown from fullJobroleData */}
+  {fullJobroleData &&
+    Object.keys(fullJobroleData).map((deptName) => {
+      const first = fullJobroleData[deptName][0]; // always contains department_id + name
+      return (
+        <option key={first.department_id} value={first.department_id}>
+          {first.department_name}
+        </option>
+      );
+    })}
+</select>
+
+</div>
+                     <div className="input-field">
+  <label className="block mb-1 text-sm font-medium text-gray-700">
+    Job Role
+  </label>
+  <select
+    className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+    value={formData.personal.jobrole}
+    onChange={(e) =>
+      handleInputChange(
+        "personal",
+        "jobrole",
+        e.target.value
+      )
+    }
+  >
+    <option value="">Select Jobrole</option>
+    {filteredJobroles && filteredJobroles.length > 0 ? (
+      filteredJobroles.map((jobrole: any) => (
+        <option
+          key={jobrole.id}
+          value={jobrole.id}
+        >
+          {jobrole.jobrole}
+        </option>
+      ))
+    ) : (
+      <option value="" disabled>
+        No job roles available
+      </option>
+    )}
+  </select>
+</div>
                     </div>
 
                     {/* Job Section */}
@@ -724,7 +766,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               onChange={() =>
                                 handleInputChange("personal", "gender", "M")
                               }
-                              className="accent-blue-500"
+                              className="accent-blue-500 no-shadow"
+
                             />
                             Male
                           </label>
@@ -737,7 +780,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               onChange={() =>
                                 handleInputChange("personal", "gender", "F")
                               }
-                              className="accent-pink-500"
+                              className="accent-pink-500 no-shadow"
                             />
                             Female
                           </label>
@@ -819,12 +862,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         >
                           <option value="">Status</option>
-                          <option 
-                            value="1" 
+                          <option
+                            value="1"
                           >
                             Active
                           </option>
-                          <option 
+                          <option
                             value="0"
                           >
                             In-Active
@@ -1126,6 +1169,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                                     day
                                   )}
                                   onChange={() => handleCheckboxChange(day)}
+                                  className="no-shadow"
                                 />
                                 {day}
                               </label>
@@ -1177,7 +1221,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                             className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                             value={
                               formData.attendance[
-                                item.inField as keyof typeof formData.attendance
+                              item.inField as keyof typeof formData.attendance
                               ]
                             }
                             onChange={(e) =>
@@ -1198,7 +1242,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                             className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                             value={
                               formData.attendance[
-                                item.outField as keyof typeof formData.attendance
+                              item.outField as keyof typeof formData.attendance
                               ]
                             }
                             onChange={(e) =>

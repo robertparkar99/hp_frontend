@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,10 +14,14 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@/components/ui/popover"; // ✅ popover
-import { Funnel } from "lucide-react"; // ✅ filter icon
+} from "@/components/ui/popover";
+import {
+  Funnel, LayoutGrid, Table, Plus, Download, Upload,
+  Sparkles, Settings, Eye, Pencil, Trash2, Copy, Search, MoreVertical
+} from "lucide-react";
 import { Atom } from "react-loading-indicators";
-import { motion } from "framer-motion"; // ✅ hover animation
+import { motion } from "framer-motion";
+import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 
 // ---------- Types ----------
 type CardData = {
@@ -23,6 +29,7 @@ type CardData = {
   classification_item: string;
   classification_category: string;
   classification_sub_category: string;
+  proficiency_level?: string;
 };
 
 interface SessionData {
@@ -49,6 +56,18 @@ export default function Index() {
   const [loadingCards, setLoadingCards] = useState(false);
 
   const [sessionData, setSessionData] = useState<SessionData>({});
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+
+  // search input state
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // ✅ Table filters
+  const [columnFilters, setColumnFilters] = useState({
+    classification_item: "",
+    classification_category: "",
+    classification_sub_category: "",
+    proficiency_level: "",
+  });
 
   // ---------- Load session ----------
   useEffect(() => {
@@ -184,39 +203,244 @@ export default function Index() {
     sessionData.url,
   ]);
 
+  // ✅ Table columns
+  const columns: TableColumn<CardData>[] = [
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Item</span>
+          <input
+            type="text"
+            value={columnFilters.classification_item}
+            onChange={(e) =>
+              setColumnFilters({
+                ...columnFilters,
+                classification_item: e.target.value,
+              })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_item,
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Category</span>
+          <input
+            type="text"
+            value={columnFilters.classification_category}
+            onChange={(e) =>
+              setColumnFilters({
+                ...columnFilters,
+                classification_category: e.target.value,
+              })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_category,
+      sortable: true,
+      wrap: true,
+      width: "300px"
+    },
+    {
+      name: (
+        <div className="flex flex-col">
+          <span>Sub Category</span>
+          <input
+            type="text"
+            value={columnFilters.classification_sub_category}
+            onChange={(e) =>
+              setColumnFilters({
+                ...columnFilters,
+                classification_sub_category: e.target.value,
+              })
+            }
+            placeholder="Search..."
+            style={{ width: "100%", padding: "4px", fontSize: "12px" }}
+          />
+        </div>
+      ),
+      selector: (row) => row.classification_sub_category,
+      sortable: true,
+      wrap: true,
+      width: "160px",
+    },
+    {
+      name: "Proficiency",
+      selector: (row) => row.proficiency_level ?? "-",
+      sortable: true,
+      width: "120px",
+    },
+  ];
+
+  // ✅ Table styles
+  const customStyles: TableStyles = {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
+      },
+    },
+    cells: {
+      style: {
+        fontSize: "13px",
+        textAlign: "left",
+      },
+    },
+    table: {
+      style: {
+        borderRadius: "20px",
+        overflow: "hidden",
+      },
+    },
+  };
+
+  // ✅ Table filtering
+  const filteredData = cards.filter(
+    (row) =>
+      row.classification_item
+        .toLowerCase()
+        .includes(columnFilters.classification_item.toLowerCase()) &&
+      row.classification_category
+        .toLowerCase()
+        .includes(columnFilters.classification_category.toLowerCase()) &&
+      row.classification_sub_category
+        .toLowerCase()
+        .includes(columnFilters.classification_sub_category.toLowerCase())
+  );
+
   return (
     <>
-      {/* 🔽 Funnel + Filters in Popover */}
-      <div className="flex p-4 justify-end items-center gap-3 mb-6">
-        <Popover>
-          <PopoverTrigger asChild>
-            <button className="p-3">
-              <Funnel />
-            </button>
-          </PopoverTrigger>
+      {/* 🔽 Enhanced Top Action Bar */}
+      <div className="flex p-4 justify-between items-center mb-6">
+        {/* Left side - Search Bar */}
+        <div className="relative w-96">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search attitude, categories, or proficiency levels..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
 
-          <PopoverContent
-            align="end"
-            className="w-[300px] p-6 bg-white shadow-xl rounded-xl flex flex-col gap-4"
-          >
-            <Filters
-              categories={categories}
-              subCategories={subCategories}
-              skills={skills}
-              loadingOptions={loadingOptions}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              selectedSubCategory={selectedSubCategory}
-              setSelectedSubCategory={setSelectedSubCategory}
-              selectedLevel={selectedLevel}
-              setSelectedLevel={setSelectedLevel}
-            />
-          </PopoverContent>
-        </Popover>
+        {/* Right side - Actions and Controls */}
+        <div className="flex items-center gap-1">
+
+          {/* Filter Popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 rounded-lg hover:bg-gray-50" title="Filter">
+                <Funnel className="w-5 h-5 text-gray-600" />
+              </button>
+            </PopoverTrigger>
+
+            <PopoverContent
+              align="end"
+              className="w-[300px] p-6 bg-white shadow-xl rounded-xl flex flex-col gap-4"
+            >
+              <Filters
+                categories={categories}
+                subCategories={subCategories}
+                skills={skills}
+                loadingOptions={loadingOptions}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedSubCategory={selectedSubCategory}
+                setSelectedSubCategory={setSelectedSubCategory}
+                selectedLevel={selectedLevel}
+                setSelectedLevel={setSelectedLevel}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* View Toggle */}
+          <div className="flex border rounded-md overflow-hidden">
+            <button
+              onClick={() => setViewMode("cards")}
+              className={`px-3 py-2 flex items-center justify-center ${viewMode === "cards"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+            >
+              <LayoutGrid className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`px-3 py-2 flex items-center justify-center ${viewMode === "table"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+            >
+              <Table className="h-5 w-5" />
+            </button>
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-auto p-4 bg-white shadow-xl rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                {/* Add New Attitude */}
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Add New Attitude">
+                  <Plus className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {/* AI Suggestions */}
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Get AI Suggestions">
+                  <Sparkles className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {/* Import/Export */}
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Import ">
+                  <Upload className="w-5 h-5 text-gray-600" />
+                </button>
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Export ">
+                  <Download className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {/* Settings */}
+                <button className="p-2 rounded-lg hover:bg-gray-100" title="Settings">
+                  <Settings className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
-      {/* 🔽 Cards */}
-      <CardGrid cards={cards} loadingCards={loadingCards} />
+
+      {/* 🔽 Switch View */}
+      {viewMode === "cards" ? (
+        <CardGrid cards={cards} loadingCards={loadingCards} />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredData}
+          customStyles={customStyles}
+          progressPending={loadingCards}
+          highlightOnHover
+          pagination
+          dense
+        />
+      )}
     </>
   );
 }
@@ -322,7 +546,7 @@ function Filters({
   );
 }
 
-// ---------- Cards Grid ----------
+// ---------- Enhanced Cards Grid with Action Icons ----------
 function CardGrid({
   cards,
   loadingCards,
@@ -361,15 +585,23 @@ function CardGrid({
             key={card.id}
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
-            className={`w-full h-[180px] bg-white border-2 border-[#C5DFFF] shadow-md shadow-black/20 p-5 flex flex-col ${borderRadius}`}
+            className={`w-full h-[200px] bg-white border-2 border-[#C5DFFF] shadow-md shadow-black/20 p-5 flex flex-col ${borderRadius} relative group`}
           >
+
+
             {/* Title */}
-            <h2
-              className="text-[#1E3A8A] font-bold text-[18px] text-center mb-3 leading-normal border-b border-[#919191] pb-1 truncate"
+            <motion.h2
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+              className="relative text-[#1E3A8A] font-bold text-[18px] text-center mb-3 leading-normal 
+                         pb-1 truncate cursor-pointer 
+                         hover:text-blue-500 transition-colors duration-300
+                         after:absolute after:bottom-0 after:left-1/2 after:w-0 after:h-[2px] after:bg-blue-500 
+                         after:transition-all after:duration-300 after:-translate-x-1/2 hover:after:w-full"
               title={card.classification_item}
             >
               {card.classification_item}
-            </h2>
+            </motion.h2>
 
             {/* Category */}
             <div className="text-[14px] mb-1 mt-2 leading-[1.125]">
@@ -385,6 +617,34 @@ function CardGrid({
               <span className="font-normal text-[#393939]">
                 {card.classification_sub_category}
               </span>
+            </div>
+
+            {/* Proficiency Level Badge */}
+            {card.proficiency_level && (
+              <div className="mt-auto pt-2">
+                <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  {card.proficiency_level}
+                </span>
+              </div>
+            )}
+
+            {/* Card Actions - Top Right */}
+            <div className="absolute bottom-3 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <button className="p-1 hover:bg-gray-100 rounded" title="View Details">
+                <Eye className="w-4 h-4 text-gray-600" />
+              </button>
+              <button className="p-1 hover:bg-gray-100 rounded" title="Edit">
+                <Pencil className="w-4 h-4 text-gray-600" />
+              </button>
+              <button className="p-1 hover:bg-gray-100 rounded" title="AI Enhance">
+                <Sparkles className="w-4 h-4 text-gray-500" />
+              </button>
+              <button className="p-1 hover:bg-gray-100 rounded" title="Duplicate">
+                <Copy className="w-4 h-4 text-gray-600" />
+              </button>
+              <button className="p-1 hover:bg-red-50 rounded" title="Delete">
+                <Trash2 className="w-4 h-4 text-gray-500" />
+              </button>
             </div>
           </motion.div>
         );

@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import DataTable from 'react-data-table-component';
 import Image from '../../../../components/AppImage';
 import Icon from '../../../../components/AppIcon';
 import { Button } from '../../../../components/ui/button';
@@ -64,6 +65,7 @@ const EmployeeTable = ({
   const [showActions, setShowActions] = useState(null);
   const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0 });
   const [clickedButtonRect, setClickedButtonRect] = useState(null);
+  const [filters, setFilters] = useState({});
 
   const safeEmployees = Array.isArray(employees) ? employees : [];
 
@@ -97,18 +99,27 @@ const EmployeeTable = ({
     return sortConfig.direction === 'asc' ? 'ArrowUp' : 'ArrowDown';
   };
 
-  const handleSort = (column) => {
-    onSort(column);
+  const handleSort = (column, sortDirection) => {
+    onSort(column, sortDirection);
   };
 
   const triggerMenuNavigation = (employeeId, menu) => {
     localStorage.setItem('clickedUser', employeeId);
-    window.__currentMenuItem = menu;
-    window.dispatchEvent(
-      new CustomEvent('menuSelected', {
-        detail: { menu, pageType: 'page', access: menu, pageProps: employeeId || null },
-      })
-    );
+
+    // Map menu paths to their corresponding routes
+    const menuRoutes = {
+      'user/viewProfile.tsx': `/content/user/profile/`,
+      'user/usersTabs.tsx': `/content/user/edit/`,
+      'task/taskManagement.tsx': `/content/task/assign/`
+    };
+
+    // Get the corresponding route path
+    const routePath = menuRoutes[menu];
+
+    if (routePath) {
+      // Use router.push to navigate
+      window.location.href = routePath;
+    }
   };
 
   const handleViewProfileMenu = (employee) => {
@@ -127,147 +138,268 @@ const EmployeeTable = ({
     setShowActions(showActions === employeeId ? null : employeeId);
   };
 
+ 
+  const handleColumnFilter = (columnKey, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [columnKey]: value
+    }));
+  };
+
+
+  // Filter data based on all active filters
+  const filteredData = safeEmployees.filter((item,index) => {
+    return Object.entries(filters).every(([key, filterValue]) => {
+      if (!filterValue) return true;
+      
+  // Handle serial number search
+      if (key === 'srno') {
+        const serialNumber = index + 1;
+        return serialNumber.toString().toLowerCase().includes(filterValue.toLowerCase());
+      }
+
+      const cellValue = item[key] ? item[key].toString().toLowerCase() : '';
+      return cellValue.includes(filterValue.toLowerCase());
+    });
+  });
+
+  const displayData = filteredData.length > 0 ? filteredData : safeEmployees;
+
+  const customStyles = {
+    headCells: {
+      style: {
+        fontSize: "14px",
+        backgroundColor: "#D1E7FF",
+        color: "black",
+        whiteSpace: "nowrap",
+        textAlign: "left",
+      },
+    },
+    cells: { style: { fontSize: "13px", textAlign: "left" } },
+    table: {
+      style: { border: "1px solid #ddd", borderRadius: "20px", overflow: "hidden" },
+    },
+  };
+
+  const columns = [
+        {
+      name: (
+        <div>
+          <div>Sr No.</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("srno", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row, index) => index + 1,
+      sortable: true,
+      width: "60px"
+    },
+    {
+      name: (
+        <div>
+          <div>Employee</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("full_name", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.full_name,
+      sortable: true,
+      cell: (row) => (
+        <div className="flex items-center space-x-5">
+          <EmployeeAvatar
+            image={row.image}
+            full_name={row.full_name}
+            status={row.status}
+          />
+          <div className="min-w-0 space-y-1">
+            {/* <button
+              onClick={() => handleViewProfileMenu(row)}
+              className="font-medium text-foreground hover:text-primary transition-smooth block truncate pt-3"
+            > */}
+              {row.full_name}
+            {/* </button> */}
+            <p className="text-sm text-muted-foreground truncate pb-3">
+              {row.email}
+            </p>
+          </div>
+        </div>
+      ),
+      minWidth: "200px"
+    },
+    {
+      name: (
+        <div>
+          <div>Mobile</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("mobile", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+             
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.mobile,
+      sortable: true,
+      omit: window.innerWidth < 1024 // Hide on mobile
+    },
+    {
+      name: (
+        <div>
+          <div>Department</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("department_name", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+             
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.department_name,
+      sortable: true,
+      omit: window.innerWidth < 1024 // Hide on mobile
+    },
+    {
+      name: (
+        <div>
+          <div>Role</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("profile_name", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+              
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.profile_name,
+      sortable: true,
+      omit: window.innerWidth < 1280 // Hide on smaller screens
+    },
+    {
+      name: (
+        <div>
+          <div>Status</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("status", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.status,
+      sortable: true,
+      cell: (row) => (
+        <div className="flex items-center space-x-2 text-sm text-foreground">
+          <span className={`inline-block w-2 h-2 rounded-full ${getStatusColor(row.status)}`} />
+          <span>{row.status}</span>
+        </div>
+      ),
+      omit: window.innerWidth < 1024 // Hide on mobile
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => handleMenuToggle(row.id, e)}
+            className="h-8 w-8"
+          >
+            <Icon name="MoreHorizontal" size={16} />
+          </Button>
+
+          {showActions === row.id &&
+            createPortal(
+              <div
+                className="absolute w-48 bg-popover border border-border rounded-md shadow-lg z-50"
+                style={{ top: menuCoords.top, left: menuCoords.left, position: "absolute" }}
+              >
+                <div className="py-2">
+                  <button
+                    onClick={() => handleEditEmployeeMenu(row)}
+                    className="w-full px-4 py-2 text-left text-sm text-popover-foreground hover:bg-muted flex items-center space-x-2"
+                  >
+                    <Icon name="Edit" size={16} />
+                    <span>Edit Employee</span>
+                  </button>
+                  <button
+                    onClick={() => handleAssignTaskMenu(row)}
+                    className="w-full px-4 py-2 text-left text-sm text-popover-foreground hover:bg-muted flex items-center space-x-2"
+                  >
+                    <Icon name="Plus" size={16} />
+                    <span>Assign Task</span>
+                  </button>
+                </div>
+              </div>,
+              document.body
+            )}
+        </div>
+      ),
+      ignoreRowClick: true,
+      button: true,
+      width: "80px"
+    },
+  ];
+
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
-      {/* Desktop Table */}
-      <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-muted border-b border-border">
-            <tr>
-              <th className="text-left px-3 lg:px-4 py-3 min-w-[200px]">
-                <button
-                  onClick={() => handleSort('name')}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Employee</span>
-                  <Icon name={getSortIcon('name')} size={14} />
-                </button>
-              </th>
-              <th className="text-left px-3 lg:px-4 py-3 hidden lg:table-cell">
-                <button
-                  onClick={() => handleSort('mobile')}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Mobile</span>
-                  <Icon name={getSortIcon('mobile')} size={14} />
-                </button>
-              </th>
-              <th className="text-left px-3 lg:px-4 py-3 hidden lg:table-cell">
-                <button
-                  onClick={() => handleSort('department_name')}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Department</span>
-                  <Icon name={getSortIcon('department_name')} size={14} />
-                </button>
-              </th>
-              <th className="text-left px-3 lg:px-4 py-3 hidden xl:table-cell">
-                <button
-                  onClick={() => handleSort('profile')}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Role</span>
-                  <Icon name={getSortIcon('profile')} size={14} />
-                </button>
-              </th>
-              <th className="text-left px-3 lg:px-4 py-3 hidden lg:table-cell">
-                <button
-                  onClick={() => handleSort('location')}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Status</span>
-                  <Icon name={getSortIcon('location')} size={14} />
-                </button>
-              </th>
-              <th className="w-12 sm:w-16 px-3 lg:px-4 py-3">
-                <span className="text-sm font-medium text-foreground">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {safeEmployees.map((employee) => (
-              <tr key={employee.id} className="hover:bg-muted/50 transition-smooth">
-                <td className="px-3 lg:px-4 py-4">
-                  <div className="flex items-center space-x-3">
-                    <EmployeeAvatar
-                      image={employee.image}
-                      full_name={employee.full_name}
-                      status={employee.status}
-                    />
-                    <div className="min-w-0">
-                      <button
-                        onClick={() => handleViewProfileMenu(employee)}
-                        className="font-medium text-foreground hover:text-primary transition-smooth block truncate"
-                      >
-                        {employee.full_name}
-                      </button>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {employee.email}
-                      </p>
-                    </div>
-                  </div>
-                </td>
-
-                <td className="px-3 lg:px-4 py-4 hidden lg:table-cell">
-                  <span className="text-sm text-foreground">{employee.mobile}</span>
-                </td>
-                <td className="px-3 lg:px-4 py-4 hidden lg:table-cell">
-                  <span className="text-sm text-foreground">{employee.department_name}</span>
-                </td>
-                <td className="px-3 lg:px-4 py-4 hidden xl:table-cell">
-                  <span className="text-sm text-foreground">{employee.profile_name}</span>
-                </td>
-
-                <td className="px-3 lg:px-4 py-4 hidden lg:table-cell">
-                  <div className="flex items-center space-x-2 text-sm text-foreground">
-                    <span className={`inline-block w-2 h-2 rounded-full ${getStatusColor(employee.status)}`} />
-                    <span>{employee.status}</span>
-                  </div>
-                </td>
-
-                <td className="px-3 lg:px-4 py-4">
-                  <div className="relative">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleMenuToggle(employee.id, e)}
-                      className="h-8 w-8"
-                    >
-                      <Icon name="MoreHorizontal" size={16} />
-                    </Button>
-
-                    {showActions === employee.id &&
-                      createPortal(
-                        <div
-                          className="absolute w-48 bg-popover border border-border rounded-md shadow-lg z-50"
-                          style={{ top: menuCoords.top, left: menuCoords.left, position: "absolute" }}
-                        >
-                          <div className="py-2">
-                            <button
-                              onClick={() => handleEditEmployeeMenu(employee)}
-                              className="w-full px-4 py-2 text-left text-sm text-popover-foreground hover:bg-muted flex items-center space-x-2"
-                            >
-                              <Icon name="Edit" size={16} />
-                              <span>Edit Employee</span>
-                            </button>
-                            <button
-                              onClick={() => handleAssignTaskMenu(employee)}
-                              className="w-full px-4 py-2 text-left text-sm text-popover-foreground hover:bg-muted flex items-center space-x-2"
-                            >
-                              <Icon name="Plus" size={16} />
-                              <span>Assign Task</span>
-                            </button>
-                          </div>
-                        </div>,
-                        document.body
-                      )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="bg-card rounded-lg overflow-hidden">
+      <DataTable
+        columns={columns}
+        data={displayData}
+        customStyles={customStyles}
+        pagination
+        highlightOnHover
+        responsive
+        noDataComponent={<div className="p-4 text-center">No employees found</div>}
+        persistTableHead
+        onSort={handleSort}
+        sortServer={true}
+      />
 
       {/* Overlay to close actions dropdown */}
       {showActions && (

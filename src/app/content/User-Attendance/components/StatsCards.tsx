@@ -52,9 +52,9 @@ const StatsCards: React.FC<StatsCardsProps> = ({ employees, records, selectedEmp
       title: selectedEmployee ? 'Selected Employee' : 'Total Employees',
       value: stats.totalEmployees,
       icon: Users,
-      color: 'bg-blue-500',
+      color: 'bg-blue-400',
       bgColor: 'bg-blue-50',
-      textColor: 'text-blue-600'
+      textColor: 'text-blue-400'
     },
     {
       title: 'Present Today',

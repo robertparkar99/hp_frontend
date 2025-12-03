@@ -233,9 +233,9 @@ export function TaskActivityStream() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Tasks</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                  <p className="text-2xl font-bold text-blue-400">{stats.total}</p>
                 </div>
-                <Activity className="w-8 h-8 text-blue-500" />
+                <Activity className="w-8 h-8 text-blue-400" />
               </div>
             </CardContent>
           </Card>
@@ -355,6 +355,7 @@ export function TaskActivityStream() {
                 {todayTasks.length > 0 ? (
                   todayTasks.map(task => (
                     <TaskCard
+                    sessionData={null}
                       key={task.id}
                       task={task}
                       onStatusUpdate={handleStatusUpdate}
@@ -374,6 +375,7 @@ export function TaskActivityStream() {
                 {upcomingTasks.length > 0 ? (
                   upcomingTasks.map(task => (
                     <TaskCard
+                    sessionData={null}
                       key={task.id}
                       task={task}
                       onStatusUpdate={handleStatusUpdate}

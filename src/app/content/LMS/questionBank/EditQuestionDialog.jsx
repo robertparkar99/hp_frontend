@@ -754,8 +754,8 @@ const addAnswer = () =>
 
                 <div className="flex gap-2 items-end">
                   {index === editForm.mappings.length - 1 && (
-                    <Button type="button" size="icon" onClick={addMapping}>
-                      <Plus className="h-4 w-4" />
+                    <Button type="button" size="icon" onClick={addMapping} style={{ padding: "12px", borderRadius: "8px", backgroundColor: "#f5f5f5" }}>
+                      <Plus className="h-4 w-4 text-black" />
                     </Button>
                   )}
                   {editForm.mappings.length > 1 && (
@@ -764,6 +764,7 @@ const addAnswer = () =>
                       size="icon"
                       variant="destructive"
                       onClick={() => removeMapping(index)}
+                        className="h-10 p-3 rounded-lg bg-[#f5f5f5] hover:bg-red-200"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -932,8 +933,8 @@ const addAnswer = () =>
                 )}
                 <div className="flex gap-2">
                   {i === editForm.answers.length - 1 && (
-                    <Button type="button" size="icon" onClick={addAnswer}>
-                      <Plus className="h-4 w-4" />
+                    <Button type="button" size="icon" onClick={addAnswer} style={{ padding: "12px", borderRadius: "8px", backgroundColor: "#f5f5f5" }}>
+                      <Plus className="h-4 w-4 text-black" />
                     </Button>
                   )}
                   {editForm.answers.length > 1 && (
@@ -942,6 +943,7 @@ const addAnswer = () =>
                       size="icon"
                       variant="destructive"
                       onClick={() => removeAnswer(i)}
+                      className="h-10 p-3 rounded-lg bg-[#f5f5f5] hover:bg-red-200"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -952,8 +954,8 @@ const addAnswer = () =>
           </div>
 
           <div className="flex justify-center pt-6">
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : "Save Changes"}
+            <Button id="update" onClick={handleSave} disabled={saving} className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+              {saving ? "Saving..." : "Update"}
             </Button>
           </div>
         </div>

@@ -74,7 +74,7 @@ const LevelResponsibility = () => {
   ];
 
   return (
-    <div className="w-full flex flex-col items-center space-y-8 px-4 py-8">
+    <div className="w-full flex flex-col bg-background rounded-xl items-center space-y-8 px-4 py-8">
       {/* LEVEL SELECTOR BUTTONS */}
       <div className="flex flex-wrap gap-3 mb-6 justify-center">
         {levelsData.map((level) => (
@@ -96,7 +96,7 @@ const LevelResponsibility = () => {
 
       {/* TOP TAB SWITCHER */}
       <div className="w-full max-w-6xl mx-auto">
-        <div className="border-4 border-blue-400 bg-[#f6faff] rounded-2xl shadow-md overflow-hidden">
+        <div className="border-2 border-blue-400 bg-[#f6faff] rounded-2xl shadow-md overflow-hidden">
           <div className="flex flex-row justify-between items-stretch text-center">
             {tabs.map((tab, index) => (
               <React.Fragment key={tab.key}>
@@ -124,7 +124,7 @@ const LevelResponsibility = () => {
       {/* LEVEL BADGE - Show for all sections, aligned to start (left) */}
       <div className="w-full flex justify-start mt-6">
         <div
-          className="px-6 py-3 rounded-2xl border-4 border-[#A4D0FF] shadow max-w-xl"
+          className="px-6 py-3 rounded-2xl border-2 border-[#A4D0FF] shadow max-w-xl"
           style={{
             background: "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
           }}
@@ -140,14 +140,14 @@ const LevelResponsibility = () => {
         <div className="flex justify-center items-start gap-8 mt-6 flex-wrap">
           {/* Description Card */}
           <div
-            className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+            className="border-2 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
             style={{
               width: "500px",
               height: "300px",
               background: "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
             }}
           >
-            <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">
+            <h3 className="text-[#0043CE] text-[24px] font-bold mb-2 opacity-80">
               Description
             </h3>
             <hr className="border border-gray-400 mb-4" />
@@ -168,7 +168,7 @@ const LevelResponsibility = () => {
 
           {/* Guidance Notes Card */}
           <div
-            className="border-4 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+            className="border-2 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
             style={{
               width: "500px",
               height: "300px",
@@ -176,7 +176,7 @@ const LevelResponsibility = () => {
               background: "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
             }}
           >
-            <h3 className="text-[#0043CE] text-[28px] font-bold mb-2 opacity-80">
+            <h3 className="text-[#0043CE] text-[24px] font-bold mb-2 opacity-80">
               Guidance Notes
             </h3>
             <hr className="border border-gray-400 mb-4" />

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 
 interface AddDialogProps {
-  skillId: number | null;
+  // skillId: number | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -77,7 +77,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}`
     );
     const data = await res.json();
-    // setCategories(data.skillData || []);
+    
     setProficiencyLevels(data.proficiency_levels || []);
   };
   const fetchDepartments = async () => {
@@ -91,11 +91,6 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     }
   };
   const getSubDepartment = async (category: string) => {
-    // const res = await fetch(
-    //   `${sessionData.url}/skill_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&category=${category}`
-    // );
-    // const data = await res.json();
-    // setSubCategories(data.skillData || []);
     try {
       const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=sub_category&searchWord=${encodeURIComponent(category)}`);
       const data = await res.json();
@@ -121,6 +116,77 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     setShowDropdown(true);
   };
 
+
+
+  // Function to generate form content using AI
+  // Remove aiTimer since we'll use a button instead
+  const generateFormContent = async (skillName: string, description: string) => {
+    if (!skillName.trim() || !description.trim()) {
+      return alert("Please enter both skill name and description first");
+    }
+
+    if (!formData.category.trim()) {
+      return alert("Please select a Skill Category first");
+    }
+
+    if (!formData.sub_category.trim()) {
+      return alert("Please select a Skill Sub Category first");
+    }
+
+    try {
+      const res = await fetch("/api/generate-skill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          skillName,
+          description,
+          orgType: sessionData.orgType
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data?.choices?.length) throw new Error("Empty AI response");
+
+      // Clean and parse JSON safely
+      let content = data.choices[0].message.content.trim();
+      content = content.replace(/```json|```/g, "").trim();
+
+      let aiResponse: any;
+      try {
+        aiResponse = JSON.parse(content);
+      } catch (err) {
+        console.warn("AI returned invalid JSON:", content);
+        return alert("AI returned invalid JSON, please retry.");
+      }
+
+      // Update form data safely
+      setFormData(prev => ({
+        ...prev,
+        category: aiResponse.category || prev.category,
+        sub_category: aiResponse.sub_category || prev.sub_category,
+        business_links: aiResponse.business_links || prev.business_links,
+        learning_resources: aiResponse.learning_resources || prev.learning_resources,
+        assesment_method: aiResponse.assessment_methods || prev.assesment_method,
+        certification_qualifications: aiResponse.certifications || prev.certification_qualifications,
+        experience_project: aiResponse.experience || prev.experience_project,
+        skill_maps: aiResponse.skill_mapping || prev.skill_maps
+      }));
+
+      if (Array.isArray(aiResponse.related_skills)) setSelectedSkills(aiResponse.related_skills);
+      if (Array.isArray(aiResponse.custom_tags)) setCustomTags(aiResponse.custom_tags);
+      if (aiResponse.category) await getSubDepartment(aiResponse.category);
+
+    } catch (error) {
+      console.error("Error generating form content:", error);
+      alert("Error generating AI content. Check console for details.");
+    }
+  };
+
+  let aiTimer: NodeJS.Timeout;
+  // generateFormContent("Python Programming", "Learn to write and optimize code in Python for AI applications.");
+
+  // Modify handleFormChange to trigger AI generation
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -203,7 +269,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
           ✖
         </button>
 
-       {/* header parts start  */}
+        {/* header parts start  */}
         <div className="flex w-full">
           {/* Left: GIF */}
           <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
@@ -213,7 +279,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
           {/* Center Content */}
           <div className="w-[90%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 text-center rounded-r-lg">
             <h2 className="text-gray-800 font-bold text-lg">Add New Skill</h2>
-            <h4 className="text-gray-700 font-semibold text-sm">  
+            <h4 className="text-gray-700 font-semibold text-sm">
               <b>Industry : </b>{sessionData.orgType}
             </h4>
           </div>
@@ -223,7 +289,8 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="category" className="text-left">Skill Category</label><br />
+                <label htmlFor="category" className="text-left">Skill Category{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label><br />
                 <select
                   name="category"
                   className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black" // Changed w-3/3 to w-full
@@ -236,10 +303,10 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                 >
                   <option value="">Select Category</option>
                   {categories.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -252,18 +319,19 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                   value={formData.sub_category}
                 >
                   <option value="">Select Sub Category</option>
-                 {subCategories.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
+                  {subCategories.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 w-full mb-5 group text-left">
-                <label htmlFor="skill_name" className="text-left">Skill Name</label><br />
+                <label htmlFor="skill_name" className="text-left">Skill Name{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label><br />
                 <input
                   type="text"
                   name="skill_name"
@@ -277,14 +345,27 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
               <div className="relative z-0 w-full mb-5 group text-left">
                 <label htmlFor="description" className="text-left">Skill Description</label><br />
-                <textarea
-                  name="description"
-                  rows={2}
-                  className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
-                  placeholder="Enter Descriptions..."
-                  onChange={handleFormChange}
-                  value={formData.description}
-                ></textarea>
+                <div className="flex gap-2">
+                  <textarea
+                    name="description"
+                    rows={2}
+                    className="w-full block p-2 border-2 border-[var(--color-blue-100)] rounded-lg focus:outline-none focus:border-blue-500 bg-white text-black"
+                    placeholder="Enter Descriptions..."
+                    onChange={handleFormChange}
+                    value={formData.description}
+                  ></textarea>
+                  <button
+                    type="button"
+                    onClick={() => generateFormContent(formData.skill_name, formData.description)}
+                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 h-10 w-50"
+                    title="Generate with AI"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M13.5 4.938l1.563 1.562a4.001 4.001 0 01-5.656 5.656L8.344 13.5a4 4 0 105.656-5.656l-1.563-1.563a5.5 5.5 0 00-7.778 7.778l1.562 1.563a5.5 5.5 0 007.778-7.778z" />
+                    </svg>
+                    AI Generate
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -302,7 +383,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                       fetchSkills(e.target.value);
                     }}
                     onFocus={() => setShowDropdown(true)}
-                   // onBlur={() => setTimeout(() => setShowDropdown(false), 100)} // Optional: hide dropdown on blur with a delay
+                  // onBlur={() => setTimeout(() => setShowDropdown(false), 100)} // Optional: hide dropdown on blur with a delay
                   />
                   {showDropdown && results.length > 0 && (
                     <ul className="absolute z-[9999] bg-opacity-100 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
