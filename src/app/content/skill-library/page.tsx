@@ -205,59 +205,59 @@ export default function Page() {
   }, []);
 
   // Fetch departments
- useEffect(() => {
-  const fetchDeptAndRoles = async () => {
-    try {
-      const response = await fetch(
-        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
-      );
-      const json = await response.json();
+  useEffect(() => {
+    const fetchDeptAndRoles = async () => {
+      try {
+        const response = await fetch(
+          `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
+        );
+        const json = await response.json();
 
-      if (!json.status) return;
+        if (!json.status) return;
 
-      const deptNames = Object.keys(json.data);
+        const deptNames = Object.keys(json.data);
 
-      // Save department list
-      setDepartments(
-        deptNames.map((name, index) => ({
-          id: String(index),
-          department: name,
-        }))
-      );
+        // Save department list
+        setDepartments(
+          deptNames.map((name, index) => ({
+            id: String(index),
+            department: name,
+          }))
+        );
 
-      // Save department → job roles mapping
-      setDeptJobroleMap(json.data);
+        // Save department → job roles mapping
+        setDeptJobroleMap(json.data);
 
-    } catch (err) {
-      console.error("Error fetching department + jobroles:", err);
-    }
-  };
+      } catch (err) {
+        console.error("Error fetching department + jobroles:", err);
+      }
+    };
 
-  if (sessionData.subInstituteId) fetchDeptAndRoles();
-}, [sessionData]);
+    if (sessionData.subInstituteId) fetchDeptAndRoles();
+  }, [sessionData]);
 
 
   // Fetch job roles based on selected department from filters
-useEffect(() => {
-  if (!selectedDepartment) {
-    setJobRoles([]);
-    return;
-  }
+  useEffect(() => {
+    if (!selectedDepartment) {
+      setJobRoles([]);
+      return;
+    }
 
-  const roles = deptJobroleMap[selectedDepartment] || [];
+    const roles = deptJobroleMap[selectedDepartment] || [];
 
-  // FIX: Convert API objects into dropdown-safe values
-  setJobRoles(
-    roles.map((roleObj: any, index) => ({
-      id: String(roleObj.id || index),
-      jobrole: roleObj.jobrole || "",
-      description: roleObj.description || "",
-      jobrole_category: roleObj.jobrole_category || "",
-      department_id: roleObj.department_id || "",
-      department_name: roleObj.department_name || ""
-    }))
-  );
-}, [selectedDepartment, deptJobroleMap]);
+    // FIX: Convert API objects into dropdown-safe values
+    setJobRoles(
+      roles.map((roleObj: any, index) => ({
+        id: String(roleObj.id || index),
+        jobrole: roleObj.jobrole || "",
+        description: roleObj.description || "",
+        jobrole_category: roleObj.jobrole_category || "",
+        department_id: roleObj.department_id || "",
+        department_name: roleObj.department_name || ""
+      }))
+    );
+  }, [selectedDepartment, deptJobroleMap]);
 
 
 
@@ -801,19 +801,19 @@ useEffect(() => {
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Filter by Department" />
                   </SelectTrigger>
-                  <SelectContent className= "max-h-60 w-73">
+                  <SelectContent className="max-h-60 w-73">
                     <SelectItem value="all">All Departments</SelectItem>
                     {departments.map((dept) => (
-  <SelectItem key={dept.id} value={dept.department}>
-    {dept.department}
-  </SelectItem>
-))}
+                      <SelectItem key={dept.id} value={dept.department}>
+                        {dept.department}
+                      </SelectItem>
+                    ))}
 
                   </SelectContent>
                 </Select>
 
                 {/* Job Role Filter */}
-                <Select
+                {/* <Select
                   value={selectedJobRole || "all"}
                   onValueChange={(value) => {
                     if (value === "all") {
@@ -825,12 +825,12 @@ useEffect(() => {
                   disabled={!selectedDepartment || loadingJobRoles}
                 >
                   <SelectTrigger className="w-full">
-                    {/* <SelectValue placeholder={loadingJobRoles ? "Loading job titles..." : "Select job title"}>
+                    <SelectValue placeholder={loadingJobRoles ? "Loading job titles..." : "Select job title"}>
                       {selectedJobRole && jobRoles.length > 0
                         ? jobRoles.find(role => role.id === selectedJobRole)?.jobrole || "Select job title"
                         : "Select job title"
                       }
-                    </SelectValue> */}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {loadingJobRoles ? (
@@ -838,11 +838,11 @@ useEffect(() => {
                     ) : jobRoles.length > 0 ? (
                       <>
                         <SelectItem value="all">All Job Roles</SelectItem>
-                       {jobRoles.map((role) => (
-  <SelectItem key={role.id} value={role.id}>
-    {role.jobrole}
-  </SelectItem>
-))}
+                        {jobRoles.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.jobrole}
+                          </SelectItem>
+                        ))}
                       </>
                     ) : (
                       <SelectItem value="no-roles" disabled>
@@ -850,7 +850,7 @@ useEffect(() => {
                       </SelectItem>
                     )}
                   </SelectContent>
-                </Select>
+                </Select> */}
 
                 {/* Category Filter */}
                 <Select
