@@ -83,7 +83,7 @@ const Index = () => {
                 </section>
 
                 {/* Performance Module */}
-                <section className="mb-8">
+                {/* <section className="mb-8">
                     <h2 className="text-2xl font-bold text-foreground mb-4">Performance</h2>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <PerformanceChart />
@@ -110,7 +110,7 @@ const Index = () => {
                             </div>
                         </Card>
                     </div>
-                </section>
+                </section> */}
 
                 {/* Leave & Payroll Module */}
                 <section className="mb-8">

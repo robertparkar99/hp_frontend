@@ -54,7 +54,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
   const fetchDepartments = async () => {
     try {
-      const apiUrl = `https://hp.triz.co.in/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`;
+      const apiUrl = `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`;
 
       const res = await fetch(apiUrl, {
         headers: sessionData.token
@@ -167,9 +167,15 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const selectedDept = departments.find(dept => dept.department_name === formData.department);
+    if (!selectedDept) {
+      alert("Please select a valid department");
+      return;
+    }
 
     const payload = {
       ...formData,
+      department_id: selectedDept.id,
       type: "API",
       method_field: "POST",
       token: sessionData.token,
@@ -314,7 +320,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
               className="text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br 
               focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
             >
-              Add by AJ
+              Submit
             </button>
           </form>
         </div>

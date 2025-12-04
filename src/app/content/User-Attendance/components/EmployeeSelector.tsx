@@ -90,28 +90,60 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
     }
   }, []);
 
-  // ✅ Fetch departments
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        if (!sessionData.url || !sessionData.subInstituteId) return;
+  // // ✅ Fetch departments
+  // useEffect(() => {
+  //   const fetchDepartments = async () => {
+  //     try {
+  //       if (!sessionData.url || !sessionData.subInstituteId) return;
 
-        const res = await fetch(
-          `${sessionData.url}/table_data?table=hrms_departments&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
-        );
+  //       const res = await fetch(
+  //         `${sessionData.url}/table_data?table=hrms_departments&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
+  //       );
 
-        const json = await res.json();
-        const deptData: Department[] = Array.isArray(json)
-          ? json
-          : json.data ?? [];
-        setDepartments(deptData);
-      } catch (err) {
-        console.error("Failed to fetch departments", err);
-      }
-    };
+  //       const json = await res.json();
+  //       const deptData: Department[] = Array.isArray(json)
+  //         ? json
+  //         : json.data ?? [];
+  //       setDepartments(deptData);
+  //     } catch (err) {
+  //       console.error("Failed to fetch departments", err);
+  //     }
+  //   };
 
-    fetchDepartments();
-  }, [sessionData]);
+  //   fetchDepartments();
+  // }, [sessionData]);
+
+  // ✅ Fetch departments using NEW API (REAL department_id)
+useEffect(() => {
+  const fetchDepartments = async () => {
+    try {
+      if (!sessionData.subInstituteId) return;
+
+      const res = await fetch(
+        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
+      );
+
+      const json = await res.json();
+      if (!json.data) return;
+
+      const deptList: Department[] = Object.entries(json.data).map(
+        ([deptName, jobroles]: any, index) => ({
+          id: jobroles[0]?.department_id ?? index,  // REAL dept_id
+          department: deptName,
+          parent_id: 0,
+          status: 1,
+        })
+      );
+
+      setDepartments(deptList);
+    } catch (err) {
+      console.error("Failed to fetch departments from new API", err);
+    }
+  };
+
+  fetchDepartments();
+}, [sessionData.subInstituteId]);
+
 
   // ✅ Get the correct employee value based on selection mode
   const getDisplayEmployee = () => {
