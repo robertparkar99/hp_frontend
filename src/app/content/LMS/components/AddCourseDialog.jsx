@@ -8,6 +8,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../../components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Button } from "../../../../components/ui/button";
 
 const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
@@ -37,6 +44,52 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
     user_id: "",
   });
 
+useEffect(() => {
+  const fetchDepartments = async () => {
+    if (!sessionData.sub_institute_id || !sessionData.url) return;
+    try {
+      setLoadingStandards(true);
+
+      const res = await fetch(
+        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`
+      );
+
+      const json = await res.json();
+      console.log("Department API Response:", json);
+
+      if (json && json.data) {
+        // Extract unique departments
+        const deptMap = new Map();
+        Object.keys(json.data).forEach((key) => {
+          json.data[key].forEach((jobrole) => {
+            if (jobrole.department_id && !deptMap.has(jobrole.department_id)) {
+              deptMap.set(jobrole.department_id, {
+                id: jobrole.department_id,
+                department_name: jobrole.department_name,
+              });
+            }
+          });
+        });
+        const deptArray = Array.from(deptMap.values());
+        setStandards(deptArray);
+      } else {
+        setStandards([]);
+      }
+    } catch (err) {
+      console.error("Error fetching departments:", err);
+      setStandards([]);
+    } finally {
+      setLoadingStandards(false);
+    }
+  };
+
+  if (open) {
+    fetchDepartments();
+  }
+}, [open, sessionData]);
+
+
+
   // Load session info from localStorage
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -65,7 +118,7 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
         const data = await res.json();
 
         console.log("✅ Standards API Response:", data);
-        
+
         // Handle different response formats
         if (data && data.data) {
           setStandards(data.data);
@@ -96,9 +149,9 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
     formData.append("type", "API");
     formData.append("formType", "course");
     // formData.append("subject_id", "0");
-formData.append("subject_id", course ? course.subject_id.toString() : "0");
+    formData.append("subject_id", course ? (course.subject_id?.toString() || "0") : "0");
     formData.append("allow_grades", "Yes");
-     formData.append("allow_content", "Yes");
+    formData.append("allow_content", "Yes");
     formData.append("elective_subject", "No");
     formData.append("add_content", "chapterwise");
     formData.append("status", display ? "1" : "0");
@@ -111,11 +164,11 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
     // Add input fields
     formData.append("sort_order", sortOrder);
     formData.append("display_name", displayName);
-    
+
     if (displayImage) {
       formData.append("display_image", displayImage);
     }
-    
+
     formData.append("subject_category", subjectCategory);
     formData.append("subject_code", subjectCode);
     formData.append("subject_type", subjectType);
@@ -132,7 +185,7 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
       alert("Please enter a course name");
       return;
     }
-    
+
     if (!standardId) {
       alert("Please select a standard");
       return;
@@ -149,7 +202,7 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
 
       const responseText = await res.text();
       console.log("API Response:", responseText);
-      
+
       let result;
       try {
         result = JSON.parse(responseText);
@@ -162,12 +215,12 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
       if (!res.ok) {
         throw new Error(result.message || "Failed to add course");
       }
-      
+
       // Transform API response to match expected course format
       const courseData = {
         id: result.id || Date.now(),
         // subject_id: result.subject_id || 0,
-        subject_id: result.subject_id || (course ? course.subject_id : 0),
+        subject_id: result.subject_id || (course ? (course.subject_id || 0) : 0),
         standard_id: parseInt(standardId) || 0,
         title: result.display_name || displayName,
         description: result.subject_category || subjectCategory,
@@ -188,7 +241,7 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
         sort_order: result.sort_order || sortOrder,
         status: result.status || (display ? "1" : "0")
       };
-      
+
       onSave(courseData);
       onOpenChange(false);
     } catch (err) {
@@ -211,8 +264,8 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
       setStandardId(course.standard_id?.toString() || "");
       setDisplay(
         course.status === "1" ||
-          course.status === 1 ||
-          course.status === true
+        course.status === 1 ||
+        course.status === true
       );
     } else {
       setSortOrder("");
@@ -337,20 +390,24 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
             <div>
               <label className="block text-sm font-medium mb-1">Department{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-              <select
-                value={standardId}
-                onChange={(e) => setStandardId(e.target.value)}
-                className="border p-2 rounded w-full"
-                disabled={loadingStandards}
-                required
-              >
-                <option value="">Select Department</option>
-                {standards.map((standard) => (
-                  <option key={standard.id} value={standard.id}>
-                    {standard.standard_name || standard.name || `Standard ${standard.id}`}
-                  </option>
-                ))}
-              </select>
+               <Select
+                  value={standardId}
+                  onValueChange={(value) => setStandardId(value)}
+                  disabled={loadingStandards}
+                  required
+                >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Department" />
+                </SelectTrigger>
+                <SelectContent className="w-100">
+                  {standards.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id?.toString() || ""}>
+                      {dept.department_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               {loadingStandards && (
                 <p className="text-xs text-gray-500 mt-1">
                   Loading standards...
@@ -390,7 +447,7 @@ formData.append("subject_id", course ? course.subject_id.toString() : "0");
             className="mt-4 mx-auto px-4 py-2 text-sm rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
             disabled={loading || loadingStandards}
           >
-            {loading ? "Processing..." : course ? "Update" : "Submit"} 
+            {loading ? "Processing..." : course ? "Update" : "Submit"}
           </Button>
         </div>
       </DialogContent>

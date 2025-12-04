@@ -18,7 +18,7 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
   onCancel,
 }) => {
   const [formData, setFormData] = useState<AttendanceFormData>({
-    employeeId: selectedEmployee?.id || "",
+    employeeId: selectedEmployee?.id ? String(selectedEmployee.id) : "",
     date: format(new Date(), "yyyy-MM-dd"),
     time: format(new Date(), "HH:mm"),
     notes: "",
@@ -59,7 +59,7 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
               <option value="">Select an employee...</option>
               {employees.map((employee) => (
                 <option key={employee.id} value={employee.id}>
-                  {employee.name} - {employee.department}
+                  {employee.name}
                 </option>
               ))}
             </select>
