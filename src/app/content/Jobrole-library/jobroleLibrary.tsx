@@ -1,5 +1,3 @@
-// JobroleLibrary
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -17,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import AddDialog from "@/components/jobroleComponent/addDialouge";
+import AddDialog from "@/components/jobroleComponent/addDialougeOld";
 import EditDialog from "@/components/jobroleComponent/editDialouge";
 import { Atom } from "react-loading-indicators";
 import {
@@ -46,7 +44,6 @@ import {
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import JobDescriptionModal from "./JobDescriptionModal";
 import ConfigurationModal from "./ConfigurationModal";
-import JobroleLibrary from "../Libraries/JobroleLibrary";
 
 type JobRole = {
   id: number;
@@ -82,6 +79,8 @@ export default function HomePage() {
 
   const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
   const [jobDescriptionModalOpen, setJobDescriptionModalOpen] = useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [configJsonObject, setConfigJsonObject] = useState<any>(null);
 
   // ✅ New state for dropdown menu
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
@@ -643,9 +642,21 @@ export default function HomePage() {
         <JobDescriptionModal
           isOpen={jobDescriptionModalOpen}
           onClose={handleCloseJobDescriptionModal}
+          onConfig={(jsonObject) => {
+            setJobDescriptionModalOpen(false);
+            setConfigJsonObject(jsonObject);
+            setIsConfigModalOpen(true);
+          }}
           jobRole={getSelectedJobRoleData()}
         />
       )}
+
+      {/* Configuration Modal */}
+      <ConfigurationModal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        jsonObject={configJsonObject}
+      />
 
       {/* Loader / No Data */}
       {loading ? (
