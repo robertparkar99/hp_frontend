@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { Atom } from "react-loading-indicators";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import ViewKnowledge from "@/components/BehaviourComponent/viewDialouge";
 
 interface BehaviourItem {
   id: number;
@@ -68,6 +69,9 @@ const BehaviourGrid = () => {
   const [sessionData, setSessionData] = useState<SessionData>({});
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [favorites, setFavorites] = useState<{ [key: number]: boolean }>({});
+
+  // Dialog state for viewing behaviour details
+  const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
 
 
   const handleClick = (id: number) => {
@@ -582,9 +586,10 @@ const BehaviourGrid = () => {
               cardData.map((card) => (
                 <motion.div
                   key={card.id}
-                  className="group bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm min-h-[180px] relative"
+                  className="group bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm min-h-[180px] relative cursor-pointer"
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  onClick={() => setSelectedCardId(card.id)}
                 >
                   {/* Favorite Star */}
                   {/* <button className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -646,6 +651,17 @@ const BehaviourGrid = () => {
           highlightOnHover
           pagination
           dense
+        />
+      )}
+
+      {/* Behaviour View Dialog */}
+      {selectedCardId && (
+        <ViewKnowledge
+          knowledgeId={selectedCardId}
+          onClose={() => setSelectedCardId(null)}
+          onSuccess={() => {}}
+          classification="behaviour"
+          typeName="Behaviour"
         />
       )}
     </>
