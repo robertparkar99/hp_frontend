@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import ViewKnowledge from "@/components/AbilityComponent/viewDialouge";
 
 type ApiItem = {
   id: number;
@@ -87,6 +88,9 @@ export default function Page() {
 
   // Search state for triangle view
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Dialog state for viewing ability details
+  const [selectedAbilityId, setSelectedAbilityId] = useState<number | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -466,7 +470,7 @@ export default function Page() {
 
       {/* View */}
       {viewMode === "triangle" ? (
-        <TriangleGrid rows={rows} />
+        <TriangleGrid rows={rows} onTriangleClick={setSelectedAbilityId} />
       ) : (
         <DataTable
           columns={columns}
@@ -476,6 +480,17 @@ export default function Page() {
           highlightOnHover
           striped
           responsive
+        />
+      )}
+
+      {/* Ability View Dialog */}
+      {selectedAbilityId && (
+        <ViewKnowledge
+          knowledgeId={selectedAbilityId}
+          onClose={() => setSelectedAbilityId(null)}
+          onSuccess={() => {}}
+          classification="ability"
+          typeName="Ability"
         />
       )}
     </div>
@@ -555,7 +570,7 @@ function Filters({
   );
 }
 
-function TriangleGrid({ rows }: { rows: ApiItem[][] }) {
+function TriangleGrid({ rows, onTriangleClick }: { rows: ApiItem[][]; onTriangleClick: (id: number) => void }) {
   return (
     <div className="flex flex-col items-center gap-8">
       {rows.length > 0 ? (
@@ -570,7 +585,7 @@ function TriangleGrid({ rows }: { rows: ApiItem[][] }) {
                   transition={{ type: "spring", stiffness: 300 }}
                   className="relative group"
                 >
-                  <Triangle text={item.classification_item} rotate={shouldRotate} />
+                  <Triangle text={item.classification_item} rotate={shouldRotate} onClick={() => onTriangleClick(item.id)} />
                   {/* Hover Actions */}
                   {/* <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button className="p-1 bg-blue-600 text-white rounded shadow-lg" title="View">
@@ -601,11 +616,12 @@ function TriangleGrid({ rows }: { rows: ApiItem[][] }) {
 type TriangleProps = {
   text: string;
   rotate?: boolean;
+  onClick?: () => void;
 };
 
-function Triangle({ text, rotate = false }: TriangleProps) {
+function Triangle({ text, rotate = false, onClick }: TriangleProps) {
   return (
-    <div className="triangle-wrapper">
+    <div className="triangle-wrapper cursor-pointer" onClick={onClick}>
       <div
         className="triangle"
         style={{
