@@ -22,6 +22,7 @@ import {
 import { Atom } from "react-loading-indicators";
 import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import ViewKnowledge from "@/components/AttitudeComponent/viewDialouge";
 
 // ---------- Types ----------
 type CardData = {
@@ -60,6 +61,9 @@ export default function Index() {
 
   // search input state
   const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // Dialog state for viewing attitude details
+  const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
 
   // ✅ Table filters
   const [columnFilters, setColumnFilters] = useState({
@@ -429,7 +433,7 @@ export default function Index() {
 
       {/* 🔽 Switch View */}
       {viewMode === "cards" ? (
-        <CardGrid cards={cards} loadingCards={loadingCards} />
+        <CardGrid cards={cards} loadingCards={loadingCards} onCardClick={setSelectedCardId} />
       ) : (
         <DataTable
           columns={columns}
@@ -439,6 +443,17 @@ export default function Index() {
           highlightOnHover
           pagination
           dense
+        />
+      )}
+
+      {/* Attitude View Dialog */}
+      {selectedCardId && (
+        <ViewKnowledge
+          knowledgeId={selectedCardId}
+          onClose={() => setSelectedCardId(null)}
+          onSuccess={() => {}}
+          classification="attitude"
+          typeName="Attitude"
         />
       )}
     </>
@@ -550,9 +565,11 @@ function Filters({
 function CardGrid({
   cards,
   loadingCards,
+  onCardClick,
 }: {
   cards: CardData[];
   loadingCards: boolean;
+  onCardClick: (id: number) => void;
 }) {
   if (loadingCards) {
     return (
@@ -585,7 +602,8 @@ function CardGrid({
             key={card.id}
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
-            className={`w-full h-[200px] bg-white border-2 border-[#C5DFFF] shadow-md shadow-black/20 p-5 flex flex-col ${borderRadius} relative group`}
+            className={`w-full h-[200px] bg-white border-2 border-[#C5DFFF] shadow-md shadow-black/20 p-5 flex flex-col ${borderRadius} relative group cursor-pointer`}
+            onClick={() => onCardClick(card.id)}
           >
 
 
