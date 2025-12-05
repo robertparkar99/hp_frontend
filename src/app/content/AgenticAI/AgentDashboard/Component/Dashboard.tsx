@@ -167,7 +167,7 @@ export default function Dashboard() {
                 key={agent.id}
                 className="flex items-center justify-between rounded-lg border border-border p-4 transition-all hover:bg-accent hover:shadow-md cursor-pointer animate-fade-in"
                 style={{ animationDelay: `${index * 50}ms` }}
-                onClick={() => router.push(`/content/AgenticAI/AgentDetail/id?id=${agent.id}`)}
+                onClick={() => router.push(`/content/AgenticAI/AgentDetail?id=${agent.id}`)}
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
