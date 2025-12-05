@@ -144,7 +144,7 @@ const SubMenuItem = ({
             localStorage.removeItem("activeSubSubItem");
         }
     };
-    
+
     const handleSubItemClick = (e: React.MouseEvent, subItem: any) => {
         e.preventDefault();
         e.stopPropagation();
@@ -172,24 +172,35 @@ const SubMenuItem = ({
     };
 
     return (
-        <div className="w-[280px] ml-[20px] mb-1">
+        // <div className="w-[280px] ml-[20px] mb-1">
+        //     <div
+        //         className="h-auto w-60 pl-1 items-center rounded-[10px]"
+        //         style={{ background: "rgba(71, 160, 255, 0.35)", boxShadow: "0 0 6px 0 rgba(0,0,0,0.1)" }}
+        //     >
+        //         <div className="w-[240px] bg-white rounded-[10px] transition-all overflow-hidden">
+        <div className="w-[260px] ml-[14px] mb-2">
             <div
-                className="h-auto w-60 pl-1 items-center rounded-[10px]"
+                className="pl-1 rounded-[12px]"
                 style={{
-                    background: "rgba(71, 160, 255, 0.25)",
-                    boxShadow: "0 0 6px 0 rgba(0, 0, 0, 0.10)",
+                    background: "rgba(71, 160, 255, 0.35)",
+                    boxShadow: "0 0 6px 0 rgba(0,0,0,0.1)",
+
                 }}
             >
-                <div className="w-[240px] bg-white rounded-[10px] transition-all overflow-hidden">
+                <div className="bg-white rounded-[12px] overflow-hidden shadow-sm">
+
                     <button
                         onClick={handleClick}
-                        className={`w-full h-[40px] flex items-center justify-between px-[15px] transition-colors ${isActive ? 'bg-blue-200 border-l-4 border-blue-500' : 'hover:bg-gray-50'}`}
+                        className={`w-full h-[42px] flex items-center justify-between px-[18px] rounded-md transition-all  hover:bg-blue-200 
+    ${isActive ? "bg-blue-200 font-semibold " : ""}
+`}
+
                     >
                         <div className="flex items-center gap-[20px]">
                             {item.icon}
                             {!isCollapsed && (
                                 <span
-                                    className="text-[#686868] text-[12px] font-medium leading-[18px]"
+                                    className={`${isActive ? 'text-[#686868]' : 'text-[#686868]'} text-[12px] font-medium leading-[18px]`}
                                     style={{
                                         fontFamily:
                                             "Roboto, -apple-system, Roboto, Helvetica, sans-serif",
@@ -220,7 +231,7 @@ const SubMenuItem = ({
                         <AnimatePresence initial={false}>
                             {isExpanded && item.subItems && item.subItems.length > 0 && (
                                 <motion.div
-                                    className="ml-[20px] pb-2"
+                                    className="ml-[10px] pb-2"
                                     initial={{ height: 0, opacity: 0 }}
                                     animate={{ height: "auto", opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
@@ -229,21 +240,17 @@ const SubMenuItem = ({
                                     {item.subItems.map((subItem: any, subSubIndex: number) => (
                                         <button
                                             key={`subsub-${subSubIndex}-${subItem.key}`}
-                                            className={`flex items-center gap-[30px] py-2 cursor-pointer w-full text-left px-2 rounded 
-                                                ${(activeSubSubItem === subItem.key || subItem.access_link === router?.pathname) 
-                                                    ? 'bg-blue-200 border-l-4 border-blue-500' 
-                                                    : 'hover:bg-gray-50'
-                                                }`}
+                                            className={`flex items-center gap-[22px] py-2 px-2 mb-1 rounded-md cursor-pointer w-full
+    ${activeSubSubItem === subItem.key
+                                                    ? "text-blue-500 font-bold bg-blue-50"
+                                                    : "text-[#686868] hover:text-blue-500 hover:bg-blue-50"
+                                                }
+`}
                                             onClick={(e) => handleSubItemClick(e, subItem)}
                                         >
-                                            <CornerDownRight className="text-gray-400" />
-                                            <span
-                                                className="text-[#686868] text-[12px] font-normal leading-[18px]"
-                                                style={{
-                                                    fontFamily:
-                                                        "Roboto, -apple-system, Roboto, Helvetica, sans-serif",
-                                                }}
-                                            >
+                                            <CornerDownRight />
+
+                                            <span className="text-[12px] font-medium leading-[18px]" style={{ fontFamily: 'Roboto, sans-serif' }}>
                                                 {subItem.label}
                                             </span>
                                         </button>
@@ -302,13 +309,13 @@ const Section = ({
             <div className="w-full h-[60px] relative">
                 {isActive ? (
                     <div
-                        className="mx-[15px] mt-[20px] h-[50px] flex items-center justify-center rounded-[15px]"
+                        className="mx-[15px] mt-[12px] h-[48px] rounded-[12px] flex items-center shadow-sm"
                         style={{ background: "#007BE5" }}
                     >
                         <button
                             type="button"
                             onClick={handleClick}
-                            className="w-full h-full flex items-center justify-between px-[11px] transition-colors rounded-[15px]"
+                            className="w-full h-full flex items-center justify-between px-[11px] transition-colors rounded-md"
                             aria-expanded={open}
                         >
                             <div className="flex items-center gap-[15px]">
@@ -349,7 +356,7 @@ const Section = ({
                         <button
                             type="button"
                             onClick={handleClick}
-                            className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors"
+                                className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors rounded-md"
                             aria-expanded={open}
                         >
                             <div className="flex items-center gap-[20px]">
@@ -387,7 +394,7 @@ const Section = ({
             </div>
 
             {!isCollapsed && isActive && open && (
-                <div className="pb-4">
+                <div className="pb-2 ">
                     {section.subItems.map((subItem, subIndex) => (
                         <SubMenuItem
                             key={`sub-${subIndex}-${subItem.key}`}
@@ -551,7 +558,7 @@ const DashboardSection = ({
     };
 
     return (
-        <div className="w-full">
+        <div className="w-full mb-2">
             <div className="w-full h-[60px] relative">
                 {isActive ? (
                     <div
@@ -561,7 +568,7 @@ const DashboardSection = ({
                         <button
                             type="button"
                             onClick={handleDashboardClick}
-                            className="w-full h-full flex items-center justify-between px-[11px] transition-colors rounded-[15px]"
+                            className="w-full h-full flex items-center justify-between px-[11px] transition-colors rounded-md"
                         >
                             <div className="flex items-center gap-[15px]">
                                 <div className="w-[30px] h-[30px] bg-white rounded-full flex items-center justify-center">
@@ -586,7 +593,7 @@ const DashboardSection = ({
                         <button
                             type="button"
                             onClick={handleDashboardClick}
-                            className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors"
+                                className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors rounded-md"
                         >
                             <div className="flex items-center gap-[20px]">
                                 <Home className="w-[16px] h-[24px]" />
@@ -658,40 +665,40 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
     }, []);
     const [initialized, setInitialized] = useState(false);
 
-useEffect(() => {
-    if (initialized === true) return; 
-    if (!sections.length) return;
+    useEffect(() => {
+        if (initialized === true) return;
+        if (!sections.length) return;
 
-    const currentPath = window.location.pathname;
-    const normalizePath = (path: string = "") =>
-        "/" + path.replace(/^\/+/, "").replace(/\/+$/, "");
-    
-    for (const section of sections) {
-        for (const l2 of section.subItems) {
+        const currentPath = window.location.pathname;
+        const normalizePath = (path: string = "") =>
+            "/" + path.replace(/^\/+/, "").replace(/\/+$/, "");
 
-            if (normalizePath(l2.access_link) === currentPath) {
-                setActiveSection(section.key);
-                setActiveSubItem(l2.key);
-                setOpen(o => ({ ...o, [section.key]: true }));
-                setSubOpen(s => ({ ...s, [l2.key]: true }));
-                setInitialized(true);
-                return;
-            }
+        for (const section of sections) {
+            for (const l2 of section.subItems) {
 
-            for (const l3 of (l2.subItems || [])) {
-                if (normalizePath(l3.access_link) === currentPath) {
+                if (normalizePath(l2.access_link) === currentPath) {
                     setActiveSection(section.key);
                     setActiveSubItem(l2.key);
-                    setActiveSubSubItem(l3.key);
                     setOpen(o => ({ ...o, [section.key]: true }));
                     setSubOpen(s => ({ ...s, [l2.key]: true }));
                     setInitialized(true);
                     return;
                 }
+
+                for (const l3 of (l2.subItems || [])) {
+                    if (normalizePath(l3.access_link) === currentPath) {
+                        setActiveSection(section.key);
+                        setActiveSubItem(l2.key);
+                        setActiveSubSubItem(l3.key);
+                        setOpen(o => ({ ...o, [section.key]: true }));
+                        setSubOpen(s => ({ ...s, [l2.key]: true }));
+                        setInitialized(true);
+                        return;
+                    }
+                }
             }
         }
-    }
-}, [sections]);
+    }, [sections]);
 
     // Persist sidebar state
     useEffect(() => {
@@ -834,15 +841,15 @@ useEffect(() => {
                                 Retry
                             </button>
                         </div>
-                    ) : loading ? (
-                        <div className="relative flex flex-col justify-center items-center transform bg-white w-full">
-                            <img
-                                src="/assets/loading/black_simple_laoding.gif"
-                                alt="loading.."
-                                className="w-[30px] h-[30px]"
-                            />
-                            <p className="mt-4">Please wait...</p>
-                        </div>
+                        // ) : loading ? (
+                        //     <div className="relative flex flex-col justify-center items-center transform bg-white w-full">
+                        //         <img
+                        //             src="/assets/loading/black_simple_laoding.gif"
+                        //             alt="loading.."
+                        //             className="w-[30px] h-[30px]"
+                        //         />
+                        //         <p className="mt-4">Please wait...</p>
+                        //     </div>
                     ) : (
                         sections.map((section, index) => (
                             <Section
@@ -866,8 +873,8 @@ useEffect(() => {
                     )}
                 </div>
             </aside>
-            { /* Global Footer with Chatbot */ }
-             <GlobalFooter />
+            { /* Global Footer with Chatbot */}
+            <GlobalFooter />
         </>
     );
 }
