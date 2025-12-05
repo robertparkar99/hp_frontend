@@ -46,10 +46,10 @@ const SearchFilters = ({
   };
   const mergedForm = { ...defaults, ...formData };
 
-  const [sections, setSections] = useState([{ label: 'Search Section', value: '' }]);
-  const [standards, setStandards] = useState([{ label: 'Search Department', value: '' }]);
-  const [subjects, setSubjects] = useState([{ label: 'Select Subject', value: '' }]);
-  const [chapters, setChapters] = useState([{ label: 'Search By Chapter', value: '' }]);
+  const [sections, setSections] = useState([{ label: 'Select Section', value: '' }]);
+  const [standards, setStandards] = useState([{ label: 'Select Department', value: '' }]);
+  const [subjects, setSubjects] = useState([{ label: 'Select Course', value: '' }]);
+  const [chapters, setChapters] = useState([{ label: 'Select Chapter', value: '' }]);
 
   const [loadingSections, setLoadingSections] = useState(false);
   const [loadingStandards, setLoadingStandards] = useState(false);
@@ -109,75 +109,71 @@ const SearchFilters = ({
   }, []);
 
   // 2️⃣ Fetch standards based on section
-  useEffect(() => {
-    let cancelled = false;
-    const fetchStandards = async () => {
-      if (!mergedForm.searchSection) {
-        setStandards([{ label: 'Search Department', value: '' }]);
+  // 2️⃣ Fetch departments using jobroles-by-department API
+useEffect(() => {
+  let cancelled = false;
+
+  const fetchDepartments = async () => {
+    setLoadingStandards(true);
+
+    try {
+      const sessionData = getSessionData();
+      if (!sessionData) {
+        console.warn("Session data missing");
+        setStandards([{ label: "Search Department", value: "" }]);
         return;
       }
 
-      setLoadingStandards(true);
-      try {
-        const sessionData = getSessionData();
-        if (!sessionData) {
-          console.warn('Session data not found.');
-          setStandards([{ label: 'Search Department', value: '' }]);
-          return;
-        }
+      const apiUrl = `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`;
 
-        const base = sessionData.url?.replace(/\/$/, '') ?? '';
-        const apiUrl = `${base}/api/get-standard-list?grade_id=${encodeURIComponent(mergedForm.searchSection)}`;
-        const res = await fetch(apiUrl, {
-          headers: sessionData.token ? { Authorization: `Bearer ${sessionData.token}` } : {}
-        });
+      const res = await fetch(apiUrl, {
+        headers: sessionData.token
+          ? { Authorization: `Bearer ${sessionData.token}` }
+          : {},
+      });
 
-        if (!res.ok) {
-          console.error('Standards fetch failed', res.status, await res.text());
-          setStandards([{ label: 'Search Department', value: '' }]);
-          return;
-        }
-
-        const data = await res.json();
-        if (cancelled) return;
-
-        let body = data;
-        if (data && data.data) body = data.data;
-
-        let formatted = [{ label: 'Search Department', value: '' }];
-
-        if (Array.isArray(body)) {
-          formatted = [
-            { label: 'Search Department', value: '' },
-            ...body.map(item => ({
-              label: item.name || item.title || String(item.id),
-              value: item.id
-            }))
-          ];
-        } else if (body && typeof body === 'object') {
-          formatted = [
-            { label: 'Search Department', value: '' },
-            ...Object.entries(body).map(([id, name]) => ({
-              label: String(name),
-              value: id
-            }))
-          ];
-        }
-
-        setStandards(formatted);
-      } catch (err) {
-        if (!cancelled) {
-          console.error('Error fetching standards:', err);
-          setStandards([{ label: 'Search Standard', value: '' }]);
-        }
-      } finally {
-        if (!cancelled) setLoadingStandards(false);
+      if (!res.ok) {
+        console.error("Department fetch failed", res.status);
+        setStandards([{ label: "Search Department", value: "" }]);
+        return;
       }
-    };
 
-    fetchStandards();
-    return () => { cancelled = true; };
-  }, [mergedForm.searchSection]);
+      const data = await res.json();
+      if (cancelled) return;
+
+      const departmentsArray = [];
+
+      // extract department names (keys)
+      if (data?.data && typeof data.data === "object") {
+        for (const [departmentName, jobroles] of Object.entries(data.data)) {
+          if (Array.isArray(jobroles) && jobroles.length > 0) {
+            const deptId = jobroles[0].department_id; // first item's department id
+            departmentsArray.push({
+              label: departmentName,
+              value: deptId,
+            });
+          }
+        }
+      }
+
+      setStandards([
+        { label: "Select Department", value: "" },
+        ...departmentsArray,
+      ]);
+    } catch (err) {
+      if (!cancelled) {
+        console.error("Dept API error:", err);
+        setStandards([{ label: "Select Department", value: "" }]);
+      }
+    } finally {
+      if (!cancelled) setLoadingStandards(false);
+    }
+  };
+
+  fetchDepartments();
+  return () => (cancelled = true);
+}, []);
+
 
   // 3️⃣ Fetch subjects based on standard
   useEffect(() => {
@@ -255,7 +251,7 @@ const SearchFilters = ({
     let cancelled = false;
     const fetchChapters = async () => {
       if (!mergedForm.subject || !mergedForm.searchStandard) {
-        setChapters([{ label: 'Search By Module', value: '' }]);
+        setChapters([{ label: 'Select Module', value: '' }]);
         return;
       }
 
@@ -264,7 +260,7 @@ const SearchFilters = ({
         const sessionData = getSessionData();
         if (!sessionData) {
           console.warn('Session data not found.');
-          setChapters([{ label: 'Search By Chapter', value: '' }]);
+          setChapters([{ label: 'Select Chapter', value: '' }]);
           return;
         }
 
@@ -288,11 +284,11 @@ const SearchFilters = ({
         const data = await res.json();
         if (cancelled) return;
 
-        let formatted = [{ label: 'Search By Chapter', value: '' }];
+        let formatted = [{ label: 'select Chapter', value: '' }];
 
         if (Array.isArray(data)) {
           formatted = [
-            { label: 'Search By Chapter', value: '' },
+            { label: 'select Chapter', value: '' },
             ...data.map(item => ({
               label: item.chapter_name || item.title || `Chapter ${item.id}`,
               value: item.id
@@ -300,7 +296,7 @@ const SearchFilters = ({
           ];
         } else if (data && typeof data === 'object') {
           formatted = [
-            { label: 'Search By Chapter', value: '' },
+            { label: 'Select Chapter', value: '' },
             ...Object.entries(data).map(([id, name]) => ({
               label: String(name),
               value: id
@@ -335,7 +331,7 @@ const SearchFilters = ({
         />
 
         <Select
-          label="Search Department"
+          label="Select Department"
           value={mergedForm.searchStandard}
           onChange={(val) => handleChange('searchStandard', val)}
           options={standards}
@@ -351,7 +347,7 @@ const SearchFilters = ({
         />
 
         <Select
-          label="Search By Module"
+          label="Select Module"
           value={mergedForm.searchByChapter}
           onChange={(val) => handleChange('searchByChapter', val)}
           options={chapters}

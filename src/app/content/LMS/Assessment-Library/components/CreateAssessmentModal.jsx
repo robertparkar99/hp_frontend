@@ -87,17 +87,20 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
       params.append('type', 'API');
       params.append('action', 'Search');
       params.append('syear', new Date().getFullYear());
+      params.append('grade', '');
+      
 
       if (sub_institute_id) params.append('sub_institute_id', sub_institute_id);
       if (formData.searchSection) params.append('grade', formData.searchSection);
       if (formData.searchStandard) params.append('standard', formData.searchStandard);
       if (formData.subject) params.append('subject', formData.subject);
 
-      if (formData.searchByChapter && formData.searchByChapter.length > 0) {
-        formData.searchByChapter.forEach((chapterId, index) => {
-          params.append(`search_chapter[${index}]`, chapterId);
-        });
-      }
+     if (Array.isArray(formData.searchByChapter) && formData.searchByChapter.length > 0) {
+  formData.searchByChapter.forEach((item, index) => {
+    const id = item?.value ?? item;   // handles both object or pure value
+    params.append(`search_chapter[${index}]`, id);
+  });
+}
 
       if (formData.searchByTopic) params.append('search_topic', formData.searchByTopic);
       if (formData.searchByMappingType) params.append('search_mapping_type', formData.searchByMappingType);
@@ -249,11 +252,13 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSave }) => {
 
     const success = await saveExamData({ ...formData, selectedQuestions });
 
-    if (success) {
-      console.log('Exam saved successfully');
-      if (onSave) onSave({ ...formData, selectedQuestions });
-      onClose();
-    }
+ if (success) {
+  onSave(true);   // tell parent it was successful
+  onClose();
+} else {
+  onSave(false);  // tell parent it failed
+}
+
   };
 
   if (!isOpen) return null;

@@ -22,7 +22,16 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import TiptapEditor from "../../../content/LMS/questionBank/TiptapEditor";
 
-export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onSave, courseDisplayName }) {
+export function AddQuestionDialog({ 
+    onQuestionAdded, 
+    editingQuestion = null, 
+    onSave, 
+    courseDisplayName,
+    chapter_id,
+    standard_id,
+    subject_id
+})
+ {
     const [open, setOpen] = useState(false)
     const [mappingTypes, setMappingTypes] = useState([])
     const [mappingValues, setMappingValues] = useState({})
@@ -45,7 +54,7 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
         learningOutcome: "",
         searchSection: "",
         searchStandard: "",
-        subject: "",
+        subject_id: "",
         searchByChapter: "",
         questionType: "1",
         questionMark: 1,
@@ -501,26 +510,31 @@ export function AddQuestionDialog({ onQuestionAdded, editingQuestion = null, onS
 
         try {
             // Create payload with truncated values to prevent data too long errors
-            const payload = {
-                type: "API",
-                sub_institute_id: sessionData.subInstituteId,
-                user_id: sessionData.userId,
-                token: sessionData.token,
-                grade_id: 1,
-                question_title: truncateText(formData.title, CHAR_LIMITS.answer),
-                description: truncateText(formData.description, 1000), // Assuming description has a higher limit
-                learning_outcome: truncateText(formData.learningOutcome, CHAR_LIMITS.answer),
-                standard_id: formData.searchStandard || 1,
-                chapter_id: formData.searchByChapter || 1,
-                subject_id: formData.subject || 1,
-                question_type_id: formData.questionType,
-                points: formData.questionMark,
-                multiple_answer: formData.multipleAnswers ? 1 : 0,
-                status: formData.show ? 1 : 0,
-                concept: truncateText(formData.concept || "", CHAR_LIMITS.answer),
-                subconcept: truncateText(formData.subconcept || "", CHAR_LIMITS.answer),
-                hint_text: truncateText(formData.hint_text || "", CHAR_LIMITS.hint),
-            };
+          const payload = {
+    type: "API",
+    sub_institute_id: sessionData.subInstituteId,
+    user_id: sessionData.userId,
+    token: sessionData.token,
+    grade_id: 1,
+
+    question_title: truncateText(formData.title, CHAR_LIMITS.answer),
+    description: truncateText(formData.description, 1000),
+    learning_outcome: truncateText(formData.learningOutcome, CHAR_LIMITS.answer),
+
+    // ★ FIXED HERE ★
+    standard_id: standard_id,
+    chapter_id: chapter_id,
+    subject_id: subject_id,
+
+    question_type_id: formData.questionType,
+    points: formData.questionMark,
+    multiple_answer: formData.multipleAnswers ? 1 : 0,
+    status: formData.show ? 1 : 0,
+    concept: truncateText(formData.concept || "", CHAR_LIMITS.answer),
+    subconcept: truncateText(formData.subconcept || "", CHAR_LIMITS.answer),
+    hint_text: truncateText(formData.hint_text || "", CHAR_LIMITS.hint),
+};
+
 
             // Add mappings with truncated reasons
             if (formData.mappings?.length) {
