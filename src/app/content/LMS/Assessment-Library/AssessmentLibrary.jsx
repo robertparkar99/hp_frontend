@@ -222,6 +222,45 @@ const AssessmentLibrary = () => {
 
   const handleCreateAssessment = (assessmentData) => {
     console.log('Creating assessment:', assessmentData);
+    // Refetch assessments after creation
+    if (sessionData.url) {
+      const fetchAssessments = async () => {
+        try {
+          setLoading(true);
+          const API_URL = `${sessionData.url}/lms/question_paper?type=API&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}&syear=2025`;
+
+          const res = await fetch(API_URL, {
+            headers: {
+              'Authorization': `Bearer ${sessionData.token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+
+          const data = await res.json();
+          console.log('API Response:', data);
+  
+          if (data && data.data && Array.isArray(data.data)) {
+            const mapped = data.data.map(mapAssessment);
+            console.log('Mapped assessments:', mapped);
+            setAssessments(mapped);
+          } else {
+            console.error('Unexpected API format:', data);
+            setError('Invalid API format');
+          }
+        } catch (err) {
+          console.error('Failed to fetch:', err);
+          setError('Failed to fetch assessments');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchAssessments();
+    }
     setShowCreateModal(false);
   };
 
