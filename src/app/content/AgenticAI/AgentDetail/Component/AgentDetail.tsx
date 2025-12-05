@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { mockAgents, mockRuns } from '@/lib/mockData';
-import StatusBadge from '../../../AgentDashboard/Component/StatusBadge';
+import StatusBadge from '../../AgentDashboard/Component/StatusBadge';
 import { ArrowLeft, Settings, Play, Pause } from 'lucide-react';
-
+// Agent Detail Component
 export default function AgentDetail() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
