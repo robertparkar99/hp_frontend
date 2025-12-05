@@ -2,6 +2,7 @@
 
 "use client";
 // import Index from '../Telent-management/Talent-Acquisition-Dashboard/Index';
+import { Suspense } from 'react';
 import Header from "@/components/Header/Header";
 import Sidebar from "@/components/SideMenu/Newsidebar";
 import { useState, useEffect } from "react";
@@ -37,7 +38,9 @@ export default function HomePage() {
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
       <div className={`transition-all duration-300 bg-background rounded-2xl p-4 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
         {/* <Index/> */}
+        <Suspense fallback={<div>Loading...</div>}> 
         <AgentDetail/>
+        </Suspense>
       </div>
     </>
   );
