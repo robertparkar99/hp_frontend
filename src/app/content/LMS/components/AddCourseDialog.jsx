@@ -44,49 +44,6 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
     user_id: "",
   });
 
-useEffect(() => {
-  const fetchDepartments = async () => {
-    if (!sessionData.sub_institute_id || !sessionData.url) return;
-    try {
-      setLoadingStandards(true);
-
-      const res = await fetch(
-        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`
-      );
-
-      const json = await res.json();
-      console.log("Department API Response:", json);
-
-      if (json && json.data) {
-        // Extract unique departments
-        const deptMap = new Map();
-        Object.keys(json.data).forEach((key) => {
-          json.data[key].forEach((jobrole) => {
-            if (jobrole.department_id && !deptMap.has(jobrole.department_id)) {
-              deptMap.set(jobrole.department_id, {
-                id: jobrole.department_id,
-                department_name: jobrole.department_name,
-              });
-            }
-          });
-        });
-        const deptArray = Array.from(deptMap.values());
-        setStandards(deptArray);
-      } else {
-        setStandards([]);
-      }
-    } catch (err) {
-      console.error("Error fetching departments:", err);
-      setStandards([]);
-    } finally {
-      setLoadingStandards(false);
-    }
-  };
-
-  if (open) {
-    fetchDepartments();
-  }
-}, [open, sessionData]);
 
 
 
@@ -106,30 +63,39 @@ useEffect(() => {
     }
   }, []);
 
-  // Fetch standards data
+  // Fetch departments data
   useEffect(() => {
-    const fetchStandards = async () => {
+    const fetchDepartments = async () => {
       if (!sessionData.sub_institute_id || !sessionData.url) return;
       try {
         setLoadingStandards(true);
         const res = await fetch(
-          `${sessionData.url}/table_data?table=standard&filters[sub_institute_id]=${sessionData.sub_institute_id}&order_by[column]=sort_order`
+          `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`
         );
-        const data = await res.json();
+        const json = await res.json();
 
-        console.log("✅ Standards API Response:", data);
+        console.log("Department API Response:", json);
 
-        // Handle different response formats
-        if (data && data.data) {
-          setStandards(data.data);
-        } else if (Array.isArray(data)) {
-          setStandards(data);
+        if (json && json.data) {
+          // Extract unique departments
+          const deptMap = new Map();
+          Object.keys(json.data).forEach((key) => {
+            json.data[key].forEach((jobrole) => {
+              if (jobrole.department_id && !deptMap.has(jobrole.department_id)) {
+                deptMap.set(jobrole.department_id, {
+                  id: jobrole.department_id,
+                  department_name: jobrole.department_name,
+                });
+              }
+            });
+          });
+          const deptArray = Array.from(deptMap.values());
+          setStandards(deptArray);
         } else {
-          console.error("Unexpected API response format:", data);
           setStandards([]);
         }
       } catch (err) {
-        console.error("❌ Failed to fetch standards:", err);
+        console.error("Error fetching departments:", err);
         setStandards([]);
       } finally {
         setLoadingStandards(false);
@@ -137,7 +103,7 @@ useEffect(() => {
     };
 
     if (open) {
-      fetchStandards();
+      fetchDepartments();
     }
   }, [open, sessionData]);
 
@@ -148,8 +114,10 @@ useEffect(() => {
     // Add all required fields
     formData.append("type", "API");
     formData.append("formType", "course");
-    // formData.append("subject_id", "0");
-    formData.append("subject_id", course ? (course.subject_id?.toString() || "0") : "0");
+    // Only append subject_id if editing and it exists
+    if (course && course.subject_id) {
+      formData.append("subject_id", course.subject_id.toString());
+    }
     formData.append("allow_grades", "Yes");
     formData.append("allow_content", "Yes");
     formData.append("elective_subject", "No");
