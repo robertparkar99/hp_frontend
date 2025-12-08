@@ -803,10 +803,12 @@ export default function Page() {
                   </SelectTrigger>
                   <SelectContent className="max-h-60 w-73">
                     <SelectItem value="all">All Departments</SelectItem>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.department}>
-                        {dept.department}
-                      </SelectItem>
+                    {departments
+                      .filter((dept) => dept.department && dept.department.trim() !== "")
+                      .map((dept) => (
+                        <SelectItem key={dept.id} value={dept.department}>
+                          {dept.department}
+                        </SelectItem>
                     ))}
 
                   </SelectContent>
@@ -871,10 +873,12 @@ export default function Page() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    {categoryOptions.map((cat, idx) => (
-                      <SelectItem key={idx} value={cat}>
-                        {cat}
-                      </SelectItem>
+                    {categoryOptions
+                      .filter((cat) => cat && cat.trim() !== "")
+                      .map((cat, idx) => (
+                        <SelectItem key={idx} value={cat}>
+                          {cat}
+                        </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -904,7 +908,7 @@ export default function Page() {
                             .map((s) => s.sub_category)
                         )
                       )
-                        .filter((sub): sub is string => typeof sub === "string")
+                        .filter((sub): sub is string => typeof sub === "string" && sub.trim() !== "")
                         .sort((a, b) => a.localeCompare(b))
                         .map((sub, idx) => (
                           <SelectItem key={idx} value={sub}>

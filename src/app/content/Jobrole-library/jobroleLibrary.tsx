@@ -167,7 +167,7 @@ export default function HomePage() {
         console.log("Fetched departments:", json);
 
         if (json?.data && typeof json.data === "object") {
-          const deptList = Object.keys(json.data); // <-- FIX
+          const deptList = Object.keys(json.data).filter(dept => dept.trim() !== ""); // Filter out empty department names
 
           setDepartments(["All Departments", ...deptList]);
         }
