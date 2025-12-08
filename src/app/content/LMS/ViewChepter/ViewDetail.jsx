@@ -378,6 +378,7 @@ if (onClose) {
           <QuestionBank
             chapter_id={selectedChapterId}
             standard_id={selectedStandardId}
+            subject_id={subject_id}
             courseDisplayName={courseDetails?.display_name || "Untitled Course"}
           />
         </div>

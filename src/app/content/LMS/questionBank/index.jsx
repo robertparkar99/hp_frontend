@@ -42,7 +42,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 
-export default function QuestionBank({ chapter_id, standard_id ,courseDisplayName}) {
+export default function QuestionBank({ chapter_id, standard_id, subject_id, courseDisplayName}) {
   // Default to 1 if not provided or falsy
   const effectiveChapterId = chapter_id || 1;
   const effectiveStandardId = standard_id || 1;
@@ -515,14 +515,18 @@ export default function QuestionBank({ chapter_id, standard_id ,courseDisplayNam
             <Upload className="mr-2 h-4 w-4" />
             Import
           </Button>
-          <AddQuestionDialog 
-            onQuestionAdded={handleQuestionAdded} 
-            sessionData={sessionData} 
-            chapter_id={effectiveChapterId} 
-            standard_id={effectiveStandardId}
-            onSave={fetchData} 
-            courseDisplayName={courseDisplayName}
-          />
+         <AddQuestionDialog
+ onSave={() => {
+   fetchData();
+   setSuccessMessage("Question added successfully!");
+ }}
+ sessionData={sessionData}
+ chapter_id={effectiveChapterId}     // ✔ use this
+ standard_id={effectiveStandardId}   // ✔ use this
+ subject_id={subject_id}             // ✔ use this
+ courseDisplayName={courseDisplayName}
+/>
+
         </div>
       </div>
 
