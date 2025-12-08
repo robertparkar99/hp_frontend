@@ -331,9 +331,8 @@ const CriticalWorkFunctionGrid = () => {
 
   // Unique filters
   const uniqueDepartments = Array.from(
-    new Set(data.map((d) => d.track || ""))
+    new Set(data.map((d) => d.track || "").filter(track => track.trim() !== ""))
   )
-    .filter(Boolean)
     .sort();
 
   const uniqueJobroles = selectedDept
@@ -342,9 +341,9 @@ const CriticalWorkFunctionGrid = () => {
         data
           .filter((d) => d.track === selectedDept)
           .map((d) => d.jobrole || "")
+          .filter(jobrole => jobrole.trim() !== "")
       )
     )
-      .filter(Boolean)
       .sort()
     : [];
 
@@ -357,12 +356,11 @@ const CriticalWorkFunctionGrid = () => {
             (d) => d.track === selectedDept && d.jobrole === selectedJobrole
           )
           .map((d) => d.critical_work_function || "")
+          .filter(func => func.trim() !== "")
       )
     )
-      .filter(Boolean)
       .sort()
-    : Array.from(new Set(data.map((d) => d.critical_work_function || "")))
-      .filter(Boolean)
+    : Array.from(new Set(data.map((d) => d.critical_work_function || "").filter(func => func.trim() !== "")))
       .sort();
 
   // Filtered grid data
