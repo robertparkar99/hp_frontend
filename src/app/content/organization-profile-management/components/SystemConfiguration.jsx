@@ -157,7 +157,7 @@ const SystemConfiguration = () => {
 
       if (data.status && data.data) {
         // API returns an object with department names as keys
-        const deptNames = Object.keys(data.data);
+        const deptNames = Object.keys(data.data).filter(name => name.trim() !== "");
 
         setDepartmentOptions(
           deptNames.map((name, index) => ({
