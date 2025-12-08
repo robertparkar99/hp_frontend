@@ -215,7 +215,7 @@ export default function Page() {
 
         if (!json.status) return;
 
-        const deptNames = Object.keys(json.data);
+        const deptNames = Object.keys(json.data).filter(name => name.trim() !== "");
 
         // Save department list
         setDepartments(
@@ -487,11 +487,11 @@ export default function Page() {
 
   // Dropdown options
   const departmentOptions = Array.from(new Set(userSkills.map((s) => s.department)))
-    .filter((dept): dept is string => typeof dept === "string")
+    .filter((dept): dept is string => typeof dept === "string" && dept.trim() !== "")
     .sort((a, b) => a.localeCompare(b));
 
   const categoryOptions = Array.from(new Set(userSkills.map((s) => s.category)))
-    .filter((cat): cat is string => typeof cat === "string")
+    .filter((cat): cat is string => typeof cat === "string" && cat.trim() !== "")
     .sort((a, b) => a.localeCompare(b));
 
   const proficiencyOptions = Array.from(new Set(userSkills.map((s) => s.proficiency_level)))
@@ -904,7 +904,7 @@ export default function Page() {
                             .map((s) => s.sub_category)
                         )
                       )
-                        .filter((sub): sub is string => typeof sub === "string")
+                        .filter((sub): sub is string => typeof sub === "string" && sub.trim() !== "")
                         .sort((a, b) => a.localeCompare(b))
                         .map((sub, idx) => (
                           <SelectItem key={idx} value={sub}>
