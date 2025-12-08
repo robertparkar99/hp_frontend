@@ -5,7 +5,7 @@ import DepartmentStructure from './components/DepartmentStructure';
 import SystemConfiguration from './components/SystemConfiguration';
 import AuditTrail from './components/AuditTrail';
 import DisciplinaryManagement from './components/DisciplinaryManagement'
-
+//add comment
 const OrganizationProfileManagement = () => {
   const [activeTab, setActiveTab] = useState('info');
   const [loading, setLoading] = useState(false);
