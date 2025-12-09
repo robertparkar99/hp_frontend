@@ -13,11 +13,13 @@ interface FormData {
   jobrole: string;
   description: string;
   department?: string;
+  department_id?: number;
   subDepartment?: string;
   performance_expectation?: string;
 }
 
-const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
+
+const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen }) => {
   const [sessionData, setSessionData] = useState({
     url: "",
     token: "",
@@ -26,12 +28,17 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
     userId: "",
     userProfile: ""
   });
-  const [departments, setDepartments] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<{ name: string, id: number }[]>([]);
   const [subDepartments, setSubDepartments] = useState<any[]>([]);
   const [formData, setFormData] = useState<FormData>({
     jobrole: "",
     description: "",
+    department: "",
+    department_id: undefined,
+    subDepartment: "",
+    performance_expectation: ""
   });
+  const [showDeptDropdown, setShowDeptDropdown] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -54,9 +61,45 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
 
   const fetchDepartments = async () => {
     try {
-      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=department&searchWord=departments`);
+      const res = await fetch(`${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`);
       const data = await res.json();
-      setDepartments(data.searchData || []);
+      console.log('Fetched data:', data);
+      let depts: { name: string, id: number }[] = [];
+      if (Array.isArray(data)) {
+        const deptMap = new Map<string, number>();
+        data.forEach((item: any) => {
+          if (item.department_name && item.department_id && !deptMap.has(item.department_name)) {
+            deptMap.set(item.department_name, item.department_id);
+          }
+        });
+        depts = Array.from(deptMap.entries()).map(([name, id]) => ({ name, id }));
+      } else if (data.data && typeof data.data === 'object') {
+        // Assuming data.data is object with department names as keys, but to get ids, need to extract from values
+        const deptMap = new Map<string, number>();
+        Object.entries(data.data).forEach(([name, jobroles]: [string, any]) => {
+          if (Array.isArray(jobroles) && jobroles.length > 0) {
+            deptMap.set(name, jobroles[0].department_id);
+          }
+        });
+        depts = Array.from(deptMap.entries()).map(([name, id]) => ({ name, id }));
+      } else if (data.jobroles && Array.isArray(data.jobroles)) {
+        const deptMap = new Map<string, number>();
+        data.jobroles.forEach((item: any) => {
+          if (item.department_name && item.department_id && !deptMap.has(item.department_name)) {
+            deptMap.set(item.department_name, item.department_id);
+          }
+        });
+        depts = Array.from(deptMap.entries()).map(([name, id]) => ({ name, id }));
+      } else if (typeof data === 'object') {
+        const deptMap = new Map<string, number>();
+        Object.entries(data).forEach(([name, jobroles]: [string, any]) => {
+          if (Array.isArray(jobroles) && jobroles.length > 0) {
+            deptMap.set(name, jobroles[0].department_id);
+          }
+        });
+        depts = Array.from(deptMap.entries()).map(([name, id]) => ({ name, id }));
+      }
+      setDepartments(depts);
     } catch (error) {
       console.error("Error fetching departments:", error);
       alert("Failed to load departments");
@@ -89,6 +132,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
 
     const payload = {
       ...formData,
+      department_id: formData.department_id,
       type: "API",
       method_field: 'POST',
       token: sessionData.token,
@@ -129,7 +173,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
           ✖
         </button>
 
-     {/* header parts start  */}
+        {/* header parts start  */}
         <div className="flex w-full">
           {/* Left: GIF */}
           <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
@@ -139,7 +183,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
           {/* Center Content */}
           <div className="w-[90%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 text-center rounded-r-lg">
             <h2 className="text-gray-800 font-bold text-lg">Add New Jobrole</h2>
-            <h4 className="text-gray-700 font-semibold text-sm">  
+            <h4 className="text-gray-700 font-semibold text-sm">
               <b>Industry : </b>{sessionData.orgType}
             </h4>
           </div>
@@ -150,33 +194,55 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
           <form className="w-[100%]" onSubmit={handleSubmit}>
             {/* Job Role and Location */}
             <div className="flex gap-4">
-              <div className="relative z-0 w-full mb-5 group text-left">
+              <div className="relative z-50 w-full mb-5 group text-left">
                 <label htmlFor="department" className="text-left">Jobrole Department</label><br />
-                <input
-                  type="text"
-                  name="department"
-                  list="departments"
-                  className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
-                  placeholder="Search or Add Department..."
-                  onChange={handleFormChange}
-                  value={formData.department}
-                  required
-                  autoComplete="off"
-                />
-                <datalist id="departments">
-                  {departments.map((dept) => (
-                    <option key={dept} value={dept}>
-                      {dept}
-                    </option>
-                  ))}
-                </datalist>
+                <div className="relative w-full">
+                  <input
+                    type="text"
+                    name="department"
+                    className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+                    placeholder="Search or Add Department..."
+                    value={formData.department}
+                    onChange={(e) => {
+                      handleFormChange(e);
+                      setShowDeptDropdown(true);
+                    }}
+                    onFocus={() => setShowDeptDropdown(true)}
+                    autoComplete="off"
+                  />
+
+                  {/* Custom Dropdown (Always Comes Under Input) */}
+                  {showDeptDropdown && (
+                    <ul className="absolute top-[42px] left-0 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-43 overflow-y-auto hide-scrollbar z-50">
+                      {departments
+                        .filter((d) =>
+                          d.name.toLowerCase().includes(formData.department?.toLowerCase() || "")
+                        )
+                        .map((dept, index) => (
+                          <li
+                            key={index}
+                            className="px-3 py-2 hover:bg-blue-100 cursor-pointer"
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, department: dept.name, department_id: dept.id }));
+                              fetchSubDepartments(dept.name);
+                              setShowDeptDropdown(false);
+                            }}
+                          >
+                            {dept.name}
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </div>
+
               </div>
 
               <div className="relative z-0 w-full mb-5 group text-left">
                 <label htmlFor="subDepartment" className="text-left">Jobrole Sub-Department</label><br />
+
                 <input
                   type="text"
-                  name="sub_department"
+                  name="subDepartment"   // ✅ FIXED
                   list="subDepartments"
                   className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
                   placeholder="Search or Add Sub-Department..."
@@ -185,14 +251,16 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen}) => {
                   autoComplete="off"
                   disabled={!formData.department}
                 />
+
                 <datalist id="subDepartments">
-                  {subDepartments.map((subDept) => (
-                    <option key={subDept} value={subDept}>
+                  {subDepartments.map((subDept, index) => (
+                    <option key={index} value={subDept}>
                       {subDept}
                     </option>
                   ))}
                 </datalist>
               </div>
+
             </div>
 
             <div className="flex gap-4">
