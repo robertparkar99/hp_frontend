@@ -240,6 +240,7 @@ const SystemConfiguration = () => {
     }
   }, [editFormData.departmentName, allUsers, departmentOptions]);
 
+
   const handleDeleteClick = async (id) => {
     if (!id) return;
     if (window.confirm("Are you sure you want to delete this Data?")) {
@@ -744,9 +745,10 @@ const SystemConfiguration = () => {
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Department" />
             </SelectTrigger>
-            <SelectContent position="popper"
-              side="bottom"
-              avoidCollisions={false}
+            <SelectContent
+              position="popper"
+              side="top"
+              avoidCollisions={true}
               className="max-h-60 w-[var(--radix-select-trigger-width)]"
             >
               {departmentOptions.map((dept) => (
