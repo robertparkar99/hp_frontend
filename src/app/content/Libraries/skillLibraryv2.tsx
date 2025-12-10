@@ -22,6 +22,7 @@ import JobroleTaxonomy from "../jobrole-taxonomy/page";
 import JobroleTAskTaxonomy from "./jobroleTaskTaxo";
 import CourseLibrary from "./CourseLibrary";
 import ViewDetail from "../LMS/ViewChepter/ViewDetail";
+import InvisibleLibrary from "../Libraries/Invisible-library/page";
 // ✅ Loader Component
 const Loader = () => (
   <div className="flex justify-center items-center h-screen">
@@ -88,7 +89,7 @@ const SkillLibrary = () => {
   return (
     <div className="bg-background rounded-xl p-5 min-h-screen">
       <TabsMenu
-        tabs={["Skill Library", "Jobrole Library", "Jobrole Task Library", "Knowledge", "Ability", "Attitude", "Behaviour", "Course Library"]}
+        tabs={["Skill Library", "Jobrole Library", "Jobrole Task Library", "Knowledge", "Ability", "Attitude", "Behaviour", "Course Library", "Invisible Library"]}
         activeTab={activeTab}
         onTabChange={handleTabChange}
         openPage={openPage}
@@ -128,6 +129,7 @@ const SkillLibrary = () => {
             {activeTab === "Attitude" && <Attitude />}
             {activeTab === "Behaviour" && <Behaviour />}
             {activeTab === "Course Library" && <CourseLibrary onViewDetails={handleViewDetails} />}
+            {activeTab === "Invisible Library" && < InvisibleLibrary/>}
           </>
         )}
       </Suspense>
