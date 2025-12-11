@@ -321,7 +321,7 @@ function getTypeIcon(type: string) {
   const props = { className: "w-5 h-5 text-white" };
 
   switch (type?.toLowerCase()) {
-    case "framework":
+    case "frameworks":
       return <Puzzle {...props} />;
     case "methodology":
       return <Target {...props} />;
@@ -329,7 +329,7 @@ function getTypeIcon(type: string) {
       return <Lightbulb {...props} />;
     case "strategy":
       return <TrendingUp {...props} />;
-    case "model":
+    case "mental models":
       return <Brain {...props} />;
     case "approach":
       return <BookOpen {...props} />;
