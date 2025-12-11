@@ -101,6 +101,14 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
   const [toggleState, setToggleState] = useState(false);
   const [filteredJobroles, setFilteredJobroles] = useState<any[]>([]);
 
+  // Check if user can edit department and jobrole
+  const isReadOnly = sessionData?.userProfile?.toLowerCase() !== "admin";
+  
+  // Collect all jobroles from all departments
+  const allJobroles = fullJobroleData ? Object.values(fullJobroleData).flat().map((r: any) =>
+    typeof r === "string" ? { id: r, jobrole: r } : r
+  ) : [];
+
   // ensure we have a safe reference to fullJobroleData from props
   // Update this useEffect to work with department IDs
 useEffect(() => {
@@ -656,17 +664,15 @@ const handleSubmit = async (e: React.FormEvent) => {
   <label className="block mb-1 text-sm font-medium text-gray-700">
     Department
   </label>
-<select
-  className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
-  value={formData.personal.department}
-  onChange={(e) =>
-    handleInputChange(
-      "personal",
-      "department",
-      Number(e.target.value) // ensure numeric ID
-    )
-  }
->
+  <select
+    className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
+    value={formData.personal.department}
+    disabled={isReadOnly}
+    onChange={(e) =>
+      handleInputChange("personal", "department", Number(e.target.value))
+    }
+  >
+
   <option value="">Select Department</option>
 
   {/* Build department dropdown from fullJobroleData */}
@@ -687,8 +693,9 @@ const handleSubmit = async (e: React.FormEvent) => {
     Job Role
   </label>
   <select
-    className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+    className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
     value={formData.personal.jobrole}
+    disabled={isReadOnly}
     onChange={(e) =>
       handleInputChange(
         "personal",
