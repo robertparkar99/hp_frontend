@@ -132,8 +132,9 @@ const Honeycomb: React.FC = () => {
           `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=knowledge&order_by[id]=desc&group_by=classification_item`
         );
         const json = await res.json();
-        setData(json);
-        setFilteredData(json);
+        const dataArray = Array.isArray(json) ? json : [];
+        setData(dataArray);
+        setFilteredData(dataArray);
       } catch (err) {
         console.error("Error fetching API data:", err);
       } finally {
