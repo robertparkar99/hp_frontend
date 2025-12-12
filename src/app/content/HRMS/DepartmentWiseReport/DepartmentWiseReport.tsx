@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 // Extend Employee with attendance row fields
 type AttendanceRow = {
   srNo: number;
-  empCode: string | number;
   department: string;
   name: string;
   date?: string; // ✅ new Date field
@@ -87,7 +86,6 @@ export default function Home() {
   // Columns
   const columns: TableColumn<AttendanceRow>[] = [
     { name: "Sr No.", selector: (row) => row.srNo, sortable: true },
-    { name: "Emp Code", selector: (row) => row.empCode, sortable: true },
     { name: "Department", selector: (row) => row.department, sortable: true },
     { name: "Employee Name", selector: (row) => row.name, sortable: true },
     { name: "Total Days", selector: (row) => row.totalDays, sortable: true },
@@ -146,7 +144,6 @@ export default function Home() {
         const mapped: AttendanceRow[] = json.empData.map(
           (emp: any, idx: number) => ({
             srNo: idx + 1,
-            empCode: emp.employee_no,
             name: emp.full_name,
             department: emp.department,
             totalDays: emp.totalDays ?? 0,
@@ -205,7 +202,6 @@ export default function Home() {
       ],
       body: data.map((row) => [
         row.srNo,
-        row.empCode,
         row.department,
         row.name,
         row.totalDays,
