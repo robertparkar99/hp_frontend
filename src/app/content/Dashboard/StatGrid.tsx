@@ -569,7 +569,7 @@ export default function Dashboard() {
       setSelectedSkill(foundSkill);
     }
   };
-
+  //
   // Enhanced function to handle multiple separators
   // More robust function with fallback
   const handleSkillListClick = (skillList: string) => {
