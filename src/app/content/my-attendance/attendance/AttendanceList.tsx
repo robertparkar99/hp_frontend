@@ -23,6 +23,20 @@ export function AttendanceList({ records }: AttendanceListProps) {
     }
   };
 
+  const formatHours = (decimalHours: number) => {
+    const hours = Math.floor(decimalHours);
+    const minutes = Math.round((decimalHours - hours) * 60);
+    if (hours > 0 && minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h`;
+    } else if (minutes > 0) {
+      return `${minutes}m`;
+    } else {
+      return '0h';
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'present':
@@ -97,7 +111,7 @@ export function AttendanceList({ records }: AttendanceListProps) {
               <div className="text-center">
                 <p className="text-muted-foreground mb-1">Total Hours</p>
                 <p className="font-bold text-primary">
-                  {record.totalHours ? `${record.totalHours}h` : '--'}
+                  {record.totalHours ? formatHours(record.totalHours) : '--'}
                 </p>
               </div>
             </div>
