@@ -128,36 +128,45 @@ export default function DemoMulti() {
             if (data.holidayData && data.holidayData.includes(date)) {
               status = "Holiday";
             }
-            // 🔹 Check attendance logs from allData
-            else if (data.allData && data.allData[date] && data.allData[date][u.id]) {
-              const dayData = data.allData[date][u.id];
-              inTime = dayData.att_punch_in || "-";
-              outTime = dayData.att_punch_out || "-";
-
-              if (!inTime || !outTime || inTime === "-" || outTime === "-") {
-                status = "Absent";
-              } else if (inTime === outTime) {
-                status = "SameInOut";
-              } else {
-                // compare employee in_time vs punch in
-                const empIn = dayData.in_time || "";
-                const empOut = dayData.out_time || "";
-                if (empIn && inTime > empIn) {
-                  status = "Latecomer";
-                } else if (empOut && outTime < empOut) {
-                  status = "HalfDay";
-                } else {
-                  status = "Present";
-                }
-              }
-            }
-            // 🔹 Weekend check from user weekly off
+            // 🔹 Check if day-specific in/out dates are null (count as holiday)
             else {
               const day = new Date(date).getDay(); // 0=Sun, 1=Mon
               const dayMap = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
               const key = dayMap[day];
-              if (u[key] === 0) {
-                status = "Weekend";
+              const inDateKey = `${key}_in_date`;
+              const outDateKey = `${key}_out_date`;
+
+              if (u[inDateKey] === null && u[outDateKey] === null) {
+                status = "Holiday";
+              }
+              // 🔹 Check attendance logs from allData
+              else if (data.allData && data.allData[date] && data.allData[date][u.id]) {
+                const dayData = data.allData[date][u.id];
+                inTime = dayData.att_punch_in || "-";
+                outTime = dayData.att_punch_out || "-";
+
+                if (!inTime || !outTime || inTime === "-" || outTime === "-") {
+                  status = "Absent";
+                } else if (inTime === outTime) {
+                  status = "SameInOut";
+                } else {
+                  // compare employee in_time vs punch in
+                  const empIn = dayData.in_time || "";
+                  const empOut = dayData.out_time || "";
+                  if (empIn && inTime > empIn) {
+                    status = "Latecomer";
+                  } else if (empOut && outTime < empOut) {
+                    status = "HalfDay";
+                  } else {
+                    status = "Present";
+                  }
+                }
+              }
+              // 🔹 Weekend check from user weekly off
+              else {
+                if (u[key] === 0) {
+                  status = "Weekend";
+                }
               }
             }
 
