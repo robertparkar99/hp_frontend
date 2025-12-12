@@ -8,7 +8,6 @@ import DataTable, { TableColumn,TableStyles } from "react-data-table-component";
 type AttendanceRow = {
   id: number;
   date: string;
-  empNo: string;
   department: string;
   name: string;
   inTime: string;
@@ -173,7 +172,6 @@ export default function DemoMulti() {
             formatted.push({
               id: Math.random(),
               date,
-              empNo: u.employee_no || "-",
               department: u.depName || "-",
               name: u.full_name || `${u.first_name} ${u.last_name}`,
               inTime,
@@ -211,7 +209,6 @@ export default function DemoMulti() {
         const searchText = filterText.toLowerCase();
         if (
           !item.date.toLowerCase().includes(searchText) &&
-          !item.empNo.toLowerCase().includes(searchText) &&
           !item.department.toLowerCase().includes(searchText) &&
           !item.name.toLowerCase().includes(searchText) &&
           !item.inTime.toLowerCase().includes(searchText) &&
@@ -315,27 +312,6 @@ export default function DemoMulti() {
         </div>
       ),
       selector: (row: AttendanceRow) => row.date,
-      sortable: true,
-    },
-    {
-      name: (
-        <div>
-          <div>Emp No</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("empNo", e.target.value)}
-            style={{
-              width: "100%",
-              padding: "4px",
-              fontSize: "12px",
-             
-              marginTop: "5px"
-            }}
-          />
-        </div>
-      ),
-      selector: (row: AttendanceRow) => row.empNo,
       sortable: true,
     },
     {
