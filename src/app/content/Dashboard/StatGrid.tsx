@@ -349,7 +349,7 @@ export default function Dashboard() {
 
         setStats({
           totalEmployees: data.totle_employees ?? 0,
-          unmappedEmployees: data.umapped_employees ?? 0,
+          unmappedEmployees: data.mapped_jobrole ?? 0,
           totalJobRoles: data.totle_jobroles ?? 0,
           totalSkills: data.totle_skills ?? 0,
         });
@@ -691,7 +691,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-3 p-1">
                     <div className="w-9 h-9 rounded bg-red-300 mb-7" />
                     <div>
-                      <p className="font-bold text-gray-700">Unmapped Employee</p>
+                      <p className="font-bold text-gray-700">Mapped Jobrole</p>
                       <p className="text-2xl font-bold text-center mt-3">{stats.unmappedEmployees}</p>
                     </div>
                   </div>
