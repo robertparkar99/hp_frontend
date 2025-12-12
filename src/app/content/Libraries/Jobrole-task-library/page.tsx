@@ -164,8 +164,9 @@ const CriticalWorkFunctionGrid = () => {
           },
         }
       );
-      const json: JobRoleTask[] = await res.json();
-      setData(json);
+      const json = await res.json();
+      const dataArray = Array.isArray(json) ? json : [];
+      setData(dataArray);
 
       // Don't set any default filters to show all tasks on load
     } catch (error) {

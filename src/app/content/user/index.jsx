@@ -166,7 +166,7 @@ const EmployeeDirectory = () => {
 
       const matchesDepartment = !filters.department || employee.department_name === filters.department;
       const matchesJobRole = !filters.jobRole || employee.jobRole === filters.jobRole;
-      const matchesLocation = !filters.location || employee.address === filters.location;
+      const matchesLocation = !filters.location || employee.profile_name === filters.location;
       const matchesSkill = !filters.skill || (employee.skills || []).some((skill) => skill.name === filters.skill);
       const matchesStatus = !filters.status || employee.status === filters.status;
 
