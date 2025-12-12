@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import DataTable from "react-data-table-component";
 import { Clock, Calendar, AlertCircle, User, ChevronUp, ChevronDown, Search } from "lucide-react";
 import { AttendanceRecord, Employee } from "../types/attendance";
@@ -39,9 +39,6 @@ const AttendanceList: React.FC<AttendanceListProps> = ({
   const [selectedRows, setSelectedRows] = useState<AttendanceRecord[]>([]);
   const [editedRecords, setEditedRecords] = useState<Record<string, AttendanceRecord>>({});
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredRecords, setFilteredRecords] = useState<AttendanceRecord[]>([]);
-  // const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
-
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
 const handleColumnFilter = (columnKey: string, value: string) => {
@@ -90,69 +87,69 @@ const handleColumnFilter = (columnKey: string, value: string) => {
   };
 
 // Then update your filteredRecords logic to include column filtering
-useMemo(() => {
-  let result = selectedEmployee
-    ? records.filter((record) => record.employeeId === selectedEmployee.id)
-    : records;
+ const filteredRecords = useMemo(() => {
+   let result = selectedEmployee
+     ? records.filter((record) => record.employeeId === selectedEmployee.id.toString())
+     : records;
 
-  if (fromDate) {
-    result = result.filter(
-      (rec) => new Date(rec.date) >= new Date(fromDate)
-    );
-  }
-  if (toDate) {
-    result = result.filter(
-      (rec) => new Date(rec.date) <= new Date(toDate)
-    );
-  }
+   if (fromDate) {
+     result = result.filter(
+       (rec) => new Date(rec.date) >= new Date(fromDate)
+     );
+   }
+   if (toDate) {
+     result = result.filter(
+       (rec) => new Date(rec.date) <= new Date(toDate)
+     );
+   }
 
-  // Apply search filter
-  if (searchTerm) {
-    result = result.filter(record => {
-      const employee = getEmployee(record.employeeId);
-      return (
-        employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.punchIn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.punchOut?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    });
-  }
+   // Apply search filter
+   if (searchTerm) {
+     result = result.filter(record => {
+       const employee = getEmployee(record.employeeId);
+       return (
+         employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         record.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         record.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         record.punchIn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         record.punchOut?.toLowerCase().includes(searchTerm.toLowerCase())
+       );
+     });
+   }
 
-  // Apply column filters
-  if (Object.keys(columnFilters).length > 0) {
-    result = result.filter(record => {
-      const employee = getEmployee(record.employeeId);
-      
-      return Object.entries(columnFilters).every(([key, filterValue]) => {
-        if (!filterValue) return true;
-        
-        switch (key) {
-          case 'srno':
-            // This would need to be handled differently as it's based on index
-            return true;
-          case 'employee':
-            return employee?.name?.toLowerCase().includes(filterValue.toLowerCase()) || false;
-          case 'date':
-            return format(parseISO(record.date), "MMM dd, yyyy").toLowerCase().includes(filterValue.toLowerCase());
-          case 'punchIn':
-            return record.punchIn?.toLowerCase().includes(filterValue.toLowerCase()) || false;
-          case 'punchOut':
-            return record.punchOut?.toLowerCase().includes(filterValue.toLowerCase()) || false;
-          case 'totalHours':
-            return record.totalHours?.toString().includes(filterValue) || false;
-          case 'status':
-            return record.status.toLowerCase().includes(filterValue.toLowerCase());
-          default:
-            return true;
-        }
-      });
-    });
-  }
+   // Apply column filters
+   if (Object.keys(columnFilters).length > 0) {
+     result = result.filter(record => {
+       const employee = getEmployee(record.employeeId);
 
-  setFilteredRecords(result);
-}, [records, employees, selectedEmployee, fromDate, toDate, searchTerm, columnFilters]);
+       return Object.entries(columnFilters).every(([key, filterValue]) => {
+         if (!filterValue) return true;
+
+         switch (key) {
+           case 'srno':
+             // This would need to be handled differently as it's based on index
+             return true;
+           case 'employee':
+             return employee?.name?.toLowerCase().includes(filterValue.toLowerCase()) || false;
+           case 'date':
+             return format(parseISO(record.date), "MMM dd, yyyy").toLowerCase().includes(filterValue.toLowerCase());
+           case 'punchIn':
+             return record.punchIn?.toLowerCase().includes(filterValue.toLowerCase()) || false;
+           case 'punchOut':
+             return record.punchOut?.toLowerCase().includes(filterValue.toLowerCase()) || false;
+           case 'totalHours':
+             return record.totalHours?.toString().includes(filterValue) || false;
+           case 'status':
+             return record.status.toLowerCase().includes(filterValue.toLowerCase());
+           default:
+             return true;
+         }
+       });
+     });
+   }
+
+   return result;
+ }, [records, employees, selectedEmployee, fromDate, toDate, searchTerm, columnFilters]);
 
   // Filter records based on selected employee and date range
   // useMemo(() => {
