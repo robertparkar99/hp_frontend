@@ -407,7 +407,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     />
                   ) : (
                     <img
-                      src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails.image}`}
+                      src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails?.image}`}
                       alt="User icon"
                       style={{ transform: "translate(28%,21%)" }}
                       className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
