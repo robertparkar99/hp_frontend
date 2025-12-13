@@ -78,6 +78,12 @@ type Config = {
   skills: string[];
   proficiencyTarget: number;
   modality: { selfPaced: boolean; instructorLed: boolean; };
+  mappingType: string;
+  mappingValue: string;
+  slideCount: number;
+  presentationStyle: string;
+  language: string;
+  repetition: boolean;
   aiModel: string;
 };
 
@@ -89,6 +95,12 @@ const DEFAULT_CONFIG: Config = {
   skills: [],
   proficiencyTarget: 3,
   modality: { selfPaced: true, instructorLed: false },
+  mappingType: "Direct",
+  mappingValue: "Option1",
+  slideCount: 15,
+  presentationStyle: "Modern",
+  language: "English",
+  repetition: false,
   aiModel: "deepseek/deepseek-chat-v3.1",
 };
 
@@ -345,13 +357,23 @@ function LoadingSpinner({ size = "sm", text = "Loading..." }: { size?: "sm" | "m
 }
 
 export default function ConfigurationModal({ isOpen, onClose, jsonObject }: ConfigurationModalProps) {
+  // Detect the type of jsonObject
+  const isCriticalWorkFunction = jsonObject && 'critical_work_function' in jsonObject;
+  const isSkillSelection = jsonObject && 'selected_skill' in jsonObject;
+
   // Log jsonObject when modal opens or jsonObject changes
   useEffect(() => {
     if (isOpen && jsonObject) {
       console.log("Configuration Modal Data:", JSON.stringify(jsonObject, null, 2));
+      if (isCriticalWorkFunction) {
+        console.log("Type: Critical Work Function Selection");
+      } else if (isSkillSelection) {
+        console.log("Type: Skill Selection");
+      }
     }
-  }, [isOpen, jsonObject]);
+  }, [isOpen, jsonObject, isCriticalWorkFunction, isSkillSelection]);
   const [cfg, setCfg] = React.useState<Config>(DEFAULT_CONFIG);
+  const [activeTab, setActiveTab] = useState<'courseParams' | 'presentationConfig'>('presentationConfig');
   const [preview, setPreview] = React.useState("Click 'Generate Course Outline with AI' to create slides.");
   const [diverged, setDiverged] = React.useState(false);
   const [manualPreview, setManualPreview] = React.useState("Click 'Generate Course Outline with AI' to create slides.");
@@ -394,6 +416,13 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       }
     }
   }, []);
+
+  // Handle tab switching based on repetition checkbox
+  useEffect(() => {
+    if (!cfg.repetition && activeTab === 'courseParams') {
+      setActiveTab('presentationConfig');
+    }
+  }, [cfg.repetition, activeTab]);
 
   // Update handleResync function
 
@@ -561,7 +590,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-blue-600" />
-            Configuration
+            Configuration {isCriticalWorkFunction ? 'for Critical Work Function' : isSkillSelection ? 'for Skill' : ''}
           </DialogTitle>
         </DialogHeader>
 
@@ -588,6 +617,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                   <button
                     onClick={() => {
                       setCfg(DEFAULT_CONFIG);
+                      setActiveTab('presentationConfig');
                       setDiverged(false);
                       setPreview("Click 'Generate Course Outline with AI' to create slides.");
                       setManualPreview("Click 'Generate Course Outline with AI' to create slides.");
@@ -605,93 +635,213 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                 <div className="pb-1">
                   <div className="pb-4">
                     <div className="grid flex-1 grid-cols-1 gap-4 overflow-auto p-4">
-                      <fieldset className="space-y-4 config-content">
-                        <legend className="px-1 text-sm font-semibold flex items-center gap-2 mb-4">
-                          {/* <SlidersHorizontal className="h-4 w-4 text-blue-600" /> */}
+                      {/* Toggle Menu */}
+                      <div className="flex gap-2 mb-4">
+                        <button
+                          onClick={() => setActiveTab('presentationConfig')}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'presentationConfig' ? 'bg-blue-100 text-blue-800 border border-blue-300' : 'text-gray-600 hover:bg-gray-100'}`}
+                        >
+                          Presentation Configuration
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('courseParams')}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'courseParams' ? 'bg-blue-100 text-blue-800 border border-blue-300' : 'text-gray-600 hover:bg-gray-100'}`}
+                        >
                           Course Parameters
-                        </legend>
+                        </button>
+                      </div>
 
+                      {activeTab === 'courseParams' && cfg.repetition && (
+                        <fieldset className="space-y-4">
+                          <legend className="text-sm font-semibold text-gray-700 mb-4">
+                            Course Parameters
+                          </legend>
 
-                        {/* Modality */}
-                        <div className="mt-4">
-                          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                            <GraduationCap className="h-4 w-4" />
-                            Modality
-                          </label>
-                          <div className="grid grid-cols-1 gap-2">
-                            <label className="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-colors hover:bg-slate-50">
-                              <input
-                                type="radio"
-                                name="modality"
-                                checked={cfg.modality.selfPaced}
-                                onChange={() =>
-                                  setCfg({
-                                    ...cfg,
-                                    modality: { selfPaced: true, instructorLed: false },
-                                  })
-                                }
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                              />
-                              <span className="text-sm">Self-paced</span>
+                          {/* Modality */}
+                          <div className="mb-4">
+                            <label className="text-sm font-medium text-gray-700 mb-2 block">
+                              Delivery Mode
                             </label>
-                            <label className="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-colors hover:bg-slate-50">
+                            <div className="grid grid-cols-1 gap-2">
+                              <label className="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-colors hover:bg-gray-50">
+                                <input
+                                  type="radio"
+                                  name="modality"
+                                  checked={cfg.modality.selfPaced}
+                                  onChange={() =>
+                                    setCfg({
+                                      ...cfg,
+                                      modality: { selfPaced: true, instructorLed: false },
+                                    })
+                                  }
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm">Self-paced</span>
+                              </label>
+                              <label className="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-colors hover:bg-gray-50">
+                                <input
+                                  type="radio"
+                                  name="modality"
+                                  checked={cfg.modality.instructorLed}
+                                  onChange={() =>
+                                    setCfg({
+                                      ...cfg,
+                                      modality: { selfPaced: false, instructorLed: true },
+                                    })
+                                  }
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm">Instructor-led</span>
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Mapping Options */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                Mapping Type
+                              </label>
+                              <select
+                                value={cfg.mappingType}
+                                onChange={(e) => setCfg({ ...cfg, mappingType: e.target.value })}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              >
+                                <option value="Direct">Direct</option>
+                                <option value="Indirect">Indirect</option>
+                                <option value="Custom">Custom</option>
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                Mapping Value
+                              </label>
+                              <select
+                                value={cfg.mappingValue}
+                                onChange={(e) => setCfg({ ...cfg, mappingValue: e.target.value })}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              >
+                                <option value="Option1">Option1</option>
+                                <option value="Option2">Option2</option>
+                                <option value="Option3">Option3</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* AI Model */}
+                          <div className="mb-4">
+                            <AiModelDropdown
+                              value={cfg.aiModel}
+                              onChange={(model) => setCfg({ ...cfg, aiModel: model })}
+                            />
+                          </div>
+
+                          <ModelInfoDisplay modelId={cfg.aiModel} />
+
+                          {/* Generate Button */}
+                          <div className="pt-4 border-t border-gray-200">
+                            <button
+                              onClick={handleGenerateCourseOutline}
+                              disabled={outlineLoading}
+                              className={`w-full rounded-lg px-4 py-3 text-sm font-semibold flex items-center gap-2 justify-center transition-all duration-200 ${outlineLoading
+                                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                : "bg-green-600 text-white hover:bg-green-700 shadow-sm"
+                                }`}
+                            >
+                              {outlineLoading ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  Generating with AI...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="h-4 w-4" />
+                                  Generate Course Outline with AI
+                                </>
+                              )}
+                            </button>
+                            <div className="text-xs text-gray-500 text-center mt-2">
+                              <p>This will generate a 10-slide course outline</p>
+                            </div>
+                          </div>
+                        </fieldset>
+                      )}
+
+                      {activeTab === 'presentationConfig' && (
+                        <fieldset className="space-y-4">
+                          <legend className="text-sm font-semibold text-gray-700 mb-4">
+                            Presentation Configuration
+                          </legend>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                Slide Count
+                              </label>
                               <input
-                                type="radio"
-                                name="modality"
-                                checked={cfg.modality.instructorLed}
-                                onChange={() =>
-                                  setCfg({
-                                    ...cfg,
-                                    modality: { selfPaced: false, instructorLed: true },
-                                  })
-                                }
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                type="number"
+                                value={cfg.slideCount}
+                                onChange={(e) => setCfg({ ...cfg, slideCount: parseInt(e.target.value) || 10 })}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                min="1"
+                                max="15"
                               />
-                              <span className="text-sm">Instructor-led</span>
-                            </label>
+                            </div>
+                            {/* <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                Language
+                              </label>
+                              <select
+                                value={cfg.language}
+                                onChange={(e) => setCfg({ ...cfg, language: e.target.value })}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              >
+                                <option value="English">English</option>
+                                <option value="Spanish">Spanish</option>
+                                <option value="French">French</option>
+                                <option value="German">German</option>
+                                <option value="Chinese">Chinese</option>
+                              </select>
+                            </div> */}
+                            {/* <div className="space-y-2">
+                              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                Style
+                                <button
+                                  onClick={() => {
+                                    setCfg({
+                                      ...cfg,
+                                      presentationStyle: "Modern"
+                                    });
+                                  }}
+                                  className="ml-2 p-1 text-yellow-500 hover:text-yellow-600"
+                                  title="Auto Set Style"
+                                >
+                                  <Sparkles className="h-4 w-4" />
+                                </button>
+                              </label>
+                              <select
+                                value={cfg.presentationStyle}
+                                onChange={(e) => setCfg({ ...cfg, presentationStyle: e.target.value })}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              >
+                                <option value="Modern">Modern</option>
+                                <option value="Classic">Classic</option>
+                                <option value="Minimal">Minimal</option>
+                              </select>
+                            </div> */}
+                            <div className="space-y-2 md:col-span-2">
+                              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                <input
+                                  type="checkbox"
+                                  checked={cfg.repetition}
+                                  onChange={(e) => setCfg({ ...cfg, repetition: e.target.checked })}
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                />
+                                No repetition of content across slides
+                              </label>
+                            </div>
                           </div>
-                        </div>
-
-                        {/* AI Model Dropdown */}
-                        <div className="mt-4">
-                          <AiModelDropdown
-                            value={cfg.aiModel}
-                            onChange={(model) => setCfg({ ...cfg, aiModel: model })}
-                          />
-                        </div>
-
-                        {/* Model Information Display */}
-                        <ModelInfoDisplay modelId={cfg.aiModel} />
-
-                        {/* Generate Course Outline Button with OpenRouter API */}
-                        <div className="mt-6 pt-4 border-t border-gray-200">
-                          <button
-                            onClick={handleGenerateCourseOutline}
-                            disabled={outlineLoading}
-                            className={`w-full rounded-lg px-4 py-3 text-sm font-semibold flex items-center gap-2 justify-center transition-all duration-200 ${outlineLoading
-                              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                              : "bg-green-600 text-white hover:bg-green-700 shadow-sm"
-                              }`}
-                          >
-                            {outlineLoading ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Generating with AI...
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="h-4 w-4" />
-                                Generate Course Outline with AI
-                              </>
-                            )}
-                          </button>
-
-                          {/* Helper text */}
-                          <div className="text-xs text-gray-500 text-center mt-2 space-y-1">
-                            <p>This will generate a 10-slide course outline</p>
-                          </div>
-                        </div>
-                      </fieldset>
+                        </fieldset>
+                      )}
                     </div>
                   </div>
                 </div>
