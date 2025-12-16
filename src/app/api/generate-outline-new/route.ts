@@ -20,10 +20,10 @@ export async function POST(req: Request) {
   try {
     // Parse input from frontend
     const { jsonObject, modality, aiModel } = await req.json();
-    
+
     // Validate server-side API key (never exposed to client)
     const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
-    
+
     //console.log("AI API KEY 28112025 : ", OPENROUTER_API_KEY);
     //console.log("jsonobject", jsonObject);
 
@@ -40,12 +40,47 @@ export async function POST(req: Request) {
     const industry = jsonObject?.industry || "-";
     const department = jsonObject?.department || "-";
     const jobRole = jsonObject?.jobrole || "-";
-    const selectedSkill = jsonObject?.selectedSkill || {};
+  const selectedSkill =
+  jsonObject?.selectedSkill ||
+  jsonObject?.skill ||
+  jsonObject?.selected_skill ||
+  (Array.isArray(jsonObject?.selectedSkills)
+    ? jsonObject.selectedSkills[0]
+    : {}) ||
+  {};
+
+
+// normalize keys from frontend / DB
+const skillName =
+  selectedSkill.skillName ||
+  selectedSkill.SkillName ||
+  selectedSkill.name ||
+  "";
+
+const skillDescription =
+  selectedSkill.description ||
+  selectedSkill.Description ||
+  "";
+
+const skillProficiency =
+  selectedSkill.proficiency_level ||
+  selectedSkill.proficiency ||
+  "";
+
+const skillCategory =
+  selectedSkill.category ||
+  "";
+
+const skillsubCategory =
+  selectedSkill.sub_category ||
+  selectedSkill.subCategory ||
+  "";
+
     const slideCount = jsonObject?.slideCount || 15;
     console.log("DEBUG: Before slideCount log");
     console.log("Number of Slides:", slideCount);
     console.log("DEBUG: After slideCount log");
-    
+
     //console.log("jobrole", jobRole);
     //console.log("keyTask", keyTask);
     //console.log("criticalWorkFunction", criticalWorkFunction);
@@ -61,17 +96,17 @@ export async function POST(req: Request) {
         .filter(item => item != null && typeof item === 'object')
         .map(item => {
           // Handle different possible data structures
-          const title = 
-            item.title || 
-            item.name || 
-            item.value || 
-            item.label || 
-            item.text || 
+          const title =
+            item.title ||
+            item.name ||
+            item.value ||
+            item.label ||
+            item.text ||
             'Untitled';
-          
+
           const category = item.category || item.type || item.group;
           const subCategory = item.subCategory || item.subType || item.subGroup;
-          
+
           return {
             title,
             category,
@@ -90,20 +125,20 @@ export async function POST(req: Request) {
     const parsedBehaviour = parseKabaItems(jsonObject?.behaviour);
 
     // Calculate totals
-    const totalKabaItems = 
-      parsedKnowledge.length + 
-      parsedAbility.length + 
-      parsedAttitude.length + 
+    const totalKabaItems =
+      parsedKnowledge.length +
+      parsedAbility.length +
+      parsedAttitude.length +
       parsedBehaviour.length;
 
     // Format KABA titles for instruction - only include up to 3 per category for readability
     const formatKabaTitlesForInstruction = (items: KabaItem[]): string => {
       if (!items.length) return "Not provided";
-      
+
       if (items.length <= 3) {
         return items.map(i => i.title).join(', ');
       }
-      
+
       // If more than 3, show first 3 with count
       return `${items.slice(0, 3).map(i => i.title).join(', ')}, and ${items.length - 3} more`;
     };
@@ -117,10 +152,22 @@ export async function POST(req: Request) {
     const formatKabaFull = (title: string, items: KabaItem[]): string => {
       if (!items.length) return `${title}: Not provided\n`;
 
-      return `${title} (${items.length} items):\n` + 
-        items.map((item, index) => `  ${index + 1}. ${item.title}` + 
-          (item.category ? ` [Category: ${item.category}]` : '') + 
+      return `${title} (${items.length} items):\n` +
+        items.map((item, index) => `  ${index + 1}. ${item.title}` +
+          (item.category ? ` [Category: ${item.category}]` : '') +
           (item.subCategory ? ` [Sub-category: ${item.subCategory}]` : '')).join("\n") + "\n";
+    };
+
+    // Format selected skill for instruction using the parsed individual fields
+    const formatSelectedSkill = (): string => {
+      const parts = [];
+      if (skillName) parts.push(`Skill: ${skillName}`);
+      if (skillDescription) parts.push(`Description: ${skillDescription}`);
+      if (skillProficiency) parts.push(`Proficiency: ${skillProficiency}`);
+      if (skillCategory) parts.push(`Category: ${skillCategory}`);
+      if (skillsubCategory) parts.push(`Sub-category: ${skillsubCategory}`);
+
+      return parts.length > 0 ? parts.join(', ') : "Not provided";
     };
 
     // Create comprehensive KABA text
@@ -131,27 +178,24 @@ ${formatKabaFull("Attitude", parsedAttitude)}
 ${formatKabaFull("Behaviour", parsedBehaviour)}
 `.trim();
 
-    const focusText = criticalWorkFunction
-      ? `Critical Work Function: ${criticalWorkFunction}
-Key Tasks: ${Array.isArray(keyTask) ? keyTask.join(", ") : keyTask || "-"}`
-      : `Skill Focus: ${selectedSkill?.skillName || "-"}`;
+    const selectedSkillText = formatSelectedSkill();
+
+    const focusText = selectedSkillText && selectedSkillText !== "Not provided"
+      ? `Selected Skill: ${selectedSkillText}
+ Key Tasks: ${Array.isArray(keyTask) ? keyTask.join(", ") : keyTask || "-"}
+ Critical Work Function: ${criticalWorkFunction}`
+      : `Critical Work Function: ${criticalWorkFunction}
+ Key Tasks: ${Array.isArray(keyTask) ? keyTask.join(", ") : keyTask || "-"}`;
 
     // Fixed instruction string - removed broken quotes and line breaks
-    const instructionText = `You are an expert instructional designer and L&D manager specializing in the industry: ${industry} and department: ${department}. Your task is to design a complete, exactly ${slideCount}-slide ${modalityString} training course. The course must be a comprehensive, competency-based guide for the job role: ${jobRole} to master key tasks: (${keyTask}) within the critical work function: ${criticalWorkFunction}.
+    const instructionTaskText = `You are an expert instructional designer and L&D manager specializing in the industry: ${industry} and department: ${department}. Your task is to design a complete, exactly ${slideCount}-slide ${modalityString} training course. The course must be a comprehensive, competency-based guide for the job role: ${jobRole} to master key tasks: (${keyTask}) within the critical work function: ${criticalWorkFunction}`;
 
-CRITICAL REQUIREMENT: You MUST integrate ALL provided KAAB competencies throughout the course:
-- Knowledge (${parsedKnowledge.length} items): ${knowledgeTitles}
-- Ability (${parsedAbility.length} items): ${abilityTitles}
-- Attitude (${parsedAttitude.length} items): ${attitudeTitles}
-- Behaviour (${parsedBehaviour.length} items): ${behaviourTitles}
+    const instructionSkillText = `You are an expert instructional designer and L&D manager specializing in the industry: ${industry} and department: ${department}. Your task is to design a complete, exactly ${slideCount}-slide ${modalityString} training course focused on mastering the skill: ${skillName} for the job role: ${jobRole}. The course must be a comprehensive, competency-based guide to develop the selected skill: ${skillName}`;
 
-IMPORTANT: You must use ALL items from ALL four KAAB categories. Do NOT just use the first items. Each slide should integrate 1-2 KAAB items naturally based on relevance.
-
-For each competency, use this format: [Category: "category_value", Sub-category: "sub_category_value", Title: "title_value"]. Weave these competencies naturally into slide content. Track which items have been used and ensure comprehensive coverage. Ensure content is practical, professional, engaging, and strictly adheres to all provided formatting and content rules.`;
 
     const coursePrompt = {
-      instruction: instructionText,
-
+      instruction: instructionTaskText,
+      critical_work_function: criticalWorkFunction, // Add critical work function to the prompt
       output_format: {
         total_slides: `${slideCount}`,
         language: "Practical, professional, engaging, and competency-based",
@@ -246,6 +290,7 @@ For each competency, use this format: [Category: "category_value", Sub-category:
               content_focus: [
                 `Overview of key tasks: (${keyTask})`,
                 `Relevance to critical work function: ${criticalWorkFunction}`,
+                
                 `Industry context: ${industry}`,
                 `Department: ${department}`,
                 `Course modality: ${modalityString}`,
@@ -264,6 +309,7 @@ For each competency, use this format: [Category: "category_value", Sub-category:
               title_logic: "'Learning Objectives & Modality Instructions'",
               content_focus: [
                 `Targeted outcomes for mastering (${keyTask})`,
+                
                 "Importance of monitoring and evaluation",
                 "Facilitator guidance and session flow overview",
                 "Participant engagement expectations",
@@ -282,6 +328,7 @@ For each competency, use this format: [Category: "category_value", Sub-category:
               title_logic: "'Completion Criteria & Evaluation'",
               content_focus: [
                 `Final verification for key tasks: (${keyTask})`,
+                
                 "Quality assurance checkpoints",
                 "Facilitator sign-off checklist",
                 "Competency assessment methods",
@@ -305,6 +352,7 @@ For each competency, use this format: [Category: "category_value", Sub-category:
               title_logic: "'Task Contextualization'",
               content_focus: [
                 `Role of key tasks: (${keyTask}) within critical work function: ${criticalWorkFunction}`,
+                
                 `Industry context: ${industry}`,
                 "Dependencies and prerequisites",
                 "Stakeholders or systems involved",
@@ -336,20 +384,525 @@ For each competency, use this format: [Category: "category_value", Sub-category:
         example_complete_coverage: {
           using_your_sample: `With ${parsedKnowledge.length} knowledge, ${parsedAbility.length} ability, ${parsedAttitude.length} attitude, ${parsedBehaviour.length} behaviour items`,
           coverage_plan: [
-            parsedKnowledge.length > 0 && parsedAbility.length > 0 && parsedAttitude.length > 0 && parsedBehaviour.length > 0 
-              ? `Slide 1: Use ${parsedKnowledge[0].title}, ${parsedAbility[0].title}, ${parsedAttitude[0].title}, ${parsedBehaviour[0].title}` 
+            parsedKnowledge.length > 0 && parsedAbility.length > 0 && parsedAttitude.length > 0 && parsedBehaviour.length > 0
+              ? `Slide 1: Use ${parsedKnowledge[0].title}, ${parsedAbility[0].title}, ${parsedAttitude[0].title}, ${parsedBehaviour[0].title}`
               : "Slide 1: Use available KAAB items",
-            parsedKnowledge.length > 1 && parsedAbility.length > 1 && parsedAttitude.length > 1 && parsedBehaviour.length > 1 
-              ? `Slide 2: Use ${parsedKnowledge[1]?.title}, ${parsedAbility[1]?.title}, ${parsedAttitude[1]?.title}, ${parsedBehaviour[1]?.title}` 
+            parsedKnowledge.length > 1 && parsedAbility.length > 1 && parsedAttitude.length > 1 && parsedBehaviour.length > 1
+              ? `Slide 2: Use ${parsedKnowledge[1]?.title}, ${parsedAbility[1]?.title}, ${parsedAttitude[1]?.title}, ${parsedBehaviour[1]?.title}`
               : "Slide 2: Use available KAAB items"
           ],
           final_check: `After all slides, verify all ${totalKabaItems} items have been naturally integrated`
         }
       }
     };
-    console.log("By AJ");
+    // console.log("By AJ");
 
-    console.log("Generated Course Prompt:", JSON.stringify(coursePrompt, null, 2));
+    // Determine which prompt to generate based on user configuration
+    const hasValidSkillData = Boolean(skillName);
+    const hasValidKeyTasks = keyTask && keyTask !== "-" && Array.isArray(keyTask) && keyTask.length > 0;
+
+    // Only generate and log the appropriate prompt based on configuration
+    let promptToUse: any;
+    
+    if (hasValidSkillData) {
+      // Skill configuration selected - use singleSkillPrompt
+      const singleSkillPrompt = {
+      instruction: instructionSkillText,
+      output_format: {
+        total_slides: `${slideCount}`,
+        language: "Practical, professional, engaging, and competency-based",
+        style: "Formal and structured",
+        visuals: "No visuals, design elements, or styling instructions of any kind",
+        repetition: "No repetition of content across slides",
+        tone: `${modalityString}`,
+        slide_structure: [
+          "Slide X: [Appropriate Slide Title Based on Position]",
+          "Slide X: [Appropriate Slide Description Based on Position]",
+          "Followed by 5 to 6 concise bullet points.",
+          "Each bullet point must be instructional, clear, and under 40 words.",
+          "Use only plain text and hyphens for bullets. No markdown, symbols, or numbering.",
+          "INTEGRATE KAAB COMPETENCIES naturally into bullet points where relevant.",
+          "IMPORTANT: Use ALL KAAB items across the course, not just the first ones."
+        ],
+
+        // Skill metadata for single skill focus
+        skill_metadata: {
+          name: `${skillName}`,
+          category: `${skillCategory}`,
+          sub_category: `${skillsubCategory}`,
+          proficiency_level: `${skillProficiency}`,
+          description: `${skillDescription}`,
+          job_role_context: `${jobRole}`,
+          industry_context: `${industry}`,
+          department_context: `${department}`
+        },
+
+        // KAAB integration guidelines for ALL items
+        kaab_integration: {
+          knowledge: {
+            placeholder: `${knowledgeTitles}`,
+            total_items: `${parsedKnowledge.length}`,
+            items_list: parsedKnowledge.map((item, index) => `${index + 1}. ${item.title}`),
+            integration_guidance: [
+              `Embed ALL ${parsedKnowledge.length} knowledge competencies into appropriate slides`,
+              parsedKnowledge.length > 0 ? `Use ALL knowledge titles as listed above` : "No knowledge items provided",
+              "Map categories to appropriate slide types",
+              "Ensure NO knowledge items are left unused",
+              `Connect knowledge items to skill: ${skillName} development`
+            ],
+            example: parsedKnowledge.length > 0 ? `For '${parsedKnowledge[0].title}' (${parsedKnowledge[0].category || 'No category'}):\n` +
+              "- Develop nursing care plans that align with established diagnostic protocols\n" +
+              "- Apply procedural knowledge to create comprehensive patient care documentation" : "No knowledge example available"
+          },
+          ability: {
+            placeholder: `${abilityTitles}`,
+            total_items: `${parsedAbility.length}`,
+            items_list: parsedAbility.map((item, index) => `${index + 1}. ${item.title}`),
+            integration_guidance: [
+              `Incorporate ALL ${parsedAbility.length} ability competencies into practical application slides`,
+              "Connect ALL ability titles to observable performance indicators",
+              `Link abilities to skill: ${skillName} demonstration`
+            ],
+            example: parsedAbility.length > 0 ? `For '${parsedAbility[0].title}' (${parsedAbility[0].category || 'No category'}):\n` +
+              "- Demonstrate precise wound care techniques while educating patients and families\n" +
+              "- Apply psychomotor control when showing proper stoma care maintenance procedures" : "No ability example available"
+          },
+          attitude: {
+            placeholder: `${attitudeTitles}`,
+            total_items: `${parsedAttitude.length}`,
+            items_list: parsedAttitude.map((item, index) => `${index + 1}. ${item.title}`),
+            integration_guidance: [
+              `Weave ALL ${parsedAttitude.length} attitude competencies into slides about mindset and approach`,
+              `Highlight how EACH attitude affects performance and outcomes`,
+              `Use ALL attitude titles to shape behavioral expectations`,
+              `Connect attitudes to mastering skill: ${skillName}`
+            ],
+            example: parsedAttitude.length > 0 ? `For '${parsedAttitude[0].title}' (${parsedAttitude[0].category || 'No category'}):\n` +
+              "- Demonstrate initiative by anticipating medication needs before formal requests\n" +
+              "- Proactively coordinate with pharmacy to prevent treatment delays" : "No attitude example available"
+          },
+          behaviour: {
+            placeholder: `${behaviourTitles}`,
+            total_items: `${parsedBehaviour.length}`,
+            items_list: parsedBehaviour.map((item, index) => `${index + 1}. ${item.title}`),
+            integration_guidance: [
+              `Integrate ALL ${parsedBehaviour.length} behaviour competencies into slides about interactions and standards`,
+              `Show how EACH behavior manifests in daily work activities`,
+              `Connect ALL behaviour titles to performance expectations and evaluation criteria`,
+              `Link behaviors to effective application of skill: ${skillName}`
+            ],
+            example: parsedBehaviour.length > 0 ? `For '${parsedBehaviour[0].title}' (${parsedBehaviour[0].category || 'No category'}):\n` +
+              "- Exercise customer empathy by meticulously compiling medication lists for seamless care continuity\n" +
+              "- Demonstrate stakeholder focus through accurate, patient-centered documentation" : "No behaviour example available"
+          },
+
+          // Comprehensive integration tracking
+          comprehensive_requirement: {
+            must_use_all: "YES - Use ALL items from ALL four KAAB categories",
+            total_kaab_items: `${totalKabaItems} items to distribute`,
+            distribution_strategy: "Spread items evenly across ALL slides based on relevance to skill: ${skillName}",
+            tracking_method: "Keep mental checklist to ensure no KAAB items are omitted",
+            verification: `Before finalizing, verify ALL ${totalKabaItems} items have been incorporated with skill: ${skillName}`
+          }
+        },
+
+        // SINGLE SKILL SLIDE GENERATION with COMPLETE KAAB integration
+        slide_sequence_logic: {
+          // Core required slides (always included in this order)
+          required_slides: [
+            {
+              position: 1,
+              title_logic: `'Mastering skill: ${skillName} for ${jobRole}'`,
+              content_focus: [
+                `Overview of skill: ${skillName} development for jobrole: ${jobRole}`,
+                `Industry context: ${industry} requirements for skill: ${skillName}`,
+                `Departmental focus: ${department} applications of skill: ${skillName}`,
+                `Course modality: ${modalityString}`,
+                `Target proficiency level: ${skillProficiency}`,
+                "INTEGRATE: Introduce a selection of KAAB competencies from ALL categories relevant to skill: ${skillName}"
+              ],
+              skill_integration: [
+                `Focus on core skill: ${skillName}`,
+                `Connect skill: ${skillName} to real-world applications in industry: ${industry}`,
+                `Highlight skill category: ${skillCategory} & subcategory: ${skillsubCategory} as critical for success`
+              ],
+              kaab_integration_plan: [
+                parsedKnowledge.length > 0 ? `Include knowledge items relevant to skill: ${skillName}: Start with ${parsedKnowledge[0].title}` : "No knowledge items to include",
+                parsedAbility.length > 0 ? `Include ability items relevant to skill: ${skillName}: Start with ${parsedAbility[0].title}` : "No ability items to include",
+                parsedAttitude.length > 0 ? `Include attitude items relevant to skill: ${skillName}: Start with ${parsedAttitude[0].title}` : "No attitude items to include",
+                parsedBehaviour.length > 0 ? `Include behaviour items relevant to skill: ${skillName}: Start with ${parsedBehaviour[0].title}` : "No behaviour items to include",
+                "Balance representation from ALL KAAB categories relevant to skill: ${skillName} development"
+              ]
+            },
+            {
+              position: 2,
+              title_logic: `'Learning Objectives for skill: ${skillName} Mastery'`,
+              content_focus: [
+                `Targeted development outcomes for skill: ${skillName}`,
+                `Proficiency level expectations: ${skillProficiency}`,
+                `Importance of skill: ${skillName} monitoring and evaluation`,
+                "Facilitator guidance and session flow overview",
+                "Participant engagement expectations",
+                "Session timing and break structure",
+                "INTEGRATE: Link objectives to development of ALL KAAB competencies through skill: ${skillName}"
+              ],
+              skill_integration: [
+                `Define measurable skill: ${skillName} development targets`,
+                `Connect skill proficiency level: ${skillProficiency} to skill: ${skillName} learning outcomes`,
+                `Establish clear skill: ${skillName} assessment criteria`
+              ],
+              kaab_integration_plan: [
+                parsedKnowledge.length > 1 ? `Connect objectives to knowledge development for skill: ${skillName}: ${parsedKnowledge[1]?.title}` : "No knowledge items for objectives",
+                parsedAbility.length > 1 ? `Link to ability enhancement for skill: ${skillName}: ${parsedAbility[1]?.title}` : "No ability items for objectives",
+                parsedAttitude.length > 1 ? `Relate to attitude cultivation for skill: ${skillName}: ${parsedAttitude[1]?.title}` : "No attitude items for objectives",
+                parsedBehaviour.length > 1 ? `Tie to behavior expectations for skill: ${skillName}: ${parsedBehaviour[1]?.title}` : "No behaviour items for objectives"
+              ]
+            },
+            {
+              position: -1, // Last slide
+              title_logic: `skill: '${skillName} Mastery & Evaluation'`,
+              content_focus: [
+                `Final skill: ${skillName} proficiency verification`,
+                `Quality assurance checkpoints for skill: ${skillName} application`,
+                "Facilitator sign-off checklist",
+                "Competency assessment methods",
+                `Continuous improvement planning for skill: ${skillName} development`,
+                "INTEGRATE: Evaluate mastery of ALL KAAB competencies through skill: ${skillName}"
+              ],
+              skill_integration: [
+                `Assess application of skill: ${skillName} in practical scenarios`,
+                `Verify achievement of ${skillProficiency} proficiency level`,
+                `Establish ongoing skill: ${skillName} development pathways`
+              ],
+              kaab_integration_plan: [
+                "Assess application of remaining knowledge items through skill: ${skillName}",
+                "Verify demonstration of remaining ability items through skill: ${skillName}",
+                "Evaluate remaining attitude items in skill: ${skillName} context",
+                "Measure remaining behaviour items in skill: ${skillName} application",
+                "Ensure ALL KAAB items have been addressed through skill: ${skillName} development"
+              ]
+            }
+          ],
+
+          // Middle slides - focused on single skill development
+          dynamic_slides: [
+            {
+              template_id: "skill_foundations",
+              title_logic: `'skill: ${skillName}: Core Foundations'`,
+              content_focus: [
+                `Essential technical and professional aspects of skill: ${skillName}`,
+                `skill category: ${skillCategory} & subcategory: ${skillsubCategory} categorization and hierarchy`,
+                `Prerequisite relationships for skill: ${skillName}`,
+                `Foundational approaches to developing skill: ${skillName}`,
+                `INTEGRATE: Show how KAAB competencies support skill: ${skillName} foundations`
+              ],
+              skill_integration: [
+                `Focus on foundational aspects of skill: ${skillName}`,
+                `Organize by skill category: ${skillCategory} & subcategory: ${skillsubCategory} structure`,
+                `Address basic to intermediate proficiency levels for skill: ${skillName}`
+              ],
+              priority: 1,
+              kaab_integration_plan: [
+                parsedKnowledge.length > 2 ? `Use knowledge relevant to skill: ${skillName}: ${parsedKnowledge[2]?.title}` : "No knowledge items for foundations",
+                parsedAbility.length > 2 ? `Use ability relevant to skill: ${skillName}: ${parsedAbility[2]?.title}` : "No ability items for foundations",
+                parsedAttitude.length > 2 ? `Use attitude relevant to skill: ${skillName}: ${parsedAttitude[2]?.title}` : "No attitude items for foundations",
+                parsedBehaviour.length > 2 ? `Use behaviour relevant to skill: ${skillName}: ${parsedBehaviour[2]?.title}` : "No behaviour items for foundations"
+              ]
+            },
+            {
+              template_id: "skill_application",
+              title_logic: `'skill: ${skillName}: Practical Application'`,
+              content_focus: [
+                `Real-world application of skill: ${skillName}`,
+                `Industry-specific: ${industry} requirements for skill: ${skillName}`,
+                `Departmental: ${department} expectations for skill: ${skillName}`,
+                `Problem-solving using skill: ${skillName}`,
+                `INTEGRATE: Demonstrate KAAB competencies in skill: ${skillName} application`
+              ],
+              skill_integration: [
+                `Apply skill: ${skillName} to practical scenarios and case studies`,
+                `Connect skill: ${skillName} to industry: ${industry} and department: ${department} needs`,
+                `Address advanced proficiency levels for skill: ${skillName}`
+              ],
+              priority: 2,
+              kaab_integration_plan: [
+                parsedKnowledge.length > 3 ? `Use knowledge in skill: ${skillName} application: ${parsedKnowledge[3]?.title}` : "No knowledge items for application",
+                parsedAbility.length > 3 ? `Use ability in skill: ${skillName} application: ${parsedAbility[3]?.title}` : "No ability items for application",
+                parsedAttitude.length > 3 ? `Use attitude in skill: ${skillName} application: ${parsedAttitude[3]?.title}` : "No attitude items for application",
+                parsedBehaviour.length > 3 ? `Use behaviour in skill: ${skillName} application: ${parsedBehaviour[3]?.title}` : "No behaviour items for application"
+              ]
+            },
+            {
+              template_id: "skill_advancement",
+              title_logic: `'skill: ${skillName}: Advanced Development'`,
+              content_focus: [
+                `Mastery-level development of skill: ${skillName}`,
+                `Complex skill: ${skillName} integration`,
+                `Leadership and mentoring in skill: ${skillName}`,
+                `Continuous professional development for skill: ${skillName}`,
+                `INTEGRATE: Advanced KAAB competency integration through skill: ${skillName}`
+              ],
+              skill_integration: [
+                `Focus on expert proficiency level for skill: ${skillName}`,
+                `Address complex skill: ${skillName} combinations`,
+                `Develop skill: ${skillName} leadership and teaching capabilities`
+              ],
+              priority: 3,
+              kaab_integration_plan: [
+                parsedKnowledge.length > 4 ? `Use knowledge for skill: ${skillName} mastery: ${parsedKnowledge[4]?.title}` : "No knowledge items for advancement",
+                parsedAbility.length > 4 ? `Use ability for skill: ${skillName} mastery: ${parsedAbility[4]?.title}` : "No ability items for advancement",
+                parsedAttitude.length > 4 ? `Use attitude for skill: ${skillName} mastery: ${parsedAttitude[4]?.title}` : "No attitude items for advancement",
+                parsedBehaviour.length > 4 ? `Use behaviour for skill: ${skillName} mastery: ${parsedBehaviour[4]?.title}` : "No behaviour items for advancement"
+              ]
+            }
+          ],
+
+          // SINGLE SKILL GENERATION LOGIC
+          single_skill_generation: {
+            skill_focus: `${skillName}`,
+            category_context: `${skillCategory} > ${skillsubCategory}`,
+            proficiency_progression: `Structure content from basic to ${skillProficiency} proficiency levels`,
+            skill_kaab_mapping: `Map skill: ${skillName} to relevant KAAB competencies`,
+            coverage_requirement: `Ensure comprehensive coverage of skill: ${skillName} at ${skillProficiency} proficiency level`
+          },
+
+          // KAAB distribution and tracking strategy
+          kaab_distribution_tracking: {
+            requirement: "MUST use ALL items from all four KAAB arrays",
+            total_items_track: `Knowledge: ${parsedKnowledge.length}, Ability: ${parsedAbility.length}, Attitude: ${parsedAttitude.length}, Behaviour: ${parsedBehaviour.length}`,
+            distribution_logic: `Spread items across slides based on skill: ${skillName} relevance, not rigid rotation`,
+            tracking_system: "Mentally track which items from each array have been used",
+            completion_check: `Before final slide, verify all ${totalKabaItems} items integrated through skill: ${skillName}`,
+            avoidance: "Do not cluster items - distribute evenly throughout skill: ${skillName} development"
+          }
+        },
+
+        // Example showing COMPLETE integration with single skill
+        example_complete_coverage: {
+          skill_context: `Focusing on skill: ${skillName}, skill category: (${skillCategory}) & skill subcategory: ${skillsubCategory}) at ${skillProficiency} level`,
+          using_your_sample: `With ${parsedKnowledge.length} knowledge, ${parsedAbility.length} ability, ${parsedAttitude.length} attitude, ${parsedBehaviour.length} behaviour items`,
+          coverage_plan: [
+            parsedKnowledge.length > 0 && parsedAbility.length > 0 && parsedAttitude.length > 0 && parsedBehaviour.length > 0
+              ? `Slide 1: Use ${parsedKnowledge[0].title}, ${parsedAbility[0].title}, ${parsedAttitude[0].title}, ${parsedBehaviour[0].title} with foundational ${skillName}`
+              : `Slide 1: Use available KAAB items with ${skillName}`,
+            parsedKnowledge.length > 1 && parsedAbility.length > 1 && parsedAttitude.length > 1 && parsedBehaviour.length > 1
+              ? `Slide 2: Use ${parsedKnowledge[1]?.title}, ${parsedAbility[1]?.title}, ${parsedAttitude[1]?.title}, ${parsedBehaviour[1]?.title} with applied ${skillName}`
+              : `Slide 2: Use available KAAB items with ${skillName}`
+          ],
+          skill_kaab_integration: `For ${skillName}, identify relevant KAAB competencies and integrate them naturally`,
+          final_check: `After all slides, verify all ${totalKabaItems} items have been naturally integrated with ${skillName} development`
+        }
+      }
+    };
+      console.log("by darshna");
+      console.log("Generated Single Skill Prompt:", JSON.stringify(singleSkillPrompt, null, 2));
+      promptToUse = singleSkillPrompt;
+    } else {
+      // Task configuration selected - use coursePrompt
+      const coursePrompt = {
+        instruction: instructionTaskText,
+        critical_work_function: criticalWorkFunction,
+        output_format: {
+          total_slides: `${slideCount}`,
+          language: "Practical, professional, engaging, and competency-based",
+          style: "Formal and structured",
+          visuals: "No visuals, design elements, or styling instructions of any kind",
+          repetition: "No repetition of content across slides",
+          tone: `${modalityString}`,
+
+          slide_structure: [
+            "Slide X: [Appropriate Slide Title Based on Position]",
+            "Slide X: [Appropriate Slide Description Based on Position]",
+            "Followed by 5 to 6 concise bullet points.",
+            "Each bullet point must be instructional, clear, and under 40 words.",
+            "Use only plain text and hyphens for bullets. No markdown, symbols, or numbering.",
+            "INTEGRATE KAAB COMPETENCIES naturally into bullet points where relevant.",
+            "IMPORTANT: Use ALL KAAB items across the course, not just the first ones."
+          ],
+
+          // KAAB integration guidelines for ALL items
+          kaab_integration: {
+            knowledge: {
+              placeholder: `${knowledgeTitles}`,
+              total_items: `${parsedKnowledge.length}`,
+              items_list: parsedKnowledge.map((item, index) => `${index + 1}. ${item.title}`),
+              integration_guidance: [
+                `Embed ALL ${parsedKnowledge.length} knowledge competencies into appropriate slides`,
+                parsedKnowledge.length > 0 ? `Use ALL knowledge titles as listed above` : "No knowledge items provided",
+                "Map categories to appropriate slide types",
+                "Ensure NO knowledge items are left unused"
+              ],
+              example: parsedKnowledge.length > 0 ? `For '${parsedKnowledge[0].title}' (${parsedKnowledge[0].category || 'No category'}):\n` +
+                "- Develop nursing care plans that align with established diagnostic protocols\n" +
+                "- Apply procedural knowledge to create comprehensive patient care documentation" : "No knowledge example available"
+            },
+            ability: {
+              placeholder: `${abilityTitles}`,
+              total_items: `${parsedAbility.length}`,
+              items_list: parsedAbility.map((item, index) => `${index + 1}. ${item.title}`),
+              integration_guidance: [
+                `Incorporate ALL ${parsedAbility.length} ability competencies into practical application slides`,
+                "Focus on how EACH ability is demonstrated in task execution",
+                "Connect ALL ability titles to observable performance indicators"
+              ],
+              example: parsedAbility.length > 0 ? `For '${parsedAbility[0].title}' (${parsedAbility[0].category || 'No category'}):\n` +
+                "- Demonstrate precise wound care techniques while educating patients and families\n" +
+                "- Apply psychomotor control when showing proper stoma care maintenance procedures" : "No ability example available"
+            },
+            attitude: {
+              placeholder: `${attitudeTitles}`,
+              total_items: `${parsedAttitude.length}`,
+              items_list: parsedAttitude.map((item, index) => `${index + 1}. ${item.title}`),
+              integration_guidance: [
+                `Weave ALL ${parsedAttitude.length} attitude competencies into slides about mindset and approach`,
+                `Highlight how EACH attitude affects task performance and outcomes`,
+                `Use ALL attitude titles to shape behavioral expectations`
+              ],
+              example: parsedAttitude.length > 0 ? `For '${parsedAttitude[0].title}' (${parsedAttitude[0].category || 'No category'}):\n` +
+                "- Demonstrate initiative by anticipating medication needs before formal requests\n" +
+                "- Proactively coordinate with pharmacy to prevent treatment delays" : "No attitude example available"
+            },
+            behaviour: {
+              placeholder: `${behaviourTitles}`,
+              total_items: `${parsedBehaviour.length}`,
+              items_list: parsedBehaviour.map((item, index) => `${index + 1}. ${item.title}`),
+              integration_guidance: [
+                `Integrate ALL ${parsedBehaviour.length} behaviour competencies into slides about interactions and standards`,
+                `Show how EACH behavior manifests in daily work activities`,
+                `Connect ALL behaviour titles to performance expectations and evaluation criteria`
+              ],
+              example: parsedBehaviour.length > 0 ? `For '${parsedBehaviour[0].title}' (${parsedBehaviour[0].category || 'No category'}):\n` +
+                "- Exercise customer empathy by meticulously compiling medication lists for seamless care continuity\n" +
+                "- Demonstrate stakeholder focus through accurate, patient-centered documentation" : "No behaviour example available"
+            },
+
+            // Comprehensive integration tracking
+            comprehensive_requirement: {
+              must_use_all: "YES - Use ALL items from ALL four KAAB categories",
+              total_kaab_items: `${totalKabaItems} items to distribute`,
+              distribution_strategy: "Spread items evenly across ALL slides based on relevance",
+              tracking_method: "Keep mental checklist to ensure no KAAB items are omitted",
+              verification: `Before finalizing, verify ALL ${totalKabaItems} items have been incorporated`
+            }
+          },
+
+          // Dynamic slide generation with COMPLETE KAAB integration
+          slide_sequence_logic: {
+            // Core required slides (always included in this order)
+            required_slides: [
+              {
+                position: 1,
+                title_logic: `'Training course for Mastering ' + ${jobRole}`,
+                content_focus: [
+                  `Overview of key tasks: (${keyTask})`,
+                  `Relevance to critical work function: ${criticalWorkFunction}`,
+                  `Industry context: ${industry}`,
+                  `Department: ${department}`,
+                  `Course modality: ${modalityString}`,
+                  "INTEGRATE: Introduce a selection of KAAB competencies from ALL categories"
+                ],
+                kaab_integration_plan: [
+                  parsedKnowledge.length > 0 ? `Include knowledge items: Start with ${parsedKnowledge[0].title}` : "No knowledge items to include",
+                  parsedAbility.length > 0 ? `Include ability items: Start with ${parsedAbility[0].title}` : "No ability items to include",
+                  parsedAttitude.length > 0 ? `Include attitude items: Start with ${parsedAttitude[0].title}` : "No attitude items to include",
+                  parsedBehaviour.length > 0 ? `Include behaviour items: Start with ${parsedBehaviour[0].title}` : "No behaviour items to include",
+                  "Balance representation from ALL KAAB categories"
+                ]
+              },
+              {
+                position: 2,
+                title_logic: "'Learning Objectives & Modality Instructions'",
+                content_focus: [
+                  `Targeted outcomes for mastering (${keyTask})`,
+                  "Importance of monitoring and evaluation",
+                  "Facilitator guidance and session flow overview",
+                  "Participant engagement expectations",
+                  "Session timing and break structure",
+                  "INTEGRATE: Link objectives to development of ALL KAAB competencies"
+                ],
+                kaab_integration_plan: [
+                  parsedKnowledge.length > 1 ? `Connect objectives to knowledge development: ${parsedKnowledge[1]?.title}` : "No knowledge items for objectives",
+                  parsedAbility.length > 1 ? `Link to ability enhancement: ${parsedAbility[1]?.title}` : "No ability items for objectives",
+                  parsedAttitude.length > 1 ? `Relate to attitude cultivation: ${parsedAttitude[1]?.title}` : "No attitude items for objectives",
+                  parsedBehaviour.length > 1 ? `Tie to behavior expectations: ${parsedBehaviour[1]?.title}` : "No behaviour items for objectives"
+                ]
+              },
+              {
+                position: -1, // Last slide
+                title_logic: "'Completion Criteria & Evaluation'",
+                content_focus: [
+                  `Final verification for key tasks: (${keyTask})`,
+                  "Quality assurance checkpoints",
+                  "Facilitator sign-off checklist",
+                  "Competency assessment methods",
+                  "Continuous improvement planning",
+                  "INTEGRATE: Evaluate mastery of ALL KAAB competencies covered"
+                ],
+                kaab_integration_plan: [
+                  "Assess application of remaining knowledge items",
+                  "Verify demonstration of remaining ability items",
+                  "Evaluate remaining attitude items",
+                  "Measure remaining behaviour items",
+                  "Ensure ALL KAAB items have been addressed somewhere in the course"
+                ]
+              }
+            ],
+
+            // Middle slides - dynamically allocated based on slideCount
+            dynamic_slides: [
+              {
+                template_id: "contextualization",
+                title_logic: "'Task Contextualization'",
+                content_focus: [
+                  `Role of key tasks: (${keyTask}) within critical work function: ${criticalWorkFunction}`,
+                  `Industry context: ${industry}`,
+                  "Dependencies and prerequisites",
+                  "Stakeholders or systems involved",
+                  "Impact on organizational goals",
+                  "INTEGRATE: Show how KAAB competencies support task context"
+                ],
+                priority: 1,
+                kaab_integration_plan: [
+                  parsedKnowledge.length > 2 ? `Use knowledge: ${parsedKnowledge[2]?.title}` : "No knowledge items for context",
+                  parsedAbility.length > 2 ? `Use ability: ${parsedAbility[2]?.title}` : "No ability items for context",
+                  parsedAttitude.length > 2 ? `Use attitude: ${parsedAttitude[2]?.title}` : "No attitude items for context",
+                  parsedBehaviour.length > 2 ? `Use behaviour: ${parsedBehaviour[2]?.title}` : "No behaviour items for context"
+                ]
+              }
+            ],
+
+            // KAAB distribution and tracking strategy
+            kaab_distribution_tracking: {
+              requirement: "MUST use ALL items from all four KAAB arrays",
+              total_items_track: `Knowledge: ${parsedKnowledge.length}, Ability: ${parsedAbility.length}, Attitude: ${parsedAttitude.length}, Behaviour: ${parsedBehaviour.length}`,
+              distribution_logic: "Spread items across slides based on relevance, not rigid rotation",
+              tracking_system: "Mentally track which items from each array have been used",
+              completion_check: `Before final slide, verify all ${totalKabaItems} items integrated`,
+              avoidance: "Do not cluster items - distribute evenly throughout the course"
+            }
+          },
+
+          // Example showing COMPLETE integration
+          example_complete_coverage: {
+            using_your_sample: `With ${parsedKnowledge.length} knowledge, ${parsedAbility.length} ability, ${parsedAttitude.length} attitude, ${parsedBehaviour.length} behaviour items`,
+            coverage_plan: [
+              parsedKnowledge.length > 0 && parsedAbility.length > 0 && parsedAttitude.length > 0 && parsedBehaviour.length > 0
+                ? `Slide 1: Use ${parsedKnowledge[0].title}, ${parsedAbility[0].title}, ${parsedAttitude[0].title}, ${parsedBehaviour[0].title}`
+                : "Slide 1: Use available KAAB items",
+              parsedKnowledge.length > 1 && parsedAbility.length > 1 && parsedAttitude.length > 1 && parsedBehaviour.length > 1
+                ? `Slide 2: Use ${parsedKnowledge[1]?.title}, ${parsedAbility[1]?.title}, ${parsedAttitude[1]?.title}, ${parsedBehaviour[1]?.title}`
+                : "Slide 2: Use available KAAB items"
+            ],
+            final_check: `After all slides, verify all ${totalKabaItems} items have been naturally integrated`
+          }
+        }
+      };
+
+      // Prepare request payload for OpenRouter API
+      console.log("Generated Course Prompt:", JSON.stringify(coursePrompt, null, 2));
+      promptToUse = coursePrompt;
+    }
+
     console.log("KABA Summary:", {
       knowledge: { count: parsedKnowledge.length, items: parsedKnowledge.map(k => k.title) },
       ability: { count: parsedAbility.length, items: parsedAbility.map(a => a.title) },
@@ -358,7 +911,6 @@ For each competency, use this format: [Category: "category_value", Sub-category:
       total: totalKabaItems
     });
 
-    // Prepare request payload for OpenRouter API
     const requestData = {
       model: aiModel || "deepseek/deepseek-chat",
       messages: [
@@ -383,7 +935,7 @@ For each competency, use this format: [Category: "category_value", Sub-category:
         },
         {
           role: "user",
-          content: JSON.stringify(coursePrompt, null, 2),
+          content: JSON.stringify(promptToUse, null, 2),
         },
       ],
       max_tokens: 4000,
