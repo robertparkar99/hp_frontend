@@ -39,10 +39,26 @@ import ViewKnowledge from "@/components/BehaviourComponent/viewDialouge";
 
 interface BehaviourItem {
   id: number;
-  proficiency_level: string | null;
-  classification_category: string;
-  classification_sub_category: string;
-  classification_item: string;
+  proficiency_level?: string | null;
+  category: string;
+  sub_category: string;
+  title: string;
+  description?: string;
+  business_link?: string;
+  assessment_method?: string;
+  behaviour_tags?: string;
+  measurable_indicators?: string;
+  behaviour_alternatives?: string;
+  performance_metrics?: string;
+  risk_implications?: string;
+  coaching_guidelines?: string;
+  sub_institute_id?: number;
+  created_by?: any;
+  updated_by?: any;
+  deleted_by?: any;
+  created_at?: string;
+  updated_at?: any;
+  deleted_at?: any;
 }
 
 interface SessionData {
@@ -83,9 +99,9 @@ const BehaviourGrid = () => {
 
 
   const [columnFilters, setColumnFilters] = useState({
-    classification_item: "",
-    classification_category: "",
-    classification_sub_category: "",
+    title: "",
+    category: "",
+    sub_category: "",
     proficiency_level: "",
   });
 
@@ -106,13 +122,16 @@ const BehaviourGrid = () => {
 
   // ---------- Fetch dropdown options ----------
   useEffect(() => {
-    if (!sessionData.sub_institute_id) return;
-
     const fetchDropdowns = async () => {
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour`,
-          { cache: "no-store" }
+          `${sessionData.url}/table_data?filters[sub_institute_id]=${sessionData.sub_institute_id}&table=s_user_behaviour`,
+          {
+            cache: "no-store",
+            headers: {
+              Authorization: `Bearer ${sessionData.token}`,
+            },
+          }
         );
         const data: BehaviourItem[] = await res.json();
 
@@ -129,7 +148,7 @@ const BehaviourGrid = () => {
 
         const categorySet = new Set(
           data
-            .map((item) => item.classification_category)
+            .map((item) => item.category)
             .filter((cat) => typeof cat === "string")
         );
         setCategories([...categorySet]);
@@ -140,8 +159,10 @@ const BehaviourGrid = () => {
       }
     };
 
-    fetchDropdowns();
-  }, [sessionData.sub_institute_id]);
+    if (sessionData.url && sessionData.token) {
+      fetchDropdowns();
+    }
+  }, [sessionData]);
 
   // ---------- Update subcategories when category changes ----------
   useEffect(() => {
@@ -154,8 +175,8 @@ const BehaviourGrid = () => {
     const filteredSubs = [
       ...new Set(
         allData
-          .filter((item) => item.classification_category === selectedCategory)
-          .map((item) => item.classification_sub_category)
+          .filter((item) => item.category === selectedCategory)
+          .map((item) => item.sub_category)
       ),
     ];
     setSubCategories(filteredSubs);
@@ -164,25 +185,33 @@ const BehaviourGrid = () => {
 
   // ---------- Fetch cards ----------
   useEffect(() => {
-    if (!sessionData.sub_institute_id) return;
-
     async function fetchCardData() {
       setLoadingCards(true);
 
-      let query = `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=behaviour`;
-
-      if (selectedLevel) query += `&filters[proficiency_level]=${selectedLevel}`;
-      if (selectedCategory)
-        query += `&filters[classification_category]=${selectedCategory}`;
-      if (selectedSubCategory)
-        query += `&filters[classification_sub_category]=${selectedSubCategory}`;
-
-      query += "&order_by[id]=desc&group_by=classification_item";
+      let query = `${sessionData.url}/table_data?filters[sub_institute_id]=${sessionData.sub_institute_id}&table=s_user_behaviour`;
 
       try {
-        const res = await fetch(query, { cache: "no-store" });
+        const res = await fetch(query, {
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`,
+          },
+        });
         let result = await res.json();
-        setCardData(Array.isArray(result) ? result : []);
+        let filteredResult = Array.isArray(result) ? result : [];
+
+        // Apply client-side filters
+        if (selectedLevel) {
+          filteredResult = filteredResult.filter(item => item.proficiency_level === selectedLevel);
+        }
+        if (selectedCategory) {
+          filteredResult = filteredResult.filter(item => item.category === selectedCategory);
+        }
+        if (selectedSubCategory) {
+          filteredResult = filteredResult.filter(item => item.sub_category === selectedSubCategory);
+        }
+
+        setCardData(filteredResult);
       } catch (err) {
         console.error("Error fetching card data:", err);
         setCardData([]);
@@ -191,12 +220,14 @@ const BehaviourGrid = () => {
       }
     }
 
-    fetchCardData();
+    if (sessionData.url && sessionData.token) {
+      fetchCardData();
+    }
   }, [
     selectedLevel,
     selectedCategory,
     selectedSubCategory,
-    sessionData.sub_institute_id,
+    sessionData,
   ]);
   useEffect(() => {
     const savedFavorites = localStorage.getItem("favorites");
@@ -215,9 +246,9 @@ const BehaviourGrid = () => {
     setSelectedSubCategory("");
     setSearchTerm("");
     setColumnFilters({
-      classification_item: "",
-      classification_category: "",
-      classification_sub_category: "",
+      title: "",
+      category: "",
+      sub_category: "",
       proficiency_level: "",
     });
   };
@@ -225,9 +256,9 @@ const BehaviourGrid = () => {
   // ---------- Export data ----------
   const exportData = () => {
     const dataToExport = filteredData.map(item => ({
-      Item: item.classification_item,
-      Category: item.classification_category,
-      'Sub Category': item.classification_sub_category,
+      Item: item.title,
+      Category: item.category,
+      'Sub Category': item.sub_category,
       'Proficiency Level': item.proficiency_level || '-'
     }));
 
@@ -261,11 +292,11 @@ const BehaviourGrid = () => {
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
             <input
               type="text"
-              value={columnFilters.classification_item}
+              value={columnFilters.title}
               onChange={(e) =>
                 setColumnFilters({
                   ...columnFilters,
-                  classification_item: e.target.value,
+                  title: e.target.value,
                 })
               }
               placeholder="Search..."
@@ -274,7 +305,7 @@ const BehaviourGrid = () => {
           </div>
         </div>
       ),
-      selector: (row) => row.classification_item,
+      selector: (row) => row.title,
       sortable: true,
       wrap: true,
     },
@@ -286,11 +317,11 @@ const BehaviourGrid = () => {
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
             <input
               type="text"
-              value={columnFilters.classification_category}
+              value={columnFilters.category}
               onChange={(e) =>
                 setColumnFilters({
                   ...columnFilters,
-                  classification_category: e.target.value,
+                  category: e.target.value,
                 })
               }
               placeholder="Search..."
@@ -299,7 +330,7 @@ const BehaviourGrid = () => {
           </div>
         </div>
       ),
-      selector: (row) => row.classification_category,
+      selector: (row) => row.category,
       sortable: true,
       wrap: true,
       width: "250px"
@@ -312,11 +343,11 @@ const BehaviourGrid = () => {
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
             <input
               type="text"
-              value={columnFilters.classification_sub_category}
+              value={columnFilters.sub_category}
               onChange={(e) =>
                 setColumnFilters({
                   ...columnFilters,
-                  classification_sub_category: e.target.value,
+                  sub_category: e.target.value,
                 })
               }
               placeholder="Search..."
@@ -325,7 +356,7 @@ const BehaviourGrid = () => {
           </div>
         </div>
       ),
-      selector: (row) => row.classification_sub_category,
+      selector: (row) => row.sub_category,
       sortable: true,
       wrap: true,
       width: "150px"
@@ -356,15 +387,15 @@ const BehaviourGrid = () => {
 
   const filteredData = cardData.filter(
     (row) =>
-      row.classification_item
+      row.title
         .toLowerCase()
-        .includes(columnFilters.classification_item.toLowerCase()) &&
-      row.classification_category
+        .includes(columnFilters.title.toLowerCase()) &&
+      row.category
         .toLowerCase()
-        .includes(columnFilters.classification_category.toLowerCase()) &&
-      row.classification_sub_category
+        .includes(columnFilters.category.toLowerCase()) &&
+      row.sub_category
         .toLowerCase()
-        .includes(columnFilters.classification_sub_category.toLowerCase())
+        .includes(columnFilters.sub_category.toLowerCase())
   );
 
   return (
@@ -609,9 +640,9 @@ const BehaviourGrid = () => {
 
                   <h3
                     className="text-blue-800 font-bold text-[16px] mb-3 pr-6 truncate"
-                    title={card.classification_item}
+                    title={card.title}
                   >
-                    {card.classification_item}
+                    {card.title}
                   </h3>
 
                   <div className="relative mb-3 h-[2px] bg-gray-300 overflow-hidden">
@@ -624,7 +655,7 @@ const BehaviourGrid = () => {
                         Category :{" "}
                       </span>
                       <span className="text-gray-700 text-sm">
-                        {card.classification_category}
+                        {card.category}
                       </span>
                     </div>
 
@@ -633,7 +664,7 @@ const BehaviourGrid = () => {
                         Sub Category :{" "}
                       </span>
                       <span className="text-gray-700 text-sm">
-                        {card.classification_sub_category}
+                        {card.sub_category}
                       </span>
                     </div>
                   </div>
