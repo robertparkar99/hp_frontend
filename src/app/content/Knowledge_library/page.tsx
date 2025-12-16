@@ -49,20 +49,34 @@ import { Atom } from "react-loading-indicators";
 import { Button } from "@/components/ui/button";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 
-interface SkillItem {
+interface KnowledgeItem {
   id: number;
-  skill_id: number;
-  proficiency_level: string;
-  proficiency_description: string;
-  classification: string;
-  classification_category: string;
-  classification_sub_category: string;
-  classification_item: string;
+  category: string;
+  sub_category: string;
+  title: string;
+  description: string;
+  business_link: string;
+  assessment_method: string;
+  knowledge_tags: string;
+  key_concepts: string;
+  theoretical_foundation: string;
+  complexity_level: string;
+  proficiency_expectation: string;
+  references: string;
+  certification_options: string;
+  compliance_relevance: string;
+  sub_institute_id: number;
+  created_by: any;
+  updated_by: any;
+  deleted_by: any;
+  created_at: string;
+  updated_at: any;
+  deleted_at: any;
 }
 
 const Honeycomb: React.FC = () => {
-  const [data, setData] = useState<SkillItem[]>([]);
-  const [filteredData, setFilteredData] = useState<SkillItem[]>([]);
+  const [data, setData] = useState<KnowledgeItem[]>([]);
+  const [filteredData, setFilteredData] = useState<KnowledgeItem[]>([]);
   const [sessionData, setSessionData] = useState({
     url: "",
     token: "",
@@ -75,14 +89,12 @@ const Honeycomb: React.FC = () => {
   // Dropdown state
   const [category, setCategory] = useState<string>("");
   const [subCategory, setSubCategory] = useState<string>("");
-  const [proficiency, setProficiency] = useState<string>("");
 
   // Column filter state
   const [filters, setFilters] = useState({
-    item: "",
+    title: "",
     category: "",
     subCategory: "",
-    proficiency: "",
     description: "",
   });
 
@@ -93,7 +105,7 @@ const Honeycomb: React.FC = () => {
   const [viewMode, setViewMode] = useState<"circle" | "table">("circle");
 
   // Dialog states
-  const [activeKnowledge, setActiveKnowledge] = useState<SkillItem | null>(null);
+  const [activeKnowledge, setActiveKnowledge] = useState<KnowledgeItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState({
     view: false,
   });
@@ -129,7 +141,12 @@ const Honeycomb: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=knowledge&order_by[id]=desc&group_by=classification_item`
+          `${sessionData.url}/table_data?filters[sub_institute_id]=3&table=s_user_knowledge`,
+          {
+            headers: {
+              Authorization: `Bearer ${sessionData.token}`,
+            },
+          }
         );
         const json = await res.json();
         const dataArray = Array.isArray(json) ? json : [];
@@ -150,19 +167,16 @@ const Honeycomb: React.FC = () => {
     let temp = data;
 
     if (category) {
-      temp = temp.filter((item) => item.classification_category === category);
+      temp = temp.filter((item) => item.category === category);
     }
     if (subCategory) {
       temp = temp.filter(
-        (item) => item.classification_sub_category === subCategory
+        (item) => item.sub_category === subCategory
       );
-    }
-    if (proficiency) {
-      temp = temp.filter((item) => item.proficiency_level === proficiency);
     }
 
     setFilteredData(temp);
-  }, [category, subCategory, proficiency, data]);
+  }, [category, subCategory, data]);
 
   // Get icon for classification item
   // const getItemIcon = (item: string) => {
@@ -225,67 +239,52 @@ const Honeycomb: React.FC = () => {
 
   // Apply column filters
   const columnFilteredData = filteredData.filter((item) =>
-    (item.classification_item || "").toLowerCase().includes(filters.item.toLowerCase()) &&
-    (item.classification_category || "").toLowerCase().includes(filters.category.toLowerCase()) &&
-    (item.classification_sub_category || "").toLowerCase().includes(filters.subCategory.toLowerCase()) &&
-    (item.proficiency_level || "").toLowerCase().includes(filters.proficiency.toLowerCase()) &&
-    (item.proficiency_description || "").toLowerCase().includes(filters.description.toLowerCase())
+    (item.title || "").toLowerCase().includes(filters.title.toLowerCase()) &&
+    (item.category || "").toLowerCase().includes(filters.category.toLowerCase()) &&
+    (item.sub_category || "").toLowerCase().includes(filters.subCategory.toLowerCase()) &&
+    (item.description || "").toLowerCase().includes(filters.description.toLowerCase())
   );
 
   // Unique options with proper filtering
   const uniqueCategories = Array.from(
-    new Set(data.map((item) => item.classification_category).filter(cat => cat && cat.trim() !== ""))
+    new Set(data.map((item) => item.category).filter(cat => cat && cat.trim() !== ""))
   );
 
   const filteredSubCategories = category
     ? Array.from(
       new Set(
         data
-          .filter((item) => item.classification_category === category)
-          .map((item) => item.classification_sub_category)
+          .filter((item) => item.category === category)
+          .map((item) => item.sub_category)
           .filter(sub => sub && sub.trim() !== "")
       )
     )
     : [];
 
-  const uniqueProficiency = Array.from(
-    new Set(data.map((item) => item.proficiency_level || "").filter(prof => prof !== null && prof !== undefined && prof !== ""))
-  ).sort((a, b) => {
-    const numA = parseInt(a, 10);
-    const numB = parseInt(b, 10);
-
-    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-    if (!isNaN(numA)) return -1;
-    if (!isNaN(numB)) return 1;
-
-    return (a || "").localeCompare(b || "");
-  });
-
   // DataTable columns with search inputs and icons
-  const columns: TableColumn<SkillItem>[] = [
+  const columns: TableColumn<KnowledgeItem>[] = [
     {
       name: (
         <div className="flex flex-col">
           <span className="flex items-center gap-2">
-            Item
+            Title
           </span>
           <div className="relative mt-1">
             <input
               type="text"
               placeholder="Search..."
-              onChange={(e) => setFilters({ ...filters, item: e.target.value })}
+              onChange={(e) => setFilters({ ...filters, title: e.target.value })}
               style={{ width: "100%", padding: "4px 8px 4px 8px", fontSize: "12px" }}
               className="border rounded"
             />
           </div>
         </div>
       ),
-      selector: (row) => row.classification_item,
+      selector: (row) => row.title,
       sortable: true,
       cell: (row) => (
         <div className="flex items-center gap-2">
-          {/* {getItemIcon(row.classification_item)} */}
-          {row.classification_item}
+          {row.title}
         </div>
       ),
     },
@@ -306,7 +305,7 @@ const Honeycomb: React.FC = () => {
           </div>
         </div>
       ),
-      selector: (row) => row.classification_category,
+      selector: (row) => row.category,
       sortable: true,
     },
     {
@@ -326,27 +325,7 @@ const Honeycomb: React.FC = () => {
           </div>
         </div>
       ),
-      selector: (row) => row.classification_sub_category,
-      sortable: true,
-    },
-    {
-      name: (
-        <div className="flex flex-col">
-          <span className="flex items-center gap-2">
-            Proficiency
-          </span>
-          <div className="relative mt-1">
-            <input
-              type="text"
-              placeholder="Search..."
-              onChange={(e) => setFilters({ ...filters, proficiency: e.target.value })}
-              style={{ width: "100%", padding: "4px 8px 4px 8px", fontSize: "12px" }}
-              className="border rounded"
-            />
-          </div>
-        </div>
-      ),
-      selector: (row) => row.proficiency_level,
+      selector: (row) => row.sub_category,
       sortable: true,
     },
     {
@@ -366,7 +345,47 @@ const Honeycomb: React.FC = () => {
           </div>
         </div>
       ),
-      selector: (row) => row.proficiency_description,
+      selector: (row) => row.description,
+      sortable: true,
+    },
+    {
+      name: "Assessment Method",
+      selector: (row) => row.assessment_method,
+      sortable: true,
+    },
+    {
+      name: "Knowledge Tags",
+      selector: (row) => row.knowledge_tags,
+      sortable: true,
+    },
+    {
+      name: "Key Concepts",
+      selector: (row) => row.key_concepts,
+      sortable: true,
+    },
+    {
+      name: "Complexity Level",
+      selector: (row) => row.complexity_level,
+      sortable: true,
+    },
+    {
+      name: "Proficiency Expectation",
+      selector: (row) => row.proficiency_expectation,
+      sortable: true,
+    },
+    {
+      name: "References",
+      selector: (row) => row.references,
+      sortable: true,
+    },
+    {
+      name: "Certification Options",
+      selector: (row) => row.certification_options,
+      sortable: true,
+    },
+    {
+      name: "Compliance Relevance",
+      selector: (row) => row.compliance_relevance,
       sortable: true,
     },
     {
@@ -468,22 +487,6 @@ const Honeycomb: React.FC = () => {
                   </SelectContent>
                 </Select>
 
-                <Select
-                  value={proficiency || "all"}
-                  onValueChange={(value) => setProficiency(value === "all" ? "" : value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Filter by Proficiency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Proficiency Levels</SelectItem>
-                    {uniqueProficiency.map((prof) => (
-                      <SelectItem key={prof} value={prof}>
-                        {prof}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </PopoverContent>
             </Popover>
 
@@ -594,9 +597,8 @@ const Honeycomb: React.FC = () => {
                       }}
                     >
                       <div className="mb-2">
-                        {/* {getItemIcon(item.classification_item)} */}
                       </div>
-                      {item.classification_item}
+                      {item.title}
                     </div>
                   );
                 })}

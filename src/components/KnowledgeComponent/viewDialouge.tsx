@@ -31,15 +31,15 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
   const [customTags, setCustomTags] = useState<any[]>([]);
   const [activeKnowledgeTab, setActiveKnowledgeTab] = useState<any>(null);
   const [activeAbilityTab, setActiveAbilityTab] = useState<any>(null);
-  const [activeApplicationTab, setActiveApplicationTab] = useState<any>(null);
+  // const [activeApplicationTab, setActiveApplicationTab] = useState<any>(null);
   const [jobroleData, setJobroleData] = useState<any[]>([]);
   const [proficiencyLevel, setProficiencyLevel] = useState<any[]>([]);
   const [knowldegeData, setKnowldegeData] = useState<any[]>([]);
   const [knowldegeLevel, setKnowlegeLevel] = useState<any[]>([]);
   const [abilityLevel, setAbilityLevel] = useState<any[]>([]);
-  const [applicationLevel, setApplicationLevel] = useState<any[]>([]);
+  // const [applicationLevel, setApplicationLevel] = useState<any[]>([]);
   const [abilityData, setAbililtyData] = useState<any[]>([]);
-  const [applicationData, setApplicationData] = useState<any[]>([]);
+  // const [applicationData, setApplicationData] = useState<any[]>([]);
   const [attitudeData, setAttitudeData] = useState<any[]>([]);
   const [behaviourData, setBehaviourData] = useState<any[]>([]);
 
@@ -79,12 +79,17 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
         setLoading(true);
         try {
           const res = await fetch(
-            `${sessionUrl}/table_data?table=s_skill_knowledge_ability&filters[id]=${knowledgeId}&filters[sub_institute_id]=${sessionSubInstituteId}&filters[classification]=knowledge`
+            `${sessionUrl}/table_data?filters[sub_institute_id]=3&table=s_user_knowledge`,
+            {
+              headers: {
+                Authorization: `Bearer ${sessionToken}`,
+              },
+            }
           );
           const data = await res.json();
-          setViewData(data[0] || null);
+          setViewData(data.find((item: any) => item.id === knowledgeId) || null);
         } catch (error) {
-          console.error("Error fetching skill data:", error);
+          console.error("Error fetching knowledge data:", error);
           setViewData(null);
         } finally {
           setLoading(false);
@@ -92,7 +97,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
       };
       fetchData();
     }
-  }, [sessionUrl, sessionToken]);
+  }, [sessionUrl, sessionToken, knowledgeId]);
 
   // ✅ Auto-select first KAAB tab when in kaab-only mode
   useEffect(() => {
@@ -151,7 +156,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
     },
     {
       id: 2,
-      title: "Knowledge Proficiency Level",
+      title: "Knowledge Level",
       iconClass: "mdi mdi-arrow-up-box",
       images: "assets/skill_images/proficiency.png",
     },
@@ -167,12 +172,12 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
       iconClass: "mdi mdi-alpha-a-box",
       images: "assets/skill_images/ability.png",
     },
-    {
-      id: 5,
-      title: "Knowledge Application",
-      iconClass: "mdi mdi-send",
-      images: "assets/skill_images/application.png",
-    },
+    // {
+    //   id: 5,
+    //   title: "Knowledge Application",
+    //   iconClass: "mdi mdi-send",
+    //   images: "assets/skill_images/application.png",
+    // },
     {
       id: 6,
       title: "Knowledge Attitude",
@@ -271,11 +276,11 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
     classification_sub_category: string;
     [key: string]: any;
   }
-  interface applicationItem {
-    application: string;
-    proficiency_level: number | string;
-    [key: string]: any;
-  }
+  // interface applicationItem {
+  //   application: string;
+  //   proficiency_level: number | string;
+  //   [key: string]: any;
+  // }
 
   function empty(arr: any[]) {
     return !Array.isArray(arr) || arr.length === 0;
@@ -501,7 +506,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                 <div className="heade">
                   <h2 className="text-gray-800 font-bold text-lg">
                     <b>Knowledge Name : </b>
-                    {viewData?.classification_item}
+                    {viewData?.title}
                   </h2>
                   {/* <h5 className="text-gray-600 font-semibold text-sm">
                     <b>Industry : </b>
@@ -509,11 +514,11 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   </h5> */}
                   <h5 className="text-gray-600 font-semibold text-sm">
                     <b>Category : </b>
-                    {viewData?.classification_category}
+                    {viewData?.category}
                   </h5>
                   <h5 className="text-gray-600 font-semibold text-sm">
                     <b>Sub Category : </b>
-                    {viewData?.classification_sub_category}
+                    {viewData?.sub_category}
                   </h5>
                 </div>
               </div>
@@ -688,14 +693,14 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>KNOWLEDGE DETAILS</b>
+                          <b>Knowledge Details</b>
                       </h2>
                     </div>
                     <div className="cardDetails grid grid-cols-3 gap-6 p-4">
                       {/* ... existing Skill Details content ... */}
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          KNOWLEDGE Category
+                            Knowledge Category
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
@@ -704,14 +709,14 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                       </div>
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          KNOWLEDGE Sub Category
+                            Knowledge Sub Category
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
                           {viewData.sub_category ? viewData.sub_category : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                           KNOWLEDGE Micro Category
                         </h4>
@@ -721,19 +726,19 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                             ? viewData.micro_category
                             : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          KNOWLEDGE Name
+                            Knowledge Name
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
                           {viewData.title ? viewData.title : "-"}
                         </p>
-                      </div>
+                      </div> */}
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          KNOWLEDGE Description
+                            Knowledge Description
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
@@ -758,7 +763,16 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                           <p className="text-[12px]">-</p>
                         )}
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-[14px] text-[#2060E6] font-bold">
+                            Knowledge Tags
+                          </h4>
+                          <hr className="text-[#ddd] pt-2" />
+                          <p className="text-[12px]">
+                            {viewData.knowledge_tags ? viewData.knowledge_tags : "-"}
+                          </p>
+                        </div>
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                           KNOWLEDGE Custom Tags
                         </h4>
@@ -775,16 +789,27 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                               </ul>
                             ))
                           : "-"}
-                      </div>
+                      </div> */}
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          KNOWLEDGE Business Links
+                            Knowledge Business Links
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">
-                          {viewData.bussiness_links
-                            ? viewData.bussiness_links
-                            : "-"}
+                        <p className="text-[12px] break-words">
+                            {viewData.business_link ? (
+                              viewData.business_link.startsWith('http') ? (
+                                <a
+                                  href={viewData.business_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-800 underline break-words"
+                                >
+                                  {viewData.business_link}
+                                </a>
+                              ) : (
+                                viewData.business_link
+                              )
+                            ) : "-"}
                         </p>
                       </div>
                       {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
@@ -792,7 +817,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                    <hr className="text-[#ddd] pt-2" />
                    <p className="text-[12px]">{viewData.proficiency_level ? viewData.proficiency_level : '-'}</p>
                  </div> */}
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                           KNOWLEDGE Learning Resource
                         </h4>
@@ -802,30 +827,30 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                             ? viewData.learning_resources
                             : "-"}
                         </p>
-                      </div>
+                      </div> */}
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          KNOWLEDGE Assesment Method
+                            Knowledge Assessment Method
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
-                          {viewData.assesment_method
-                            ? viewData.assesment_method
+                            {viewData.assessment_method
+                              ? viewData.assessment_method
                             : "-"}
                         </p>
                       </div>
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          KNOWLEDGE Certification/Qualification
+                            Knowledge Certification Options
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
-                          {viewData.certification_qualifications
-                            ? viewData.certification_qualifications
+                            {viewData.certification_options
+                              ? viewData.certification_options
                             : "-"}
                         </p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                           KNOWLEDGE Experience/Project
                         </h4>
@@ -835,8 +860,8 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                             ? viewData.experience_project
                             : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                           KNOWLEDGE Maps
                         </h4>
@@ -865,8 +890,8 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                             ? viewData.skill_importance
                             : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                           KNOWLEDGE Legel/Compliance Relevance
                         </h4>
@@ -876,8 +901,8 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                             ? viewData.legal_compliance_relevance
                             : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                           KNOWLEDGE SOP Practice Link
                         </h4>
@@ -887,10 +912,10 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                             ? viewData.sop_practice_link
                             : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          KNOWLEDGE Performance Metrics
+                          Knowledge Performance Metrics
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
@@ -901,7 +926,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                       </div>
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          KNOWLEDGE Common Errors Tips
+                          Knowledge Common Errors Tips
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
@@ -912,7 +937,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                       </div>
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          KNOWLEDGE SME/Help Contacts
+                          Knowledge SME/Help Contacts
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
@@ -921,14 +946,24 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                       </div>
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                          Sub-KNOWLEDGES
+                          Sub-Knowledges
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
                           {viewData.sub_skills ? viewData.sub_skills : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+
+                        <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                          <h4 className="text-[14px] text-[#2060E6] font-bold">
+                            Compliance Relevance
+                          </h4>
+                          <hr className="text-[#ddd] pt-2" />
+                          <p className="text-[12px]">
+                            {viewData.compliance_relevance ? viewData.compliance_relevance : "-"}
+                          </p>
+                        </div>
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                           KNOWLEDGE Workflow/Mindmap
                         </h4>
@@ -945,7 +980,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                         <p className="text-[12px]">
                           {viewData.tasklist ? viewData.tasklist : "-"}
                         </p>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 )}
@@ -953,7 +988,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>KNOWLEDGE JOBROLE</b>
+                          <b>Knowledge Jobrole</b>
                       </h2>
                     </div>
                     {jobroleData && jobroleData.length > 0 ? (
@@ -1012,7 +1047,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>KNOWLEDGE PROFICIENCY LEVEL</b>
+                          <b>Knowledge Level</b>
                       </h2>
                     </div>
                     {proficiencyLevel && proficiencyLevel.length > 0 ? (
@@ -1074,7 +1109,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>KNOWLEDGE SKILL</b>
+                          <b>Knowledge Skill</b>
                       </h2>
                     </div>
                     {renderKaabWithProficiencyLevels("knowledge")}
@@ -1084,13 +1119,13 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>KNOWLEDGE ABILITY</b>
+                          <b>Knowledge Ability</b>
                       </h2>
                     </div>
                     {renderKaabWithProficiencyLevels("ability")}
                   </div>
                 )}
-                {activeCardIndex === 5 && (
+                  {/* {activeCardIndex === 5 && (
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
@@ -1173,12 +1208,12 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                       </div>
                     )}
                   </div>
-                )}
+                )} */}
                 {activeCardIndex === 6 && (
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>KNOWLEDGE ATTITUDE</b>
+                          <b>Knowledge Attitude</b>
                       </h2>
                     </div>
                     {renderKaabWithProficiencyLevels("attitude")}
@@ -1188,7 +1223,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>KNOWLEDGE BEHAVIOUR</b>
+                          <b>Knowledge Behaviour</b>
                       </h2>
                     </div>
                     {renderKaabWithProficiencyLevels("behaviour")}
