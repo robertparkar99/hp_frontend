@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import ViewSkill from "@/components/skillComponent/viewDialouge"; // ✅ import ViewSkill
+// import ViewSkill from "@/components/skillComponent/viewDialouge"; // ✅ import ViewSkill
 import { Description } from "@radix-ui/react-dialog";
 
 type JobRole = {
@@ -324,16 +324,16 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole
   const mapKabaItems = (arr: KabaItem[]) => arr.map((i) => ({ id: i.id, category: i.category, sub_category: i.sub_category, title: i.title }));
 
   // ✅ Handle skill click to open ViewSkill modal
-  const handleSkillClick = (skillId: number) => {
-    setSelectedSkillId(skillId);
-    setIsViewSkillOpen(true);
-  };
+  // const handleSkillClick = (skillId: number) => {
+  //   setSelectedSkillId(skillId);
+  //   setIsViewSkillOpen(true);
+  // };
 
-  // ✅ Close ViewSkill modal
-  const handleCloseViewSkill = () => {
-    setIsViewSkillOpen(false);
-    setSelectedSkillId(null);
-  };
+  // // ✅ Close ViewSkill modal
+  // const handleCloseViewSkill = () => {
+  //   setIsViewSkillOpen(false);
+  //   setSelectedSkillId(null);
+  // };
 
   if (!isOpen || !jobRole) return null;
 
@@ -427,7 +427,6 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole
                           <TableCell>
                             {selectedFunction === criticalFunction && (
                               <Button className="bg-green-400 text-white hover:bg-green-500" onClick={() => {
-                                // Calculate tasksByFunction locally
                                 const tasksByFunction = tasksData.reduce((acc, task) => {
                                   const fn = task.critical_work_function || "Uncategorized";
                                   if (!acc[fn]) acc[fn] = [];
@@ -438,24 +437,28 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole
                                 const tasksForFunction = tasksByFunction[selectedFunction] || [];
                                 const keyTasks = tasksForFunction.map(task => task.taskName);
 
-                                const jsonObject = {
+                                const payload = {
                                   industry: sessionData.orgType,
                                   department: jobRole.department,
                                   jobrole: jobRole.jobrole,
                                   description: jobRole.description,
                                   critical_work_function: selectedFunction,
-                                  key_tasks: keyTasks
-                                };
-
-                                const payload = {
-                                  ...jsonObject,
+                                  key_tasks: keyTasks,
                                   knowledge: mapKabaItems(knowledgeItems),
                                   ability: mapKabaItems(abilityItems),
                                   attitude: mapKabaItems(attitudeItems),
                                   behaviour: mapKabaItems(behaviourItems),
                                 };
+
+                                // ✅ CONSOLE LOG ON CONFIG CLICK
+                                console.log("🟢 Configuration Payload (Critical Work Function):",
+                                  JSON.stringify(payload, null, 2)
+                                );
+
                                 onConfig(payload);
-                              }}>Configuration</Button>
+                              }}
+                              >
+                                Configuration</Button>
                             )}
                           </TableCell>
                         )}
@@ -491,9 +494,7 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole
                       <div className="grid md:grid-cols-2 gap-4">
                         {skills.map((skill, index) => (
                           <div
-                            key={skill.id || index}
-                            onClick={() => skill.skill_id && handleSkillClick(Number(skill.skill_id))} // ✅ use skill.skill_id here
-                            className="border-l-4 border-blue-500 pl-4 py-2 bg-gray-50 rounded-r cursor-pointer hover:bg-blue-50 transition relative"
+                            className="border-l-4 border-blue-500 pl-4 py-2 bg-gray-50 rounded-r cursor-default hover:bg-blue-50 transition relative"
                           >
                             {showSkillRadios && (
                               <input
@@ -527,8 +528,9 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole
                             )}
                             {showSkillRadios && selectedSkill === skill.skill_id && (
                               <Button className="bg-green-400 text-white hover:bg-green-500 mt-2 w-full" onClick={(e) => {
-                                e.stopPropagation(); // Prevent triggering the card click
-                                const jsonObject = {
+                                e.stopPropagation();
+
+                                const payload = {
                                   industry: sessionData.orgType,
                                   department: jobRole.department,
                                   jobrole: jobRole.jobrole,
@@ -540,9 +542,19 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole
                                     proficiency_level: skill.proficiency_level,
                                     description: skill.description,
                                     skill_id: skill.skill_id
-                                  }
+                                  },
+                                  knowledge: mapKabaItems(knowledgeItems),
+                                  ability: mapKabaItems(abilityItems),
+                                  attitude: mapKabaItems(attitudeItems),
+                                  behaviour: mapKabaItems(behaviourItems),
                                 };
-                                onConfig(jsonObject);
+
+                                // ✅ CONSOLE LOG ON CONFIG CLICK
+                                console.log("🟢 Configuration Payload (Skill):",
+                                  JSON.stringify(payload, null, 2)
+                                );
+
+                                onConfig(payload);
                               }}>
                                 Configuration
                               </Button>
@@ -603,7 +615,7 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole
 
       {/* // In your JobDescriptionModal.tsx, update the ViewSkill usage: */}
 
-      {isViewSkillOpen && selectedSkillId && (
+      {/* {isViewSkillOpen && selectedSkillId && (
         <ViewSkill
           skillId={selectedSkillId}
           formType="user"
@@ -611,7 +623,7 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, jobRole
           onSuccess={() => { }}
           viewMode="kaab-only" // ✅ This will show only KAAB data with proficiency levels
         />
-      )}
+      )} */}
     </>
   );
 }

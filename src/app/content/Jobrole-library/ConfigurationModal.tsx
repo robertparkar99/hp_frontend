@@ -47,27 +47,27 @@ interface Department {
 // AI Models data
 const aiModels = [
   // 🔹 Tier 1: Best for structured instructional generation
-  { id: "deepseek/deepseek-chat-v3.1", name: "DeepSeek Chat v3.1", contextWindow: 32768, price: "FREE", type: "structured-output", notes: "Low hallucination. Great for JSON output." },
-  { id: "mistralai/mistral-small-3.2-24b-instruct", name: "Mistral Small 3.2", contextWindow: 32000, price: "FREE", type: "high-accuracy", notes: "Stable format and fast response." },
-  { id: "tngtech/deepseek-r1t2-chimera", name: "DeepSeek R1T2 Chimera", contextWindow: 32768, price: "FREE", type: "balanced", notes: "Capable of complex instructional tasks." },
-  { id: "z-ai/glm-4.5-air", name: "GLM-4.5-Air", contextWindow: 128000, price: "FREE", type: "general", notes: "Multilingual support, structured friendly." },
-  { id: "meta-llama/llama-3.3-8b-instruct", name: "LLaMA 3.3", contextWindow: 8192, price: "FREE", type: "lightweight", notes: "Fast instruction-focused model." },
+  { id: "deepseek/deepseek-chat-v3.1", name: "DeepSeek Chat v3.1", contextWindow: 32768, type: "structured-output", notes: "Low hallucination. Great for JSON output." },
+  { id: "mistralai/mistral-small-3.2-24b-instruct", name: "Mistral Small 3.2", contextWindow: 32000, type: "high-accuracy", notes: "Stable format and fast response." },
+  { id: "tngtech/deepseek-r1t2-chimera", name: "DeepSeek R1T2 Chimera", contextWindow: 32768, type: "balanced", notes: "Capable of complex instructional tasks." },
+  { id: "z-ai/glm-4.5-air", name: "GLM-4.5-Air", contextWindow: 128000, type: "general", notes: "Multilingual support, structured friendly." },
+  { id: "meta-llama/llama-3.3-8b-instruct", name: "LLaMA 3.3", contextWindow: 8192, type: "lightweight", notes: "Fast instruction-focused model." },
 
   // 🔸 Tier 2: Acceptable fallbacks
-  { id: "openai/gpt-oss-20b", name: "GPT-OSS 20B", contextWindow: 8192, price: "FREE", type: "fallback", notes: "Low cost, mixed consistency." },
-  { id: "meituan/longcat-flash-chat", name: "LongCat Flash Chat", contextWindow: 32000, price: "FREE", type: "fallback", notes: "May hallucinate formatting." },
-  { id: "alibaba/tongyi-deepresearch-30b-a3b", name: "Tongyi DeepResearch", contextWindow: 32768, price: "FREE", type: "experimental", notes: "Unstable output." },
-  { id: "nousresearch/deephermes-3-llama-3-8b-preview", name: "DeepHermes-3", contextWindow: 8192, price: "FREE", type: "preview", notes: "Emerging, inconsistent." },
-  { id: "mistralai/mistral-nemo", name: "Mistral-NeMo", contextWindow: 8192, price: "FREE", type: "fallback", notes: "Use for small requests." },
+  { id: "openai/gpt-oss-20b", name: "GPT-OSS 20B", contextWindow: 8192, type: "fallback", notes: "Low cost, mixed consistency." },
+  { id: "meituan/longcat-flash-chat", name: "LongCat Flash Chat", contextWindow: 32000, type: "fallback", notes: "May hallucinate formatting." },
+  { id: "alibaba/tongyi-deepresearch-30b-a3b", name: "Tongyi DeepResearch", contextWindow: 32768, type: "experimental", notes: "Unstable output." },
+  { id: "nousresearch/deephermes-3-llama-3-8b-preview", name: "DeepHermes-3", contextWindow: 8192, type: "preview", notes: "Emerging, inconsistent." },
+  { id: "mistralai/mistral-nemo", name: "Mistral-NeMo", contextWindow: 8192, type: "fallback", notes: "Use for small requests." },
 
   // 🟡 Tier 3: Optional exploration
-  { id: "moonshotai/kimi-dev-72b", name: "Kimi Dev 72B", contextWindow: 128000, price: "FREE", type: "experimental", notes: "High context. Slower latency." },
-  { id: "meta-llama/llama-3.2-3b-instruct", name: "LLaMA 3.2", contextWindow: 8192, price: "FREE", type: "lightweight", notes: "Fast but low quality." },
-  { id: "nvidia/nemotron-nano-9b-v2", name: "Nemotron 9B", contextWindow: 8192, price: "FREE", type: "low-tier", notes: "Avoid unless fallback." },
-  { id: "microsoft/mai-ds-r1", name: "MAI-DS R1", contextWindow: 8192, price: "FREE", type: "experimental", notes: "Experimental model." },
-  { id: "qwen/qwen3-235b-a22b", name: "Qwen 3 235B", contextWindow: 131072, price: "FREE", type: "massive", notes: "Very high context." },
-  { id: "qwen/qwen2.5-vl-72b-instruct", name: "Qwen VL 72B", contextWindow: 128000, price: "FREE", type: "text-only", notes: "Vision model. Use for text only." },
-  { id: "meta-llama/llama-4-maverick", name: "LLaMA 4 Maverick", contextWindow: 8192, price: "FREE", type: "experimental", notes: "Unstable, early release." }
+  { id: "moonshotai/kimi-dev-72b", name: "Kimi Dev 72B", contextWindow: 128000, type: "experimental", notes: "High context. Slower latency." },
+  { id: "meta-llama/llama-3.2-3b-instruct", name: "LLaMA 3.2", contextWindow: 8192, type: "lightweight", notes: "Fast but low quality." },
+  { id: "nvidia/nemotron-nano-9b-v2", name: "Nemotron 9B", contextWindow: 8192, type: "low-tier", notes: "Avoid unless fallback." },
+  { id: "microsoft/mai-ds-r1", name: "MAI-DS R1", contextWindow: 8192, type: "experimental", notes: "Experimental model." },
+  { id: "qwen/qwen3-235b-a22b", name: "Qwen 3 235B", contextWindow: 131072, type: "massive", notes: "Very high context." },
+  { id: "qwen/qwen2.5-vl-72b-instruct", name: "Qwen VL 72B", contextWindow: 128000, type: "text-only", notes: "Vision model. Use for text only." },
+  { id: "meta-llama/llama-4-maverick", name: "LLaMA 4 Maverick", contextWindow: 8192, type: "experimental", notes: "Unstable, early release." }
 ];
 
 type Config = {
@@ -83,7 +83,7 @@ type Config = {
   slideCount: number;
   presentationStyle: string;
   language: string;
-  repetition: boolean;
+  // repetition: boolean;
   aiModel: string;
 };
 
@@ -100,7 +100,7 @@ const DEFAULT_CONFIG: Config = {
   slideCount: 15,
   presentationStyle: "Modern",
   language: "English",
-  repetition: false,
+  // repetition: false,
   aiModel: "deepseek/deepseek-chat-v3.1",
 };
 
@@ -165,7 +165,7 @@ function AiModelDropdown({
                 <div className="font-medium">{model.name}</div>
                 <div className="text-xs text-gray-500 flex justify-between">
                   <span>{model.contextWindow.toLocaleString()} context</span>
-                  <span>{model.price}</span>
+                  {/* <span>{model.price}</span> */}
                 </div>
               </button>
             ))}
@@ -189,7 +189,7 @@ function AiModelDropdown({
                 <div className="font-medium">{model.name}</div>
                 <div className="text-xs text-gray-500 flex justify-between">
                   <span>{model.contextWindow.toLocaleString()} context</span>
-                  <span>{model.price}</span>
+                  {/* <span>{model.price}</span> */}
                 </div>
               </button>
             ))}
@@ -213,7 +213,7 @@ function AiModelDropdown({
                 <div className="font-medium">{model.name}</div>
                 <div className="text-xs text-gray-500 flex justify-between">
                   <span>{model.contextWindow.toLocaleString()} context</span>
-                  <span>{model.price}</span>
+                  {/* <span>{model.price}</span> */}
                 </div>
               </button>
             ))}
@@ -232,7 +232,7 @@ function AiModelDropdown({
                 ? "text-amber-600"
                 : "text-red-600"
               }`}>
-              {selectedModel.price}
+              {/* {selectedModel.price} */}
             </span>
           </div>
           <div className="text-gray-400 mt-1">{selectedModel.notes}</div>
@@ -257,7 +257,7 @@ function ModelInfoDisplay({ modelId }: { modelId: string }) {
           <div className="text-xs text-blue-700 mt-1 space-y-1">
             <div>Context: {model.contextWindow.toLocaleString()} tokens</div>
             <div>Type: {model.type}</div>
-            <div>Price: {model.price}</div>
+            {/* <div>Price: {model.price}</div> */}
           </div>
         </div>
         <div className={`px-2 py-1 rounded text-xs font-medium ${model.type === "structured-output" || model.type === "high-accuracy"
@@ -418,11 +418,11 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   }, []);
 
   // Handle tab switching based on repetition checkbox
-  useEffect(() => {
-    if (!cfg.repetition && activeTab === 'courseParams') {
-      setActiveTab('presentationConfig');
-    }
-  }, [cfg.repetition, activeTab]);
+  // useEffect(() => {
+  //   if (!cfg.repetition && activeTab === 'courseParams') {
+  //     setActiveTab('presentationConfig');
+  //   }
+  // }, [cfg.repetition, activeTab]);
 
   // Update handleResync function
 
@@ -447,7 +447,10 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          jsonObject,
+          jsonObject: {
+            ...jsonObject,
+            slideCount: cfg.slideCount
+          },
           modality: cfg.modality,
           aiModel: cfg.aiModel,
           industry
@@ -505,6 +508,8 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     setCourseLoading(true);
     setError(null);
     setSuccess(null);
+
+  
 
     try {
       const response = await fetch("/api/generate-course", {
@@ -651,7 +656,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                         </button>
                       </div>
 
-                      {activeTab === 'courseParams' && cfg.repetition && (
+                      {activeTab === 'courseParams' &&(
                         <fieldset className="space-y-4">
                           <legend className="text-sm font-semibold text-gray-700 mb-4">
                             Course Parameters
@@ -761,7 +766,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                               )}
                             </button>
                             <div className="text-xs text-gray-500 text-center mt-2">
-                              <p>This will generate a 10-slide course outline</p>
+                              <p>This will generate a {cfg.slideCount}-slide course outline</p>
                             </div>
                           </div>
                         </fieldset>
@@ -828,7 +833,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                                 <option value="Minimal">Minimal</option>
                               </select>
                             </div> */}
-                            <div className="space-y-2 md:col-span-2">
+                            {/* <div className="space-y-2 md:col-span-2">
                               <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                                 <input
                                   type="checkbox"
@@ -838,7 +843,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                                 />
                                 No repetition of content across slides
                               </label>
-                            </div>
+                            </div> */}
                           </div>
                         </fieldset>
                       )}
