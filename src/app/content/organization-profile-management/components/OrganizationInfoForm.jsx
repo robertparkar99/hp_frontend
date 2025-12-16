@@ -26,6 +26,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
   const [sessionData, setSessionData] = useState({});
   const [sessionOrgType, setSessionOrgType] = useState('');
   const [industryOptions, setIndustryOptions] = useState([]);
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     legal_name: '',
     cin: '',
@@ -52,6 +53,15 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
       logoPreview: null,
     },
   ]);
+
+  const validatePAN = (pan) => {
+    if (!pan) return '';
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    if (!panRegex.test(pan)) {
+      return 'PAN must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., AAAAA9999A)';
+    }
+    return '';
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -150,8 +160,12 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
   };
 
  const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
+   e.preventDefault();
+   if (Object.values(errors).some(err => err)) {
+     alert('Please fix validation errors before submitting.');
+     return;
+   }
+   try {
     const formDataPayload = new FormData();
 
     // Main org data
@@ -303,6 +317,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
   };
 
   const handleSisterChange = (index, field, value) => {
+    if (field === 'pan') value = value.toUpperCase();
     const updated = [...sisterCompanies];
     updated[index][field] = value;
     setSisterCompanies(updated);
@@ -385,10 +400,12 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
               <Input
                 value={displayValue(formData.pan, '')}
-                placeholder="Enter 10-digit PAN"
+                placeholder="Enter PAN (e.g., AAAAA9999A)"
                 onChange={(e) => handleInputChange('pan', e.target.value)}
+                onBlur={(e) => setErrors(prev => ({...prev, pan: validatePAN(e.target.value)}))}
                 required
               />
+              {errors.pan && <p className="text-red-500 text-xs">{errors.pan}</p>}
             </div>
           </div>
 
@@ -552,9 +569,11 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
               <label className="block text-sm font-medium">PAN</label>
               <Input
                 value={displayValue(sister.pan, '')}
-                placeholder="Enter 10-digit PAN"
+                placeholder="Enter PAN (e.g., AAAAA9999A)"
                 onChange={(e) => handleSisterChange(index, 'pan', e.target.value)}
+                onBlur={(e) => setErrors(prev => ({...prev, [`sister_pan_${index}`]: validatePAN(e.target.value)}))}
               />
+              {errors[`sister_pan_${index}`] && <p className="text-red-500 text-xs">{errors[`sister_pan_${index}`]}</p>}
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium">Industry</label>
