@@ -3,6 +3,7 @@ import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
+import { Bot } from 'lucide-react';
 
 export const LogoSection: React.FC = () => {
   const router = useRouter();
@@ -166,9 +167,8 @@ export const LogoSection: React.FC = () => {
             </div>,
             document.body
           )}
-
-        {/* notification icon */}
-        <div className="notificationIcon cursor-pointer">
+          {/* notification icon */}
+        {/* <div className="notificationIcon cursor-pointer">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -182,6 +182,19 @@ export const LogoSection: React.FC = () => {
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
           </svg>
+        </div> */}
+
+        {/* chatbot icon */}
+        <div className="cursor-pointer">
+          <button
+            onClick={() => {
+              const event = new CustomEvent('openChatbot');
+              window.dispatchEvent(event);
+            }}
+            className="p-2 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-all"
+          >
+            <Bot className="w-6 h-6 text-blue-600" />
+          </button>
         </div>
       </div>
 
