@@ -381,6 +381,19 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [courseLoading, setCourseLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  // Auto-dismiss success message after 5 seconds
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (success) {
+      timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [success]);
 
   const [sessionData, setSessionData] = useState<any>(null);
   const [industry, setIndustry] = useState<string>("");
