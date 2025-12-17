@@ -83,12 +83,16 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
         setLoading(true);
         try {
           const res = await fetch(
-            `${sessionUrl}/table_data?table=s_skill_knowledge_ability&filters[id]=${knowledgeId}&filters[sub_institute_id]=${sessionSubInstituteId}&filters[classification]=${classification}`
+            `https://hp.triz.co.in/table_data?table=s_user_attitude&filters[id]=${knowledgeId}&filters[sub_institute_id]=3`
           );
           const data = await res.json();
-          setViewData(data[0] || null);
+          const attitudeData = data[0] || null;
+          setViewData(attitudeData);
+          if (attitudeData) {
+            setCustomTags(attitudeData.attitude_tags ? attitudeData.attitude_tags.split(',').map((tag: string) => tag.trim()) : []);
+          }
         } catch (error) {
-          console.error("Error fetching skill data:", error);
+          console.error("Error fetching attitude data:", error);
           setViewData(null);
         } finally {
           setLoading(false);
@@ -155,7 +159,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
     },
     {
       id: 2,
-      title: `${typeName} Proficiency Level`,
+      title: `${typeName} Level`,
       iconClass: "mdi mdi-arrow-up-box",
       images: "assets/skill_images/proficiency.png",
     },
@@ -171,12 +175,12 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
     //   iconClass: "mdi mdi-alpha-a-box",
     //   images: "assets/skill_images/ability.png",
     // },
-    {
-      id: 5,
-      title: `${typeName} Application`,
-      iconClass: "mdi mdi-send",
-      images: "assets/skill_images/application.png",
-    },
+    // {
+    //   id: 5,
+    //   title: `${typeName} Application`,
+    //   iconClass: "mdi mdi-send",
+    //   images: "assets/skill_images/application.png",
+    // },
     {
       id: 6,
       title: `${typeName} Attitude`,
@@ -505,7 +509,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                 <div className="heade">
                   <h2 className="text-gray-800 font-bold text-lg">
                     <b>{typeName} Name : </b>
-                    {viewData?.classification_item}
+                    {viewData?.title}
                   </h2>
                   {/* <h5 className="text-gray-600 font-semibold text-sm">
                     <b>Industry : </b>
@@ -513,11 +517,11 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   </h5> */}
                   <h5 className="text-gray-600 font-semibold text-sm">
                     <b>Category : </b>
-                    {viewData?.classification_category}
+                    {viewData?.category}
                   </h5>
                   <h5 className="text-gray-600 font-semibold text-sm">
                     <b>Sub Category : </b>
-                    {viewData?.classification_sub_category}
+                    {viewData?.sub_category}
                   </h5>
                 </div>
               </div>
@@ -697,7 +701,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                     </div>
                     <div className="cardDetails grid grid-cols-3 gap-6 p-4">
                       {/* ... existing Skill Details content ... */}
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                         Attitude Category
                         </h4>
@@ -714,8 +718,8 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                         <p className="text-[12px]">
                           {viewData.sub_category ? viewData.sub_category : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                         Attitude Micro Category
                         </h4>
@@ -725,8 +729,8 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                             ? viewData.micro_category
                             : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                         Attitude Name
                         </h4>
@@ -734,7 +738,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                         <p className="text-[12px]">
                           {viewData.title ? viewData.title : "-"}
                         </p>
-                      </div>
+                      </div> */}
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                         Attitude Description
@@ -764,7 +768,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                       </div>
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
-                        Attitude Custom Tags
+                            Attitude Tags
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         {customTags && !empty(customTags)
@@ -786,9 +790,18 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                         </h4>
                         <hr className="text-[#ddd] pt-2" />
                         <p className="text-[12px]">
-                          {viewData.bussiness_links
-                            ? viewData.bussiness_links
-                            : "-"}
+                            {viewData.business_link ? (
+                              <a
+                                href={viewData.business_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 underline hover:text-blue-800 break-words"
+                              >
+                                {viewData.business_link}
+                              </a>
+                            ) : (
+                              "-"
+                            )}
                         </p>
                       </div>
                       {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
@@ -796,7 +809,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                    <hr className="text-[#ddd] pt-2" />
                    <p className="text-[12px]">{viewData.proficiency_level ? viewData.proficiency_level : '-'}</p>
                  </div> */}
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                         Attitude Learning Resource
                         </h4>
@@ -806,19 +819,63 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                             ? viewData.learning_resources
                             : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">
-                        Attitude Assesment Method
-                        </h4>
-                        <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">
-                          {viewData.assesment_method
-                            ? viewData.assesment_method
+                      </div> */}
+                        <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                          <h4 className="text-[14px] text-[#2060E6] font-bold">
+                            Attitude Assesment Method
+                          </h4>
+                          <hr className="text-[#ddd] pt-2" />
+                          <p className="text-[12px]">
+                            {viewData.assessment_method
+                              ? viewData.assessment_method
+                              : "-"}
+                          </p>
+                        </div>
+                        <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                          <h4 className="text-[14px] text-[#2060E6] font-bold">
+                            Attitude Development Methods
+                          </h4>
+                          <hr className="text-[#ddd] pt-2" />
+                          <p className="text-[12px]">
+                            {viewData.development_methods
+                              ? viewData.development_methods
+                              : "-"}
+                          </p>
+                        </div>
+                        <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                          <h4 className="text-[14px] text-[#2060E6] font-bold">
+                            Attitude Negative Indicators
+                          </h4>
+                          <hr className="text-[#ddd] pt-2" />
+                          <p className="text-[12px]">
+                            {viewData.negative_indicators
+                              ? viewData.negative_indicators
+                              : "-"}
+                          </p>
+                        </div>
+                        <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                          <h4 className="text-[14px] text-[#2060E6] font-bold">
+                            Attitude Improvement Strategies
+                          </h4>
+                          <hr className="text-[#ddd] pt-2" />
+                          <p className="text-[12px]">
+                            {viewData.improvement_strategies
+                              ? viewData.improvement_strategies
                             : "-"}
                         </p>
                       </div>
                       <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-[14px] text-[#2060E6] font-bold">
+                            Attitude Cultural Alignment
+                          </h4>
+                          <hr className="text-[#ddd] pt-2" />
+                          <p className="text-[12px]">
+                            {viewData.cultural_alignment
+                              ? viewData.cultural_alignment
+                              : "-"}
+                          </p>
+                        </div>
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                         Attitude Certification/Qualification
                         </h4>
@@ -828,8 +885,8 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                             ? viewData.certification_qualifications
                             : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                         Attitude Experience/Project
                         </h4>
@@ -839,8 +896,8 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                             ? viewData.experience_project
                             : "-"}
                         </p>
-                      </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                      </div> */}
+                        {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
                         Attitude Maps
                         </h4>
@@ -949,7 +1006,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                         <p className="text-[12px]">
                           {viewData.tasklist ? viewData.tasklist : "-"}
                         </p>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 )}
@@ -957,7 +1014,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>Attitude JOBROLE</b>
+                          <b>Attitude Jobrole</b>
                       </h2>
                     </div>
                     {jobroleData && jobroleData.length > 0 ? (
@@ -1016,7 +1073,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>{typeName.toUpperCase()} PROFICIENCY LEVEL</b>
+                          <b>{typeName.toUpperCase()} Level</b>
                       </h2>
                     </div>
                     {proficiencyLevel && proficiencyLevel.length > 0 ? (
@@ -1078,7 +1135,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>Attitude SKILL</b>
+                          <b>Attitude Skill</b>
                       </h2>
                     </div>
                     {renderKaabWithProficiencyLevels("knowledge")}
@@ -1088,7 +1145,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>Attitude ABILITY</b>
+                          <b>Attitude Ability</b>
                       </h2>
                     </div>
                     {renderKaabWithProficiencyLevels("ability")}
@@ -1182,7 +1239,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>ABILITY ATTITUDE</b>
+                          <b>ABILITY Attitude</b>
                       </h2>
                     </div>
                     {renderKaabWithProficiencyLevels("attitude")}
@@ -1192,7 +1249,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
-                        <b>Attitude BEHAVIOUR</b>
+                          <b>Attitude Behaviour</b>
                       </h2>
                     </div>
                     {renderKaabWithProficiencyLevels("behaviour")}

@@ -92,15 +92,24 @@ export default function Index() {
     const fetchDropdowns = async () => {
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude`,
+          `${sessionData.url}/table_data?filters[sub_institute_id]=${sessionData.sub_institute_id}&table=s_user_attitude`,
           { cache: "no-store" }
         );
-        const data: CardData[] = await res.json();
+        const data = await res.json();
+
+        // Transform data to match expected structure
+        const transformed: CardData[] = data.map((item: any) => ({
+          id: item.id,
+          classification_item: item.title,
+          classification_category: item.category,
+          classification_sub_category: item.sub_category,
+          proficiency_level: null,
+        }));
 
         // Deduplicate
         const levels = [
           ...new Set(
-            data
+            transformed
               .map((item: any) => item.proficiency_level)
               .filter((lvl) => typeof lvl === "string")
           ),
@@ -109,7 +118,7 @@ export default function Index() {
 
         const cats = [
           ...new Set(
-            data
+            transformed
               .map((item) => item.classification_category)
               .filter((c) => typeof c === "string")
           ),
@@ -118,7 +127,7 @@ export default function Index() {
 
         const subs = [
           ...new Set(
-            data
+            transformed
               .map((item) => item.classification_sub_category)
               .filter((s) => typeof s === "string")
           ),
@@ -145,14 +154,23 @@ export default function Index() {
     const fetchSubCats = async () => {
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude&filters[classification_category]=${selectedCategory}`,
+          `${sessionData.url}/table_data?filters[sub_institute_id]=${sessionData.sub_institute_id}&table=s_user_attitude&filters[category?.category=${selectedCategory}`,
           { cache: "no-store" }
         );
-        const data: CardData[] = await res.json();
+        const data = await res.json();
+
+        // Transform dataorta
+        const transformed: CardData[] = data.map((item: any) => ({
+          id: item.id,
+          classification_item: item.title,
+          classification_category: item.category,
+          classification_sub_category: item.sub_category,
+          proficiency_level: null,
+        }));
 
         const subs = [
           ...new Set(
-            data
+            transformed
               .map((item) => item.classification_sub_category)
               .filter((s) => typeof s === "string")
           ),
@@ -174,21 +192,28 @@ export default function Index() {
     const fetchCards = async () => {
       setLoadingCards(true);
       try {
-        let query = `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=attitude`;
+        let query = `${sessionData.url}/table_data?filters[sub_institute_id]=${sessionData.sub_institute_id}&table=s_user_attitude`;
 
-        if (selectedLevel)
-          query += `&filters[proficiency_level]=${selectedLevel}`;
         if (selectedCategory)
-          query += `&filters[classification_category]=${selectedCategory}`;
+          query += `&filters[category]=${selectedCategory}`;
         if (selectedSubCategory)
-          query += `&filters[classification_sub_category]=${selectedSubCategory}`;
+          query += `&filters[sub_category]=${selectedSubCategory}`;
 
-        query += "&order_by[id]=desc&group_by=classification_item";
+        query += "&order_by[id]=desc";
 
         const res = await fetch(query, { cache: "no-store" });
         const data = await res.json();
 
-        const normalized = Array.isArray(data) ? data : data?.data || [];
+        // Transform data
+        const transformed: CardData[] = data.map((item: any) => ({
+          id: item.id,
+          classification_item: item.title,
+          classification_category: item.category,
+          classification_sub_category: item.sub_category,
+          proficiency_level: null,
+        }));
+
+        const normalized = Array.isArray(transformed) ? transformed : [];
         setCards(normalized);
       } catch (err) {
         console.error("Error fetching cards:", err);
@@ -204,7 +229,6 @@ export default function Index() {
     selectedCategory,
     selectedSubCategory,
     sessionData.sub_institute_id,
-    sessionData.url,
   ]);
 
   // ✅ Table columns

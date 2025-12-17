@@ -289,7 +289,7 @@ export default function HomePage() {
             onChange={(e) =>
               setColumnFilters({ ...columnFilters, jobrole: e.target.value })
             }
-            placeholder="Search..."
+            placeholder="Search.."
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
