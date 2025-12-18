@@ -9,9 +9,9 @@ interface Message {
   id: string;
   type: 'user' | 'bot';
   content: string;
-   conversationId?: string; 
+  conversationId?: string;
   timestamp: Date;
-   feedback?: {
+  feedback?: {
     rating: 1 | -1;
     text?: string;
   };
@@ -19,13 +19,13 @@ interface Message {
     sql?: string;
     tablesUsed?: string[];
     insights?: string;
-     canEscalate?: boolean;
+    canEscalate?: boolean;
   };
 }
 
 interface ChatbotCopilotProps {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
- userId?: string;
+  userId?: string;
   apiEndpoint?: string;
 
 }
@@ -52,8 +52,8 @@ export default function ChatbotCopilot({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string>();
   const [conversationId, setConversationId] = useState<string>();
- const [showEscalationModal, setShowEscalationModal] = useState(false);
-const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 1 | -1 } | null>(null);
+  const [showEscalationModal, setShowEscalationModal] = useState(false);
+  const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 1 | -1 } | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -63,6 +63,18 @@ const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 
     scrollToBottom();
   }, [messages]);
 
+  // Auto-resize textarea
+  useEffect(() => {
+    const handleOpenChatbot = () => {
+      setIsOpen(true);
+    };
+
+    window.addEventListener('openChatbot', handleOpenChatbot);
+
+    return () => {
+      window.removeEventListener('openChatbot', handleOpenChatbot);
+    };
+  }, []);
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
@@ -78,7 +90,7 @@ const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 
     'top-left': 'top-6 left-6'
   };
 
- const handleFeedback = async (messageId: string, rating: 1 | -1) => {
+  const handleFeedback = async (messageId: string, rating: 1 | -1) => {
     setFeedbackMessage(messageId);
     setFeedbackState({ messageId, rating });
     try {
@@ -128,11 +140,11 @@ const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 
       const data = await response.json();
 
       const botMessage: Message = {
-       id: data.id || uuidv4(),
+        id: data.id || uuidv4(),
         type: 'bot',
         content: data.answer || 'I couldn\'t process that request. Please try rephrasing your question.',
         timestamp: new Date(),
-       conversationId: data.conversationId,
+        conversationId: data.conversationId,
         metadata: {
           sql: data.sql,
           tablesUsed: data.tables_used,
@@ -142,7 +154,7 @@ const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 
       };
 
       setConversationId(data.conversationId);
-       setMessages(prev => [...prev, botMessage]);
+      setMessages(prev => [...prev, botMessage]);
 
     } catch (error) {
       const errorMessage: Message = {
@@ -159,7 +171,7 @@ const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 
       setIsLoading(false);
     }
   };
-  
+
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -176,8 +188,8 @@ const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 
         content: 'Hello! 👋 I\'m your AI Data Assistant. How can I help you today?',
         timestamp: new Date(),
         metadata: {
-            canEscalate: false
-          }
+          canEscalate: false
+        }
       }
     ]);
     setShowEscalationModal(false);
@@ -191,195 +203,133 @@ const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 
       .trim();
   };
 
+  //   if (!isOpen) {
+  //   return (
+  //     <button
+  //       onClick={() => setIsOpen(true)}
+  //       className="fixed top-4 right-4 z-50 p-2 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-all"
+  //     >
+  //       <Bot className="w-6 h-6 text-blue-600" />
+  //     </button>
+  //   );
+  // }
   if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className={`fixed ${positionClasses[position]} z-50 w-13 h-13 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center group backdrop-blur-sm border border-white/20`}
-        style={{
-          animation: 'float 3s ease-in-out infinite'
-        }}
-      >
-        <MessageSquare className="w-7 h-7" />
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
-        <style>{`
-          @keyframes float {
-            0%, 100% { transform: translateY(0px) scale(1); }
-            50% { transform: translateY(-5px) scale(1.05); }
-          }
-        `}</style>
-      </button>
-    );
+    return null;
   }
-
   return (
-    <div
-  className={`fixed ${positionClasses[position]} z-50 ${
-    isExpanded 
-      ? 'w-[95vw] h-[95vh] max-w-7xl max-h-[90vh]' 
-      : 'w-[530px] h-[600px]'   // ← increased width only
-  } flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200/80 overflow-hidden backdrop-blur-sm bg-white/95 transition-all duration-300`}
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/10 z-40 transition-opacity"
+        onClick={() => setIsOpen(false)}
+      />
 
-      style={{
-        animation: 'slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
-      }}
-    >
-      <style>{`
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        @keyframes messageSlide {
-          from {
-            opacity: 0;
-            transform: translateX(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
-          50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.2); }
-        }
-        .message-enter {
-          animation: messageSlide 0.3s ease-out;
-        }
-        .typing-dots {
-          display: inline-block;
-        }
-        .typing-dots span {
-          animation: typing 1.4s infinite;
-        }
-        .typing-dots span:nth-child(2) {
-          animation-delay: 0.2s;
-        }
-        .typing-dots span:nth-child(3) {
-          animation-delay: 0.4s;
-        }
-        @keyframes typing {
-          0%, 60%, 100% { transform: translateY(0); }
-          30% { transform: translateY(-4px); }
-        }
-      `}</style>
+      {/* Right Wall Panel */}
+      <div
+        className="fixed right-0 z-50 flex flex-col bg-white shadow-2xl border-l border-gray-200
+             top-[64px] h-[calc(100vh-64px)]
+             transition-all duration-300 ease-in-out w-[400px]"
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm border border-white/30">
-            <Bot className="w-6 h-6" />
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
+          <div className="flex items-center gap-2">
+            <Bot className="w-5 h-5 text-purple-600" />
+            <h3 className="font-semibold text-gray-700">Data Copilot</h3>
           </div>
-          <div>
-            <h3 className="font-bold text-lg">Data Copilot</h3>
-            <p className="text-blue-100 text-sm opacity-90">AI Assistant • Always Learning</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={clearChat}
-            className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-all duration-200 hover:scale-110"
-            title="Clear Chat"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-          <button
+
+          <div className="flex items-center gap-1">
+            {/* <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-all duration-200 hover:scale-110"
-            title={isExpanded ? "Minimize" : "Maximize"}
+            className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500"
+            title={isExpanded ? "Narrow pane" : "Widen pane"}
           >
-            {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-all duration-200 hover:scale-110"
-          >
-            <X className="w-5 h-5" />
-          </button>
+            {isExpanded ? (
+              <Minimize2 className="w-4 h-4" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
+          </button> */}
+
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-gray-50 to-white">
-        {messages.map((message, index) => (
-          <div
-            key={message.id}
-            className={`message-enter flex gap-4 ${
-              message.type === 'user' ? 'flex-row-reverse' : 'flex-row'
-            }`}
-          >
-            {/* Avatar */}
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-white">
+          {messages.map((message) => (
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ${
-                message.type === 'user'
-                  ? 'bg-gradient-to-br from-gray-700 to-gray-800'
-                  : 'bg-gradient-to-br from-blue-500 to-purple-500'
-              } text-white`}
-            >
-              {message.type === 'user' ? (
-                <User className="w-5 h-5" />
-              ) : (
-                <Bot className="w-5 h-5" />
-              )}
-            </div>
-
-            {/* Message Content */}
-            <div
-              className={`flex flex-col gap-3 max-w-[85%] ${
-                message.type === 'user' ? 'items-end' : 'items-start'
-              }`}
-            >
-              {/* Message Bubble */}
-              <div
-                className={`rounded-2xl px-5 py-3 shadow-sm backdrop-blur-sm ${
-                  message.type === 'user'
-                    ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-br-md'
-                    : 'bg-white text-gray-800 border border-gray-200/80 rounded-bl-md'
+              key={message.id}
+              className={`flex gap-3 ${message.type === "user" ? "flex-row-reverse" : "flex-row"
                 }`}
+            >
+              {/* Avatar */}
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.type === "user"
+                    ? "bg-gray-200"
+                    : "bg-blue-100"
+                  }`}
               >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                  {message.content}
-                </p>
+                {message.type === "user" ? (
+                  <User className="w-4 h-4 text-gray-600" />
+                ) : (
+                  <Bot className="w-4 h-4 text-blue-600" />
+                )}
               </div>
 
-              {/* Metadata */}
-              {message.metadata?.tablesUsed && message.metadata.tablesUsed.length > 0 && (
-                <div className="flex gap-2 flex-wrap">
-                  {message.metadata.tablesUsed.map((table, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium shadow-sm"
-                    >
-                      <Database className="w-3 h-3" />
-                      <span>{table}</span>
-                    </div>
-                  ))}
+              {/* Message Content */}
+              <div
+                className={`flex flex-col gap-2 max-w-[85%] ${message.type === "user"
+                    ? "items-end"
+                    : "items-start"
+                  }`}
+              >
+                <div
+                  className={`rounded-2xl px-4 py-2 text-sm ${message.type === "user"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-800"
+                    }`}
+                >
+                  {message.content}
                 </div>
-              )}
 
-              {message.metadata?.sql && (
-                <details className="w-full text-sm cursor-pointer group">
-                  <summary className="hover:text-blue-600 font-medium text-gray-600 list-none flex items-center gap-2 transition-colors">
-                    <Database className="w-4 h-4" />
-                    View SQL Query
-                    <span className="text-xs text-gray-400 group-hover:text-blue-400">▾</span>
-                  </summary>
-                  <div className="mt-3 p-4 bg-gray-900 text-green-400 rounded-xl overflow-x-auto border border-gray-700 shadow-lg">
-                    <pre className="text-xs font-mono leading-relaxed">
-                      {formatSQL(message.metadata.sql)}
-                    </pre>
+                {/* Metadata */}
+                {message.metadata?.tablesUsed && message.metadata.tablesUsed.length > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {message.metadata.tablesUsed.map((table, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium shadow-sm"
+                      >
+                        <Database className="w-3 h-3" />
+                        <span>{table}</span>
+                      </div>
+                    ))}
                   </div>
-                </details>
-              )}
+                )}
+
+                {message.metadata?.sql && (
+                  <details className="w-full text-sm cursor-pointer group">
+                    <summary className="hover:text-blue-600 font-medium text-gray-600 list-none flex items-center gap-2 transition-colors">
+                      <Database className="w-4 h-4" />
+                      View SQL Query
+                      <span className="text-xs text-gray-400 group-hover:text-blue-400">▾</span>
+                    </summary>
+                    <div className="mt-3 p-4 bg-gray-900 text-green-400 rounded-xl overflow-x-auto border border-gray-700 shadow-lg">
+                      <pre className="text-xs font-mono leading-relaxed">
+                        {formatSQL(message.metadata.sql)}
+                      </pre>
+                    </div>
+                  </details>
+                )}
 
 
-               {message.type === 'bot' && message.metadata?.canEscalate && (
+                {message.type === 'bot' && message.metadata?.canEscalate && (
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => handleFeedback(message.id, 1)}
@@ -406,88 +356,76 @@ const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 
                   </div>
                 )}
 
-              {/* Timestamp */}
-              <span className="text-xs text-gray-400 px-1">
-                {message.timestamp.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </span>
-            </div>
-          </div>
-        ))}
-
-        {/* Loading Indicator */}
-        {isLoading && (
-          <div className="message-enter flex gap-4">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg">
-              <Bot className="w-5 h-5" />
-            </div>
-            <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-200/80 flex items-center gap-3">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                {/* Timestamp */}
+                <span className="text-xs text-gray-400 px-1">
+                  {message.timestamp.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
               </div>
-              <span className="text-sm text-gray-600 font-medium">Analyzing your data...</span>
             </div>
-          </div>
-        )}
+          ))}
 
-        <div ref={messagesEndRef} />
-      </div>
+          {/* Loading Indicator */}
+          {isLoading && (
+            <div className="message-enter flex gap-4">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg">
+                <Bot className="w-5 h-5" />
+              </div>
+              <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-200/80 flex items-center gap-3">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+                <span className="text-sm text-gray-600 font-medium">Analyzing your data...</span>
+              </div>
+            </div>
+          )}
 
-      {/* Input Area */}
-      <div className="p-5 bg-white border-t border-gray-200/80 backdrop-blur-sm">
-        <div className="flex gap-3 items-end">
-          <div className="flex-1 relative">
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+          <div className="relative flex flex-col gap-2 bg-white border border-gray-300 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Ask about your data..."
-              disabled={isLoading}
-              rows={1}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm text-gray-800 placeholder-gray-400 resize-none bg-white/80 backdrop-blur-sm transition-all duration-200"
-              style={{
-                minHeight: '48px',
-                maxHeight: '120px'
-              }}
+              placeholder="Ask a question..."
+              className="w-full px-2 py-1 text-sm bg-transparent border-none focus:outline-none resize-none min-h-[40px]"
             />
-            {/* <div className="absolute bottom-2 right-2">
-              <span className={`text-xs ${input.length > 200 ? 'text-red-400' : 'text-gray-400'}`}>
-                {input.length}/200
+
+            <div className="flex justify-between items-center px-1">
+              <span className="text-[10px] text-gray-400">
+                AI-generated content may be incorrect
               </span>
-            </div> */}
+
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+                className="p-2 rounded-full
+                          bg-blue-700 text-white
+                          hover:bg-blue-700
+                          hover:-translate-y-[1px]
+                          active:translate-y-0
+                          disabled:bg-blue-200
+                          transition-all duration-150
+                          shadow-sm hover:shadow-md"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className="px-5 py-3 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 font-medium shadow-md disabled:shadow-none"
-            style={{
-              animation: !input.trim() || isLoading ? 'none' : 'pulseGlow 2s infinite'
-            }}
-          >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            <span className="hidden sm:inline">Send</span>
-          </button>
-        </div>
-        <div className="flex justify-between items-center mt-3">
-         <p className="text-xs text-gray-400 mt-2 text-center">
-          Press Enter to send • Shift+Enter for new line
-         </p>
-          {/* <div className="flex gap-2 text-xs text-gray-400">
-            <span className="px-2 py-1 bg-gray-100 rounded-md">SQL</span>
-            <span className="px-2 py-1 bg-gray-100 rounded-md">Analysis</span>
-            <span className="px-2 py-1 bg-gray-100 rounded-md">Insights</span>
-          </div> */}
         </div>
       </div>
-    </div>
-  );
-}
+    </>
+  )
+};
