@@ -45,6 +45,7 @@ import {
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import JobDescriptionModal from "./JobDescriptionModal";
 import ConfigurationModal from "./ConfigurationModal";
+import GenerateAssessmentModal from "./GenerateAssessmentModal";
 
 type JobRole = {
   id: number;
@@ -81,7 +82,9 @@ export default function HomePage() {
   const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
   const [jobDescriptionModalOpen, setJobDescriptionModalOpen] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
   const [configJsonObject, setConfigJsonObject] = useState<any>(null);
+  const [assessmentData, setAssessmentData] = useState<any>(null);
 
   // ✅ New state for dropdown menu
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
@@ -436,27 +439,7 @@ export default function HomePage() {
       {/* 🔝 Top bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
         <div className="flex-1 max-w-md">
-          {/* Department Filter */}
-          {/* <div className="w-60">
-            <Select
-              onValueChange={(val) => {
-                setSelectedDept(val);
-                setSelected(null);
-              }}
-              defaultValue="All Departments"
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {dept}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div> */}
+        
 
           {/* Search Bar */}
           <div className="relative ">
@@ -648,6 +631,11 @@ export default function HomePage() {
             setConfigJsonObject(jsonObject);
             setIsConfigModalOpen(true);
           }}
+          onGenerateAssessment={(data) => {
+            setJobDescriptionModalOpen(false);
+            setAssessmentData(data);
+            setIsAssessmentModalOpen(true);
+          }}
           jobRole={getSelectedJobRoleData()}
         />
       )}
@@ -657,6 +645,13 @@ export default function HomePage() {
         isOpen={isConfigModalOpen}
         onClose={() => setIsConfigModalOpen(false)}
         jsonObject={configJsonObject}
+      />
+
+      {/* Generate Assessment Modal */}
+      <GenerateAssessmentModal
+        isOpen={isAssessmentModalOpen}
+        onClose={() => setIsAssessmentModalOpen(false)}
+        data={assessmentData}
       />
 
       {/* Loader / No Data */}
