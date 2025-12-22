@@ -356,16 +356,24 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
         return acc;
     }, {} as Record<string, Task[]>);
 
+    const filteredJobRole = {
+        id: jobRole.id,
+        industries: jobRole.industries,
+        department: jobRole.department,
+        sub_department: jobRole.sub_department,
+        department_id: (jobRole as any).department_id || '',
+        jobrole: jobRole.jobrole,
+        description: jobRole.description,
+    };
+
     const allData = {
-        jobRole,
+        jobRole: filteredJobRole,
         skillsData,
         tasksData,
-        tasksByFunction,
         knowledgeItems,
         abilityItems,
         attitudeItems,
         behaviourItems,
-        sessionData,
     };
 
     return (
