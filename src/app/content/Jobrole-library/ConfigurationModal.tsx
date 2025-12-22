@@ -395,9 +395,20 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     };
   }, [success]);
 
-  const [sessionData, setSessionData] = useState<any>(null);
-  const [industry, setIndustry] = useState<string>("");
+  const [sessionData, setSessionData] = useState({
+    url: '',
+    token: '',
+    subInstituteId: '',
+    departmentId: '',
+    orgType: '',
+    userId: '',
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [generatedUrls, setGeneratedUrls] = useState<{ exportUrl?: string; gammaUrl?: string } | null>(null);
+  const [showDropdownModal, setShowDropdownModal] = useState(false);
+  const [currentStandardId, setCurrentStandardId] = useState<number | null>(null);
+  const [currentSubjectId, setCurrentSubjectId] = useState<number | null>(null);
+  const [modules, setModules] = useState<any[]>([]);
 
   // State for Create Template functionality
 
@@ -416,19 +427,78 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
 
   // Load sessionData from localStorage once
   useEffect(() => {
-    const userData = localStorage.getItem("userData");
+    const userData = localStorage.getItem('userData');
     if (userData) {
-      try {
-        const parsed = JSON.parse(userData);
-        setSessionData(parsed);
-        if (parsed.org_type) {
-          setIndustry(parsed.org_type);
-        }
-      } catch (err) {
-        console.error("Failed to parse userData from localStorage:", err);
-      }
+      const { APP_URL, token, sub_institute_id, department_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+        departmentId: department_id || '',
+        orgType: org_type,
+        userId: user_id,
+      });
     }
+    setIsLoading(false);
   }, []);
+
+  // Fetch modules when dropdown is shown
+  useEffect(() => {
+    if (showDropdownModal && currentStandardId && currentSubjectId) {
+      const fetchModules = async () => {
+        const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${currentStandardId}&subject_id=${currentSubjectId}`;
+        const response = await fetch(chapterApiUrl);
+        if (response.ok) {
+          const data = await response.json();
+          const fetchedModules = data.data || [];
+          if (fetchedModules.length === 0) {
+            // Automatically create Module 1
+            const storeChapterApiUrl = `${sessionData.url}/lms/chapter_master/store?type=API&sub_institute_id=${sessionData.subInstituteId}&standard=${currentStandardId}&subject=${currentSubjectId}`;
+            const formData = new FormData();
+            formData.append('type', 'API');
+            formData.append('sub_institute_id', sessionData.subInstituteId.toString());
+            formData.append('grade', '9');
+            formData.append('standard', currentStandardId.toString());
+            formData.append('subject', currentSubjectId.toString());
+            const chapterName = isCriticalWorkFunction ? jsonObject.critical_work_function : isSkillSelection ? (typeof jsonObject.selected_skill === 'object' ? jsonObject.selected_skill.skillName || jsonObject.selected_skill : jsonObject.selected_skill) : 'Module 1';
+            formData.append('chapter_name', chapterName);
+            formData.append('chapter_code', 'MOD1');
+            formData.append('chapter_desc', 'Default module');
+            formData.append('availability', '1');
+            formData.append('show_hide', '1');
+            formData.append('sort_order', '1');
+            formData.append('syear', new Date().getFullYear().toString());
+            formData.append('token', sessionData.token);
+
+            const storeResponse = await fetch(storeChapterApiUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${sessionData.token}`
+              },
+              body: formData
+            });
+            if (storeResponse.ok) {
+              // Refetch modules to include the new one
+              const refetchResponse = await fetch(chapterApiUrl);
+              if (refetchResponse.ok) {
+                const refetchData = await refetchResponse.json();
+                setModules(refetchData.data || []);
+              } else {
+                setModules([]);
+              }
+            } else {
+              setModules([]);
+            }
+          } else {
+            setModules(fetchedModules);
+          }
+        } else {
+          setModules([]);
+        }
+      };
+      fetchModules();
+    }
+  }, [showDropdownModal, currentStandardId, currentSubjectId, sessionData]);
 
   // Handle tab switching based on repetition checkbox
   // useEffect(() => {
@@ -443,6 +513,53 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
 
   // OpenRouter API Integration - UPDATED to use jsonObject
   const handleGenerateCourseOutline = async () => {
+    const createModule = async (standardId: number, subjectId: number, displayName: string) => {
+      // Fetch existing modules
+      const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${standardId}&subject_id=${subjectId}`;
+      const chapterResponse = await fetch(chapterApiUrl);
+
+      if (chapterResponse.ok) {
+        const chapterData = await chapterResponse.json();
+        const existingModules = chapterData.data || [];
+        const nextModuleNumber = existingModules.length + 1;
+        const chapterName = `Module ${nextModuleNumber}`;
+        const chapterCode = `MOD${nextModuleNumber}`;
+        const chapterDesc = `Module for ${displayName}`;
+
+        // Create new module
+        const storeChapterApiUrl = `${sessionData.url}/lms/chapter_master/store?type=API&sub_institute_id=${sessionData.subInstituteId}&standard_id=${standardId}&subject_id=${subjectId}`;
+        const storeChapterResponse = await fetch(storeChapterApiUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionData.token}`
+          },
+          body: JSON.stringify({
+            type: 'API',
+            sub_institute_id: sessionData.subInstituteId,
+            grade: 9,
+            standard: standardId,
+            subject: subjectId,
+            chapter_name: chapterName,
+            chapter_code: chapterCode,
+            chapter_desc: chapterDesc,
+            availability: 1,
+            show_hide: 1,
+            sort_order: 1,
+            syear: new Date().getFullYear(),
+            token: sessionData.token
+          })
+        });
+
+        if (storeChapterResponse.ok) {
+          console.log('Module created successfully');
+        } else {
+          console.error('Failed to create module');
+        }
+      } else {
+        console.error('Failed to fetch chapters');
+      }
+    };
     if (!jsonObject) {
       setError("⚠️ No job role data available!");
       return;
@@ -456,28 +573,35 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       const selectedModel = aiModels.find(model => model.id === cfg.aiModel);
       if (!selectedModel) throw new Error("Selected AI model not found");
 
-      const response = await fetch("/api/generate-outline-new", {
+      // Prepare jsonObject for outline generation
+      let outlineJsonObject = { ...jsonObject };
+      if (isSkillSelection) {
+        outlineJsonObject.critical_work_function = jsonObject.selected_skill;
+      }
+
+      // Call the outline API
+      const outlineResponse = await fetch("/api/generate-outline-new", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jsonObject: {
-            ...jsonObject,
+            ...outlineJsonObject,
             slideCount: cfg.slideCount
           },
           modality: cfg.modality,
           aiModel: cfg.aiModel,
-          industry
+          industry: sessionData.orgType
         }),
       });
 
-      // ✅ Read response only once
-      const data = await response.json();
+      // Process the outline response
+      const outlineData = await outlineResponse.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Course generation failed");
+      if (!outlineResponse.ok) {
+        throw new Error(outlineData.error || "Course generation failed");
       }
 
-      const generatedContent = data.content;
+      const generatedContent = outlineData.content;
       if (!generatedContent) {
         throw new Error("No content generated by AI model");
       }
@@ -488,6 +612,117 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       setPreview(generatedContent);
       setDiverged(true);
 
+      // Fetch the task, skill, and sub_std_map data
+      const taskApiUrl = `${sessionData.url}/jobrole_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&jobrole=${encodeURIComponent(jsonObject.jobrole)}&formType=tasks`;
+      const skillApiUrl = `${sessionData.url}/jobrole_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&jobrole=${encodeURIComponent(jsonObject.jobrole)}&formType=skills`;
+      const subStdMapApiUrl = `${sessionData.url}/school_setup/sub_std_map?sub_institute_id=${sessionData.subInstituteId}&type=API`;
+
+      const [taskResponse, skillResponse, subStdMapResponse] = await Promise.all([
+        fetch(taskApiUrl),
+        fetch(skillApiUrl),
+        fetch(subStdMapApiUrl, {
+          headers: {
+            'Authorization': `Bearer ${sessionData.token}`
+          }
+        })
+      ]);
+
+      const taskData = await taskResponse.json();
+      const skillData = await skillResponse.json();
+      const subStdMapData = await subStdMapResponse.json();
+
+      if (skillResponse.ok && skillData.userskillData && skillData.userskillData.length > 0 && subStdMapResponse.ok && subStdMapData.data) {
+        const departmentId = skillData.userskillData[0].user_jobrole.department_id;
+
+        if (isCriticalWorkFunction && taskResponse.ok && taskData.usertaskData) {
+          const criticalWorkFunctionName = jsonObject.critical_work_function || '';
+          const matchingTask = taskData.usertaskData.find((task: any) => task.critical_work_function === criticalWorkFunctionName);
+
+          if (matchingTask && departmentId) {
+            const existingMapping = subStdMapData.data.find((item: any) => item.subject_id == matchingTask.id && item.standard_id == departmentId);
+            if (existingMapping) {
+              setCurrentStandardId(departmentId);
+              setCurrentSubjectId(matchingTask.id);
+              setShowDropdownModal(true);
+            } else {
+              // Call the store API for task
+              const storeApiUrl = `${sessionData.url}/sub_std_map/store?type=API&sub_institute_id=${sessionData.subInstituteId}&standard_id=${departmentId}&subject_id=${matchingTask.id}&jobrole=${encodeURIComponent(jsonObject.jobrole)}&display_name=${encodeURIComponent(criticalWorkFunctionName)}`;
+
+              const storeResponse = await fetch(storeApiUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${sessionData.token}`
+                },
+                body: JSON.stringify({
+                  allow_content: 'Yes',
+                  subject_category: 'Task'
+                })
+              });
+
+              if (!storeResponse.ok) {
+                const errorData = await storeResponse.json();
+                console.error('Error calling store API:', errorData);
+              } else {
+                console.log('Store API called successfully for task');
+                // Create module
+                await createModule(departmentId, matchingTask.id, criticalWorkFunctionName);
+                // Show dropdown with the new module
+                setCurrentStandardId(departmentId);
+                setCurrentSubjectId(matchingTask.id);
+                setShowDropdownModal(true);
+              }
+            }
+          } else {
+            console.error('Matching task or department_id not found');
+          }
+        } else if (isSkillSelection) {
+          const selectedSkill = jsonObject.selected_skill || '';
+          const skillName = typeof selectedSkill === 'object' ? selectedSkill.skillName || selectedSkill : selectedSkill;
+          const matchingSkill = skillData.userskillData.find((skill: any) => skill.skill === skillName) || skillData.userskillData[0];
+
+          if (matchingSkill && departmentId) {
+            const existingMapping = subStdMapData.data.find((item: any) => item.subject_id == matchingSkill.id && item.standard_id == departmentId);
+            if (existingMapping) {
+              setCurrentStandardId(departmentId);
+              setCurrentSubjectId(matchingSkill.id);
+              setShowDropdownModal(true);
+            } else {
+              // Call the store API for skill
+              const storeApiUrl = `${sessionData.url}/sub_std_map/store?type=API&sub_institute_id=${sessionData.subInstituteId}&standard_id=${departmentId}&subject_id=${matchingSkill.id}&jobrole=${encodeURIComponent(jsonObject.jobrole)}&display_name=${encodeURIComponent(skillName)}`;
+
+              const storeResponse = await fetch(storeApiUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${sessionData.token}`
+                },
+                body: JSON.stringify({
+                  allow_content: 'Yes',
+                  subject_category: 'Skill'
+                })
+              });
+
+              if (!storeResponse.ok) {
+                const errorData = await storeResponse.json();
+                console.error('Error calling store API:', errorData);
+              } else {
+                console.log('Store API called successfully for skill');
+                // Create module
+                await createModule(departmentId, matchingSkill.id, skillName);
+                // Show dropdown with the new module
+                setCurrentStandardId(departmentId);
+                setCurrentSubjectId(matchingSkill.id);
+                setShowDropdownModal(true);
+              }
+            }
+          } else {
+            console.error('Matching skill or department_id not found');
+          }
+        }
+      } else {
+        console.error('Failed to fetch skill or sub_std_map data');
+      }
 
       setSuccess(`✅ Course outline generated successfully using ${selectedModel.name}!`);
 
@@ -552,19 +787,19 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         id: Date.now(), // Use timestamp as unique ID
         subject_id: Date.now(),
         standard_id: Date.now(),
-        title: jsonObject?.jobrole || "Generated Course",
+        title: jsonObject?.critical_work_function ? `${jsonObject.jobrole} - ${jsonObject.critical_work_function}` : jsonObject?.jobrole || "Generated Course",
         description: manualPreview?.substring(0, 100) + "..." || "AI-generated course content",
         thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop", // Default course image
         contentType: "presentation",
         category: "AI Generated",
         difficulty: "intermediate",
-        short_name: "AI Course",
+        short_name: jsonObject?.critical_work_function || "AI Course",
         subject_type: "Training",
         progress: 0,
         instructor: "AI Assistant",
         isNew: true,
         isMandatory: false,
-        display_name: jsonObject?.jobrole || "Generated Course",
+        display_name: jsonObject?.critical_work_function || jsonObject?.jobrole || "Generated Course",
         sort_order: "1",
         status: "1",
         subject_category: "AI Generated",
@@ -867,7 +1102,8 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
             </section>
 
             {/* Right: Course Outline Preview */}
-            <section className="flex flex-col rounded-2xl border overflow-hidden min-h-[200px] md:min-h-[300px] max-h-[70vh] bg-white">
+            <section className="flex flex-col rounded-2xl border overflow-hidden min-h-[200px] md:min-h-[300px] max-h-[70vh] bg-white relative">
+              
               <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
                 <h2 className="text-base font-semibold flex items-center gap-2">
                   <Eye className="h-5 w-5 text-blue-600" />
@@ -902,9 +1138,23 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                   </button>
                 </div> */}
               </div>
-
               {/* Preview Content */}
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden relative">
+                {showDropdownModal && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <select className="p-2 border rounded bg-white">
+                      {modules.length > 0 ? (
+                        modules.map((module: any) => (
+                          <option key={module.id} value={module.id}>
+                            {module.chapter_name}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>No modules found</option>
+                      )}
+                    </select>
+                  </div>
+                )}
                 <div className="h-full w-full p-3 font-mono text-sm leading-6 overflow-auto smooth-scrollbar bg-slate-50">
                   {outlineLoading ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
