@@ -31,8 +31,8 @@ export default function GenerateAssessmentModal({
 
   const [currentStep, setCurrentStep] = useState(0);
 
-  const [questionCount, setQuestionCount] = useState<number>(15);
-  const [mappings, setMappings] = useState<{ typeId: number; typeName: string; valueId: number; valueName: string; reason: string; questionCount: number; marks: number }[]>([{ typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 0 }]);
+  const [questionCount, setQuestionCount] = useState<number>(0);
+  const [mappings, setMappings] = useState<{ typeId: number; typeName: string; valueId: number; valueName: string; reason: string; questionCount: number; marks: number }[]>([{ typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 15 }]);
   const [mappingTypes, setMappingTypes] = useState<{ id: number; name: string }[]>([]);
   const [mappingValuesMap, setMappingValuesMap] = useState<{ [key: number]: { id: number; name: string }[] }>({});
   const [timeLimit, setTimeLimit] = useState<boolean>(false);
@@ -86,63 +86,15 @@ export default function GenerateAssessmentModal({
    ------------------------------ */
   const [assessmentData, setAssessmentData] = useState({
     jobRole: "Community Care Associate",
-    questions: [
-      {
-        id: 1,
-        text: "A client shows signs of discomfort during daily care. What is the MOST appropriate action?",
-        options: [
-          "Ignore minor complaints",
-          "Immediately report and document the observation",
-          "Continue routine tasks",
-          "Ask another client for advice"
-        ],
-        correctAnswer: "Immediately report and document the observation",
-        cwf: "Perform stakeholder engagement",
-        keyTask: "Build rapport and professional relationships with clients",
-        rationale: "Reporting discomfort ensures patient safety and compliance with care protocols."
-      },
-      {
-        id: 2,
-        text: "When assembling wine and drape, what is the key consideration?",
-        options: [
-          "Speed over accuracy",
-          "Adhere to control procedures",
-          "Personal preference",
-          "Client suggestions"
-        ],
-        correctAnswer: "Adhere to control procedures",
-        cwf: "Support department administration",
-        keyTask: "Adhere to control procedures",
-        rationale: "Control procedures ensure accuracy and safety in assembly tasks."
-      },
-      {
-        id: 3,
-        text: "What is essential for data integration in community care?",
-        options: [
-          "Manual recording only",
-          "Adherence to activity and action plans",
-          "Personal judgment",
-          "Informal notes"
-        ],
-        correctAnswer: "Adherence to activity and action plans",
-        cwf: "Data integration",
-        keyTask: "Ensure data accuracy and compliance",
-        rationale: "Activity and action plans provide structured data integration for effective care."
-      }
-    ],
-    answerKey: [
-      { question: "Q1", answer: "B", rationale: "Reporting discomfort ensures patient safety and compliance with care protocols." },
-      { question: "Q2", answer: "B", rationale: "Control procedures ensure accuracy and safety in assembly tasks." },
-      { question: "Q3", answer: "B", rationale: "Activity and action plans provide structured data integration for effective care." }
-    ],
-    mapping: [
-      { cwf: "Perform stakeholder engagement", description: "Support department administration and stakeholder engagement.", keyTasks: ["Build rapport and professional relationships with clients"] },
-      { cwf: "Support department administration", description: "Adhere to control procedures", keyTasks: ["Adhere to control procedures"] },
-      { cwf: "Data integration", description: "Ensure data accuracy and compliance", keyTasks: ["Ensure data accuracy and compliance"] }
-    ]
+    questions: [],
+    answerKey: [],
+    mapping: []
   });
   const [editedQuestions, setEditedQuestions] = useState(assessmentData.questions);
 
+  const [loading, setLoading] = useState(false);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [error, setError] = useState("");
 
 
   const configTabs = ["Questions", "Answer Key", "Mapping"] as const;
@@ -156,7 +108,7 @@ export default function GenerateAssessmentModal({
     if (!sessionData) return;
     const fetchMappingTypes = async () => {
       try {
-        const response = await fetch(`${sessionData?.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[parent_id]=0`, {
+        const response = await fetch(`${sessionData?.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[parent_id]=0&item_type=question&reason=`, {
           headers: {
             'Authorization': `Bearer ${sessionData?.token}`,
           },
@@ -184,6 +136,11 @@ export default function GenerateAssessmentModal({
       console.log("All data from JobDescriptionModal:", JSON.stringify(data, null, 2));
     }
   }, [data]);
+
+  useEffect(() => {
+    const total = mappings.reduce((sum, mapping) => sum + mapping.questionCount, 0);
+    setQuestionCount(total);
+  }, [mappings]);
 
   /* ------------------------------
      NAVIGATION
@@ -222,8 +179,24 @@ export default function GenerateAssessmentModal({
     }
   };
 
+  const fetchMappingReason = async (mappingId: number) => {
+    if (!sessionData) return "";
+    try {
+      const response = await fetch(`${sessionData.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[id]=${mappingId}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionData.token}`,
+        },
+      });
+      const data = await response.json();
+      return data[0]?.reason || "";
+    } catch (error) {
+      console.error('Error fetching mapping reason:', error);
+      return "";
+    }
+  };
+
   const addMapping = () => {
-    setMappings(prev => [...prev, { typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 0 }]);
+    setMappings(prev => [...prev, { typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 15 }]);
   };
 
   const updateMapping = (index: number, field: string, value: string | number) => {
@@ -233,7 +206,11 @@ export default function GenerateAssessmentModal({
           const selectedType = mappingTypes.find(t => t.id === value);
           if (selectedType) {
             fetchMappingValues(selectedType.id);
-            return { ...mapping, typeId: value as number, typeName: selectedType.name, valueId: 0, valueName: "" };
+            // Fetch reason for the selected type
+            fetchMappingReason(value as number).then(reason => {
+              setMappings(prev => prev.map((m, i) => i === index ? { ...m, reason } : m));
+            });
+            return { ...mapping, typeId: value as number, typeName: selectedType.name, valueId: 0, valueName: "", reason: "" };
           }
         } else if (field === 'valueId') {
           const selectedValue = (mappingValuesMap[mapping.typeId] || []).find(v => v.id === value);
@@ -241,7 +218,7 @@ export default function GenerateAssessmentModal({
         } else if (field === 'reason') {
           return { ...mapping, reason: value as string };
         } else if (field === 'questionCount') {
-          return { ...mapping, questionCount: value as number };
+          return { ...mapping, questionCount: value as number, marks: value as number };
         } else if (field === 'marks') {
           return { ...mapping, marks: value as number };
         }
@@ -254,6 +231,38 @@ export default function GenerateAssessmentModal({
     setMappings(prev => prev.length > 1 ? prev.filter((_, i) => i !== index) : prev);
   };
 
+  const generateQuestionsWithGemini = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobRole: data?.jobRole?.jobrole || "Community Care Associate",
+          assessmentType: "mcq",
+          // difficultyLevel: "intermediate",
+          questionCount: questionCount,
+          mappings: mappings,
+          data: data,
+
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!Array.isArray(result.questions)) {
+        throw new Error("No questions array in response");
+      }
+
+      setQuestions(result.questions);
+    } catch (err: any) {
+      setError(err.message || "Generation failed");
+    } finally {
+      setLoading(false);
+    }
+  };
   /* ------------------------------
       STEPS
    ------------------------------ */
@@ -303,10 +312,10 @@ export default function GenerateAssessmentModal({
                         </select>
                         <textarea
                           value={mapping.reason}
-                          onChange={(e) => updateMapping(index, 'reason', e.target.value)}
-                          placeholder="Enter reason"
+                          readOnly
+                          placeholder="Reason will be loaded when mapping value is selected"
                           rows={2}
-                          className="col-span-2 p-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="col-span-2 p-2 border border-gray-200 rounded-md bg-gray-50 focus:outline-none"
                         />
                         <input
                           type="number"
@@ -318,9 +327,8 @@ export default function GenerateAssessmentModal({
                         <input
                           type="number"
                           value={mapping.marks}
-                          onChange={(e) => updateMapping(index, 'marks', Number(e.target.value))}
-                          min="0"
-                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          readOnly
+                          className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                         />
                         <div className="flex gap-2">
                           {mappings.length > 1 && (
@@ -355,6 +363,15 @@ export default function GenerateAssessmentModal({
             </div>
           </div>
 
+          <div className="flex justify-end">
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={generateQuestionsWithGemini}
+            >
+              Generate Question(AI)
+            </Button>
+          </div>
+
           <div className="border-b mb-4">
             <div className="flex gap-6 text-sm font-medium text-gray-500">
               {configTabs.map((tab) => {
@@ -384,7 +401,7 @@ export default function GenerateAssessmentModal({
 
           {configActiveTab === "Questions" && (
             <div>
-              {assessmentData.questions.map((question, index) => (
+              {questions && questions.length > 0 ? questions.map((question, index) => (
                 <div key={question.id} className="border rounded-lg overflow-hidden">
                   <div
                     className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer"
@@ -392,7 +409,7 @@ export default function GenerateAssessmentModal({
                   >
                     <div className="flex items-center gap-3">
                       <span className="font-medium">Q{question.id}</span>
-                      <span className="text-gray-700">{question.text.substring(0, 60)}...</span>
+                      <span className="text-gray-700">{question.question.substring(0, 60)}...</span>
                     </div>
                     {expandedQuestions.includes(question.id) ?
                       <ChevronUp className="h-4 w-4" /> :
@@ -409,9 +426,9 @@ export default function GenerateAssessmentModal({
                           className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">Select answer</option>
-                          {question.options.map((option, idx) => (
+                          {question.options.map((option: string, idx: number) => (
                             <option key={idx} value={option}>
-                              {String.fromCharCode(65 + idx)}. {option}
+                              {option}
                             </option>
                           ))}
                         </select>
@@ -428,7 +445,11 @@ export default function GenerateAssessmentModal({
                     </div>
                   )}
                 </div>
-              ))}
+              )) : (
+                <div className="text-center text-gray-500 py-8">
+                  No questions available. Click "Generate Question(AI)" to create questions.
+                </div>
+              )}
             </div>
           )}
 
@@ -445,7 +466,7 @@ export default function GenerateAssessmentModal({
                   </tr>
                 </thead>
                 <tbody>
-                  {assessmentData.questions.map((question, index) => {
+                  {questions && questions.length > 0 ? questions.map((question, index) => {
                     const userAnswer = userAnswers[question.id];
                     const correctAnswer = question.correctAnswer;
                     const isCorrect = userAnswer === correctAnswer;
@@ -455,7 +476,7 @@ export default function GenerateAssessmentModal({
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-800 font-medium">
-                              {userAnswer ? String.fromCharCode(65 + question.options.findIndex(opt => opt === userAnswer)) : '?'}
+                              {userAnswer ? String.fromCharCode(65 + (question.options as string[]).findIndex((opt: string) => opt === userAnswer)) : '?'}
                             </div>
                             <span>{userAnswer || 'Not answered'}</span>
                           </div>
@@ -463,7 +484,7 @@ export default function GenerateAssessmentModal({
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-800 font-medium">
-                              {String.fromCharCode(65 + question.options.findIndex(opt => opt === correctAnswer))}
+                              {String.fromCharCode(65 + (question.options as string[]).findIndex((opt: string) => opt === correctAnswer))}
                             </div>
                             <span>{correctAnswer}</span>
                           </div>
@@ -482,7 +503,13 @@ export default function GenerateAssessmentModal({
                         <td className="p-3">{question.rationale}</td>
                       </tr>
                     );
-                  })}
+                  }) : (
+                    <tr>
+                      <td colSpan={5} className="text-center text-gray-500 py-8">
+                        No questions available. Click "Generate Question(AI)" to create questions.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -499,23 +526,30 @@ export default function GenerateAssessmentModal({
                   </tr>
                 </thead>
                 <tbody>
-                  {(() => {
-                    const grouped = assessmentData.questions.reduce((acc, q) => {
+                  {questions && questions.length > 0 && (() => {
+                    const grouped = questions.reduce((acc, q) => {
                       if (!acc[q.cwf]) acc[q.cwf] = {};
                       if (!acc[q.cwf][q.keyTask]) acc[q.cwf][q.keyTask] = [];
                       acc[q.cwf][q.keyTask].push(q.id);
                       return acc;
-                    }, {} as { [cwf: string]: { [keyTask: string]: number[] } });
-                    return Object.entries(grouped).map(([cwf, keyTasks]) =>
+                    }, {} as Record<string, Record<string, number[]>>);
+                    return Object.entries(grouped as Record<string, Record<string, number[]>>).map(([cwf, keyTasks]) =>
                       Object.entries(keyTasks).map(([keyTask, questionIds], index) => (
                         <tr key={`${cwf}-${keyTask}`} className="border-b hover:bg-gray-50">
-                          {index === 0 && <td rowSpan={Object.keys(keyTasks).length} className="p-3 font-medium">{cwf}</td>}
+                          {index === 0 && <td rowSpan={Object.keys(keyTasks as Record<string, number[]>).length} className="p-3 font-medium">{cwf}</td>}
                           <td className="p-3">{keyTask}</td>
                           <td className="p-3">{questionIds.map(id => `Q${id}`).join(', ')}</td>
                         </tr>
                       ))
                     );
                   })()}
+                  {(!assessmentData.questions || assessmentData.questions.length === 0) && (
+                    <tr>
+                      <td colSpan={3} className="text-center text-gray-500 py-8">
+                        No questions available. Click "Generate Question(AI)" to create questions.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -563,15 +597,13 @@ export default function GenerateAssessmentModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Number of Questions
+                    Number of Questions (Calculated from Mappings)
                   </label>
                   <input
                     type="number"
                     value={questionCount}
-                    onChange={(e) => setQuestionCount(Math.max(1, Number(e.target.value)))}
-                    placeholder="Enter number of questions"
-                    min="1"
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    readOnly
+                    className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                   />
                 </div>
 
