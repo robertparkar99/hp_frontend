@@ -31,6 +31,7 @@ const CourseCard = ({
   const [contentType, setContentType] = useState("none");
   const [loading, setLoading] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [correctSubjectId, setCorrectSubjectId] = useState(null);
   const isDefault = imgSrc === DEFAULT_IMAGE;
 
   useEffect(() => {
@@ -69,6 +70,11 @@ const CourseCard = ({
           console.warn("⚠️ No content_data found for", course.title);
           setContentType("none");
           setContentData(null);
+        }
+
+        // Set correct subject_id from API response
+        if (data && data.course_details && data.course_details.subject_id) {
+          setCorrectSubjectId(data.course_details.subject_id);
         }
       } catch (error) {
         console.error("❌ Error fetching content data for", course.title, ":", error);
@@ -205,7 +211,7 @@ const CourseCard = ({
   }, [contentData]);
 
   const handleViewDetails = () => {
-    onViewDetails(course.subject_id, course.standard_id);
+    onViewDetails(correctSubjectId || course.subject_id, course.standard_id);
   };
 
   const handleEnroll = async () => {
