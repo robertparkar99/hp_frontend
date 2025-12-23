@@ -19,7 +19,7 @@ interface KabaArrays {
 export async function POST(req: Request) {
   try {
     // Parse input from frontend
-    const { jsonObject, modality, aiModel, mappingType, mappingValue } = await req.json();
+    const { jsonObject, modality, aiModel, mappingType, mappingValue, mappingReason } = await req.json();
 
     // Validate server-side API key (never exposed to client)
     const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
@@ -189,44 +189,54 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
           "Inquiry-Based": {
             slide_guidance: "Structure each slide around a central question or investigative theme",
             activity_type: "Question formulation, evidence gathering, analysis tasks",
-            assessment: "Evaluate questioning skills, research ability, and analytical thinking"
+            assessment: "Evaluate questioning skills, research ability, and analytical thinking",
+            reason: "Inquiry-Based Learning promotes critical thinking and problem-solving by encouraging learners to explore questions, gather evidence, and analyze information. This approach develops independent learning skills and fosters a deeper understanding of the subject matter through active investigation."
           },
           "Experiential-Based": {
             slide_guidance: "Connect theoretical concepts to hands-on experience and reflection",
             activity_type: "Simulations, practical exercises, reflective journals",
-            assessment: "Assess application of learning in practical contexts"
+            assessment: "Assess application of learning in practical contexts",
+            reason: "Experiential-Based Learning enhances skill acquisition and retention by bridging theory with real-world practice. Through hands-on activities and reflection, learners develop practical competencies and gain confidence in applying knowledge to actual situations, leading to more effective and lasting learning outcomes."
           },
           "Art-Integrated": {
             slide_guidance: "Incorporate creative elements and metaphorical thinking",
             activity_type: "Visual representations, creative problem-solving, metaphorical analysis",
-            assessment: "Evaluate innovative thinking and creative application"
+            assessment: "Evaluate innovative thinking and creative application",
+            reason: "Art-Integrated Learning stimulates creativity and innovation by connecting technical content with artistic expression. This approach encourages metaphorical thinking, visual representation, and alternative perspectives, helping learners develop innovative problem-solving skills and enhancing engagement through creative exploration."
           },
           "Project-Based": {
             slide_guidance: "Organize content around project phases and deliverables",
             activity_type: "Project planning, execution, presentation, and evaluation",
-            assessment: "Assess project outcomes and process management"
+            assessment: "Assess project outcomes and process management",
+            reason: "Project-Based Learning provides comprehensive skill development through structured, goal-oriented activities. By working on complete projects with clear deliverables, learners develop planning, execution, collaboration, and evaluation skills that directly translate to professional competence and real-world application."
           },
           "Scenario-Based": {
             slide_guidance: "Build content around realistic scenarios and case studies",
             activity_type: "Scenario analysis, role-playing, decision-making exercises",
-            assessment: "Evaluate decision-making in context and scenario resolution"
+            assessment: "Evaluate decision-making in context and scenario resolution",
+            reason: "Scenario-Based Learning improves decision-making and contextual understanding by placing learners in realistic situations. Through case studies and role-playing, participants develop the ability to analyze complex situations, make informed decisions, and resolve challenges effectively, preparing them for actual workplace scenarios."
           }
         }
         // Add other mapping types here as needed
       };
 
       const typeMap = guidanceMap[mappingType as keyof typeof guidanceMap];
-      return (typeMap as any)?.[mappingValue] || {
+      const guidance = (typeMap as any)?.[mappingValue] || {
         slide_guidance: `Apply ${mappingValue} principles throughout the course`,
         activity_type: "Activities aligned with selected approach",
-        assessment: "Assessment methods matching the chosen methodology"
+        assessment: "Assessment methods matching the chosen methodology",
+        reason: `The ${mappingValue} approach provides a structured methodology for effective learning and skill development, ensuring comprehensive coverage of the subject matter through targeted activities and assessments.`
       };
+      return guidance;
     }
 
     // Then integrate in your prompt:
     const selectedMappingType = mappingType || "pedagogical process";
     const selectedMappingValue = mappingValue || "Project-Based";
     const mappingGuidance = getMappingGuidance(selectedMappingType, selectedMappingValue);
+    
+    // Use provided reason or fall back to generated one
+    const reason = mappingReason || mappingGuidance.reason;
 
     // Determine which prompt to generate based on user configuration
     const hasValidSkillData = Boolean(skillName);
@@ -251,7 +261,8 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
           pedagogical_approach: {
             mapping_type: selectedMappingType,
             mapping_value: selectedMappingValue,
-            context: `Using ${selectedMappingValue} approach for skill: ${skillName} development`
+            context: `Using ${selectedMappingValue} approach for skill: ${skillName} development`,
+            reason: reason
           },
           
           slide_structure: [
@@ -277,7 +288,6 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
             industry_context: `${industry}`,
             department_context: `${department}`,
             // NEW: Add pedagogical approach to metadata
-            pedagogical_approach: `${selectedMappingValue}`,
             teaching_methodology: `${selectedMappingType}: ${selectedMappingValue}`
           },
 
@@ -698,6 +708,7 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
         pedagogical_approach: {
           mapping_type: selectedMappingType, // e.g., "pedagogical process"
           mapping_value: selectedMappingValue, // e.g., "Project-Based"
+          reason: reason
         },
 
         output_format: {
@@ -742,39 +753,7 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
             ],
 
             // Specific guidance for different pedagogical approaches
-            pedagogical_guidance: {
-              // Define how each approach should influence the course
-              "Inquiry-Based": [
-                "Structure slides around questions and discovery",
-                "Encourage problem-solving and critical thinking",
-                "Design activities that prompt investigation and analysis",
-                "Focus on developing questioning skills and evidence evaluation"
-              ],
-              "Experiential-Based": [
-                "Connect theory to practical application",
-                "Include hands-on learning scenarios",
-                "Emphasize reflection on experience",
-                "Bridge knowledge with real-world practice"
-              ],
-              "Art-Integrated": [
-                "Incorporate creative expression elements",
-                "Use metaphorical thinking and visualization",
-                "Connect technical content with artistic perspectives",
-                "Encourage innovative problem-solving approaches"
-              ],
-              "Project-Based": [
-                "Organize content around project milestones",
-                "Include project planning and execution elements",
-                "Focus on deliverable creation and evaluation",
-                "Integrate collaborative work and project management"
-              ],
-              "Scenario-Based": [
-                "Build content around realistic scenarios",
-                "Use case studies and situational analysis",
-                "Focus on decision-making in context",
-                "Include role-playing and simulation elements"
-              ]
-            },
+            pedagogical_guidance: reason,
 
             // How to apply the selected approach
             application_rules: [
@@ -865,7 +844,7 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
                   `Department: ${department}`,
                   `Course modality: ${modalityString}`,
                   // NEW: Add mapping context
-                  `Pedagogical approach: ${selectedMappingValue}`,
+                  `${selectedMappingType}: ${selectedMappingValue}`,
                   "INTEGRATE: Introduce a selection of KAAB competencies from ALL categories"
                 ],
                 // NEW: Add mapping to integration plan
@@ -1002,10 +981,6 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
           }
         }
       };
-
-      console.log("Generated Course Prompt with Mapping Integration");
-      console.log("Mapping Type:", selectedMappingType);
-      console.log("Mapping Value:", selectedMappingValue);
       promptToUse = coursePrompt;
     }
 
