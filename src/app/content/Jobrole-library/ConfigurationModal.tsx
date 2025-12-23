@@ -70,6 +70,7 @@ const aiModels = [
   { id: "meta-llama/llama-4-maverick", name: "LLaMA 4 Maverick", contextWindow: 8192, type: "experimental", notes: "Unstable, early release." }
 ];
 
+
 type Config = {
   department: string;
   jobRole: string;
@@ -95,8 +96,8 @@ const DEFAULT_CONFIG: Config = {
   skills: [],
   proficiencyTarget: 3,
   modality: { selfPaced: true, instructorLed: false },
-  mappingType: "Direct",
-  mappingValue: "Option1",
+  mappingType: "",
+  mappingValue: "",
   slideCount: 15,
   presentationStyle: "Modern",
   language: "English",
@@ -404,11 +405,17 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     userId: '',
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [generatedUrls, setGeneratedUrls] = useState<{ exportUrl?: string; gammaUrl?: string } | null>(null);
+  const [generatedUrls, setGeneratedUrls] = useState<{ exportUrl?: string; gammaUrl?: string; contentLink?: string } | null>(null);
   const [showDropdownModal, setShowDropdownModal] = useState(false);
   const [currentStandardId, setCurrentStandardId] = useState<number | null>(null);
   const [currentSubjectId, setCurrentSubjectId] = useState<number | null>(null);
+  const [currentChapterId, setCurrentChapterId] = useState<number | null>(null);
   const [modules, setModules] = useState<any[]>([]);
+  const [mappingTypes, setMappingTypes] = useState<any[]>([]);
+  const [mappingValues, setMappingValues] = useState<any[]>([]);
+  const [mappingTypesLoading, setMappingTypesLoading] = useState(true);
+  const [mappingValuesLoading, setMappingValuesLoading] = useState(true);
+  const [selectedMappingTypeId, setSelectedMappingTypeId] = useState<number | null>(null);
 
   // State for Create Template functionality
 
@@ -442,6 +449,85 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     setIsLoading(false);
   }, []);
 
+  // Fetch mapping types and values from API
+  useEffect(() => {
+    if (sessionData.url && sessionData.token) {
+      // Fetch mapping types
+      const fetchMappingTypes = async () => {
+        try {
+          setMappingTypesLoading(true);
+          const url = `${sessionData.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[item_type]=content`;
+          console.log('Fetching mapping types from:', url);
+          const response = await fetch(url, {
+            headers: {
+              'Authorization': `Bearer ${sessionData.token}`
+            }
+          });
+          console.log('Mapping types response status:', response.status);
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Mapping types data:', data);
+            const types = data.data || data || [];
+            setMappingTypes(types);
+            // Auto-select the first type and fetch its values
+            if (types.length > 0) {
+              const firstType = types[0];
+              const defaultValue = firstType.name || firstType.id;
+              setCfg(prev => ({ ...prev, mappingType: defaultValue }));
+              setSelectedMappingTypeId(firstType.id);
+            }
+          } else {
+            console.error('Failed to fetch mapping types:', response.statusText);
+          }
+        } catch (error) {
+          console.error('Error fetching mapping types:', error);
+        } finally {
+          setMappingTypesLoading(false);
+        }
+      };
+
+      fetchMappingTypes();
+      // Don't fetch values initially
+    }
+  }, [sessionData.url, sessionData.token]);
+
+  // Fetch mapping values when selectedMappingTypeId changes
+  useEffect(() => {
+    console.log('useEffect for mapping values triggered, selectedMappingTypeId:', selectedMappingTypeId);
+    if (selectedMappingTypeId && sessionData.url && sessionData.token) {
+      const fetchMappingValues = async () => {
+        try {
+          setMappingValuesLoading(true);
+          const url = `${sessionData.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[parent_id]=${selectedMappingTypeId}`;
+          console.log('Fetching mapping values from:', url);
+          const response = await fetch(url, {
+            headers: {
+              'Authorization': `Bearer ${sessionData.token}`
+            }
+          });
+          console.log('Mapping values response status:', response.status);
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Mapping values data:', data);
+            setMappingValues(data.data || data || []);
+          } else {
+            console.error('Failed to fetch mapping values:', response.statusText);
+            setMappingValues([]);
+          }
+        } catch (error) {
+          console.error('Error fetching mapping values:', error);
+          setMappingValues([]);
+        } finally {
+          setMappingValuesLoading(false);
+        }
+      };
+      fetchMappingValues();
+    } else {
+      setMappingValues([]);
+      setMappingValuesLoading(false);
+    }
+  }, [selectedMappingTypeId, sessionData.url, sessionData.token]);
+
   // Fetch modules when dropdown is shown
   useEffect(() => {
     if (showDropdownModal && currentStandardId && currentSubjectId) {
@@ -457,7 +543,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
             const formData = new FormData();
             formData.append('type', 'API');
             formData.append('sub_institute_id', sessionData.subInstituteId.toString());
-            formData.append('grade', '9');
+            // formData.append('grade', '9');
             formData.append('standard', currentStandardId.toString());
             formData.append('subject', currentSubjectId.toString());
             const chapterName = isCriticalWorkFunction ? jsonObject.critical_work_function : isSkillSelection ? (typeof jsonObject.selected_skill === 'object' ? jsonObject.selected_skill.skillName || jsonObject.selected_skill : jsonObject.selected_skill) : 'Module 1';
@@ -478,6 +564,11 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
               body: formData
             });
             if (storeResponse.ok) {
+              const responseData = await storeResponse.json();
+              // Store the created chapter ID
+              if (responseData.data && responseData.data.id) {
+                setCurrentChapterId(responseData.data.id);
+              }
               // Refetch modules to include the new one
               const refetchResponse = await fetch(chapterApiUrl);
               if (refetchResponse.ok) {
@@ -491,6 +582,10 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
             }
           } else {
             setModules(fetchedModules);
+            // Set the first module as current chapter ID
+            if (fetchedModules.length > 0) {
+              setCurrentChapterId(fetchedModules[0].id);
+            }
           }
         } else {
           setModules([]);
@@ -590,7 +685,9 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           },
           modality: cfg.modality,
           aiModel: cfg.aiModel,
-          industry: sessionData.orgType
+          industry: sessionData.orgType,
+          mappingType: cfg.mappingType,
+          mappingValue: cfg.mappingValue
         }),
       });
 
@@ -757,30 +854,82 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     setError(null);
     setSuccess(null);
 
-  
+
 
     try {
+      // Call Gamma API for course generation first
       const response = await fetch("/api/generate-course", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          inputText: manualPreview
+          inputText: manualPreview,
+          slideCount: cfg.slideCount
         }),
       });
-
+      
       const data = await response.json();
-
+      
       if (!response.ok) {
         throw new Error(data.error || "Course generation failed");
       }
-
+      
       console.log("✅ Course generated successfully:", data);
-
+      
       // Store the generated URLs
-      setGeneratedUrls({
-        exportUrl: data.data?.exportUrl,
-        gammaUrl: data.data?.gammaUrl
+      const generatedPdfUrl = data.data?.exportUrl || data.data?.gammaUrl || '';
+      
+      // Call store_content_master API with the actual PDF link
+      const storeContentApiUrl = `${sessionData.url}/lms/store_content_master`;
+      const formData = new FormData();
+      
+      // Add form data parameters
+      formData.append('type', 'API');
+      formData.append('grade_id', '9');
+      formData.append('standard_id', currentStandardId?.toString() || '63');
+      formData.append('subject_id', currentSubjectId?.toString() || '45');
+      formData.append('chapter_id', currentChapterId?.toString() || '78');
+      formData.append('title', jsonObject?.critical_work_function || jsonObject?.jobrole || 'Newton Law Video');
+      formData.append('description', manualPreview?.substring(0, 100) || 'Explains motion laws');
+      formData.append('link', generatedPdfUrl);
+      formData.append('contentType', 'link');
+      formData.append('show_hide', '1');
+      formData.append('content_category', 'AI Generated');
+      formData.append('sub_institute_id', sessionData.subInstituteId);
+      formData.append('syear', new Date().getFullYear().toString());
+      console.log('Selected mapping_type:', cfg.mappingType, 'mapping_value:', cfg.mappingValue);
+      formData.append('mapping_type[]', cfg.mappingType);
+      formData.append('mapping_value[]', cfg.mappingValue);
+      
+      const storeResponse = await fetch(storeContentApiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionData.token}`
+        },
+        body: formData
       });
+     
+      if (!storeResponse.ok) {
+        const errorData = await storeResponse.json();
+        console.error('Error calling store_content_master API:', errorData);
+      } else {
+        const responseData = await storeResponse.json();
+        console.log('store_content_master API called successfully');
+        
+        // Store the content link from the response
+        if (responseData.data && responseData.data.link) {
+          setGeneratedUrls({
+            exportUrl: data.data?.exportUrl,
+            gammaUrl: data.data?.gammaUrl,
+            contentLink: responseData.data.link
+          });
+        } else {
+          setGeneratedUrls({
+            exportUrl: data.data?.exportUrl,
+            gammaUrl: data.data?.gammaUrl,
+            contentLink: generatedPdfUrl
+          });
+        }
+      }
 
       // Save generated course to Course Library
       const generatedCourse = {
@@ -812,6 +961,57 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       existingCourses.push(generatedCourse);
       localStorage.setItem("generatedCourses", JSON.stringify(existingCourses));
 
+      // Call the save-generated-course API to store all course data
+      const requestData = {
+        type: "API",
+        sub_institute_id: sessionData.subInstituteId,
+        user_id: sessionData.userId,
+        course_type: jsonObject?.jobrole || "Generated Course",
+        input_fields: {
+          jobrole: jsonObject?.jobrole || "",
+          jobrole_description: jsonObject?.jobrole_description || "",
+          critical_work_function: isCriticalWorkFunction ? {
+            critical_work_function: jsonObject?.critical_work_function || "",
+            key_task: jsonObject?.key_task || {}
+          } : {}
+        },
+        configure_fields: {
+          modality: cfg.modality.selfPaced ? "self-paced" : "instructor-led",
+          "map-type": cfg.mappingType || "",
+          "map-value": cfg.mappingValue || "",
+          "AI model": cfg.aiModel || ""
+        },
+        outline: manualPreview ? [manualPreview] : [],
+        title: jsonObject?.critical_work_function ? `${jsonObject.jobrole} - ${jsonObject.critical_work_function}` : jsonObject?.jobrole || "Generated Course",
+        description: manualPreview?.substring(0, 200) || "AI-generated course content",
+        export_url: data.data?.exportUrl || "",
+        presentation_platform: "Gamma",
+        course_pdf: data.data?.exportUrl || "",
+        status: "Incompleted"
+      };
+      
+      console.log('📡 Saving course to backend...');
+      console.log('🔗 API URL:', `${sessionData.url}/api/save-generated-course?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`);
+      console.log('📋 Request Data:', JSON.stringify(requestData, null, 2));
+      
+      const saveCourseResponse = await fetch(`${sessionData.url}/api/save-generated-course?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${sessionData.token}`
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!saveCourseResponse.ok) {
+        const errorData = await saveCourseResponse.json();
+        console.error("❌ Error saving generated course:", errorData);
+      } else {
+        console.log("✅ Course saved successfully to backend");
+        const responseData = await saveCourseResponse.json();
+        console.log("📥 Response:", responseData);
+      }
+
       setSuccess("✅ Course presentation generated successfully! Added to Course Library.");
 
     } catch (err) {
@@ -830,7 +1030,9 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
 
   // Handle View Course button
   const handleViewCourse = () => {
-    if (generatedUrls?.exportUrl) {
+    if (generatedUrls?.contentLink) {
+      window.open(generatedUrls.contentLink, '_blank');
+    } else if (generatedUrls?.exportUrl) {
       window.open(generatedUrls.exportUrl, '_blank');
     } else if (generatedUrls?.gammaUrl) {
       window.open(generatedUrls.gammaUrl, '_blank');
@@ -904,7 +1106,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                         </button>
                       </div>
 
-                      {activeTab === 'courseParams' &&(
+                      {activeTab === 'courseParams' && (
                         <fieldset className="space-y-4">
                           <legend className="text-sm font-semibold text-gray-700 mb-4">
                             Course Parameters
@@ -957,12 +1159,28 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                               </label>
                               <select
                                 value={cfg.mappingType}
-                                onChange={(e) => setCfg({ ...cfg, mappingType: e.target.value })}
+                                onChange={(e) => {
+                                  const selectedValue = e.target.value;
+                                  console.log('Selected mapping type value:', selectedValue);
+                                  const selectedType = mappingTypes.find(type => type.name === selectedValue || String(type.id) === selectedValue);
+                                  console.log('Found selected type:', selectedType);
+                                  const typeId = selectedType ? selectedType.id : null;
+                                  console.log('Setting selectedMappingTypeId to:', typeId);
+                                  setSelectedMappingTypeId(typeId);
+                                  setCfg({ ...cfg, mappingType: selectedValue, mappingValue: "" });
+                                }}
                                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                disabled={mappingTypesLoading || mappingTypes.length === 0}
                               >
-                                <option value="Direct">Direct</option>
-                                <option value="Indirect">Indirect</option>
-                                <option value="Custom">Custom</option>
+                                {mappingTypes.length > 0 ? (
+                                  mappingTypes.map((type) => (
+                                    <option key={type.id} value={type.name || type.id}>
+                                      {type.name || type.id}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option value="">No mapping types available</option>
+                                )}
                               </select>
                             </div>
                             <div className="space-y-2">
@@ -973,10 +1191,17 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                                 value={cfg.mappingValue}
                                 onChange={(e) => setCfg({ ...cfg, mappingValue: e.target.value })}
                                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                disabled={mappingValuesLoading || mappingValues.length === 0}
                               >
-                                <option value="Option1">Option1</option>
-                                <option value="Option2">Option2</option>
-                                <option value="Option3">Option3</option>
+                                {mappingValues.length > 0 ? (
+                                  mappingValues.map((value) => (
+                                    <option key={value.id} value={value.name || value.id}>
+                                      {value.name || value.id}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option value="">No mapping values available</option>
+                                )}
                               </select>
                             </div>
                           </div>
@@ -1103,58 +1328,34 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
 
             {/* Right: Course Outline Preview */}
             <section className="flex flex-col rounded-2xl border overflow-hidden min-h-[200px] md:min-h-[300px] max-h-[70vh] bg-white relative">
-              
               <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
                 <h2 className="text-base font-semibold flex items-center gap-2">
                   <Eye className="h-5 w-5 text-blue-600" />
                   Preview
                 </h2>
-                {/* <div className="flex items-center gap-2 text-xs">
-                  {diverged && (
-                    <button
-                      onClick={handleResync}
-                      disabled={outlineLoading}
-                      className={`rounded-md border px-2 py-1 flex items-center gap-1 transition-all duration-200 ${outlineLoading
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "hover:bg-slate-50"
-                        }`}
-                    >
-                      <RotateCcw className="h-3 w-3" />
-                      Resync
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(manualPreview);
-                    }}
-                    disabled={outlineLoading}
-                    className={`rounded-md border px-2 py-1 flex items-center gap-1 transition-all duration-200 ${outlineLoading
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "hover:bg-slate-50"
-                      }`}
+
+                {/* ✅ Module Dropdown – RIGHT SIDE */}
+                {showDropdownModal && (
+                  <select
+                    className="px-3 py-2 text-sm border rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onChange={(e) => setCurrentChapterId(parseInt(e.target.value))}
+                    value={currentChapterId || ''}
                   >
-                    <Copy className="h-3 w-3" />
-                    Copy
-                  </button>
-                </div> */}
+                    {modules.length > 0 ? (
+                      modules.map((module: any) => (
+                        <option key={module.id} value={module.id}>
+                          {module.chapter_name}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled value="">No modules found</option>
+                    )}
+                  </select>
+                )}
               </div>
+
               {/* Preview Content */}
               <div className="flex-1 overflow-hidden relative">
-                {showDropdownModal && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <select className="p-2 border rounded bg-white">
-                      {modules.length > 0 ? (
-                        modules.map((module: any) => (
-                          <option key={module.id} value={module.id}>
-                            {module.chapter_name}
-                          </option>
-                        ))
-                      ) : (
-                        <option disabled>No modules found</option>
-                      )}
-                    </select>
-                  </div>
-                )}
                 <div className="h-full w-full p-3 font-mono text-sm leading-6 overflow-auto smooth-scrollbar bg-slate-50">
                   {outlineLoading ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
