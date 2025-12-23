@@ -81,6 +81,7 @@ type Config = {
   modality: { selfPaced: boolean; instructorLed: boolean; };
   mappingType: string;
   mappingValue: string;
+  mappingReason: string;
   slideCount: number;
   presentationStyle: string;
   language: string;
@@ -98,6 +99,7 @@ const DEFAULT_CONFIG: Config = {
   modality: { selfPaced: true, instructorLed: false },
   mappingType: "",
   mappingValue: "",
+  mappingReason: "",
   slideCount: 15,
   presentationStyle: "Modern",
   language: "English",
@@ -382,7 +384,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [courseLoading, setCourseLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   // Auto-dismiss success message after 5 seconds
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -413,9 +415,12 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [modules, setModules] = useState<any[]>([]);
   const [mappingTypes, setMappingTypes] = useState<any[]>([]);
   const [mappingValues, setMappingValues] = useState<any[]>([]);
+  const [mappingReasons, setMappingReasons] = useState<any[]>([]);
   const [mappingTypesLoading, setMappingTypesLoading] = useState(true);
   const [mappingValuesLoading, setMappingValuesLoading] = useState(true);
+  const [mappingReasonsLoading, setMappingReasonsLoading] = useState(true);
   const [selectedMappingTypeId, setSelectedMappingTypeId] = useState<number | null>(null);
+  const [selectedMappingValueId, setSelectedMappingValueId] = useState<number | null>(null);
 
   // State for Create Template functionality
 
@@ -467,7 +472,11 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           if (response.ok) {
             const data = await response.json();
             console.log('Mapping types data:', data);
-            const types = data.data || data || [];
+            // Ensure each mapping type has a reason field
+            const types = (data.data || data || []).map((type: any) => ({
+              ...type,
+              reason: type.reason || `The ${type.name} category encompasses various pedagogical approaches for effective learning and skill development.`
+            }));
             setMappingTypes(types);
             // Auto-select the first type and fetch its values
             if (types.length > 0) {
@@ -509,14 +518,24 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           if (response.ok) {
             const data = await response.json();
             console.log('Mapping values data:', data);
-            setMappingValues(data.data || data || []);
+            // Use the reason field directly from API without fallback
+            const values = (data.data || data || []).map((value: any) => ({
+              ...value
+            }));
+            setMappingValues(values);
+            // Reset reasons when values change
+            setMappingReasons([]);
+            setSelectedMappingValueId(null);
+            setCfg(prev => ({ ...prev, mappingValue: "", mappingReason: "" }));
           } else {
             console.error('Failed to fetch mapping values:', response.statusText);
             setMappingValues([]);
+            setMappingReasons([]);
           }
         } catch (error) {
           console.error('Error fetching mapping values:', error);
           setMappingValues([]);
+          setMappingReasons([]);
         } finally {
           setMappingValuesLoading(false);
         }
@@ -525,8 +544,21 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     } else {
       setMappingValues([]);
       setMappingValuesLoading(false);
+      setMappingReasons([]);
+      setSelectedMappingValueId(null);
     }
   }, [selectedMappingTypeId, sessionData.url, sessionData.token]);
+
+  // Fetch mapping reasons when selectedMappingValueId changes
+  // Note: Reasons are now retrieved directly from mappingValues, not from a separate API call
+  useEffect(() => {
+    if (selectedMappingValueId && cfg.mappingValue) {
+      const selectedValue = mappingValues.find(v => v.id === selectedMappingValueId);
+      if (selectedValue && selectedValue.reason) {
+        setCfg(prev => ({ ...prev, mappingReason: selectedValue.reason }));
+      }
+    }
+  }, [selectedMappingValueId, cfg.mappingValue, mappingValues]);
 
   // Fetch modules when dropdown is shown
   useEffect(() => {
@@ -687,7 +719,9 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           aiModel: cfg.aiModel,
           industry: sessionData.orgType,
           mappingType: cfg.mappingType,
-          mappingValue: cfg.mappingValue
+          mappingValue: cfg.mappingValue,
+          // Include reason if available
+          mappingReason: cfg.mappingReason || undefined
         }),
       });
 
@@ -866,22 +900,22 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           slideCount: cfg.slideCount
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || "Course generation failed");
       }
-      
+
       console.log("✅ Course generated successfully:", data);
-      
+
       // Store the generated URLs
       const generatedPdfUrl = data.data?.exportUrl || data.data?.gammaUrl || '';
-      
+
       // Call store_content_master API with the actual PDF link
       const storeContentApiUrl = `${sessionData.url}/lms/store_content_master`;
       const formData = new FormData();
-      
+
       // Add form data parameters
       formData.append('type', 'API');
       formData.append('grade_id', '9');
@@ -899,7 +933,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       console.log('Selected mapping_type:', cfg.mappingType, 'mapping_value:', cfg.mappingValue);
       formData.append('mapping_type[]', cfg.mappingType);
       formData.append('mapping_value[]', cfg.mappingValue);
-      
+
       const storeResponse = await fetch(storeContentApiUrl, {
         method: 'POST',
         headers: {
@@ -907,14 +941,14 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         },
         body: formData
       });
-     
+
       if (!storeResponse.ok) {
         const errorData = await storeResponse.json();
         console.error('Error calling store_content_master API:', errorData);
       } else {
         const responseData = await storeResponse.json();
         console.log('store_content_master API called successfully');
-        
+
         // Store the content link from the response
         if (responseData.data && responseData.data.link) {
           setGeneratedUrls({
@@ -989,11 +1023,11 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         course_pdf: data.data?.exportUrl || "",
         status: "Incompleted"
       };
-      
+
       console.log('📡 Saving course to backend...');
       console.log('🔗 API URL:', `${sessionData.url}/api/save-generated-course?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`);
       console.log('📋 Request Data:', JSON.stringify(requestData, null, 2));
-      
+
       const saveCourseResponse = await fetch(`${sessionData.url}/api/save-generated-course?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`, {
         method: "POST",
         headers: {
@@ -1076,6 +1110,8 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                       setDiverged(false);
                       setPreview("Click 'Generate Course Outline with AI' to create slides.");
                       setManualPreview("Click 'Generate Course Outline with AI' to create slides.");
+                      setSelectedMappingTypeId(null);
+                      setSelectedMappingValueId(null);
                     }}
                     className="rounded-md border px-2 py-1 flex items-center gap-1 transition-all duration-200 hover:bg-slate-50"
                   >
@@ -1152,7 +1188,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                           </div>
 
                           {/* Mapping Options */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div className="space-y-2">
                               <label className="text-sm font-medium text-gray-700">
                                 Mapping Type
@@ -1167,7 +1203,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                                   const typeId = selectedType ? selectedType.id : null;
                                   console.log('Setting selectedMappingTypeId to:', typeId);
                                   setSelectedMappingTypeId(typeId);
-                                  setCfg({ ...cfg, mappingType: selectedValue, mappingValue: "" });
+                                  setCfg({ ...cfg, mappingType: selectedValue, mappingValue: "", mappingReason: "" });
                                 }}
                                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 disabled={mappingTypesLoading || mappingTypes.length === 0}
@@ -1189,7 +1225,16 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                               </label>
                               <select
                                 value={cfg.mappingValue}
-                                onChange={(e) => setCfg({ ...cfg, mappingValue: e.target.value })}
+                                onChange={(e) => {
+                                  const selectedValue = e.target.value;
+                                  console.log('Selected mapping value value:', selectedValue);
+                                  const selectedValueObj = mappingValues.find(value => value.name === selectedValue || String(value.id) === selectedValue);
+                                  console.log('Found selected value:', selectedValueObj);
+                                  const valueId = selectedValueObj ? selectedValueObj.id : null;
+                                  console.log('Setting selectedMappingValueId to:', valueId);
+                                  setSelectedMappingValueId(valueId);
+                                  setCfg({ ...cfg, mappingValue: selectedValue, mappingReason: "" });
+                                }}
                                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 disabled={mappingValuesLoading || mappingValues.length === 0}
                               >
@@ -1204,7 +1249,46 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                                 )}
                               </select>
                             </div>
+                          <div className="space-y-2">
+  <label className="text-sm font-medium text-gray-700">
+    Reason
+  </label>
+
+  <textarea
+    value={
+      cfg.mappingType
+        ? mappingTypes.find(
+            t => t.name === cfg.mappingType || String(t.id) === cfg.mappingType
+          )?.reason || ""
+        : ""
+    }
+    readOnly
+    rows={10}
+    className="w-full rounded-lg border border-gray-300 p-3 text-sm bg-gray-50 whitespace-pre-line focus:outline-none"
+    placeholder="Reason will appear here based on selected mapping type..."
+  />
+</div>
+
                           </div>
+                          
+                          {/* Mapping Type Reason Display */}
+                          {/* {cfg.mappingType && mappingTypes.find(t => t.name === cfg.mappingType)?.reason && (
+  <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+    <div className="flex justify-between items-start">
+      <div>
+        <h4 className="font-medium text-green-900">
+          Why {cfg.mappingType}?
+        </h4>
+        <p className="text-xs text-green-600 mt-2">
+          {mappingTypes.find(t => t.name === cfg.mappingType)?.reason}
+        </p>
+      </div>
+      <div className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+        Category Explanation
+      </div>
+    </div>
+  </div>
+)} */}
 
                           {/* AI Model */}
                           <div className="mb-4">
@@ -1215,6 +1299,23 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                           </div>
 
                           <ModelInfoDisplay modelId={cfg.aiModel} />
+
+                          {/* Mapping Reason Display */}
+                          {cfg.mappingValue && mappingValues.find(v => v.name === cfg.mappingValue)?.reason && (
+                            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-medium text-blue-900">Why {cfg.mappingValue}?</h4>
+                                  <p className="text-xs text-blue-600 mt-2">
+                                    {mappingValues.find(v => v.name === cfg.mappingValue)?.reason}
+                                  </p>
+                                </div>
+                                <div className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  Pedagogical Approach
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Generate Button */}
                           <div className="pt-4 border-t border-gray-200">
