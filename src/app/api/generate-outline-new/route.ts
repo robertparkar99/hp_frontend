@@ -981,6 +981,7 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
           }
         }
       };
+      console.log("Generated Course Prompt with Mapping Integration");
       promptToUse = coursePrompt;
     }
 
