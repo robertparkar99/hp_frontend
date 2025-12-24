@@ -111,41 +111,41 @@ const SystemConfiguration = () => {
   // };
 
   const fetchDepartments = async () => {
-  try {
-    const res = await fetch(
-      `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`
-    );
+    try {
+      const res = await fetch(
+        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`
+      );
 
-    const json = await res.json();
+      const json = await res.json();
 
-    console.log("Fetched departments:", json);
+      console.log("Fetched departments:", json);
 
-    if (json.status && json.data && typeof json.data === "object") {
+      if (json.status && json.data && typeof json.data === "object") {
 
-      // Convert department_name → id mapping
-      const departmentList = Object.keys(json.data)
-        .map((deptName) => {
-          const deptArr = json.data[deptName];
+        // Convert department_name → id mapping
+        const departmentList = Object.keys(json.data)
+          .map((deptName) => {
+            const deptArr = json.data[deptName];
 
-          if (Array.isArray(deptArr) && deptArr.length > 0) {
-            return {
-              id: deptArr[0].department_id,   // ✔ Correct department ID
-              name: deptArr[0].department_name, // ✔ Correct department name
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
+            if (Array.isArray(deptArr) && deptArr.length > 0) {
+              return {
+                id: deptArr[0].department_id,   // ✔ Correct department ID
+                name: deptArr[0].department_name, // ✔ Correct department name
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
 
-      setDepartmentOptions(departmentList);
-    } else {
+        setDepartmentOptions(departmentList);
+      } else {
+        setDepartmentOptions([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching departments:", error);
       setDepartmentOptions([]);
     }
-  } catch (error) {
-    console.error("❌ Error fetching departments:", error);
-    setDepartmentOptions([]);
-  }
-};
+  };
 
 
 
@@ -750,25 +750,25 @@ const SystemConfiguration = () => {
           <label className="block text-sm font-medium text-gray-700 mb-1">Department{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <Select
-  value={formData.departmentId}
-  onValueChange={(val) => handleChange("departmentId", val)}
-  required
->
-  <SelectTrigger className="w-full">
-    <SelectValue placeholder="Select Department" />
-  </SelectTrigger>
+            value={formData.departmentId}
+            onValueChange={(val) => handleChange("departmentId", val)}
+            required
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Department" />
+            </SelectTrigger>
 
-  <SelectContent className="max-h-60 w-73">
-    {departmentOptions.map((dept) => (
-      <SelectItem
-        key={dept.id}
-        value={String(dept.id)}   
-      >
-        {dept.name}               
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
+            <SelectContent className="max-h-60 w-73">
+              {departmentOptions.map((dept) => (
+                <SelectItem
+                  key={dept.id}
+                  value={String(dept.id)}
+                >
+                  {dept.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
         </div>
 

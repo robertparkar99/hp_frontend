@@ -153,21 +153,32 @@ const SystemConfiguration = () => {
         `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.sub_institute_id}`
       );
 
-      const data = await res.json();
+      const json = await res.json();
 
-      if (data.status && data.data) {
-        // API returns an object with department names as keys
-        const deptNames = Object.keys(data.data).filter(name => name.trim() !== "");
+      if (json.status && json.data && typeof json.data === "object") {
 
-        setDepartmentOptions(
-          deptNames.map((name, index) => ({
-            id: index + 1,
-            name: name,   // Department name (like "Administrative Support")
-          }))
-        );
+        // Convert department_name → id mapping
+        const departmentList = Object.keys(json.data)
+          .map((deptName) => {
+            const deptArr = json.data[deptName];
+
+            if (Array.isArray(deptArr) && deptArr.length > 0) {
+              return {
+                id: deptArr[0].department_id,   // ✔ Correct department ID
+                name: deptArr[0].department_name, // ✔ Correct department name
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
+
+        setDepartmentOptions(departmentList);
+      } else {
+        setDepartmentOptions([]);
       }
     } catch (error) {
-      console.error("Error fetching new department list:", error);
+      console.error("❌ Error fetching departments:", error);
+      setDepartmentOptions([]);
     }
   };
 
@@ -746,10 +757,7 @@ const SystemConfiguration = () => {
               <SelectValue placeholder="Select Department" />
             </SelectTrigger>
             <SelectContent
-              position="popper"
-              side="top"
-              avoidCollisions={true}
-              className="max-h-60 w-[var(--radix-select-trigger-width)]"
+             className="max-h-60 w-73"
             >
               {departmentOptions.map((dept) => (
                 <SelectItem key={dept.id} value={dept.name}>

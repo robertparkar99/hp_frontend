@@ -32,12 +32,14 @@ const CourseCard = ({
   const [loading, setLoading] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [correctSubjectId, setCorrectSubjectId] = useState(null);
+  const [jobRoles, setJobRoles] = useState([]);
   const isDefault = imgSrc === DEFAULT_IMAGE;
 
   useEffect(() => {
     const fetchContentData = async () => {
       if (!course.subject_id || !course.standard_id) {
         setContentType("none");
+        setJobRoles([]);
         return;
       }
 
@@ -75,6 +77,12 @@ const CourseCard = ({
         // Set correct subject_id from API response
         if (data && data.course_details && data.course_details.subject_id) {
           setCorrectSubjectId(data.course_details.subject_id);
+        }
+        // Set job roles
+        if (data && data.job_roles && Array.isArray(data.job_roles)) {
+          setJobRoles(data.job_roles);
+        } else {
+          setJobRoles([]);
         }
       } catch (error) {
         console.error("❌ Error fetching content data for", course.title, ":", error);
@@ -345,6 +353,22 @@ const CourseCard = ({
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   };
 
+  // Get job role from course object or extract from title
+  const getJobRole = () => {
+    if (course.jobrole) return course.jobrole;
+    
+    // Extract from title if it follows the format "CWF: JobRole - Department" or "Skill: JobRole - Department"
+    if (course.title) {
+      // Match pattern: "CWF: JobRole - Department" or "Skill: JobRole - Department"
+      const match = course.title.match(/^(CWF:|Skill:)\s*([^-]+)/);
+      if (match && match[2]) {
+        return match[2].trim();
+      }
+    }
+    
+    return 'N/A';
+  };
+
   // ---------------- LIST VIEW ----------------
   if (viewMode === "list") {
     return (
@@ -381,9 +405,14 @@ const CourseCard = ({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-foreground text-lg truncate pr-4">
-                {course.title}
-              </h3>
+              <div className="flex items-center flex-1 min-w-0">
+                <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full mr-2 flex-shrink-0">
+                  {course.category || course.subject_category}
+                </span>
+                <h3 className="font-semibold text-foreground text-lg truncate">
+                  {course.title}
+                </h3>
+              </div>
               <div className="flex items-center space-x-2 flex-shrink-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -405,7 +434,10 @@ const CourseCard = ({
             </div>
 
             <p className="text-muted-foreground text-sm mb-1 line-clamp-1">
-              <span className="font-medium mr-1">Department:</span>{course.description}
+              {course.description}
+            </p>
+            <p className="text-muted-foreground text-sm mb-3 line-clamp-1">
+              {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
             </p>
 
             <div className="text-sm text-muted-foreground mb-4">
@@ -536,14 +568,22 @@ const CourseCard = ({
       </div>
 
       <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-semibold text-foreground text-lg mb-2 line-clamp-2">
-          {course.title}
-        </h3>
-        <p className="text-muted-foreground text-sm mb-3 line-clamp-3">
-          {course.description}
+        <div className="flex items-center mb-2">
+          <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full mr-2 flex-shrink-0">
+            {course.category || course.subject_category}
+          </span>
+          <h3 className="font-semibold text-foreground text-lg line-clamp-2 flex-1">
+            {course.title}
+          </h3>
+        </div>
+        <p className="text-muted-foreground text-sm mb-1 line-clamp-2">
+          <span className="font-medium mr-1">Department:</span> {course.description}
         </p>
-
-        <div className="text-sm text-muted-foreground mb-4">
+        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+          <span className="font-medium mr-1">Job Role:</span> {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
+        </p>
+        
+        {/* <div className="text-sm text-muted-foreground mb-4">
           <div className="flex items-center">
             <span className="font-medium mr-1">Short Name:</span>
             {course.short_name}
@@ -552,7 +592,7 @@ const CourseCard = ({
             <span className="font-medium mr-1">Course Type:</span>
             {course.subject_type}
           </div>
-        </div>
+        </div> */}
 
         <div className="flex items-center justify-between mt-auto p-3 rounded-lg">
           <div className="flex justify-between items-center w-full text-xs">

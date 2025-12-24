@@ -94,7 +94,7 @@ const ProgressDashboard = () => {
   };
 
   const timeOptions = [
-    { value: 'all', label: 'All Types' },
+    { value: 'all', label: 'priority' },
     { value: 'High', label: 'High' },
     {value: 'Medium', label: 'Medium' },
     { value: 'Low', label: 'Low' },
@@ -109,7 +109,19 @@ const ProgressDashboard = () => {
 
   // Get unique departments and job roles for filter options
   const departmentOptions = useMemo(() => {
-    const departments = [...new Set(allData.map(task => task.department).filter(Boolean))];
+    // Extract department names from allData, handling both string and object formats
+    const departments = [...new Set(
+      allData
+        .map(task => {
+          if (typeof task.department === 'string') {
+            return task.department;
+          } else if (task.department && typeof task.department === 'object') {
+            return task.department.department_name || task.department.name || '';
+          }
+          return '';
+        })
+        .filter(Boolean)
+    )];
     return [
       { value: 'all', label: 'All Departments' },
       ...departments.map(dept => ({ value: dept, label: dept }))
@@ -149,8 +161,19 @@ const ProgressDashboard = () => {
       const matchesColumnFilters = Object.entries(filters).every(([key, filterValue]) => {
         if (!filterValue) return true;
         
-        const cellValue = task[key] ? task[key].toString().toLowerCase() : '';
-        return cellValue.includes(filterValue.toLowerCase());
+        // Handle department filtering for both string and object formats
+        let cellValue = '';
+        if (key === 'department') {
+          if (typeof task.department === 'string') {
+            cellValue = task.department;
+          } else if (task.department && typeof task.department === 'object') {
+            cellValue = task.department.department_name || task.department.name || '';
+          }
+        } else {
+          cellValue = task[key] ? task[key].toString().toLowerCase() : '';
+        }
+        
+        return cellValue.toString().toLowerCase().includes(filterValue.toLowerCase());
       });
 
       // Then apply the existing filters
@@ -166,10 +189,18 @@ const ProgressDashboard = () => {
 
       // const matchesStatus = statusFilter === 'all' || task.status.toUpperCase() === statusFilter;
       const matchesStatus =
-  statusFilter === 'all' ||
-  (task.status && task.status.toUpperCase() === statusFilter);
+    statusFilter === 'all' ||
+    (task.status && task.status.toUpperCase() === statusFilter);
 
-      const matchesDepartment = departmentFilter === 'all' || task.department === departmentFilter;
+      // Handle department filtering for both string and object formats
+      let taskDepartment = '';
+      if (typeof task.department === 'string') {
+        taskDepartment = task.department;
+      } else if (task.department && typeof task.department === 'object') {
+        taskDepartment = task.department.department_name || task.department.name || '';
+      }
+      const matchesDepartment = departmentFilter === 'all' || taskDepartment === departmentFilter;
+      
       const matchesJobrole = jobroleFilter === 'all' || task.jobrole === jobroleFilter;
 
       return matchesColumnFilters && matchesTime && matchesStatus && matchesDepartment && matchesJobrole;
@@ -429,7 +460,14 @@ const ProgressDashboard = () => {
           />
         </div>
       ),
-      selector: row => row.department,
+      selector: row => {
+        if (typeof row.department === 'string') {
+          return row.department;
+        } else if (row.department && typeof row.department === 'object') {
+          return row.department.department_name || row.department.name || '';
+        }
+        return '';
+      },
       sortable: true,
       minWidth: "150px"
     },
@@ -510,7 +548,7 @@ const ProgressDashboard = () => {
     {
       name: (
         <div>
-          <div>Task Type</div>
+          <div>Task Priority</div>
           <input
             type="text"
             placeholder="Search..."
@@ -581,12 +619,17 @@ const ProgressDashboard = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
+            className={`h-8 w-8 text-xs py-1 px-2 rounded ${
+              sessionData.user_profile_name?.toLowerCase().includes('employee')
+                ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                : 'bg-red-500 hover:bg-red-700 text-white'
+            }`}
             onClick={() => {
-              if (window.confirm('Are you sure you want to delete this task?')) {
+              if (!sessionData.user_profile_name?.toLowerCase().includes('employee') && window.confirm('Are you sure you want to delete this task?')) {
                 handleDeleteTask(row.id);
               }
             }}
+            disabled={sessionData.user_profile_name?.toLowerCase().includes('employee')}
           >
             <Icon name="Trash2" size={14} />
           </Button>
@@ -801,7 +844,7 @@ const ProgressDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Select
-                    label="Task Type"
+                    label="Task Priority"
                     options={taskTypeOptions}
                     value={currentTask.task_type}
                     onChange={(value) => handleInputChange('task_type', value)}
@@ -826,6 +869,7 @@ const ProgressDashboard = () => {
                     options={approveStatusOptions}
                     value={currentTask.approve_status?.toLowerCase() || 'pending'}
                     onChange={(value) => handleInputChange('approve_status', value)}
+                    disabled={sessionData.user_profile_name?.toLowerCase().includes('employee')}
                   />
                 </div>
                 <div>
