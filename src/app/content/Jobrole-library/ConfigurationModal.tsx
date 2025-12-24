@@ -919,9 +919,9 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       // Add form data parameters
       formData.append('type', 'API');
       formData.append('grade_id', '9');
-      formData.append('standard_id', currentStandardId?.toString() || '63');
-      formData.append('subject_id', currentSubjectId?.toString() || '45');
-      formData.append('chapter_id', currentChapterId?.toString() || '78');
+      formData.append('standard_id', currentStandardId?.toString() || '');
+      formData.append('subject_id', currentSubjectId?.toString() || '');
+      formData.append('chapter_id', currentChapterId?.toString() || '');
       formData.append('title', jsonObject?.critical_work_function || jsonObject?.jobrole || 'Newton Law Video');
       formData.append('description', manualPreview?.substring(0, 100) || 'Explains motion laws');
       formData.append('link', generatedPdfUrl);
@@ -1249,28 +1249,29 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                                 )}
                               </select>
                             </div>
-                          <div className="space-y-2">
-  <label className="text-sm font-medium text-gray-700">
-    Reason
-  </label>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                Reason
+                              </label>
 
-  <textarea
-    value={
-      cfg.mappingType
-        ? mappingTypes.find(
-            t => t.name === cfg.mappingType || String(t.id) === cfg.mappingType
-          )?.reason || ""
-        : ""
-    }
-    readOnly
-    rows={10}
-    className="w-full rounded-lg border border-gray-300 p-3 text-sm bg-gray-50 whitespace-pre-line focus:outline-none"
-    placeholder="Reason will appear here based on selected mapping type..."
-  />
-</div>
+                              <textarea
+                                value={
+                                  cfg.mappingType
+                                    ? mappingTypes.find(
+                                      t => t.name === cfg.mappingType || String(t.id) === cfg.mappingType
+                                    )?.reason || ""
+                                    : ""
+                                }
+                                readOnly
+                                rows={4}
+                                className="w-full rounded-lg border border-gray-300 p-3 text-sm bg-gray-50 
+             max-h-28 overflow-y-auto whitespace-pre-line focus:outline-none"
+                                placeholder="Reason will appear here based on selected mapping type..."
+                              />
+                            </div>
 
                           </div>
-                          
+
                           {/* Mapping Type Reason Display */}
                           {/* {cfg.mappingType && mappingTypes.find(t => t.name === cfg.mappingType)?.reason && (
   <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
@@ -1435,13 +1436,19 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                   Preview
                 </h2>
 
+
                 {/* ✅ Module Dropdown – RIGHT SIDE */}
                 {showDropdownModal && (
                   <select
                     className="px-3 py-2 text-sm border rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    onChange={(e) => setCurrentChapterId(parseInt(e.target.value))}
-                    value={currentChapterId || ''}
+                    value={currentChapterId ?? ""}   // 🔑 important
+                    onChange={(e) => setCurrentChapterId(Number(e.target.value))}
                   >
+                    {/* 🔹 Placeholder */}
+                    <option value="" disabled>
+                      Select Module
+                    </option>
+
                     {modules.length > 0 ? (
                       modules.map((module: any) => (
                         <option key={module.id} value={module.id}>
@@ -1449,10 +1456,11 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                         </option>
                       ))
                     ) : (
-                      <option disabled value="">No modules found</option>
+                      <option disabled>No modules found</option>
                     )}
                   </select>
                 )}
+
               </div>
 
               {/* Preview Content */}
