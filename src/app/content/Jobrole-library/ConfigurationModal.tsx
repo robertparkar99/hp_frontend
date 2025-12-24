@@ -1441,25 +1441,28 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                 {showDropdownModal && (
                   <select
                     className="px-3 py-2 text-sm border rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={currentChapterId ?? ""}   // 🔑 important
+                    value={
+                      modules.length === 1
+                        ? modules[0].id           // ✅ auto-show module name
+                        : currentChapterId ?? ""  // ✅ placeholder for multiple modules
+                    }
                     onChange={(e) => setCurrentChapterId(Number(e.target.value))}
                   >
-                    {/* 🔹 Placeholder */}
-                    <option value="" disabled>
-                      Select Module
-                    </option>
-
-                    {modules.length > 0 ? (
-                      modules.map((module: any) => (
-                        <option key={module.id} value={module.id}>
-                          {module.chapter_name}
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled>No modules found</option>
+                    {/* Show placeholder ONLY if multiple modules */}
+                    {modules.length > 1 && (
+                      <option value="" disabled>
+                        Select Module
+                      </option>
                     )}
+
+                    {modules.map((module: any) => (
+                      <option key={module.id} value={module.id}>
+                        {module.chapter_name}
+                      </option>
+                    ))}
                   </select>
                 )}
+
 
               </div>
 
