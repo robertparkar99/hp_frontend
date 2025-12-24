@@ -953,7 +953,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       formData.append('link', generatedPdfUrl);
       formData.append('contentType', 'link');
       formData.append('show_hide', '1');
-      formData.append('content_category', 'AI Generated');
+      formData.append('content_category', 'PDF');
       formData.append('sub_institute_id', sessionData.subInstituteId);
       formData.append('syear', new Date().getFullYear().toString());
       console.log('Selected mapping_type ID:', selectedMappingTypeId, 'mapping_value ID:', selectedMappingValueId);
@@ -996,29 +996,31 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         id: Date.now(), // Use timestamp as unique ID
         subject_id: Date.now(),
         standard_id: Date.now(),
-        title: jsonObject?.critical_work_function ? `${jsonObject.jobrole} - ${jsonObject.critical_work_function}` : jsonObject?.jobrole || "Generated Course",
+        title: isCriticalWorkFunction ? `CWF: ${jsonObject.jobrole} - ${jsonObject.critical_work_function}` : isSkillSelection ? `Skill: ${jsonObject.jobrole} - ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
         description: manualPreview?.substring(0, 100) + "..." || "AI-generated course content",
         thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop", // Default course image
         contentType: "presentation",
         category: "AI Generated",
         difficulty: "intermediate",
-        short_name: jsonObject?.critical_work_function || "AI Course",
+        short_name: isCriticalWorkFunction ? `CWF: ${jsonObject.critical_work_function}` : isSkillSelection ? `Skill: ${jsonObject.selected_skill}` : "AI Course",
         subject_type: "Training",
         progress: 0,
         instructor: "AI Assistant",
         isNew: true,
         isMandatory: false,
-        display_name: jsonObject?.critical_work_function || jsonObject?.jobrole || "Generated Course",
+        display_name: isCriticalWorkFunction ? `CWF: ${jsonObject.critical_work_function}` : isSkillSelection ? `Skill: ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
         sort_order: "1",
         status: "1",
         subject_category: "AI Generated",
         external_url: data.data?.exportUrl || data.data?.gammaUrl,
-        platform: "Gamma"
+        platform: "Gamma",
+        jobrole: jsonObject?.jobrole || "N/A"
       };
 
       // Save to localStorage for Course Library
       const existingCourses = JSON.parse(localStorage.getItem("generatedCourses") || "[]");
-      existingCourses.push(generatedCourse);
+      // Unshift to add new course at the beginning of the array
+      existingCourses.unshift(generatedCourse);
       localStorage.setItem("generatedCourses", JSON.stringify(existingCourses));
 
       // Call the save-generated-course API to store all course data
@@ -1042,7 +1044,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           "AI model": cfg.aiModel || ""
         },
         outline: manualPreview ? [manualPreview] : [],
-        title: jsonObject?.critical_work_function ? `${jsonObject.jobrole} - ${jsonObject.critical_work_function}` : jsonObject?.jobrole || "Generated Course",
+        title: isCriticalWorkFunction ? `CWF: ${jsonObject.jobrole} - ${jsonObject.critical_work_function}` : isSkillSelection ? `Skill: ${jsonObject.jobrole} - ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
         description: manualPreview?.substring(0, 200) || "AI-generated course content",
         export_url: data.data?.exportUrl || "",
         presentation_platform: "Gamma",
