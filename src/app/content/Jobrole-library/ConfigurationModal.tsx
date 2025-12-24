@@ -627,6 +627,13 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     }
   }, [showDropdownModal, currentStandardId, currentSubjectId, sessionData]);
 
+  // Ensure chapter_id is set when modules are available
+  useEffect(() => {
+    if (modules.length > 0 && !currentChapterId) {
+      setCurrentChapterId(modules[0].id);
+    }
+  }, [modules, currentChapterId]);
+
   // Handle tab switching based on repetition checkbox
   // useEffect(() => {
   //   if (!cfg.repetition && activeTab === 'courseParams') {
@@ -718,8 +725,10 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           modality: cfg.modality,
           aiModel: cfg.aiModel,
           industry: sessionData.orgType,
-          mappingType: cfg.mappingType,
-          mappingValue: cfg.mappingValue,
+          mappingType: selectedMappingTypeId,
+          mappingValue: selectedMappingValueId,
+          mappingTypeName: cfg.mappingType,
+          mappingValueName: cfg.mappingValue,
           // Include reason if available
           mappingReason: cfg.mappingReason || undefined
         }),
@@ -884,6 +893,11 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       return;
     }
 
+    // Ensure chapter_id is set before proceeding
+    if (!currentChapterId && modules.length > 0) {
+      setCurrentChapterId(modules[0].id);
+    }
+
     setCourseLoading(true);
     setError(null);
     setSuccess(null);
@@ -912,6 +926,18 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       // Store the generated URLs
       const generatedPdfUrl = data.data?.exportUrl || data.data?.gammaUrl || '';
 
+      // Ensure chapter_id is set before proceeding
+      if (!currentChapterId && modules.length > 0) {
+        setCurrentChapterId(modules[0].id);
+      }
+
+      // Validate that chapter_id is set
+      if (!currentChapterId) {
+        setError("⚠️ Chapter not found. Please select a module first.");
+        setCourseLoading(false);
+        return;
+      }
+
       // Call store_content_master API with the actual PDF link
       const storeContentApiUrl = `${sessionData.url}/lms/store_content_master`;
       const formData = new FormData();
@@ -930,9 +956,9 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       formData.append('content_category', 'AI Generated');
       formData.append('sub_institute_id', sessionData.subInstituteId);
       formData.append('syear', new Date().getFullYear().toString());
-      console.log('Selected mapping_type:', cfg.mappingType, 'mapping_value:', cfg.mappingValue);
-      formData.append('mapping_type[]', cfg.mappingType);
-      formData.append('mapping_value[]', cfg.mappingValue);
+      console.log('Selected mapping_type ID:', selectedMappingTypeId, 'mapping_value ID:', selectedMappingValueId);
+      formData.append('mapping_type[]', selectedMappingTypeId?.toString() || '');
+      formData.append('mapping_value[]', selectedMappingValueId?.toString() || '');
 
       const storeResponse = await fetch(storeContentApiUrl, {
         method: 'POST',
@@ -1011,8 +1037,8 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         },
         configure_fields: {
           modality: cfg.modality.selfPaced ? "self-paced" : "instructor-led",
-          "map-type": cfg.mappingType || "",
-          "map-value": cfg.mappingValue || "",
+          "map-type": selectedMappingTypeId?.toString() || "",
+          "map-value": selectedMappingValueId?.toString() || "",
           "AI model": cfg.aiModel || ""
         },
         outline: manualPreview ? [manualPreview] : [],
@@ -1227,27 +1253,30 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                                 value={cfg.mappingValue}
                                 onChange={(e) => {
                                   const selectedValue = e.target.value;
-                                  console.log('Selected mapping value value:', selectedValue);
-                                  const selectedValueObj = mappingValues.find(value => value.name === selectedValue || String(value.id) === selectedValue);
-                                  console.log('Found selected value:', selectedValueObj);
-                                  const valueId = selectedValueObj ? selectedValueObj.id : null;
-                                  console.log('Setting selectedMappingValueId to:', valueId);
-                                  setSelectedMappingValueId(valueId);
+
+                                  const selectedValueObj = mappingValues.find(
+                                    value => value.name === selectedValue || String(value.id) === selectedValue
+                                  );
+
+                                  setSelectedMappingValueId(selectedValueObj ? selectedValueObj.id : null);
                                   setCfg({ ...cfg, mappingValue: selectedValue, mappingReason: "" });
                                 }}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm 
+             focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 disabled={mappingValuesLoading || mappingValues.length === 0}
                               >
-                                {mappingValues.length > 0 ? (
-                                  mappingValues.map((value) => (
-                                    <option key={value.id} value={value.name || value.id}>
-                                      {value.name || value.id}
-                                    </option>
-                                  ))
-                                ) : (
-                                  <option value="">No mapping values available</option>
-                                )}
+                                {/* ✅ Placeholder */}
+                                <option value="" disabled>
+                                  Select Mapping Value
+                                </option>
+
+                                {mappingValues.map((value) => (
+                                  <option key={value.id} value={value.name || value.id}>
+                                    {value.name || value.id}
+                                  </option>
+                                ))}
                               </select>
+
                             </div>
                             <div className="space-y-2">
                               <label className="text-sm font-medium text-gray-700">

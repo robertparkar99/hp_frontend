@@ -19,8 +19,8 @@ interface KabaArrays {
 export async function POST(req: Request) {
   try {
     // Parse input from frontend
-    const { jsonObject, modality, aiModel, mappingType, mappingValue, mappingReason } = await req.json();
-
+    const { jsonObject, modality, aiModel, mappingType, mappingValue, mappingReason, mappingTypeName, mappingValueName } = await req.json();
+    
     // Validate server-side API key (never exposed to client)
     const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 
@@ -231,8 +231,10 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
     }
 
     // Then integrate in your prompt:
-    const selectedMappingType = mappingType || "pedagogical process";
-    const selectedMappingValue = mappingValue || "Project-Based";
+    // Use the names sent from the frontend (mappingTypeName and mappingValueName)
+    // These contain the actual display names that the user selected
+    const selectedMappingType = mappingTypeName || "pedagogical process";
+    const selectedMappingValue = mappingValueName || "Project-Based";
     const mappingGuidance = getMappingGuidance(selectedMappingType, selectedMappingValue);
     
     // Use provided reason or fall back to generated one
@@ -982,6 +984,9 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
         }
       };
       console.log("Generated Course Prompt with Mapping Integration");
+      console.log("Mapping Type:", selectedMappingType);
+      console.log("Mapping Value:", selectedMappingValue);
+      
       promptToUse = coursePrompt;
     }
 
