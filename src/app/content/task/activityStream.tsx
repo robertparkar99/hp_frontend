@@ -50,6 +50,7 @@ const ActivityStream = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
+  const [taskTypeFilter, setTaskTypeFilter] = useState<string>('all');
   const [sessionData, setSessionData] = useState<SessionData>({
     url: "",
     token: "",
@@ -102,9 +103,12 @@ const ActivityStream = () => {
 
       const data = await response.json();
       setTasks(Array.isArray(data.allTask) ? data.allTask : []);
-      setTodayTaskList(data.today.taskAssigned || []);
-      setUpcomingTaskList(data.upcoming.taskAssigned || []);
-      setRecentTaskLists(data.recent.taskAssigned || []);
+      setTodayTaskList(data.today?.taskAssigned?.jobRoleTasks?.map(t => ({...t, is_jobrole_task: true})) || []);
+      setUpcomingTaskList(data.upcoming?.taskAssigned?.jobRoleTasks?.map(t => ({...t, is_jobrole_task: true})) || []);
+      setRecentTaskLists([
+        ...(data.recent?.taskAssigned?.map(t => ({...t, is_jobrole_task: false})) || []),
+        ...(data.recent?.jobRoleTasks?.map(t => ({...t, is_jobrole_task: true})) || [])
+      ]);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       setTasks([]);
@@ -150,10 +154,13 @@ const ActivityStream = () => {
         (task.task_description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
       const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
       const matchesEmployee = selectedEmployee === 'all' || task.allocatedBy === selectedEmployee;
+      const matchesTaskType = taskTypeFilter === 'all' ||
+        (taskTypeFilter === 'jobrole' && task.is_jobrole_task !== undefined && task.is_jobrole_task) ||
+        (taskTypeFilter === 'allocated' && (!task.is_jobrole_task || task.is_jobrole_task === false));
 
-      return matchesSearch && matchesStatus && matchesEmployee;
+      return matchesSearch && matchesStatus && matchesEmployee && matchesTaskType;
     });
-  }, [todayTaskList, searchQuery, filterStatus, selectedEmployee]);
+  }, [todayTaskList, searchQuery, filterStatus, selectedEmployee, taskTypeFilter]);
 
   const filteredUpcomingTasks = useMemo(() => {
     return upcomingTaskList.filter(task => {
@@ -162,10 +169,13 @@ const ActivityStream = () => {
         (task.task_description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
       const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
       const matchesEmployee = selectedEmployee === 'all' || task.allocatedBy === selectedEmployee;
+      const matchesTaskType = taskTypeFilter === 'all' ||
+        (taskTypeFilter === 'jobrole' && task.is_jobrole_task !== undefined && task.is_jobrole_task) ||
+        (taskTypeFilter === 'allocated' && (!task.is_jobrole_task || task.is_jobrole_task === false));
 
-      return matchesSearch && matchesStatus && matchesEmployee;
+      return matchesSearch && matchesStatus && matchesEmployee && matchesTaskType;
     });
-  }, [upcomingTaskList, searchQuery, filterStatus, selectedEmployee]);
+  }, [upcomingTaskList, searchQuery, filterStatus, selectedEmployee, taskTypeFilter]);
 
   const filteredRecentTasks = useMemo(() => {
     return recentTaskLists.filter(task => {
@@ -174,10 +184,13 @@ const ActivityStream = () => {
         (task.task_description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
       const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
       const matchesEmployee = selectedEmployee === 'all' || task.allocatedBy === selectedEmployee;
+      const matchesTaskType = taskTypeFilter === 'all' ||
+        (taskTypeFilter === 'jobrole' && task.is_jobrole_task !== undefined && task.is_jobrole_task) ||
+        (taskTypeFilter === 'allocated' && (!task.is_jobrole_task || task.is_jobrole_task === false));
 
-      return matchesSearch && matchesStatus && matchesEmployee;
+      return matchesSearch && matchesStatus && matchesEmployee && matchesTaskType;
     });
-  }, [recentTaskLists, searchQuery, filterStatus, selectedEmployee]);
+  }, [recentTaskLists, searchQuery, filterStatus, selectedEmployee, taskTypeFilter]);
 
   const stats = useMemo(() => {
     const allFilteredTasks = [
@@ -273,7 +286,7 @@ const ActivityStream = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
                     <div className="relative">
@@ -297,6 +310,19 @@ const ActivityStream = () => {
                         <SelectItem value="PENDING">PENDING</SelectItem>
                         <SelectItem value="IN-PROGRESS">IN-PROGRESS</SelectItem>
                         <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Task Type</label>
+                    <Select value={taskTypeFilter} onValueChange={setTaskTypeFilter}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Tasks</SelectItem>
+                        <SelectItem value="jobrole">Job Role Tasks</SelectItem>
+                        <SelectItem value="allocated">Allocated Tasks</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
