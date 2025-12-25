@@ -35,10 +35,11 @@ interface TaskCardProps {
   task: any;
   sessionData: any;
   onStatusUpdate: (taskId: string, status: Task['status'], reply?: string) => void;
+  onRefetch: () => void;
   employees: any[];
 }
 
-export function TaskCard({ task, sessionData, onStatusUpdate, employees }: TaskCardProps) {
+export function TaskCard({ task, sessionData, onStatusUpdate, onRefetch, employees }: TaskCardProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [isReplied, setIsReplied] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
@@ -267,22 +268,34 @@ export function TaskCard({ task, sessionData, onStatusUpdate, employees }: TaskC
                 size="sm"
                 onClick={async () => {
                   try {
-                    // Prepare form data
-                    const formData = new FormData();
-                    formData.append('formType', 'single');
-                    formData.append('task_id', task.id);
-                    formData.append('status', newStatus);
-                    formData.append('reply', replyMessage);
-                    formData.append('action', 'update_task_status');
+                    // Map status to API format
+                    const statusMap: { [key: string]: string } = {
+                      'pending': 'PENDING',
+                      'in-progress': 'IN-PROGRES',
+                      'completed': 'COMPLETED'
+                    };
+                    const apiStatus = statusMap[newStatus] || newStatus.toUpperCase();
+
+                    // Prepare payload
+                    const payload = {
+                      token: sessionData.token,
+                      row: {
+                        data: {
+                          status: apiStatus,
+                          task_description: replyMessage
+                        }
+                      }
+                    };
 
                     // Make API call
                     const response = await fetch(
-                      `${sessionData.url}/lms/lmsActivityStream?type=API&token=${sessionData.token}` +
-                      `&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}&user_profile_id=${sessionData.userProfile}` +
-                      `&org_type=${sessionData.orgType}&syear=${sessionData.syear}`,
+                      `${sessionData.url}/task/update-status/${task.id}`,
                       {
-                        method: 'POST',
-                        body: formData
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
                       }
                     );
 
@@ -291,6 +304,8 @@ export function TaskCard({ task, sessionData, onStatusUpdate, employees }: TaskC
                     }
 
                     const result = await response.json();
+                    // Refetch data to update UI
+                    onRefetch();
                     // Reset form
                     setIsReplying(false);
                     setReplyMessage('');
