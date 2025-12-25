@@ -21,7 +21,9 @@ export const LogoSection: React.FC = () => {
     setMounted(true);
     const storedData = localStorage.getItem("userData");
     if (storedData) {
-      setUserData(JSON.parse(storedData));
+      const parsedData = JSON.parse(storedData);
+      setUserData(parsedData);
+      console.log("Session data:", parsedData);
     } else {
       router.push("/");
     }
@@ -73,7 +75,7 @@ export const LogoSection: React.FC = () => {
     );
   };
 
-  const menuItems = [{ label: "Rights Management", path: "groupWiseRights/page.tsx" }];
+  const menuItems = userData?.user_profile_name === "Admin" ? [{ label: "Rights Management", path: "groupWiseRights/page.tsx" }] : [];
 
   return (
     <div className="flex relative z-50 items-center">
@@ -141,7 +143,7 @@ export const LogoSection: React.FC = () => {
               }}
               className="bg-white shadow-lg rounded-md border border-gray-200 w-48"
             >
-              <ul className="py-1">
+              <ul className="py-0">
                 {menuItems.map((item, idx) => (
                   <li
                     key={idx}
