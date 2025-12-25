@@ -20,6 +20,16 @@ interface GenerateAssessmentModalProps {
   data: any;
 }
 
+interface Question {
+  id: number;
+  question_title?: string;
+  question?: string;
+  answers: { answer: string; correct_answer: number }[];
+  mappingType?: string;
+  mappingValue?: string;
+  reason?: string;
+}
+
 /* --------------------------------
    COMPONENT
 -------------------------------- */
@@ -32,7 +42,7 @@ export default function GenerateAssessmentModal({
   const [currentStep, setCurrentStep] = useState(0);
 
   const [questionCount, setQuestionCount] = useState<number>(0);
-  const [mappings, setMappings] = useState<{ typeId: number; typeName: string; valueId: number; valueName: string; reason: string; questionCount: number; marks: number }[]>([{ typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 15 }]);
+  const [mappings, setMappings] = useState<{ typeId: number; typeName: string; valueId: number; valueName: string; reason: string; questionCount: number; marks: number }[]>([{ typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 1 }]);
   const [mappingTypes, setMappingTypes] = useState<{ id: number; name: string }[]>([]);
   const [mappingValuesMap, setMappingValuesMap] = useState<{ [key: number]: { id: number; name: string }[] }>({});
   const [timeLimit, setTimeLimit] = useState<boolean>(false);
@@ -51,7 +61,13 @@ export default function GenerateAssessmentModal({
   const [configActiveTab, setConfigActiveTab] = useState<typeof configTabs[number]>("Questions");
   const [userAnswers, setUserAnswers] = useState<{ [key: number]: string }>({});
   const [showEdit, setShowEdit] = useState(false);
+  const [questionsGenerated, setQuestionsGenerated] = useState(false);
+  const [questionsSaved, setQuestionsSaved] = useState(false);
+  const [questionIds, setQuestionIds] = useState<number[]>([]);
+  // const [questionMasterId, setQuestionMasterId] = useState<number | null>(null);
+
   const [sessionData, setSessionData] = useState<{
+
     url: string;
     token: string;
     subInstituteId: string;
@@ -93,11 +109,11 @@ export default function GenerateAssessmentModal({
   const [editedQuestions, setEditedQuestions] = useState(assessmentData.questions);
 
   const [loading, setLoading] = useState(false);
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [error, setError] = useState("");
 
 
-  const configTabs = ["Questions", "Answer Key", "Mapping"] as const;
+  const configTabs = ["Questions", "Answer Key"] as const;
   const tabs = ["Questions", "Answer Key", "Mapping", "Final Review"] as const;
   type TabType = (typeof tabs)[number]
 
@@ -140,6 +156,11 @@ export default function GenerateAssessmentModal({
   useEffect(() => {
     const total = mappings.reduce((sum, mapping) => sum + mapping.questionCount, 0);
     setQuestionCount(total);
+  }, [mappings]);
+
+  useEffect(() => {
+    const total = mappings.reduce((sum, mapping) => sum + mapping.questionCount * mapping.marks, 0);
+    setTotalMarks(total);
   }, [mappings]);
 
   /* ------------------------------
@@ -196,7 +217,7 @@ export default function GenerateAssessmentModal({
   };
 
   const addMapping = () => {
-    setMappings(prev => [...prev, { typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 15 }]);
+    setMappings(prev => [...prev, { typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 1 }]);
   };
 
   const updateMapping = (index: number, field: string, value: string | number) => {
@@ -218,7 +239,7 @@ export default function GenerateAssessmentModal({
         } else if (field === 'reason') {
           return { ...mapping, reason: value as string };
         } else if (field === 'questionCount') {
-          return { ...mapping, questionCount: value as number, marks: value as number };
+          return { ...mapping, questionCount: value as number, marks: 1 };
         } else if (field === 'marks') {
           return { ...mapping, marks: value as number };
         }
@@ -232,16 +253,26 @@ export default function GenerateAssessmentModal({
   };
 
   const generateQuestionsWithGemini = async () => {
+    console.log("generateQuestionsWithGemini called");
     setLoading(true);
     setError("");
 
+    if (!sessionData) {
+      console.log("sessionData is null");
+      alert("Session not loaded");
+      return;
+    }
+
+    console.log("sessionData:", sessionData);
+
     try {
+      console.log("Making fetch to /api/generate-questions");
       const res = await fetch("/api/generate-questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jobRole: data?.jobRole?.jobrole || "Community Care Associate",
-          assessmentType: "mcq",
+          question_type: "multiple",
           // difficultyLevel: "intermediate",
           questionCount: questionCount,
           mappings: mappings,
@@ -250,22 +281,255 @@ export default function GenerateAssessmentModal({
         }),
       });
 
+      console.log("Fetch response status:", res.status);
       const result = await res.json();
+      console.log("Fetch result:", result);
 
       if (!Array.isArray(result.questions)) {
         throw new Error("No questions array in response");
       }
 
-      setQuestions(result.questions);
+      console.log("Generated questions:", result.questions);
+      console.log("Generated question ids:", (result.questions as Question[]).map(q => q.id));
+      setQuestions(result.questions as Question[]);
+      // setQuestionIds((result.questions as Question[]).map(q => q.id).filter(Boolean));
+      setQuestionsGenerated(true);
     } catch (err: any) {
       setError(err.message || "Generation failed");
     } finally {
       setLoading(false);
     }
   };
+
+
+  // const storeQuestions = async (questions: Question[]) => {
+  //   if (!sessionData) {
+  //     alert("Session not loaded");
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoading(true);
+  //     const ids: number[] = [];
+
+  //     for (const q of questions) {
+  //       const payload = {
+  //         token: sessionData.token,
+  //         question_type_id: 1,        // MCQ
+  //         standard_id: data?.jobRole?.department_id || 2, // department id from jobrole
+  //         question_title: q.question_title || q.question,
+  //         description: q.reason || "AI generated question",
+  //         points: 1,
+  //         paper_category: data?.jobRole?.jobrole,
+  //         multiple_answer: 1,
+  //         sub_institute_id: Number(sessionData.subInstituteId),
+  //         answers: q.answers.map((a) => ({
+  //           answer: a.answer,
+  //           correct_answer: Number(a.correct_answer),
+  //         })),
+  //       };
+
+  //       const res = await fetch(
+  //         `${sessionData.url}/api/ai-generated-assessment/question/store`,
+  //         {
+  //           method: "POST",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             'Authorization': `Bearer ${sessionData.token}`,
+  //             "Accept": "application/json",
+  //           },
+  //           body: JSON.stringify(payload),
+  //         }
+  //       );
+
+  //       const result = await res.json();
+
+  //       if (!res.ok) {
+  //         console.error("Failed question:", payload, result);
+  //         throw new Error(result.message || "Question store failed");
+  //       }
+
+  //       if (result.id) {
+  //         ids.push(result.id);
+  //       }
+
+  //       if (result.questionmaster_id && !questionMasterId) {
+  //         setQuestionMasterId(result.questionmaster_id);
+  //       }
+
+  //     }
+  //     // after all questions are stored successfully
+  //     setQuestionIds(ids);
+  //     setQuestionsSaved(true);
+  //     alert("✅ All questions stored successfully");
+  //   } catch (err: any) {
+  //     console.error(err);
+  //     alert("❌ Failed to store questions");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  const storeQuestions = async (questions: Question[]) => {
+    if (!sessionData) {
+      alert("Session not loaded");
+      return { questionIds: [] };
+    }
+
+    try {
+      setLoading(true);
+
+      const ids: number[] = [];
+
+      for (const q of questions) {
+        const payload = {
+          token: sessionData.token,
+          question_type_id: 1,
+          standard_id: data?.jobRole?.department_id || 2,
+          question_title: q.question_title || q.question,
+          description: q.reason || "AI generated question",
+          points: 1,
+          paper_category: data?.jobRole?.jobrole,
+          multiple_answer: 0,
+          sub_institute_id: Number(sessionData.subInstituteId),
+          answers: q.answers.map((a) => ({
+            answer: a.answer,
+            correct_answer: Number(a.correct_answer),
+          })),
+        };
+
+        const res = await fetch(
+          `${sessionData.url}/api/ai-generated-assessment/question/store`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${sessionData.token}`,
+              Accept: "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          throw new Error(result.message || "Question store failed");
+        }
+
+        if (result?.question_id) {
+          const qId = Number(result.question_id);
+
+          // ✅ store each question ONCE
+          if (!ids.includes(qId)) {
+            ids.push(qId);
+          }
+        }
+      }
+
+      setQuestionIds(ids);
+      setQuestionsSaved(true);
+
+      console.log("Stored question IDs:", ids);
+
+      return { questionIds: ids };
+    } catch (err) {
+      console.error(err);
+      alert("Failed to store questions");
+      return { questionIds: [] };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const storeAssessment = async () => {
+    console.log("storeAssessment called, questionsSaved:", questionsSaved);
+    console.log("questionIds before:", questionIds);
+    // console.log("questionMasterId before:", questionMasterId);
+    if (!sessionData) {
+      alert("Session not loaded");
+      return;
+    }
+
+    let finalQuestionIds = questionIds;
+
+
+    // ✅ Ensure questions are stored FIRST
+    if (!questionsSaved) {
+      console.log("Storing questions...");
+      const result = await storeQuestions(questions);
+      finalQuestionIds = result.questionIds;
+
+    }
+
+    console.log("finalQuestionIds:", finalQuestionIds);
+
+    const payload = {
+      grade_id: 1,
+      standard_id: data?.jobRole?.department_id || 2,
+      subject_id: 3,
+      paper_name: assessmentName,
+      paper_desc: assessmentDescription,
+      open_date: openDate,
+      close_date: closeDate,
+      timelimit_enable: timeLimit ? 1 : 0,
+      time_allowed: timeLimitValue,
+      total_marks: totalMarks,
+      total_ques: questionCount,
+
+      // ✅ ONLY question_ids
+      question_ids: finalQuestionIds.join(","),
+
+      shuffle_question: shuffleQuestions ? 1 : 0,
+      attempt_allowed: 1,
+      show_feedback: showFeedback ? 1 : 0,
+      show_hide: 1,
+      result_show_ans: showRightAnswer ? 1 : 0,
+      created_by: Number(sessionData.userId),
+      sub_institute_id: Number(sessionData.subInstituteId),
+      exam_type: "online",
+      mapping_type_id: mappings[0]?.typeId,
+      mapping_value_id: mappings[0]?.valueId,
+      reasons: mappings[0]?.reason,
+    };
+    console.log("Assessment payload question_ids:", finalQuestionIds.join(','));
+    // console.log("Assessment payload questionmaster_id:", finalQuestionMasterId);
+    console.log("Full assessment store payload:", payload);
+    alert("Assessment Store Payload:\n" + JSON.stringify(payload, null, 2));
+
+    try {
+      setLoading(true);
+      const res = await fetch(
+        `${sessionData.url}/api/ai-generated-assessment/assessment/store`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sessionData.token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const result = await res.json();
+
+      if (res.ok) {
+        alert("Assessment saved successfully");
+        onClose();
+      } else {
+        alert(result.message || "Failed to save assessment");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error saving assessment");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /* ------------------------------
-      STEPS
-   ------------------------------ */
+       STEPS
+    ------------------------------ */
   const steps = [
     {
       title: `Assessment Preview – ${data?.jobRole?.jobrole || "Community Care Associate"}`,
@@ -364,11 +628,13 @@ export default function GenerateAssessmentModal({
           </div>
 
           <div className="flex justify-end">
+            {error && <div className="text-red-500 mr-4">{error}</div>}
             <Button
               className="bg-blue-600 hover:bg-blue-700"
               onClick={generateQuestionsWithGemini}
+              disabled={loading}
             >
-              Generate Question(AI)
+              {loading ? "Generating..." : "Generate Question(AI)"}
             </Button>
           </div>
 
@@ -402,14 +668,14 @@ export default function GenerateAssessmentModal({
           {configActiveTab === "Questions" && (
             <div>
               {questions && questions.length > 0 ? questions.map((question, index) => (
-                <div key={question.id} className="border rounded-lg overflow-hidden">
+                <div key={question.id || index} className="border rounded-lg overflow-hidden">
                   <div
                     className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer"
                     onClick={() => toggleQuestion(question.id)}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="font-medium">Q{question.id}</span>
-                      <span className="text-gray-700">{question.question.substring(0, 60)}...</span>
+                      <span className="font-medium">Q{question.id || index + 1}</span>
+                      <span className="text-gray-700">{question.question_title || question.question || 'No question text'}</span>
                     </div>
                     {expandedQuestions.includes(question.id) ?
                       <ChevronUp className="h-4 w-4" /> :
@@ -420,26 +686,44 @@ export default function GenerateAssessmentModal({
                   {expandedQuestions.includes(question.id) && (
                     <div className="p-4 border-t">
                       <div className="space-y-3">
+
+
                         <select
                           value={userAnswers[question.id] || ''}
-                          onChange={(e) => setUserAnswers(prev => ({ ...prev, [question.id]: e.target.value }))}
+                          onChange={(e) =>
+                            setUserAnswers(prev => ({
+                              ...prev,
+                              [question.id]: e.target.value,
+                            }))
+                          }
                           className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">Select answer</option>
-                          {question.options.map((option: string, idx: number) => (
-                            <option key={idx} value={option}>
-                              {option}
-                            </option>
-                          ))}
+
+                          {question.answers &&
+                            Array.isArray(question.answers) &&
+                            question.answers.map((answer, idx: number) => {
+                              const optionLabel = String.fromCharCode(65 + idx); // A, B, C, D
+
+                              return (
+                                <option key={idx} value={answer.answer}>
+                                  {optionLabel}. {answer.answer}
+                                </option>
+                              );
+                            })}
                         </select>
+
                       </div>
 
                       <div className="mt-4 pt-4 border-t">
+                        <div className="text-xs text-gray-600 mt-1">
+                          <span className="font-medium">Mapping Type:</span> {question.mappingType}
+                        </div>
                         <div className="text-xs text-gray-600">
-                          <span className="font-medium">CWF:</span> {question.cwf}
+                          <span className="font-medium">Mapping Value:</span> {question.mappingValue}
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
-                          <span className="font-medium">Key Task:</span> {question.keyTask}
+                          <span className="font-medium">Reason:</span> {question.reason}
                         </div>
                       </div>
                     </div>
@@ -459,48 +743,31 @@ export default function GenerateAssessmentModal({
                 <thead className="bg-gray-50">
                   <tr className="border-b">
                     <th className="text-left p-3 font-medium text-gray-700">Questions</th>
-                    <th className="text-left p-3 font-medium text-gray-700">Your Answer</th>
+                    {/* <th className="text-left p-3 font-medium text-gray-700">Your Answer</th> */}
                     <th className="text-left p-3 font-medium text-gray-700">Correct Answer</th>
-                    <th className="text-left p-3 font-medium text-gray-700">Status</th>
-                    <th className="text-left p-3 font-medium text-gray-700">Rationale</th>
+                    {/* <th className="text-left p-3 font-medium text-gray-700">Status</th> */}
+                    {/* <th className="text-left p-3 font-medium text-gray-700">Rationale</th> */}
                   </tr>
                 </thead>
                 <tbody>
                   {questions && questions.length > 0 ? questions.map((question, index) => {
                     const userAnswer = userAnswers[question.id];
-                    const correctAnswer = question.correctAnswer;
+                    const correctAnswerObj = question.answers?.find((a) => a.correct_answer == 1);
+                    const correctAnswer = correctAnswerObj?.answer || '';
                     const isCorrect = userAnswer === correctAnswer;
                     return (
                       <tr key={question.id} className="border-b hover:bg-gray-50">
                         <td className="p-3">Q{question.id}</td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-800 font-medium">
-                              {userAnswer ? String.fromCharCode(65 + (question.options as string[]).findIndex((opt: string) => opt === userAnswer)) : '?'}
-                            </div>
-                            <span>{userAnswer || 'Not answered'}</span>
-                          </div>
-                        </td>
+
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 flex items-center justify-center rounded-full bg-green-100 text-green-800 font-medium">
-                              {String.fromCharCode(65 + (question.options as string[]).findIndex((opt: string) => opt === correctAnswer))}
+                              {correctAnswerObj ? String.fromCharCode(65 + question.answers.indexOf(correctAnswerObj)) : '?'}
                             </div>
                             <span>{correctAnswer}</span>
                           </div>
                         </td>
-                        <td className="p-3">
-                          {userAnswer ? (
-                            isCorrect ? (
-                              <span className="text-green-600 font-medium">Correct</span>
-                            ) : (
-                              <span className="text-red-600 font-medium">Incorrect</span>
-                            )
-                          ) : (
-                            <span className="text-gray-500">Not answered</span>
-                          )}
-                        </td>
-                        <td className="p-3">{question.rationale}</td>
+
                       </tr>
                     );
                   }) : (
@@ -515,45 +782,7 @@ export default function GenerateAssessmentModal({
             </div>
           )}
 
-          {configActiveTab === "Mapping" && (
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr className="border-b">
-                    <th className="text-left p-3 font-medium text-gray-700">Critical Work Functions</th>
-                    <th className="text-left p-3 font-medium text-gray-700">Key Tasks</th>
-                    <th className="text-left p-3 font-medium text-gray-700">Questions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {questions && questions.length > 0 && (() => {
-                    const grouped = questions.reduce((acc, q) => {
-                      if (!acc[q.cwf]) acc[q.cwf] = {};
-                      if (!acc[q.cwf][q.keyTask]) acc[q.cwf][q.keyTask] = [];
-                      acc[q.cwf][q.keyTask].push(q.id);
-                      return acc;
-                    }, {} as Record<string, Record<string, number[]>>);
-                    return Object.entries(grouped as Record<string, Record<string, number[]>>).map(([cwf, keyTasks]) =>
-                      Object.entries(keyTasks).map(([keyTask, questionIds], index) => (
-                        <tr key={`${cwf}-${keyTask}`} className="border-b hover:bg-gray-50">
-                          {index === 0 && <td rowSpan={Object.keys(keyTasks as Record<string, number[]>).length} className="p-3 font-medium">{cwf}</td>}
-                          <td className="p-3">{keyTask}</td>
-                          <td className="p-3">{questionIds.map(id => `Q${id}`).join(', ')}</td>
-                        </tr>
-                      ))
-                    );
-                  })()}
-                  {(!assessmentData.questions || assessmentData.questions.length === 0) && (
-                    <tr>
-                      <td colSpan={3} className="text-center text-gray-500 py-8">
-                        No questions available. Click "Generate Question(AI)" to create questions.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+
         </div>
       ),
     },
@@ -614,109 +843,13 @@ export default function GenerateAssessmentModal({
                   <input
                     type="number"
                     value={totalMarks}
-                    onChange={(e) => setTotalMarks(Math.max(0, Number(e.target.value)))}
-                    placeholder="Enter total marks"
-                    min="0"
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    readOnly
+                    className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                   />
                 </div>
               </div>
             </div>
           </div>
-
-          {/* ASSESSMENT SETTINGS */}
-          <div className="rounded-lg border bg-gray-50 p-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Assessment Settings</h3>
-            <div className="space-y-4">
-              {/* MAPPING SETTINGS */}
-              <div>
-                <h4 className="text-md font-semibold text-gray-800 mb-4">Mapping Settings</h4>
-                <div className="space-y-4">
-                  {mappings.map((mapping, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="grid grid-cols-7 gap-4 text-sm font-medium text-gray-700">
-                        <span>Mapping Type</span>
-                        <span>Mapping Value</span>
-                        <span className="col-span-2">Reason</span>
-                        <span>Number of Questions</span>
-                        <span>Marks</span>
-                        <span></span>
-                      </div>
-                      <div className="grid grid-cols-7 gap-4 items-center">
-                        <select
-                          value={mapping.typeId}
-                          onChange={(e) => updateMapping(index, 'typeId', Number(e.target.value))}
-                          className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value={0}>Select Type</option>
-                          {mappingTypes.map(type => (
-                            <option key={type.id} value={type.id}>{type.name}</option>
-                          ))}
-                        </select>
-                        <select
-                          value={mapping.valueId}
-                          onChange={(e) => updateMapping(index, 'valueId', Number(e.target.value))}
-                          className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value={0}>Select Value</option>
-                          {(mappingValuesMap[mapping.typeId] || []).map(val => (
-                            <option key={val.id} value={val.id}>{val.name}</option>
-                          ))}
-                        </select>
-                        <textarea
-                          value={mapping.reason}
-                          onChange={(e) => updateMapping(index, 'reason', e.target.value)}
-                          placeholder="Enter reason"
-                          rows={2}
-                          className="col-span-2 p-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <input
-                          type="number"
-                          value={mapping.questionCount}
-                          onChange={(e) => updateMapping(index, 'questionCount', Number(e.target.value))}
-                          min="1"
-                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <input
-                          type="number"
-                          value={mapping.marks}
-                          onChange={(e) => updateMapping(index, 'marks', Number(e.target.value))}
-                          min="0"
-                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <div className="flex gap-2">
-                          {mappings.length > 1 && (
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="destructive"
-                              onClick={() => removeMapping(index)}
-                              className="h-10 p-3 rounded-lg bg-[#f5f5f5] hover:bg-red-200"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {index === mappings.length - 1 && (
-                            <Button
-                              type="button"
-                              size="icon"
-
-                              onClick={addMapping}
-                              // className="px-2 py-1 text-black bg-[#f5f5f5] rounded hover:bg-gray-100"
-                              style={{ padding: "12px", borderRadius: "8px", backgroundColor: "#f5f5f5" }}
-                            >
-                              <Plus className="h-4 w-4 text-black" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* ASSESSMENT TIMING AND ACCESS */}
           <div className="rounded-lg border bg-gray-50 p-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Timing & Access</h3>
@@ -888,40 +1021,36 @@ export default function GenerateAssessmentModal({
           </Button>
 
           <div className="flex gap-3">
-            {/* {currentStep === 2 && !showEdit && (
-              <Button
-                variant="outline"
-                onClick={() => setShowEdit(true)}
-              >
-                Edit Assessment
-              </Button>
-            )} */}
+
             {currentStep < steps.length - 1 ? (
-              <Button
-                onClick={next}
-                disabled={currentStep === 1 && isStep1Invalid}
-              >
-                Next
-              </Button>
+              <div className="flex gap-3">
+
+                {currentStep === 0 &&
+                  questionsGenerated &&
+                  !questionsSaved && (
+                    <Button
+                      variant="outline"
+                    disabled={loading}
+                    onClick={() => storeQuestions(questions)}
+                  >
+                    {loading ? "Saving..." : "Save Question"}
+                  </Button>
+                  )}
+                <Button
+                  onClick={next}
+                  disabled={currentStep === 1 && isStep1Invalid}
+                >
+                  Next
+                </Button>
+              </div>
             ) : (
               <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    console.log("Save to Assessment Library");
-                    onClose();
-                  }}
-                >
-                  Save to Assessment Library
-                </Button>
-                <Button
+                  <Button
                   className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => {
-                    console.log("Generate Assessment");
-                    onClose();
-                  }}
+                    onClick={storeAssessment}
+                    disabled={loading}
                 >
-                  Generate Assessment
+                    {loading ? "Saving..." : "Save to Assessment Library"}
                 </Button>
               </div>
             )}
