@@ -2,7 +2,8 @@
 import { NextResponse } from "next/server";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY_NEW!;
-const MODEL = "0";
+console.log("OPENROUTER_API_KEY set:", !!OPENROUTER_API_KEY);
+const MODEL = "deepseek/deepseek-chat";
 
 function extractJSON(text: string) {
   return text
@@ -12,50 +13,110 @@ function extractJSON(text: string) {
 }
 
 export async function POST(req: Request) {
+  console.log("API /api/generate-questions called");
   try {
     const body = await req.json();
-    const { jobRole, assessmentType, questionCount, mappings, data: jobData } = body;
+    console.log("Request body:", body);
+    const { jobRole, question_type, questionCount, mappings, data: jobData } = body;
     const { tasksByFunction, skillsData, tasksData, knowledgeItems, abilityItems, attitudeItems, behaviourItems } = jobData;
-    console.log("JObdiscription model data",jobData);
+    console.log("Job Role:", jobRole);
+    console.log("JObdiscription model data", jobData);
+    console.log("mappings ", mappings);
+    console.log("question_type ", question_type);
+    console.log("questionCount ", questionCount);
+    const totalMarks = mappings?.reduce((sum: number, m: any) => sum + m.questionCount * m.marks, 0) || 0;
+    console.log("Total Marks:", totalMarks);
 
-    const prompt = `You are an expert assessment question generator.
 
-    Job Role: ${jobRole}
-    Assessment Type: ${assessmentType}
+    const prompt = `Your task is to generate  ${questionCount}high-quality, job-relevant hiring
+    assessment questions using the structured job context, structured domain context, mapping requirements, question generation rules provided.
+    ========================
+    JOB CONTEXT
+    ========================
+    Industry: ${jobData.jobRole.industries}
+    Department: ${jobData.jobRole.department}
+    Job Role: ${jobData.jobRole.jobrole}
 
-    Generate ${questionCount} multiple-choice questions based on the Question Mapping Settings.
 
-    Rules:
-    - 4 options per question (A, B, C, D)
-    - Exactly ONE correct answer
-    - Include rationale
-    - Map each question to Critical Work Function and Key Task
+    Role Description:
+    ${jobData.jobRole.description}
 
-    Question Mapping Settings:
-    ${mappings?.map((m: any, i: number) =>
-          `${i + 1}. Type: ${m.typeName} → Value: ${m.valueName}
-    Reason: ${m.reason}
-    Questions: ${m.questionCount}
-    Marks: ${m.marks}`
-        ).join("\n") || "No mappings provided"}
 
-    IMPORTANT: Return ONLY valid JSON. Do NOT include any markdown, code blocks, or extra text. Start directly with { and end with }.
+    ========================
+    STRUCTURED DOMAIN CONTEXT
+    ========================
+    Use the following datasets strictly as grounding context.
+    Do NOT invent skills, tasks, knowledge, abilities, attitudes, or behaviours beyond what is provided.
 
-    Output format:
+
+    SKILLS DATA (SkillName, description, proficiency_level):
+    ${JSON.stringify(skillsData, null, 2)}
+
+
+    TASKS DATA (critical work functions & taskName):
+    ${JSON.stringify(tasksData, null, 2)}
+
+
+    KNOWLEDGE ITEMS (title, description):
+    ${JSON.stringify(knowledgeItems, null, 2)}
+
+
+    ABILITY ITEMS (title, description):
+    ${JSON.stringify(abilityItems, null, 2)}
+
+
+    ATTITUDE ITEMS (title, description):
+    ${JSON.stringify(attitudeItems, null, 2)}
+
+
+    BEHAVIOUR ITEMS (title, description):
+    ${JSON.stringify(behaviourItems, null, 2)}
+
+
+    ========================
+    MAPPING REQUIREMENTS
+    ========================
+    Each requirement set defines WHAT to assess, WHY it is assessed, and HOW MANY questions to generate.
+
+
+    ${mappings?.map((m: any, i: number) => `
+    REQUIREMENT SET ${i + 1}:
+        - Mapping Type: ${m.typeName}
+        - Target Value: ${m.valueName}
+        - Reason: ${m.reason}
+        - Questions Required: ${m.questionCount}
+        - Total Marks: ${m.marks}
+
+
+    For this set:
+    • Questions must clearly demonstrate the Target Value
+    • Content must be appropriate for the specified Job Role
+    `).join("\\n")}
+
+    ========================
+    OUTPUT FORMAT (JSON ONLY)
+    ========================
     {
       "questions": [
         {
           "id": 1,
-          "type": "${assessmentType}",
-          "question": "Question text here?",
-          "options": ["A. Option 1", "B. Option 2", "C. Option 3", "D. Option 4"],
-          "correctAnswer": "A. Option 1",
-          "cwf": "Critical Work Function",
-          "keyTask": "Key Task",
-          "rationale": "Explanation here"
+          "question_title": "Job-specific, scenario-based question text",
+          "answers": [
+        { "answer": "PHP Framework", "correct_answer": 1 },
+        { "answer": "Database", "correct_answer": 0 },
+        { "answer": "Operating System", "correct_answer": 0 },
+        { "answer": "RAM", "correct_answer": 0 }
+       ],
+          "mappingType": "${mappings[0]?.typeName}",
+          "mappingValue": "${mappings[0]?.valueName}",
+          "marks": ${mappings[0]?.marks},
+          "reason": "Explanation grounded in the provided job context"
         }
       ]
-    }`;
+      }
+    }
+    `;
+
 
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
@@ -67,9 +128,47 @@ export async function POST(req: Request) {
         },
         body: JSON.stringify({
           model: MODEL,
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.2,
-          max_tokens: 2500,
+          messages: [
+            {
+              role: "system",
+              content:
+                `You are an expert assessment question generator and psychometric specialist.
+                ========================
+                QUESTION GENERATION RULES
+                ========================
+                1. Generate EXACTLY the number of questions specified per requirement set.
+                2. Each question must be explicitly grounded in:
+                  - at least one Skill OR Task
+                  - and one Knowledge / Ability / Attitude / Behaviour where relevant.
+                3. Avoid generic questions — remain specific to the provided job context.
+                4. Each MCQ must include:
+                  - 4 plausible options
+                  - only ONE fully correct answer
+                  - Randomized correct option between A-D.
+                5.For every question:
+                  - Generate exactly 4 answer options.
+                  - Randomly shuffle the options (A, B, C, D) independently for each question.
+                  - The correct answer must appear in a different letter position across questions whenever possible.
+                  - Do NOT follow any fixed ordering pattern.
+                6. Provide a clear reason explaining why the answer is correct.
+                ========================
+                OPENROUTER MODEL GUIDANCE
+                ========================
+                - Be deterministic and structured.
+                - Avoid unnecessary verbosity.
+                - Do NOT include explanations outside the JSON output.
+                - Output valid, strictly parseable JSON only.
+                Ensure the final output strictly follows this structure.`,
+            },
+            { role: "user", content: JSON.stringify(prompt, null, 2) }],
+          max_tokens: 4000,
+          temperature: 0.0,
+          top_p: 0.0,
+          top_k: 1,
+          frequency_penalty: 0.0,
+          presence_penalty: 0.0,
+          repetition_penalty: 0.0,
+          seed: 12345,
         }),
       }
     );

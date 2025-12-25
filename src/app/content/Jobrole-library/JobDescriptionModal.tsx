@@ -456,7 +456,7 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                     </TableHeader>
                                     <TableBody>
                                         {Object.entries(tasksByFunction).map(([criticalFunction, tasks], idx) => (
-                                            <TableRow key={idx}>
+                                            <TableRow key={criticalFunction}>
                                                 {showRadios && (
                                                     <TableCell>
                                                         <input
@@ -472,7 +472,7 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                                 <TableCell>
                                                     <ul className="list-disc ml-4 space-y-1 text-sm">
                                                         {tasks.map((task, i) => (
-                                                            <li key={i}>{task.taskName}</li>
+                                                            <li key={task.id || i}>{task.taskName}</li>
                                                         ))}
                                                     </ul>
                                                 </TableCell>
@@ -547,6 +547,7 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                             <div className="grid md:grid-cols-2 gap-4">
                                                 {skills.map((skill, index) => (
                                                     <div
+                                                        key={skill.id || skill.skill_id || index}
                                                         className="border-l-4 border-blue-500 pl-4 py-2 bg-gray-50 rounded-r cursor-default hover:bg-blue-50 transition relative"
                                                     >
                                                         {showSkillRadios && (
