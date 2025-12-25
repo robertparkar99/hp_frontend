@@ -103,11 +103,11 @@ const ActivityStream = () => {
 
       const data = await response.json();
       setTasks(Array.isArray(data.allTask) ? data.allTask : []);
-      setTodayTaskList(data.today?.taskAssigned?.jobRoleTasks?.map(t => ({...t, is_jobrole_task: true})) || []);
-      setUpcomingTaskList(data.upcoming?.taskAssigned?.jobRoleTasks?.map(t => ({...t, is_jobrole_task: true})) || []);
+      setTodayTaskList(data.today?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false})) || []);
+      setUpcomingTaskList(data.upcoming?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false})) || []);
       setRecentTaskLists([
-        ...(data.recent?.taskAssigned?.map(t => ({...t, is_jobrole_task: false})) || []),
-        ...(data.recent?.jobRoleTasks?.map(t => ({...t, is_jobrole_task: true})) || [])
+        ...(data.recent?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false})) || []),
+        ...(data.recent?.jobRoleTasks?.map((t: any) => ({...t, is_jobrole_task: true})) || [])
       ]);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -286,7 +286,7 @@ const ActivityStream = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
                     <div className="relative">
@@ -310,19 +310,6 @@ const ActivityStream = () => {
                         <SelectItem value="PENDING">PENDING</SelectItem>
                         <SelectItem value="IN-PROGRESS">IN-PROGRESS</SelectItem>
                         <SelectItem value="COMPLETED">COMPLETED</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Task Type</label>
-                    <Select value={taskTypeFilter} onValueChange={setTaskTypeFilter}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Tasks</SelectItem>
-                        <SelectItem value="jobrole">Job Role Tasks</SelectItem>
-                        <SelectItem value="allocated">Allocated Tasks</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -355,6 +342,7 @@ const ActivityStream = () => {
                       task={task}
                       sessionData={sessionData}
                       onStatusUpdate={handleStatusUpdate}
+                      onRefetch={fetchTask}
                       employees={employees}
                     />
                   ))
@@ -375,6 +363,7 @@ const ActivityStream = () => {
                       sessionData={sessionData}
                       task={task}
                       onStatusUpdate={handleStatusUpdate}
+                      onRefetch={fetchTask}
                       employees={employees}
                     />
                   ))
@@ -395,6 +384,7 @@ const ActivityStream = () => {
                       sessionData={sessionData}
                       task={task}
                       onStatusUpdate={handleStatusUpdate}
+                      onRefetch={fetchTask}
                       employees={employees}
                     />
                   ))
