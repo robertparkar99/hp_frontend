@@ -351,7 +351,7 @@ const ActivityStream = () => {
                 {filteredTodayTasks.length > 0 ? (
                   filteredTodayTasks.map((task, index) => (
                     <TaskCard
-                      key={task.id}
+                      key={index}
                       task={task}
                       sessionData={sessionData}
                       onStatusUpdate={handleStatusUpdate}
@@ -371,7 +371,7 @@ const ActivityStream = () => {
                 {filteredUpcomingTasks.length > 0 ? (
                   filteredUpcomingTasks.map((task, index) => (
                     <TaskCard
-                      key={task.id}
+                      key={index}
                       sessionData={sessionData}
                       task={task}
                       onStatusUpdate={handleStatusUpdate}
@@ -391,7 +391,7 @@ const ActivityStream = () => {
                 {filteredRecentTasks.length > 0 ? (
                   filteredRecentTasks.map((task, index) => (
                     <TaskCard
-                      key={task.id}
+                      key={index}
                       sessionData={sessionData}
                       task={task}
                       onStatusUpdate={handleStatusUpdate}
