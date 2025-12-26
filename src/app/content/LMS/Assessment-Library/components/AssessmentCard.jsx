@@ -15,6 +15,7 @@ const AssessmentCard = ({
   onSchedule,
 }) => {
   const getDifficultyColor = (difficulty) => {
+    if (!difficulty) return 'bg-gray-100 text-gray-800 border-gray-200';
     switch (difficulty.toLowerCase()) {
       case 'easy':
         return 'bg-green-100 text-green-800 border-green-200';
@@ -28,6 +29,7 @@ const AssessmentCard = ({
   };
 
   const getCategoryColor = (category) => {
+    if (!category) return 'bg-gray-100 text-gray-800 border-gray-200';
     switch (category.toLowerCase()) {
       case 'job role':
         return 'bg-blue-100 text-blue-800 border-blue-200';
@@ -52,7 +54,7 @@ const AssessmentCard = ({
           <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2">
             {assessment.title}
           </h3>
-          <div className="flex flex-wrap gap-2 mb-3">
+          {/* <div className="flex flex-wrap gap-2 mb-3">
             <span
               className={`px-2 py-1 text-xs font-medium rounded-md border ${getCategoryColor(
                 assessment.category
@@ -67,14 +69,14 @@ const AssessmentCard = ({
             >
               {assessment.subject}
             </span>
-          </div>
+          </div> */}
         </div>
 
         {/* Status dot */}
         <div className="flex items-center space-x-2 ml-4">
           <span
             className={`h-[12px] w-[12px] rounded-full ${
-              assessment.status !== 'Closed' ? 'bg-green-500' : 'bg-gray-400'
+              assessment.status === 'Active' ? 'bg-green-500' : 'bg-gray-400'
             }`}
           />
         </div>
@@ -170,7 +172,7 @@ const AssessmentCard = ({
       </div>
 
       {/* 🔹 Separate Start Assessment button */}
-      {assessment.status !== 'Closed' && (
+      {assessment.status === 'Active' && (
         <div className="mt-4 flex justify-start">
           <Button
             variant="default"
