@@ -1,7 +1,7 @@
 
 import { NextResponse } from "next/server";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY_NEW!;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY_NEW || " ";
 console.log("OPENROUTER_API_KEY set:", !!OPENROUTER_API_KEY);
 const MODEL = "deepseek/deepseek-chat";
 
