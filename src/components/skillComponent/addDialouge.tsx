@@ -9,6 +9,8 @@ interface AddDialogProps {
 }
 
 interface FormData {
+  department: string;
+  department_id: number;
   category: string;
   sub_category: string;
   skill_name: string;
@@ -33,6 +35,8 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
   });
 
   const [formData, setFormData] = useState<FormData>({
+    department: "",
+    department_id: 0,
     category: "",
     sub_category: "",
     skill_name: "",
@@ -40,6 +44,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     business_links: ""
   });
 
+  const [departments, setDepartments] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [subCategories, setSubCategories] = useState<any[]>([]);
   const [proficiencyLevels, setProficiencyLevels] = useState<any[]>([]);
@@ -49,6 +54,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [customTags, setCustomTags] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -68,9 +74,17 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
       fetchInitialData();
-      fetchDepartments(); // categorires
+      fetchDepartments();
     }
   }, [sessionData]);
+
+  useEffect(() => {
+    if (formData.department) {
+      fetchCategories(formData.department);
+      setFormData(prev => ({ ...prev, category: "", sub_category: "" }));
+      setSubCategories([]);
+    }
+  }, [formData.department]);
 
   const fetchInitialData = async () => {
     const res = await fetch(
@@ -82,22 +96,47 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
   };
   const fetchDepartments = async () => {
     try {
-      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=category&searchWord=departments`);
+      const res = await fetch(`${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`);
       const data = await res.json();
-      setCategories(data.searchData || []);
+
+      if (data?.data && typeof data.data === "object") {
+        const deptArray: { id: number; department_name: string }[] = [];
+        for (const [deptName, jobroles] of Object.entries(data.data)) {
+          if (Array.isArray(jobroles) && jobroles.length > 0) {
+            deptArray.push({
+              id: jobroles[0].department_id,
+              department_name: deptName,
+            });
+          }
+        }
+        setDepartments(deptArray);
+      } else {
+        setDepartments([]);
+      }
     } catch (error) {
       console.error("Error fetching departments:", error);
       alert("Failed to load departments");
     }
   };
-  const getSubDepartment = async (category: string) => {
+
+  const fetchCategories = async (department: string) => {
+    try {
+      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=category&searchWord=${encodeURIComponent(department)}`);
+      const data = await res.json();
+      setCategories(data.searchData || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      alert("Failed to load categories");
+    }
+  };
+  const fetchSubCategories = async (category: string) => {
     try {
       const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=sub_category&searchWord=${encodeURIComponent(category)}`);
       const data = await res.json();
       setSubCategories(data.searchData || []);
     } catch (error) {
-      console.error("Error fetching sub-departments:", error);
-      alert("Failed to load sub-departments");
+      console.error("Error fetching sub-categories:", error);
+      alert("Failed to load sub-categories");
     }
     setFormData(prev => ({ ...prev, category }));
   };
@@ -125,6 +164,10 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       return alert("Please enter both skill name and description first");
     }
 
+    if (!formData.department.trim()) {
+      return alert("Please select a Department first");
+    }
+
     if (!formData.category.trim()) {
       return alert("Please select a Skill Category first");
     }
@@ -133,6 +176,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       return alert("Please select a Skill Sub Category first");
     }
 
+    setIsGenerating(true);
     try {
       const res = await fetch("/api/generate-skill", {
         method: "POST",
@@ -161,25 +205,27 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       }
 
       // Update form data safely
+      const dept = departments.find(d => d.department_name === aiResponse.department);
       setFormData(prev => ({
         ...prev,
-        category: aiResponse.category || prev.category,
-        sub_category: aiResponse.sub_category || prev.sub_category,
-        business_links: aiResponse.business_links || prev.business_links,
-        learning_resources: aiResponse.learning_resources || prev.learning_resources,
-        assesment_method: aiResponse.assessment_methods || prev.assesment_method,
-        certification_qualifications: aiResponse.certifications || prev.certification_qualifications,
-        experience_project: aiResponse.experience || prev.experience_project,
-        skill_maps: aiResponse.skill_mapping || prev.skill_maps
+        department: prev.department || aiResponse.department,
+        department_id: prev.department_id || (dept ? dept.id : prev.department_id),
+        business_links: prev.business_links || aiResponse.business_links,
+        learning_resources: prev.learning_resources || aiResponse.learning_resources,
+        assesment_method: prev.assesment_method || aiResponse.assessment_methods,
+        certification_qualifications: prev.certification_qualifications || aiResponse.certifications,
+        experience_project: prev.experience_project || aiResponse.experience,
+        skill_maps: prev.skill_maps || aiResponse.skill_mapping
       }));
 
       if (Array.isArray(aiResponse.related_skills)) setSelectedSkills(aiResponse.related_skills);
       if (Array.isArray(aiResponse.custom_tags)) setCustomTags(aiResponse.custom_tags);
-      if (aiResponse.category) await getSubDepartment(aiResponse.category);
 
     } catch (error) {
       console.error("Error generating form content:", error);
       alert("Error generating AI content. Check console for details.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -224,17 +270,27 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
     e.preventDefault();
 
     const payload = {
-      ...formData,
-      type: "API",
-      method_field: 'POST',
-      related_skills: selectedSkills,
-      custom_tags: customTags,
       token: sessionData.token,
-      sub_institute_id: sessionData.subInstituteId,
+      type: "API",
       org_type: sessionData.orgType,
+      sub_institute_id: sessionData.subInstituteId,
+      department_id: formData.department_id,
       user_profile_name: sessionData.userProfile,
       user_id: sessionData.userId,
-      formType: 'user',
+      formType: "custom",
+      category: formData.category,
+      sub_category: formData.sub_category,
+      skill_name: formData.skill_name,
+      description: formData.description,
+      related_skills: selectedSkills,
+      bussiness_links: formData.business_links,
+      custom_tags: customTags,
+      proficiency_level: formData.proficiency_level,
+      learning_resources: formData.learning_resources,
+      assesment_method: formData.assesment_method,
+      certification_qualifications: formData.certification_qualifications,
+      experience_project: formData.experience_project,
+      skill_maps: formData.skill_maps,
     };
 
     try {
@@ -251,8 +307,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
       const data = await res.json();
       if (data.status === 1) {
         alert(data.message);
-        onSuccess();
-        onClose();
+        window.location.reload();
       } else {
         alert(data.message);
       }
@@ -289,13 +344,41 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
 
             <div className="grid md:grid-cols-2 md:gap-6">
               <div className="relative z-0 w-full mb-5 group text-left">
+                <label htmlFor="department" className="text-left">Department{" "}
+                <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label><br />
+                <select
+                  name="department"
+                  className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black"
+                  onChange={(e) => {
+                    const selectedDept = departments.find(d => d.id.toString() === e.target.value);
+                    if (selectedDept) {
+                      setFormData(prev => ({
+                        ...prev,
+                        department: selectedDept.department_name,
+                        department_id: selectedDept.id
+                      }));
+                    }
+                  }}
+                  value={departments.find(d => d.department_name === formData.department)?.id || ""}
+                  required
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.department_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="relative z-0 w-full mb-5 group text-left">
                 <label htmlFor="category" className="text-left">Skill Category{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label><br />
                 <select
                   name="category"
-                  className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black" // Changed w-3/3 to w-full
+                  className="form-select w-full focus:border-blue-500 rounded-lg border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black"
                   onChange={(e) => {
-                    getSubDepartment(e.target.value);
+                    fetchSubCategories(e.target.value);
                     handleFormChange(e);
                   }}
                   value={formData.category}
@@ -357,13 +440,26 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                   <button
                     type="button"
                     onClick={() => generateFormContent(formData.skill_name, formData.description)}
-                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 h-10 w-50"
+                    disabled={isGenerating}
+                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 flex items-center gap-2 h-10 w-50"
                     title="Generate with AI"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M13.5 4.938l1.563 1.562a4.001 4.001 0 01-5.656 5.656L8.344 13.5a4 4 0 105.656-5.656l-1.563-1.563a5.5 5.5 0 00-7.778 7.778l1.562 1.563a5.5 5.5 0 007.778-7.778z" />
-                    </svg>
-                    AI Generate
+                    {isGenerating ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M13.5 4.938l1.563 1.562a4.001 4.001 0 01-5.656 5.656L8.344 13.5a4 4 0 105.656-5.656l-1.563-1.563a5.5 5.5 0 00-7.778 7.778l1.562 1.563a5.5 5.5 0 007.778-7.778z" />
+                        </svg>
+                        AI Generate
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
