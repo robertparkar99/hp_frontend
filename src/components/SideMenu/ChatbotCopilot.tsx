@@ -20,6 +20,7 @@ interface Message {
     tablesUsed?: string[];
     insights?: string;
     canEscalate?: boolean;
+    intent?: string;
   };
 }
 
@@ -271,8 +272,8 @@ export default function ChatbotCopilot({
               {/* Avatar */}
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.type === "user"
-                    ? "bg-gray-200"
-                    : "bg-blue-100"
+                  ? "bg-gray-200"
+                  : "bg-blue-100"
                   }`}
               >
                 {message.type === "user" ? (
@@ -285,14 +286,14 @@ export default function ChatbotCopilot({
               {/* Message Content */}
               <div
                 className={`flex flex-col gap-2 max-w-[85%] ${message.type === "user"
-                    ? "items-end"
-                    : "items-start"
+                  ? "items-end"
+                  : "items-start"
                   }`}
               >
                 <div
                   className={`rounded-2xl px-4 py-2 text-sm ${message.type === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-800"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-800"
                     }`}
                 >
                   {message.content}
@@ -389,6 +390,24 @@ export default function ChatbotCopilot({
 
         {/* Input Area */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+          {/* Save JD Button */}
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={() => {
+                console.log("Save JD clicked");
+                // future: save JD logic here
+              }}
+              className="px-4 py-1.5 text-sm font-medium
+             rounded-lg
+             bg-blue-600 text-white
+             hover:bg-blue-700
+             transition-all
+             shadow-sm"
+>
+              Save JD
+            </button>
+          </div>
+
           <div className="relative flex flex-col gap-2 bg-white border border-gray-300 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
             <textarea
               ref={textareaRef}

@@ -37,6 +37,25 @@ interface ChatResponse {
   id?: string;
 }
 
+interface JobDescription {
+  job_title: string;
+  department: string;
+  experience_level: string;
+  key_responsibilities: string[];
+  required_skills: string[];
+  preferred_skills: string[];
+  education: string;
+  employment_type: string;
+  location: string;
+}
+
+interface ActionResponse {
+  type: 'ACTION_RESPONSE';
+  module: string;
+  action: string;
+  data: JobDescription;
+}
+
 let debugModeEnabled = false;
 
 function enableDebugMode() {
@@ -774,6 +793,40 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
       return accessError;
     }
 
+    if (intent.intent === 'CREATE_JOB_DESCRIPTION') {
+      try {
+        const jdResponse = await handleCreateJobDescription({
+          query: request.query,
+          userContext: { userId: anonymousId, role: request.role },
+          conversationId
+        });
+
+        console.log("🔥 JD RESPONSE:", jdResponse);
+
+        const answer = `Job Description created:\n\n**${jdResponse.data.job_title}**\n\nDepartment: ${jdResponse.data.department}\nExperience: ${jdResponse.data.experience_level}\n\nResponsibilities:\n${jdResponse.data.key_responsibilities.map((r: string) => `- ${r}`).join('\n')}\n\nRequired Skills:\n${jdResponse.data.required_skills.map((s: string) => `- ${s}`).join('\n')}\n\nPreferred Skills:\n${jdResponse.data.preferred_skills.map((s: string) => `- ${s}`).join('\n')}\n\nEducation: ${jdResponse.data.education}\nEmployment Type: ${jdResponse.data.employment_type}\nLocation: ${jdResponse.data.location}`;
+
+        await saveMessage(conversationId, 'bot', answer, intent.intent);
+
+        return {
+          answer,
+          conversationId,
+          intent: intent.intent,
+          canEscalate: true
+        };
+      } catch (error) {
+        const errorMessage = `Failed to create job description: ${(error as Error).message}`;
+        await saveMessage(conversationId, 'bot', errorMessage, intent.intent, undefined, undefined, true, (error as Error).message);
+        return {
+          answer: errorMessage,
+          conversationId,
+          intent: intent.intent,
+          error: 'JD_CREATION_FAILED',
+          recoverable: false,
+          canEscalate: true
+        };
+      }
+    }
+
     if (shouldRouteToAction(intent.intent)) {
       const actionResponse = {
         answer: `I detected this might be a ${intent.intent} request. For actions and support requests, please contact a support representative or escalate this conversation.`,
@@ -974,6 +1027,114 @@ async function ensureConversation(request: ChatRequest): Promise<string> {
   }
 
   return newConv.id;
+}
+
+export async function handleCreateJobDescription({ query, userContext, conversationId }: { query: string; userContext: any; conversationId: string }): Promise<ActionResponse> {
+  // Save user message for auditability
+  await saveMessage(conversationId, 'user', query, 'job_description_generation');
+
+  // Permission check (mandatory)
+  if (!canAccessData(userContext, 'TALENT_DEVELOPMENT')) {
+    throw new Error('Access denied for JD creation');
+  }
+
+  // Build JD prompt
+  const prompt = `
+
+You are an HR and Talent Development expert.
+
+Create a professional Job Description based on the user input.
+
+User Request: "${query}"
+the output should be in JSON format only, without any additional text.
+Return output in JSON with the following structure:
+
+{
+  "job_title": "",
+  "department": "",
+  "experience_level": "",
+  "key_responsibilities": [],
+  "required_skills": [],
+  "preferred_skills": [],
+  "education": "",
+  "employment_type": "",
+  "location": ""
+}
+`;
+
+  const startTime = Date.now();
+
+  try {
+    // Call the LLM
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.LLM_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek/deepseek-chat',
+        messages: [
+          { role: 'system', content: 'You are an expert HR assistant. Generate structured job descriptions in JSON format only.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate job description');
+    }
+
+    const data = await response.json();
+    const responseTime = Date.now() - startTime;
+
+    // Log the LLM call if debug mode is enabled
+    if (debugModeEnabled) {
+      await logLLMCall(conversationId, 'deepseek/deepseek-chat', responseTime, true);
+    }
+
+    // Parse the LLM response as JSON
+    const rawContent = data.choices[0].message.content.trim();
+    const cleanedContent = rawContent.replace(/```json\n?|\n?```/g, '').trim();
+    const jdOutput: JobDescription = JSON.parse(cleanedContent);
+
+    // Validate the structure (basic check)
+    if (!jdOutput.job_title || !Array.isArray(jdOutput.key_responsibilities) || !Array.isArray(jdOutput.required_skills)) {
+      throw new Error('Invalid job description structure returned by LLM');
+    }
+
+    // Save the JD result for auditability and conversation history
+    await saveMessage(conversationId, 'bot', rawContent, 'job_description_generation');
+
+    // Log for analytics: who is generating JDs, which roles are common
+    await logEvent({
+      conversationId,
+      logLevel: 'info',
+      logType: 'JD_CREATED_FROM_CHAT',
+      message: 'Job description created from chat',
+      metadata: { userId: userContext?.userId, conversationId }
+    });
+
+    // Return tagged response for Talent Development module
+    return {
+      type: 'ACTION_RESPONSE',
+      module: 'TALENT_DEVELOPMENT',
+      action: 'CREATE_JOB_DESCRIPTION',
+      data: jdOutput
+    };
+  } catch (error) {
+    console.error('Error in handleCreateJobDescription:', error);
+    // Log the error
+    await logEvent({
+      conversationId,
+      logLevel: 'error',
+      logType: 'jd_generation_failure',
+      message: `Failed to generate job description: ${(error as Error).message}`,
+      metadata: { query, userContext }
+    });
+    throw error;  // Re-throw for upstream handling
+  }
 }
 
 export async function handleEscalation(
