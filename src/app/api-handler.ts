@@ -1047,7 +1047,8 @@ Create a professional Job Description based on the user input.
 
 User Request: "${query}"
 Important Note : There should be mandatorily values of Industry,department ,jobrole and description in the User Request, 
-then only do the below things otherwise return the response to tell the user to fill the required things..
+Action : If Important Note is not followed then return please fill the missout thing which are not in the user request.
+
 the output should be in JSON format only, without any additional text.
 Return output in JSON with the following structure:
 
