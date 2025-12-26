@@ -161,7 +161,7 @@ export async function POST(req: Request) {
                 Ensure the final output strictly follows this structure.`,
             },
             { role: "user", content: JSON.stringify(prompt, null, 2) }],
-          max_tokens: 2000,
+          max_tokens: 1000,
           temperature: 0.0,
           top_p: 0.0,
           top_k: 1,
