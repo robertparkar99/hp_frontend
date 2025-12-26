@@ -464,6 +464,24 @@ export default function GenerateAssessmentModal({
 
     console.log("finalQuestionIds:", finalQuestionIds);
 
+    // Build mappings object per question
+    const questionMappings: { [key: string]: { mapping_type_id: number; mapping_value_id: number; reasons: string }[] } = {};
+    let questionIndex = 0;
+    mappings.forEach(mapping => {
+      for (let i = 0; i < mapping.questionCount && questionIndex < finalQuestionIds.length; i++) {
+        const qId = finalQuestionIds[questionIndex].toString();
+        if (!questionMappings[qId]) {
+          questionMappings[qId] = [];
+        }
+        questionMappings[qId].push({
+          mapping_type_id: mapping.typeId,
+          mapping_value_id: mapping.valueId,
+          reasons: mapping.reason
+        });
+        questionIndex++;
+      }
+    });
+
     const payload = {
       grade_id: 1,
       standard_id: data?.jobRole?.department_id || 2,
@@ -488,9 +506,7 @@ export default function GenerateAssessmentModal({
       created_by: Number(sessionData.userId),
       sub_institute_id: Number(sessionData.subInstituteId),
       exam_type: "online",
-      mapping_type_id: mappings[0]?.typeId,
-      mapping_value_id: mappings[0]?.valueId,
-      reasons: mappings[0]?.reason,
+      mappings: questionMappings,
     };
     console.log("Assessment payload question_ids:", finalQuestionIds.join(','));
     // console.log("Assessment payload questionmaster_id:", finalQuestionMasterId);
