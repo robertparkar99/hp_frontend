@@ -156,7 +156,7 @@ const LearningCalendar: React.FC = () => {
       {/* Mini Calendar */}
       <div className="mb-6">
         <div className="grid grid-cols-7 gap-1 mb-2">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
+          {['S', 'M', 'T', 'W', 'Th', 'F', 'Sa'].map((day) => (
             <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
               {day}
             </div>

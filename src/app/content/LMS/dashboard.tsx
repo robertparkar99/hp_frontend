@@ -13,28 +13,29 @@ import AiCourseDialog from './components/AiCourseDialog'
 import ViewDetail from '../LMS/ViewChepter/ViewDetail'
 
 type Course = {
-  id: number
-  subject_id: number
-  standard_id: number
-  title: string
-  description: string
-  thumbnail: string
-  contentType: string
-  category: string
-  difficulty: string
-  short_name: string
-  subject_type: string
-  progress: number
-  instructor: string
-  isNew: boolean
-  isMandatory: boolean
-  display_name: string
-  sort_order: string
-  status: string
-  subject_category?: string
-  is_external?: boolean
-  external_url?: string
-  platform?: string
+   id: number
+   subject_id: number
+   standard_id: number
+   title: string
+   description: string
+   thumbnail: string
+   contentType: string
+   category: string
+   difficulty: string
+   short_name: string
+   subject_type: string
+   progress: number
+   instructor: string
+   isNew: boolean
+   isMandatory: boolean
+   display_name: string
+   sort_order: string
+   status: string
+   subject_category?: string
+   is_external?: boolean
+   external_url?: string
+   platform?: string
+   jobrole?: string
 }
 
 type Filters = {
@@ -88,7 +89,6 @@ const LearningCatalog: React.FC = () => {
   const [isExternalCourseDialogOpen, setIsExternalCourseDialogOpen] = useState(false)
   const [activePlatformTab, setActivePlatformTab] = useState('udemy')
   const [jobRoles, setJobRoles] = useState<any[]>([])
-  const [jobRolesLoading, setJobRolesLoading] = useState(true)
 
   // ✅ Session data
   const [sessionData, setSessionData] = useState<any>(null)
@@ -132,6 +132,7 @@ const LearningCatalog: React.FC = () => {
       console.log('📦 Raw API data:', data)
 
       const mappedCourses: Course[] = []
+      const jobRolesSet = new Set()
 
       if (data?.lms_subject) {
         Object.keys(data.lms_subject).forEach((category) => {
@@ -155,9 +156,15 @@ const LearningCatalog: React.FC = () => {
               display_name: item.display_name ?? item.standard_name ?? 'Untitled',
               sort_order: item.sort_order ?? '1',
               status: item.status ?? '1',
-              subject_category: category // Add subject_category for filtering
+              subject_category: category, // Add subject_category for filtering
+              jobrole: item.jobrole ?? undefined
             }
             mappedCourses.push(course)
+
+            // Collect unique jobroles
+            if (item.jobrole) {
+              jobRolesSet.add(item.jobrole)
+            }
           })
         })
       }
@@ -167,6 +174,17 @@ const LearningCatalog: React.FC = () => {
       const sortedCourses = [...mappedCourses].sort((a, b) => b.id - a.id)
       setCourses(sortedCourses)
       setFilteredCourses(sortedCourses)
+
+      // Set job roles from the API data
+      const uniqueJobRoles = Array.from(jobRolesSet).map((jobrole, index) => ({
+        id: index + 1,
+        jobrole: jobrole,
+        name: jobrole,
+        description: '',
+        department: '',
+        industries: ''
+      }))
+      setJobRoles(uniqueJobRoles)
     } catch (error) {
       console.error('🚨 Error fetching courses:', error)
     } finally {
@@ -174,35 +192,6 @@ const LearningCatalog: React.FC = () => {
     }
   }, [sessionData])
 
-  // ✅ Fetch job roles
-  const fetchJobRoles = useCallback(async () => {
-    if (!sessionData) return
-    try {
-      setJobRolesLoading(true)
-
-      // Use the specific API URL from the task
-      const apiUrl = `${sessionData.APP_URL}/lms/chapter_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_profile_name=${sessionData.user_profile_name}&user_id=${sessionData.user_id}&standard_id=83&subject_id=91&token=${sessionData.token}`
-
-      console.log('📡 Fetching job roles from:', apiUrl)
-
-      const res = await fetch(apiUrl)
-      if (!res.ok) throw new Error(`❌ Failed to fetch job roles. Status: ${res.status}`)
-
-      const data = await res.json()
-      console.log('📦 Raw job roles API data:', data)
-
-      if (data?.job_roles) {
-        setJobRoles(data.job_roles)
-      } else {
-        setJobRoles([])
-      }
-    } catch (error) {
-      console.error('🚨 Error fetching job roles:', error)
-      setJobRoles([])
-    } finally {
-      setJobRolesLoading(false)
-    }
-  }, [sessionData, buildApiUrl])
 
   // ✅ Fetch external courses from Udemy API using fetch
   const fetchExternalCourses = async (searchTerm: string = 'react', page: number = 0) => {
@@ -265,9 +254,8 @@ const LearningCatalog: React.FC = () => {
   useEffect(() => {
     if (sessionData) {
       fetchCourses()
-      fetchJobRoles()
     }
-  }, [sessionData, fetchCourses, fetchJobRoles])
+  }, [sessionData, fetchCourses])
 
   // ✅ Apply filters to courses
   useEffect(() => {
@@ -515,22 +503,18 @@ const LearningCatalog: React.FC = () => {
                       <h2 className="text-2xl font-bold text-foreground mb-4">
                         Job Roles
                       </h2>
-                      {jobRolesLoading ? (
-                        <div className="text-center py-10">Loading job roles...</div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                          {jobRoles.map((role) => (
-                            <div key={role.id} className="bg-[#5E9DFF] text-white rounded-lg p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
-                              <h3 className="text-lg font-semibold mb-2 line-clamp-2">{role.jobrole || role.name}</h3>
-                              <p className="text-sm opacity-90 mb-3 line-clamp-3">{role.description}</p>
-                              <div className="text-xs opacity-75">
-                                <p>Dept: {role.department}</p>
-                                <p>Industry: {role.industries}</p>
-                              </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {jobRoles.map((role) => (
+                          <div key={role.id} className="bg-[#5E9DFF] text-white rounded-lg p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                            <h3 className="text-lg font-semibold mb-2 line-clamp-2">{role.jobrole || role.name}</h3>
+                            <p className="text-sm opacity-90 mb-3 line-clamp-3">{role.description}</p>
+                            <div className="text-xs opacity-75">
+                              <p>Dept: {role.department}</p>
+                              <p>Industry: {role.industries}</p>
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
