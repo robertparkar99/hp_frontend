@@ -1253,6 +1253,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import AdminSkillRating from "./AdminSkillRating";
+import JobroleSkillRatingDesign from "./jobrole-skillrating";
 import { useRouter } from "next/navigation";
 // validators (do not change utils.ts)
 import { validateSkillProficiencies, getValidationMessages } from "@/lib/utils";
@@ -1325,6 +1326,8 @@ export default function Index({
   const [viewPart, setViewPart] = useState<any>("chart Box");
   const [activeTab, setActiveTab] = useState<string>("knowledge");
 
+
+
   const [validationState, setValidationState] = useState<ValidationState>({
     knowledge: {},
     ability: {},
@@ -1375,46 +1378,46 @@ export default function Index({
     setInfoDialogOpen(true);
   };
 
-useEffect(() => {
-  const storedRatedSkills = localStorage.getItem(`ratedSkills_${clickedUser}`);
-  if (storedRatedSkills) {
-    try {
-      const parsedSkills = JSON.parse(storedRatedSkills);
+  useEffect(() => {
+    const storedRatedSkills = localStorage.getItem(`ratedSkills_${clickedUser}`);
+    if (storedRatedSkills) {
+      try {
+        const parsedSkills = JSON.parse(storedRatedSkills);
 
-      // Ensure objects are properly parsed (in case of double stringification)
-      const processedSkills = parsedSkills.map((skill: any) => ({
-        ...skill,
-        knowledge: typeof skill.knowledge === 'string' ? JSON.parse(skill.knowledge) : (skill.knowledge || {}),
-        ability: typeof skill.ability === 'string' ? JSON.parse(skill.ability) : (skill.ability || {}),
-        behaviour: typeof skill.behaviour === 'string' ? JSON.parse(skill.behaviour) : (skill.behaviour || {}),
-        attitude: typeof skill.attitude === 'string' ? JSON.parse(skill.attitude) : (skill.attitude || {}),
-      }));
+        // Ensure objects are properly parsed (in case of double stringification)
+        const processedSkills = parsedSkills.map((skill: any) => ({
+          ...skill,
+          knowledge: typeof skill.knowledge === 'string' ? JSON.parse(skill.knowledge) : (skill.knowledge || {}),
+          ability: typeof skill.ability === 'string' ? JSON.parse(skill.ability) : (skill.ability || {}),
+          behaviour: typeof skill.behaviour === 'string' ? JSON.parse(skill.behaviour) : (skill.behaviour || {}),
+          attitude: typeof skill.attitude === 'string' ? JSON.parse(skill.attitude) : (skill.attitude || {}),
+        }));
 
-      console.log("Loaded skills from localStorage:", processedSkills);
-      setLocalRatedSkills(processedSkills);
-      setUserRatedSkills(processedSkills);
+        console.log("Loaded skills from localStorage:", processedSkills);
+        setLocalRatedSkills(processedSkills);
+        setUserRatedSkills(processedSkills);
 
-      // Load current skill data if available
-      if (selectedSkill) {
-        const ratedSkill = processedSkills.find(
-          (rated: any) => rated.skill_id === selectedSkill.skill_id
-        );
-        if (ratedSkill) {
-          console.log("Found rated skill on load:", ratedSkill);
-          // This will trigger the useEffect above to load KAAB data
+        // Load current skill data if available
+        if (selectedSkill) {
+          const ratedSkill = processedSkills.find(
+            (rated: any) => rated.skill_id === selectedSkill.skill_id
+          );
+          if (ratedSkill) {
+            console.log("Found rated skill on load:", ratedSkill);
+            // This will trigger the useEffect above to load KAAB data
+          }
         }
+      } catch (error) {
+        console.error("Error parsing stored rated skills:", error);
       }
-    } catch (error) {
-      console.error("Error parsing stored rated skills:", error);
+    } else if (userRatedSkills && userRatedSkills.length > 0) {
+      setLocalRatedSkills(userRatedSkills);
+      localStorage.setItem(
+        `ratedSkills_${clickedUser}`,
+        JSON.stringify(userRatedSkills)
+      );
     }
-  } else if (userRatedSkills && userRatedSkills.length > 0) {
-    setLocalRatedSkills(userRatedSkills);
-    localStorage.setItem(
-      `ratedSkills_${clickedUser}`,
-      JSON.stringify(userRatedSkills)
-    );
-  }
-}, [userRatedSkills, clickedUser, setUserRatedSkills, selectedSkill]);
+  }, [userRatedSkills, clickedUser, setUserRatedSkills, selectedSkill]);
 
   useEffect(() => {
     if (localRatedSkills.length > 0) {
@@ -1454,63 +1457,94 @@ useEffect(() => {
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
       fetchInitialData();
+      // fetchUserRatedSkills();
     }
   }, [sessionData]);
 
- // FIXED: Load KAAB data when selectedSkill changes
-useEffect(() => {
-  if (selectedSkill && localRatedSkills && localRatedSkills.length > 0) {
-    const ratedSkill = localRatedSkills.find(
-      (rated: any) => rated.skill_id === selectedSkill.skill_id
-    );
+  // Fetch user rated skills to load existing KAAB data
+  // const fetchUserRatedSkills = async (): Promise<void> => {
+  //   try {
+  //     const userData = localStorage.getItem("userData");
+  //     if (!userData) return;
 
-    console.log("Loading KAAB data for skill:", selectedSkill.skill, ratedSkill);
+  //     const { APP_URL, token, user_id } = JSON.parse(userData);
+  //     const response = await fetch(
+  //       `${APP_URL}/user-rated-skills?user_id=${user_id}&token=${token}&include_proficiency=true`
+  //     );
 
-    if (ratedSkill) {
-      // Load level selection
-      const levelIndex = SkillLevels.findIndex((level: ProficiencyLevel) => {
-        if (!ratedSkill.skill_level) return false;
-        const levelNumber = ratedSkill.skill_level.replace("Level ", "");
-        return (
-          level.proficiency_level.includes(levelNumber) ||
-          level.proficiency_type === ratedSkill.skill_level ||
-          level.proficiency_level === ratedSkill.skill_level
-        );
-      });
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Fetched rated skills for rating:", data.userRatedSkills);
 
-      if (levelIndex !== -1) {
-        setSelectedLevelIndex(levelIndex);
-        setSelectedSkillLevel(ratedSkill.skill_level);
+  //       // Update local rated skills with fetched data
+  //       const fetchedSkills = data.userRatedSkills || [];
+  //       setLocalRatedSkills(fetchedSkills);
+  //       if (setUserRatedSkills && typeof setUserRatedSkills === 'function') {
+  //         setUserRatedSkills(fetchedSkills);
+  //       }
+
+  //       // Save to localStorage
+  //       localStorage.setItem(`ratedSkills_${clickedUser}`, JSON.stringify(fetchedSkills));
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching user rated skills:", error);
+  //   }
+  // };
+
+  // FIXED: Load KAAB data when selectedSkill changes
+  useEffect(() => {
+    if (selectedSkill && localRatedSkills && localRatedSkills.length > 0) {
+      const ratedSkill = localRatedSkills.find(
+        (rated: any) => rated.skill_id === selectedSkill.skill_id
+      );
+
+      console.log("Loading KAAB data for skill:", selectedSkill.skill, ratedSkill);
+
+      if (ratedSkill) {
+        // Load level selection
+        const levelIndex = SkillLevels.findIndex((level: ProficiencyLevel) => {
+          if (!ratedSkill.skill_level) return false;
+          const levelNumber = ratedSkill.skill_level.replace("Level ", "");
+          return (
+            level.proficiency_level.includes(levelNumber) ||
+            level.proficiency_type === ratedSkill.skill_level ||
+            level.proficiency_level === ratedSkill.skill_level
+          );
+        });
+
+        if (levelIndex !== -1) {
+          setSelectedLevelIndex(levelIndex);
+          setSelectedSkillLevel(ratedSkill.skill_level);
+        }
+
+        // Load KAAB validation state - THIS IS THE KEY FIX
+        setValidationState({
+          knowledge: ratedSkill.knowledge || {},
+          ability: ratedSkill.ability || {},
+          behaviour: ratedSkill.behaviour || {},
+          attitude: ratedSkill.attitude || {},
+        });
+
+        // Show details if KAAB data exists
+        const hasKAABData = Object.keys(ratedSkill.knowledge || {}).length > 0 ||
+          Object.keys(ratedSkill.ability || {}).length > 0 ||
+          Object.keys(ratedSkill.behaviour || {}).length > 0 ||
+          Object.keys(ratedSkill.attitude || {}).length > 0;
+
+        setShowDetails(hasKAABData);
+      } else {
+        setSelectedLevelIndex(null);
+        setSelectedSkillLevel("");
+        setValidationState({
+          knowledge: {},
+          ability: {},
+          behaviour: {},
+          attitude: {},
+        });
+        setShowDetails(false);
       }
-
-      // Load KAAB validation state - THIS IS THE KEY FIX
-      setValidationState({
-        knowledge: ratedSkill.knowledge || {},
-        ability: ratedSkill.ability || {},
-        behaviour: ratedSkill.behaviour || {},
-        attitude: ratedSkill.attitude || {},
-      });
-
-      // Show details if KAAB data exists
-      const hasKAABData = Object.keys(ratedSkill.knowledge || {}).length > 0 ||
-                         Object.keys(ratedSkill.ability || {}).length > 0 ||
-                         Object.keys(ratedSkill.behaviour || {}).length > 0 ||
-                         Object.keys(ratedSkill.attitude || {}).length > 0;
-      
-      setShowDetails(hasKAABData);
-    } else {
-      setSelectedLevelIndex(null);
-      setSelectedSkillLevel("");
-      setValidationState({
-        knowledge: {},
-        ability: {},
-        behaviour: {},
-        attitude: {},
-      });
-      setShowDetails(false);
     }
-  }
-}, [selectedSkill, localRatedSkills, SkillLevels]);
+  }, [selectedSkill, localRatedSkills, SkillLevels]);
 
   const saveCurrentSkillData = (): void => {
     if (selectedSkill) {
@@ -1601,57 +1635,59 @@ useEffect(() => {
     index: number,
     array: any[]
   ): void => {
-    setValidationState((prev) => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        [attribute]: isValid ? "yes" : "no",
-      },
-    }));
+    setValidationState((prev) => {
+      const newState = {
+        ...prev,
+        [type]: {
+          ...prev[type],
+          [attribute]: isValid ? "yes" : "no",
+        },
+      };
 
-    if (index === array.length - 1) {
-      const currentIndex = attrArray.findIndex((a) => a.title.toLowerCase() === type);
+      if (index === array.length - 1) {
+        const currentIndex = attrArray.findIndex(
+          (a) => a.title.toLowerCase() === type
+        );
 
-      if (currentIndex < attrArray.length - 1) {
-        setTimeout(() => {
-          setActiveTab(attrArray[currentIndex + 1].title);
-        }, 300);
-      } else {
-        setTimeout(() => {
-          handleSubmit();
-          if (currentSkillIndex < userJobroleSkills.length - 1) {
-            setTimeout(() => {
-              moveToNextSkill();
-            }, 500);
-          }
-        }, 300);
+        if (currentIndex < attrArray.length - 1) {
+          setTimeout(() => {
+            setActiveTab(attrArray[currentIndex + 1].title);
+          }, 300);
+        } else {
+          // ✅ CRITICAL FIX: pass the updated state to handleSubmit
+          setTimeout(() => {
+            handleSubmit(newState);
+          }, 300);
+        }
       }
-    }
-  };
-const moveToNextSkill = (): void => {
-  if (currentSkillIndex < userJobroleSkills.length - 1) {
-    const nextIndex = currentSkillIndex + 1;
-    setCurrentSkillIndex(nextIndex);
-    setSelectedSkill(userJobroleSkills[nextIndex]);
-    
-    // Reset for new skill - but data will be loaded from useEffect
-    setActiveTab("knowledge");
-    setValidationState({
-      knowledge: {},
-      ability: {},
-      behaviour: {},
-      attitude: {},
+
+      return newState;
     });
-    setShowDetails(false);
-    setSelectedLevelIndex(null);
-    setSelectedSkillLevel("");
-    
-    // The useEffect will automatically load data for the new selectedSkill
-  }
-  
-  setIsProcessing(false);
-  setSelectedImage("/image 16.png");
-};
+  };
+  const moveToNextSkill = (): void => {
+    if (currentSkillIndex < userJobroleSkills.length - 1) {
+      const nextIndex = currentSkillIndex + 1;
+      setCurrentSkillIndex(nextIndex);
+      setSelectedSkill(userJobroleSkills[nextIndex]);
+
+      // Reset for new skill - but data will be loaded from useEffect
+      setActiveTab("knowledge");
+      setValidationState({
+        knowledge: {},
+        ability: {},
+        behaviour: {},
+        attitude: {},
+      });
+      setShowDetails(false);
+      setSelectedLevelIndex(null);
+      setSelectedSkillLevel("");
+
+      // The useEffect will automatically load data for the new selectedSkill
+    }
+
+    setIsProcessing(false);
+    setSelectedImage("/image 16.png");
+  };
   const moveToPreviousSkill = (): void => {
     if (currentSkillIndex > 0) {
       saveCurrentSkillData();
@@ -1665,59 +1701,67 @@ const moveToNextSkill = (): void => {
   };
 
 
-const handleSubmit = async (): Promise<void> => {
-  if (selectedLevelIndex === null) {
-    showInfo("Validation", "Please select at least one proficiency level before proceeding.", "error");
-    return;
-  }
+  const handleSubmit = async (passedValidationState?: ValidationState): Promise<void> => {
+    if (selectedLevelIndex === null) {
+      showInfo("Validation", "Please select at least one proficiency level before proceeding.", "error");
+      return;
+    }
 
-  if (!selectedSkill) return;
+    if (!selectedSkill) return;
 
-  setIsProcessing(true);
+    setIsProcessing(true);
 
-  try {
-    // Create the rated skill with KAAB data - ensure objects are preserved
-    const newRatedSkill = {
-      skill_id: selectedSkill.skill_id,
-      skill_level: selectedSkillLevel,
-      skill: selectedSkill.skill,
-      category: selectedSkill.category,
-      knowledge: { ...validationState.knowledge }, // Spread to create new object
-      ability: { ...validationState.ability },     // Spread to create new object
-      behaviour: { ...validationState.behaviour }, // Spread to create new object
-      attitude: { ...validationState.attitude },   // Spread to create new object
-    };
+    const currentValidationState = passedValidationState || validationState;
 
-    console.log("Saving skill with KAAB data:", newRatedSkill);
+    try {
+      // Create the rated skill with KAAB data - ensure objects are preserved
+      const newRatedSkill = {
+        skill_id: selectedSkill.skill_id,
+        skill_level: selectedSkillLevel,
+        skill: selectedSkill.skill,
+        category: selectedSkill.category,
+        knowledge: { ...currentValidationState.knowledge }, // Spread to create new object
+        ability: { ...currentValidationState.ability },     // Spread to create new object
+        behaviour: { ...currentValidationState.behaviour }, // Spread to create new object
+        attitude: { ...(currentValidationState.attitude || {}) }   // Spread to create new object
+      };
 
-    // Update local rated skills
-    setLocalRatedSkills(prev => {
-      const filtered = prev.filter(skill => skill.skill_id !== selectedSkill.skill_id);
-      const updatedSkills = [...filtered, newRatedSkill];
-      
-      // Save to localStorage - ensure proper JSON structure
-      localStorage.setItem(`ratedSkills_${clickedUser}`, JSON.stringify(updatedSkills));
-      
-      console.log("Updated localRatedSkills:", updatedSkills);
-      return updatedSkills;
-    });
+      console.log("Saving skill with KAAB data:", newRatedSkill);
 
-    // Move to next skill after ensuring state is updated
-    setTimeout(() => {
-      if (currentSkillIndex < userJobroleSkills.length - 1) {
-        moveToNextSkill();
-      } else {
-        setIsProcessing(false);
-        showInfo("Completed", "All skills rated! Click 'Validate & Save All' to submit.", "success");
-      }
-    }, 500);
+      // Update local rated skills
+      // setLocalRatedSkills(prev => {
+      //   const filtered = prev.filter(skill => skill.skill_id !== selectedSkill.skill_id);
+      //   const updatedSkills = [...filtered, newRatedSkill];
 
-  } catch (error) {
-    console.error("Error saving skill:", error);
-    showInfo("Error", "Error saving skill assessment", "error");
-    setIsProcessing(false);
-  }
-};
+      //   // Save to localStorage - ensure proper JSON structure
+      //   localStorage.setItem(`ratedSkills_${clickedUser}`, JSON.stringify(updatedSkills));
+
+      //   console.log("Updated localRatedSkills:", updatedSkills);
+      //   return updatedSkills;
+      // });
+setLocalRatedSkills(prev => {
+  const filtered = prev.filter(
+    skill => skill.skill_id !== selectedSkill.skill_id
+  );
+  return [...filtered, newRatedSkill];
+});
+
+      // Move to next skill after ensuring state is updated
+      setTimeout(() => {
+        if (currentSkillIndex < userJobroleSkills.length - 1) {
+          moveToNextSkill();
+        } else {
+          setIsProcessing(false);
+          showInfo("Completed", "All skills rated! Click 'Validate & Save All' to submit.", "success");
+        }
+      }, 500);
+
+    } catch (error) {
+      console.error("Error saving skill:", error);
+      showInfo("Error", "Error saving skill assessment", "error");
+      setIsProcessing(false);
+    }
+  };
 
   // Part 2/3 (continue)
 
@@ -1728,60 +1772,61 @@ const handleSubmit = async (): Promise<void> => {
   };
 
   const handleSkillSelect = (skill: Skill, index: number): void => {
-  // Save current skill data before switching
-  if (selectedSkill && selectedLevelIndex !== null) {
-    const currentRatedSkill = {
-      skill_id: selectedSkill.skill_id,
-      skill_level: selectedSkillLevel,
-      skill: selectedSkill.skill,
-      knowledge: validationState.knowledge,
-      ability: validationState.ability,
-      behaviour: validationState.behaviour,
-      attitude: validationState.attitude,
-    };
+    // Save current skill data before switching ONLY if skill_level is selected
+    if (selectedSkill && selectedLevelIndex !== null && selectedSkillLevel) {
+      const currentRatedSkill = {
+        skill_id: selectedSkill.skill_id,
+        skill_level: selectedSkillLevel,
+        skill: selectedSkill.skill,
+        knowledge: validationState.knowledge,
+        ability: validationState.ability,
+        behaviour: validationState.behaviour,
+        attitude: validationState.attitude,
+      };
 
-    setLocalRatedSkills(prev => {
-      const filtered = prev.filter(s => s.skill_id !== selectedSkill.skill_id);
-      const updated = [...filtered, currentRatedSkill];
-      localStorage.setItem(`ratedSkills_${clickedUser}`, JSON.stringify(updated));
-      console.log("Auto-saved skill when switching:", currentRatedSkill.skill);
-      return updated;
-    });
-  }
-
-  // Switch to new skill
-  setSelectedSkill(skill);
-  setCurrentSkillIndex(index);
-  setActiveTab("knowledge");
-  
-  // Load the new skill's data
-  setTimeout(() => {
-    const ratedSkill = localRatedSkills.find(
-      (rated: any) => rated.skill_id === skill.skill_id
-    );
-    
-    if (ratedSkill) {
-      setSelectedLevelIndex(SkillLevels.findIndex(level => 
-        level.proficiency_level === ratedSkill.skill_level
-      ));
-      setSelectedSkillLevel(ratedSkill.skill_level);
-      setValidationState({
-        knowledge: ratedSkill.knowledge || {},
-        ability: ratedSkill.ability || {},
-        behaviour: ratedSkill.behaviour || {},
-        attitude: ratedSkill.attitude || {},
+      setLocalRatedSkills(prev => {
+        const filtered = prev.filter(s => s.skill_id !== selectedSkill.skill_id);
+        const updated = [...filtered, currentRatedSkill];
+        localStorage.setItem(`ratedSkills_${clickedUser}`, JSON.stringify(updated));
+        console.log("Auto-saved skill when switching:", currentRatedSkill.skill);
+        return updated;
       });
-      setShowDetails(true);
-    } else {
-      setSelectedLevelIndex(null);
-      setSelectedSkillLevel("");
-      setValidationState({
-        knowledge: {}, ability: {}, behaviour: {}, attitude: {}
-      });
-      setShowDetails(false);
     }
-  }, 100);
-};
+
+    // Switch to new skill
+    setSelectedSkill(skill);
+    setCurrentSkillIndex(index);
+    setActiveTab("knowledge");
+
+    // Load the new skill's data
+    setTimeout(() => {
+      const ratedSkill = localRatedSkills.find(
+        (rated: any) => rated.skill_id === skill.skill_id
+      );
+
+      if (ratedSkill && ratedSkill.skill_level) {
+        setSelectedLevelIndex(SkillLevels.findIndex(level =>
+          level.proficiency_level === ratedSkill.skill_level ||
+          level.proficiency_type === ratedSkill.skill_level
+        ));
+        setSelectedSkillLevel(ratedSkill.skill_level);
+        setValidationState({
+          knowledge: ratedSkill.knowledge || {},
+          ability: ratedSkill.ability || {},
+          behaviour: ratedSkill.behaviour || {},
+          attitude: ratedSkill.attitude || {},
+        });
+        setShowDetails(true);
+      } else {
+        setSelectedLevelIndex(null);
+        setSelectedSkillLevel("");
+        setValidationState({
+          knowledge: {}, ability: {}, behaviour: {}, attitude: {}
+        });
+        setShowDetails(false);
+      }
+    }, 100);
+  };
 
   // Function to clear all rated skills (for testing/debugging)
   // Function to clear all rated skills
@@ -1824,201 +1869,176 @@ const handleSubmit = async (): Promise<void> => {
     console.log("Final bulk data structure:", bulkData);
     console.log("=== END DEBUG ===");
   };
-
-  // ✅ Bulk validation with dialog (called by Save All button)
- const validateAndSaveAllSkills = async (): Promise<void> => {
-  if (localRatedSkills.length === 0) {
-    showInfo("No ratings", "No skills have been rated yet!", "info");
-    return;
-  }
-
-  // Check for skills with level 6
-  const skillsWithLevel6 = localRatedSkills.filter(skill => {
-    if (!skill.skill_level) return false;
-    const levelMatch = skill.skill_level.toString().match(/\d+/);
-    return levelMatch && parseInt(levelMatch[0], 10) > 5;
-  });
-
-  if (skillsWithLevel6.length > 0) {
-    // Show warning about level adjustment
-    setValidationMessages([
-      `${skillsWithLevel6.length} skills have proficiency level 6.`,
-      "Backend only accepts levels 1-5.",
-      "Level 6 will be automatically adjusted to level 5.",
-      "Do you want to proceed with this adjustment?"
-    ]);
-    setValidationType("warning");
-    setPendingBulkData(localRatedSkills);
-    setValidationDialogOpen(true);
-    return;
-  }
-
-  // Debug: check what we're about to send
-  debugBulkData(localRatedSkills);
-
-  // Run validation before submitting
-  const validation = validateSkillProficiencies(
-    localRatedSkills.map((skill) => ({
-      skill_id: skill.skill_id,
-      skill_name: skill.skill,
-      proficiency_level: Number(skill.skill_level?.match(/\d+/)?.[0] || 0),
-      category: skill.category,
-    }))
-  );
-
-  const messages = getValidationMessages(validation);
-
-  if (!validation.isValid) {
-    setValidationMessages(messages);
-    setValidationType("error");
-    setValidationDialogOpen(true);
-    return;
-  } else if (validation.warnings.length > 0) {
-    setValidationMessages(messages);
-    setValidationType("warning");
-    setPendingBulkData(localRatedSkills);
-    setValidationDialogOpen(true);
-    return;
-  }
-
-  await performBulkSave(localRatedSkills);
+const isSkillValid = (skill: any) => {
+  return !!skill?.skill_level;
 };
-const performBulkSave = async (skillsToSave: any[]): Promise<void> => {
-  setIsProcessing(true);
-  try {
-    // Process skills to ensure valid proficiency levels (1-5 only)
-    const processedSkills = skillsToSave.map((skill) => {
-      // Extract numeric level from skill_level string
-      let numericLevel = 1; // Default to 1
-      
-      if (skill.skill_level) {
-        const levelMatch = skill.skill_level.toString().match(/\d+/);
-        if (levelMatch) {
-          numericLevel = parseInt(levelMatch[0], 10);
-        }
-      }
-      
-      // FORCE level to be between 1-5 - if 6, make it 5
-      // This is required because backend validation only accepts 1-5
-      const validatedLevel = Math.max(1, Math.min(5, numericLevel));
-      
-      // Log if we're changing level 6 to 5
-      if (numericLevel > 5) {
-        console.warn(`Converting skill level ${numericLevel} to 5 for skill: ${skill.skill}`);
-      }
-      
-      return {
-        ...skill,
-        skill_level: validatedLevel, // Use validated numeric level (1-5 only)
-        knowledge: typeof skill.knowledge === 'string' ? JSON.parse(skill.knowledge) : (skill.knowledge || {}),
-        ability: typeof skill.ability === 'string' ? JSON.parse(skill.ability) : (skill.ability || {}),
-        behaviour: typeof skill.behaviour === 'string' ? JSON.parse(skill.behaviour) : (skill.behaviour || {}),
-        attitude: typeof skill.attitude === 'string' ? JSON.parse(skill.attitude) : (skill.attitude || {}),
-      };
-    });
+  // ✅ Bulk validation with dialog (called by Save All button)
+const validateAndSaveAllSkills = async (): Promise<void> => {
+  const validSkills = localRatedSkills.filter(isSkillValid);
 
-    console.log("Processed skills for bulk save (levels 1-5 only):", processedSkills);
-    
-    // Check if any skills had level 6 that we converted
-    const convertedSkills = skillsToSave.filter((skill, index) => {
-      const originalLevel = skill.skill_level?.toString().match(/\d+/)?.[0];
-      const processedLevel = processedSkills[index].skill_level;
-      return originalLevel && parseInt(originalLevel) > 5;
-    });
-
-    const bulkData = {
-      skills: processedSkills.map((skill) => ({
-        skill_id: skill.skill_id,
-        skill_level: skill.skill_level, // This is now guaranteed to be 1-5
-        knowledge: skill.knowledge,
-        ability: skill.ability,
-        behaviour: skill.behaviour,
-        attitude: skill.attitude,
-        user_id: clickedUser || 0,
-        sub_institute_id: sessionData.subInstituteId,
-      })),
-      user_id: clickedUser || 0,
-      sub_institute_id: sessionData.subInstituteId,
-    };
-
-    console.log("Final bulk data to send (ALL LEVELS 1-5):", bulkData);
-
-    const response = await fetch(`${sessionData.url}/skill-matrix/store-bulk`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${sessionData.token}`,
-      },
-      body: JSON.stringify(bulkData),
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      console.log("Bulk submission successful:", result);
-
-      // Clear local storage after successful bulk save
-      localStorage.removeItem(`ratedSkills_${clickedUser}`);
-      setLocalRatedSkills([]);
-
-      if (setUserRatedSkills && typeof setUserRatedSkills === 'function') {
-        setUserRatedSkills([]);
-      }
-
-      // Show appropriate success message
-      if (convertedSkills.length > 0) {
-        showInfo(
-          "Success ✅ (Levels Adjusted)", 
-          [
-            `All ${processedSkills.length} skills have been successfully saved!`,
-            `Note: ${convertedSkills.length} skills with level 6 were adjusted to level 5.`,
-            "Backend only accepts proficiency levels 1-5."
-          ],
-          "success"
-        );
-      } else {
-        showInfo(
-          "Success ✅", 
-          `All ${processedSkills.length} skills have been successfully saved!`,
-          "success"
-        );
-      }
-      
-    } else if (response.status === 422) {
-      const errorData = await response.json();
-      console.error("Validation error details:", errorData);
-      
-      // Extract specific error messages
-      const errorMessages = Object.values(errorData.errors || {})
-        .flat()
-        .map((msg: any) => `• ${msg}`);
-      
-      showInfo(
-        "Validation Failed", 
-        errorMessages.length > 0 ? errorMessages : ["Please check all skill levels are valid (1-5)"],
-        "error"
-      );
-    } else {
-      const errorText = await response.text();
-      console.error("Bulk submission failed:", response.status, errorText);
-      showInfo(
-        "Failed", 
-        `Server error (${response.status}): ${response.statusText}`,
-        "error"
-      );
-    }
-  } catch (error) {
-    console.error("Error in bulk submission:", error);
+  if (validSkills.length === 0) {
     showInfo(
-      "Error", 
-      `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      "Validation Error",
+      "Please rate at least one skill proficiency level before saving.",
       "error"
     );
-  } finally {
-    setIsProcessing(false);
-    setValidationDialogOpen(false);
-    setPendingBulkData(null);
+    return;
   }
+
+  // ❌ Find invalid skills
+  const invalidSkills = localRatedSkills.filter(
+    (skill) => !skill?.skill_level
+  );
+
+  if (invalidSkills.length > 0) {
+    showInfo(
+      "Incomplete Skills",
+      "Some skills are missing proficiency level. Please complete them before saving.",
+      "error"
+    );
+    return;
+  }
+
+  // ✅ Proceed ONLY with valid skills
+  await performBulkSave(validSkills);
 };
+
+  const performBulkSave = async (skillsToSave: any[]): Promise<void> => {
+    setIsProcessing(true);
+    try {
+      // Process skills to ensure valid proficiency levels (1-5 only)
+      const processedSkills = skillsToSave.map((skill) => {
+        // Extract numeric level from skill_level string
+        let numericLevel = 1; // Default to 1
+
+        if (skill.skill_level) {
+          const levelMatch = skill.skill_level.toString().match(/\d+/);
+          if (levelMatch) {
+            numericLevel = parseInt(levelMatch[0], 10);
+          }
+        }
+
+        // FORCE level to be between 1-5 - if 6, make it 5
+        // This is required because backend validation only accepts 1-5
+        const validatedLevel = Math.max(1, Math.min(5, numericLevel));
+
+        // Log if we're changing level 6 to 5
+        if (numericLevel > 5) {
+          console.warn(`Converting skill level ${numericLevel} to 5 for skill: ${skill.skill}`);
+        }
+
+        return {
+          ...skill,
+          skill_level: validatedLevel, // Use validated numeric level (1-5 only)
+          knowledge: typeof skill.knowledge === 'string' ? JSON.parse(skill.knowledge) : (skill.knowledge || {}),
+          ability: typeof skill.ability === 'string' ? JSON.parse(skill.ability) : (skill.ability || {}),
+          behaviour: typeof skill.behaviour === 'string' ? JSON.parse(skill.behaviour) : (skill.behaviour || {}),
+          attitude: typeof skill.attitude === 'string' ? JSON.parse(skill.attitude) : (skill.attitude || {}),
+        };
+      });
+
+      console.log("Processed skills for bulk save (levels 1-5 only):", processedSkills);
+
+      // Check if any skills had level 6 that we converted
+      const convertedSkills = skillsToSave.filter((skill, index) => {
+        const originalLevel = skill.skill_level?.toString().match(/\d+/)?.[0];
+        const processedLevel = processedSkills[index].skill_level;
+        return originalLevel && parseInt(originalLevel) > 5;
+      });
+
+      const bulkData = {
+        skills: processedSkills.map((skill) => ({
+          skill_id: skill.skill_id,
+          skill_level: skill.skill_level, // This is now guaranteed to be 1-5
+          knowledge: skill.knowledge || {},
+          ability: skill.ability || {},
+          behaviour: skill.behaviour || {},
+          attitude: skill.attitude || {},
+          user_id: clickedUser || 0,
+          sub_institute_id: sessionData.subInstituteId,
+        })),
+        user_id: clickedUser || 0,
+        sub_institute_id: sessionData.subInstituteId,
+      };
+
+      console.log("Final bulk data to send (ALL LEVELS 1-5):", bulkData);
+
+      const response = await fetch(`${sessionData.url}/skill-matrix/store-bulk`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.token}`,
+        },
+        body: JSON.stringify(bulkData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Bulk submission successful:", result);
+
+        // Clear local storage after successful bulk save
+        localStorage.removeItem(`ratedSkills_${clickedUser}`);
+        setLocalRatedSkills([]);
+
+        if (setUserRatedSkills && typeof setUserRatedSkills === 'function') {
+          setUserRatedSkills([]);
+        }
+
+        // Show appropriate success message
+        if (convertedSkills.length > 0) {
+          showInfo(
+            "Success ✅ (Levels Adjusted)",
+            [
+              `All ${processedSkills.length} skills have been successfully saved!`,
+              `Note: ${convertedSkills.length} skills with level 6 were adjusted to level 5.`,
+              "Backend only accepts proficiency levels 1-5."
+            ],
+            "success"
+          );
+        } else {
+          showInfo(
+            "Success ✅",
+            `All ${processedSkills.length} skills have been successfully saved!`,
+            "success"
+          );
+        }
+
+      } else if (response.status === 422) {
+        const errorData = await response.json();
+        console.error("Validation error details:", errorData);
+
+        // Extract specific error messages
+        const errorMessages = Object.values(errorData.errors || {})
+          .flat()
+          .map((msg: any) => `• ${msg}`);
+
+        showInfo(
+          "Validation Failed",
+          errorMessages.length > 0 ? errorMessages : ["Please check all skill levels are valid (1-5)"],
+          "error"
+        );
+      } else {
+        const errorText = await response.text();
+        console.error("Bulk submission failed:", response.status, errorText);
+        showInfo(
+          "Failed",
+          `Server error (${response.status}): ${response.statusText}`,
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Error in bulk submission:", error);
+      showInfo(
+        "Error",
+        `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        "error"
+      );
+    } finally {
+      setIsProcessing(false);
+      setValidationDialogOpen(false);
+      setPendingBulkData(null);
+    }
+  };
 
 
 
@@ -2106,7 +2126,7 @@ const performBulkSave = async (skillsToSave: any[]): Promise<void> => {
         <AdminSkillRating
           skills={skills}
           userRatedSkills={localRatedSkills}
-          setUserRatedSkills={setLocalRatedSkills}
+          parentSetUserRatedSkills={setLocalRatedSkills}
           SkillLevels={SkillLevels}
           userJobroleSkills={userJobroleSkills}
         />
@@ -2135,30 +2155,46 @@ const performBulkSave = async (skillsToSave: any[]): Promise<void> => {
 
             {/* Top Right Icons - Moved higher with negative top margin */}
             <div className="absolute -top-15 right-0 flex gap-5 z-10">
+              {/* Star Icon */}
               <span
-                className="star-box-icon mdi mdi-star-box-multiple-outline text-xl cursor-pointer p-2 full bg-yellow-100 text-yellow-600 shadow hover:bg-yellow-200 hover:text-yellow-700 transition-all rounded-md"
+                className="mdi mdi-star-box-multiple-outline text-xl cursor-pointer p-2 bg-yellow-100 text-yellow-600 shadow hover:bg-yellow-200 hover:text-yellow-700 transition-all rounded-md"
                 title="Star Box"
                 onClick={() => {
                   setViewPart("default");
                 }}
               ></span>
 
+              {/* Chart Icon */}
               <span
-                className="chart-bar-icon mdi mdi-chart-bar text-xl cursor-pointer p-2 full bg-blue-100 text-blue-600 shadow hover:bg-blue-200 hover:text-blue-700 transition-all rounded-md"
+                className="mdi mdi-chart-bar text-xl cursor-pointer p-2 bg-blue-100 text-blue-600 shadow hover:bg-blue-200 hover:text-blue-700 transition-all rounded-md"
                 title="Admin Skill Rating"
                 onClick={() => {
                   setViewPart("rated skill");
                 }}
               ></span>
+
+              {/* ✅ NEW ICON (Settings / Info) */}
+              <span
+                className="mdi mdi-cog-outline text-xl cursor-pointer p-2 bg-gray-100 text-gray-700 shadow hover:bg-gray-200 hover:text-gray-900 transition-all rounded-md"
+                title="Jobrole Skill Rating"
+                onClick={() => setViewPart("jobrole-skillrating")}
+              ></span>
             </div>
+
 
             {viewPart === "rated skill" ? (
               <AdminSkillRating
                 skills={skills}
                 userRatedSkills={localRatedSkills}
-                setUserRatedSkills={setLocalRatedSkills}
+                parentSetUserRatedSkills={setLocalRatedSkills}
                 SkillLevels={SkillLevels}
                 userJobroleSkills={userJobroleSkills}
+              />
+            ) : viewPart === "jobrole-skillrating" ? (
+              <JobroleSkillRatingDesign
+                subInstituteId={sessionData.subInstituteId}
+                jobroleId={3154} // TODO: Get actual jobrole id
+                jobroleTitle={userJobroleSkills[0]?.jobrole || "Community Care Associate"}
               />
             ) : (
               <div className="flex flex-col xl:flex-row gap-6 xl:gap-8">
@@ -2187,49 +2223,7 @@ const performBulkSave = async (skillsToSave: any[]): Promise<void> => {
                           key={index}
                           className="relative group cursor-pointer"
                           onClick={() => {
-                            // Save current skill data before switching
-                            if (selectedSkill) {
-                              const currentRatedSkill = {
-                                skill_id: selectedSkill.skill_id,
-                                skill_level: selectedSkillLevel,
-                                skill: selectedSkill.skill,
-                                knowledge: validationState.knowledge,
-                                ability: validationState.ability,
-                                behaviour: validationState.behaviour,
-                                attitude: validationState.attitude,
-                              };
-
-                              setLocalRatedSkills(prev => {
-                                const filtered = prev.filter(s => s.skill_id !== selectedSkill.skill_id);
-                                return [...filtered, currentRatedSkill];
-                              });
-                            }
-
-                            // Then switch to new skill
-                            setSelectedSkill(skill);
-                            setCurrentSkillIndex(index);
-
-                            // Load the new skill's data
-                            if (ratedSkill) {
-                              setSelectedLevelIndex(SkillLevels.findIndex(level =>
-                                level.proficiency_level === ratedSkill.skill_level
-                              ));
-                              setSelectedSkillLevel(ratedSkill.skill_level);
-                              setValidationState({
-                                knowledge: ratedSkill.knowledge || {},
-                                ability: ratedSkill.ability || {},
-                                behaviour: ratedSkill.behaviour || {},
-                                attitude: ratedSkill.attitude || {},
-                              });
-                              setShowDetails(true);
-                            } else {
-                              setSelectedLevelIndex(null);
-                              setSelectedSkillLevel("");
-                              setValidationState({
-                                knowledge: {}, ability: {}, behaviour: {}, attitude: {}
-                              });
-                              setShowDetails(false);
-                            }
+                            handleSkillSelect(skill, index);
                           }}
                         >
                           <div className={`h-[36px] flex items-center transition-all duration-300 ${skill.skill_id === selectedSkill?.skill_id
@@ -2358,7 +2352,7 @@ const performBulkSave = async (skillsToSave: any[]): Promise<void> => {
                         {/* Next Button - Hide when showDetails is true */}
                         {!showDetails && (
                           <button
-                            onClick={handleSubmit}
+                            onClick={() => handleSubmit()}
                             className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md"
                           >
                             Next →
@@ -2470,7 +2464,7 @@ const performBulkSave = async (skillsToSave: any[]): Promise<void> => {
                           <div className="mt-5 flex justify-end">
                             <button
                               className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-                              onClick={handleSubmit}
+                              onClick={() => handleSubmit()}
                               title={
                                 selectedLevelIndex === null
                                   ? "Please select a level first"
@@ -2579,25 +2573,27 @@ const performBulkSave = async (skillsToSave: any[]): Promise<void> => {
         </Dialog>
       </div>
 
-      {/* Bottom-right fixed actions: Clear, Save All, etc. */}
-      <div className="fixed bottom-6 right-6 flex gap-3 z-50">
-        <button
-          onClick={clearRatedSkills}
-          className="px-4 py-2 rounded-full bg-red-500 text-white shadow hover:bg-red-600"
-          title="Clear rated skills"
-        >
-          Clear Rated
-        </button>
+      {/* Bottom-right fixed actions: Clear, Save All, etc. - Only show in default view */}
+      {viewPart !== "jobrole-skillrating" && viewPart !== "rated skill" && (
+        <div className="fixed bottom-6 right-6 flex gap-3 z-50">
+          <button
+            onClick={clearRatedSkills}
+            className="px-4 py-2 rounded-full bg-red-500 text-white shadow hover:bg-red-600"
+            title="Clear rated skills"
+          >
+            Clear Rated
+          </button>
 
-       <button
-  onClick={validateAndSaveAllSkills}
-  className="px-4 py-2 rounded-full bg-green-600 text-white shadow hover:bg-green-700"
-  title="Validate & Save All"
-  disabled={isProcessing || localRatedSkills.length === 0}
->
-  {isProcessing ? "Processing..." : `Validate & Save All (${localRatedSkills.length})`}
-</button>
-      </div>
+          <button
+            onClick={validateAndSaveAllSkills}
+            className="px-4 py-2 rounded-full bg-green-600 text-white shadow hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Validate & Save All"
+            disabled={isProcessing || localRatedSkills.length === 0}
+          >
+            {isProcessing ? "Processing..." : `Validate & Save All (${localRatedSkills.length})`}
+          </button>
+        </div>
+      )}
 
       {/* Dialogs */}
       <ValidationDialog />

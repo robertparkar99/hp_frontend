@@ -905,6 +905,7 @@ interface RatedSkill {
 interface JobroleSkilladd1Props {
   skills: Skill[];
   userRatedSkills: RatedSkill[];
+  parentSetUserRatedSkills: React.Dispatch<React.SetStateAction<RatedSkill[]>>;
   SkillLevels: any[];
   userJobroleSkills: any[];
 }
@@ -1169,6 +1170,7 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
 export default function Page({
   skills: initialSkills,
   userRatedSkills: initialUserRatedSkills,
+  parentSetUserRatedSkills,
   SkillLevels,
   userJobroleSkills,
 }: JobroleSkilladd1Props) {
