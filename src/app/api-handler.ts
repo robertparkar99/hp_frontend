@@ -1016,16 +1016,18 @@ async function handleCreateJobDescriptionAction(
 ): Promise<ChatResponse> {
   // Basic extraction from the query. 
   //This could be replaced with a more sophisticated NLP entity extraction model.
-  const query = request.query.toLowerCase();
-  const industryMatch = query.match(/industry\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
-  const jobRoleMatch = query.match(/jobrole\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
-  const departmentMatch = query.match(/jobrole\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
-  const descriptionMatch = query.match(/description\s*[:\-]?\s*(.+)$/i)?.[1]?.trim();
+  const rawQuery = request.query;
+  const query = rawQuery.toLowerCase();
+  const industryMatch = rawQuery.match(/industry\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
+  const jobRoleMatch = rawQuery.match(/jobrole\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
+  const departmentMatch = rawQuery.match(/department\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
+  const descriptionMatch = rawQuery.match(/description\s*[:\-]?\s*(.+)$/i)?.[1]?.trim();
 
-  const industry = industryMatch ? industryMatch[1] : null;
-  const jobRole = jobRoleMatch ? jobRoleMatch[1] : null;
-  const department = departmentMatch ? departmentMatch[1] : null;
-  const description = descriptionMatch ? descriptionMatch[1] : null;
+  const industry = industryMatch ?? null;
+  const jobRole = jobRoleMatch ?? null;
+  const department = departmentMatch ?? null;
+  const description = descriptionMatch ?? null;
+
 
   const missingFields: string[] = [];
   if (!industry) missingFields.push('Industry');
