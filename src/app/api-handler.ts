@@ -1,18 +1,18 @@
 
 import { classifyIntent, shouldRouteToAction, shouldUseFallback } from "@/lib1/intent-classifier";
- import { sanitizeQuery, validateQuerySafety } from "@/lib1/sanitizer";
- import { parseError, formatErrorResponse, shouldRetry } from "@/lib1/error-handler";
- import { getRoleContext, canAccessData, getDataAccessFilter } from "@/lib1/role-context";
- import { logEvent, logQuery, logLLMCall, formatDebugTrace } from "@/lib1/observability";
- import {
-   createConversation,
-   getConversationBySessionId,
-   saveMessage,
-   getConversationHistory,
-   updateConversationStatus
- } from "@/lib1/conversation-persistence";
- import { createEscalation } from "@/lib1/escalation-service";
- import { v4 as uuidv4 } from 'uuid';
+import { sanitizeQuery, validateQuerySafety } from "@/lib1/sanitizer";
+import { parseError, formatErrorResponse, shouldRetry } from "@/lib1/error-handler";
+import { getRoleContext, canAccessData, getDataAccessFilter } from "@/lib1/role-context";
+import { logEvent, logQuery, logLLMCall, formatDebugTrace } from "@/lib1/observability";
+import {
+  createConversation,
+  getConversationBySessionId,
+  saveMessage,
+  getConversationHistory,
+  updateConversationStatus
+} from "@/lib1/conversation-persistence";
+import { createEscalation } from "@/lib1/escalation-service";
+import { v4 as uuidv4 } from 'uuid';
 
 interface ChatRequest {
   query: string;
@@ -57,13 +57,13 @@ interface ActionResponse {
 }
 
 interface CreateJobDescriptionAction {
-    type: 'CREATE_JOB_DESCRIPTION';
-    payload: {
-        industry: string;
-        jobRole: string;
-        department: string;
-        description: string;
-    };
+  type: 'CREATE_JOB_DESCRIPTION';
+  payload: {
+    industry: string;
+    jobRole: string;
+    department: string;
+    description: string;
+  };
 }
 
 let debugModeEnabled = false;
@@ -386,17 +386,17 @@ async function callHpApi(method: "GET" | "POST", url: string, params?: Record<st
     }
   };
 
- if (method === "POST") {
-  // If caller provides params.body, send it
-  if (params?.body) {
-    fetchOptions.body = JSON.stringify(params.body);
-  } else if (body) {
-    fetchOptions.body = JSON.stringify(body);
-  } else {
-    // send empty body if not provided
-    fetchOptions.body = JSON.stringify({});
+  if (method === "POST") {
+    // If caller provides params.body, send it
+    if (params?.body) {
+      fetchOptions.body = JSON.stringify(params.body);
+    } else if (body) {
+      fetchOptions.body = JSON.stringify(body);
+    } else {
+      // send empty body if not provided
+      fetchOptions.body = JSON.stringify({});
+    }
   }
-}
 
 
   const res = await fetch(finalUrl, fetchOptions);
@@ -527,16 +527,16 @@ async function executeSQLQuery(sql: string, originalQuery?: string): Promise<any
   const limit = fragments?.limit;
 
   // 2) If no table found in SQL, try to infer from original natural-language query
-// Additional fallback: Use alias map keys
-if (!table && originalQuery) {
-  const words = originalQuery.toLowerCase().split(/\s+/);
-  for (const w of words) {
-    if (tableAliasMap[w]) {
-      table = tableAliasMap[w];
-      break;
+  // Additional fallback: Use alias map keys
+  if (!table && originalQuery) {
+    const words = originalQuery.toLowerCase().split(/\s+/);
+    for (const w of words) {
+      if (tableAliasMap[w]) {
+        table = tableAliasMap[w];
+        break;
+      }
     }
   }
-}
 
 
   // 3) If still no table, but SQL contains only a WHERE (LLM might have returned "WHERE ...")
@@ -585,12 +585,12 @@ if (!table && originalQuery) {
     apiEntry = hpApiMap[table];
   }
   // Fallback match: remove "-" and "_" from both sides
-if (!apiEntry) {
-  const cleanedTable = table.toLowerCase().replace(/[-_]/g, "");
-  apiEntry = Object.entries(hpApiMap).find(([key]) =>
-    key.toLowerCase().replace(/[-_]/g, "") === cleanedTable
-  )?.[1];
-}
+  if (!apiEntry) {
+    const cleanedTable = table.toLowerCase().replace(/[-_]/g, "");
+    apiEntry = Object.entries(hpApiMap).find(([key]) =>
+      key.toLowerCase().replace(/[-_]/g, "") === cleanedTable
+    )?.[1];
+  }
 
 
   // known special table -> endpoint mapping
@@ -624,12 +624,12 @@ if (!apiEntry) {
     for (const [k, v] of Object.entries(filters)) {
       // API expects filters[key]=value
       if (Array.isArray(v)) {
-    v.forEach((val, idx) => {
-        params[`filters[${k}][${idx}]`] = val;
-    });
-} else {
-    params[`filters[${k}]`] = v;
-}
+        v.forEach((val, idx) => {
+          params[`filters[${k}][${idx}]`] = val;
+        });
+      } else {
+        params[`filters[${k}]`] = v;
+      }
 
     }
   } else {
@@ -683,7 +683,7 @@ if (!apiEntry) {
     // rethrow with additional context so upper layers know which URL failed
     throw new Error(`executeSQLQuery failed for table=${table}: ${(err as Error).message}`);
   }
-}     
+}
 
 // -------------------------
 // END REPLACEMENT: API LAYER
@@ -1017,10 +1017,10 @@ async function handleCreateJobDescriptionAction(
   // Basic extraction from the query. 
   //This could be replaced with a more sophisticated NLP entity extraction model.
   const query = request.query.toLowerCase();
-  const industryMatch = query.match(/industry: (\w+)/);
-  const jobRoleMatch = query.match(/jobrole: (\w+)/);
-  const departmentMatch = query.match(/department: (\w+)/);
-  const descriptionMatch = query.match(/description: (.*)/);
+  const industryMatch = query.match(/industry\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
+  const jobRoleMatch = query.match(/jobrole\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
+  const departmentMatch = query.match(/jobrole\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
+  const descriptionMatch = query.match(/description\s*[:\-]?\s*(.+)$/i)?.[1]?.trim();
 
   const industry = industryMatch ? industryMatch[1] : null;
   const jobRole = jobRoleMatch ? jobRoleMatch[1] : null;
