@@ -496,27 +496,6 @@ const LearningCatalog: React.FC = () => {
                     onEditCourse={handleEditCourse}
                     sessionInfo={sessionData}
                   />
-
-                  {/* Job Roles Section */}
-                  {jobRoles.length > 0 && (
-                    <div className="mt-8">
-                      <h2 className="text-2xl font-bold text-foreground mb-4">
-                        Job Roles
-                      </h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {jobRoles.map((role) => (
-                          <div key={role.id} className="bg-[#5E9DFF] text-white rounded-lg p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
-                            <h3 className="text-lg font-semibold mb-2 line-clamp-2">{role.jobrole || role.name}</h3>
-                            <p className="text-sm opacity-90 mb-3 line-clamp-3">{role.description}</p>
-                            <div className="text-xs opacity-75">
-                              <p>Dept: {role.department}</p>
-                              <p>Industry: {role.industries}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
