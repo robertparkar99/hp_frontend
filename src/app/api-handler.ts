@@ -56,6 +56,16 @@ interface ActionResponse {
   data: JobDescription;
 }
 
+interface CreateJobDescriptionAction {
+    type: 'CREATE_JOB_DESCRIPTION';
+    payload: {
+        industry: string;
+        jobRole: string;
+        department: string;
+        description: string;
+    };
+}
+
 let debugModeEnabled = false;
 
 function enableDebugMode() {
@@ -794,37 +804,7 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
     }
 
     if (intent.intent === 'CREATE_JOB_DESCRIPTION') {
-      try {
-        const jdResponse = await handleCreateJobDescription({
-          query: request.query,
-          userContext: { userId: anonymousId, role: request.role },
-          conversationId
-        });
-
-        console.log("🔥 JD RESPONSE:", jdResponse);
-
-        const answer = `Job Description created:\n\n**${jdResponse.data.job_title}**\n\nDepartment: ${jdResponse.data.department}\nExperience: ${jdResponse.data.experience_level}\n\nResponsibilities:\n${jdResponse.data.key_responsibilities.map((r: string) => `- ${r}`).join('\n')}\n\nRequired Skills:\n${jdResponse.data.required_skills.map((s: string) => `- ${s}`).join('\n')}\n\nPreferred Skills:\n${jdResponse.data.preferred_skills.map((s: string) => `- ${s}`).join('\n')}\n\nEducation: ${jdResponse.data.education}\nEmployment Type: ${jdResponse.data.employment_type}\nLocation: ${jdResponse.data.location}`;
-
-        await saveMessage(conversationId, 'bot', answer, intent.intent);
-
-        return {
-          answer,
-          conversationId,
-          intent: intent.intent,
-          canEscalate: true
-        };
-      } catch (error) {
-        const errorMessage = `Failed to create job description: ${(error as Error).message}`;
-        await saveMessage(conversationId, 'bot', errorMessage, intent.intent, undefined, undefined, true, (error as Error).message);
-        return {
-          answer: errorMessage,
-          conversationId,
-          intent: intent.intent,
-          error: 'JD_CREATION_FAILED',
-          recoverable: false,
-          canEscalate: true
-        };
-      }
+      return handleCreateJobDescriptionAction(request, { userId: anonymousId, role: request.role }, conversationId);
     }
 
     if (shouldRouteToAction(intent.intent)) {
@@ -1029,6 +1009,73 @@ async function ensureConversation(request: ChatRequest): Promise<string> {
   return newConv.id;
 }
 
+async function handleCreateJobDescriptionAction(
+  request: ChatRequest,
+  userContext: { userId: string; role: string | undefined },
+  conversationId: string
+): Promise<ChatResponse> {
+  // Basic extraction from the query. 
+  //This could be replaced with a more sophisticated NLP entity extraction model.
+  const query = request.query.toLowerCase();
+  const industryMatch = query.match(/industry: (\w+)/);
+  const jobRoleMatch = query.match(/jobrole: (\w+)/);
+  const departmentMatch = query.match(/department: (\w+)/);
+  const descriptionMatch = query.match(/description: (.*)/);
+
+  const industry = industryMatch ? industryMatch[1] : null;
+  const jobRole = jobRoleMatch ? jobRoleMatch[1] : null;
+  const department = departmentMatch ? departmentMatch[1] : null;
+  const description = descriptionMatch ? descriptionMatch[1] : null;
+
+  const missingFields: string[] = [];
+  if (!industry) missingFields.push('Industry');
+  if (!jobRole) missingFields.push('Jobrole');
+  if (!department) missingFields.push('Department');
+  if (!description) missingFields.push('Description');
+
+  if (missingFields.length > 0) {
+    const answer = `Please provide the following missing information: ${missingFields.join(', ')}.`;
+    await saveMessage(conversationId, 'bot', answer, 'CREATE_JOB_DESCRIPTION');
+    return {
+      answer,
+      conversationId,
+      intent: 'CREATE_JOB_DESCRIPTION',
+      recoverable: true,
+      suggestion: 'Please provide the missing details to proceed.',
+    };
+  }
+
+  try {
+    const jdResponse = await handleCreateJobDescription({
+      query: `Industry: ${industry}, Jobrole: ${jobRole}, Department: ${department}, Description: ${description}`,
+      userContext,
+      conversationId,
+    });
+
+    const answer = `Job Description created:\n\n**${jdResponse.data.job_title}**\n\nDepartment: ${jdResponse.data.department}\nExperience: ${jdResponse.data.experience_level}\n\nResponsibilities:\n${jdResponse.data.key_responsibilities.map((r: string) => `- ${r}`).join('\n')}\n\nRequired Skills:\n${jdResponse.data.required_skills.map((s: string) => `- ${s}`).join('\n')}\n\nPreferred Skills:\n${jdResponse.data.preferred_skills.map((s: string) => `- ${s}`).join('\n')}\n\nEducation: ${jdResponse.data.education}\nEmployment Type: ${jdResponse.data.employment_type}\nLocation: ${jdResponse.data.location}`;
+
+    await saveMessage(conversationId, 'bot', answer, 'CREATE_JOB_DESCRIPTION');
+
+    return {
+      answer,
+      conversationId,
+      intent: 'CREATE_JOB_DESCRIPTION',
+      canEscalate: true,
+    };
+  } catch (error) {
+    const errorMessage = `Failed to create job description: ${(error as Error).message}`;
+    await saveMessage(conversationId, 'bot', errorMessage, 'CREATE_JOB_DESCRIPTION', undefined, undefined, true, (error as Error).message);
+    return {
+      answer: errorMessage,
+      conversationId,
+      intent: 'CREATE_JOB_DESCRIPTION',
+      error: 'JD_CREATION_FAILED',
+      recoverable: false,
+      canEscalate: true,
+    };
+  }
+}
+
 export async function handleCreateJobDescription({ query, userContext, conversationId }: { query: string; userContext: any; conversationId: string }): Promise<ActionResponse> {
   // Save user message for auditability
   await saveMessage(conversationId, 'user', query, 'job_description_generation');
@@ -1046,8 +1093,6 @@ You are an HR and Talent Development expert.
 Create a professional Job Description based on the user input.
 
 User Request: "${query}"
-Important Note : There should be mandatorily values of Industry,department ,jobrole and description in the User Request, 
-Action : If Important Note is not followed then return please fill the missout thing which are not in the user request.
 
 the output should be in JSON format only, without any additional text.
 Return output in JSON with the following structure:
