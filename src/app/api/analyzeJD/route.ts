@@ -1,40 +1,14 @@
 /**
  * API Route: /api/analyzeJD
  * Analyzes job descriptions using GPT and maps to Singapore Competency Framework
- * Input: { jd: string }
+ * Input: { jd: string, sessionData: { url: string, token: string, subInstituteId: string, orgType: string, userId: string } }
  * Output: { core_skills, behavioral_traits, competency_level, mapped_competencies }
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { useEffect, useState } from "react";
-
- const [sessionData, setSessionData] = useState({
-    url: "",
-    token: "",
-    subInstituteId: "",
-    orgType: "",
-    userId: "",
-  });
-
-  // ✅ Load session data
-  useEffect(() => {
-    const userData = localStorage.getItem("userData");
-    if (userData) {
-      const { APP_URL, token, sub_institute_id, org_type, user_id } =
-        JSON.parse(userData);
-      setSessionData({
-        url: APP_URL,
-        token,
-        subInstituteId: sub_institute_id,
-        orgType: org_type,
-        userId: user_id,
-      });
-    }
-  }, []);
 
 const DEEPSEEK_API_KEY = process.env.SCREENING_DEEPSEEK_API_KEY;
 const API_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
-const ICF_API = `${sessionData.url}/getSkillCompetency?sub_institute_id=${sessionData.subInstituteId}`;
 
 interface ICFCompetency {
   skill_name?: string;
@@ -42,15 +16,19 @@ interface ICFCompetency {
   proficiency_level?: string;
 }
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(req: NextRequest) {
   try {
-    const { jd } = await req.json();
+    const { jd, sessionData } = await req.json();
 
     if (!jd || typeof jd !== 'string') {
       return NextResponse.json({ error: 'Invalid job description' }, { status: 400 });
     }
+
+    if (!sessionData || !sessionData.url || !sessionData.subInstituteId) {
+      return NextResponse.json({ error: 'Missing session data' }, { status: 400 });
+    }
+
+    const ICF_API = `${sessionData.url}/getSkillCompetency?sub_institute_id=${sessionData.subInstituteId}`;
 
     const gptPrompt = `Analyze this job description and extract:
     1. Core technical skills (list 5-8 specific skills)
