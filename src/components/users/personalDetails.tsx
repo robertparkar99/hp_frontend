@@ -99,54 +99,50 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeSection, setActiveSection] = useState<TabId>("personal");
   const [toggleState, setToggleState] = useState(false);
-  const [filteredJobroles, setFilteredJobroles] = useState<any[]>([]);
 
   // Check if user can edit department and jobrole
   const isReadOnly = sessionData?.userProfile?.toLowerCase() !== "admin";
-  
+
   // Collect all jobroles from all departments
   const allJobroles = fullJobroleData ? Object.values(fullJobroleData).flat().map((r: any) =>
     typeof r === "string" ? { id: r, jobrole: r } : r
   ) : [];
 
-  // ensure we have a safe reference to fullJobroleData from props
-  // Update this useEffect to work with department IDs
-useEffect(() => {
-  if (!fullJobroleData) {
-    setFilteredJobroles([]);
-    return;
-  }
-
-  const selectedDeptId = formData.personal.department;
-
-  if (!selectedDeptId) {
-    setFilteredJobroles([]);
-    return;
-  }
-
-  // STEP 1: find department_name from API using department_id
-  let departmentName = "";
-  
-  Object.keys(fullJobroleData).forEach((deptName) => {
-    const first = fullJobroleData[deptName][0];
-    if (first.department_id == selectedDeptId) {
-      departmentName = deptName;
+  // Compute filtered jobroles based on selected department
+  const filteredJobroles = useMemo(() => {
+    if (!fullJobroleData) {
+      return [];
     }
-  });
 
-  // STEP 2: get job roles for that department
-  if (departmentName && fullJobroleData[departmentName]) {
-    const roles = fullJobroleData[departmentName];
+    const selectedDeptId = formData.personal.department;
 
-    const normalized = roles.map((r: any) =>
-      typeof r === "string" ? { id: r, jobrole: r } : r
-    );
+    if (!selectedDeptId) {
+      return [];
+    }
 
-    setFilteredJobroles(normalized);
-  } else {
-    setFilteredJobroles([]);
-  }
-}, [formData.personal.department, fullJobroleData]);
+    // STEP 1: find department_name from API using department_id
+    let departmentName = "";
+
+    Object.keys(fullJobroleData).forEach((deptName) => {
+      const first = fullJobroleData[deptName][0];
+      if (first.department_id == selectedDeptId) {
+        departmentName = deptName;
+      }
+    });
+
+    // STEP 2: get job roles for that department
+    if (departmentName && fullJobroleData[departmentName]) {
+      const roles = fullJobroleData[departmentName];
+
+      const normalized = roles.map((r: any) =>
+        typeof r === "string" ? { id: r, jobrole: r } : r
+      );
+
+      return normalized;
+    } else {
+      return [];
+    }
+  }, [formData.personal.department, fullJobroleData]);
 
 
   
@@ -475,7 +471,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             </div>
 
             {/* Content Sections */}
-            <div className="content-area w-full ml-10">
+            <div className="content-area w-full ml-10 bg-white rounded-lg">
               {/* Form Content */}
               <div className="form-content">
                 <h2 className="section-title">
