@@ -1028,7 +1028,9 @@ async function handleCreateJobDescriptionAction(
   const department = departmentMatch ?? null;
   const description = descriptionMatch ?? null;
 
-
+  // if (!industry || !jobRole || !department || !description) {
+  //   throw new Error('Unreachable: validation failed');
+  // }
   const missingFields: string[] = [];
   if (!industry) missingFields.push('Industry');
   if (!jobRole) missingFields.push('Jobrole');
@@ -1046,10 +1048,16 @@ async function handleCreateJobDescriptionAction(
       suggestion: 'Please provide the missing details to proceed.',
     };
   }
-
+  const safeIndustry = industry!;
+  const safeJobRole = jobRole!;
+  const safeDepartment = department!;
+  const safeDescription = description!;
   try {
     const jdResponse = await handleCreateJobDescription({
-      query: `Industry: ${industry}, Jobrole: ${jobRole}, Department: ${department}, Description: ${description}`,
+      industry: safeIndustry,
+      jobRole: safeJobRole,
+      department: safeDepartment,
+      description: safeDescription,
       userContext,
       conversationId,
     });
@@ -1078,8 +1086,22 @@ async function handleCreateJobDescriptionAction(
   }
 }
 
-export async function handleCreateJobDescription({ query, userContext, conversationId }: { query: string; userContext: any; conversationId: string }): Promise<ActionResponse> {
+export async function handleCreateJobDescription({ industry,
+  department,
+  jobRole,
+  description,
+  userContext,
+  conversationId
+}: {
+  industry: string;
+  department: string;
+  jobRole: string;
+  description: string;
+  userContext: any;
+  conversationId: string;
+}): Promise<ActionResponse> {
   // Save user message for auditability
+  const query = `Create a job description for ${jobRole} in ${department} of ${industry} with the following description: ${description}`;
   await saveMessage(conversationId, 'user', query, 'job_description_generation');
 
   // Permission check (mandatory)
@@ -1092,9 +1114,12 @@ export async function handleCreateJobDescription({ query, userContext, conversat
 
 You are an HR and Talent Development expert.
 
-Create a professional Job Description based on the user input.
+Create a professional Job Description.
 
-User Request: "${query}"
+Industry: ${industry}
+Department: ${department}
+Job Role: ${jobRole}
+Context: ${description}
 
 the output should be in JSON format only, without any additional text.
 Return output in JSON with the following structure:
