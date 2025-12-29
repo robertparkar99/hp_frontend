@@ -28,94 +28,125 @@ export async function POST(req: Request) {
     console.log("Total Marks:", totalMarks);
 
 
-    const prompt = `Your task is to generate  ${questionCount}high-quality, job-relevant hiring
-    assessment questions using the structured job context, structured domain context, mapping requirements, question generation rules provided.
-    ========================
-    JOB CONTEXT
-    ========================
-    Industry: ${jobData.jobRole.industries}
-    Department: ${jobData.jobRole.department}
-    Job Role: ${jobData.jobRole.jobrole}
+    const prompt = `Your task is to generate ${questionCount} high-quality, job-relevant hiring
+assessment questions using the structured job context, structured domain context,
+mapping requirements, and mandatory assessment rules provided below.
 
+========================
+JOB CONTEXT
+========================
+Industry: ${jobData.jobRole.industries}
+Department: ${jobData.jobRole.department}
+Job Role: ${jobData.jobRole.jobrole}
 
-    Role Description:
-    ${jobData.jobRole.description}
+Role Description:
+${jobData.jobRole.description}
 
+========================
+STRUCTURED DOMAIN CONTEXT (GROUNDING ONLY)
+========================
+Use the following datasets strictly as grounding context.
+Do NOT invent skills, tasks, knowledge, abilities, attitudes, or behaviours
+beyond what is explicitly provided.
 
-    ========================
-    STRUCTURED DOMAIN CONTEXT
-    ========================
-    Use the following datasets strictly as grounding context.
-    Do NOT invent skills, tasks, knowledge, abilities, attitudes, or behaviours beyond what is provided.
+SKILLS DATA (SkillName, description, proficiency_level):
+${JSON.stringify(skillsData, null, 2)}
 
+TASKS DATA (critical work functions & taskName):
+${JSON.stringify(tasksData, null, 2)}
 
-    SKILLS DATA (SkillName, description, proficiency_level):
-    ${JSON.stringify(skillsData, null, 2)}
+KNOWLEDGE ITEMS (title, description):
+${JSON.stringify(knowledgeItems, null, 2)}
 
+ABILITY ITEMS (title, description):
+${JSON.stringify(abilityItems, null, 2)}
 
-    TASKS DATA (critical work functions & taskName):
-    ${JSON.stringify(tasksData, null, 2)}
+ATTITUDE ITEMS (title, description):
+${JSON.stringify(attitudeItems, null, 2)}
 
+BEHAVIOUR ITEMS (title, description):
+${JSON.stringify(behaviourItems, null, 2)}
 
-    KNOWLEDGE ITEMS (title, description):
-    ${JSON.stringify(knowledgeItems, null, 2)}
+========================
+MANDATORY COVERAGE RULES
+========================
+Across all generated questions, coverage MUST include:
 
+• Tasks: observable work execution or decision-making  
+• Skills: applied capability or technique  
+• Knowledge: factual or conceptual understanding  
+• Abilities: underlying capacity (analysis, judgment, problem-solving)  
+• Attitudes: values, mindset, or disposition  
+• Behaviours: observable actions or patterns over time  
 
-    ABILITY ITEMS (title, description):
-    ${JSON.stringify(abilityItems, null, 2)}
+Each question MUST:
+1. Target exactly ONE primary domain category
+   (Task | Skill | Knowledge | Ability | Attitude | Behaviour)
+2. Be clearly assessable in a hiring context
+3. Be grounded in exactly ONE specific item from the provided datasets
+4. Avoid testing multiple domains in a single question
 
+========================
+ANSWER OPTION QUALITY RULES
+========================
+• Correct answers MUST NOT be identifiable solely by being more specific,
+  more technical, longer, or more detailed than the distractors.
+• All answer options must be plausible, comparable in length and specificity,
+  and aligned to the same domain and difficulty level.
+• Distractors must represent realistic but incorrect reasoning,
+  not obviously wrong or irrelevant choices.
+• If one option stands out due to uniqueness or excessive detail,
+  regenerate the answer set until options are balanced.
 
-    ATTITUDE ITEMS (title, description):
-    ${JSON.stringify(attitudeItems, null, 2)}
+========================
+MAPPING REQUIREMENTS
+========================
+Each requirement set defines WHAT to assess, WHY it is assessed,
+HOW MANY questions to generate, and WHICH domain category it belongs to.
 
+${mappings?.map((m: any, i: number) => `
+REQUIREMENT SET ${i + 1}:
+  - Mapping Type: ${m.typeName}
+  - Target Value: ${m.valueName}
+  - Domain Category (Task | Skill | Knowledge | Ability | Attitude | Behaviour): ${m.domainCategory}
+  - Reason: ${m.reason}
+  - Questions Required: ${m.questionCount}
+  - Total Marks: ${m.marks}
 
-    BEHAVIOUR ITEMS (title, description):
-    ${JSON.stringify(behaviourItems, null, 2)}
+For this set:
+• All questions MUST assess the specified Domain Category
+• Each question must operationalize the Target Value
+• Content must be appropriate for the specified Job Role
+• sourceItem.dataset = "${m.domainCategory.toUpperCase()} ITEMS"
+• sourceItem.title = the title of the specific item from the dataset used for the question
+`).join("\n")}
 
-
-    ========================
-    MAPPING REQUIREMENTS
-    ========================
-    Each requirement set defines WHAT to assess, WHY it is assessed, and HOW MANY questions to generate.
-
-
-    ${mappings?.map((m: any, i: number) => `
-    REQUIREMENT SET ${i + 1}:
-        - Mapping Type: ${m.typeName}
-        - Target Value: ${m.valueName}
-        - Reason: ${m.reason}
-        - Questions Required: ${m.questionCount}
-        - Total Marks: ${m.marks}
-
-
-    For this set:
-    • Questions must clearly demonstrate the Target Value
-    • Content must be appropriate for the specified Job Role
-    `).join("\\n")}
-
-    ========================
-    OUTPUT FORMAT (JSON ONLY)
-    ========================
+========================
+OUTPUT FORMAT (JSON ONLY)
+========================
+{
+  "questions": [
     {
-      "questions": [
-        {
-          "id": 1,
-          "question_title": "Job-specific, scenario-based question text",
-          "answers": [
-        { "answer": "PHP Framework", "correct_answer": 1 },
-        { "answer": "Database", "correct_answer": 0 },
-        { "answer": "Operating System", "correct_answer": 0 },
-        { "answer": "RAM", "correct_answer": 0 }
-       ],
-          "mappingType": "${mappings[0]?.typeName}",
-          "mappingValue": "${mappings[0]?.valueName}",
-          "marks": ${mappings[0]?.marks},
-          "reason": "Explanation grounded in the provided job context"
-        }
-      ]
-      }
+      "id": 1,
+      "domainCategory": "Behaviour",
+      "sourceItem": {
+        "dataset": "BEHAVIOUR ITEMS",
+        "title": "Conflict Resolution"
+      },
+      "question_title": "Job-specific, scenario-based question text",
+      "answers": [
+        { "answer": "Plausible option A", "correct_answer": 0 },
+        { "answer": "Plausible option B", "correct_answer": 1 },
+        { "answer": "Plausible option C", "correct_answer": 0 },
+        { "answer": "Plausible option D", "correct_answer": 0 }
+      ],
+      "mappingType": "${mappings[0]?.typeName}",
+      "mappingValue": "${mappings[0]?.valueName}",
+      "marks": ${mappings[0]?.marks},
+      "reason": "Explanation explicitly linking the question to the selected dataset item, domain category, and job context"
     }
-    `;
+  ]
+}`;
 
 
     const response = await fetch(
