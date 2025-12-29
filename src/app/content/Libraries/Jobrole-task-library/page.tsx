@@ -558,16 +558,16 @@ const CriticalWorkFunctionGrid = () => {
                 onClick={() => {
                   setShowRadioButtons((prev) => !prev);
 
-                  // Optional: reset selection when hiding radios
+                  // Reset selection when hiding radios
                   if (showRadioButtons) {
                     setSelectedRadio(null);
                     setConfigJsonObject(null);
                   }
                 }}
-                className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:rounded-md transition-colors"
                 title="AI Generate"
               >
-                <Sparkles className="w-5 h-5 text-gray-600" />
+                {showRadioButtons ? "Hide selection" : "Generate with AI"}
               </button>
 
               {/* Consolidated Actions Dropdown */}
