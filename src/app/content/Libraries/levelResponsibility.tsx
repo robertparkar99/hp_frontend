@@ -135,69 +135,56 @@ const LevelResponsibility = () => {
         </div>
       </div>
 
-      {/* DESCRIPTION SECTION */}
-      {activeSection === 'description' && activeData && (
-        <div className="flex justify-center items-start gap-8 mt-6 flex-wrap">
-          {/* Description Card */}
-          <div
-            className="border-2 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
-            style={{
-              width: "500px",
-              height: "300px",
-              background: "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
-            }}
-          >
-            <h3 className="text-[#0043CE] text-[24px] font-bold mb-2 opacity-80">
-              Description
-            </h3>
-            <hr className="border border-gray-400 mb-4" />
-            {/* Scrollable area */}
-            <div
-              style={{
-                width: "450px",
-                height: "150px",
-                overflowY: "auto",
-                paddingRight: "8px",
-              }}
-            >
-              <p className="text-black text-[15px] whitespace-pre-line">
-                {activeData.essence_level}
-              </p>
-            </div>
-          </div>
+      
+  {/* DESCRIPTION SECTION */}
+{activeSection === 'description' && activeData && (
+  <div className="w-full max-w-6xl mx-auto mt-6 px-4">
+    <div className="grid grid-cols-2 gap-8">
+      
+      {/* Description Card */}
+      <div
+        className="relative w-full h-[300px] rounded-2xl border-2 border-[#94BEFF] shadow-sm
+                   transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+        }}
+      >
+        <h3 className="mt-6 ml-5 text-[#0043CE] text-[24px] font-bold opacity-80">
+          Description
+        </h3>
 
-          {/* Guidance Notes Card */}
-          <div
-            className="border-2 border-[#94BEFF] rounded-2xl p-6 shadow-sm bg-white transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
-            style={{
-              width: "500px",
-              height: "300px",
-              textAlign: 'justify',
-              background: "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
-            }}
-          >
-            <h3 className="text-[#0043CE] text-[24px] font-bold mb-2 opacity-80">
-              Guidance Notes
-            </h3>
-            <hr className="border border-gray-400 mb-4" />
-            {/* Scrollable area */}
-            <div
-              style={{
-                width: "450px",
-                height: "150px",
-                overflowY: "auto",
-                paddingRight: "8px",
-              }}
-              className="hide-scrollbar"
-            >
-              <p className="text-black text-[15px] whitespace-pre-line">
-                {cleanText(activeData.attribute_guidance_notes)}
+        <hr className="mx-5 my-3 border border-gray-400" />
 
-              </p>
-            </div>
-          </div>
+        <div className="mx-5 h-[150px] overflow-y-auto pr-2 text-[15px] whitespace-pre-line hide-scrollbar">
+          {cleanText(activeData.essence_level)}
         </div>
-      )}
+      </div>
+
+      {/* Guidance Notes Card */}
+      <div
+        className="relative w-full h-[300px] rounded-2xl border-2 border-[#94BEFF] shadow-sm
+                   transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+        }}
+      >
+        <h3 className="mt-6 ml-5 text-[#0043CE] text-[24px] font-bold opacity-80">
+          Guidance Notes
+        </h3>
+
+        <hr className="mx-5 my-3 border border-gray-400" />
+
+        <div className="mx-5 h-[150px] overflow-y-auto pr-2 text-[15px] whitespace-pre-line hide-scrollbar">
+          {cleanText(activeData.attribute_guidance_notes)}
+        </div>
+      </div>
+
+    </div>
+  </div>
+)}
+
 
       {/* RESPONSIBILITY ATTRIBUTES SECTION */}
       {activeSection === 'responsibility' && levelAttributes?.Attributes && (

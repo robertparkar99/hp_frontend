@@ -159,6 +159,8 @@ const EmployeeDirectory = () => {
       const matchesSearch =
         searchTerm === '' ||
         employee.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.department_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.jobRole.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (employee.skills || []).some((skill) =>
           skill.name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -341,14 +343,16 @@ const EmployeeDirectory = () => {
               Search, filter, and manage workforce information efficiently
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="justify-start"
-            onClick={() => setIsAddUserModalOpen(true)}
-          >
-            Add Employee
-          </Button>
+          {sessionData.user_profile_name !== 'Employee' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              onClick={() => setIsAddUserModalOpen(true)}
+            >
+              Add Employee
+            </Button>
+          )}
         </div>
       </div>
 

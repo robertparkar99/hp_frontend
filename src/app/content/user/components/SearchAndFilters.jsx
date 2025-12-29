@@ -259,7 +259,7 @@ const SearchAndFilters = ({
       <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0">
         <Input
           type="search"
-          placeholder="Search employees by name, email, or skills..."
+          placeholder="Search employees by Name, Department, Job Role, Email, Skills..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           className="flex-1"
