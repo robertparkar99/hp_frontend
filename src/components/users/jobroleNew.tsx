@@ -333,10 +333,11 @@ export default function Index({ onBack, knowledge, ability, behaviour, attitude,
                 <div className="max-w-screen-xl mx-auto overflow-y-auto hide-scrollbar">
                     <button
                         onClick={onBack}
-                        className="mb-4 text-blue-500 hover:text-blue-700 hover:cursor-pointer"
+                        className="mt-6 mb-6 text-blue-500 hover:text-blue-700 hover:cursor-pointer"
                     >
                         ← Back to Skills
-                    </button>
+                    </button>   
+
                     <div className="flex gap-4">
                         {/* Sidebar */}
                         <div className="w-[200px] flex-shrink-0">
