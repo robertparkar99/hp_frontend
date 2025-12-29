@@ -533,6 +533,71 @@ const CandidatePortal = () => {
     return true;
   };
 
+
+  const buildResumeJSONText = (formData: ApplicationFormData) => {
+    return `
+Candidate Name: ${formData.first_name} ${formData.last_name}
+Email: ${formData.email}
+Mobile: ${formData.mobile}
+Location: ${formData.current_location}
+
+Experience:
+${formData.experience}
+
+Education:
+${formData.education}
+
+Skills:
+${formData.skills}
+
+Certifications:
+${formData.certifications || "Not provided"}
+
+Current Company:
+${formData.current_company || "Not provided"}
+
+Current Role:
+${formData.current_role || "Not provided"}
+  `.trim();
+  };
+
+  const buildJDData = (job: JobPosting) => ({
+    core_skills: job.skills
+      ? job.skills.split(",").map(s => s.trim())
+      : [],
+
+    behavioral_traits: [
+      "Problem Solving",
+      "Teamwork",
+      "Communication"
+    ],
+
+    competency_level: job.skills
+      ? job.skills.split(",").reduce((acc: any, skill) => {
+        acc[skill.trim()] = "Intermediate";
+        return acc;
+      }, {})
+      : {}
+  });
+
+  const screenCandidate = async (payload: any) => {
+    const response = await fetch("/api/screenCandidate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error("ScreenCandidate API failed");
+    }
+
+    return response.json();
+  };
+
+
+
   // FIXED: handleSubmit function using FormData to send file properly
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -635,6 +700,32 @@ const CandidatePortal = () => {
         if (result.status !== 0 || result.message?.includes('successfully') || result.success) {
           const successMessage = `✅ Application submitted successfully for ${selectedJob.title}!`;
           alert(successMessage);
+
+          // ===============================
+          // AI SCREENING (JSON ONLY)
+          // ===============================
+          try {
+            const screeningPayload = {
+              resume: buildResumeJSONText(formData),
+              jdData: buildJDData(selectedJob),
+              candidateEmail: formData.email,
+              candidateName: `${formData.first_name} ${formData.last_name}`
+            };
+
+            const screeningResult = await screenCandidate(screeningPayload);
+
+            console.log("🧠 Screening Result:", screeningResult);
+
+            alert(
+              `AI Recommendation: ${screeningResult.recommendation}
+Fit Score: ${screeningResult.competency_match}%
+Cultural Fit: ${screeningResult.cultural_fit}`
+            );
+
+          } catch (error) {
+            console.warn("⚠️ Screening failed but application saved", error);
+          }
+
           setIsDialogOpen(false);
 
           // Reset form
@@ -674,6 +765,9 @@ const CandidatePortal = () => {
       setIsSubmitting(false);
     }
   };
+
+
+
 
   if (loading) {
     return (

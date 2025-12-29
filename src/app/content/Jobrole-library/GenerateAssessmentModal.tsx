@@ -28,6 +28,9 @@ interface Question {
   mappingType?: string;
   mappingValue?: string;
   reason?: string;
+  domainCategory?: string;
+  sourceItem?: { dataset: string; title: string };
+  marks?: number;
 }
 
 /* --------------------------------
@@ -42,7 +45,7 @@ export default function GenerateAssessmentModal({
   const [currentStep, setCurrentStep] = useState(0);
 
   const [questionCount, setQuestionCount] = useState<number>(0);
-  const [mappings, setMappings] = useState<{ typeId: number; typeName: string; valueId: number; valueName: string; reason: string; questionCount: number; marks: number }[]>([{ typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 1 }]);
+  const [mappings, setMappings] = useState<{ typeId: number; typeName: string; valueId: number; valueName: string; reason: string; questionCount: number; marks: number; domainCategory: string }[]>([{ typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 1, domainCategory: "" }]);
   const [mappingTypes, setMappingTypes] = useState<{ id: number; name: string }[]>([]);
   const [mappingValuesMap, setMappingValuesMap] = useState<{ [key: number]: { id: number; name: string }[] }>({});
   const [timeLimit, setTimeLimit] = useState<boolean>(false);
@@ -176,6 +179,16 @@ export default function GenerateAssessmentModal({
 
   const isStep1Invalid = !assessmentName || !assessmentDescription || totalMarks === 0 || questionCount === 0;
 
+  const getDomainCategory = (typeName: string): string => {
+    const lower = typeName.toLowerCase();
+    if (lower.includes('behaviour')) return 'Behaviour';
+    if (lower.includes('attitude')) return 'Attitude';
+    if (lower.includes('ability')) return 'Ability';
+    if (lower.includes('knowledge')) return 'Knowledge';
+    if (lower.includes('skill')) return 'Skill';
+    if (lower.includes('task')) return 'Task';
+    return '';
+  };
 
   const toggleQuestion = (id: number) => {
     setExpandedQuestions(prev =>
@@ -217,7 +230,7 @@ export default function GenerateAssessmentModal({
   };
 
   const addMapping = () => {
-    setMappings(prev => [...prev, { typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 1 }]);
+    setMappings(prev => [...prev, { typeId: 0, typeName: "", valueId: 0, valueName: "", reason: "", questionCount: 15, marks: 1, domainCategory: "" }]);
   };
 
   const updateMapping = (index: number, field: string, value: string | number) => {
@@ -231,7 +244,8 @@ export default function GenerateAssessmentModal({
             fetchMappingReason(value as number).then(reason => {
               setMappings(prev => prev.map((m, i) => i === index ? { ...m, reason } : m));
             });
-            return { ...mapping, typeId: value as number, typeName: selectedType.name, valueId: 0, valueName: "", reason: "" };
+            const domainCat = getDomainCategory(selectedType.name);
+            return { ...mapping, typeId: value as number, typeName: selectedType.name, valueId: 0, valueName: "", reason: "", domainCategory: domainCat };
           }
         } else if (field === 'valueId') {
           const selectedValue = (mappingValuesMap[mapping.typeId] || []).find(v => v.id === value);
@@ -395,6 +409,12 @@ export default function GenerateAssessmentModal({
             answer: a.answer,
             correct_answer: Number(a.correct_answer),
           })),
+          domainCategory: q.domainCategory,
+          sourceItem: q.sourceItem,
+          mappingType: q.mappingType,
+          mappingValue: q.mappingValue,
+          marks: q.marks,
+          reason: q.reason,
         };
 
         const res = await fetch(
@@ -561,15 +581,16 @@ export default function GenerateAssessmentModal({
                 <div className="space-y-4">
                   {mappings.map((mapping, index) => (
                     <div key={index} className="space-y-2">
-                      <div className="grid grid-cols-7 gap-4 text-sm font-medium text-gray-700">
+                      <div className="grid grid-cols-8 gap-4 text-sm font-medium text-gray-700">
                         <span>Mapping Type</span>
                         <span>Mapping Value</span>
                         <span className="col-span-2">Reason</span>
+                        {/* <span>Domain Category</span> */}
                         <span>Questions</span>
                         <span>Marks</span>
                         <span></span>
                       </div>
-                      <div className="grid grid-cols-7 gap-4 items-center">
+                      <div className="grid grid-cols-8 gap-4 items-center">
                         <select
                           value={mapping.typeId}
                           onChange={(e) => updateMapping(index, 'typeId', Number(e.target.value))}
@@ -597,6 +618,12 @@ export default function GenerateAssessmentModal({
                           rows={2}
                           className="col-span-2 p-2 border border-gray-200 rounded-md bg-gray-50 focus:outline-none"
                         />
+                        {/* <input
+                          value={mapping.domainCategory}
+                          readOnly
+                          placeholder="Domain Category"
+                          className="p-2 border border-gray-200 rounded-md bg-gray-50 focus:outline-none"
+                        /> */}
                         <input
                           type="number"
                           value={mapping.questionCount}
@@ -740,6 +767,9 @@ export default function GenerateAssessmentModal({
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
                           <span className="font-medium">Reason:</span> {question.reason}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Domain Category:</span> {question.domainCategory}
                         </div>
                       </div>
                     </div>

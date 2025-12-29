@@ -380,12 +380,35 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
         <>
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                 <div className="bg-white rounded-xl shadow-lg w-full max-w-6xl p-6 overflow-y-auto max-h-[90vh] hide-scroll">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-semibold">Job Role: {jobRole.jobrole}</h2>
-                        <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>
-                            ✕
-                        </button>
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                        {/* Left: Job Role */}
+                        <div className="flex flex-col">
+                            <h2 className="text-2xl font-semibold">Job Role: {jobRole.jobrole}</h2>
+                        </div>
+
+                        {/* Right: Actions */}
+                        <div className="flex items-center gap-3">
+                            <Button
+                                onClick={() => onGenerateAssessment(allData)}
+                                className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-sm
+                 hover:bg-green-600 focus:outline-none focus:ring-2
+                 focus:ring-green-400 focus:ring-offset-1 transition"
+                            >
+                                Generate Assessment with AI
+                            </Button>
+
+                            <button
+                                onClick={onClose}
+                                aria-label="Close"
+                                className="w-9 h-9 flex items-center justify-center rounded-full
+                 text-gray-500 hover:text-gray-700 hover:bg-gray-100
+                 focus:outline-none focus:ring-2 focus:ring-gray-300 transition"
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
+
 
                     {/* 🧩 Job Description */}
                     <Card className="mb-6">
@@ -420,12 +443,12 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                             {/* Action Buttons */}
                             <div className="flex items-center gap-3">
                                 {/* Generate Assessment with AI */}
-                                <Button
+                                {/* <Button
                                     onClick={() => onGenerateAssessment(allData)}
                                     className="bg-green-400 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-400"
                                 >
                                     Generate Assessment with AI
-                                </Button>
+                                </Button> */}
 
                                 {/* Build Course with AI */}
                                 <Button
