@@ -341,28 +341,28 @@ const SkillData: React.FC<Props> = ({ editData }) => {
   };
 
   // Handle Delete
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this Skills?")) {
-      try {
-        const res = await fetch(
-          `${sessionData.url}/SkillName_library/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=skills`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${sessionData.token}`,
-            },
-          }
-        );
+   const handleDelete = async (id: number) => {
+     if (window.confirm("Are you sure you want to delete this Skills?")) {
+       try {
+         const res = await fetch(
+           `${sessionData.url}/skill_library/${id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=jobrole`,
+           {
+             method: "DELETE",
+             headers: {
+               Authorization: `Bearer ${sessionData.token}`,
+             },
+           }
+         );
 
-        const data = await res.json();
-        alert(data.message);
-        fetchInitialData();
-      } catch (error) {
-        console.error("Error deleting Skills:", error);
-        alert("Error deleting Skills");
-      }
-    }
-  };
+         const data = await res.json();
+         alert(data.message);
+         fetchInitialData();
+       } catch (error) {
+         console.error("Error deleting Skills:", error);
+         alert("Error deleting Skills");
+       }
+     }
+   };
 
   // Handle Column Filtering
   const handleColumnFilter = (column: string, value: string) => {

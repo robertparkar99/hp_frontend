@@ -18,7 +18,7 @@ import {
   HelpCircle,
   Search,
   MoreVertical,
-  Upload
+  Upload,
 } from "lucide-react";
 import {
   Select,
@@ -39,7 +39,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import DataTable, {
+  TableColumn,
+  TableStyles,
+} from "react-data-table-component";
 import ConfigurationModal from "../../Jobrole-library/ConfigurationModal";
 
 type JobRoleTask = {
@@ -78,7 +81,7 @@ const CriticalWorkFunctionGrid = () => {
   const [selectedRadio, setSelectedRadio] = useState<number | null>(null);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [configJsonObject, setConfigJsonObject] = useState<any>(null);
-
+  const [showRadioButtons, setShowRadioButtons] = useState(false);
 
   // Header shrinking
   const [headerShrunk, setHeaderShrunk] = useState(false);
@@ -124,9 +127,9 @@ const CriticalWorkFunctionGrid = () => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isActionsMenuOpen]);
 
@@ -142,8 +145,8 @@ const CriticalWorkFunctionGrid = () => {
 
     const contentElement = contentRef.current;
     if (contentElement) {
-      contentElement.addEventListener('scroll', handleScroll);
-      return () => contentElement.removeEventListener('scroll', handleScroll);
+      contentElement.addEventListener("scroll", handleScroll);
+      return () => contentElement.removeEventListener("scroll", handleScroll);
     }
   }, []);
 
@@ -157,7 +160,7 @@ const CriticalWorkFunctionGrid = () => {
     setLoading(true);
     try {
       const res = await fetch(
-        `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[sector]=${sessionData.orgType}&order_by[direction]=desc&group_by=task`,
+        `${sessionData.url}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[sector]=${sessionData.orgType}&order_by[direction]=desc`,
         {
           headers: {
             Authorization: `Bearer ${sessionData.token}`,
@@ -179,10 +182,9 @@ const CriticalWorkFunctionGrid = () => {
   // Handle select changes
   const handleDepartmentChange = (val: string) => {
     setSelectedDept(val);
-    setSelectedJobrole("");        // ❌ do not auto-select jobrole
-    setSelectedFunction("");       // reset function filter
+    setSelectedJobrole(""); // ❌ do not auto-select jobrole
+    setSelectedFunction(""); // reset function filter
   };
-
 
   const handleJobroleChange = (val: string) => {
     setSelectedJobrole(val);
@@ -278,7 +280,7 @@ const CriticalWorkFunctionGrid = () => {
     if (!id) return;
     try {
       // Find the task to clone
-      const taskToClone = data.find(item => item.id === id);
+      const taskToClone = data.find((item) => item.id === id);
       if (!taskToClone) {
         alert("Task not found!");
         return;
@@ -288,7 +290,7 @@ const CriticalWorkFunctionGrid = () => {
       const clonedTask = {
         ...taskToClone,
         task: `${taskToClone.task} (Copy)`,
-        id: undefined // Remove ID to create new record
+        id: undefined, // Remove ID to create new record
       };
 
       // Send POST request to create cloned task
@@ -332,37 +334,39 @@ const CriticalWorkFunctionGrid = () => {
 
   // Unique filters
   const uniqueDepartments = Array.from(
-    new Set(data.map((d) => d.track || "").filter(track => track.trim() !== ""))
-  )
-    .sort();
-
-  const uniqueJobroles = selectedDept
-    ? Array.from(
-      new Set(
-        data
-          .filter((d) => d.track === selectedDept)
-          .map((d) => d.jobrole || "")
-          .filter(jobrole => jobrole.trim() !== "")
-      )
+    new Set(
+      data.map((d) => d.track || "").filter((track) => track.trim() !== "")
     )
-      .sort()
-    : [];
+  ).sort();
 
+  const uniqueJobroles = Array.from(
+    new Set(
+      data
+        .filter((d) => !selectedDept || d.track === selectedDept)
+        .map((d) => d.jobrole || "")
+        .filter((jobrole) => jobrole.trim() !== "")
+    )
+  ).sort();
 
-  const uniqueFunctions = selectedDept && selectedJobrole
-    ? Array.from(
-      new Set(
-        data
-          .filter(
-            (d) => d.track === selectedDept && d.jobrole === selectedJobrole
+  const uniqueFunctions =
+    selectedDept && selectedJobrole
+      ? Array.from(
+          new Set(
+            data
+              .filter(
+                (d) => d.track === selectedDept && d.jobrole === selectedJobrole
+              )
+              .map((d) => d.critical_work_function || "")
+              .filter((func) => func.trim() !== "")
           )
-          .map((d) => d.critical_work_function || "")
-          .filter(func => func.trim() !== "")
-      )
-    )
-      .sort()
-    : Array.from(new Set(data.map((d) => d.critical_work_function || "").filter(func => func.trim() !== "")))
-      .sort();
+        ).sort()
+      : Array.from(
+          new Set(
+            data
+              .map((d) => d.critical_work_function || "")
+              .filter((func) => func.trim() !== "")
+          )
+        ).sort();
 
   // Filtered grid data
   const filteredData = data.filter((item) => {
@@ -372,7 +376,6 @@ const CriticalWorkFunctionGrid = () => {
       return false;
     return true;
   });
-
 
   // ✅ DataTable Columns
   const columns: TableColumn<JobRoleTask>[] = [
@@ -516,14 +519,22 @@ const CriticalWorkFunctionGrid = () => {
   // ✅ Apply column filters
   const filteredTableData = filteredData.filter((row) =>
     Object.entries(columnFilters).every(([key, val]) =>
-      val ? String(row[key as keyof JobRoleTask] || "").toLowerCase().includes(val.toLowerCase()) : true
+      val
+        ? String(row[key as keyof JobRoleTask] || "")
+            .toLowerCase()
+            .includes(val.toLowerCase())
+        : true
     )
   );
 
   return (
     <>
       <div className="min-h-screen overflow-y-auto scrollbar-hide">
-        <div className={`p-4 transition-all duration-300 ${headerShrunk ? 'p-2' : 'p-4'}`}>
+        <div
+          className={`p-4 transition-all duration-300 ${
+            headerShrunk ? "p-2" : "p-4"
+          }`}
+        >
           {/* Top filter + Toggle */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
             {/* Search Bar - Left */}
@@ -542,8 +553,24 @@ const CriticalWorkFunctionGrid = () => {
 
             {/* Right Section - More Icon + Filter + View Toggle */}
             <div className="flex items-center space-x-2">
-              {/* Consolidated Actions Dropdown */}
+              {/* AI Generate Button */}
+              <button
+                onClick={() => {
+                  setShowRadioButtons((prev) => !prev);
 
+                  // Reset selection when hiding radios
+                  if (showRadioButtons) {
+                    setSelectedRadio(null);
+                    setConfigJsonObject(null);
+                  }
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:rounded-md transition-colors"
+                title="AI Generate"
+              >
+                {showRadioButtons ? "Hide selection" : "Generate with AI"}
+              </button>
+
+              {/* Consolidated Actions Dropdown */}
 
               {/* Filter */}
               <Popover>
@@ -623,19 +650,21 @@ const CriticalWorkFunctionGrid = () => {
               <div className="flex border rounded-md overflow-hidden">
                 <button
                   onClick={() => setViewMode("myview")}
-                  className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "myview"
-                    ? "bg-blue-100 text-blue-600 border-blue-300"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
+                  className={`px-3 py-2 flex items-center justify-center transition-colors ${
+                    viewMode === "myview"
+                      ? "bg-blue-100 text-blue-600 border-blue-300"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
                 >
                   <Square className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => setViewMode("table")}
-                  className={`px-3 py-2 flex items-center justify-center transition-colors ${viewMode === "table"
-                    ? "bg-blue-100 text-blue-600 border-blue-300"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
+                  className={`px-3 py-2 flex items-center justify-center transition-colors ${
+                    viewMode === "table"
+                      ? "bg-blue-100 text-blue-600 border-blue-300"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
                 >
                   <Table className="h-5 w-5" />
                 </button>
@@ -666,8 +695,6 @@ const CriticalWorkFunctionGrid = () => {
                         <Sparkles className="w-5 h-5 text-gray-600" />
                       </button>
 
-
-
                       {/* Bulk Actions */}
                       {selectedTasks.length > 0 && (
                         <button
@@ -678,7 +705,6 @@ const CriticalWorkFunctionGrid = () => {
                           <ListChecks className="w-5 h-5 text-gray-600" />
                         </button>
                       )}
-
 
                       <button
                         onClick={handleImport}
@@ -731,26 +757,33 @@ const CriticalWorkFunctionGrid = () => {
               >
                 <div className="absolute z-[10] right-0 bottom-0 w-[1px] h-[1px] bg-[#B7DAFF] rounded-[0px_50px_0px_15px] transition-all duration-500 group-hover:w-full group-hover:h-full group-hover:rounded-[15px] group-hover:opacity-[0.5] pointer-events-none"></div>
                 {/* ⭐ Radio Button (Top Right) */}
-                <div className="absolute top-2 right-5 z-20">
-                  <input
-                    type="radio"
-                    name="taskSelection"
-                    checked={selectedRadio === item.id}
-                    onChange={() => {
-                      setSelectedRadio(item.id);
-                      const jsonObject = {
-                        industry: sessionData.orgType,
-                        department: item.track,
-                        jobrole: item.jobrole,
-                        critical_work_function: item.critical_work_function,
-                        key_tasks: item.task
-                      };
-                      console.log(jsonObject);
-                      setConfigJsonObject(jsonObject);
-                    }}
-                    className="h-3 w-3 cursor-pointer"
-                  />
-                </div>
+                {showRadioButtons && (
+                  <div className="absolute top-2 right-5 z-20">
+                    <input
+                      type="radio"
+                      name="taskSelection"
+                      checked={selectedRadio === item.id}
+                      onClick={() => {
+                        if (selectedRadio === item.id) {
+                          // 🔁 Second click → uncheck
+                          setSelectedRadio(null);
+                          setConfigJsonObject(null);
+                        } else {
+                          // ✅ First click → select
+                          setSelectedRadio(item.id);
+                          setConfigJsonObject({
+                            industry: sessionData.orgType,
+                            department: item.track,
+                            jobrole: item.jobrole,
+                            critical_work_function: item.critical_work_function,
+                            key_tasks: item.task,
+                          });
+                        }
+                      }}
+                      className="h-3 w-3 cursor-pointer"
+                    />
+                  </div>
+                )}
                 <div className="relative z-10 p-6 flex-1">
                   <h3
                     className="text-lg font-bold text-gray-900 mb-2 leading-tight truncate cursor-pointer hover:text-blue-600 transition-colors"
@@ -774,7 +807,6 @@ const CriticalWorkFunctionGrid = () => {
                 </div>
 
                 <div className="flex justify-end p-2 mt-[-6]">
-
                   {/* Configure Button (Only visible if this card is selected by radio) */}
                   {selectedRadio === item.id && (
                     <button
@@ -844,9 +876,7 @@ const CriticalWorkFunctionGrid = () => {
                 <span className="bg-[#6fc7ff] p-2 rounded-full">
                   Critical Work Function
                 </span>{" "}
-                <span className="p-1">
-                  {viewData?.critical_work_function}
-                </span>
+                <span className="p-1">{viewData?.critical_work_function}</span>
               </li>
               <li className="my-2 py-1">
                 <span className="bg-[#fcf38d] p-2 rounded-full">
