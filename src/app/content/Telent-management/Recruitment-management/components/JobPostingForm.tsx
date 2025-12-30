@@ -773,6 +773,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
       },
       body: JSON.stringify({
         jd: jdText,
+        sub_institute_id: sessionData.sub_institute_id,
       }),
     });
 

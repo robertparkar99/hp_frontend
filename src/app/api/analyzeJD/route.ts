@@ -18,17 +18,16 @@ interface ICFCompetency {
 
 export async function POST(req: NextRequest) {
   try {
-    const { jd, sessionData } = await req.json();
+    const { jd, sub_institute_id } = await req.json();
 
     if (!jd || typeof jd !== 'string') {
       return NextResponse.json({ error: 'Invalid job description' }, { status: 400 });
     }
 
-    if (!sessionData || !sessionData.url || !sessionData.subInstituteId) {
-      return NextResponse.json({ error: 'Missing session data' }, { status: 400 });
-    }
+    const resolvedSubInstituteId = sub_institute_id ?? 3;
 
-    const ICF_API = `${sessionData.url}/getSkillCompetency?sub_institute_id=${sessionData.subInstituteId}`;
+    const ICF_API = `https://hp.triz.co.in/getSkillCompetency?sub_institute_id=${resolvedSubInstituteId}`;
+
 
     const gptPrompt = `Analyze this job description and extract:
     1. Core technical skills (list 5-8 specific skills)
