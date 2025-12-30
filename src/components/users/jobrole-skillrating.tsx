@@ -1,4 +1,3 @@
-//
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog";  
 // validators (do not change utils.ts)
 import { validateSkillProficiencies, getValidationMessages } from "@/lib/utils";
 
@@ -59,6 +58,12 @@ export default function JobroleSkillRatingDesign({
   const [selectedBehaviourLevel, setSelectedBehaviourLevel] = useState<any>(null);
   const [behaviourLevelSelections, setBehaviourLevelSelections] = useState<Record<string, any>>({});
 
+  const [initialSkillLevelSelections, setInitialSkillLevelSelections] = useState<Record<string, any>>({});
+  const [initialKnowledgeLevelSelections, setInitialKnowledgeLevelSelections] = useState<Record<string, any>>({});
+  const [initialAbilityLevelSelections, setInitialAbilityLevelSelections] = useState<Record<string, any>>({});
+  const [initialAttitudeLevelSelections, setInitialAttitudeLevelSelections] = useState<Record<string, any>>({});
+  const [initialBehaviourLevelSelections, setInitialBehaviourLevelSelections] = useState<Record<string, any>>({});
+
   const [sessionData, setSessionData] = useState({
     url: '',
     token: '',
@@ -68,6 +73,8 @@ export default function JobroleSkillRatingDesign({
   });
 
   const [localRatedSkills, setLocalRatedSkills] = useState<any[]>([]);
+
+  const storageKey = sessionData.userId && jobroleId ? `jobrole_skill_ratings_${sessionData.userId}_${jobroleId}` : null;
 
   // --- Dialog states for replacing alerts/confirms ---
   const [validationDialogOpen, setValidationDialogOpen] = useState<boolean>(false);
@@ -119,14 +126,26 @@ export default function JobroleSkillRatingDesign({
         );
         if (response.ok) {
           const data = await response.json();
-          setSkills(data.skill || []);
-          setKnowledge(data.knowledge || []);
-          setAbility(data.ability || []);
-          setAttitude(data.attitude || []);
-          setBehaviour(data.behaviour || []);
+
+          const normalizeItem = (item: any, index: number, type: string) => {
+            if (typeof item === 'string') {
+              return { id: `${type}_${index}`, title: item, description: '' };
+            } else {
+              return { id: item.id || `${type}_${index}`, title: item.title || item, description: item.description || '' };
+            }
+          };
+
+          setSkills(data.skill?.map((item: any, index: number) => normalizeItem(item, index, 'skill')) || []);
+          setKnowledge(data.knowledge?.map((item: any, index: number) => normalizeItem(item, index, 'knowledge')) || []);
+          setAbility(data.ability?.map((item: any, index: number) => normalizeItem(item, index, 'ability')) || []);
+          setAttitude(data.attitude?.map((item: any, index: number) => normalizeItem(item, index, 'attitude')) || []);
+          setBehaviour(data.behaviour?.map((item: any, index: number) => normalizeItem(item, index, 'behaviour')) || []);
+
           if (data.skill?.length) {
             setSelectedSkill(data.skill[0]);
+            setExpandedTab('skills');
           }
+
         } else {
           console.error("KAAB API failed:", response.status);
         }
@@ -137,6 +156,44 @@ export default function JobroleSkillRatingDesign({
 
     fetchData();
   }, [sessionData.url, subInstituteId, jobroleId, jobroleTitle]);
+
+  // Load saved ratings from localStorage
+  useEffect(() => {
+    if (storageKey) {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setSkillLevelSelections(parsed.skillLevelSelections || {});
+          setKnowledgeLevelSelections(parsed.knowledgeLevelSelections || {});
+          setAbilityLevelSelections(parsed.abilityLevelSelections || {});
+          setAttitudeLevelSelections(parsed.attitudeLevelSelections || {});
+          setBehaviourLevelSelections(parsed.behaviourLevelSelections || {});
+          setInitialSkillLevelSelections(parsed.skillLevelSelections || {});
+          setInitialKnowledgeLevelSelections(parsed.knowledgeLevelSelections || {});
+          setInitialAbilityLevelSelections(parsed.abilityLevelSelections || {});
+          setInitialAttitudeLevelSelections(parsed.attitudeLevelSelections || {});
+          setInitialBehaviourLevelSelections(parsed.behaviourLevelSelections || {});
+        } catch (e) {
+          console.error('Error parsing saved ratings:', e);
+        }
+      }
+    }
+  }, [storageKey]);
+
+  // Save ratings to localStorage whenever selections change
+  useEffect(() => {
+    if (storageKey) {
+      const data = {
+        skillLevelSelections,
+        knowledgeLevelSelections,
+        abilityLevelSelections,
+        attitudeLevelSelections,
+        behaviourLevelSelections,
+      };
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    }
+  }, [skillLevelSelections, knowledgeLevelSelections, abilityLevelSelections, attitudeLevelSelections, behaviourLevelSelections, storageKey]);
 
 
   useEffect(() => {
@@ -251,13 +308,14 @@ export default function JobroleSkillRatingDesign({
 
 
   const getCurrentCategory = () => {
-    if (selectedSkill) return 'skill';
-    if (selectedKnowledge) return 'knowledge';
-    if (selectedAbility) return 'ability';
-    if (selectedAttitude) return 'attitude';
-    if (selectedBehaviour) return 'behaviour';
+    if (expandedTab === 'skills') return 'skill';
+    if (expandedTab === 'knowledge') return 'knowledge';
+    if (expandedTab === 'ability') return 'ability';
+    if (expandedTab === 'attitude') return 'attitude';
+    if (expandedTab === 'behaviour') return 'behaviour';
     return null;
   };
+  
 
   const moveToNext = () => {
     const category = getCurrentCategory();
@@ -266,51 +324,80 @@ export default function JobroleSkillRatingDesign({
     let setCurrentIndex!: (index: number) => void;
     let data!: any[];
     let setSelected!: (item: any) => void;
-    let setSelectedLevel!: (level: any) => void;
+    let setLevelSetter!: (level: any) => void;
     let levelSelections!: Record<string, any>;
     if (category === 'skill') {
       currentIndex = currentSkillIndex;
       setCurrentIndex = setCurrentSkillIndex;
       data = skills;
       setSelected = setSelectedSkill;
-      setSelectedLevel = setSelectedLevel;
+      setLevelSetter = setSelectedLevel;
       levelSelections = skillLevelSelections;
     } else if (category === 'knowledge') {
       currentIndex = currentKnowledgeIndex;
       setCurrentIndex = setCurrentKnowledgeIndex;
       data = knowledge;
       setSelected = setSelectedKnowledge;
-      setSelectedLevel = setSelectedKnowledgeLevel;
+      setLevelSetter = setSelectedKnowledgeLevel;
       levelSelections = knowledgeLevelSelections;
     } else if (category === 'ability') {
       currentIndex = currentAbilityIndex;
       setCurrentIndex = setCurrentAbilityIndex;
       data = ability;
       setSelected = setSelectedAbility;
-      setSelectedLevel = setSelectedAbilityLevel;
+      setLevelSetter = setSelectedAbilityLevel;
       levelSelections = abilityLevelSelections;
     } else if (category === 'attitude') {
       currentIndex = currentAttitudeIndex;
       setCurrentIndex = setCurrentAttitudeIndex;
       data = attitude;
       setSelected = setSelectedAttitude;
-      setSelectedLevel = setSelectedAttitudeLevel;
+      setLevelSetter = setSelectedAttitudeLevel;
       levelSelections = attitudeLevelSelections;
     } else if (category === 'behaviour') {
       currentIndex = currentBehaviourIndex;
       setCurrentIndex = setCurrentBehaviourIndex;
       data = behaviour;
       setSelected = setSelectedBehaviour;
-      setSelectedLevel = setSelectedBehaviourLevel;
+      setLevelSetter = setSelectedBehaviourLevel;
       levelSelections = behaviourLevelSelections;
     }
     if (currentIndex < data.length - 1) {
       const nextIndex = currentIndex + 1;
       const nextItem = data[nextIndex];
-      setCurrentIndex(nextIndex);
-      setSelected(nextItem);
       const selectedLevel = levelSelections[nextItem.id] || null;
-      setSelectedLevel(selectedLevel);
+      setCurrentIndex(nextIndex);
+      setLevelSetter(selectedLevel);
+      setSelected(nextItem);
+      // Clear other selections
+      if (category === 'skill') {
+        setSelectedKnowledge(null);
+        setSelectedAbility(null);
+        setSelectedAttitude(null);
+        setSelectedBehaviour(null);
+      } else if (category === 'knowledge') {
+        setSelectedSkill(null);
+        setSelectedAbility(null);
+        setSelectedAttitude(null);
+        setSelectedBehaviour(null);
+      } else if (category === 'ability') {
+        setSelectedSkill(null);
+        setSelectedKnowledge(null);
+        setSelectedAttitude(null);
+        setSelectedBehaviour(null);
+      } else if (category === 'attitude') {
+        setSelectedSkill(null);
+        setSelectedKnowledge(null);
+        setSelectedAbility(null);
+        setSelectedBehaviour(null);
+      } else if (category === 'behaviour') {
+        setSelectedSkill(null);
+        setSelectedKnowledge(null);
+        setSelectedAbility(null);
+        setSelectedAttitude(null);
+      }
+      // Set expanded tab
+      setExpandedTab(category === 'skill' ? 'skills' : category);
     }
   };
 
@@ -321,59 +408,89 @@ export default function JobroleSkillRatingDesign({
     let setCurrentIndex!: (index: number) => void;
     let data!: any[];
     let setSelected!: (item: any) => void;
-    let setSelectedLevel!: (level: any) => void;
+    let setLevelSetter!: (level: any) => void;
     let levelSelections!: Record<string, any>;
     if (category === 'skill') {
       currentIndex = currentSkillIndex;
       setCurrentIndex = setCurrentSkillIndex;
       data = skills;
       setSelected = setSelectedSkill;
-      setSelectedLevel = setSelectedLevel;
+      setLevelSetter = setSelectedLevel;
       levelSelections = skillLevelSelections;
     } else if (category === 'knowledge') {
       currentIndex = currentKnowledgeIndex;
       setCurrentIndex = setCurrentKnowledgeIndex;
       data = knowledge;
       setSelected = setSelectedKnowledge;
-      setSelectedLevel = setSelectedKnowledgeLevel;
+      setLevelSetter = setSelectedKnowledgeLevel;
       levelSelections = knowledgeLevelSelections;
     } else if (category === 'ability') {
       currentIndex = currentAbilityIndex;
       setCurrentIndex = setCurrentAbilityIndex;
       data = ability;
       setSelected = setSelectedAbility;
-      setSelectedLevel = setSelectedAbilityLevel;
+      setLevelSetter = setSelectedAbilityLevel;
       levelSelections = abilityLevelSelections;
     } else if (category === 'attitude') {
       currentIndex = currentAttitudeIndex;
       setCurrentIndex = setCurrentAttitudeIndex;
       data = attitude;
       setSelected = setSelectedAttitude;
-      setSelectedLevel = setSelectedAttitudeLevel;
+      setLevelSetter = setSelectedAttitudeLevel;
       levelSelections = attitudeLevelSelections;
     } else if (category === 'behaviour') {
       currentIndex = currentBehaviourIndex;
       setCurrentIndex = setCurrentBehaviourIndex;
       data = behaviour;
       setSelected = setSelectedBehaviour;
-      setSelectedLevel = setSelectedBehaviourLevel;
+      setLevelSetter = setSelectedBehaviourLevel;
       levelSelections = behaviourLevelSelections;
     }
     if (currentIndex > 0) {
       const prevIndex = currentIndex - 1;
       const prevItem = data[prevIndex];
-      setCurrentIndex(prevIndex);
-      setSelected(prevItem);
       const selectedLevel = levelSelections[prevItem.id] || null;
-      setSelectedLevel(selectedLevel);
+      setCurrentIndex(prevIndex);
+      setLevelSetter(selectedLevel);
+      setSelected(prevItem);
+      // Clear other selections
+      if (category === 'skill') {
+        setSelectedKnowledge(null);
+        setSelectedAbility(null);
+        setSelectedAttitude(null);
+        setSelectedBehaviour(null);
+      } else if (category === 'knowledge') {
+        setSelectedSkill(null);
+        setSelectedAbility(null);
+        setSelectedAttitude(null);
+        setSelectedBehaviour(null);
+      } else if (category === 'ability') {
+        setSelectedSkill(null);
+        setSelectedKnowledge(null);
+        setSelectedAttitude(null);
+        setSelectedBehaviour(null);
+      } else if (category === 'attitude') {
+        setSelectedSkill(null);
+        setSelectedKnowledge(null);
+        setSelectedAbility(null);
+        setSelectedBehaviour(null);
+      } else if (category === 'behaviour') {
+        setSelectedSkill(null);
+        setSelectedKnowledge(null);
+        setSelectedAbility(null);
+        setSelectedAttitude(null);
+      }
+      // Set expanded tab
+      setExpandedTab(category === 'skill' ? 'skills' : category);
     }
   };
 
   // ✅ Bulk validation with dialog (called by Save All button)
   const validateAndSaveAllSkills = async (): Promise<void> => {
-    // Collect all rated KAAB items
+    // Collect all rated items
+    const ratedSkills: any[] = [];
     const ratedKAAB: any[] = [];
-
+  
     // Collect from all categories
     const categories = [
       { data: skills, selections: skillLevelSelections, type: 'skill' },
@@ -382,31 +499,44 @@ export default function JobroleSkillRatingDesign({
       { data: attitude, selections: attitudeLevelSelections, type: 'attitude' },
       { data: behaviour, selections: behaviourLevelSelections, type: 'behaviour' },
     ];
-
+  
     categories.forEach(({ data, selections, type }) => {
+      const initialSelections = type === 'skill' ? initialSkillLevelSelections :
+        type === 'knowledge' ? initialKnowledgeLevelSelections :
+        type === 'ability' ? initialAbilityLevelSelections :
+        type === 'attitude' ? initialAttitudeLevelSelections :
+        initialBehaviourLevelSelections;
       data.forEach((item: any) => {
-        if (selections[item.id]) {
-          const selectedLevel = selections[item.id];
+        const current = selections[item.id];
+        const initial = initialSelections[item.id];
+        if (current !== initial) {
+          const selectedLevel = current;
           const levelValue = typeof selectedLevel === 'object' ? (selectedLevel.proficiency_level || selectedLevel.level) : selectedLevel;
-          ratedKAAB.push({
+          const itemData = {
             id: item.id,
             title: item.title || item,
             level: levelValue,
             type: type,
             category: type,
-          });
+          };
+          if (type === 'skill') {
+            ratedSkills.push(itemData);
+          } else {
+            ratedKAAB.push(itemData);
+          }
         }
       });
     });
 
-    if (ratedKAAB.length === 0) {
-      showInfo("No ratings", "No KAAB items have been rated yet!", "info");
+    if (ratedSkills.length === 0 && ratedKAAB.length === 0) {
+      showInfo("No ratings", "No items have been rated yet!", "info");
       return;
     }
 
     // Run validation before submitting
+    const allRated = [...ratedSkills, ...ratedKAAB];
     const validation = validateSkillProficiencies(
-      ratedKAAB.map((item) => ({
+      allRated.map((item) => ({
         skill_id: item.id,
         skill_name: item.title,
         proficiency_level: Number(item.level?.match(/\d+/)?.[0] || 0),
@@ -426,22 +556,21 @@ export default function JobroleSkillRatingDesign({
       // Show warnings dialog with Proceed button
       setValidationMessages(messages);
       setValidationType("warning");
-      setPendingBulkData(ratedKAAB);
+      setPendingBulkData({ ratedSkills, ratedKAAB });
       setValidationDialogOpen(true);
       return;
     }
 
     // No issues — proceed
-    await performBulkSave(ratedKAAB);
+    await performBulkSave(ratedSkills, ratedKAAB);
   };
 
-  const performBulkSave = async (kaabToSave: any[]): Promise<void> => {
+  const performBulkSave = async (ratedSkills: any[], ratedKAAB: any[]): Promise<void> => {
     setIsProcessing(true);
     try {
-      // Process KAAB items to ensure valid proficiency levels (1-5 only)
-      const processedKAAB = kaabToSave.map((item) => {
-        // Extract numeric level from level string
-        let numericLevel = 1; // Default to 1
+      // Process skills
+      const processedSkills = ratedSkills.map((item) => {
+        let numericLevel = 1;
 
         if (item.level) {
           const levelMatch = item.level.toString().match(/\d+/);
@@ -450,50 +579,46 @@ export default function JobroleSkillRatingDesign({
           }
         }
 
-        // FORCE level to be between 1-5 - if 6, make it 5
         const validatedLevel = Math.max(1, Math.min(5, numericLevel));
 
-        // Log if we're changing level 6 to 5
-        if (numericLevel > 5) {
-          console.warn(`Converting KAAB level ${numericLevel} to 5 for item: ${item.title}`);
-        }
-
         return {
-          ...item,
-          level: validatedLevel, // Use validated numeric level (1-5 only)
-          knowledge: item.type === 'knowledge' ? { [item.title]: validatedLevel } : {},
-          ability: item.type === 'ability' ? { [item.title]: validatedLevel } : {},
-          behaviour: item.type === 'behaviour' ? { [item.title]: validatedLevel } : {},
-          attitude: item.type === 'attitude' ? { [item.title]: validatedLevel } : {},
+          skill_id: item.id,
+          skill_level: validatedLevel,
+          type: item.type,
+          user_id: sessionData.userId
         };
       });
 
-      console.log("Processed KAAB for bulk save (levels 1-5 only):", processedKAAB);
+      // Process KAAB
+      const processedKAAB = ratedKAAB.map((item) => {
+        let numericLevel = 1;
 
-      // Check if any items had level 6 that we converted
-      const convertedItems = kaabToSave.filter((item, index) => {
-        const originalLevel = item.level?.toString().match(/\d+/)?.[0];
-        const processedLevel = processedKAAB[index].level;
-        return originalLevel && parseInt(originalLevel) > 5;
+        if (item.level) {
+          const levelMatch = item.level.toString().match(/\d+/);
+          if (levelMatch) {
+            numericLevel = parseInt(levelMatch[0], 10);
+          }
+        }
+
+        const validatedLevel = Math.max(1, Math.min(5, numericLevel));
+
+        return {
+          skill_id: item.id,
+          skill_level: validatedLevel,
+          type: item.type,
+          user_id: sessionData.userId
+        };
       });
 
       const bulkData = {
-        skills: processedKAAB.map((item) => ({
-          skill_id: item.id,
-          skill_level: item.level, // This is now guaranteed to be 1-5
-          knowledge: item.knowledge,
-          ability: item.ability,
-          behaviour: item.behaviour,
-          attitude: item.attitude,
-          user_id: sessionData.userId || 0,
-          sub_institute_id: sessionData.subInstituteId,
-        })),
-        user_id: sessionData.userId || 0,
-        sub_institute_id: sessionData.subInstituteId,
+        skills: processedSkills,
+        kaab: processedKAAB,
+        user_id: sessionData.userId,
+        sub_institute_id: sessionData.subInstituteId
       };
-
-      console.log("Final bulk data to send (ALL LEVELS 1-5):", bulkData);
-
+  
+      console.log("Final bulk data to send:", bulkData);
+  
       const response = await fetch(`${sessionData.url}/skill-matrix/store-bulk`, {
         method: "POST",
         headers: {
@@ -502,45 +627,35 @@ export default function JobroleSkillRatingDesign({
         },
         body: JSON.stringify(bulkData),
       });
-
+  
       if (response.ok) {
         const result = await response.json();
         console.log("Bulk submission successful:", result);
+  
+        // Update initial selections to current after successful save
+        setInitialSkillLevelSelections(skillLevelSelections);
+        setInitialKnowledgeLevelSelections(knowledgeLevelSelections);
+        setInitialAbilityLevelSelections(abilityLevelSelections);
+        setInitialAttitudeLevelSelections(attitudeLevelSelections);
+        setInitialBehaviourLevelSelections(behaviourLevelSelections);
 
-        // Clear local storage or state if needed
-        // For now, just show success
-
-        // Show appropriate success message
-        if (convertedItems.length > 0) {
-          showInfo(
-            "Success ✅ (Levels Adjusted)",
-            [
-              `All ${processedKAAB.length} KAAB items have been successfully saved!`,
-              `Note: ${convertedItems.length} items with level 6 were adjusted to level 5.`,
-              "Backend only accepts proficiency levels 1-5."
-            ],
-            "success"
-          );
-        } else {
-          showInfo(
-            "Success ✅",
-            `All ${processedKAAB.length} KAAB items have been successfully saved!`,
-            "success"
-          );
-        }
-
+        showInfo(
+          "Success ✅",
+          `All ${processedSkills.length + processedKAAB.length} items have been successfully saved!`,
+          "success"
+        );
       } else if (response.status === 422) {
         const errorData = await response.json();
         console.error("Validation error details:", errorData);
-
+  
         // Extract specific error messages
         const errorMessages = Object.values(errorData.errors || {})
           .flat()
           .map((msg: any) => `• ${msg}`);
-
+  
         showInfo(
           "Validation Failed",
-          errorMessages.length > 0 ? errorMessages : ["Please check all KAAB levels are valid (1-5)"],
+          errorMessages.length > 0 ? errorMessages : ["Please check all levels are valid (1-5)"],
           "error"
         );
       } else {
@@ -617,6 +732,7 @@ export default function JobroleSkillRatingDesign({
                           setSelectedAbility(null);
                           setSelectedAttitude(null);
                           setSelectedBehaviour(null);
+                          setExpandedTab('skills');
                         } : tab.title === "knowledge" ? () => {
                           const knowledgeIndex = knowledge.findIndex(k => k.id === item.id);
                           setCurrentKnowledgeIndex(knowledgeIndex);
@@ -626,6 +742,7 @@ export default function JobroleSkillRatingDesign({
                           setSelectedAbility(null);
                           setSelectedAttitude(null);
                           setSelectedBehaviour(null);
+                          setExpandedTab('knowledge');
                         } : tab.title === "ability" ? () => {
                           const abilityIndex = ability.findIndex(a => a.id === item.id);
                           setCurrentAbilityIndex(abilityIndex);
@@ -635,6 +752,7 @@ export default function JobroleSkillRatingDesign({
                           setSelectedKnowledge(null);
                           setSelectedAttitude(null);
                           setSelectedBehaviour(null);
+                          setExpandedTab('ability');
                         } : tab.title === "attitude" ? () => {
                           const attitudeIndex = attitude.findIndex(att => att.id === item.id);
                           setCurrentAttitudeIndex(attitudeIndex);
@@ -644,6 +762,7 @@ export default function JobroleSkillRatingDesign({
                           setSelectedKnowledge(null);
                           setSelectedAbility(null);
                           setSelectedBehaviour(null);
+                          setExpandedTab('attitude');
                         } : tab.title === "behaviour" ? () => {
                           const behaviourIndex = behaviour.findIndex(beh => beh.id === item.id);
                           setCurrentBehaviourIndex(behaviourIndex);
@@ -653,6 +772,7 @@ export default function JobroleSkillRatingDesign({
                           setSelectedKnowledge(null);
                           setSelectedAbility(null);
                           setSelectedAttitude(null);
+                          setExpandedTab('behaviour');
                         } : undefined}
                         className={`w-full bg-white border p-2 rounded-lg cursor-pointer transition hover:bg-gray-50
   ${(tab.title === "skills" && selectedSkill?.id === item.id) ||
@@ -690,7 +810,7 @@ export default function JobroleSkillRatingDesign({
         {/* Item Description */}
         {(selectedSkill || selectedKnowledge || selectedAbility || selectedAttitude || selectedBehaviour) && (
           <p className="text-sm text-gray-600 mb-4">
-            {selectedSkill ? selectedSkill.description : selectedKnowledge ? selectedKnowledge.description :  ""}
+            {selectedSkill?.description || selectedKnowledge?.description || selectedAbility?.description || selectedAttitude?.description || selectedBehaviour?.description || ""}
           </p>
         )}
 
@@ -808,7 +928,7 @@ export default function JobroleSkillRatingDesign({
               >
                 {knowledgeProficiencyLevels.map((level, index) => {
                   const levelNumber =
-                    level?.level?.match(/\d+/)?.[0] ?? "1";
+                    (level?.proficiency_level || level?.level || "").toString().match(/\d+/)?.[0] ?? "1";
 
                   const bgColors = [
                     "bg-blue-100 text-blue-700",
@@ -898,7 +1018,7 @@ export default function JobroleSkillRatingDesign({
             <div className="flex justify-center flex-wrap gap-0">
               <div className="flex p-1 rounded-full bg-white shadow-[0_0_0_1px_#c7d2fe,0_4px_12px_rgba(0,0,0,0.08)]">
                 {abilityProficiencyLevels.map((level, index) => {
-                  const levelNumber = level?.level ?? "1";
+                  const levelNumber = (level?.proficiency_level || level?.level || "").toString().match(/\d+/)?.[0] ?? "1";
 
                   const bgColors = [
                     "bg-blue-100 text-blue-700",
@@ -982,7 +1102,7 @@ export default function JobroleSkillRatingDesign({
             <div className="flex justify-center flex-wrap gap-0">
               <div className="flex p-1 rounded-full bg-white shadow-[0_0_0_1px_#c7d2fe,0_4px_12px_rgba(0,0,0,0.08)]">
                 {attitudeProficiencyLevels.map((level, index) => {
-                  const levelNumber = level?.level ?? "1";
+                  const levelNumber = (level?.proficiency_level || level?.level || "").toString().match(/\d+/)?.[0] ?? "1";
 
                   const bgColors = [
                     "bg-blue-100 text-blue-700",
@@ -1066,7 +1186,7 @@ export default function JobroleSkillRatingDesign({
             <div className="flex justify-center flex-wrap gap-0">
               <div className="flex p-1 rounded-full bg-white shadow-[0_0_0_1px_#c7d2fe,0_4px_12px_rgba(0,0,0,0.08)]">
                 {behaviourProficiencyLevels.map((level, index) => {
-                  const levelNumber = level?.level ?? "1";
+                  const levelNumber = (level?.proficiency_level || level?.level || "").toString().match(/\d+/)?.[0] ?? "1";
 
                   const bgColors = [
                     "bg-blue-100 text-blue-700",
@@ -1220,7 +1340,7 @@ export default function JobroleSkillRatingDesign({
                 className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => {
                   setValidationDialogOpen(false);
-                  if (pendingBulkData) performBulkSave(pendingBulkData);
+                  if (pendingBulkData) performBulkSave(pendingBulkData.ratedSkills, pendingBulkData.ratedKAAB);
                 }}
               >
                 Proceed Anyway
