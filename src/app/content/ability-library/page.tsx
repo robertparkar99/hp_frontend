@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -36,6 +34,8 @@ import {
 import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/AbilityComponent/viewDialouge";
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "@/lib/tourSteps";
 
 type ApiItem = {
   id: number;
@@ -52,13 +52,18 @@ interface SessionData {
   org_type?: string;
 }
 
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+
 const safeArray = (data: any): ApiItem[] => {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
   return [];
 };
 
-export default function Page() {
+export default function Page({ showDetailTour }: PageProps) {
   const [items, setItems] = useState<ApiItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,6 +81,10 @@ export default function Page() {
   // Toggle view: triangle or table
   const [viewMode, setViewMode] = useState<"triangle" | "table">("triangle");
 
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
+
   // Column search state for DataTable
   const [columnFilters, setColumnFilters] = useState<{
     [key: string]: string;
@@ -91,6 +100,15 @@ export default function Page() {
 
   // Dialog state for viewing ability details
   const [selectedAbilityId, setSelectedAbilityId] = useState<number | null>(null);
+
+  // Detail tour handler
+  useEffect(() => {
+    (window as any).detailOnboardingHandler = (tab: string) => {
+      if (tab === 'Ability') {
+        setShowTour(true);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -177,6 +195,13 @@ export default function Page() {
 
     fetchItems();
   }, [sessionData, selectedLevel, selectedCategory, selectedSubCategory]);
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
   // Filter items for triangle view based on search
   const filteredTriangleItems = items.filter(item =>
@@ -339,7 +364,7 @@ export default function Page() {
   return (
     <div className="p-4">
       {/* Header with Title and Action Buttons */}
-    
+
 
       {/* Search Bar and Filters */}
       <div className="flex justify-between items-center mb-4">
@@ -347,6 +372,7 @@ export default function Page() {
         <div className="relative w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
+            id="search-abilities-input"
             type="text"
             placeholder="Search abilities, categories, or proficiency levels..."
             value={searchTerm}
@@ -360,7 +386,7 @@ export default function Page() {
             {/* Funnel Filter Popover */}
             <Popover>
               <PopoverTrigger asChild>
-                <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md">
+                <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md" title="Filter">
                   <Funnel className="w-5 h-5 " />
 
                 </button>
@@ -382,12 +408,12 @@ export default function Page() {
             </Popover>
 
             {/* View Toggle */}
-            <div className="flex border rounded-md overflow-hidden">
+            <div id="ability-view-toggle" className="flex border rounded-md overflow-hidden">
               <button
                 onClick={() => setViewMode("triangle")}
                 className={`px-3 py-2 flex items-center justify-center ${viewMode === "triangle"
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 title="Triangle View"
               >
@@ -396,8 +422,8 @@ export default function Page() {
               <button
                 onClick={() => setViewMode("table")}
                 className={`px-3 py-2 flex items-center justify-center ${viewMode === "table"
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 title="Table View"
               >
@@ -406,7 +432,7 @@ export default function Page() {
             </div>
             <Popover>
               <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="More Actions">
                   <MoreVertical className="w-5 h-5 text-gray-600" />
                 </button>
               </PopoverTrigger>
@@ -416,7 +442,7 @@ export default function Page() {
               >
                 {/* Action Buttons - All in one line */}
                 <div className="flex items-center gap-3">
-                                    {/* Add New Ability */}
+                  {/* Add New Ability */}
                   <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Add New Ability">
                     <Plus className="w-5 h-5 text-gray-600" />
 
@@ -483,12 +509,25 @@ export default function Page() {
         />
       )}
 
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps('Ability')}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
+        />
+      )}
+
       {/* Ability View Dialog */}
       {selectedAbilityId && (
         <ViewKnowledge
           knowledgeId={selectedAbilityId}
           onClose={() => setSelectedAbilityId(null)}
-          onSuccess={() => {}}
+          onSuccess={() => { }}
           classification="ability"
           typeName="Ability"
         />

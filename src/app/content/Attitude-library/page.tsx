@@ -23,6 +23,8 @@ import { Atom } from "react-loading-indicators";
 import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/AttitudeComponent/viewDialouge";
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "@/lib/tourSteps";
 
 // ---------- Types ----------
 type CardData = {
@@ -41,7 +43,11 @@ interface SessionData {
 }
 
 // ---------- Main Page ----------
-export default function Index() {
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+export default function Index({ showDetailTour }: PageProps) {
   const [skills, setSkills] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [subCategories, setSubCategories] = useState<string[]>([]);
@@ -64,6 +70,25 @@ export default function Index() {
 
   // Dialog state for viewing attitude details
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
+
+  // // Detail tour handler
+  // useEffect(() => {
+  //   (window as any).detailOnboardingHandler = (tab: string) => {
+  //     if (tab === 'Attitude') {
+  //       setShowTour(true);
+  //     }
+  //   };
+  // }, []);
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
   // ✅ Table filters
   const [columnFilters, setColumnFilters] = useState({
@@ -356,6 +381,7 @@ export default function Index() {
         <div className="relative w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
+            id="search-attitude-input"
             type="text"
             placeholder="Search attitude, categories, or proficiency levels..."
             value={searchTerm}
@@ -395,7 +421,7 @@ export default function Index() {
           </Popover>
 
           {/* View Toggle */}
-          <div className="flex border rounded-md overflow-hidden">
+          <div id="attitude-view-toggle" className="flex border rounded-md overflow-hidden">
             <button
               onClick={() => setViewMode("cards")}
               className={`px-3 py-2 flex items-center justify-center ${viewMode === "cards"
@@ -417,7 +443,7 @@ export default function Index() {
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="More Actions">
                 <MoreVertical className="w-5 h-5 text-gray-600" />
               </button>
             </PopoverTrigger>
@@ -478,6 +504,19 @@ export default function Index() {
           onSuccess={() => {}}
           classification="attitude"
           typeName="Attitude"
+        />
+      )}
+
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps('Attitude')}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
         />
       )}
     </>

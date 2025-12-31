@@ -33,6 +33,7 @@ const TabsMenu: React.FC<TabsMenuProps> = ({
           {tabs.map((tab) => (
             <button
               key={tab}
+              id={`tab-${tab.replace(/\s+/g, '-').toLowerCase()}`}
               onClick={() => {
                 onTabChange(tab);
                 onOpenPage(null); // tab બદલતાં dropdown page હાઇડ
@@ -60,7 +61,7 @@ const TabsMenu: React.FC<TabsMenuProps> = ({
 
           {isDropdownOpen && (
             <div className="absolute right-0 mt-2 w-56 bg-white shadow-md rounded-md z-10">
-              {activeTab === "Skill Library" && (
+              {activeTab === "Skill" && (
                 <button
                   className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                   onClick={() => openAndClose("SkillTaxonomy")}
@@ -69,7 +70,7 @@ const TabsMenu: React.FC<TabsMenuProps> = ({
                 </button>
               )}
 
-              {activeTab === "Jobrole Library" && (
+              {activeTab === "Jobrole" && (
                 <button
                   className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                   onClick={() => openAndClose("JobroleTaxonomy")}
@@ -78,7 +79,7 @@ const TabsMenu: React.FC<TabsMenuProps> = ({
                 </button>
               )}
 
-              {activeTab === "Jobrole Task Library" && (
+              {activeTab === "Jobrole Task" && (
                 <button
                   className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                   onClick={() => openAndClose("JobroleTaskTaxonomy")}

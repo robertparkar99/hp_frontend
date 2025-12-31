@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/dialog";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ConfigurationModal from "../../Jobrole-library/ConfigurationModal";
+import ShepherdTour from "../../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "@/lib/tourSteps";
 
 type JobRoleTask = {
   id: number;
@@ -53,7 +55,18 @@ type JobRoleTask = {
   sub_institute_id: number;
 };
 
-const CriticalWorkFunctionGrid = () => {
+interface CriticalWorkFunctionGridProps {
+  showDetailTour?: {
+    show: boolean;
+    onComplete: () => void;
+  };
+}
+
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ showDetailTour }: PageProps) => {
   const [data, setData] = useState<JobRoleTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [editData, setEditData] = useState<any>({});
@@ -85,7 +98,8 @@ const CriticalWorkFunctionGrid = () => {
 
   // Content section ref
   const contentRef = useRef<HTMLElement>(null);
-
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
   // ✅ View toggle state
   const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
 
@@ -152,6 +166,14 @@ const CriticalWorkFunctionGrid = () => {
     if (!sessionData.url || !sessionData.subInstituteId) return;
     fetchData();
   }, [sessionData]);
+
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -723,7 +745,7 @@ const CriticalWorkFunctionGrid = () => {
 
         {/* ✅ Toggle between Card View and Table View */}
         {viewMode === "myview" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div id="task-cards-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredData.map((item) => (
               <div
                 key={item.id}
@@ -883,6 +905,19 @@ const CriticalWorkFunctionGrid = () => {
           isOpen={isConfigModalOpen}
           onClose={() => setIsConfigModalOpen(false)}
           jsonObject={configJsonObject}
+        />
+      )}
+
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps('Jobrole Task')}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
         />
       )}
     </>

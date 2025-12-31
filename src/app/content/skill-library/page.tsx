@@ -26,6 +26,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Atom } from "react-loading-indicators";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "../../../lib/tourSteps";
 
 type Skill = {
   id: number;
@@ -69,7 +71,11 @@ type Department = {
   department: string;
 };
 
-export default function Page() {
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+export default function Page({ showDetailTour = false }: PageProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [userSkills, setUserSkills] = useState<Skill[]>([]);
   const [jobRoleSkills, setJobRoleSkills] = useState<JobRoleSkill[]>([]);
@@ -148,6 +154,9 @@ export default function Page() {
 
   // Ref for content section
   const contentRef = useRef<HTMLElement>(null);
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
 
   // Toggle function for the actions menu
   const toggleActionsMenu = () => {
@@ -415,6 +424,13 @@ export default function Page() {
   useEffect(() => {
     fetchData();
   }, [sessionData, refreshKey]);
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
   // Delete handler
   const handleDelete = async (skillId: number) => {
@@ -756,6 +772,7 @@ export default function Page() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
+                id="search-skills-input"
                 type="text"
                 placeholder="Search skills..."
                 value={searchTerm}
@@ -772,7 +789,7 @@ export default function Page() {
             {/* Filter Button */}
             <Popover>
               <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-gray-100">
+                <button className="p-2 rounded-lg hover:bg-gray-100" title="Filter">
                   <Funnel className="w-5 h-5" />
                 </button>
               </PopoverTrigger>
@@ -1261,6 +1278,19 @@ export default function Page() {
             onSuccess={() => {
               setDialogOpen({ ...dialogOpen, add: false });
               setRefreshKey((prev) => prev + 1);
+            }}
+          />
+        )}
+
+        {/* Detail Tour */}
+        {showTour && (
+          <ShepherdTour
+            steps={generateDetailTourSteps('Skill')}
+            onComplete={() => {
+              setShowTour(false);
+              if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+                showDetailTour.onComplete();
+              }
             }}
           />
         )}
