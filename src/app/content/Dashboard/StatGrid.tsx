@@ -1250,8 +1250,7 @@ export default function Dashboard() {
             </div>
           )}
           {/* Employee Table - Full width row */}
-          {(shouldShowWidget("Employee List") || !selectedWidget) && (
-            <div className="col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll mb-15 ">
+          <div className="col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll mb-15 ">
               {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
 
               {/* Table Headers with Search Fields */}
@@ -1415,7 +1414,7 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          )}
+        
         </div>
 
         {/* Right Section - Adjust column span based on sidebar state */}
