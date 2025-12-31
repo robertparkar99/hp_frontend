@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || " "; // Store securely in env file
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY_SKILL || " "; // Store securely in env file
 
 export async function POST(req: Request) {
     try {
         console.log("Received POST request at /api/generate-skill");
+        console.log("OPENROUTER_API_KEY:", OPENROUTER_API_KEY);
         const { skillName, description, orgType } = await req.json();
         console.log("Parsed skillName:", skillName);
         console.log("Parsed description:", description);
@@ -39,17 +40,22 @@ export async function POST(req: Request) {
             headers: {
                 "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
                 "Content-Type": "application/json",
+                
             },
             body: JSON.stringify({
                 model: "deepseek/deepseek-chat",
                 messages: [{ role: "user", content: prompt }],
+                temperature: 0.7,
+                max_tokens: 500,
             }),
         });
 
         const data = await response.json();
+        console.log("OpenRouter response data:", data);
         return NextResponse.json(data);
     } catch (error) {
         console.error("OpenRouter error:", error);
+        console.log("Error details:", error);
         return NextResponse.json({ error: "AI generation failed" }, { status: 500 });
     }
 }

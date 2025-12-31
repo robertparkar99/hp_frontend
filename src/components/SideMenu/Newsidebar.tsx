@@ -464,46 +464,46 @@ const useMenuData = (sessionData: any) => {
                 }
             };
 
-            // Fetch all data in parallel where possible
-            const [level1Data, level2Data, level3Data] = await Promise.all([
-                fetchWithRetry(
-                    `${sessionData.url}/table_data?table=tblmenumaster&filters[parent_id]=0&filters[level]=1&filters[status]=1&sort_order=sort_order`
-                ),
-                fetchWithRetry(
-                    `${sessionData.url}/table_data?table=tblmenumaster&filters[level]=2&filters[status]=1&sort_order=sort_order`
-                ),
-                fetchWithRetry(
-                    `${sessionData.url}/table_data?table=tblmenumaster&filters[level]=3&filters[status]=1&sort_order=sort_order`
-                )
-            ]);
+            // Fetch menu data from the new API
+            const menuData = await fetchWithRetry(
+                `${sessionData.url}/user/ajax_groupwiserights?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&profile_id=${sessionData.userProfile}`
+            );
 
             // Process data
-            const sectionsData = level1Data.map((l1: MenuApiItem) => {
-                const l2Items = level2Data.filter((l2: MenuApiItem) => l2.parent_id === l1.id);
-                const subItems = l2Items.map((l2: MenuApiItem) => {
-                    const l3Items = level3Data.filter((l3: MenuApiItem) => l3.parent_id === l2.id);
+            const sectionsData = menuData.level_1
+                .filter((l1: any) => l1.can_view === 1)
+                .map((l1: any) => {
+                    const l2Group = menuData.level_2[l1.id] || {};
+                    const subItems = Object.values(l2Group)
+                        .filter((l2: any) => l2.can_view === 1)
+                        .map((l2: any) => {
+                            const l3Group = menuData.level_3[l2.id] || {};
+                            const subSubItems = Object.values(l3Group)
+                                .filter((l3: any) => l3.can_view === 1)
+                                .map((l3: any) => ({
+                                    key: String(l3.id),
+                                    label: l3.menu_name,
+                                    page_type: l3.page_type,
+                                    access_link: l3.access_link,
+                                }));
+
+                            return {
+                                key: String(l2.id),
+                                label: l2.menu_name,
+                                icon: <i className={l2.icon}></i>,
+                                page_type: l2.page_type,
+                                access_link: l2.access_link,
+                                subItems: subSubItems,
+                            };
+                        });
+
                     return {
-                        key: String(l2.id),
-                        label: l2.menu_name,
-                        icon: <i className={l2.icon}></i>,
-                        page_type: l2.page_type,
-                        access_link: l2.access_link,
-                        subItems: l3Items.map((l3: MenuApiItem) => ({
-                            key: String(l3.id),
-                            label: l3.menu_name,
-                            page_type: l3.page_type,
-                            access_link: l3.access_link,
-                        })),
+                        key: String(l1.id),
+                        label: l1.menu_name,
+                        icon: <i className={l1.icon}></i>,
+                        subItems,
                     };
                 });
-
-                return {
-                    key: String(l1.id),
-                    label: l1.menu_name,
-                    icon: <i className={l1.icon}></i>,
-                    subItems,
-                };
-            });
 
             // Cache the result
             menuCache.set(cacheKey, sectionsData);
@@ -717,7 +717,7 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         const userData = localStorage.getItem("userData");
         if (userData) {
             try {
-                const { APP_URL, token, sub_institute_id, org_type, user_id, userimage, userProfile, firstName, lastName } = JSON.parse(userData);
+                const { APP_URL, token, sub_institute_id, org_type, user_id, userimage, user_profile_id, firstName, lastName } = JSON.parse(userData);
                 setSessionData({
                     url: APP_URL || "",
                     token: token || "",
@@ -725,7 +725,7 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                     orgType: org_type || "",
                     userId: user_id || "",
                     userimage: userimage || "",
-                    userProfile: userProfile || "",
+                    userProfile: user_profile_id || "",
                     firstName: firstName || "",
                     lastName: lastName || "",
                 });

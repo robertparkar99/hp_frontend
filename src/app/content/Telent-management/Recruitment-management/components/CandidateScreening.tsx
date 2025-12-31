@@ -76,29 +76,40 @@ interface JobApplication {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  current_company?: string;
+  current_role?: string;
 }
 
 interface Candidate {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  position: string;
-  experience: string;
-  education: string;
-  location: string;
-  skills: string[];
-  score: number;
-  status: 'shortlisted' | 'rejected' | 'pending' | 'under_review';
-  appliedDate: string;
-  resumeUrl: string;
-  matchDetails: {
-    skillsMatch: number;
-    experienceMatch: number;
-    educationMatch: number;
-    locationMatch: number;
-  };
-  originalApplication: JobApplication;
+   id: string;
+   name: string;
+   email: string;
+   phone: string;
+   position: string;
+   experience: string;
+   education: string;
+   location: string;
+   skills: string[];
+   score: number | null;
+   status: 'shortlisted' | 'rejected' | 'pending' | 'under_review';
+   appliedDate: string;
+   resumeUrl: string;
+   matchDetails: {
+     skillsMatch: number | null;
+     experienceMatch: number | null;
+     educationMatch: number | null;
+     cultural_fit: number | null;
+   };
+   originalApplication: JobApplication;
+   aiRecommendation?: string;
+   culturalFit?: number;
+   reasoning?: string;
+   isScreened: boolean;
+   predictedSuccess?: string;
+   rankingScore?: number;
+   skillMatchDetails?: any[];
+   skillGaps?: string[];
+   strengths?: string[];
 }
 
 interface CandidateScreeningProps {
@@ -129,13 +140,6 @@ const CandidateScreening = ({ jobApplications, jobPostings, loading, onRefresh }
         // Parse skills from string to array
         const skillsArray = application.skills ? application.skills.split(',').map(skill => skill.trim()) : [];
 
-        // Generate a consistent random score based on application ID
-        const getRandomScore = (id: number) => {
-          return (id % 40) + 60; // Score between 60-100
-        };
-
-        const score = getRandomScore(application.id);
-
         // Determine status based on application status
         const getCandidateStatus = (appStatus: string): Candidate['status'] => {
           switch (appStatus) {
@@ -144,16 +148,6 @@ const CandidateScreening = ({ jobApplications, jobPostings, loading, onRefresh }
             case 'under_review': return 'under_review';
             default: return 'pending';
           }
-        };
-
-        // Generate match details based on score and application data
-        const generateMatchDetails = (app: JobApplication, score: number) => {
-          return {
-            skillsMatch: parseFloat(Math.min(score + (Math.random() * 10 - 5), 100).toFixed(2)),
-            experienceMatch: parseFloat(Math.min(score + (Math.random() * 10 - 5), 100).toFixed(2)),
-            educationMatch: parseFloat(Math.min(score + (Math.random() * 10 - 5), 100).toFixed(2)),
-            locationMatch: parseFloat(Math.min(score + (Math.random() * 10 - 5), 100).toFixed(2))
-          };
         };
 
         return {
@@ -166,20 +160,148 @@ const CandidateScreening = ({ jobApplications, jobPostings, loading, onRefresh }
           education: application.education || 'Not specified',
           location: application.current_location || 'Not specified',
           skills: skillsArray,
-          score: score,
+          score: null, // Will be set by AI screening
           status: getCandidateStatus(application.status),
           appliedDate: application.applied_date || application.created_at,
           resumeUrl: application.resume_path || '',
-          matchDetails: generateMatchDetails(application, score),
-          originalApplication: application
+          matchDetails: {
+            skillsMatch: null,
+            experienceMatch: null,
+            educationMatch: null,
+            cultural_fit: null
+          },
+          originalApplication: application,
+          isScreened: false
         };
       });
 
       setCandidates(convertedCandidates);
+
+      // After setting candidates, perform AI screening for each
+      screenAllCandidates(convertedCandidates);
     } else {
       setCandidates([]);
     }
   }, [jobApplications, jobPostings]);
+
+  // Function to screen all candidates using AI
+  const screenAllCandidates = async (candidatesList: Candidate[]) => {
+    const updatedCandidates = await Promise.all(
+      candidatesList.map(async (candidate) => {
+        try {
+          const job = jobPostings.find(j => j.id === candidate.originalApplication.job_id);
+          if (!job) return candidate;
+
+          // Build resume text from application data
+          const resumeText = buildResumeText(candidate.originalApplication);
+
+          // Build JD data from job posting
+          const jdData = buildJDData(job);
+
+          // Call screening API
+          const screeningResult = await screenCandidate({
+            resume: resumeText,
+            jdData: jdData,
+            candidateEmail: candidate.email,
+            candidateName: candidate.name
+          });
+          
+
+          // Update candidate with real screening data
+          return {
+            ...candidate,
+            score: screeningResult.competency_match,
+            matchDetails: {
+              skillsMatch: screeningResult.competency_match,
+              experienceMatch: screeningResult.competency_match,
+              educationMatch: screeningResult.competency_match,
+              cultural_fit: screeningResult.cultural_fit
+            },
+            aiRecommendation: screeningResult.recommendation,
+            culturalFit: screeningResult.cultural_fit,
+            reasoning: screeningResult.reasoning,
+            isScreened: true,
+            predictedSuccess: screeningResult.predicted_success,
+            rankingScore: screeningResult.competency_match,
+            skillMatchDetails: screeningResult.skill_match_details,
+            skillGaps: screeningResult.skill_gaps,
+            strengths: screeningResult.strengths
+          };
+        } catch (error) {
+          console.warn(`Failed to screen candidate ${candidate.id}:`, error);
+          // Return candidate with existing data if screening fails
+          return candidate;
+        }
+      })
+    );
+
+    setCandidates(updatedCandidates);
+  };
+
+  // Helper function to build resume text from application data
+  const buildResumeText = (application: JobApplication) => {
+    return `
+Candidate Name: ${application.first_name} ${application.last_name}
+Email: ${application.email}
+Mobile: ${application.mobile}
+Location: ${application.current_location}
+
+Experience:
+${application.experience}
+
+Education:
+${application.education}
+
+Skills:
+${application.skills}
+
+Certifications:
+${application.certifications || "Not provided"}
+
+Current Company:
+${application.current_company || "Not provided"}
+
+Current Role:
+${application.current_role || "Not provided"}
+    `.trim();
+  };
+
+  // Helper function to build JD data from job posting
+  const buildJDData = (job: JobPosting) => ({
+    core_skills: job.skills
+      ? job.skills.split(",").map(s => s.trim())
+      : [],
+
+    behavioral_traits: [
+      "Problem Solving",
+      "Teamwork",
+      "Communication"
+    ],
+
+    competency_level: job.skills
+      ? job.skills.split(",").reduce((acc: any, skill) => {
+        acc[skill.trim()] = "Intermediate";
+        return acc;
+      }, {})
+      : {}
+  });
+
+  // Function to screen a single candidate
+  const screenCandidate = async (payload: any) => {
+    const response = await fetch("/api/screenCandidate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error("ScreenCandidate API failed");
+    }
+
+    return response.json();
+  };
 
   const getStatusBadge = (status: Candidate['status']) => {
     switch (status) {
@@ -194,7 +316,8 @@ const CandidateScreening = ({ jobApplications, jobPostings, loading, onRefresh }
     }
   };
 
-  const getScoreBadge = (score: number) => {
+  const getScoreBadge = (score: number | null) => {
+    if (score === null) return null;
     if (score >= 85) return <Badge className="bg-success text-success-foreground">Excellent</Badge>;
     if (score >= 70) return <Badge className="bg-warning text-warning-foreground">Good</Badge>;
     if (score >= 60) return <Badge variant="outline">Fair</Badge>;
@@ -214,12 +337,13 @@ const CandidateScreening = ({ jobApplications, jobPostings, loading, onRefresh }
     return matchesSearch && matchesTab;
   });
 
+  const screenedCandidates = candidates.filter(c => c.isScreened && c.score !== null);
   const stats = {
     total: candidates.length,
     shortlisted: candidates.filter(c => c.status === 'shortlisted').length,
     pending: candidates.filter(c => c.status === 'pending' || c.status === 'under_review').length,
     rejected: candidates.filter(c => c.status === 'rejected').length,
-    avgScore: candidates.length > 0 ? Math.round(candidates.reduce((sum, c) => sum + c.score, 0) / candidates.length) : 0
+    avgScore: screenedCandidates.length > 0 ? Math.round(screenedCandidates.reduce((sum, c) => sum + (c.score || 0), 0) / screenedCandidates.length) : 0
   };
 
   const handleViewApplication = (candidate: Candidate) => {
@@ -398,31 +522,118 @@ const CandidateScreening = ({ jobApplications, jobPostings, loading, onRefresh }
                         <div className="text-right">
                           <div className="flex items-center space-x-2 mb-2 justify-end">
                             <Star className="w-5 h-5 text-primary" />
-                            <span className="text-2xl font-bold text-primary">{candidate.score}%</span>
+                              <span className="text-2xl font-bold text-primary">
+                                {candidate.isScreened && candidate.score !== null ? `${candidate.score}%` : 'Pending'}
+                              </span>
                           </div>
-                          {getScoreBadge(candidate.score)}
+                            {candidate.isScreened && candidate.score !== null ? getScoreBadge(candidate.score) : (
+                              <Badge variant="outline">Screening in Progress</Badge>
+                            )}
+                            {candidate.aiRecommendation && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                AI: {candidate.aiRecommendation}
+                              </div>
+                            )}
+                            {/* {candidate.culturalFit && (
+                              <div className="text-sm text-muted-foreground">
+                                Cultural Fit: {candidate.culturalFit}%
+                              </div>
+                            )} */}
                         </div>
                       </div>
 
                       {/* Match Details */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div className="text-center">
-                          <div className="text-lg font-semibold">{candidate.matchDetails.skillsMatch}%</div>
-                          <div className="text-xs text-muted-foreground">Skills Match</div>
+                        {candidate.isScreened ? (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                            <div className="text-center">
+                              <div className="text-lg font-semibold">{candidate.matchDetails.skillsMatch}%</div>
+                              <div className="text-xs text-muted-foreground">Skills Match</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-semibold">{candidate.matchDetails.experienceMatch}%</div>
+                              <div className="text-xs text-muted-foreground">Experience</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-semibold">{candidate.matchDetails.educationMatch}%</div>
+                              <div className="text-xs text-muted-foreground">Education</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-semibold">{candidate.matchDetails.cultural_fit}</div>
+                              <div className="text-xs text-muted-foreground">Cultural Fit</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center mb-4">
+                            <div className="text-sm text-muted-foreground">AI screening in progress...</div>
+                          </div>
+                        )}
+
+                      {/* Additional Screening Details */}
+                      {candidate.isScreened && (
+                        <div className="mb-4 space-y-3">
+                          {candidate.predictedSuccess && (
+                            <div>
+                              <h4 className="font-medium text-sm mb-1">Predicted Success</h4>
+                              <Badge variant={
+                                candidate.predictedSuccess === 'Highly Likely' ? 'default' :
+                                candidate.predictedSuccess === 'Likely' ? 'secondary' :
+                                candidate.predictedSuccess === 'Possible' ? 'outline' : 'destructive'
+                              }>
+                                {candidate.predictedSuccess}
+                              </Badge>
+                            </div>
+                          )}
+
+                          {candidate.rankingScore !== undefined && (
+                            <div>
+                              <h4 className="font-medium text-sm mb-1">Ranking Score</h4>
+                              <div className="text-lg font-semibold">{candidate.rankingScore}/100</div>
+                            </div>
+                          )}
+
+                          {candidate.skillMatchDetails && candidate.skillMatchDetails.length > 0 && (
+                            <div>
+                              <h4 className="font-medium text-sm mb-2">Skill Match Details</h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {candidate.skillMatchDetails.map((skill: any, index: number) => (
+                                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                    <span className="text-sm">{skill.skill}</span>
+                                    <Badge variant={skill.present ? "default" : "destructive"} className="text-xs">
+                                      {skill.present ? "Present" : "Missing"}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {candidate.skillGaps && candidate.skillGaps.length > 0 && (
+                            <div>
+                              <h4 className="font-medium text-sm mb-2">Skill Gaps</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {candidate.skillGaps.map((gap, index) => (
+                                  <Badge key={index} variant="destructive" className="text-xs">
+                                    {gap}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {candidate.strengths && candidate.strengths.length > 0 && (
+                            <div>
+                              <h4 className="font-medium text-sm mb-2">Key Strengths</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {candidate.strengths.map((strength, index) => (
+                                  <Badge key={index} variant="default" className="text-xs">
+                                    {strength}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-center">
-                          <div className="text-lg font-semibold">{candidate.matchDetails.experienceMatch}%</div>
-                          <div className="text-xs text-muted-foreground">Experience</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-semibold">{candidate.matchDetails.educationMatch}%</div>
-                          <div className="text-xs text-muted-foreground">Education</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-semibold">{candidate.matchDetails.locationMatch}%</div>
-                          <div className="text-xs text-muted-foreground">Location</div>
-                        </div>
-                      </div>
+                      )}
 
                       {/* Skills */}
                       {candidate.skills.length > 0 && (

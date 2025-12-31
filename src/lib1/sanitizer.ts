@@ -5,7 +5,7 @@ export interface SanitizationResult {
 }
 
 const dangerousPatterns = [
-  /(\b(DROP|DELETE|TRUNCATE|ALTER|INSERT|UPDATE|CREATE|EXEC|EXECUTE|UNION|SELECT\s+\*\s+FROM)\b)/gi,
+  /(\b(DROP|DELETE|TRUNCATE|ALTER|INSERT|UPDATE|EXEC|EXECUTE|UNION|SELECT\s+\*\s+FROM)\b)/gi,
   /(<script|javascript:|onerror=|onload=)/gi,
   /(--|;|\/\*|\*\/|xp_|sp_)/gi,
   /(\[|{|%|\$|#|\^|&|\||\\)/g,

@@ -14,6 +14,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import TaskListModel from "../task/components/taskListModel";
 
 interface SessionData {
@@ -31,6 +39,7 @@ interface Employee {
   first_name: string;
   middle_name?: string;
   last_name?: string;
+  department_id?: string;
 }
 
 interface JobRole {
@@ -80,6 +89,7 @@ const TaskManagement = () => {
   const [selEmployee, setSelEmployee] = useState<string[]>([]);
   const [taskList, setTaskList] = useState<Task[]>([]);
   const [taskListArr, setTaskListArr] = useState<any>();
+  const [previouslyAllocatedTasks, setPreviouslyAllocatedTasks] = useState<Task[]>([]);
   const [selTask, setSelTask] = useState<string>("");
   const [skillList, setSkillList] = useState<Skill[]>([]);
   const [selSkill, setSelSkill] = useState<string[]>([]);
@@ -99,6 +109,11 @@ const TaskManagement = () => {
   const [observationPoint, setObservationPoint] = useState<string>("");
   const [kras, setKras] = useState<string>("");
   const [kpis, setKpis] = useState<string>("");
+
+  // Add state for department field
+  const [departmentList, setDepartmentList] = useState<{ department_name: string; department_id?: string }[]>([]);
+  const [selDepartment, setSelDepartment] = useState<string>("");
+  const [selDepartmentId, setSelDepartmentId] = useState<string>("");
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -126,7 +141,7 @@ const TaskManagement = () => {
 
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
-      fetchJobroles();
+      fetchDepartments();
       fetchObserver();
     }
   }, [sessionData.url, sessionData.token]);
@@ -139,6 +154,26 @@ const TaskManagement = () => {
       }
     };
   }, [previewUrl]);
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
+      );
+      const data = await res.json();
+
+      // Extract unique department names and IDs from the API response
+      const departments = data.data ?
+        Object.keys(data.data).map(deptName => ({
+          department_name: deptName,
+          department_id: data.data[deptName][0]?.department_id || ''
+        })) : [];
+      setDepartmentList(departments);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      alert("Failed to load departments");
+    }
+  };
 
   const fetchJobroles = async () => {
     try {
@@ -170,10 +205,10 @@ const TaskManagement = () => {
     try {
       const res = await fetch(
         `${sessionData.url}/search_data?type=API&token=${sessionData.token}` +
-          `&sub_institute_id=${sessionData.subInstituteId}` +
-          `&org_type=${sessionData.orgType}` +
-          `&searchType=jobrole_emp` +
-          `&searchWord=${jobRole}`
+        `&sub_institute_id=${sessionData.subInstituteId}` +
+        `&org_type=${sessionData.orgType}` +
+        `&searchType=jobrole_emp` +
+        `&searchWord=${jobRole}`
       );
       const data = await res.json();
       const employees = Array.isArray(data.searchData)
@@ -186,26 +221,112 @@ const TaskManagement = () => {
     }
   };
 
+  const fetchDepartmentWiseJobroles = async (departmentName: string) => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
+      );
+      const data = await res.json();
+
+      // Filter job roles by selected department
+      const deptData = data.data || {};
+      const jobroles = deptData[departmentName] || [];
+
+      // Transform to match expected JobRole interface
+      const transformedJobroles = jobroles.map((jr: any) => ({
+        jobrole: jr.jobrole,
+        allocated_standards: jr.id.toString()
+      }));
+
+      setJobroleList(transformedJobroles);
+      setSelJobrole("");
+      setEmployeeList([]);
+    } catch (error) {
+      console.error("Error fetching department-wise jobroles:", error);
+      alert("Failed to load department jobroles");
+    }
+  };
+
+  const fetchDepartmentWiseEmployees = async (departmentName: string) => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
+      );
+      const data = await res.json();
+
+      // Get all job roles for the selected department
+      const deptData = data.data || {};
+      const jobroles = deptData[departmentName] || [];
+
+      // Extract unique employees from all job roles in this department
+      const employeeMap = new Map<string, Employee>();
+
+      jobroles.forEach((jr: any) => {
+        if (jr.employees && Array.isArray(jr.employees)) {
+          jr.employees.forEach((emp: any) => {
+            if (emp.id && !employeeMap.has(emp.id)) {
+              employeeMap.set(emp.id, {
+                id: emp.id,
+                first_name: emp.first_name || '',
+                middle_name: emp.middle_name || '',
+                last_name: emp.last_name || '',
+                department_id: jr.department_id || ''
+              });
+            }
+          });
+        }
+      });
+
+      setEmployeeList(Array.from(employeeMap.values()));
+    } catch (error) {
+      console.error("Error fetching department-wise employees:", error);
+      alert("Failed to load department employees");
+    }
+  };
+
   const fetchEmployeeDetails = async (userId: string) => {
     if (userId === "") {
       setSkillList([]);
       setTaskList([]);
+      setPreviouslyAllocatedTasks([]);
     } else {
       try {
         const response = await fetch(
           `${sessionData.url}/user/add_user/${userId}/edit?type=API&token=${sessionData.token}` +
-            `&sub_institute_id=${sessionData.subInstituteId}` +
-            `&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
+          `&sub_institute_id=${sessionData.subInstituteId}` +
+          `&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
         );
 
         const data = await response.json();
         setSkillList(data.jobroleSkills || []);
         setTaskList(data.jobroleTasks || []);
         setTaskListArr(data.jobroleTasks || []);
+        
+        // Fetch previously allocated tasks for this employee
+        await fetchPreviouslyAllocatedTasks(userId);
       } catch (error) {
         console.error("Error fetching employee details:", error);
         alert("Failed to load employee details");
       }
+    }
+  };
+  
+  const fetchPreviouslyAllocatedTasks = async (userId: string) => {
+    try {
+      const response = await fetch(
+        `${sessionData.url}/api/get-employee-tasks?user_id=${userId}&sub_institute_id=${sessionData.subInstituteId}`
+      );
+      const data = await response.json();
+      
+      // Extract unique task titles from previously allocated tasks
+      const uniqueTasks = Array.isArray(data)
+        ? data.map((task: any) => ({ task: task.task_title || task.task }))
+        : [];
+      
+      setPreviouslyAllocatedTasks(uniqueTasks);
+    } catch (error) {
+      console.error("Error fetching previously allocated tasks:", error);
+      setPreviouslyAllocatedTasks([]);
     }
   };
 
@@ -245,25 +366,25 @@ const TaskManagement = () => {
   // Fixed date formatting function
   const formatDateForInput = (dateString: string): string => {
     if (!dateString) return '';
-    
+
     try {
       // If it's already in YYYY-MM-DD format, return as is
       if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
         return dateString;
       }
-      
+
       // Try to parse the date
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
         console.warn('Invalid date string:', dateString);
         return '';
       }
-      
+
       // Format to YYYY-MM-DD for input field
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
-      
+
       return `${year}-${month}-${day}`;
     } catch (error) {
       console.error('Error formatting date:', error);
@@ -274,12 +395,12 @@ const TaskManagement = () => {
   // Ensure date is properly formatted for API submission
   const formatDateForAPI = (dateString: string): string => {
     if (!dateString) return '';
-    
+
     // If it's already in correct format, return as is
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       return dateString;
     }
-    
+
     // Otherwise format it properly
     return formatDateForInput(dateString);
   };
@@ -294,7 +415,13 @@ const TaskManagement = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!selEmployee.length || !selTask || !taskType) {
+    // If no employees selected but department is selected, allow submission
+    if (!selEmployee.length && !selDepartmentId) {
+      alert("Please select either employees or a department");
+      return;
+    }
+    
+    if (!selTask || !taskType) {
       alert("Please fill all required fields");
       return;
     }
@@ -317,7 +444,26 @@ const TaskManagement = () => {
       const formData = new FormData();
 
       // Add all form fields to formData
-      formData.append("TASK_ALLOCATED_TO", selEmployee.join(","));
+      // Include department_id for each employee in TASK_ALLOCATED_TO
+      // Use the selected department ID if available, otherwise fall back to employee's department_id
+      const employeesWithDept = selEmployee.map(empId => {
+        const employee = employeeList.find(e => e.id === empId);
+        const deptId = selDepartmentId || employee?.department_id || '';
+        return employee ? `${empId}:${deptId}` : empId;
+      });
+      
+      // If no employees are selected but a department is selected, use the department ID
+      if (selDepartmentId && selEmployee.length === 0) {
+        formData.append("TASK_ALLOCATED_TO", selDepartmentId);
+      } else if (employeesWithDept.length > 0) {
+        formData.append("TASK_ALLOCATED_TO", employeesWithDept.join(","));
+      }
+      
+      // Also log the formatted data for debugging
+      const finalAllocatedTo = selDepartmentId && selEmployee.length === 0
+        ? selDepartmentId
+        : employeesWithDept.join(",");
+      console.log("TASK_ALLOCATED_TO:", finalAllocatedTo);
       formData.append("task_title", selTask);
       formData.append("task_description", taskDescription);
       formData.append("skills", selSkill.join(","));
@@ -344,8 +490,8 @@ const TaskManagement = () => {
 
       const response = await fetch(
         `${sessionData.url}/task?type=API&token=${sessionData.token}` +
-          `&sub_institute_id=${sessionData.subInstituteId}` +
-          `&org_type=${sessionData.orgType}&syear=${sessionData.syear}&user_id=${sessionData.userId}&formType=multiUser`,
+        `&sub_institute_id=${sessionData.subInstituteId}` +
+        `&org_type=${sessionData.orgType}&syear=${sessionData.syear}&user_id=${sessionData.userId}&formType=multiUser`,
         {
           method: "POST",
           headers: {
@@ -356,7 +502,7 @@ const TaskManagement = () => {
       );
 
       const result = await response.json();
-      
+
       if (response.ok) {
         alert("Task created successfully for all selected employees!");
         resetForm();
@@ -366,8 +512,7 @@ const TaskManagement = () => {
     } catch (error) {
       console.error("Error submitting form:", error);
       alert(
-        `Error: ${
-          error instanceof Error ? error.message : "Something went wrong"
+        `Error: ${error instanceof Error ? error.message : "Something went wrong"
         }`
       );
     } finally {
@@ -376,6 +521,8 @@ const TaskManagement = () => {
   };
 
   const resetForm = () => {
+    setSelDepartment("");
+    setSelDepartmentId("");
     setSelJobrole("");
     setSelEmployee([]);
     setSelTask("");
@@ -391,6 +538,7 @@ const TaskManagement = () => {
     setObservationPoint("");
     setKras("");
     setKpis("");
+    setPreviouslyAllocatedTasks([]);
     
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -403,7 +551,7 @@ const TaskManagement = () => {
         return;
       }
       setMessage(1);
-      
+
       const skillsData = '[' + skillList.map(skill => skill.title).join(',') + ']';
       const response = await fetch(`${sessionData.url}/gemini_chat`, {
         method: 'POST',
@@ -420,21 +568,21 @@ const TaskManagement = () => {
       if (data[0]) {
         setMessage(2);
         const geminiData = data[0] as GeminiResponse;
-        
+
         // Update form fields with Gemini response
         setTaskDescription(geminiData.task_description);
-        
+
         const repeatMapping: { [key: string]: string } = {
           "Day": "1",
-          "Week": "7", 
+          "Week": "7",
           "Month": "30",
           "Year": "365"
         };
         setRepeatDays(repeatMapping[geminiData.repeat_once_in_every] || "1");
-        
+
         const formattedDate = formatDateForInput(geminiData.repeat_until_date);
         setRepeatUntil(formattedDate);
-        
+
         setObservationPoint(geminiData.observation_point);
         setKras(geminiData.kras);
         setKpis(geminiData.kpis);
@@ -467,10 +615,10 @@ const TaskManagement = () => {
                 <div>
                   {isjobroleList && (
                     <button className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
-                    onClick={() => {
-                      setIsJobroleModel(true);
-                      setIsEditModalOpen(true);
-                    }}>
+                      onClick={() => {
+                        setIsJobroleModel(true);
+                        setIsEditModalOpen(true);
+                      }}>
                       <span
                         className="mdi mdi-format-list-checks"
                       ></span>
@@ -479,37 +627,78 @@ const TaskManagement = () => {
                   )}
                 </div>
               </div>
-              
-              <form className="space-y-6" onSubmit={handleSubmit} ref={formRef}>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+              <form className="space-y-6 mt-6" onSubmit={handleSubmit} ref={formRef}>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {/* Department */}
+                  <div>
+                    <label className="block mb-1 text-sm text-gray-900">
+                      Department<span className="text-red-500">*</span>
+                    </label>
+
+                    <Select
+                      value={selDepartment}
+                      onValueChange={(value) => {
+                        setSelDepartment(value);
+                        const dept = departmentList.find(d => d.department_name === value);
+                        setSelDepartmentId(dept?.department_id || '');
+                        fetchDepartmentWiseJobroles(value);
+                        fetchDepartmentWiseEmployees(value);
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+
+                      <SelectContent
+                        side="bottom"
+                        align="start"
+                        sideOffset={6}
+                        avoidCollisions={false}
+                        className="max-w-[350px] overflow-y-auto"
+                        onWheel={(e) => e.stopPropagation()}
+                      >
+
+                        {departmentList.map((dept, index) => (
+                          <SelectItem key={index} value={dept.department_name}>
+                            {dept.department_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                  </div>
                   {/* Job Role */}
                   <div>
-                    <label
-                      htmlFor="jobRole"
-                      className="block mb-1 text-sm text-gray-900"
-                    >
-                      Job role{" "}
-                      <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
+                    <label className="block mb-1 text-sm text-gray-900">
+                      Job Role <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      id="jobRole"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+
+                    <Select
                       value={selJobrole}
-                      onChange={(e) => {
-                        const selectedJobRole = e.target.value;
-                        setSelJobrole(selectedJobRole);
-                        setSelJobroleText(e.target.options[e.target.selectedIndex].text);
-                        getEmployeeList(selectedJobRole);
+                      onValueChange={(value) => {
+                        setSelJobrole(value);
+                        const role = jobroleList.find(j => j.allocated_standards === value);
+                        setSelJobroleText(role?.jobrole || "");
+                        getEmployeeList(value);
                       }}
-                      required
                     >
-                      <option value="">Select Job Role</option>
-                      {jobroleList.map((jobrole, index) => (
-                        <option key={index} value={jobrole.allocated_standards}>
-                          {jobrole.jobrole}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Job Role" />
+                      </SelectTrigger>
+
+                      <SelectContent className="max-h-[260px] overflow-y-auto">
+                        {jobroleList.map((jobrole, index) => (
+                          <SelectItem
+                            key={index}
+                            value={jobrole.allocated_standards}
+                          >
+                            {jobrole.jobrole}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
                   </div>
 
                   {/* Assign To */}
@@ -570,7 +759,7 @@ const TaskManagement = () => {
                         placeholder="Type or select a task"
                         required
                       />
-                      <span className="mdi mdi-creation text-[20px] text-yellow-400" onClick={()=>geminiChat(selTask)} title="Generate Task with the help of AI"></span>
+                      <span className="mdi mdi-creation text-[20px] text-yellow-400" onClick={() => geminiChat(selTask)} title="Generate Task with the help of AI"></span>
                     </div>
                     {message === 1 && (
                       <div className="flex items-center text-yellow-400">
@@ -591,12 +780,50 @@ const TaskManagement = () => {
                       </div>
                     )}
                     <datalist id="taskList">
+                      {/* Job-role based tasks (default) */}
                       {taskList.map((task, index) => (
-                        <option key={index} value={task.task}>
+                        <option key={`jobrole-${index}`} value={task.task}>
+                          {task.task}
+                        </option>
+                      ))}
+                      
+                      {/* Previously allocated tasks */}
+                      {previouslyAllocatedTasks.map((task, index) => (
+                        <option key={`allocated-${index}`} value={task.task}>
                           {task.task}
                         </option>
                       ))}
                     </datalist>
+                    
+                    {/* Display task categories info */}
+                    {(taskList.length > 0 || previouslyAllocatedTasks.length > 0) && (
+                      <div className="mt-2 p-2 bg-gray-50 rounded-md border border-gray-200">
+  <div className="flex flex-col space-y-1 text-sm text-gray-600">
+
+    {/* Previously / Recently Used Tasks */}
+    {previouslyAllocatedTasks.length > 0 && (
+      <div className="flex items-center">
+        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+        <span>
+          {previouslyAllocatedTasks.length} Previously / Recently used task(s)
+        </span>
+      </div>
+    )}
+
+    {/* Job-role Based Tasks */}
+    {taskList.length > 0 && (
+      <div className="flex items-center">
+        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+        <span>
+          {taskList.length} Job-role based task(s)
+        </span>
+      </div>
+    )}
+
+  </div>
+</div>
+
+                    )}
                   </div>
                 </div>
 
@@ -619,7 +846,7 @@ const TaskManagement = () => {
                       onChange={(e) => setTaskDescription(e.target.value)}
                     ></textarea>
                   </div>
-                  
+
                   {/* Repeat Days */}
                   <div>
                     <label
@@ -676,7 +903,7 @@ const TaskManagement = () => {
                 </div>
 
                 {/* ... rest of your form fields with controlled components ... */}
-                
+
                 {/* Make sure to update all other form fields to use controlled components */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Skills Required */}
@@ -711,7 +938,7 @@ const TaskManagement = () => {
                       ))}
                     </select>
                   </div>
-                  
+
                   {/* Observer */}
                   <div>
                     <label
@@ -775,7 +1002,7 @@ const TaskManagement = () => {
                       onChange={(e) => setKpis(e.target.value)}
                     />
                   </div>
-                  
+
                   {/* Monitoring Points */}
                   <div>
                     <label
@@ -859,17 +1086,16 @@ const TaskManagement = () => {
                       htmlFor="task_type"
                       className="block mb-1 text-sm text-gray-900"
                     >
-                      Task Type{" "}
+                      Task priority {" "}
                       <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                     </label>
                     <div className="flex space-x-4 mt-2 justify-around">
                       <button
                         type="button"
-                        className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${
-                          taskType === "High"
-                            ? "border-red-600 text-red-700 bg-[#fbeded]"
-                            : "border-red-400 text-red-700 bg-white"
-                        }`}
+                        className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === "High"
+                          ? "border-red-600 text-red-700 bg-[#fbeded]"
+                          : "border-red-400 text-red-700 bg-white"
+                          }`}
                         onClick={() => handleTaskTypeSelect("High")}
                       >
                         <span className="w-4 h-4 bg-red-600 rounded-full mb-1"></span>
@@ -877,11 +1103,10 @@ const TaskManagement = () => {
                       </button>
                       <button
                         type="button"
-                        className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${
-                          taskType === "Medium"
-                            ? "border-yellow-600 text-yellow-700 bg-[#FEF6E9]"
-                            : "border-yellow-400 text-yellow-700 bg-white"
-                        }`}
+                        className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === "Medium"
+                          ? "border-yellow-600 text-yellow-700 bg-[#FEF6E9]"
+                          : "border-yellow-400 text-yellow-700 bg-white"
+                          }`}
                         onClick={() => handleTaskTypeSelect("Medium")}
                       >
                         <span className="w-4 h-4 bg-yellow-500 rounded-full mb-1"></span>
@@ -889,11 +1114,10 @@ const TaskManagement = () => {
                       </button>
                       <button
                         type="button"
-                        className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${
-                          taskType === "Low"
-                            ? "border-teal-600 text-teal-700 bg-[#EBF9F4]"
-                            : "border-teal-400 text-teal-700 bg-white"
-                        }`}
+                        className={`flex flex-col items-center border-2 rounded-lg py-3 px-4 w-24 transition ${taskType === "Low"
+                          ? "border-teal-600 text-teal-700 bg-[#EBF9F4]"
+                          : "border-teal-400 text-teal-700 bg-white"
+                          }`}
                         onClick={() => handleTaskTypeSelect("Low")}
                       >
                         <span className="w-4 h-4 bg-teal-500 rounded-full mb-1"></span>
@@ -944,7 +1168,7 @@ const TaskManagement = () => {
           </div>
         </div>
       </div>
-      
+
       {isjobroleModel && (
         <Dialog open={isEditModalOpen} onOpenChange={(open) => {
           setIsEditModalOpen(open);
@@ -956,17 +1180,17 @@ const TaskManagement = () => {
             <DialogHeader>
               <DialogTitle>Bulk Task Assignment</DialogTitle>
             </DialogHeader>
-            <TaskListModel 
-              taskListArr={taskListArr} 
-              ObserverList={ObserverList} 
-              sessionData={sessionData} 
-              selectedEmployees={selEmployee.join(",")}  
-              onSuccess={handleBulkTaskSuccess} 
+            <TaskListModel
+              taskListArr={taskListArr}
+              ObserverList={ObserverList}
+              sessionData={sessionData}
+              selectedEmployees={selEmployee.join(",")}
+              onSuccess={handleBulkTaskSuccess}
             />
           </DialogContent>
         </Dialog>
       )}
-    </>   
+    </>
   );
 };
 

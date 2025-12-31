@@ -13,26 +13,41 @@ import CreateAssessmentModal from './components/CreateAssessmentModal';
 import SkillAssessment from '@/components/skill-assessment';
 
 // 🔄 Mapper function to normalize API → UI format
-const mapAssessment = (item) => ({
-  id: item.id,
-  title: item.paper_name,              // ✅ used in cards
-  name: item.paper_name,               // ✅ fallback for SkillAssessment
-  description: item.paper_desc,
-  type: item.exam_type || 'online',
-  difficulty: 'medium',                // API doesn't give → default
-  subject: item.subject_name,
-  questionCount: item.total_ques,
-  duration: item.time_allowed,
-  maxAttempts: item.attempt_allowed,
-  status: item.active_exam === 'yes' ? 'Available' : 'Closed',
-  category: item.grade_name || item.standard_name || 'General',
-  deadline: item.close_date,
-  assignedTo: 0,                       // not provided → placeholder
-  completions: 0,                      // not provided → placeholder
-  avgScore: 0,                         // not provided → placeholder
-  createdAt: item.created_at,
-  createdBy: item.created_by,
-});
+const mapAssessment = (item) => {
+  const now = new Date();
+  const openDate = item.open_date ? new Date(item.open_date) : null;
+  const closeDate = item.close_date ? new Date(item.close_date) : null;
+
+  let status = 'Closed';
+  if (openDate && closeDate) {
+    if (now >= openDate && now <= closeDate) {
+      status = 'Active';
+    }
+  }
+
+  return {
+    id: item.id,
+    title: item.paper_name || item.name || 'Untitled Assessment',              // ✅ used in cards
+    name: item.paper_name || item.name || 'Untitled Assessment',               // ✅ fallback for SkillAssessment
+    description: item.paper_desc || item.description || '',
+    type: item.exam_type || item.type || 'online',
+    difficulty: item.difficulty || 'medium',                // API doesn't give → default
+    subject: item.subject_name || item.subject || 'General',
+    questionCount: item.total_ques || item.questionCount || 0,
+    duration: item.time_allowed || item.duration || 0,
+    maxAttempts: item.attempt_allowed || item.maxAttempts || 1,
+    status: status,
+    category: item.grade_name || item.standard_name || item.category || 'General',
+    deadline: item.close_date || item.deadline,
+    openDate: item.open_date,
+    closeDate: item.close_date,
+    assignedTo: item.assignedTo || 0,                       // not provided → placeholder
+    completions: item.completions || 0,                      // not provided → placeholder
+    avgScore: item.avgScore || 0,                         // not provided → placeholder
+    createdAt: item.created_at || item.createdAt,
+    createdBy: item.created_by || item.createdBy,
+  };
+};
 
 const AssessmentLibrary = () => {
   const isDesktop = useMediaQuery({ minWidth: 1024 });
@@ -89,7 +104,7 @@ const AssessmentLibrary = () => {
     const fetchAssessments = async () => {
       try {
         setLoading(true);
-        const API_URL = `${sessionData.url}/lms/question_paper?type=API&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}&syear=2025`;
+        const API_URL = `${sessionData.url}/api/ai-generated-assessment/assessment/index?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`;
 
         const res = await fetch(API_URL, {
           headers: {
@@ -103,14 +118,23 @@ const AssessmentLibrary = () => {
         }
 
         const data = await res.json();
+        console.log('New API Response:', data);
 
-        if (data?.message === 'SUCCESS' && Array.isArray(data.data)) {
-          const mapped = data.data.map(mapAssessment);
-          setAssessments(mapped);
+        let assessmentsArray = [];
+        if (Array.isArray(data)) {
+          assessmentsArray = data;
+        } else if (data?.data && Array.isArray(data.data)) {
+          assessmentsArray = data.data;
+        } else if (data?.assessments && Array.isArray(data.assessments)) {
+          assessmentsArray = data.assessments;
         } else {
           console.error('Unexpected API format:', data);
           setError('Invalid API format');
+          return;
         }
+
+        const mapped = assessmentsArray.map(mapAssessment);
+        setAssessments(mapped);
       } catch (err) {
         console.error('Failed to fetch:', err);
         setError('Failed to fetch assessments');
@@ -165,7 +189,7 @@ const AssessmentLibrary = () => {
       if (filters.status !== 'all' && item.status?.toLowerCase() !== filters.status?.toLowerCase()) return false;
 
       // Show only available
-      if (filters.showAvailableOnly && item.status !== 'Available') return false;
+      if (filters.showAvailableOnly && item.status !== 'Active') return false;
 
       // Optionally deadline / subject filter if you added dropdowns for them
       if (filters.deadline && item.deadline !== filters.deadline) return false;
@@ -181,7 +205,7 @@ const AssessmentLibrary = () => {
     const today = new Date();
 
     let total = assessments.length;
-    let active = assessments.filter(a => a.status === 'Available').length;
+    let active = assessments.filter(a => a.status === 'Active').length;
     let inactive = assessments.filter(a => a.status === 'Closed').length;
     let recent = assessments.filter(a => a.deadline && new Date(a.deadline) <= today).length;
     let upcoming = assessments.filter(a => a.deadline && new Date(a.deadline) > today).length;
@@ -227,7 +251,7 @@ const AssessmentLibrary = () => {
       const fetchAssessments = async () => {
         try {
           setLoading(true);
-          const API_URL = `${sessionData.url}/lms/question_paper?type=API&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}&syear=2025`;
+          const API_URL = `${sessionData.url}/api/ai-generated-assessment/assessment/index?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`;
 
           const res = await fetch(API_URL, {
             headers: {
@@ -241,16 +265,24 @@ const AssessmentLibrary = () => {
           }
 
           const data = await res.json();
-          console.log('API Response:', data);
-  
-          if (data && data.data && Array.isArray(data.data)) {
-            const mapped = data.data.map(mapAssessment);
-            console.log('Mapped assessments:', mapped);
-            setAssessments(mapped);
+          console.log('New API Response:', data);
+
+          let assessmentsArray = [];
+          if (Array.isArray(data)) {
+            assessmentsArray = data;
+          } else if (data?.data && Array.isArray(data.data)) {
+            assessmentsArray = data.data;
+          } else if (data?.assessments && Array.isArray(data.assessments)) {
+            assessmentsArray = data.assessments;
           } else {
             console.error('Unexpected API format:', data);
             setError('Invalid API format');
+            return;
           }
+
+          const mapped = assessmentsArray.map(mapAssessment);
+          console.log('Mapped assessments:', mapped);
+          setAssessments(mapped);
         } catch (err) {
           console.error('Failed to fetch:', err);
           setError('Failed to fetch assessments');
@@ -315,30 +347,30 @@ const AssessmentLibrary = () => {
                 <Icon name="Upload" size={16} />
                 Export Results
               </Button> */}
-             <div className="flex items-center">
-  <Button
-    variant="ghost"
-    size="icon"
-    className="text-muted-foreground hover:text-foreground"
-    title="Info / Help"
-  >
-    <Icon name="Info" size={16} />
-  </Button>
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-foreground"
+                  title="Info / Help"
+                >
+                  <Icon name="Info" size={16} />
+                </Button>
 
-  {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) && (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="flex items-center gap-1 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 transition-colors"
-      title="create Assessment with AI"
-      onClick={() => console.log('AI Build Assessment clicked')}
-    >
-      <Icon name="Sparkles" size={16} />
-    </Button>
-  )}
-</div>
+                {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 transition-colors"
+                    title="create Assessment with AI"
+                    onClick={() => console.log('AI Build Assessment clicked')}
+                  >
+                    <Icon name="Sparkles" size={16} />
+                  </Button>
+                )}
+              </div>
 
-              
+
 
               {/* Create Assessment Button */}
               {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (

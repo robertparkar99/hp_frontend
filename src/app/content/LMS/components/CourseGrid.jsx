@@ -149,9 +149,9 @@ const CourseGrid = ({
       )}
 
       {/* Results Summary */}
-      <div className="mt-8 pt-6 border-t border-border text-center text-sm text-muted-foreground">
+      {/* <div className="mt-8 pt-6 border-t border-border text-center text-sm text-muted-foreground">
         Showing {courses.length} of {totalcourse} courses
-      </div>
+      </div> */}
     </div>
   );
 };

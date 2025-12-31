@@ -39,10 +39,26 @@ import { generateDetailTourSteps } from "@/lib/tourSteps";
 
 type ApiItem = {
   id: number;
-  classification_item: string;
-  proficiency_level: string;
-  classification_category: string;
-  classification_sub_category: string;
+  category: string;
+  sub_category: string;
+  title: string;
+  description: string;
+  business_link: string;
+  assessment_method: string;
+  ability_tags: string;
+  cognitive_elements: string;
+  psychomotor_elements: string;
+  measurement_metrics: string;
+  importance_level: string;
+  common_challenges: string;
+  improvement_tips: string;
+  sub_institute_id: number;
+  created_by: number | null;
+  updated_by: number | null;
+  deleted_by: number | null;
+  created_at: string;
+  updated_at: string | null;
+  deleted_at: string | null;
 };
 
 interface SessionData {
@@ -67,11 +83,9 @@ export default function Page({ showDetailTour }: PageProps) {
   const [items, setItems] = useState<ApiItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [skills, setSkills] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [subCategories, setSubCategories] = useState<string[]>([]);
 
-  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
 
@@ -89,10 +103,10 @@ export default function Page({ showDetailTour }: PageProps) {
   const [columnFilters, setColumnFilters] = useState<{
     [key: string]: string;
   }>({
-    classification_item: "",
-    proficiency_level: "",
-    classification_category: "",
-    classification_sub_category: "",
+    title: "",
+    importance_level: "",
+    category: "",
+    sub_category: "",
   });
 
   // Search state for triangle view
@@ -122,19 +136,18 @@ export default function Page({ showDetailTour }: PageProps) {
 
   // Fetch dropdown options
   useEffect(() => {
-    if (!sessionData.sub_institute_id || !sessionData.url) return;
+    if (!sessionData.sub_institute_id) return;
     const fetchDropdowns = async () => {
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=ability&order_by[column]=proficiency_level&order_by[direction]=asc&group_by=proficiency_level`,
+          `${sessionData.url}/table_data?filters[sub_institute_id]=${sessionData.sub_institute_id}&table=s_user_ability`,
           { cache: "no-store" }
         );
         const json = await res.json();
         const data = safeArray(json);
 
-        setSkills([...new Set(data.map((item) => item.proficiency_level))].filter(Boolean));
-        setCategories([...new Set(data.map((item) => item.classification_category))].filter(Boolean));
-        setSubCategories([...new Set(data.map((item) => item.classification_sub_category))].filter(Boolean));
+        setCategories([...new Set(data.map((item) => item.category))].filter(Boolean));
+        setSubCategories([...new Set(data.map((item) => item.sub_category))].filter(Boolean));
       } catch (err) {
         console.error("Error fetching dropdown data:", err);
       } finally {
@@ -142,22 +155,22 @@ export default function Page({ showDetailTour }: PageProps) {
       }
     };
     fetchDropdowns();
-  }, [sessionData.sub_institute_id, sessionData.url]);
+  }, [sessionData.sub_institute_id]);
 
   // Update subcategories when category changes
   useEffect(() => {
-    if (!selectedCategory || !sessionData.sub_institute_id || !sessionData.url) return;
+    if (!selectedCategory) return;
 
     const fetchSubCats = async () => {
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=ability&filters[classification_category]=${selectedCategory}`,
+          `${sessionData.url}/table_data?filters[sub_institute_id]=${sessionData.sub_institute_id}&table=s_user_ability&filters[category]=${selectedCategory}`,
           { cache: "no-store" }
         );
         const json = await res.json();
         const data = safeArray(json);
 
-        setSubCategories([...new Set(data.map((item) => item.classification_sub_category))].filter(Boolean));
+        setSubCategories([...new Set(data.map((item) => item.sub_category))].filter(Boolean));
         setSelectedSubCategory(null);
       } catch (err) {
         console.error("Error fetching subcategories:", err);
@@ -165,21 +178,20 @@ export default function Page({ showDetailTour }: PageProps) {
     };
 
     fetchSubCats();
-  }, [selectedCategory, sessionData]);
+  }, [selectedCategory, sessionData.sub_institute_id]);
 
   // Fetch items with filters applied
   useEffect(() => {
-    if (!sessionData.sub_institute_id || !sessionData.url) return;
+    if (!sessionData.sub_institute_id) return;
 
     const fetchItems = async () => {
       try {
         setLoading(true);
 
-        let url = `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[classification]=ability&order_by[id]=desc`;
+        let url = `${sessionData.url}/table_data?filters[sub_institute_id]=${sessionData.sub_institute_id}&table=s_user_ability&order_by[id]=desc`;
 
-        if (selectedLevel) url += `&filters[proficiency_level]=${selectedLevel}`;
-        if (selectedCategory) url += `&filters[classification_category]=${selectedCategory}`;
-        if (selectedSubCategory) url += `&filters[classification_sub_category]=${selectedSubCategory}`;
+        if (selectedCategory) url += `&filters[category]=${selectedCategory}`;
+        if (selectedSubCategory) url += `&filters[sub_category]=${selectedSubCategory}`;
 
         const res = await fetch(url, { cache: "no-store" });
         const json = await res.json();
@@ -194,7 +206,7 @@ export default function Page({ showDetailTour }: PageProps) {
     };
 
     fetchItems();
-  }, [sessionData, selectedLevel, selectedCategory, selectedSubCategory]);
+  }, [selectedCategory, selectedSubCategory, sessionData.sub_institute_id,]);
 
   useEffect(() => {
     const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
@@ -205,19 +217,19 @@ export default function Page({ showDetailTour }: PageProps) {
 
   // Filter items for triangle view based on search
   const filteredTriangleItems = items.filter(item =>
-    item.classification_item?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.classification_category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.classification_sub_category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.proficiency_level?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.sub_category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.importance_level?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Column-wise filter for DataTable
   const filteredTableItems = items.filter((item) => {
     return (
-      (item.classification_item?.toLowerCase() || "").includes(columnFilters.classification_item?.toLowerCase() || "") &&
-      (item.proficiency_level?.toLowerCase() || "").includes(columnFilters.proficiency_level?.toLowerCase() || "") &&
-      (item.classification_category?.toLowerCase() || "").includes(columnFilters.classification_category?.toLowerCase() || "") &&
-      (item.classification_sub_category?.toLowerCase() || "").includes(columnFilters.classification_sub_category?.toLowerCase() || "")
+      (item.title?.toLowerCase() || "").includes(columnFilters.title?.toLowerCase() || "") &&
+      (item.importance_level?.toLowerCase() || "").includes(columnFilters.importance_level?.toLowerCase() || "") &&
+      (item.category?.toLowerCase() || "").includes(columnFilters.category?.toLowerCase() || "") &&
+      (item.sub_category?.toLowerCase() || "").includes(columnFilters.sub_category?.toLowerCase() || "")
     );
   });
 
@@ -234,35 +246,35 @@ export default function Page({ showDetailTour }: PageProps) {
     {
       name: (
         <div className="flex flex-col">
-          <span>Item</span>
+          <span>Title</span>
           <input
-            value={columnFilters.classification_item}
+            value={columnFilters.title}
             onChange={(e) =>
-              setColumnFilters({ ...columnFilters, classification_item: e.target.value })
+              setColumnFilters({ ...columnFilters, title: e.target.value })
             }
             placeholder="Search..."
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row) => row.classification_item,
+      selector: (row) => row.title,
       sortable: true,
     },
     {
       name: (
         <div className="flex flex-col">
-          <span>Proficiency</span>
+          <span>Importance</span>
           <input
-            value={columnFilters.proficiency_level}
+            value={columnFilters.importance_level}
             onChange={(e) =>
-              setColumnFilters({ ...columnFilters, proficiency_level: e.target.value })
+              setColumnFilters({ ...columnFilters, importance_level: e.target.value })
             }
             placeholder="Search..."
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row) => row.proficiency_level,
+      selector: (row) => row.importance_level,
       sortable: true,
       width: "100px"
     },
@@ -271,16 +283,16 @@ export default function Page({ showDetailTour }: PageProps) {
         <div className="flex flex-col">
           <span>Category</span>
           <input
-            value={columnFilters.classification_category}
+            value={columnFilters.category}
             onChange={(e) =>
-              setColumnFilters({ ...columnFilters, classification_category: e.target.value })
+              setColumnFilters({ ...columnFilters, category: e.target.value })
             }
             placeholder="Search..."
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row) => row.classification_category,
+      selector: (row) => row.category,
       sortable: true,
       width: "160px"
     },
@@ -289,16 +301,16 @@ export default function Page({ showDetailTour }: PageProps) {
         <div className="flex flex-col">
           <span>Sub Category</span>
           <input
-            value={columnFilters.classification_sub_category}
+            value={columnFilters.sub_category}
             onChange={(e) =>
-              setColumnFilters({ ...columnFilters, classification_sub_category: e.target.value })
+              setColumnFilters({ ...columnFilters, sub_category: e.target.value })
             }
             placeholder="Search..."
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row) => row.classification_sub_category,
+      selector: (row) => row.sub_category,
       sortable: true,
       width: "200px"
     },
@@ -374,7 +386,7 @@ export default function Page({ showDetailTour }: PageProps) {
           <input
             id="search-abilities-input"
             type="text"
-            placeholder="Search abilities, categories, or proficiency levels..."
+            placeholder="Search abilities, categories, sub categories, or importance levels..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -395,14 +407,11 @@ export default function Page({ showDetailTour }: PageProps) {
                 <Filters
                   categories={categories}
                   subCategories={subCategories}
-                  skills={skills}
                   loadingOptions={loadingOptions}
                   selectedCategory={selectedCategory}
                   setSelectedCategory={setSelectedCategory}
                   selectedSubCategory={selectedSubCategory}
                   setSelectedSubCategory={setSelectedSubCategory}
-                  selectedLevel={selectedLevel}
-                  setSelectedLevel={setSelectedLevel}
                 />
               </PopoverContent>
             </Popover>
@@ -539,27 +548,21 @@ export default function Page({ showDetailTour }: PageProps) {
 type FiltersProps = {
   categories: string[];
   subCategories: string[];
-  skills: string[];
   loadingOptions: boolean;
   selectedCategory: string | null;
   setSelectedCategory: (value: string) => void;
   selectedSubCategory: string | null;
   setSelectedSubCategory: (value: string) => void;
-  selectedLevel: string | null;
-  setSelectedLevel: (value: string) => void;
 };
 
 function Filters({
   categories,
   subCategories,
-  skills,
   loadingOptions,
   selectedCategory,
   setSelectedCategory,
   selectedSubCategory,
   setSelectedSubCategory,
-  selectedLevel,
-  setSelectedLevel,
 }: FiltersProps) {
   return (
     <div className="flex flex-col gap-3">
@@ -593,18 +596,6 @@ function Filters({
         </SelectContent>
       </Select>
 
-      <Select value={selectedLevel ?? ""} onValueChange={(value) => setSelectedLevel(value)}>
-        <SelectTrigger className="w-full rounded-xl border-gray-300 shadow-md bg-white">
-          <SelectValue placeholder="Filter by Proficiency" />
-        </SelectTrigger>
-        <SelectContent>
-          {loadingOptions ? (
-            <SelectItem value="loading" disabled>Loading...</SelectItem>
-          ) : (
-            skills.map((level, idx) => <SelectItem key={idx} value={level}>{level}</SelectItem>)
-          )}
-        </SelectContent>
-      </Select>
     </div>
   );
 }
@@ -624,7 +615,7 @@ function TriangleGrid({ rows, onTriangleClick }: { rows: ApiItem[][]; onTriangle
                   transition={{ type: "spring", stiffness: 300 }}
                   className="relative group"
                 >
-                  <Triangle text={item.classification_item} rotate={shouldRotate} onClick={() => onTriangleClick(item.id)} />
+                  <Triangle text={item.title} rotate={shouldRotate} onClick={() => onTriangleClick(item.id)} />
                   {/* Hover Actions */}
                   {/* <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button className="p-1 bg-blue-600 text-white rounded shadow-lg" title="View">

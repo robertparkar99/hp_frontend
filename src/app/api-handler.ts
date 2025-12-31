@@ -1,18 +1,18 @@
 
 import { classifyIntent, shouldRouteToAction, shouldUseFallback } from "@/lib1/intent-classifier";
- import { sanitizeQuery, validateQuerySafety } from "@/lib1/sanitizer";
- import { parseError, formatErrorResponse, shouldRetry } from "@/lib1/error-handler";
- import { getRoleContext, canAccessData, getDataAccessFilter } from "@/lib1/role-context";
- import { logEvent, logQuery, logLLMCall, formatDebugTrace } from "@/lib1/observability";
- import {
-   createConversation,
-   getConversationBySessionId,
-   saveMessage,
-   getConversationHistory,
-   updateConversationStatus
- } from "@/lib1/conversation-persistence";
- import { createEscalation } from "@/lib1/escalation-service";
- import { v4 as uuidv4 } from 'uuid';
+import { sanitizeQuery, validateQuerySafety } from "@/lib1/sanitizer";
+import { parseError, formatErrorResponse, shouldRetry } from "@/lib1/error-handler";
+import { getRoleContext, canAccessData, getDataAccessFilter } from "@/lib1/role-context";
+import { logEvent, logQuery, logLLMCall, formatDebugTrace } from "@/lib1/observability";
+import {
+  createConversation,
+  getConversationBySessionId,
+  saveMessage,
+  getConversationHistory,
+  updateConversationStatus
+} from "@/lib1/conversation-persistence";
+import { createEscalation } from "@/lib1/escalation-service";
+import { v4 as uuidv4 } from 'uuid';
 
 interface ChatRequest {
   query: string;
@@ -35,6 +35,35 @@ interface ChatResponse {
   suggestion?: string;
   canEscalate?: boolean;
   id?: string;
+}
+
+interface JobDescription {
+  job_title: string;
+  department: string;
+  experience_level: string;
+  key_responsibilities: string[];
+  required_skills: string[];
+  preferred_skills: string[];
+  education: string;
+  employment_type: string;
+  location: string;
+}
+
+interface ActionResponse {
+  type: 'ACTION_RESPONSE';
+  module: string;
+  action: string;
+  data: JobDescription;
+}
+
+interface CreateJobDescriptionAction {
+  type: 'CREATE_JOB_DESCRIPTION';
+  payload: {
+    industry: string;
+    jobRole: string;
+    department: string;
+    description: string;
+  };
 }
 
 let debugModeEnabled = false;
@@ -357,17 +386,17 @@ async function callHpApi(method: "GET" | "POST", url: string, params?: Record<st
     }
   };
 
- if (method === "POST") {
-  // If caller provides params.body, send it
-  if (params?.body) {
-    fetchOptions.body = JSON.stringify(params.body);
-  } else if (body) {
-    fetchOptions.body = JSON.stringify(body);
-  } else {
-    // send empty body if not provided
-    fetchOptions.body = JSON.stringify({});
+  if (method === "POST") {
+    // If caller provides params.body, send it
+    if (params?.body) {
+      fetchOptions.body = JSON.stringify(params.body);
+    } else if (body) {
+      fetchOptions.body = JSON.stringify(body);
+    } else {
+      // send empty body if not provided
+      fetchOptions.body = JSON.stringify({});
+    }
   }
-}
 
 
   const res = await fetch(finalUrl, fetchOptions);
@@ -498,16 +527,16 @@ async function executeSQLQuery(sql: string, originalQuery?: string): Promise<any
   const limit = fragments?.limit;
 
   // 2) If no table found in SQL, try to infer from original natural-language query
-// Additional fallback: Use alias map keys
-if (!table && originalQuery) {
-  const words = originalQuery.toLowerCase().split(/\s+/);
-  for (const w of words) {
-    if (tableAliasMap[w]) {
-      table = tableAliasMap[w];
-      break;
+  // Additional fallback: Use alias map keys
+  if (!table && originalQuery) {
+    const words = originalQuery.toLowerCase().split(/\s+/);
+    for (const w of words) {
+      if (tableAliasMap[w]) {
+        table = tableAliasMap[w];
+        break;
+      }
     }
   }
-}
 
 
   // 3) If still no table, but SQL contains only a WHERE (LLM might have returned "WHERE ...")
@@ -556,12 +585,12 @@ if (!table && originalQuery) {
     apiEntry = hpApiMap[table];
   }
   // Fallback match: remove "-" and "_" from both sides
-if (!apiEntry) {
-  const cleanedTable = table.toLowerCase().replace(/[-_]/g, "");
-  apiEntry = Object.entries(hpApiMap).find(([key]) =>
-    key.toLowerCase().replace(/[-_]/g, "") === cleanedTable
-  )?.[1];
-}
+  if (!apiEntry) {
+    const cleanedTable = table.toLowerCase().replace(/[-_]/g, "");
+    apiEntry = Object.entries(hpApiMap).find(([key]) =>
+      key.toLowerCase().replace(/[-_]/g, "") === cleanedTable
+    )?.[1];
+  }
 
 
   // known special table -> endpoint mapping
@@ -595,12 +624,12 @@ if (!apiEntry) {
     for (const [k, v] of Object.entries(filters)) {
       // API expects filters[key]=value
       if (Array.isArray(v)) {
-    v.forEach((val, idx) => {
-        params[`filters[${k}][${idx}]`] = val;
-    });
-} else {
-    params[`filters[${k}]`] = v;
-}
+        v.forEach((val, idx) => {
+          params[`filters[${k}][${idx}]`] = val;
+        });
+      } else {
+        params[`filters[${k}]`] = v;
+      }
 
     }
   } else {
@@ -654,7 +683,7 @@ if (!apiEntry) {
     // rethrow with additional context so upper layers know which URL failed
     throw new Error(`executeSQLQuery failed for table=${table}: ${(err as Error).message}`);
   }
-}     
+}
 
 // -------------------------
 // END REPLACEMENT: API LAYER
@@ -772,6 +801,10 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
       };
       await saveMessage(conversationId, 'bot', accessError.answer, intent.intent, undefined, undefined, true, 'Access denied');
       return accessError;
+    }
+
+    if (intent.intent === 'CREATE_JOB_DESCRIPTION') {
+      return handleCreateJobDescriptionAction(request, { userId: anonymousId, role: request.role }, conversationId);
     }
 
     if (shouldRouteToAction(intent.intent)) {
@@ -974,6 +1007,209 @@ async function ensureConversation(request: ChatRequest): Promise<string> {
   }
 
   return newConv.id;
+}
+
+async function handleCreateJobDescriptionAction(
+  request: ChatRequest,
+  userContext: { userId: string; role: string | undefined },
+  conversationId: string
+): Promise<ChatResponse> {
+  // Basic extraction from the query. 
+  //This could be replaced with a more sophisticated NLP entity extraction model.
+  const rawQuery = request.query;
+  const query = rawQuery.toLowerCase();
+  const industryMatch = rawQuery.match(/industry\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
+  const jobRoleMatch = rawQuery.match(/jobrole\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
+  const departmentMatch = rawQuery.match(/department\s*[:\-]?\s*([a-zA-Z ]+)/i)?.[1]?.trim();
+  const descriptionMatch = rawQuery.match(/description\s*[:\-]?\s*(.+)$/i)?.[1]?.trim();
+
+  const industry = industryMatch ?? null;
+  const jobRole = jobRoleMatch ?? null;
+  const department = departmentMatch ?? null;
+  const description = descriptionMatch ?? null;
+
+  // if (!industry || !jobRole || !department || !description) {
+  //   throw new Error('Unreachable: validation failed');
+  // }
+  const missingFields: string[] = [];
+  if (!industry) missingFields.push('Industry');
+  if (!jobRole) missingFields.push('Jobrole');
+  if (!department) missingFields.push('Department');
+  if (!description) missingFields.push('Description');
+
+  if (missingFields.length > 0) {
+    const answer = `Please provide the following missing information: ${missingFields.join(', ')}.`;
+    await saveMessage(conversationId, 'bot', answer, 'CREATE_JOB_DESCRIPTION');
+    return {
+      answer,
+      conversationId,
+      intent: 'CREATE_JOB_DESCRIPTION',
+      recoverable: true,
+      suggestion: 'Please provide the missing details to proceed.',
+    };
+  }
+  const safeIndustry = industry!;
+  const safeJobRole = jobRole!;
+  const safeDepartment = department!;
+  const safeDescription = description!;
+  try {
+    const jdResponse = await handleCreateJobDescription({
+      industry: safeIndustry,
+      jobRole: safeJobRole,
+      department: safeDepartment,
+      description: safeDescription,
+      userContext,
+      conversationId,
+    });
+
+    const answer = `Job Description created:\n\n**${jdResponse.data.job_title}**\n\nDepartment: ${jdResponse.data.department}\nExperience: ${jdResponse.data.experience_level}\n\nResponsibilities:\n${jdResponse.data.key_responsibilities.map((r: string) => `- ${r}`).join('\n')}\n\nRequired Skills:\n${jdResponse.data.required_skills.map((s: string) => `- ${s}`).join('\n')}\n\nPreferred Skills:\n${jdResponse.data.preferred_skills.map((s: string) => `- ${s}`).join('\n')}\n\nEducation: ${jdResponse.data.education}\nEmployment Type: ${jdResponse.data.employment_type}\nLocation: ${jdResponse.data.location}`;
+
+    await saveMessage(conversationId, 'bot', answer, 'CREATE_JOB_DESCRIPTION');
+
+    return {
+      answer,
+      conversationId,
+      intent: 'CREATE_JOB_DESCRIPTION',
+      canEscalate: true,
+    };
+  } catch (error) {
+    const errorMessage = `Failed to create job description: ${(error as Error).message}`;
+    await saveMessage(conversationId, 'bot', errorMessage, 'CREATE_JOB_DESCRIPTION', undefined, undefined, true, (error as Error).message);
+    return {
+      answer: errorMessage,
+      conversationId,
+      intent: 'CREATE_JOB_DESCRIPTION',
+      error: 'JD_CREATION_FAILED',
+      recoverable: false,
+      canEscalate: true,
+    };
+  }
+}
+
+export async function handleCreateJobDescription({ industry,
+  department,
+  jobRole,
+  description,
+  userContext,
+  conversationId
+}: {
+  industry: string;
+  department: string;
+  jobRole: string;
+  description: string;
+  userContext: any;
+  conversationId: string;
+}): Promise<ActionResponse> {
+  // Save user message for auditability
+  const query = `Create a job description for ${jobRole} in ${department} of ${industry} with the following description: ${description}`;
+  await saveMessage(conversationId, 'user', query, 'job_description_generation');
+
+  // Permission check (mandatory)
+  if (!canAccessData(userContext, 'TALENT_DEVELOPMENT')) {
+    throw new Error('Access denied for JD creation');
+  }
+
+  // Build JD prompt
+  const prompt = `
+
+You are an HR and Talent Development expert.
+
+Create a professional Job Description.
+
+Industry: ${industry}
+Department: ${department}
+Job Role: ${jobRole}
+Context: ${description}
+
+the output should be in JSON format only, without any additional text.
+Return output in JSON with the following structure:
+
+{
+  "job_title": "",
+  "department": "",
+  "experience_level": "",
+  "key_responsibilities": [],
+  "required_skills": [],
+  "preferred_skills": [],
+  "education": "",
+  "employment_type": "",
+  "location": ""
+}
+`;
+
+  const startTime = Date.now();
+
+  try {
+    // Call the LLM
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.LLM_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek/deepseek-chat',
+        messages: [
+          { role: 'system', content: 'You are an expert HR assistant. Generate structured job descriptions in JSON format only.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate job description');
+    }
+
+    const data = await response.json();
+    const responseTime = Date.now() - startTime;
+
+    // Log the LLM call if debug mode is enabled
+    if (debugModeEnabled) {
+      await logLLMCall(conversationId, 'deepseek/deepseek-chat', responseTime, true);
+    }
+
+    // Parse the LLM response as JSON
+    const rawContent = data.choices[0].message.content.trim();
+    const cleanedContent = rawContent.replace(/```json\n?|\n?```/g, '').trim();
+    const jdOutput: JobDescription = JSON.parse(cleanedContent);
+
+    // Validate the structure (basic check)
+    if (!jdOutput.job_title || !Array.isArray(jdOutput.key_responsibilities) || !Array.isArray(jdOutput.required_skills)) {
+      throw new Error('Invalid job description structure returned by LLM');
+    }
+
+    // Save the JD result for auditability and conversation history
+    await saveMessage(conversationId, 'bot', rawContent, 'job_description_generation');
+
+    // Log for analytics: who is generating JDs, which roles are common
+    await logEvent({
+      conversationId,
+      logLevel: 'info',
+      logType: 'JD_CREATED_FROM_CHAT',
+      message: 'Job description created from chat',
+      metadata: { userId: userContext?.userId, conversationId }
+    });
+
+    // Return tagged response for Talent Development module
+    return {
+      type: 'ACTION_RESPONSE',
+      module: 'TALENT_DEVELOPMENT',
+      action: 'CREATE_JOB_DESCRIPTION',
+      data: jdOutput
+    };
+  } catch (error) {
+    console.error('Error in handleCreateJobDescription:', error);
+    // Log the error
+    await logEvent({
+      conversationId,
+      logLevel: 'error',
+      logType: 'jd_generation_failure',
+      message: `Failed to generate job description: ${(error as Error).message}`,
+      metadata: { query, userContext }
+    });
+    throw error;  // Re-throw for upstream handling
+  }
 }
 
 export async function handleEscalation(

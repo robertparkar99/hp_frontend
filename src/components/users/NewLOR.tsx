@@ -117,83 +117,51 @@ export default function Index({ SelLOR }: SelLORProps) {
       </div>
 
       {/* DESCRIPTION SECTION */}
-      {activeSection === "description" && (
-        <div className="flex justify-around w-full gap-2 mt-6 flex-wrap">
-          {descriptionCards.map((card, index) => (
-            <div
-              key={index}
-              className="relative"
-              style={{
-                width: "500px",
-                height: "300px",
-                borderRadius: "18px",
-                overflow: "hidden",
-                textAlign: "justify",
-              }}
-            >
-              <div
-                className="absolute inset-0"
-                style={{
-                  borderRadius: "16px",
-                  border: "2px solid #94BEFF",
-                  background:
-                    "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
-                  backdropFilter: "blur(2px)",
-                }}
-              />
+      {/* DESCRIPTION SECTION */}
+{activeSection === "description" && (
+  <div className="w-full max-w-6xl mx-auto mt-6 px-4">
+    <div className="grid grid-cols-2 gap-6">
+      {descriptionCards.map((card, index) => (
+        <div
+          key={index}
+          className="relative w-full h-[300px] rounded-[18px] overflow-hidden text-justify"
+        >
+          {/* Background */}
+          <div
+            className="absolute inset-0 rounded-[16px] border-2 border-[#94BEFF]"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+              backdropFilter: "blur(2px)",
+            }}
+          />
 
-              <h3
-                style={{
-                  position: "relative",
-                  margin: "30px 0px 0px 20px",
-                  fontSize: "24px",
-                  fontWeight: "700",
-                  fontFamily: "Inter, sans-serif",
-                  color: "#0043CE",
-                  opacity: 0.8,
-                }}
-              >
-                {card.title}
-              </h3>
+          {/* Title */}
+          <h3 className="relative mt-7 ml-5 text-[24px] font-bold text-[#0043CE] opacity-80">
+            {card.title}
+          </h3>
 
-              <svg
-                style={{
-                  position: "relative",
-                  marginTop: "10px",
-                  marginLeft: "22px",
-                  width: "460px",
-                  height: "12px",
-                }}
-                viewBox="0 0 550 12"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M0.666667 6C0.666667 8.94552 3.05448 11.3333 6 11.3333C8.94552 11.3333 11.3333 8.94552 11.3333 6C11.3333 3.05448 8.94552 0.666667 6 0.666667C3.05448 0.666667 0.666667 3.05448 0.666667 6ZM540 7C540.552 7 541 6.55228 541 6C541 5.44772 540.552 5 540 5V7ZM6 6V7H540V6V5H6V6Z"
-                  fill="#A1A1A1"
-                />
-              </svg>
+          {/* Divider */}
+          <svg
+            className="relative mt-2 ml-5 w-[90%] h-[12px]"
+            viewBox="0 0 550 12"
+          >
+            <path
+              d="M0.666667 6C0.666667 8.94552 3.05448 11.3333 6 11.3333C8.94552 11.3333 11.3333 8.94552 11.3333 6C11.3333 3.05448 8.94552 0.666667 6 0.666667C3.05448 0.666667 0.666667 3.05448 0.666667 6ZM540 7C540.552 7 541 6.55228 541 6C541 5.44772 540.552 5 540 5V7ZM6 6V7H540V6V5H6V6Z"
+              fill="#A1A1A1"
+            />
+          </svg>
 
-              <div
-                style={{
-                  position: "relative",
-                  margin: "20px",
-                  width: "460px",
-                  height: "150px",
-                  fontSize: "15px",
-                  fontFamily: "Inter, sans-serif",
-                  color: "#000",
-                  whiteSpace: "pre-line",
-                  overflowY: "auto",
-                  paddingRight: "10px",
-                }}
-                className="hide-scrollbar"
-              >
-                {card.text}
-              </div>
-            </div>
-          ))}
+          {/* Content */}
+          <div className="relative m-5 h-[150px] text-[15px] text-black whitespace-pre-line overflow-y-auto pr-2 hide-scrollbar">
+            {card.text}
+          </div>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
+
 
       {/* RESPONSIBILITY SECTION */}
       {activeSection === "responsibility" && (

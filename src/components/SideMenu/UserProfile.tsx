@@ -45,9 +45,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userSessionData }) => 
                 ? userSessionData.lastName
                 : "User profile"}
         </p>
-        {userSessionData?.userProfile && (
+        {/* {userSessionData?.userProfile && (
           <p className="text-xs text-gray-500 mt-1">{userSessionData.userProfile}</p>
-        )}
+        )} */}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 // 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 import FilterSidebar from './components/FilterSidebar'
@@ -13,28 +13,29 @@ import AiCourseDialog from './components/AiCourseDialog'
 import ViewDetail from '../LMS/ViewChepter/ViewDetail'
 
 type Course = {
-  id: number
-  subject_id: number
-  standard_id: number
-  title: string
-  description: string
-  thumbnail: string
-  contentType: string
-  category: string
-  difficulty: string
-  short_name: string
-  subject_type: string
-  progress: number
-  instructor: string
-  isNew: boolean
-  isMandatory: boolean
-  display_name: string
-  sort_order: string
-  status: string
-  subject_category?: string
-  is_external?: boolean
-  external_url?: string
-  platform?: string
+   id: number
+   subject_id: number
+   standard_id: number
+   title: string
+   description: string
+   thumbnail: string
+   contentType: string
+   category: string
+   difficulty: string
+   short_name: string
+   subject_type: string
+   progress: number
+   instructor: string
+   isNew: boolean
+   isMandatory: boolean
+   display_name: string
+   sort_order: string
+   status: string
+   subject_category?: string
+   is_external?: boolean
+   external_url?: string
+   platform?: string
+   jobrole?: string
 }
 
 type Filters = {
@@ -87,6 +88,7 @@ const LearningCatalog: React.FC = () => {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false)
   const [isExternalCourseDialogOpen, setIsExternalCourseDialogOpen] = useState(false)
   const [activePlatformTab, setActivePlatformTab] = useState('udemy')
+  const [jobRoles, setJobRoles] = useState<any[]>([])
 
   // ✅ Session data
   const [sessionData, setSessionData] = useState<any>(null)
@@ -109,13 +111,13 @@ const LearningCatalog: React.FC = () => {
   }, [])
 
   // ✅ Build API URL
-  const buildApiUrl = () => {
+  const buildApiUrl = useCallback(() => {
     if (!sessionData) return ''
     return `${sessionData.APP_URL}/lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=${sessionData.syear}&user_id=${sessionData.user_id}&user_profile_name=${sessionData.user_profile_name}`
-  }
+  }, [sessionData])
 
   // ✅ Fetch courses
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     if (!sessionData) return
     try {
       setLoading(true)
@@ -130,6 +132,7 @@ const LearningCatalog: React.FC = () => {
       console.log('📦 Raw API data:', data)
 
       const mappedCourses: Course[] = []
+      const jobRolesSet = new Set()
 
       if (data?.lms_subject) {
         Object.keys(data.lms_subject).forEach((category) => {
@@ -153,22 +156,42 @@ const LearningCatalog: React.FC = () => {
               display_name: item.display_name ?? item.standard_name ?? 'Untitled',
               sort_order: item.sort_order ?? '1',
               status: item.status ?? '1',
-              subject_category: category // Add subject_category for filtering
+              subject_category: category, // Add subject_category for filtering
+              jobrole: item.jobrole ?? undefined
             }
             mappedCourses.push(course)
+
+            // Collect unique jobroles
+            if (item.jobrole) {
+              jobRolesSet.add(item.jobrole)
+            }
           })
         })
       }
 
       console.log('✅ Mapped courses:', mappedCourses)
-      setCourses(mappedCourses)
-      setFilteredCourses(mappedCourses)
+      // Sort courses by id (timestamp) in descending order to show latest first
+      const sortedCourses = [...mappedCourses].sort((a, b) => b.id - a.id)
+      setCourses(sortedCourses)
+      setFilteredCourses(sortedCourses)
+
+      // Set job roles from the API data
+      const uniqueJobRoles = Array.from(jobRolesSet).map((jobrole, index) => ({
+        id: index + 1,
+        jobrole: jobrole,
+        name: jobrole,
+        description: '',
+        department: '',
+        industries: ''
+      }))
+      setJobRoles(uniqueJobRoles)
     } catch (error) {
       console.error('🚨 Error fetching courses:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [sessionData])
+
 
   // ✅ Fetch external courses from Udemy API using fetch
   const fetchExternalCourses = async (searchTerm: string = 'react', page: number = 0) => {
@@ -232,7 +255,7 @@ const LearningCatalog: React.FC = () => {
     if (sessionData) {
       fetchCourses()
     }
-  }, [sessionData])
+  }, [sessionData, fetchCourses])
 
   // ✅ Apply filters to courses
   useEffect(() => {
@@ -359,8 +382,8 @@ const LearningCatalog: React.FC = () => {
       platform: externalCourse.platform
     };
 
-    // Add to courses list
-    setCourses(prev => [...prev, newExternalCourse]);
+    // Add to courses list and sort by id to show latest first
+    setCourses(prev => [...prev, newExternalCourse].sort((a, b) => b.id - a.id));
     setIsExternalCourseDialogOpen(false);
     
     // Show success message
@@ -619,14 +642,14 @@ const ExternalCourseDialog = ({
               <div className="flex justify-center items-center py-12">
                 <div className="text-center">
                   <span className="mdi mdi-loading animate-spin text-4xl text-blue-600 mb-4"></span>
-                  <p className="text-gray-600">Loading courses from Udemy...</p>
+                  <p className="text-gray-600">Loading courses from Udemy&hellip;</p>
                 </div>
               </div>
             ) : courses.length > 0 ? (
               <>
                 <div className="mb-4 flex items-center justify-between">
                   <p className="text-gray-600">
-                    Found {courses.length} courses for "{searchQuery}"
+                    Found {courses.length} courses for &ldquo;{searchQuery}&rdquo;
                   </p>
                   <p className="text-sm text-gray-500">
                     Page {page + 1}
@@ -731,7 +754,7 @@ const ExternalCourseDialog = ({
               <div className="text-center py-12">
                 <span className="mdi mdi-magnify text-4xl text-gray-300 mb-4"></span>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
-                <p className="text-gray-600 mb-4">Try searching for different topics like "react", "python", or "marketing"</p>
+                <p className="text-gray-600 mb-4">Try searching for different topics like &ldquo;react&rdquo;, &ldquo;python&rdquo;, or &ldquo;marketing&rdquo;</p>
                 <button
                   onClick={onSearch}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

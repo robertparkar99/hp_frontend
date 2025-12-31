@@ -381,7 +381,7 @@ const SearchToolbar = ({
           <div className="relative">
             <Input
               type="search"
-              placeholder="Search courses by title, department, shortname, course type..."
+              placeholder="Search courses by title, department, shortname, course type.."
               value={searchQuery || ''}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-10 pr-10"

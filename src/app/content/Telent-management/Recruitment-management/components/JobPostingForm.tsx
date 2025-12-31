@@ -129,6 +129,9 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
   const [openJobroleModal, setOpenJobroleModal] = useState(false);
   const [roles, setRoles] = useState<JobRole[]>([]);
 
+  const [jdAnalysis, setJdAnalysis] = useState<any>(null);
+
+
   const [formData, setFormData] = useState<JobFormData>({
     title: "",
     department: "",
@@ -760,6 +763,28 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
     }
   };
 
+
+
+  const analyzeJobDescription = async (jdText: string) => {
+    const res = await fetch("/api/analyzeJD", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jd: jdText,
+        sub_institute_id: sessionData.sub_institute_id,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error("JD analysis failed");
+    }
+
+    return await res.json();
+  };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -784,6 +809,13 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
     setIsSubmitting(true);
 
     try {
+
+      const jdAnalysisResult = await analyzeJobDescription(formData.jobDescription);
+
+      console.log("✅ JD Analysis Result:", jdAnalysisResult);
+      setJdAnalysis(jdAnalysisResult);
+
+
       const formDataToSend = buildFormData();
 
       let apiUrl, method;
@@ -877,6 +909,10 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
       setIsSubmitting(false);
     }
   };
+
+
+
+
 
   const handleCancel = () => {
     onOpenChange(false);

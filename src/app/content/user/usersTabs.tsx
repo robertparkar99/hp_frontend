@@ -46,7 +46,7 @@ export default function EditProfilePage() {
   const [userJobroleComponent, setUserJobroleComponents] = useState<any>();
   const [userCategory, setUserCategory] = useState<any>("");
   // near your other states
-const [fullJobroleData, setFullJobroleData] = useState<any>({});
+  const [fullJobroleData, setFullJobroleData] = useState<any>({});
 
 
   const [sessionData, setSessionData] = useState({
@@ -98,28 +98,28 @@ const [fullJobroleData, setFullJobroleData] = useState<any>({});
   }, [sessionData]);
 
   // 🔥 NEW API: Department + Jobrole
-const fetchDepartmentsAndJobroles = async () => {
-  try {
-    const res = await fetch(
-      `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
-    );
+  const fetchDepartmentsAndJobroles = async () => {
+    try {
+      const res = await fetch(
+        `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
+      );
 
-    const api = await res.json();
-    console.log("NEW API DATA:", api);
+      const api = await res.json();
+      console.log("NEW API DATA:", api);
 
-    const deptObject = api.data || {};
+      const deptObject = api.data || {};
 
-    // store full map so child can read department -> jobroles mapping
-    setFullJobroleData(deptObject);
+      // store full map so child can read department -> jobroles mapping
+      setFullJobroleData(deptObject);
 
-    const departmentList = Object.keys(deptObject);
-    setUserdepartment(departmentList);
+      const departmentList = Object.keys(deptObject);
+      setUserdepartment(departmentList);
 
-    // don't set jobrole list globally here; PersonalDetails will derive based on selected department
-  } catch (error) {
-    console.error("Failed to fetch new dept/jobroles:", error);
-  }
-};
+      // don't set jobrole list globally here; PersonalDetails will derive based on selected department
+    } catch (error) {
+      console.error("Failed to fetch new dept/jobroles:", error);
+    }
+  };
 
 
   // Old full user load (jobroleList/department removed)
@@ -201,48 +201,82 @@ const fetchDepartmentsAndJobroles = async () => {
       {isLoading ? (
         <Loading />
       ) : (
-        <div className="w-full">
-          <div className="flex justify-between gap-6 items-center py-2 w-full">
-             <div className="backbuttonx flex items-center gap-3">
-            <button onClick={handleGoBack} className="text-black">
-              <ArrowLeft size={24} />
-            </button>
-            </div>
+        <div className="w-full min-h-screen bg-background flex flex-col rounded-xl">
 
-            <div className="flex overflow-x-auto lg:overflow-visible px-1 py-1 rounded-full border-2 border-blue-100 bg-gradient-to-r from-white via-white to-teal-100 shadow-lg w-full justify-start lg:justify-center gap-2">
-              {tabs.map((tab) => (
-                <Button
-                  key={tab.id}
-                  variant="ghost"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "rounded-full text-xs sm:text-xs font-medium whitespace-nowrap transition-all duration-200 flex items-center px-2 sm:px-3 py-1 sm:py-1.5 min-w-fit",
-                     activeTab === tab.id
-                       ? "bg-emerald-500 text-white [&>svg]:text-white shadow-md hover:bg-emerald-500"
-                       : "hover:bg-slate-50"
-                  )}
-                >
-                       {React.cloneElement(tab.icon, {
-                     className: cn(
-                       "mr-1 text-xs sm:text-base",
-                       activeTab === tab.id ? "text-white" : "text-slate-700"
-                     ),
-                   })}
-                   <span className="truncate">{tab.label}</span>
-                </Button>
-              ))}
+
+          {/* ================= HEADER ================= */}
+          <div className="z-40 border-b border-blue-100">
+            <div className="flex items-center gap-3 px-3 py-2">
+
+              {/* Back Button */}
+              <button
+                onClick={handleGoBack}
+                className="shrink-0 text-black"
+              >
+                <ArrowLeft size={20} />
+              </button>
+
+
+              {/* Tabs Scroll Area */}
+              <div className="flex-1 overflow-x-auto scrollbar-hide">
+                <div className="flex justify-start">
+                  <div
+                    className="bg-white
+        inline-flex items-center gap-2
+        pl-2 pr-4 py-1.5
+        rounded-full
+        border border-blue-200
+        bg-gradient-to-r from-white to-[#D9FFF6]
+        max-w-screen-lg
+      "
+                  >
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={cn(
+                          `
+            flex items-center gap-1.5
+            whitespace-nowrap
+            rounded-full
+            transition-all
+            text-[12.5px] font-medium
+
+            px-3 py-1.5
+            md:px-2 md:py-1
+            lg:px-3 lg:py-1.5
+            `,
+                          activeTab === tab.id
+                            ? "bg-emerald-500 text-white shadow"
+                            : "text-slate-700 hover:bg-white"
+                        )}
+                      >
+                        {React.cloneElement(tab.icon, {
+                          className: cn(
+                            "h-3.5 w-3.5",
+                            activeTab === tab.id ? "text-white" : "text-slate-600"
+                          ),
+                        })}
+                        <span className="leading-none">{tab.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
-          <div className="w-full h-[1px] bg-gray-300 my-2" />
 
-          <div className="p-4 text-[13px]">
+          {/* ================= CONTENT SECTION ================= */}
+          <div className="flex-1 px-4 py-4">
+
             {activeTab === "personal-info" && (
               <PersonalDetails
                 userDetails={userDetails}
-                userdepartment={userdepartment}     // NEW API DATA
-                userJobroleLists={userJobroleLists} // NEW API DATA
-                fullJobroleData={fullJobroleData}     
+                userdepartment={userdepartment}
+                userJobroleLists={userJobroleLists}
+                fullJobroleData={fullJobroleData}
                 userLOR={userLOR}
                 userProfiles={userProfiles}
                 userLists={userLists}
@@ -268,7 +302,9 @@ const fetchDepartmentsAndJobroles = async () => {
               <JobRoleTasks userJobroleTask={userJobroleTask} />
             )}
 
-            {activeTab === "responsibility" && <LOR SelLOR={SelLORs} />}
+            {activeTab === "responsibility" && (
+              <LOR SelLOR={SelLORs} />
+            )}
 
             {activeTab === "skill-rating" && (
               <Skillrating
@@ -290,4 +326,5 @@ const fetchDepartmentsAndJobroles = async () => {
       )}
     </>
   );
+
 }
