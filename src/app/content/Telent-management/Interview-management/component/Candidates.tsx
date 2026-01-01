@@ -40,6 +40,12 @@ interface Candidate {
 interface Filters {
   [key: string]: string;
 }
+interface SessionData {
+  url?: string;
+  token?: string;
+  sub_institute_id?: string | number;
+  org_type?: string;
+}
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -64,22 +70,38 @@ export default function Candidates() {
   const [filteredData, setFilteredData] = useState<Candidate[]>([]);
   const [currentView, setCurrentView] = useState<'candidates' | 'feedback'>('candidates');
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [sessionData, setSessionData] = useState<SessionData>({
+  });
+
+  // ---------- Load session ----------
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        const { APP_URL, token, sub_institute_id, org_type } =
+          JSON.parse(userData);
+        setSessionData({ url: APP_URL, token, sub_institute_id, org_type });
+      }
+    }
+  }, []);
+
+  const fetchCandidates = async () => {
+    if (!sessionData.sub_institute_id || !sessionData.url || !sessionData.token) return;
+    try {
+      const response = await fetch(`${sessionData.url}/api/candidate?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
+      const data = await response.json();
+      if (data.status) {
+        setCandidates(data.data);
+        setFilteredData(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching candidates:', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchCandidates = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:8000/api/candidate?sub_institute_id=3&type=API&token=1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5');
-        const data = await response.json();
-        if (data.status) {
-          setCandidates(data.data);
-          setFilteredData(data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching candidates:', error);
-      }
-    };
     fetchCandidates();
-  }, []);
+  }, [sessionData.sub_institute_id, sessionData.url, sessionData.token]);
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
@@ -348,7 +370,7 @@ export default function Candidates() {
   };
 
   if (currentView === 'feedback' && selectedCandidate) {
-    return <Feedback candidate={selectedCandidate} onBack={() => setCurrentView('candidates')} />;
+    return <Feedback candidate={selectedCandidate} onBack={() => setCurrentView('candidates')} onRefresh={fetchCandidates} />;
   }
 
   return (

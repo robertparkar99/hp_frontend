@@ -8,29 +8,52 @@
   import { Slider } from "@/components/ui/slider";
   import { Star, User, Clock, MessageSquare, ArrowLeft } from "lucide-react";
   import { cn } from "@/lib/utils";
+interface SessionData {
+  url?: string;
+  token?: string;
+  sub_institute_id?: string | number;
+  org_type?: string;
+}
 
-  export default function Feedback({ candidate, onBack }: { candidate: any; onBack?: () => void }) {
+  export default function Feedback({ candidate, onBack, onRefresh }: { candidate: any; onBack?: () => void; onRefresh?: () => void }) {
     const [ratings, setRatings] = useState<{ [key: number]: number }>({});
     const [overallRating, setOverallRating] = useState([7]);
     const [recommendation, setRecommendation] = useState("");
     const [keyStrengths, setKeyStrengths] = useState("");
     const [areasOfConcern, setAreasOfConcern] = useState("");
     const [additionalComments, setAdditionalComments] = useState("");
+    const [hasFeedback, setHasFeedback] = useState(false);
+    const [feedbackId, setFeedbackId] = useState<number | null>(null);
+    const [sessionData, setSessionData] = useState<SessionData>({});
+
+    // ---------- Load session ----------
+    useEffect(() => {
+      if (typeof window !== "undefined") {
+        const userData = localStorage.getItem("userData");
+        if (userData) {
+          const { APP_URL, token, sub_institute_id, org_type } =
+            JSON.parse(userData);
+          setSessionData({ url: APP_URL, token, sub_institute_id, org_type });
+        }
+      }
+    }, []);
 
     useEffect(() => {
+      if (!sessionData.sub_institute_id) return;
       const fetchFeedback = async () => {
         try {
-          const response = await fetch(`http://127.0.0.1:8000/api/feedback/${candidate.candidate_id}?sub_institute_id=3&type=API&token=1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5`, {
+          const response = await fetch(`${sessionData.url}/api/feedback/${candidate.candidate_id}?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`, {
             method: 'GET',
             headers: {
               'Accept': 'application/json',
-              'Authorization': 'Bearer 1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5',
+              'Authorization': `Bearer ${sessionData.token}`,
             },
           });
           if (response.ok) {
             const result = await response.json();
             if (result.status && result.data) {
               const feedback = result.data;
+              setFeedbackId(feedback.id);
               const criteria = JSON.parse(feedback.evaluation_criteria);
               const newRatings: { [key: number]: number } = {};
               let overall = 7;
@@ -50,16 +73,23 @@
               setKeyStrengths(feedback.key_strengths);
               setAreasOfConcern(feedback.areas_of_concern);
               setAdditionalComments(feedback.additional_comments);
+              setHasFeedback(true);
+            } else {
+              setFeedbackId(null);
+              setHasFeedback(false);
             }
+          } else {
+            setHasFeedback(false);
           }
         } catch (error) {
           console.error('Error fetching feedback:', error);
+          setHasFeedback(false);
         }
       };
       if (candidate.candidate_id) {
         fetchFeedback();
       }
-    }, [candidate.candidate_id]);
+    }, [candidate.candidate_id, sessionData.sub_institute_id]);
 
     const parts = candidate.candidate_name.split(' ');
     const email = parts.pop() || '';
@@ -117,21 +147,29 @@
       };
 
       try {
-          const response = await fetch('http://127.0.0.1:8000/api/evaluation?type=API&sub_institute_id=3', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Authorization': 'Bearer 1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5',
-  },
-  body: JSON.stringify(evaluationData),
-});
+        const url = hasFeedback && feedbackId
+          ? `${sessionData.url}/api/feedback/${feedbackId}?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`
+          : `${sessionData.url}/api/evaluation?type=API&sub_institute_id=${sessionData.sub_institute_id}`;
+        const method = hasFeedback ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${sessionData.token}`,
+          },
+          body: JSON.stringify(evaluationData),
+        });
 
         if (response.ok) {
-          alert('Feedback submitted successfully!');
+          alert(hasFeedback ? 'Feedback updated successfully!' : 'Feedback submitted successfully!');
+          if (!hasFeedback) setHasFeedback(true);
+          if (onRefresh) onRefresh();
           // Optionally reset form or navigate back
         } else {
-          alert('Failed to submit feedback.');
+          const errorData = await response.json().catch(() => ({}));
+          alert(hasFeedback ? `Failed to update feedback: ${errorData.message || 'Unknown error'}` : 'Failed to submit feedback.');
         }
       } catch (error) {
         console.error('Error submitting feedback:', error);
@@ -326,7 +364,7 @@
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-6 border-t">
                   <Button className="flex-1 btn-professional" onClick={handleSubmitFeedback}>
-                    Submit Feedback
+                    {hasFeedback ? "Edit Feedback" : "Submit Feedback"}
                   </Button>
                   <Button variant="outline" className="flex-1">
                     Save as Draft
