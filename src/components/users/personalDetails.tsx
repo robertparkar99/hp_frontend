@@ -799,6 +799,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         <select
                           className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.personal.user_profile_id}
+                          disabled={isReadOnly}
                           onChange={(e) =>
                             handleInputChange(
                               "personal",
@@ -856,6 +857,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         <select
                           className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.personal.status}
+                          disabled={isReadOnly}
                           onChange={(e) =>
                             handleInputChange(
                               "personal",
