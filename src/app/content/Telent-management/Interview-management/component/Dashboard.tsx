@@ -46,7 +46,7 @@ export function Dashboard() {
     { key: "schedule", label: "Schedule Interview", icon: Calendar },
     { key: "candidates", label: "Candidates", icon: Users },
     { key: "interview-panel", label: "Interview Panel", icon: UserCheck },
-    { key: "feedback", label: "Feedback", icon: MessageSquare },
+    // { key: "feedback", label: "Feedback", icon: MessageSquare },
   ];
 
   const handleTabChange = (tabKey: string) => {
@@ -106,7 +106,7 @@ export function Dashboard() {
         {activeTab === "schedule" && <DynamicScheduleInterview />}
         {activeTab === "candidates" && <DynamicCandidates />}
         {activeTab === "interview-panel" && <DynamicInterviewPanels />}
-        {activeTab === "feedback" && <DynamicFeedback />}
+        {/* {activeTab === "feedback" && <DynamicFeedback />} */}
       </Suspense>
     </div>
   );

@@ -236,7 +236,7 @@ const CandidatePortal = () => {
         }
 
         console.log(`💼 Raw job data: ${jobData.length} jobs`);
-        
+
         // DEBUG: Log all jobs to see their status
         console.log("🔍 ALL JOBS WITH STATUS:");
         jobData.forEach((job, index) => {
@@ -470,7 +470,7 @@ const CandidatePortal = () => {
   // Utility function to display file links in S3 format
   const renderFileLink = (filePath: string, fileName: string) => {
     if (!filePath) return null;
-    
+
     return (
       <p className="text-xs text-gray-500 mt-1">
         Uploaded file:{" "}
@@ -716,10 +716,53 @@ ${formData.current_role || "Not provided"}
 
             console.log("🧠 Screening Result:", screeningResult);
 
+            // ===============================
+            // STORE SCREENING RESULTS IN EXTERNAL API
+            // ===============================
+            try {
+              const talentScreeningPayload = {
+                candidate_id: result.data?.id || result.data?.candidate_id || "14", // Use actual candidate ID from response
+                competency_match: screeningResult.competency_match || 0,
+                cultural_fit: screeningResult.cultural_fit || "Medium",
+                predicted_success: screeningResult.predicted_success || "Possible",
+                overall_fit_score: screeningResult.competency_match || 0, // Using competency_match as overall score
+                ranking_score: Math.round((screeningResult.competency_match || 0) * 0.95), // Slightly lower than competency match
+                skill_gaps: screeningResult.skill_gaps || [],
+                strengths: screeningResult.strengths || [],
+                skill_match_details: screeningResult.skill_match_details || [],
+                recommendation: screeningResult.recommendation || "Request Additional Info",
+                deepseek_analysis: {
+                  summary: screeningResult.summary || "Analysis completed",
+                  reasoning: `Candidate shows ${screeningResult.competency_match}% competency match with ${screeningResult.cultural_fit} cultural fit. ${screeningResult.strengths?.length || 0} key strengths identified.`
+                },
+                sub_institute_id: sessionData?.sub_institute_id || 3
+              };
+
+              console.log("📤 Storing screening results:", talentScreeningPayload);
+
+              const storeResponse = await fetch(`${sessionData.APP_URL}/api/talent-screening-results?type=API&token=${sessionData.token}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(talentScreeningPayload)
+              });
+
+              if (storeResponse.ok) {
+                const storeResult = await storeResponse.json();
+                console.log("✅ Screening results stored successfully:", storeResult);
+              } else {
+                console.error("❌ Failed to store screening results:", storeResponse.status, await storeResponse.text());
+              }
+
+            } catch (storeError) {
+              console.error("❌ Error storing screening results:", storeError);
+            }
+
             alert(
               `AI Recommendation: ${screeningResult.recommendation}
-Fit Score: ${screeningResult.competency_match}%
-Cultural Fit: ${screeningResult.cultural_fit}`
+                Fit Score: ${screeningResult.competency_match}%
+                Cultural Fit: ${screeningResult.cultural_fit}`
             );
 
           } catch (error) {
@@ -967,7 +1010,7 @@ Cultural Fit: ${screeningResult.cultural_fit}`
                                     <Input
                                       id="first_name"
                                       value={formData.first_name}
-                                      onChange={(e) => handleInputChange('first_name', e.target.value)} 
+                                      onChange={(e) => handleInputChange('first_name', e.target.value)}
                                       placeholder="John"
                                       required
                                     />

@@ -1,5 +1,4 @@
 
-
 "use client";
 import React, { useState, useEffect } from "react";
 import Icon from "../../../components/AppIcon";
@@ -213,25 +212,25 @@ const AssessmentComplete = ({
         </div>
 
         <div className="grid grid-cols-4 gap-2 mb-6">
-          <div className="rounded p-3 text-center">
+          <div className=" rounded p-3 text-center">
             <p className="text-lg font-semibold text-primary">
               {Object.keys(safeAnswers).length}
             </p>
             <p className="text-xs text-muted-foreground">Answered</p>
           </div>
-          <div className="rounded p-3 text-center">
+          <div className=" rounded p-3 text-center">
             <p className="text-lg font-semibold text-success">
               {correctCount}
             </p>
             <p className="text-xs text-muted-foreground">Correct</p>
           </div>
-          <div className="rounded p-3 text-center">
+          <div className=" rounded p-3 text-center">
             <p className="text-lg font-semibold text-destructive">
               {incorrectCount}
             </p>
             <p className="text-xs text-muted-foreground">Incorrect</p>
           </div>
-          <div className="rounded p-3 text-center">
+          <div className=" rounded p-3 text-center">
             <p className="text-lg font-semibold text-muted-foreground">
               {skippedCount}
             </p>
@@ -241,7 +240,7 @@ const AssessmentComplete = ({
 
         {/* Performance by Category */}
         <div className="border-t border-border pt-4">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Your Performance</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4"> Your Performance</h3>
           <div className="space-y-4">
             {Object.values(categories).map((category, index) => (
               <div key={index} className="border border-border rounded-lg overflow-hidden">
@@ -331,7 +330,7 @@ const AssessmentComplete = ({
                                     ) : (
                                       <div className="p-3 rounded border bg-destructive/10 border-destructive/20">
                                         <p className="text-sm text-destructive">No answer selected</p>
-                                      </div>
+                                        </div>
                                     )}
                                   </div>
                                 </div>
@@ -369,9 +368,9 @@ const AssessmentComplete = ({
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - Only Submit Assessment remains */}
       <div className="flex justify-center">
-        <Button 
+        {/* <Button
           variant="primary"
           iconName="Upload"
           onClick={handleSubmitAssessment}
@@ -381,7 +380,7 @@ const AssessmentComplete = ({
         >
           {isSubmitting ? "Submitting..." :
             submitSuccess ? "Submitted Successfully" : "Submit Assessment"}
-        </Button>
+        </Button> */}
       </div>
     </div>
   );
