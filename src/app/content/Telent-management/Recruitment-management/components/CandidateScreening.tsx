@@ -113,22 +113,74 @@ interface Candidate {
 }
 
 interface CandidateScreeningProps {
-  jobApplications: JobApplication[];
   jobPostings: JobPosting[];
-  loading: boolean;
   onRefresh: () => void;
 }
 
-const CandidateScreening = ({ jobApplications, jobPostings, loading, onRefresh }: CandidateScreeningProps) => {
+const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
+  const [sessionData, setSessionData] = useState<any>(null);
+  const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch session data on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        const { APP_URL, token, sub_institute_id, org_type } =
+          JSON.parse(userData);
+        setSessionData({ url: APP_URL, token, sub_institute_id, org_type });
+      }
+    }
+  }, []);
+
+  // Fetch job applications from API
+  useEffect(() => {
+    const fetchJobApplications = async () => {
+      if (!sessionData) return;
+
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `${sessionData.url}/api/job-applications?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch job applications: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("Job applications API response:", result);
+
+        // Handle different possible response structures
+        let applications: JobApplication[] = [];
+        if (Array.isArray(result.data)) {
+          applications = result.data;
+        } else if (Array.isArray(result)) {
+          applications = result;
+        }
+
+        setJobApplications(applications);
+        console.log(`Fetched ${applications.length} job applications`);
+      } catch (error) {
+        console.error("Error fetching job applications:", error);
+        setJobApplications([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobApplications();
+  }, [sessionData]);
 
   // Convert JobApplications to Candidate format
   useEffect(() => {
-    if (jobApplications && jobApplications.length > 0) {
+    if (jobApplications.length > 0) {
       const convertedCandidates = jobApplications.map((application): Candidate => {
         // Find the job title for this application
         const job = jobPostings.find(j => j.id === application.job_id);
@@ -177,59 +229,58 @@ const CandidateScreening = ({ jobApplications, jobPostings, loading, onRefresh }
 
       setCandidates(convertedCandidates);
 
-      // After setting candidates, perform AI screening for each
-      screenAllCandidates(convertedCandidates);
+      // After setting candidates, fetch screening results for each
+      fetchScreeningResults(convertedCandidates);
     } else {
       setCandidates([]);
     }
   }, [jobApplications, jobPostings]);
 
-  // Function to screen all candidates using AI
-  const screenAllCandidates = async (candidatesList: Candidate[]) => {
+  // Function to fetch screening results for all candidates
+  const fetchScreeningResults = async (candidatesList: Candidate[]) => {
     const updatedCandidates = await Promise.all(
       candidatesList.map(async (candidate) => {
         try {
-          const job = jobPostings.find(j => j.id === candidate.originalApplication.job_id);
-          if (!job) return candidate;
+          // Fetch screening results from API
+          const screeningResponse = await fetch(
+            `${sessionData.url}/api/talent-screening-results/candidate/${candidate.id}?type=API&token=${sessionData.token}`
+          );
 
-          // Build resume text from application data
-          const resumeText = buildResumeText(candidate.originalApplication);
+          if (!screeningResponse.ok) {
+            console.warn(`No screening data found for candidate ${candidate.id}`);
+            return candidate; // Return candidate without screening data
+          }
 
-          // Build JD data from job posting
-          const jdData = buildJDData(job);
+          const screeningData = await screeningResponse.json();
 
-          // Call screening API
-          const screeningResult = await screenCandidate({
-            resume: resumeText,
-            jdData: jdData,
-            candidateEmail: candidate.email,
-            candidateName: candidate.name
-          });
-          
+          if (!screeningData.success) {
+            console.warn(`Invalid screening data for candidate ${candidate.id}`);
+            return candidate;
+          }
 
-          // Update candidate with real screening data
+          // Update candidate with fetched screening data
           return {
             ...candidate,
-            score: screeningResult.competency_match,
+            score: screeningData.competency_match,
             matchDetails: {
-              skillsMatch: screeningResult.competency_match,
-              experienceMatch: screeningResult.competency_match,
-              educationMatch: screeningResult.competency_match,
-              cultural_fit: screeningResult.cultural_fit
+              skillsMatch: screeningData.competency_match,
+              experienceMatch: screeningData.scoringPipeline?.competency_scoring?.overallFitScore || screeningData.competency_match,
+              educationMatch: screeningData.competency_match,
+              cultural_fit: screeningData.cultural_fit
             },
-            aiRecommendation: screeningResult.recommendation,
-            culturalFit: screeningResult.cultural_fit,
-            reasoning: screeningResult.reasoning,
+            aiRecommendation: screeningData.recommendation,
+            culturalFit: screeningData.cultural_fit,
+            reasoning: screeningData.summary,
             isScreened: true,
-            predictedSuccess: screeningResult.predicted_success,
-            rankingScore: screeningResult.competency_match,
-            skillMatchDetails: screeningResult.skill_match_details,
-            skillGaps: screeningResult.skill_gaps,
-            strengths: screeningResult.strengths
+            predictedSuccess: screeningData.predicted_success,
+            rankingScore: screeningData.ranking_score,
+            skillMatchDetails: screeningData.skill_match_details,
+            skillGaps: screeningData.skill_gaps,
+            strengths: screeningData.strengths
           };
         } catch (error) {
-          console.warn(`Failed to screen candidate ${candidate.id}:`, error);
-          // Return candidate with existing data if screening fails
+          console.warn(`Failed to fetch screening data for candidate ${candidate.id}:`, error);
+          // Return candidate with existing data if fetch fails
           return candidate;
         }
       })
@@ -238,70 +289,6 @@ const CandidateScreening = ({ jobApplications, jobPostings, loading, onRefresh }
     setCandidates(updatedCandidates);
   };
 
-  // Helper function to build resume text from application data
-  const buildResumeText = (application: JobApplication) => {
-    return `
-Candidate Name: ${application.first_name} ${application.last_name}
-Email: ${application.email}
-Mobile: ${application.mobile}
-Location: ${application.current_location}
-
-Experience:
-${application.experience}
-
-Education:
-${application.education}
-
-Skills:
-${application.skills}
-
-Certifications:
-${application.certifications || "Not provided"}
-
-Current Company:
-${application.current_company || "Not provided"}
-
-Current Role:
-${application.current_role || "Not provided"}
-    `.trim();
-  };
-
-  // Helper function to build JD data from job posting
-  const buildJDData = (job: JobPosting) => ({
-    core_skills: job.skills
-      ? job.skills.split(",").map(s => s.trim())
-      : [],
-
-    behavioral_traits: [
-      "Problem Solving",
-      "Teamwork",
-      "Communication"
-    ],
-
-    competency_level: job.skills
-      ? job.skills.split(",").reduce((acc: any, skill) => {
-        acc[skill.trim()] = "Intermediate";
-        return acc;
-      }, {})
-      : {}
-  });
-
-  // Function to screen a single candidate
-  const screenCandidate = async (payload: any) => {
-    const response = await fetch("/api/screenCandidate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error("ScreenCandidate API failed");
-    }
-
-    return response.json();
-  };
 
   const getStatusBadge = (status: Candidate['status']) => {
     switch (status) {
@@ -378,7 +365,9 @@ ${application.current_role || "Not provided"}
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-4">Candidate Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -438,6 +427,7 @@ ${application.current_role || "Not provided"}
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -455,7 +445,27 @@ ${application.current_role || "Not provided"}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="sm" onClick={onRefresh}>
+              <Button variant="outline" size="sm" onClick={() => {
+                // Refetch job applications
+                if (sessionData) {
+                  fetch(`${sessionData.url}/api/job-applications?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`)
+                    .then(response => response.json())
+                    .then(result => {
+                      let applications: JobApplication[] = [];
+                      if (Array.isArray(result.data)) {
+                        applications = result.data;
+                      } else if (Array.isArray(result)) {
+                        applications = result;
+                      }
+                      setJobApplications(applications);
+                      console.log(`Refetched ${applications.length} job applications`);
+                    })
+                    .catch(error => {
+                      console.error("Error refetching job applications:", error);
+                    });
+                }
+                onRefresh();
+              }}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh
               </Button>
@@ -522,7 +532,7 @@ ${application.current_role || "Not provided"}
                         <div className="text-right">
                           <div className="flex items-center space-x-2 mb-2 justify-end">
                             <Star className="w-5 h-5 text-primary" />
-                              <span className="text-2xl font-bold text-primary">
+                              <span className="text-2xl font-bold text-primary" title={candidate.isScreened && candidate.score !== null ? `AI Screening Score: ${candidate.score}%` : 'Screening in progress'}>
                                 {candidate.isScreened && candidate.score !== null ? `${candidate.score}%` : 'Pending'}
                               </span>
                           </div>
@@ -536,7 +546,7 @@ ${application.current_role || "Not provided"}
                             )}
                             {/* {candidate.culturalFit && (
                               <div className="text-sm text-muted-foreground">
-                                Cultural Fit: {candidate.culturalFit}%
+                                Cultural Fit: {candidate.culturalFit}
                               </div>
                             )} */}
                         </div>
@@ -547,18 +557,30 @@ ${application.current_role || "Not provided"}
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                             <div className="text-center">
                               <div className="text-lg font-semibold">{candidate.matchDetails.skillsMatch}%</div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+                                <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.skillsMatch}%` }}></div>
+                              </div>
                               <div className="text-xs text-muted-foreground">Skills Match</div>
                             </div>
                             <div className="text-center">
                               <div className="text-lg font-semibold">{candidate.matchDetails.experienceMatch}%</div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+                                <div className="bg-green-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.experienceMatch}%` }}></div>
+                              </div>
                               <div className="text-xs text-muted-foreground">Experience</div>
                             </div>
                             <div className="text-center">
                               <div className="text-lg font-semibold">{candidate.matchDetails.educationMatch}%</div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+                                <div className="bg-yellow-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.educationMatch}%` }}></div>
+                              </div>
                               <div className="text-xs text-muted-foreground">Education</div>
                             </div>
                             <div className="text-center">
                               <div className="text-lg font-semibold">{candidate.matchDetails.cultural_fit}</div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+                                <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.cultural_fit}` }}></div>
+                              </div>
                               <div className="text-xs text-muted-foreground">Cultural Fit</div>
                             </div>
                           </div>
@@ -571,23 +593,39 @@ ${application.current_role || "Not provided"}
                       {/* Additional Screening Details */}
                       {candidate.isScreened && (
                         <div className="mb-4 space-y-3">
-                          {candidate.predictedSuccess && (
-                            <div>
-                              <h4 className="font-medium text-sm mb-1">Predicted Success</h4>
-                              <Badge variant={
-                                candidate.predictedSuccess === 'Highly Likely' ? 'default' :
-                                candidate.predictedSuccess === 'Likely' ? 'secondary' :
-                                candidate.predictedSuccess === 'Possible' ? 'outline' : 'destructive'
-                              }>
-                                {candidate.predictedSuccess}
-                              </Badge>
-                            </div>
-                          )}
+                            {(candidate.predictedSuccess || candidate.rankingScore !== undefined) && (
+                              <div className="flex items-center gap-4">
+                                {candidate.predictedSuccess && (
+                                  <div className="flex flex-col gap-1">
+                                    <Badge
+                                      className="w-fit px-3 py-1 text-sm font-semibold"
+                                      variant={
+                                        candidate.predictedSuccess === "Highly Likely"
+                                          ? "default"
+                                          : candidate.predictedSuccess === "Likely"
+                                            ? "secondary"
+                                            : candidate.predictedSuccess === "Possible"
+                                              ? "outline"
+                                              : "destructive"
+                                      }
+                                    >
+                                      {candidate.predictedSuccess}
+                                    </Badge>
+                                    <span className="text-sm text-muted-foreground">
+                                      Predicted Success
+                                    </span>
 
-                          {candidate.rankingScore !== undefined && (
-                            <div>
-                              <h4 className="font-medium text-sm mb-1">Ranking Score</h4>
-                              <div className="text-lg font-semibold">{candidate.rankingScore}/100</div>
+
+                                  </div>
+
+                                )}
+                                {candidate.rankingScore !== undefined && (
+                                  <div className="flex flex-col gap-1">
+
+                                    <span className="text-sm font-semibold">{candidate.rankingScore}/100</span>
+                                    <span className="text-sm text-muted-foreground">Ranking Score</span>
+                                  </div>
+                                )}
                             </div>
                           )}
 
@@ -612,7 +650,7 @@ ${application.current_role || "Not provided"}
                               <h4 className="font-medium text-sm mb-2">Skill Gaps</h4>
                               <div className="flex flex-wrap gap-2">
                                 {candidate.skillGaps.map((gap, index) => (
-                                  <Badge key={index} variant="destructive" className="text-xs">
+                                  <Badge key={index} variant="destructive" className="text-xs bg-red-100 text-red-800 hover:bg-red-200">
                                     {gap}
                                   </Badge>
                                 ))}
@@ -669,8 +707,8 @@ ${application.current_role || "Not provided"}
                             onClick={() => handleDownloadResume(candidate)}
                             disabled={!candidate.resumeUrl}
                           >
-                            <FileText className="w-4 h-4 mr-2" />
-                            Resume
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Resume
                           </Button>
                           <Button
                             variant="outline"
@@ -679,7 +717,7 @@ ${application.current_role || "Not provided"}
                             disabled={!candidate.resumeUrl}
                           >
                             <Download className="w-4 h-4 mr-2" />
-                            Download
+                              Download Resume
                           </Button>
                           {candidate.status === 'pending' && (
                             <>
