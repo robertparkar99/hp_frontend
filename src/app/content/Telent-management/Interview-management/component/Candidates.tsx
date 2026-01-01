@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Eye, Calendar, MessageSquare, Download } from "lucide-react";
+import { Search, Filter, Eye, Calendar, MessageSquare, Download, Star } from "lucide-react";
 import dynamic from 'next/dynamic';
+import Feedback from './Feedback';
 
 const ExcelExportButton = dynamic(
   () => import('@/components/exportButtons/excelExportButton').then(mod => mod.ExcelExportButton),
@@ -26,84 +27,26 @@ const PrintButton = dynamic(
 
 // Define TypeScript interfaces
 interface Candidate {
-  id: number;
-  name: string;
-  email: string;
-  position: string;
+  candidate_name: string;
+  position: number;
   status: string;
-  stage: string;
-  appliedDate: string;
-  nextInterview: string | null;
-  score: number;
+  stage: string | null;
+  applied_date: string;
+  next_interview: string | null;
+  score: string | null;
+  panel_id: number | null;
 }
 
 interface Filters {
   [key: string]: string;
 }
 
-const candidatesData: Candidate[] = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    email: "sarah.j@email.com",
-    position: "Senior Software Engineer",
-    status: "Interview Scheduled",
-    stage: "Technical Interview",
-    appliedDate: "2024-01-15",
-    nextInterview: "2024-01-20 10:00 AM",
-    score: 8.5,
-  },
-  {
-    id: 2,
-    name: "Michael Rodriguez",
-    email: "m.rodriguez@email.com",
-    position: "Product Manager",
-    status: "Under Review",
-    stage: "Application Review",
-    appliedDate: "2024-01-12",
-    nextInterview: null,
-    score: 7.8,
-  },
-  {
-    id: 3,
-    name: "Lisa Zhang",
-    email: "lisa.zhang@email.com",
-    position: "UX Designer",
-    status: "Interview Scheduled",
-    stage: "Final Interview",
-    appliedDate: "2024-01-10",
-    nextInterview: "2024-01-22 2:00 PM",
-    score: 9.2,
-  },
-  {
-    id: 4,
-    name: "David Chen",
-    email: "david.chen@email.com",
-    position: "Data Scientist", 
-    status: "Offer Extended",
-    stage: "Offer Stage",
-    appliedDate: "2024-01-08",
-    nextInterview: null,
-    score: 9.0,
-  },
-  {
-    id: 5,
-    name: "Emma Wilson",
-    email: "emma.w@email.com",
-    position: "Marketing Manager",
-    status: "Pending Feedback",
-    stage: "Phone Screening",
-    appliedDate: "2024-01-14",
-    nextInterview: null,
-    score: 7.5,
-  },
-];
-
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "Interview Scheduled":
       return "bg-blue-100 text-blue-800";
     case "Under Review":
+    case "Pending Review":
       return "bg-yellow-100 text-yellow-800";
     case "Offer Extended":
       return "bg-green-100 text-green-800";
@@ -117,21 +60,42 @@ const getStatusBadge = (status: string) => {
 export default function Candidates() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filters, setFilters] = useState<Filters>({});
-  const [filteredData, setFilteredData] = useState<Candidate[]>(candidatesData);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [filteredData, setFilteredData] = useState<Candidate[]>([]);
+  const [currentView, setCurrentView] = useState<'candidates' | 'feedback'>('candidates');
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+
+  useEffect(() => {
+    const fetchCandidates = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/candidate?sub_institute_id=3&type=API&token=1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5');
+        const data = await response.json();
+        if (data.status) {
+          setCandidates(data.data);
+          setFilteredData(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching candidates:', error);
+      }
+    };
+    fetchCandidates();
+  }, []);
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     if (term) {
-      const filtered = candidatesData.filter(candidate =>
-        candidate.name.toLowerCase().includes(term.toLowerCase()) ||
-        candidate.position.toLowerCase().includes(term.toLowerCase()) ||
-        candidate.email.toLowerCase().includes(term.toLowerCase()) ||
+      const filtered = candidates.filter(candidate =>
+        candidate.candidate_name.toLowerCase().includes(term.toLowerCase()) ||
+        candidate.position.toString().toLowerCase().includes(term.toLowerCase()) ||
         candidate.status.toLowerCase().includes(term.toLowerCase()) ||
-        candidate.stage.toLowerCase().includes(term.toLowerCase())
+        (candidate.stage || '').toLowerCase().includes(term.toLowerCase()) ||
+        candidate.applied_date.toLowerCase().includes(term.toLowerCase()) ||
+        (candidate.next_interview || '').toLowerCase().includes(term.toLowerCase()) ||
+        (candidate.score || '').toLowerCase().includes(term.toLowerCase())
       );
       setFilteredData(filtered);
     } else {
-      setFilteredData(candidatesData);
+      setFilteredData(candidates);
     }
   };
 
@@ -143,14 +107,18 @@ export default function Candidates() {
   };
 
   useEffect(() => {
-    let filtered = [...candidatesData];
+    let filtered = [...candidates];
 
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(candidate =>
-        candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.email.toLowerCase().includes(searchTerm.toLowerCase())
+        candidate.candidate_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.position.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (candidate.stage || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.applied_date.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (candidate.next_interview || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (candidate.score || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -158,14 +126,27 @@ export default function Candidates() {
     Object.keys(filters).forEach((key) => {
       if (filters[key] && filters[key].trim() !== "") {
         filtered = filtered.filter((item) => {
-          const value = (item[key as keyof Candidate] || "").toString().toLowerCase();
+          let value = '';
+          if (key === 'position') {
+            value = item.position.toString().toLowerCase();
+          } else if (key === 'applied_date') {
+            value = new Date(item.applied_date).toLocaleDateString().toLowerCase();
+          } else if (key === 'next_interview') {
+            value = (item.next_interview || '').toLowerCase();
+          } else if (key === 'score') {
+            value = (item.score || '').toLowerCase();
+          } else if (key === 'stage') {
+            value = (item.stage || '').toLowerCase();
+          } else {
+            value = (item[key as keyof Candidate] as string || '').toLowerCase();
+          }
           return value.includes(filters[key]);
         });
       }
     });
 
     setFilteredData(filtered);
-  }, [filters, searchTerm]);
+  }, [filters, searchTerm, candidates]);
 
   const columns :TableColumn<Candidate>[]= [
     {
@@ -175,18 +156,23 @@ export default function Candidates() {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("name", e.target.value)}
+            onChange={(e) => handleColumnFilter("candidate_name", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: Candidate) => row.name,
-      cell: (row: Candidate) => (
-        <div>
-          <p className="font-medium">{row.name}</p>
-          <p className="text-sm text-muted-foreground">{row.email}</p>
-        </div>
-      ),
+      selector: (row: Candidate) => row.candidate_name,
+      cell: (row: Candidate) => {
+        const parts = row.candidate_name.split(' ');
+        const email = parts.pop() || '';
+        const name = parts.join(' ');
+        return (
+          <div>
+            <p className="font-medium">{name}</p>
+            {/* <p className="text-sm text-muted-foreground">{email}</p> */}
+          </div>
+        );
+      },
       sortable: true,
       minWidth: "200px"
     },
@@ -202,7 +188,7 @@ export default function Candidates() {
           />
         </div>
       ),
-      selector: (row: Candidate) => row.position,
+      selector: (row: Candidate) => row.position.toString(),
       sortable: true,
       minWidth: "180px"
     },
@@ -239,7 +225,7 @@ export default function Candidates() {
           />
         </div>
       ),
-      selector: (row: Candidate) => row.stage,
+      selector: (row: Candidate) => row.stage || "-",
       sortable: true,
       minWidth: "150px"
     },
@@ -250,12 +236,12 @@ export default function Candidates() {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("appliedDate", e.target.value)}
+            onChange={(e) => handleColumnFilter("applied_date", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: Candidate) => new Date(row.appliedDate).toLocaleDateString(),
+      selector: (row: Candidate) => new Date(row.applied_date).toLocaleDateString(),
       sortable: true,
       minWidth: "120px"
     },
@@ -266,12 +252,12 @@ export default function Candidates() {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("nextInterview", e.target.value)}
+            onChange={(e) => handleColumnFilter("next_interview", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: Candidate) => row.nextInterview || "-",
+      selector: (row: Candidate) => row.next_interview ? new Date(row.next_interview).toLocaleString() : "-",
       sortable: true,
       minWidth: "150px"
     },
@@ -287,11 +273,11 @@ export default function Candidates() {
           />
         </div>
       ),
-      selector: (row: Candidate) => row.score,
+      selector: (row: Candidate) => row.score || "-",
       cell: (row: Candidate) => (
         <div className="flex items-center">
-          <span className="font-medium">{row.score}</span>
-          <span className="text-muted-foreground">/10</span>
+          <span className="font-medium">{row.score ? parseFloat(row.score) : '-'}</span>
+          {row.score && <span className="text-muted-foreground">/10</span>}
         </div>
       ),
       sortable: true,
@@ -300,24 +286,28 @@ export default function Candidates() {
     {
       name: "Actions",
       cell: (row: Candidate) => (
-        <div className="flex space-x-2">
-          <Button size="sm" variant="outline" className="h-8">
-            <Eye className="h-3 w-3 mr-1" />
+        <div className="flex w-full space-x-1">
+          <Button size="sm" variant="outline" className="h-6 px-2 w-16">
+            <Eye className="h-3 w-3 ]" />
             View
           </Button>
-          <Button size="sm" variant="outline" className="h-8">
-            <Calendar className="h-3 w-3 mr-1" />
+          <Button size="sm" variant="outline" className="h-6 px-2 w-25">
+            <Calendar className="h-2 w-2 ml-2" />
             Schedule
           </Button>
-          <Button size="sm" variant="outline" className="h-8">
-            <MessageSquare className="h-3 w-3 mr-1" />
+          <Button size="sm" variant="outline" className="h-6 px-2 w-24">
+            <MessageSquare className="h-3 w-3 " />
             Message
+          </Button>
+          <Button size="sm" variant="outline" className="h-6 px-2 w-23" onClick={() => { setSelectedCandidate(row); setCurrentView('feedback'); }}>
+            <Star className="h-3 w-3" />
+            Feedback
           </Button>
         </div>
       ),
       ignoreRowClick: true,
       button: true,
-      minWidth: "250px"
+      minWidth: "390px"
     },
   ];
 
@@ -357,6 +347,10 @@ export default function Candidates() {
     },
   };
 
+  if (currentView === 'feedback' && selectedCandidate) {
+    return <Feedback candidate={selectedCandidate} onBack={() => setCurrentView('candidates')} />;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -367,35 +361,35 @@ export default function Candidates() {
           </p>
         </div>
        <div className="flex space-x-2">
-            <PrintButton
-              data={filteredData.length > 0 ? filteredData : candidatesData}
-              title="Incident Reports"
-              excludedFields={["id"]}
-              buttonText={
-                <>
-                  <span className="mdi mdi-printer-outline"></span>
-                </>
-              }
-            />
-            <ExcelExportButton
-              sheets={[{ data: filteredData.length > 0 ? filteredData : candidatesData, sheetName: "Incident Reports" }]}
-              fileName="incident_reports"
-              buttonText={
-                <>
-                  <span className="mdi mdi-file-excel"></span>
-                </>
-              }
-            />
-            <PdfExportButton
-              data={filteredData.length > 0 ? filteredData : candidatesData}
-              fileName="incident_reports"
-              buttonText={
-                <>
-                  <span className="mdi mdi-file-pdf-box"></span>
-                </>
-              }
-            />
-          </div>
+         <PrintButton
+           data={filteredData.length > 0 ? filteredData : candidates}
+           title="Candidates"
+           excludedFields={["panel_id"]}
+           buttonText={
+             <>
+               <span className="mdi mdi-printer-outline"></span>
+             </>
+           }
+         />
+         <ExcelExportButton
+           sheets={[{ data: filteredData.length > 0 ? filteredData : candidates, sheetName: "Candidates" }]}
+           fileName="candidates"
+           buttonText={
+             <>
+               <span className="mdi mdi-file-excel"></span>
+             </>
+           }
+         />
+         <PdfExportButton
+           data={filteredData.length > 0 ? filteredData : candidates}
+           fileName="candidates"
+           buttonText={
+             <>
+               <span className="mdi mdi-file-pdf-box"></span>
+             </>
+           }
+         />
+       </div>
       </div>
 
       {/* Search and Filters */}
