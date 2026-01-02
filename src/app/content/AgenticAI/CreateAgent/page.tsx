@@ -1,6 +1,6 @@
 "use client";
 import  Header  from "@/components/Header/Header";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import CreateAgent from "./Component/CreateAgent";
 // import EmployeeOnboarding from "./EmployeeOnboarding";
 
@@ -33,7 +33,7 @@ export default function HomePage() {
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar}  /> */}
         <div className={`transition-all duration-300 bg-background rounded-2xl p-4 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
       {/* <EmployeeOnboarding /> */}
-      <CreateAgent/>
+      <Suspense fallback={<div>Loading...</div>}><CreateAgent/></Suspense>
       </div>
     </div>
   );
