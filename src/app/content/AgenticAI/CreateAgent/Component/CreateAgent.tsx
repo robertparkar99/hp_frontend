@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -22,14 +22,18 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Check } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
 interface FormDataType {
   name: string;
   description: string;
+  module: string;
   model: string;
   temperature: number;
   maxTokens: number;
+  submodule: string;
+  role: string;
   systemPrompt: string;
   tools: string[];
 }
@@ -37,9 +41,10 @@ interface FormDataType {
 interface ErrorType {
   name?: string;
   description?: string;
-  model?: string;
+  module?: string;
   maxTokens?: string;
   systemPrompt?: string;
+  tools?: string;
 }
 
 
@@ -73,12 +78,16 @@ const validateStep = (step: number, data: FormDataType): ErrorType => {
   }
 
   if (step === 2) {
-    if (!data.model) errors.model = "Please select a model";
+    if (!data.module.trim()) errors.module = "Module is required";
     if (data.maxTokens < 100 || data.maxTokens > 8000) errors.maxTokens = "Max tokens must be between 100 and 8000";
   }
 
   if (step === 3) {
     if (!data.systemPrompt.trim()) errors.systemPrompt = "System prompt is required";
+  }
+
+  if (step === 4) {
+    if (data.tools.length === 0) errors.tools = "At least one tool must be selected";
   }
 
   return errors;
@@ -87,26 +96,69 @@ const validateStep = (step: number, data: FormDataType): ErrorType => {
 
 export default function CreateAgent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
+  const isEdit = !!editId;
 
   const [currentStep, setCurrentStep] = useState(1);
 
   const [formData, setFormData] = useState<FormDataType>({
     name: "",
     description: "",
+    module: "",
     model: "gpt-4",
     temperature: 0.7,
     maxTokens: 2000,
+    submodule: "gpt-4",
+    role: "",
     systemPrompt: "",
     tools: [],
   });
 
   const [errors, setErrors] = useState<ErrorType>({});
+  const [createdAgent, setCreatedAgent] = useState<any>(null);
+  const [sentPayload, setSentPayload] = useState<any>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Load draft
   useEffect(() => {
     const draft = localStorage.getItem(DRAFT_KEY);
-    if (draft) setFormData(JSON.parse(draft));
+    if (draft) {
+      const parsedDraft = JSON.parse(draft);
+      setFormData(prev => ({ ...prev, ...parsedDraft }));
+    }
   }, []);
+
+  // Load agent for edit
+  useEffect(() => {
+    if (editId) {
+      const fetchAgent = async () => {
+        try {
+          const response = await fetch(`https://pariharajit6348-agenticai.hf.space/agents/${editId}`);
+          if (response.ok) {
+            const agent = await response.json();
+            setFormData({
+              name: agent.name || '',
+              description: agent.description || '',
+              module: agent.module || '',
+              model: 'gpt-4', // Assuming default, since API might not have it
+              temperature: agent.temperature || 0.7,
+              maxTokens: agent.max_tokens || 2000,
+              submodule: agent.sub_module || '',
+              role: 'agent', // Assuming default
+              systemPrompt: agent.system_prompt || '',
+              tools: [], // Assuming no tools from API
+            });
+          } else {
+            console.error('Failed to fetch agent for edit');
+          }
+        } catch (error) {
+          console.error('Error fetching agent for edit:', error);
+        }
+      };
+      fetchAgent();
+    }
+  }, [editId]);
 
   // Auto-save
   useEffect(() => {
@@ -127,13 +179,13 @@ export default function CreateAgent() {
   // TOOL TOGGLE
   // --------------------------------------------------
   const toggleTool = (toolId: string) => {
-  setFormData((prev) => ({
-    ...prev,
-    tools: prev.tools.includes(toolId)
-      ? prev.tools.filter((t) => t !== toolId)
-      : [...prev.tools, toolId],
-  }));
-};
+    setFormData((prev) => ({
+      ...prev,
+      tools: prev.tools.includes(toolId)
+        ? prev.tools.filter((t) => t !== toolId)
+        : [...prev.tools, toolId],
+    }));
+  };
 
 
   // --------------------------------------------------
@@ -144,27 +196,62 @@ export default function CreateAgent() {
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length === 0) {
-      if (currentStep < 4) setCurrentStep(currentStep + 1);
+      if (currentStep <= 4) setCurrentStep(currentStep + 1);
     }
   };
 
   // --------------------------------------------------
   // SUBMIT
   // --------------------------------------------------
-  const handleSubmit = (e:React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const validationErrors = validateStep(currentStep, formData);
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
-    // Clear draft
-    localStorage.removeItem(DRAFT_KEY);
+    setErrorMessage('');
+    setCreatedAgent(null);
+    setSentPayload(null);
 
-    // SIMPLE ALERT (REPLACED TOAST)
-    alert(`Agent Created Successfully!\n\n${formData.name} is ready to use.`);
+    try {
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        module: formData.module,
+        sub_module: formData.submodule,
+        role: formData.role,
+        temperature: formData.temperature,
+        max_tokens: formData.maxTokens,
+        system_prompt: formData.systemPrompt,
+        tools: formData.tools,
+      };
+      setSentPayload(payload);
 
-    router.push("/");
+      const url = isEdit ? `https://pariharajit6348-agenticai.hf.space/agents/${editId}` : 'https://pariharajit6348-agenticai.hf.space/agents';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCreatedAgent(data);
+        alert(`${isEdit ? 'Agent updated' : 'Agent created'} successfully`);
+        // Keep draft for refresh
+      } else {
+        const errorText = await response.text();
+        setErrorMessage(`Failed to ${isEdit ? 'update' : 'create'} agent: ${response.status} ${response.statusText} - ${errorText}`);
+        alert(`Error: ${errorMessage}`);
+      }
+    } catch (error: any) {
+      setErrorMessage(`Error creating agent: ${error.message}`);
+    }
   };
 
   return (
@@ -174,7 +261,7 @@ export default function CreateAgent() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Create New Agent</h1>
+          <h1 className="text-3xl font-bold text-foreground">{isEdit ? 'Edit Agent' : 'Create New Agent'}</h1>
           <p className="text-muted-foreground">
             Configure your AI agent's behavior and capabilities
           </p>
@@ -200,8 +287,8 @@ export default function CreateAgent() {
                       currentStep > step.id
                         ? "border-primary bg-primary"
                         : currentStep === step.id
-                        ? "border-primary"
-                        : "border-muted"
+                          ? "border-primary"
+                          : "border-muted"
                     )}
                   >
                     {currentStep > step.id ? (
@@ -262,6 +349,7 @@ export default function CreateAgent() {
               <div>
                 <Label>Agent Name</Label>
                 <Input
+                  placeholder="Enter agent name"
                   value={formData.name}
                   onChange={(e) => updateField("name", e.target.value)}
                 />
@@ -273,6 +361,7 @@ export default function CreateAgent() {
               <div>
                 <Label>Description</Label>
                 <Textarea
+                  placeholder="Describe the agent's purpose and capabilities"
                   value={formData.description}
                   onChange={(e) => updateField("description", e.target.value)}
                 />
@@ -292,10 +381,22 @@ export default function CreateAgent() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
+                <Label>Module</Label>
+                <Input
+                  placeholder="e.g. research"
+                  value={formData.module}
+                  onChange={(e) => updateField("module", e.target.value)}
+                />
+                {errors.module && (
+                  <p className="text-red-500 text-sm">{errors.module}</p>
+                )}
+              </div>
+              {/* Submodule */}
+              <div>
                 <Label>Model</Label>
                 <Select
-                  value={formData.model}
-                  onValueChange={(v) => updateField("model", v)}
+                  value={formData.submodule}
+                  onValueChange={(v) => updateField("submodule", v)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -306,10 +407,18 @@ export default function CreateAgent() {
                     <SelectItem value="claude-3">Claude 3</SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.model && (
-                  <p className="text-red-500 text-sm">{errors.model}</p>
-                )}
               </div>
+
+              {/* Role */}
+              <div>
+                <Label>Role</Label>
+                <Input
+                  placeholder="e.g. Interview Assistant"
+                  value={formData.role}
+                  onChange={(e) => updateField("role", e.target.value)}
+                />
+              </div>
+
 
               <div>
                 <Label>Temperature: {formData.temperature.toFixed(1)}</Label>
@@ -348,6 +457,7 @@ export default function CreateAgent() {
             <CardContent>
               <Textarea
                 rows={6}
+                placeholder="Define the agent's behavior, instructions, and personality"
                 value={formData.systemPrompt}
                 onChange={(e) => updateField("systemPrompt", e.target.value)}
               />
@@ -401,10 +511,44 @@ export default function CreateAgent() {
               Next
             </Button>
           ) : (
-            <Button type="submit">Create Agent</Button>
+              <Button type="submit">{isEdit ? 'Update Agent' : 'Create Agent'}</Button>
           )}
         </div>
       </form>
+
+      {/* SUCCESS DISPLAY */}
+      {createdAgent && sentPayload && (
+        <Alert>
+          <AlertTitle>Agent {isEdit ? 'Updated' : 'Created'} Successfully</AlertTitle>
+          <AlertDescription>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold">Sent Payload:</h3>
+                <pre className="bg-muted p-4 rounded text-sm overflow-auto">
+                  {JSON.stringify(sentPayload, null, 2)}
+                </pre>
+              </div>
+              <div>
+                <h3 className="font-semibold">Response:</h3>
+                <pre className="bg-muted p-4 rounded text-sm overflow-auto">
+                  {JSON.stringify(createdAgent, null, 2)}
+                </pre>
+              </div>
+              <Button onClick={() => router.push("/")} className="mt-4">
+                Go Back to Home
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* ERROR DISPLAY */}
+      {errorMessage && (
+        <Alert variant="destructive">
+          <AlertTitle>Error Creating Agent</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }
