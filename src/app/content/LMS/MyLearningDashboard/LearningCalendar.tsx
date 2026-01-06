@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Clock, FileText, Video, Calendar } from "lucide-react";
 
 interface Event {
@@ -9,49 +9,88 @@ interface Event {
   time: string;
   course: string;
   priority: 'high' | 'medium' | 'low';
+  displayDateTime: string;
 }
 
 const LearningCalendar: React.FC = () => {
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2025, 6, 28)); // July 28, 2025
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [events, setEvents] = useState<Event[]>([]);
 
-  const upcomingEvents: Event[] = [
-    {
-      id: 1,
-      title: "React Advanced Patterns",
-      type: "deadline",
-      date: "2025-07-30",
-      time: "11:59 PM",
-      course: "Advanced React Development",
-      priority: "high"
-    },
-    {
-      id: 2,
-      title: "Data Visualization Quiz",
-      type: "assessment",
-      date: "2025-08-02",
-      time: "2:00 PM",
-      course: "Data Analysis Fundamentals",
-      priority: "medium"
-    },
-    {
-      id: 3,
-      title: "Project Management Workshop",
-      type: "live_session",
-      date: "2025-08-05",
-      time: "10:00 AM",
-      course: "Leadership Essentials",
-      priority: "high"
-    },
-    {
-      id: 4,
-      title: "ML Algorithm Assignment",
-      type: "deadline",
-      date: "2025-08-08",
-      time: "11:59 PM",
-      course: "Machine Learning Basics",
-      priority: "low"
+  const mapType = (eventType: string): Event['type'] => {
+    switch (eventType.toLowerCase()) {
+      case 'high': return 'deadline';
+      case 'medium': return 'assessment';
+      case 'low': return 'live_session';
+      default: return 'deadline';
     }
-  ];
+  };
+
+  const parseCurrentDateTime = (currentDateTime: string, year: string): Date | null => {
+    const parts = currentDateTime.split(' at ');
+    if (parts.length !== 2) return null;
+    const datePart = parts[0]; // "Jan 06"
+    const timePart = parts[1]; // "5:56 AM"
+    const [monthStr, dayStr] = datePart.split(' ');
+    const monthIndex = new Date(`${monthStr} 1, 2000`).getMonth();
+    const day = parseInt(dayStr);
+    const timeMatch = timePart.match(/(\d+):(\d+) (\w+)/);
+    if (!timeMatch) return null;
+    const hour = parseInt(timeMatch[1]);
+    const minute = parseInt(timeMatch[2]);
+    const ampm = timeMatch[3];
+    const hour24 = ampm === 'PM' && hour !== 12 ? hour + 12 : hour === 12 && ampm === 'AM' ? 0 : hour;
+    return new Date(parseInt(year), monthIndex, day, hour24, minute);
+  };
+
+  const [sessionData, setSessionData] = useState({
+    url: '',
+    token: '',
+    subInstituteId: '',
+    orgType: '',
+    userId: '',
+});
+
+useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+        const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+        setSessionData({
+            url: APP_URL,
+            token,
+            subInstituteId: sub_institute_id,
+            orgType: org_type,
+            userId: user_id,
+        });
+    }
+}, []);
+  
+
+  useEffect(() => {
+    if (sessionData.url && sessionData.token && sessionData.subInstituteId && sessionData.userId) {
+      fetch(`${sessionData.url}/api/skill-development/calendar?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status) {
+            setCurrentDate(new Date(parseInt(data.data.year), parseInt(data.data.month) - 1, 1));
+            const mappedEvents = data.data.events.map((item: any, index: number) => {
+              const eventDate = parseCurrentDateTime(item.current_datetime, data.data.year);
+              return {
+                id: index,
+                title: item.title,
+                type: mapType(item.priority),
+                date: eventDate ? eventDate.toISOString().split('T')[0] : '',
+                time: eventDate ? eventDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "All day",
+                course: item.description,
+                priority: item.priority as 'high' | 'medium' | 'low',
+                displayDateTime: item.current_datetime,
+              };
+            });
+            setEvents(mappedEvents);
+          }
+        })
+        .catch(err => console.error('Error fetching calendar data:', err));
+    }
+  }, [sessionData]);
 
   const getDaysInMonth = (date: Date): number => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -167,13 +206,14 @@ const LearningCalendar: React.FC = () => {
             <div key={`empty-${index}`} className="h-8"></div>
           ))}
           {days.map((day) => {
-            const hasEvent = upcomingEvents.some(event => {
+            const hasEvent = events.some(event => {
               const eventDate = new Date(event.date);
-              return eventDate.getDate() === day && 
+              return eventDate.getDate() === day &&
                      eventDate.getMonth() === currentDate.getMonth() &&
                      eventDate.getFullYear() === currentDate.getFullYear();
             });
-            const isToday = day === 28 && currentDate.getMonth() === 6; // July 28, 2025
+            const today = new Date();
+            const isToday = day === today.getDate() && currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
 
             return (
               <div
@@ -197,7 +237,7 @@ const LearningCalendar: React.FC = () => {
       <div>
         <h3 className="text-sm font-medium text-foreground mb-4">Upcoming Events</h3>
         <div className="space-y-3">
-          {upcomingEvents.slice(0, 3).map((event) => (
+          {events.slice(0, 3).map((event) => (
             <div key={event.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getEventBackgroundColor(event.type)}`}>
                 <div className={getEventIconColor(event.type)}>
@@ -208,9 +248,10 @@ const LearningCalendar: React.FC = () => {
                 <p className="text-sm font-medium text-foreground truncate">{event.title}</p>
                 <p className="text-xs text-muted-foreground truncate">{event.course}</p>
                 <div className="flex items-center space-x-2 mt-1">
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(event.date)} at {event.time}
-                  </span>
+                <span className="text-xs text-muted-foreground">
+  {event.displayDateTime}
+</span>
+
                   <span className={`text-xs font-medium ${getPriorityColor(event.priority)}`}>
                     {event.priority}
                   </span>
@@ -220,9 +261,9 @@ const LearningCalendar: React.FC = () => {
           ))}
         </div>
         
-        {upcomingEvents.length > 3 && (
+        {events.length > 3 && (
           <button className="w-full mt-4 text-sm text-blue-500 hover:text-blue-600 font-medium">
-            View All Events ({upcomingEvents.length - 3} more)
+            View All Events ({events.length - 3} more)
           </button>
         )}
       </div>
