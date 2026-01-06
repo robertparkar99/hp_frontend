@@ -569,7 +569,7 @@ const SystemConfiguration = () => {
     {
       name: (
         <div>
-          <div>Assigned To</div>
+          <div>AssignedTo</div>
           <input
             type="text"
             placeholder="Search..."
@@ -692,7 +692,6 @@ const SystemConfiguration = () => {
         </div>
       ),
       ignoreRowClick: true,
-      button: true,
     },
   ];
 
@@ -752,15 +751,14 @@ const SystemConfiguration = () => {
           <Select
             value={formData.departmentName}
             onValueChange={(value) => handleChange("departmentName", value)}
+            position="popper"
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Department" />
             </SelectTrigger>
-            <SelectContent
-             className="max-h-60 w-73"
-            >
+            <SelectContent className="max-h-40 max-w-85 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
               {departmentOptions.map((dept) => (
-                <SelectItem key={dept.id} value={dept.name}>
+                <SelectItem key={dept.id} value={dept.name} className="whitespace-normal break-words">
                   {dept.name}
                 </SelectItem>
               ))}
@@ -770,19 +768,22 @@ const SystemConfiguration = () => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-          <select
+          <Select
             value={formData.assignedTo}
-            onChange={(e) => handleChange("assignedTo", e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
-            required
+            onValueChange={(value) => handleChange("assignedTo", value)}
+            position="popper"
           >
-            <option value="">Select Employee </option>
-            {userOptions.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Employee" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+              {userOptions.map((user) => (
+                <SelectItem key={user.id} value={user.id.toString()} className="whitespace-normal break-words">
+                  {user.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
@@ -800,21 +801,24 @@ const SystemConfiguration = () => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Frequency{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-          <select
+          <Select
             value={formData.frequency}
-            onChange={(e) => handleChange("frequency", e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
-            required
+            onValueChange={(value) => handleChange("frequency", value)}
+            position="popper"
           >
-            <option value="">Select Frequency</option>
-            {["One-Time", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Custom"].map(
-              (opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              )
-            )}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Frequency" />
+            </SelectTrigger>
+            <SelectContent className="max-h-35 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+              {["One-Time", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Custom"].map(
+                (opt) => (
+                  <SelectItem key={opt} value={opt} className="whitespace-normal break-words">
+                    {opt}
+                  </SelectItem>
+                )
+              )}
+            </SelectContent>
+          </Select>
         </div>
 
         {formData.frequency === "Custom" && (
@@ -937,36 +941,42 @@ const SystemConfiguration = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Department{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-              <select
+              <Select
                 value={editFormData.departmentName}
-                onChange={(e) => handleEditChange("departmentName", e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-                required
+                onValueChange={(value) => handleEditChange("departmentName", value)}
+                position="popper"
               >
-                <option value="">Select Department</option>
-                {departmentOptions.map((dept) => (
-                  <option key={dept.id} value={dept.name}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Department" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+                  {departmentOptions.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.name} className="whitespace-normal break-words">
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-              <select
+              <Select
                 value={editFormData.assignedTo}
-                onChange={(e) => handleEditChange("assignedTo", e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-                required
+                onValueChange={(value) => handleEditChange("assignedTo", value)}
+                position="popper"
               >
-                <option value="">Select User</option>
-                {editUserOptions.map((user) => (
-                  <option key={user.id} value={user.id.toString()}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select User" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+                  {editUserOptions.map((user) => (
+                    <SelectItem key={user.id} value={user.id.toString()} className="whitespace-normal break-words">
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Due Date{" "}
@@ -983,21 +993,24 @@ const SystemConfiguration = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Frequency{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-              <select
+              <Select
                 value={editFormData.frequency}
-                onChange={(e) => handleEditChange("frequency", e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-                required
+                onValueChange={(value) => handleEditChange("frequency", value)}
+                position="popper"
               >
-                <option value="">Select Frequency</option>
-                {["One-Time", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Custom"].map(
-                  (opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  )
-                )}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Frequency" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+                  {["One-Time", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Custom"].map(
+                    (opt) => (
+                      <SelectItem key={opt} value={opt} className="whitespace-normal break-words">
+                        {opt}
+                      </SelectItem>
+                    )
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             {editFormData.frequency === "Custom" && (

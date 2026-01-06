@@ -1,8 +1,9 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Icon from '../../../../components/AppIcon';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select';
 
 const SearchAndFilters = ({
   searchTerm,
@@ -14,15 +15,26 @@ const SearchAndFilters = ({
   sessionData
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const openCount = useRef(0);
+
+  useEffect(() => {
+    if (dropdownOpen) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
+    return () => document.body.classList.remove('overflow-hidden');
+  }, [dropdownOpen]);
 
   // Department from new API
   const [departmentOptions, setDepartmentOptions] = useState([
-    { value: '', label: 'All Departments' }
+    { value: 'all', label: 'All Departments' }
   ]);
 
   // Job Roles from API - will be updated based on selected department
   const [jobRoleOptions, setJobRoleOptions] = useState([
-    { value: '', label: 'All Job Roles' }
+    { value: 'all', label: 'All Job Roles' }
   ]);
 
   // All job roles data from API
@@ -30,11 +42,11 @@ const SearchAndFilters = ({
 
   // Roles (user_profiles) from API
   const [roleOptions, setRoleOptions] = useState([
-    { value: '', label: 'All Roles' }
+    { value: 'all', label: 'All Roles' }
   ]);
 
   const statusOptions = [
-    { value: '', label: 'All Status' },
+    { value: 'all', label: 'All Status' },
     { value: 'Active', label: 'Active' },
     { value: 'Inactive', label: 'In Active' },
     { value: 'Offline', label: 'Offline' }
@@ -64,7 +76,7 @@ const SearchAndFilters = ({
           console.log('📦 Raw Data Structure:', data.data); // Debug log
 
           setDepartmentOptions([
-            { value: '', label: 'All Departments' },
+            { value: 'all', label: 'All Departments' },
             ...departments.map(dept => ({
               value: dept,
               label: dept
@@ -78,11 +90,11 @@ const SearchAndFilters = ({
           updateAllJobRoles(data.data);
         } else {
           console.warn('⚠️ Unexpected Department API format:', data);
-          setDepartmentOptions([{ value: '', label: 'All Departments' }]);
+          setDepartmentOptions([{ value: 'all', label: 'All Departments' }]);
         }
       } catch (error) {
         console.error('❌ Failed to fetch departments:', error);
-        setDepartmentOptions([{ value: '', label: 'All Departments' }]);
+        setDepartmentOptions([{ value: 'all', label: 'All Departments' }]);
       }
     };
 
@@ -109,7 +121,7 @@ const SearchAndFilters = ({
     const sortedJobRoles = Array.from(allJobRoles).sort();
     
     setJobRoleOptions([
-      { value: '', label: 'All Job Roles' },
+      { value: 'all', label: 'All Job Roles' },
       ...sortedJobRoles.map(role => ({
         value: role,
         label: role
@@ -129,7 +141,7 @@ const SearchAndFilters = ({
     console.log('🎯 Current department filter:', filters.department); // Debug log
     console.log('📊 Available departments in data:', Object.keys(allJobRolesData)); // Debug log
 
-    if (filters.department && filters.department !== '') {
+    if (filters.department && filters.department !== 'all') {
       // Get job roles for selected department
       const departmentJobRoles = allJobRolesData[filters.department];
       
@@ -154,7 +166,7 @@ const SearchAndFilters = ({
         console.log('✅ Filtered job roles for department:', filteredRoles); // Debug log
 
         setJobRoleOptions([
-          { value: '', label: 'All Job Roles' },
+          { value: 'all', label: 'All Job Roles' },
           ...filteredRoles.map(role => ({
             value: role,
             label: role
@@ -186,7 +198,7 @@ const SearchAndFilters = ({
 
         if (Array.isArray(data.user_profiles)) {
           setRoleOptions([
-            { value: '', label: 'All Roles' },
+            { value: 'all', label: 'All Roles' },
             ...data.user_profiles
               .filter(role => role?.name)
               .map(role => ({
@@ -215,6 +227,15 @@ const SearchAndFilters = ({
   };
 
   const getFilterLabel = (key, value) => {
+    if (value === '') {
+      const allLabels = {
+        department: 'All Departments',
+        jobRole: 'All Job Roles',
+        location: 'All Roles',
+        status: 'All Status'
+      };
+      return allLabels[key] || value;
+    }
     const optionMaps = {
       department: departmentOptions,
       jobRole: jobRoleOptions,
@@ -230,26 +251,39 @@ const SearchAndFilters = ({
   const handleDepartmentChange = (value) => {
     console.log('🔄 Department changed to:', value); // Debug log
     // Reset job role when department changes
-    onFilterChange('department', value);
+    const actualValue = value === 'all' ? '' : value;
+    onFilterChange('department', actualValue);
     onFilterChange('jobRole', '');
   };
 
   const renderSelect = (label, options, value, keyName, onChangeHandler = null) => (
     <div className="flex flex-col">
       <label className="mb-1 text-sm font-medium">{label}</label>
-      <select
-        value={value}
-        onChange={e => onChangeHandler ? onChangeHandler(e.target.value) : onFilterChange(keyName, e.target.value)}
-        className="border border-border rounded px-3 py-2"
+      <Select
+        value={value === '' ? 'all' : value}
+        onValueChange={(val) => {
+          const actualVal = val === 'all' ? '' : val;
+          onChangeHandler ? onChangeHandler(actualVal) : onFilterChange(keyName, actualVal);
+        }}
+        onOpenChange={(open) => {
+          if (open) openCount.current++;
+          else openCount.current--;
+          setDropdownOpen(openCount.current > 0);
+        }}
       >
-        {options
-          .filter(opt => opt && opt.value != null)
-          .map((opt, index) => (
-            <option key={index} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-      </select>
+        <SelectTrigger className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent position="popper" side="bottom" align="start" avoidCollisions={false} className="max-h-40 max-w-64 overflow-y-auto">
+          {options
+            .filter(opt => opt && opt.value != null)
+            .map((opt, index) => (
+              <SelectItem key={index} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 
@@ -268,17 +302,15 @@ const SearchAndFilters = ({
           <Button
             variant="outline"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            iconName="Filter"
-            iconPosition="left"
           >
+            <Icon name="Filter" size={16} />
             Filters {getActiveFiltersCount() > 0 && `(${getActiveFiltersCount()})`}
           </Button>
           <Button
             variant="outline"
             onClick={onExport}
-            iconName="Download"
-            iconPosition="left"
           >
+            <Icon name="Download" size={16} />
             Export
           </Button>
         </div>
