@@ -11,7 +11,7 @@ import { TrendingUp, Users, Calendar, Target, ChevronDown, TrendingDown, Minus, 
 
 // UI Components (simplified versions for single file)
 const Badge = ({ className, variant, children, ...props }: any) => (
-  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${className}`} {...props}>
+  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${className}`} {...props}>k
     {children}
   </span>
 );
@@ -744,14 +744,111 @@ function BalanceEquityView() {
   const [similarityThreshold, setSimilarityThreshold] = useState(50);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [hoveredRole, setHoveredRole] = useState<string | null>(null);
+  const [heatmapData, setHeatmapData] = useState(HEATMAP);
+  const [nodes, setNodes] = useState<any[]>([]);
+  const [edges, setEdges] = useState<any[]>([]);
+  const [scorecardData, setScorecardData] = useState<any>(null);
+  const [sessionData, setSessionData] = useState({
+    url: '',
+    token: '',
+    subInstituteId: '',
+    orgType: '',
+    userId: '',
+  });
 
-  const filteredConnections = CONNECTIONS.filter(
-    conn => conn.strength * 100 >= similarityThreshold
-  );
+  const getColor = (value: number) => {
+    if (value <= 25) return "bg-green-400";
+    if (value <= 60) return "bg-amber-400";
+    if (value <= 80) return "bg-red-500";
+    return "bg-gray-300";
+  };
+
+  useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+        orgType: org_type,
+        userId: user_id,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sessionData.url && sessionData.token && sessionData.subInstituteId) {
+      // Fetch heatmap data
+      fetch(`${sessionData.url}/api/competency/workload-heatmap?sub_institute_id=${sessionData.subInstituteId}`, {
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${sessionData.token}`,
+        },
+      })
+        .then(res => res.json())
+        .then(data => {
+          const mapped = data.map((item: any) => ({
+            label: item.role,
+            value: item.workloadIndex,
+            tasks: item.tasks,
+            color: getColor(item.workloadIndex)
+          }));
+          setHeatmapData(mapped);
+        })
+        .catch(err => console.error('Error fetching heatmap data:', err));
+
+      // Fetch role similarity data
+      fetch(`${sessionData.url}/api/competency/role-similarity?threshold=0.5&sub_institude_id=${sessionData.subInstituteId}`, {
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${sessionData.token}`,
+        },
+      })
+        .then(res => res.json())
+        .then(data => {
+          // Map nodes with positions
+          const centerX = 50;
+          const centerY = 50;
+          const radius = 35;
+          const mappedNodes = data.nodes.map((node: any, index: number) => {
+            const angle = (index / data.nodes.length) * 2 * Math.PI;
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            const size = node.importance * 0.3;
+            return { ...node, x, y, size };
+          });
+          setNodes(mappedNodes);
+          setEdges(data.edges);
+        })
+        .catch(err => console.error('Error fetching role similarity data:', err));
+
+      // Fetch coverage scorecards data
+      fetch(`${sessionData.url}/api/competency/coverage-scorecards?sub_institute_id=${sessionData.subInstituteId}`, {
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${sessionData.token}`,
+        },
+      })
+        .then(res => res.json())
+        .then(data => {
+          setScorecardData(data);
+        })
+        .catch(err => console.error('Error fetching scorecard data:', err));
+    }
+  }, [sessionData]);
 
   const filteredRoles = selectedDepartment === "all"
-    ? ROLES
-    : ROLES.filter(role => role.department === selectedDepartment);
+    ? nodes
+    : nodes.filter((node: any) => node.department === selectedDepartment);
+
+  const filteredConnections = edges.filter((edge: any) =>
+    edge.similarity >= similarityThreshold &&
+    filteredRoles.some((node: any) => node.id === edge.source) &&
+    filteredRoles.some((node: any) => node.id === edge.target)
+  );
+
+  const uniqueDepartments = Array.from(new Set(nodes.map((node: any) => node.department)));
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -764,7 +861,7 @@ function BalanceEquityView() {
             <p className="text-xs text-slate-400 mb-4">Task volume vs skill requirement</p>
 
             <div className="space-y-3">
-              {HEATMAP.map((row, i) => (
+              {heatmapData.map((row, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="w-40 text-xs text-slate-600">{row.label}</div>
                   <div className="flex-1 bg-slate-100 h-5 rounded-full overflow-hidden relative">
@@ -840,9 +937,9 @@ function BalanceEquityView() {
             <div className="w-full h-64 bg-white border rounded-md relative overflow-hidden mb-4">
               <svg viewBox="0 0 100 100" className="w-full h-full">
                 {/* Draw connections */}
-                {CONNECTIONS.map((conn, i) => {
-                  const source = ROLES.find(r => r.id === conn.source);
-                  const target = ROLES.find(r => r.id === conn.target);
+                {filteredConnections.map((conn, i) => {
+                  const source = filteredRoles.find((n: any) => n.id === conn.source);
+                  const target = filteredRoles.find((n: any) => n.id === conn.target);
                   if (!source || !target) return null;
 
                   return (
@@ -852,8 +949,8 @@ function BalanceEquityView() {
                       y1={source.y}
                       x2={target.x}
                       y2={target.y}
-                      stroke={DEPARTMENT_COLORS[source.department]}
-                      strokeWidth={conn.strength * 3}
+                      stroke={DEPARTMENT_COLORS[source.department] || '#64748B'}
+                      strokeWidth={(conn.similarity / 100) * 3}
                       strokeOpacity={0.4}
                       className="transition-all duration-200"
                     />
@@ -861,7 +958,7 @@ function BalanceEquityView() {
                 })}
 
                 {/* Draw nodes */}
-                {ROLES.map((role) => {
+                {filteredRoles.map((role: any) => {
                   return (
                     <g
                       key={role.id}
@@ -871,7 +968,7 @@ function BalanceEquityView() {
                         cx={role.x}
                         cy={role.y}
                         r={role.size * 2}
-                        fill={DEPARTMENT_COLORS[role.department]}
+                        fill={DEPARTMENT_COLORS[role.department] || '#64748B'}
                         stroke="#fff"
                         strokeWidth="1"
                         className="transition-all duration-200"
@@ -885,7 +982,7 @@ function BalanceEquityView() {
                         fontWeight="bold"
                         className="pointer-events-none select-none"
                       >
-                        {role.name.split(' ').map(word => word[0]).join('')}
+                        {role.label.split(' ').map((word: string) => word[0]).join('')}
                       </text>
                     </g>
                   );
@@ -915,12 +1012,13 @@ function BalanceEquityView() {
               <div>
                 <label className="text-xs text-slate-600 font-medium mb-2 block">Department Filter</label>
                 <select
-                  defaultValue="all"
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
                   className="w-full text-xs border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">All Departments</option>
-                  {DEPARTMENTS.map(dept => (
-                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                  {uniqueDepartments.map((dept: string) => (
+                    <option key={dept} value={dept}>{dept}</option>
                   ))}
                 </select>
               </div>
@@ -929,13 +1027,13 @@ function BalanceEquityView() {
               <div>
                 <label className="text-xs text-slate-600 font-medium mb-2 block">Department Colors</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {DEPARTMENTS.map((dept) => (
-                    <div key={dept.id} className="flex items-center text-xs">
+                  {uniqueDepartments.map((dept: string) => (
+                    <div key={dept} className="flex items-center text-xs">
                       <div
                         className="w-3 h-3 rounded mr-2 flex-shrink-0"
-                        style={{ backgroundColor: dept.color }}
+                        style={{ backgroundColor: DEPARTMENT_COLORS[dept] || '#64748B' }}
                       ></div>
-                      <span className="text-slate-700 truncate">{dept.name}</span>
+                      <span className="text-slate-700 truncate">{dept}</span>
                     </div>
                   ))}
                 </div>
@@ -961,20 +1059,20 @@ function BalanceEquityView() {
                 <p className="text-xs text-slate-400">Completeness metrics</p>
               </div>
               <div className="text-2xl font-bold text-slate-800">
-                80% <span className="text-xs text-slate-400">Overall</span>
+                {scorecardData?.overall || 80}% <span className="text-xs text-slate-400">Overall</span>
               </div>
             </div>
 
             <div className="space-y-3">
-              {SCORECARD.map((item, i) => (
+              {(scorecardData?.metrics || SCORECARD).map((item: { name?: string; title?: string; display?: string; current?: number; target?: number }, i: number) => (
                 <div key={i}>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-700">{item.title}</span>
+                    <span className="text-slate-700">{item.name || item.title}</span>
                     <span className="text-slate-500">
-                      {item.current}% / {item.target}%
+                      {item.display || `${item.current || 0}% / ${item.target || 0}%`}
                     </span>
                   </div>
-                  <Progress value={(item.current / item.target) * 100} className="h-2" />
+                  <Progress value={item.current && item.target ? (item.current / item.target) * 100 : 0} className="h-2" />
                 </div>
               ))}
             </div>
