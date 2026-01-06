@@ -416,7 +416,6 @@ const ProgressDashboard = () => {
           </div>
         </div>
       ),
-      minWidth: "250px"
     },
     {
       name: (
@@ -439,7 +438,6 @@ const ProgressDashboard = () => {
       ),
       selector: row => row.ALLOCATED_TO,
       sortable: true,
-      minWidth: "150px"
     },
     {
       name: (
@@ -469,7 +467,6 @@ const ProgressDashboard = () => {
         return '';
       },
       sortable: true,
-      minWidth: "150px"
     },
     {
       name: (
@@ -492,7 +489,6 @@ const ProgressDashboard = () => {
       ),
       selector: row => row.jobrole,
       sortable: true,
-      minWidth: "150px"
     },
     {
       name: (
@@ -515,7 +511,6 @@ const ProgressDashboard = () => {
       ),
       selector: row => row.task_date,
       sortable: true,
-      minWidth: "120px"
     },
     {
       name: (
@@ -543,7 +538,6 @@ const ProgressDashboard = () => {
           {row.status}
         </span>
       ),
-      minWidth: "140px"
     },
     {
       name: (
@@ -574,7 +568,6 @@ const ProgressDashboard = () => {
           </span>
         </div>
       ),
-      minWidth: "120px"
     },
     {
       name: (
@@ -637,7 +630,6 @@ const ProgressDashboard = () => {
       ),
       ignoreRowClick: true,
       button: true,
-      minWidth: "100px"
     },
   ];
 

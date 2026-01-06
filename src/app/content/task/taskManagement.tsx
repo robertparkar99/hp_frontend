@@ -646,19 +646,11 @@ const TaskManagement = () => {
                         fetchDepartmentWiseEmployees(value);
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
                         <SelectValue placeholder="Select Department" />
                       </SelectTrigger>
 
-                      <SelectContent
-                        side="bottom"
-                        align="start"
-                        sideOffset={6}
-                        avoidCollisions={false}
-                        className="max-w-[350px] overflow-y-auto"
-                        onWheel={(e) => e.stopPropagation()}
-                      >
-
+                      <SelectContent className="max-h-60 max-w-65">
                         {departmentList.map((dept, index) => (
                           <SelectItem key={index} value={dept.department_name}>
                             {dept.department_name}
@@ -683,11 +675,11 @@ const TaskManagement = () => {
                         getEmployeeList(value);
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
                         <SelectValue placeholder="Select Job Role" />
                       </SelectTrigger>
 
-                      <SelectContent className="max-h-[260px] overflow-y-auto">
+                      <SelectContent className="max-h-60 max-w-65">
                         {jobroleList.map((jobrole, index) => (
                           <SelectItem
                             key={index}
@@ -712,7 +704,7 @@ const TaskManagement = () => {
                     </label>
                     <select
                       id="assignTo"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none resize"
+                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
                       value={selEmployee}
                       onChange={(e) => {
                         const selectedOptions = Array.from(
@@ -856,20 +848,22 @@ const TaskManagement = () => {
                       Repeat Once in every{" "}
                       <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                     </label>
-                    <select
-                      id="days"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                    <Select
                       value={repeatDays}
-                      onChange={(e) => setRepeatDays(e.target.value)}
+                      onValueChange={(value) => setRepeatDays(value)}
                       required
                     >
-                      <option value="">Select Days</option>
-                      {Array.from({ length: 14 }, (_, i) => i + 1).map((day) => (
-                        <option key={day} value={day}>
-                          {day} {day === 1 ? "day" : "days"}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
+                        <SelectValue placeholder="Select Days" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {Array.from({ length: 14 }, (_, i) => i + 1).map((day) => (
+                          <SelectItem key={day} value={day.toString()}>
+                            {day} {day === 1 ? "day" : "days"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Repeat Until - FIXED */}
@@ -916,7 +910,7 @@ const TaskManagement = () => {
                     </label>
                     <select
                       id="skillsRequired"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none resize"
+                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
                       multiple
                       value={selSkill}
                       onChange={(e) => {
@@ -948,21 +942,23 @@ const TaskManagement = () => {
                       Observer{" "}
                       <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                     </label>
-                    <select
-                      id="observer"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                    <Select
                       value={selObserver}
-                      onChange={(e) => setSelObserver(e.target.value)}
+                      onValueChange={(value) => setSelObserver(value)}
                       required
                     >
-                      <option value="">Select Observer</option>
-                      {ObserverList.map((observer, index) => (
-                        <option key={index} value={observer.id}>
-                          {observer.first_name} {observer.middle_name}{" "}
-                          {observer.last_name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
+                        <SelectValue placeholder="Select Observer" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {ObserverList.map((observer, index) => (
+                          <SelectItem key={index} value={observer.id}>
+                            {observer.first_name} {observer.middle_name}{" "}
+                            {observer.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* KRAs */}
