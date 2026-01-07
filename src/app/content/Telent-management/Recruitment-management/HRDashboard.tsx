@@ -97,15 +97,15 @@ interface JobApplication {
   deleted_at: string | null;
 }
 
-interface Application {
-  id: number;
-  name: string;
-  position: string;
-  status: string;
-  appliedDate: string;
-  experience: string;
-  score: number;
-}
+// interface Application {
+//   id: number;
+//   name: string;
+//   position: string;
+//   status: string;
+//   appliedDate: string;
+//   experience: string;
+//   score: number;
+// }
 
 interface EditJobData {
   id: number;
@@ -283,6 +283,7 @@ const HRDashboard = () => {
 
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
+  const [applicationScores, setApplicationScores] = useState<{ [key: number]: number | null }>({});
 
   // Handle view application details
   const handleViewApplication = (application: JobApplication) => {
@@ -345,6 +346,8 @@ const HRDashboard = () => {
 
       if (result.data && Array.isArray(result.data)) {
         setJobApplications(result.data);
+        // Fetch scores for applications
+        fetchApplicationScores(result.data);
       } else {
         setJobApplications([]);
       }
@@ -354,6 +357,34 @@ const HRDashboard = () => {
     } finally {
       setApplicationsLoading(false);
     }
+  };
+
+  // Fetch screening scores for applications
+  const fetchApplicationScores = async (applications: JobApplication[]) => {
+    const scores: { [key: number]: number | null } = {};
+    await Promise.all(
+      applications.map(async (app) => {
+        try {
+          const screeningResponse = await fetch(
+            `${sessionData.APP_URL}/api/talent-screening-results/candidate/${app.id}?type=API&token=${sessionData.token}`
+          );
+          if (screeningResponse.ok) {
+            const screeningData = await screeningResponse.json();
+            if (screeningData.success) {
+              scores[app.id] = screeningData.competency_match;
+            } else {
+              scores[app.id] = null;
+            }
+          } else {
+            scores[app.id] = null;
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch screening data for application ${app.id}:`, error);
+          scores[app.id] = null;
+        }
+      })
+    );
+    setApplicationScores(scores);
   };
 
   // Fetch job postings from API
@@ -517,36 +548,36 @@ const HRDashboard = () => {
     setEditingJob(null);
   };
 
-  // Static data for other sections
-  const recentApplications: Application[] = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      position: "Senior Full-Stack Developer",
-      status: "Interview Scheduled",
-      appliedDate: "2024-01-18",
-      experience: "5 years",
-      score: 92
-    },
-    {
-      id: 2,
-      name: "Michael Chen",
-      position: "Product Manager",
-      status: "Under Review",
-      appliedDate: "2024-01-17",
-      experience: "7 years",
-      score: 88
-    },
-    {
-      id: 3,
-      name: "Emily Rodriguez",
-      position: "Senior Full-Stack Developer",
-      status: "Shortlisted",
-      appliedDate: "2024-01-16",
-      experience: "6 years",
-      score: 85
-    }
-  ];
+  // // Static data for other sections
+  // const recentApplications: Application[] = [
+  //   {
+  //     id: 1,
+  //     name: "Sarah Johnson",
+  //     position: "Senior Full-Stack Developer",
+  //     status: "Interview Scheduled",
+  //     appliedDate: "2024-01-18",
+  //     experience: "5 years",
+  //     score: 92
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Michael Chen",
+  //     position: "Product Manager",
+  //     status: "Under Review",
+  //     appliedDate: "2024-01-17",
+  //     experience: "7 years",
+  //     score: 88
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "Emily Rodriguez",
+  //     position: "Senior Full-Stack Developer",
+  //     status: "Shortlisted",
+  //     appliedDate: "2024-01-16",
+  //     experience: "6 years",
+  //     score: 85
+  //   }
+  // ];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -813,9 +844,7 @@ const HRDashboard = () => {
           </TabsContent> */}
           <TabsContent value="screening">
             <CandidateScreening
-              jobApplications={jobApplications}
               jobPostings={jobPostings}
-              loading={applicationsLoading}
               onRefresh={fetchJobApplications}
             />
           </TabsContent>
@@ -844,13 +873,7 @@ const HRDashboard = () => {
                 ) : (
                   <div className="space-y-3">
                     {jobApplications.map((application) => {
-                      // Generate a consistent random score based on application ID
-                      const getRandomScore = (id: number) => {
-                        // Use the ID to generate a consistent "random" score between 60-100
-                        return (id % 40) + 60;
-                      };
-
-                      const score = getRandomScore(application.id);
+                      const score = applicationScores[application.id];
 
                       // Find the job title for this application
                       const job = jobPostings.find(j => j.id === application.job_id);
@@ -892,10 +915,9 @@ const HRDashboard = () => {
                             <div className="flex items-center justify-between lg:justify-end lg:space-x-6">
                               <div className="flex items-center space-x-4 lg:space-x-6">
                                 <div className="text-center">
-                                  <div className={`text-lg font-bold ${score >= 85 ? 'text-green-600' :
-                                      score >= 70 ? 'text-blue-600' : 'text-orange-600'
-                                    }`}>
-                                    {score}%
+                                  <div className={`text-lg font-bold ${score !== null ? (score >= 85 ? 'text-green-600' :
+                                    score >= 70 ? 'text-blue-600' : 'text-orange-600') : 'text-gray-500'}`}>
+                                    {score !== null ? `${score}%` : 'Pending'}
                                   </div>
                                   <div className="text-xs text-gray-500">Score</div>
                                 </div>

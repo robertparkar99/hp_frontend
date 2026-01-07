@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,25 +52,46 @@ interface Interviewer {
   available: boolean;
 }
 
+interface Interview {
+    id: number;
+    candidateName: string;
+    position: string;
+    positionId: number;
+    candidateId: number;
+    panelId: number;
+    date: string;
+    time: string;
+    duration: string;
+    location: string;
+    interviewers: string[];
+    status: string;
+}
+
+interface ScheduleInterviewProps {
+    interview?: Interview | null;
+}
 
 
-export default function ScheduleInterview() {
-  const [date, setDate] = useState<string>("");
-  const [selectedPanel, setSelectedPanel] = useState<string>("");
-  const [selectedInterviewers, setSelectedInterviewers] = useState<number[]>([]);
-  const [sessionData, setSessionData] = useState<SessionData>({});
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [selectedPosition, setSelectedPosition] = useState<string>("");
-  const [selectedCandidate, setSelectedCandidate] = useState<string>("");
-  const [panels, setPanels] = useState<Panel[]>([]);
-  const [time, setTime] = useState<string>("");
-  const [duration, setDuration] = useState<string>("");
-  const [location, setLocation] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
+
+export default function ScheduleInterview({ interview }: ScheduleInterviewProps) {
+   const [date, setDate] = useState<string>("");
+   const [selectedPanel, setSelectedPanel] = useState<string>("");
+   const [selectedInterviewers, setSelectedInterviewers] = useState<number[]>([]);
+   const [sessionData, setSessionData] = useState<SessionData>({});
+   const [positions, setPositions] = useState<Position[]>([]);
+   const [candidates, setCandidates] = useState<Candidate[]>([]);
+   const [selectedPosition, setSelectedPosition] = useState<string>("");
+   const [selectedCandidate, setSelectedCandidate] = useState<string>("");
+   const [panels, setPanels] = useState<Panel[]>([]);
+   const [loadingPanels, setLoadingPanels] = useState<boolean>(true);
+   const [time, setTime] = useState<string>("");
+   const [duration, setDuration] = useState<string>("");
+   const [location, setLocation] = useState<string>("");
+   const [notes, setNotes] = useState<string>("");
 
   // Load session data
   useEffect(() => {
+      console.log("interview prop:", interview);
     if (typeof window !== "undefined") {
       const userData = localStorage.getItem("userData");
       if (userData) {
@@ -118,6 +140,7 @@ export default function ScheduleInterview() {
   useEffect(() => {
     if (!sessionData.sub_institute_id) return;
     const fetchPanels = async () => {
+      setLoadingPanels(true);
       try {
         const response = await fetch(`${sessionData.url}/api/interview-panel/list?type=API&sub_institute_id=${sessionData.sub_institute_id}&token=${sessionData.token}`);
         const data = await response.json();
@@ -126,10 +149,44 @@ export default function ScheduleInterview() {
         }
       } catch (error) {
         console.error('Error fetching panels:', error);
+      } finally {
+        setLoadingPanels(false);
       }
     };
     fetchPanels();
   }, [sessionData.sub_institute_id, sessionData.url, sessionData.token]);
+
+    // Pre-fill form if interview is provided
+    useEffect(() => {
+        if (interview && positions.length > 0 && candidates.length > 0 && panels.length > 0) {
+            setSelectedPosition(interview.positionId.toString());
+
+            setSelectedCandidate(interview.candidateId.toString());
+
+            // set other fields
+            console.log("Prefilling interview data:", interview);
+            setDuration(interview.duration);
+            console.log("Setting duration to:", interview.duration);
+            setDate(interview.date);
+            // Set location
+            setLocation(interview.location);
+
+            // Set duration (extract number)
+            const durationMatch = interview.duration.match(/(\d+)/);
+            if (durationMatch) {
+                setDuration(durationMatch[1]);
+            }
+
+            setTime(interview.time);
+
+            setSelectedPanel(interview.panelId.toString());
+            const panel = panels.find(p => p.id.toString() === interview.panelId.toString());
+            if (panel) {
+                const interviewers = JSON.parse(panel.available_interviewers || '[]');
+                setSelectedInterviewers(interviewers);
+            }
+        }
+    }, [interview, positions, candidates, panels]);
 
   const togglePanel = (id: number) => {
     const isSelecting = selectedPanel !== id.toString();
@@ -161,6 +218,7 @@ export default function ScheduleInterview() {
     }
 
     const payload = {
+      ...(interview && { id: interview.id }),
       job_id: selectedPosition,
       applicant_id: selectedCandidate,
       round_no: "1", // Default
@@ -178,17 +236,33 @@ export default function ScheduleInterview() {
       user_id: sessionData.sub_institute_id // Assuming user_id is sub_institute_id
     };
 
+    const isReschedule = !!interview;
+
+    let url: string;
+    let method: string;
+    let body: string | undefined;
+
+    if (isReschedule) {
+      method = 'PUT';
+      url = `${sessionData.url}/api/interview-schedules/${interview.id}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&round_no=1&interview_date=${date}&time=${time}&duration=${duration}&location=${encodeURIComponent(location)}&interviewer_id=${encodeURIComponent(JSON.stringify(selectedInterviewers))}&panel_id=${selectedPanel}&status=Scheduled&rating=&feedback=&additional_notes=${encodeURIComponent(notes.slice(0, 200))}&user_id=${sessionData.sub_institute_id}&applicant_id=${selectedCandidate}&job_id=${selectedPosition}`;
+      body = undefined;
+    } else {
+      method = 'POST';
+      url = `${sessionData.url}/api/interview-schedules?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`;
+      body = JSON.stringify(payload);
+    }
+
     try {
-      const response = await fetch(`${sessionData.url}/api/interview-schedules?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`, {
-        method: 'POST',
-        headers: {
+      const response = await fetch(url, {
+        method,
+        headers: body ? {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
+        } : undefined,
+        body
       });
 
       if (response.ok) {
-        alert('Interview scheduled successfully');
+        alert(isReschedule ? 'Interview rescheduled successfully' : 'Interview scheduled successfully');
         // Reset form
         setSelectedPosition("");
         setSelectedCandidate("");
@@ -200,20 +274,22 @@ export default function ScheduleInterview() {
         setSelectedPanel("");
         setSelectedInterviewers([]);
       } else {
-        alert('Failed to schedule interview');
+        alert(isReschedule ? 'Failed to reschedule interview' : 'Failed to schedule interview');
       }
     } catch (error) {
-      console.error('Error scheduling interview:', error);
-      alert('Error scheduling interview');
+      console.error(isReschedule ? 'Error rescheduling interview:' : 'Error scheduling interview:', error);
+      alert(isReschedule ? 'Error rescheduling interview' : 'Error scheduling interview');
     }
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground">Schedule Interview</h1>
+        <h1 className="text-xl font-bold text-foreground">
+          {interview ? `Reschedule Interview for ${interview.candidateName}` : "Schedule Interview"}
+        </h1>
         <p className="text-muted-foreground text-sm">
-          Set up a new interview with candidates and panel members
+          {interview ? "Modify the existing interview details" : "Set up a new interview with candidates and panel members"}
         </p>
       </div>
 
@@ -228,7 +304,7 @@ export default function ScheduleInterview() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="position">Position</Label>
-                  <Select onValueChange={setSelectedPosition}>
+                                  <Select onValueChange={setSelectedPosition} value={selectedPosition} disabled={!!interview}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select position" />
                     </SelectTrigger>
@@ -244,16 +320,16 @@ export default function ScheduleInterview() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="candidate">Candidate</Label>
-                  <Select disabled={!selectedPosition} onValueChange={setSelectedCandidate}>
+                                  <Select disabled={!selectedPosition || !!interview} onValueChange={setSelectedCandidate} value={selectedCandidate}>
                     <SelectTrigger>
                       <SelectValue placeholder={selectedPosition ? "Select candidate" : "Select position first"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {selectedPosition ? candidates.filter(candidate => candidate.job_id.toString() === selectedPosition).map((candidate) => (
+                                          {candidates.filter(candidate => candidate.job_id.toString() === selectedPosition).map((candidate) => (
                         <SelectItem key={candidate.id} value={candidate.id.toString()}>
-                          {`${candidate.first_name} ${candidate.middle_name} ${candidate.last_name}`.trim()}
+                                                  {`${candidate.first_name} ${(candidate.middle_name || '').trim()} ${candidate.last_name}`.trim()}
                         </SelectItem>
-                      )) : []}
+                                          ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -277,7 +353,7 @@ export default function ScheduleInterview() {
                   <Label htmlFor="time">Time</Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Select onValueChange={setTime}>
+                                      <Select onValueChange={setTime} value={time}>
                       <SelectTrigger className="pl-10">
                         <SelectValue placeholder="Select time" />
                       </SelectTrigger>
@@ -295,7 +371,7 @@ export default function ScheduleInterview() {
 
                 <div className="space-y-2">
                   <Label htmlFor="duration">Duration</Label>
-                  <Select onValueChange={setDuration}>
+                                  <Select onValueChange={setDuration} value={duration}>
                     <SelectTrigger>
                       <SelectValue placeholder="Duration" />
                     </SelectTrigger>
@@ -345,7 +421,13 @@ export default function ScheduleInterview() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {panels.filter(panel => panel.status === "available").map((panel) => (
+              {loadingPanels ? (
+                <div className="p-8 text-center">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <div className="mt-2 text-muted-foreground">Loading interview panels...</div>
+                </div>
+              ) : (
+                panels.filter(panel => panel.status === "available").map((panel) => (
                 <div
                   key={panel.id}
                   className={cn(
@@ -387,11 +469,11 @@ export default function ScheduleInterview() {
                     </div>
                   </div>
                 </div>
-              ))}
+              )))}
               
               <div className="pt-4 border-t">
                 <Button onClick={handleSchedule} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                  Schedule Interview
+                  {interview ? "Reschedule Interview" : "Schedule Interview"}
                 </Button>
               </div>
             </CardContent>
