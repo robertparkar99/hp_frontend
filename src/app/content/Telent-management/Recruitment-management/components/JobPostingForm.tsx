@@ -261,12 +261,17 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
         const data = await response.json();
         console.log("Departments response:", data);
 
-        const transformedDepartments = Array.isArray(data)
-          ? data.map((dept: any, index: number) => ({
-            id: dept.id ? String(dept.id) : String(index + 1),
-            department: dept.department
-          }))
-          : [];
+        let departmentsArray = [];
+        if (Array.isArray(data)) {
+          departmentsArray = data;
+        } else if (typeof data === 'object' && data !== null) {
+          departmentsArray = Object.values(data).flat();
+        }
+
+        const transformedDepartments = departmentsArray.map((dept: any, index: number) => ({
+          id: dept.department_id ? String(dept.department_id) : String(index + 1),
+          department: dept.department
+        }));
 
         setDepartments(transformedDepartments);
       } catch (err) {
@@ -318,14 +323,19 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
         const data = await response.json();
         console.log("Job roles response:", data);
 
-        const transformedJobRoles = Array.isArray(data)
-          ? data.map((role: any, index: number) => ({
-            id: role.id ? String(role.id) : String(index + 1),
-            jobrole: role.jobrole,
-            department: role.department || selectedDepartment.department,
-            description: role.description || ""
-          }))
-          : [];
+        let jobRolesArray = [];
+        if (Array.isArray(data)) {
+          jobRolesArray = data;
+        } else if (typeof data === 'object' && data !== null) {
+          jobRolesArray = Object.values(data).flat();
+        }
+
+        const transformedJobRoles = jobRolesArray.map((role: any, index: number) => ({
+          id: role.id ? String(role.id) : String(index + 1),
+          jobrole: role.jobrole,
+          department: role.department || selectedDepartment.department,
+          description: role.description || ""
+        }));
 
         setJobRoles(transformedJobRoles);
       } catch (err) {

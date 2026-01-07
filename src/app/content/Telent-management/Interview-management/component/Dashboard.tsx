@@ -37,9 +37,25 @@ import { DashboardStats } from "./DashboardStats";
 import { UpcomingInterviews } from "./UpcomingInterviews";
 import { CandidatePipeline } from "./CandidatePipeline";
 
+interface Interview {
+  id: number;
+  candidateName: string;
+  position: string;
+  positionId: number;
+  candidateId: number;
+  panelId: number;
+  date: string;
+  time: string;
+  duration: string;
+  location: string;
+  interviewers: string[];
+  status: string;
+}
+
 export function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [openPage, setOpenPage] = useState<string | null>(null);
+  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
 
   const tabs = [
     { key: "dashboard", label: "Dashboard", icon: UserCheck },
@@ -98,12 +114,12 @@ export function Dashboard() {
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <UpcomingInterviews />
+              <UpcomingInterviews onReschedule={(interview) => { setSelectedInterview(interview); setActiveTab("schedule"); }} />
               <CandidatePipeline />
             </div>
           </>
         )}
-        {activeTab === "schedule" && <DynamicScheduleInterview />}
+        {activeTab === "schedule" && <DynamicScheduleInterview interview={selectedInterview} />}
         {activeTab === "candidates" && <DynamicCandidates />}
         {activeTab === "interview-panel" && <DynamicInterviewPanels />}
         {/* {activeTab === "feedback" && <DynamicFeedback />} */}

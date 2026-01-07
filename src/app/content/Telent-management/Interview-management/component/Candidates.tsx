@@ -64,14 +64,14 @@ const getStatusBadge = (status: string) => {
 };
 
 export default function Candidates() {
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [filters, setFilters] = useState<Filters>({});
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [filteredData, setFilteredData] = useState<Candidate[]>([]);
-  const [currentView, setCurrentView] = useState<'candidates' | 'feedback'>('candidates');
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
-  const [sessionData, setSessionData] = useState<SessionData>({
-  });
+   const [searchTerm, setSearchTerm] = useState<string>("");
+   const [filters, setFilters] = useState<Filters>({});
+   const [candidates, setCandidates] = useState<Candidate[]>([]);
+   const [filteredData, setFilteredData] = useState<Candidate[]>([]);
+   const [currentView, setCurrentView] = useState<'candidates' | 'feedback'>('candidates');
+   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+   const [sessionData, setSessionData] = useState<SessionData>({});
+   const [loading, setLoading] = useState<boolean>(true);
 
   // ---------- Load session ----------
   useEffect(() => {
@@ -87,6 +87,7 @@ export default function Candidates() {
 
   const fetchCandidates = async () => {
     if (!sessionData.sub_institute_id || !sessionData.url || !sessionData.token) return;
+    setLoading(true);
     try {
       const response = await fetch(`${sessionData.url}/api/candidate?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
       const data = await response.json();
@@ -96,6 +97,8 @@ export default function Candidates() {
       }
     } catch (error) {
       console.error('Error fetching candidates:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -313,10 +316,10 @@ export default function Candidates() {
             <Eye className="h-3 w-3 ]" />
             View
           </Button>
-          <Button size="sm" variant="outline" className="h-6 px-2 w-25">
+          {/* <Button size="sm" variant="outline" className="h-6 px-2 w-25">
             <Calendar className="h-2 w-2 ml-2" />
             Schedule
-          </Button>
+          </Button> */}
           <Button size="sm" variant="outline" className="h-6 px-2 w-24">
             <MessageSquare className="h-3 w-3 " />
             Message
@@ -329,7 +332,7 @@ export default function Candidates() {
       ),
       ignoreRowClick: true,
       button: true,
-      minWidth: "390px"
+      minWidth: "290px"
     },
   ];
 
@@ -441,23 +444,30 @@ export default function Candidates() {
           <CardTitle className="text-xl">All Candidates ({filteredData.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={columns}
-            data={filteredData}
-            customStyles={customStyles}
-            pagination
-            highlightOnHover
-            responsive
-            noDataComponent={
-              <div className="p-8 text-center text-muted-foreground">
-                <div className="text-lg font-medium mb-2">No candidates found</div>
-                <div className="text-sm">Try adjusting your search or filters</div>
-              </div>
-            }
-            persistTableHead
-            paginationPerPage={10}
-            paginationRowsPerPageOptions={[10, 25, 50, 100]}
-          />
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="mt-2 text-muted-foreground">Loading candidates...</div>
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={filteredData}
+              customStyles={customStyles}
+              pagination
+              highlightOnHover
+              responsive
+              noDataComponent={
+                <div className="p-8 text-center text-muted-foreground">
+                  <div className="text-lg font-medium mb-2">No candidates found</div>
+                  <div className="text-sm">Try adjusting your search or filters</div>
+                </div>
+              }
+              persistTableHead
+              paginationPerPage={10}
+              paginationRowsPerPageOptions={[10, 25, 50, 100]}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

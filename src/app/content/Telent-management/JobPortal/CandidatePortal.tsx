@@ -1197,13 +1197,13 @@ ${formData.current_role || "Not provided"}
             </div>
 
             {/* Load More */}
-            {filteredJobListings.length > 0 && (
+            {/* {filteredJobListings.length > 0 && (
               <div className="text-center mt-8">
                 <Button variant="outline" size="lg">
                   Load More Jobs
                 </Button>
               </div>
-            )}
+            )} */}
           </TabsContent>
 
           <TabsContent value="upload">

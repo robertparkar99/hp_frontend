@@ -66,25 +66,26 @@ const availableInterviewers = [
 
 
 export default function InterviewPanels() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedPanel, setSelectedPanel] = useState<any>(null);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [sessionData, setSessionData] = useState<SessionData>({});
-  const [newPanel, setNewPanel] = useState({
-    name: "",
-    description: "",
-    positions: [] as number[],
-    members: [] as any[]
-  });
+   const [searchTerm, setSearchTerm] = useState("");
+   const [statusFilter, setStatusFilter] = useState("all");
+   const [selectedPanel, setSelectedPanel] = useState<any>(null);
+   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+   const [sessionData, setSessionData] = useState<SessionData>({});
+   const [loading, setLoading] = useState<boolean>(true);
+   const [newPanel, setNewPanel] = useState({
+     name: "",
+     description: "",
+     positions: [] as number[],
+     members: [] as any[]
+   });
 
-  const [availableInterviewers, setAvailableInterviewers] = useState<Interviewer[]>([]);
-  const [availablePositions, setAvailablePositions] = useState<{id: number, title: string}[]>([]);
+   const [availableInterviewers, setAvailableInterviewers] = useState<Interviewer[]>([]);
+   const [availablePositions, setAvailablePositions] = useState<{id: number, title: string}[]>([]);
 
-  const [panels, setPanels] = useState<Panel[]>([]);
-  const [positionsOpen, setPositionsOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingPanelId, setEditingPanelId] = useState<number | null>(null);
+   const [panels, setPanels] = useState<Panel[]>([]);
+   const [positionsOpen, setPositionsOpen] = useState(false);
+   const [isEditing, setIsEditing] = useState(false);
+   const [editingPanelId, setEditingPanelId] = useState<number | null>(null);
 
   const fetchInterviewers = async () => {
     try {
@@ -161,6 +162,7 @@ export default function InterviewPanels() {
   useEffect(() => {
     if (!sessionData.sub_institute_id) return;
     const fetchData = async () => {
+      setLoading(true);
       try {
         // Fetch interviewers
         const interviewersResponse = await fetch(`${sessionData.url}/api/interview-panel/users?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
@@ -190,6 +192,8 @@ export default function InterviewPanels() {
         await fetchPanels(interviewers, positions);
       } catch (error) {
         console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -542,122 +546,131 @@ export default function InterviewPanels() {
       </div>
 
       {/* Panels Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredPanels.map((panel) => (
-          <Card key={panel.id} className="widget-card">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{panel.name}</CardTitle>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <Badge 
-                      className={cn(
-                        "text-xs",
-                        panel.status === "active" ? "status-completed" : "status-pending"
-                      )}
-                    >
-                      {panel.status.charAt(0).toUpperCase() + panel.status.slice(1)}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {panel.members.length} Members
-                    </Badge>
-                  </div>
-                </div>
-                <div className="flex space-x-1">
-                  <Button variant="ghost" size="sm" onClick={() => handleEditPanel(panel)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeletePanel(panel.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {panel.description}
-              </p>
-
-              {/* Panel Stats */}
-              <div className="grid grid-cols-2 gap-4 py-2">
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-primary">{panel.upcomingInterviews}</p>
-                  <p className="text-xs text-muted-foreground">Upcoming</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-primary">{panel.totalInterviews}</p>
-                  <p className="text-xs text-muted-foreground">Total</p>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Panel Members */}
-              <div>
-                <h4 className="text-sm font-medium mb-2 flex items-center">
-                  <Users className="mr-2 h-3 w-3" />
-                  Panel Members
-                </h4>
-                <div className="space-y-2">
-                  {panel.members.slice(0, 3).map((member) => (
-                    <div key={member.id} className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-medium text-primary">
-                          {member.name.charAt(0)}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{member.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{member.role}</p>
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="mt-2 text-muted-foreground">Loading interview panels...</div>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredPanels.map((panel) => (
+              <Card key={panel.id} className="widget-card">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{panel.name}</CardTitle>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <Badge
+                          className={cn(
+                            "text-xs",
+                            panel.status === "active" ? "status-completed" : "status-pending"
+                          )}
+                        >
+                          {panel.status.charAt(0).toUpperCase() + panel.status.slice(1)}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {panel.members.length} Members
+                        </Badge>
                       </div>
                     </div>
-                  ))}
-                  {panel.members.length > 3 && (
-                    <p className="text-xs text-muted-foreground">
-                      +{panel.members.length - 3} more members
-                    </p>
-                  )}
-                </div>
-              </div>
+                    <div className="flex space-x-1">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditPanel(panel)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeletePanel(panel.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {panel.description}
+                  </p>
 
-              {/* Target Positions */}
-              <div>
-                <h4 className="text-sm font-medium mb-2">Target Positions</h4>
-                <div className="flex flex-wrap gap-1">
-                  {panel.positions.slice(0, 2).map((position) => (
-                    <Badge key={position} variant="outline" className="text-xs">
-                      {position}
-                    </Badge>
-                  ))}
-                  {panel.positions.length > 2 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{panel.positions.length - 2} more
-                    </Badge>
-                  )}
-                </div>
-              </div>
+                  {/* Panel Stats */}
+                  <div className="grid grid-cols-2 gap-4 py-2">
+                    <div className="text-center">
+                      <p className="text-lg font-semibold text-primary">{panel.upcomingInterviews}</p>
+                      <p className="text-xs text-muted-foreground">Upcoming</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-semibold text-primary">{panel.totalInterviews}</p>
+                      <p className="text-xs text-muted-foreground">Total</p>
+                    </div>
+                  </div>
 
-              <div className="pt-2">
-                <Button variant="outline" size="sm" className="w-full">
-                  View Details
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  <Separator />
 
-      {filteredPanels.length === 0 && (
-        <div className="text-center py-12">
-          <Users className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-          <h3 className="text-lg font-medium text-muted-foreground mt-4">No panels found</h3>
-          <p className="text-sm text-muted-foreground">
-            {searchTerm || statusFilter !== "all" 
-              ? "Try adjusting your search or filter criteria"
-              : "Create your first interview panel to get started"
-            }
-          </p>
-        </div>
+                  {/* Panel Members */}
+                  <div>
+                    <h4 className="text-sm font-medium mb-2 flex items-center">
+                      <Users className="mr-2 h-3 w-3" />
+                      Panel Members
+                    </h4>
+                    <div className="space-y-2">
+                      {panel.members.slice(0, 3).map((member) => (
+                        <div key={member.id} className="flex items-center space-x-2">
+                          <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-medium text-primary">
+                              {member.name.charAt(0)}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{member.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{member.role}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {panel.members.length > 3 && (
+                        <p className="text-xs text-muted-foreground">
+                          +{panel.members.length - 3} more members
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Target Positions */}
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Target Positions</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {panel.positions.slice(0, 2).map((position) => (
+                        <Badge key={position} variant="outline" className="text-xs">
+                          {position}
+                        </Badge>
+                      ))}
+                      {panel.positions.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{panel.positions.length - 2} more
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button variant="outline" size="sm" className="w-full">
+                      View Details
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {filteredPanels.length === 0 && (
+            <div className="text-center py-12">
+              <Users className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-medium text-muted-foreground mt-4">No panels found</h3>
+              <p className="text-sm text-muted-foreground">
+                {searchTerm || statusFilter !== "all"
+                  ? "Try adjusting your search or filter criteria"
+                  : "Create your first interview panel to get started"
+                }
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

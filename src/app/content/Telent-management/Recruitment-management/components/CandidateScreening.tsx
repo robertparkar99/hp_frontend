@@ -1,4 +1,4 @@
-"use client";
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -194,10 +194,12 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
 
         // Determine status based on application status
         const getCandidateStatus = (appStatus: string): Candidate['status'] => {
-          switch (appStatus) {
+          const normalizedStatus = appStatus.toLowerCase();
+          switch (normalizedStatus) {
             case 'shortlisted': return 'shortlisted';
             case 'rejected': return 'rejected';
             case 'under_review': return 'under_review';
+            case 'hired': return 'shortlisted'; // Assuming hired is treated as shortlisted
             default: return 'pending';
           }
         };
@@ -295,7 +297,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       case 'shortlisted':
         return <Badge className="bg-success text-success-foreground">Shortlisted</Badge>;
       case 'rejected':
-        return <Badge className="bg-destructive text-destructive-foreground">Rejected</Badge>;
+        return <Badge className="bg-destructive text-white-foreground">Rejected</Badge>;
       case 'pending':
         return <Badge className="bg-warning text-warning-foreground">Pending Review</Badge>;
       case 'under_review':
@@ -344,6 +346,100 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       window.open(candidate.resumeUrl, '_blank');
     } else {
       alert('No resume available for this candidate');
+    }
+  };
+
+  const handleShortlist = async (candidate: Candidate) => {
+    if (!sessionData) return;
+    try {
+      const updateData = {
+        type: "API",
+        token: sessionData.token,
+        sub_institute_id: sessionData.sub_institute_id,
+        job_id: candidate.originalApplication.job_id,
+        first_name: candidate.originalApplication.first_name,
+        middle_name: candidate.originalApplication.middle_name || "",
+        last_name: candidate.originalApplication.last_name,
+        email: candidate.originalApplication.email,
+        mobile: candidate.originalApplication.mobile,
+        current_location: candidate.originalApplication.current_location,
+        employment_type: candidate.originalApplication.employment_type,
+        experience: candidate.originalApplication.experience,
+        education: candidate.originalApplication.education,
+        expected_salary: candidate.originalApplication.expected_salary,
+        skills: candidate.originalApplication.skills,
+        certifications: candidate.originalApplication.certifications || "",
+        applied_date: candidate.originalApplication.applied_date,
+        status: "shortlisted",
+        user_id: sessionData.user_id || 1
+      };
+
+      const response = await fetch(`${sessionData.url}/api/job-applications/${candidate.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (response.ok) {
+        alert('Candidate shortlisted successfully');
+        // Update local state immediately
+        setCandidates(prev => prev.map(c => c.id === candidate.id ? { ...c, status: 'shortlisted' } : c));
+        onRefresh(); // Refresh the data
+      } else {
+        alert('Failed to shortlist candidate');
+      }
+    } catch (error) {
+      console.error('Error shortlisting candidate:', error);
+      alert('Error shortlisting candidate');
+    }
+  };
+
+  const handleReject = async (candidate: Candidate) => {
+    if (!sessionData) return;
+    try {
+      const updateData = {
+        type: "API",
+        token: sessionData.token,
+        sub_institute_id: sessionData.sub_institute_id,
+        job_id: candidate.originalApplication.job_id,
+        first_name: candidate.originalApplication.first_name,
+        middle_name: candidate.originalApplication.middle_name || "",
+        last_name: candidate.originalApplication.last_name,
+        email: candidate.originalApplication.email,
+        mobile: candidate.originalApplication.mobile,
+        current_location: candidate.originalApplication.current_location,
+        employment_type: candidate.originalApplication.employment_type,
+        experience: candidate.originalApplication.experience,
+        education: candidate.originalApplication.education,
+        expected_salary: candidate.originalApplication.expected_salary,
+        skills: candidate.originalApplication.skills,
+        certifications: candidate.originalApplication.certifications || "",
+        applied_date: candidate.originalApplication.applied_date,
+        status: "rejected",
+        user_id: sessionData.user_id || 1
+      };
+
+      const response = await fetch(`${sessionData.url}/api/job-applications/${candidate.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (response.ok) {
+        alert('Candidate rejected successfully');
+        // Update local state immediately
+        setCandidates(prev => prev.map(c => c.id === candidate.id ? { ...c, status: 'rejected' } : c));
+        onRefresh(); // Refresh the data
+      } else {
+        alert('Failed to reject candidate');
+      }
+    } catch (error) {
+      console.error('Error rejecting candidate:', error);
+      alert('Error rejecting candidate');
     }
   };
 
@@ -629,13 +725,13 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                             </div>
                           )}
 
-                          {candidate.skillMatchDetails && candidate.skillMatchDetails.length > 0 && (
+                            {/* {candidate.skillMatchDetails && candidate.skillMatchDetails.length > 0 && (
                             <div>
                               <h4 className="font-medium text-sm mb-2">Skill Match Details</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {candidate.skillMatchDetails.map((skill: any, index: number) => (
-                                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                    <span className="text-sm">{skill.skill}</span>
+                                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50  rounded">
+                                    <span className="text-sm">{skill.name || skill.skill}</span>
                                     <Badge variant={skill.present ? "default" : "destructive"} className="text-xs">
                                       {skill.present ? "Present" : "Missing"}
                                     </Badge>
@@ -643,7 +739,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                                 ))}
                               </div>
                             </div>
-                          )}
+                          )} */}
 
                           {candidate.skillGaps && candidate.skillGaps.length > 0 && (
                             <div>
@@ -721,11 +817,20 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                           </Button>
                           {candidate.status === 'pending' && (
                             <>
-                              <Button variant="outline" size="sm" className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-destructive border-destructive hover:bg-red-100 hover:text-red-800"
+                                  onClick={() => handleReject(candidate)}
+                                >
                                 <X className="w-4 h-4 mr-2" />
                                 Reject
                               </Button>
-                              <Button size="sm" className="bg-success hover:bg-success/90 text-success-foreground">
+                                <Button
+                                  size="sm"
+                                  className="bg-success hover:bg-success/90 text-success-foreground"
+                                  onClick={() => handleShortlist(candidate)}
+                                >
                                 <CheckCircle className="w-4 h-4 mr-2" />
                                 Shortlist
                               </Button>
