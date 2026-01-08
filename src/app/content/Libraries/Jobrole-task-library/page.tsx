@@ -2,6 +2,7 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import { Atom } from "react-loading-indicators";
+import { checkPermission } from "@/utils/permissions";
 import {
   Funnel,
   Square,
@@ -74,6 +75,12 @@ const CriticalWorkFunctionGrid = () => {
     orgType: "",
     userId: "",
   });
+
+  const [permissions, setPermissions] = useState({
+    canAdd: false,
+    canEdit: false,
+    canDelete: false,
+  });
   const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -118,6 +125,19 @@ const CriticalWorkFunctionGrid = () => {
       });
     }
   }, []);
+
+  // Load permissions
+  useEffect(() => {
+    if (sessionData.userId) {
+      const fetchPermissions = async () => {
+        const canAdd = await checkPermission("Library & Taxonomy", "can_add");
+        const canEdit = await checkPermission("Library & Taxonomy", "can_edit");
+        const canDelete = await checkPermission("Library & Taxonomy", "can_delete");
+        setPermissions({ canAdd, canEdit, canDelete });
+      };
+      fetchPermissions();
+    }
+  }, [sessionData.userId]);
 
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
@@ -469,7 +489,13 @@ const CriticalWorkFunctionGrid = () => {
       cell: (row) => (
         <div className="flex space-x-2">
           <button
-            onClick={() => handleEditClick(row.id, row.jobrole)}
+            onClick={() => {
+              if (!permissions.canEdit) {
+                alert("You don't have right to edit this.");
+                return;
+              }
+              handleEditClick(row.id, row.jobrole);
+            }}
             className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
           >
             <Edit size={14} />
@@ -481,7 +507,13 @@ const CriticalWorkFunctionGrid = () => {
             <Copy size={14} />
           </button>
           <button
-            onClick={() => handleDeleteClick(row.id)}
+            onClick={() => {
+              if (!permissions.canDelete) {
+                alert("You don't have right to delete this.");
+                return;
+              }
+              handleDeleteClick(row.id);
+            }}
             className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
           >
             <Trash size={14} />
@@ -556,6 +588,10 @@ const CriticalWorkFunctionGrid = () => {
               {/* AI Generate Button */}
               <button
                 onClick={() => {
+                  if (!permissions.canAdd) {
+                    alert("You don't have right to add this.");
+                    return;
+                  }
                   setShowRadioButtons((prev) => !prev);
 
                   // Reset selection when hiding radios
@@ -818,14 +854,26 @@ const CriticalWorkFunctionGrid = () => {
                   )}
                   <button
                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                    onClick={() => handleEditClick(item.id, item.jobrole)}
+                    onClick={() => {
+                      if (!permissions.canEdit) {
+                        alert("You don't have right to edit this.");
+                        return;
+                      }
+                      handleEditClick(item.id, item.jobrole);
+                    }}
                   >
                     <Edit size={16} />
                   </button>
 
                   <button
                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                    onClick={() => handleDeleteClick(item.id)}
+                    onClick={() => {
+                      if (!permissions.canDelete) {
+                        alert("You don't have right to delete this.");
+                        return;
+                      }
+                      handleDeleteClick(item.id);
+                    }}
                   >
                     <Trash size={16} />
                   </button>

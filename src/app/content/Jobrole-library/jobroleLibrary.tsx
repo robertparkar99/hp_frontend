@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { checkPermission } from "@/utils/permissions";
 import {
   Select,
   SelectContent,
@@ -97,6 +98,12 @@ export default function HomePage() {
     userId: "",
   });
 
+  const [permissions, setPermissions] = useState({
+    canAdd: false,
+    canEdit: false,
+    canDelete: false,
+  });
+
   // ✅ Load session data
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -112,6 +119,19 @@ export default function HomePage() {
       });
     }
   }, []);
+
+  // ✅ Load permissions
+  useEffect(() => {
+    if (sessionData.userId) {
+      const fetchPermissions = async () => {
+        const canAdd = await checkPermission("Library & Taxonomy", "can_add");
+        const canEdit = await checkPermission("Library & Taxonomy", "can_edit");
+        const canDelete = await checkPermission("Library & Taxonomy", "can_delete");
+        setPermissions({ canAdd, canEdit, canDelete });
+      };
+      fetchPermissions();
+    }
+  }, [sessionData.userId]);
 
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
@@ -379,7 +399,13 @@ export default function HomePage() {
           </button>
           {/* Edit Button */}
           <button
-            onClick={() => handleEdit(row.id)}
+            onClick={() => {
+              if (!permissions.canEdit) {
+                alert("You don't have right to edit this.");
+                return;
+              }
+              handleEdit(row.id);
+            }}
             className="bg-blue-500 hover:bg-blue-700 text-white text-xs p-1.5 rounded transition-colors"
             title="Edit Job Role"
           >
@@ -397,7 +423,13 @@ export default function HomePage() {
 
           {/* Delete Button */}
           <button
-            onClick={() => handleDeleteClick(row.id)}
+            onClick={() => {
+              if (!permissions.canDelete) {
+                alert("You don't have right to delete this.");
+                return;
+              }
+              handleDeleteClick(row.id);
+            }}
             className="bg-red-500 hover:bg-red-700 text-white text-xs p-1.5 rounded transition-colors"
             title="Delete Job Role"
           >
@@ -542,7 +574,13 @@ export default function HomePage() {
                     {/* Add New Jobrole */}
                     <button
                       className="hover:bg-gray-100 px-2 py-2 flex items-center justify-center transition-colors rounded-md "
-                      onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
+                      onClick={() => {
+                        if (!permissions.canAdd) {
+                          alert("You don't have right to add this.");
+                          return;
+                        }
+                        setDialogOpen({ ...dialogOpen, add: true });
+                      }}
                       title="Add New Job Role"
                     >
                       <Plus className="h-5 w-5 text-gray-600" />
@@ -727,7 +765,13 @@ export default function HomePage() {
                       </button>
                       {/* Edit Button */}
                       <button
-                        onClick={() => handleEdit(role.id)}
+                        onClick={() => {
+                          if (!permissions.canEdit) {
+                            alert("You don't have right to edit this.");
+                            return;
+                          }
+                          handleEdit(role.id);
+                        }}
                         title="Edit Job Role"
                       >
                         <Edit className="text-white hover:text-gray-200" size={14} />
@@ -743,7 +787,13 @@ export default function HomePage() {
 
                       {/* Delete Button */}
                       <button
-                        onClick={() => handleDeleteClick(role.id)}
+                        onClick={() => {
+                          if (!permissions.canDelete) {
+                            alert("You don't have right to delete this.");
+                            return;
+                          }
+                          handleDeleteClick(role.id);
+                        }}
                         title="Delete Job Role"
                       >
                         <Trash className="text-white hover:text-gray-200" size={14} />
