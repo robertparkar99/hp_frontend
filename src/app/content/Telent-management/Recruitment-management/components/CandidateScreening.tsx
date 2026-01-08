@@ -81,35 +81,35 @@ interface JobApplication {
 }
 
 interface Candidate {
-   id: string;
-   name: string;
-   email: string;
-   phone: string;
-   position: string;
-   experience: string;
-   education: string;
-   location: string;
-   skills: string[];
-   score: number | null;
-   status: 'shortlisted' | 'rejected' | 'pending' | 'under_review';
-   appliedDate: string;
-   resumeUrl: string;
-   matchDetails: {
-     skillsMatch: number | null;
-     experienceMatch: number | null;
-     educationMatch: number | null;
-     cultural_fit: number | null;
-   };
-   originalApplication: JobApplication;
-   aiRecommendation?: string;
-   culturalFit?: number;
-   reasoning?: string;
-   isScreened: boolean;
-   predictedSuccess?: string;
-   rankingScore?: number;
-   skillMatchDetails?: any[];
-   skillGaps?: string[];
-   strengths?: string[];
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  position: string;
+  experience: string;
+  education: string;
+  location: string;
+  skills: string[];
+  score: number | null;
+  status: 'shortlisted' | 'rejected' | 'pending' | 'under_review';
+  appliedDate: string;
+  resumeUrl: string;
+  matchDetails: {
+    skillsMatch: number | null;
+    experienceMatch: number | null;
+    educationMatch: number | null;
+    cultural_fit: number | null;
+  };
+  originalApplication: JobApplication;
+  aiRecommendation?: string;
+  culturalFit?: number;
+  reasoning?: string;
+  isScreened: boolean;
+  predictedSuccess?: string;
+  rankingScore?: number;
+  skillMatchDetails?: any[];
+  skillGaps?: string[];
+  strengths?: string[];
 }
 
 interface CandidateScreeningProps {
@@ -117,13 +117,95 @@ interface CandidateScreeningProps {
   onRefresh: () => void;
 }
 
+const EXPERIENCE_LEVELS: Record<string, number> = {
+  "Entry Level (0-2 years)": 1,
+  "Mid Level (3-5 years)": 2,
+  "Senior Level (6-10 years)": 3,
+  "Lead Level (10+ years)": 4
+};
+
+const calculateExperienceMatch = (
+  jobExperience: string,
+  candidateExperience: string
+): number => {
+  if (!jobExperience || !candidateExperience) return 0;
+
+  const jobLevel = EXPERIENCE_LEVELS[jobExperience];
+  const candLevel = EXPERIENCE_LEVELS[candidateExperience];
+
+  if (!jobLevel || !candLevel) return 0;
+
+  if (candLevel >= jobLevel) return 100;
+  if (candLevel === jobLevel - 1) return 70;
+  return 30;
+};
+
+
+const EDUCATION_LEVELS: Record<string, number> = {
+  "Not Required": 0,
+  "High School Diploma": 1,
+  "Associate Degree": 2,
+  "Bachelor's Degree": 3,
+  "Master's Degree": 4,
+  "PhD": 5
+};
+const calculateEducationMatch = (
+  jobEducation: string,
+  candidateEducation: string
+): number => {
+  if (!jobEducation || !candidateEducation) return 0;
+
+  if (jobEducation === "Not Required") return 100;
+
+  const jobLevel = EDUCATION_LEVELS[jobEducation];
+  const candLevel = EDUCATION_LEVELS[candidateEducation];
+
+  if (jobLevel === undefined || candLevel === undefined) return 0;
+
+  if (candLevel >= jobLevel) return 100;
+  if (candLevel === jobLevel - 1) return 70;
+  return 30;
+};
+
+const calculateSkillMatch = (
+  jobSkills: string,
+  candidateSkills: string
+): number => {
+  if (!jobSkills || !candidateSkills) return 0;
+
+  const jobSkillArr = jobSkills
+    .toLowerCase()
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const candSkillArr = candidateSkills
+    .toLowerCase()
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  if (jobSkillArr.length === 0) return 0;
+
+  const matched = jobSkillArr.filter(skill =>
+    candSkillArr.some(c => c.includes(skill) || skill.includes(c))
+  );
+
+  return Math.round((matched.length / jobSkillArr.length) * 100);
+};
+
+
+
 const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
   const [sessionData, setSessionData] = useState<any>(null);
+  const [jobPostingsApi, setJobPostingsApi] = useState<JobPosting[]>([]);
+
   const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -138,6 +220,39 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       }
     }
   }, []);
+
+
+  useEffect(() => {
+    if (!sessionData) return;
+
+    const fetchJobPostings = async () => {
+      try {
+        const response = await fetch(
+          `${sessionData.url}/api/job-postings?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch job postings");
+        }
+
+        const result = await response.json();
+
+        let postings: JobPosting[] = [];
+        if (Array.isArray(result.data)) {
+          postings = result.data;
+        } else if (Array.isArray(result)) {
+          postings = result;
+        }
+
+        setJobPostingsApi(postings);
+      } catch (error) {
+        console.error("Error fetching job postings:", error);
+        setJobPostingsApi([]);
+      }
+    };
+
+    fetchJobPostings();
+  }, [sessionData]);
 
   // Fetch job applications from API
   useEffect(() => {
@@ -178,16 +293,87 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
     fetchJobApplications();
   }, [sessionData]);
 
+  // const calculateEducationMatch = (
+  //   jobEducation: string,
+  //   candidateEducation: string
+  // ): number => {
+  //   if (!jobEducation || !candidateEducation) return 0;
+
+  //   const jobEdu = jobEducation.toLowerCase();
+  //   const candEdu = candidateEducation.toLowerCase();
+
+  //   if (candEdu.includes(jobEdu)) return 100;
+  //   if (jobEdu.includes(candEdu)) return 80;
+
+  //   const jobParts = jobEdu.split(/[,/]/);
+  //   const matched = jobParts.filter(p => candEdu.includes(p.trim()));
+
+  //   return Math.round((matched.length / jobParts.length) * 100);
+  // };
+  // const extractYears = (text: string): number => {
+  //   const match = text.match(/(\d+(\.\d+)?)/);
+  //   return match ? parseFloat(match[1]) : 0;
+  // };
+
+  // const calculateExperienceMatch = (
+  //   jobExp: string,
+  //   candidateExp: string
+  // ): number => {
+  //   if (!jobExp || !candidateExp) return 0;
+
+  //   const jobYears = extractYears(jobExp);
+  //   const candYears = extractYears(candidateExp);
+
+  //   if (jobYears === 0 || candYears === 0) return 0;
+  //   if (candYears >= jobYears) return 100;
+
+  //   return Math.round((candYears / jobYears) * 100);
+  // };
+
+
+
   // Convert JobApplications to Candidate format
   useEffect(() => {
+    if (jobApplications.length === 0 || jobPostingsApi.length === 0) {
+      return;
+    }
+
     if (jobApplications.length > 0) {
       const convertedCandidates = jobApplications.map((application): Candidate => {
         // Find the job title for this application
-        const job = jobPostings.find(j => j.id === application.job_id);
-        const jobTitle = job ? job.title : `Job ID: ${application.job_id}`;
+        // const job = jobPostings.find(j => j.id === application.job_id);
 
-        // Format the applicant's full name
-        const fullName = `${application.first_name || ''} ${application.middle_name || ''} ${application.last_name || ''}`.trim();
+        const job = jobPostingsApi.find(j => j.id === application.job_id);
+
+        const experienceMatch = job
+          ? calculateExperienceMatch(job.experience, application.experience)
+          : null;
+
+        const educationMatch = job
+          ? calculateEducationMatch(job.education, application.education)
+          : null;
+
+        // Log education and experience calculations for debugging
+        const FullName = `${application.first_name || ''} ${application.middle_name || ''} ${application.last_name || ''}`.trim();
+        console.log(`Candidate: ${FullName}, Job Experience: ${job?.experience}, Candidate Experience: ${application.experience}, Experience Match: ${experienceMatch}%`);
+        console.log(`Candidate: ${FullName}, Job Education: ${job?.education}, Candidate Education: ${application.education}, Education Match: ${educationMatch}%`);
+
+        const skillMatch = job
+          ? calculateSkillMatch(job.skills, application.skills)
+          : null;
+
+        const missingSkills = job
+          ? job.skills
+            .split(',')
+            .map(s => s.trim())
+            .filter(js =>
+              !application.skills
+                ?.toLowerCase()
+                .includes(js.toLowerCase())
+            )
+          : [];
+
+        const jobTitle = job ? job.title : `Job ID: ${application.job_id}`;
 
         // Parse skills from string to array
         const skillsArray = application.skills ? application.skills.split(',').map(skill => skill.trim()) : [];
@@ -206,7 +392,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
 
         return {
           id: application.id.toString(),
-          name: fullName || 'Unknown Applicant',
+          name: FullName || 'Unknown Applicant',
           email: application.email,
           phone: application.mobile,
           position: jobTitle,
@@ -218,12 +404,21 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
           status: getCandidateStatus(application.status),
           appliedDate: application.applied_date || application.created_at,
           resumeUrl: application.resume_path || '',
+          // matchDetails: {
+          //   skillsMatch: null,
+          //   experienceMatch: null,
+          //   educationMatch: null,
+          //   cultural_fit: null
+          // },
+
           matchDetails: {
-            skillsMatch: null,
-            experienceMatch: null,
-            educationMatch: null,
+            skillsMatch: skillMatch,
+            experienceMatch,
+            educationMatch,
             cultural_fit: null
           },
+
+
           originalApplication: application,
           isScreened: false
         };
@@ -236,7 +431,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
     } else {
       setCandidates([]);
     }
-  }, [jobApplications, jobPostings]);
+  }, [jobApplications, jobPostingsApi]);
 
   // Function to fetch screening results for all candidates
   const fetchScreeningResults = async (candidatesList: Candidate[]) => {
@@ -265,9 +460,13 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
             ...candidate,
             score: screeningData.competency_match,
             matchDetails: {
-              skillsMatch: screeningData.competency_match,
-              experienceMatch: screeningData.scoringPipeline?.competency_scoring?.overallFitScore || screeningData.competency_match,
-              educationMatch: screeningData.competency_match,
+              // skillsMatch: screeningData.competency_match,
+              // experienceMatch: screeningData.scoringPipeline?.competency_scoring?.overallFitScore || screeningData.competency_match,
+              // educationMatch: screeningData.competency_match,
+              skillsMatch: candidate.matchDetails.skillsMatch,
+              experienceMatch: candidate.matchDetails.experienceMatch,
+              educationMatch: candidate.matchDetails.educationMatch,
+
               cultural_fit: screeningData.cultural_fit
             },
             aiRecommendation: screeningData.recommendation,
@@ -337,6 +536,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
 
   const handleViewApplication = (candidate: Candidate) => {
     setSelectedApplication(candidate.originalApplication);
+    setSelectedCandidate(candidate);
     setIsApplicationDialogOpen(true);
   };
 
@@ -464,65 +664,65 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-4">Candidate Overview</h2>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <User className="w-5 h-5 text-blue-400" />
-              <div>
-                <div className="text-2xl font-bold">{stats.total}</div>
-                <div className="text-xs text-muted-foreground">Total Candidates</div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <User className="w-5 h-5 text-blue-400" />
+                <div>
+                  <div className="text-2xl font-bold">{stats.total}</div>
+                  <div className="text-xs text-muted-foreground">Total Candidates</div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-success" />
-              <div>
-                <div className="text-2xl font-bold text-success">{stats.shortlisted}</div>
-                <div className="text-xs text-muted-foreground">Shortlisted</div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-5 h-5 text-success" />
+                <div>
+                  <div className="text-2xl font-bold text-success">{stats.shortlisted}</div>
+                  <div className="text-xs text-muted-foreground">Shortlisted</div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Clock className="w-5 h-5 text-warning" />
-              <div>
-                <div className="text-2xl font-bold text-warning">{stats.pending}</div>
-                <div className="text-xs text-muted-foreground">Pending</div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-warning" />
+                <div>
+                  <div className="text-2xl font-bold text-warning">{stats.pending}</div>
+                  <div className="text-xs text-muted-foreground">Pending</div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <X className="w-5 h-5 text-destructive" />
-              <div>
-                <div className="text-2xl font-bold text-destructive">{stats.rejected}</div>
-                <div className="text-xs text-muted-foreground">Rejected</div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <X className="w-5 h-5 text-destructive" />
+                <div>
+                  <div className="text-2xl font-bold text-destructive">{stats.rejected}</div>
+                  <div className="text-xs text-muted-foreground">Rejected</div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
-              <div>
-                <div className="text-2xl font-bold">{stats.avgScore}%</div>
-                <div className="text-xs text-muted-foreground">Avg Score</div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="w-5 h-5 text-blue-400" />
+                <div>
+                  <div className="text-2xl font-bold">{stats.avgScore}%</div>
+                  <div className="text-xs text-muted-foreground">Avg Score</div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -652,30 +852,30 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                         {candidate.isScreened ? (
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                             <div className="text-center">
-                              <div className="text-lg font-semibold">{candidate.matchDetails.skillsMatch}%</div>
+                              <div className="text-lg font-semibold">{candidate.matchDetails.skillsMatch || 0}%</div>
                               <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
-                                <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.skillsMatch}%` }}></div>
+                                <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.skillsMatch || 0}%` }}></div>
                               </div>
                               <div className="text-xs text-muted-foreground">Skills Match</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-semibold">{candidate.matchDetails.experienceMatch}%</div>
+                              <div className="text-lg font-semibold">{candidate.matchDetails.experienceMatch || 0}%</div>
                               <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
-                                <div className="bg-green-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.experienceMatch}%` }}></div>
+                                <div className="bg-green-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.experienceMatch || 0}%` }}></div>
                               </div>
                               <div className="text-xs text-muted-foreground">Experience</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-semibold">{candidate.matchDetails.educationMatch}%</div>
+                              <div className="text-lg font-semibold">{candidate.matchDetails.educationMatch || 0}%</div>
                               <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
-                                <div className="bg-yellow-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.educationMatch}%` }}></div>
+                                <div className="bg-yellow-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.educationMatch || 0}%` }}></div>
                               </div>
                               <div className="text-xs text-muted-foreground">Education</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-semibold">{candidate.matchDetails.cultural_fit}</div>
+                              <div className="text-lg font-semibold">{candidate.matchDetails.cultural_fit || 0}</div>
                               <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
-                                <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.cultural_fit}` }}></div>
+                                <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${candidate.matchDetails.cultural_fit || 0}%` }}></div>
                               </div>
                               <div className="text-xs text-muted-foreground">Cultural Fit</div>
                             </div>
@@ -772,7 +972,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                       {/* Skills */}
                       {candidate.skills.length > 0 && (
                         <div className="mb-4">
-                          <h4 className="font-medium text-sm mb-2">Key Skills</h4>
+                            <h4 className="font-medium text-sm mb-2">Candidate Key Skills</h4>
                           <div className="flex flex-wrap gap-2">
                             {candidate.skills.map((skill, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">
@@ -849,9 +1049,11 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
 
       <ApplicationDetailsDialog
         application={selectedApplication}
+        candidate={selectedCandidate}
         jobPostings={jobPostings}
         open={isApplicationDialogOpen}
         onOpenChange={setIsApplicationDialogOpen}
+        showScreeningScores={true}
       />
     </div>
   );
