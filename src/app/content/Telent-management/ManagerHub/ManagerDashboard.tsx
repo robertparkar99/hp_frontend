@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ViewFullProfileDialog from "./ViewFullProfileDialog";
 import {
   CheckCircle,
   Clock,
@@ -41,6 +43,8 @@ const ManagerDashboard = () => {
   const [sessionData, setSessionData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [teamOverview, setTeamOverview] = useState<any>(null);
+  const [selectedInterview, setSelectedInterview] = useState<InterviewFeedback | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   // Fetch session data on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -295,7 +299,7 @@ const ManagerDashboard = () => {
                         )}
 
                         <div className="flex justify-between items-center">
-                          <Button variant="outline">
+                          <Button variant="outline" onClick={() => { setSelectedInterview(interview); setDialogOpen(true); }}>
                             <Eye className="w-4 h-4 mr-2" />
                             View Full Profile
                           </Button>
@@ -385,6 +389,7 @@ const ManagerDashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+      <ViewFullProfileDialog open={dialogOpen} onOpenChange={setDialogOpen} interview={selectedInterview} />
     </div>
   );
 };
