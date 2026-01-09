@@ -1,24 +1,24 @@
 "use client";
+import { useState, useEffect } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 
-const departmentDistribution = [
-  { month: "Apr", Applicants: 120, Shortlisted: 80, Hired: 50 },
-  { month: "May", Applicants: 145, Shortlisted: 95, Hired: 60 },
-  { month: "Jun", Applicants: 165, Shortlisted: 110, Hired: 75 },
-  { month: "Jul", Applicants: 190, Shortlisted: 130, Hired: 88 },
-  { month: "Aug", Applicants: 220, Shortlisted: 155, Hired: 105 },
-  { month: "Sep", Applicants: 250, Shortlisted: 180, Hired: 125 },
-];
+// Colors for departments
+const departmentColors = ["#0da2e7", "#10b77f", "#fb923c", "#7c3bed", "#e92063", "#f59e0b", "#ef4444"];
 
-const departmentSizes = [
-  { name: "Engineering", value: 18, color: "#0da2e7" },
-  { name: "Sales", value: 12, color: "#10b77f" },
-  { name: "Marketing", value: 18, color: "#fb923c" },
-  { name: "Operations", value: 22, color: "#7c3bed" },
-  { name: "HR", value: 8, color: "#e92063" },
-];
+interface DepartmentSize {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface DepartmentDistribution {
+  month: string;
+  Applicants: number;
+  Shortlisted: number;
+  Hired: number;
+}
 
 // Custom Tooltip Component for Department Distribution matching the image
 const CustomDepartmentTooltip = ({ active, payload, label }: any) => {
@@ -66,6 +66,73 @@ const CustomPieTooltip = ({ active, payload }: any) => {
 };
 
 export const DepartmentalInsights = () => {
+  const [departmentDistribution, setDepartmentDistribution] = useState<DepartmentDistribution[]>([]);
+  const [departmentSizes, setDepartmentSizes] = useState<DepartmentSize[]>([]);
+  const [sessionData, setSessionData] = useState({
+    url: "",
+    token: "",
+    subInstituteId: "",
+  });
+
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!sessionData.url) return;
+
+    const fetchDepartmentData = async () => {
+      try {
+        const response = await fetch(`${sessionData.url}/api/reports/departments/distribution?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`);
+        const result = await response.json();
+        if (result.status) {
+          const mappedData = result.data.map((item: any) => ({
+            month: item.month,
+            Applicants: item.applicants,
+            Shortlisted: parseInt(item.shortlisted),
+            Hired: parseInt(item.hired)
+          }));
+          setDepartmentDistribution(mappedData);
+        }
+      } catch (error) {
+        console.error('Error fetching department data:', error);
+      }
+    };
+
+    fetchDepartmentData();
+  }, [sessionData]);
+
+  useEffect(() => {
+    if (!sessionData.url) return;
+
+    const fetchDepartmentSizes = async () => {
+      try {
+        const response = await fetch(`${sessionData.url}/api/reports/departments/sizes?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`);
+        const result = await response.json();
+        if (result.status) {
+          const mappedData = result.data.map((item: any, index: number) => ({
+            name: item.name,
+            value: item.value,
+            color: departmentColors[index % departmentColors.length]
+          }));
+          setDepartmentSizes(mappedData);
+        }
+      } catch (error) {
+        console.error('Error fetching department sizes:', error);
+      }
+    };
+
+    fetchDepartmentSizes();
+  }, [sessionData]);
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Departmental Insights</h2>
