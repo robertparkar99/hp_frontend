@@ -709,7 +709,7 @@ const HRDashboard = () => {
               <option value="jobs">Job Postings</option>
               <option value="screening">Resume Screening</option>
               <option value="applications">Applications</option>
-              <option value="analytics">Analytics</option>
+              {/* <option value="analytics">Analytics</option> */}
             </select>
           </div>
 
@@ -718,7 +718,7 @@ const HRDashboard = () => {
             <TabsTrigger value="jobs" className="flex-1 data-[state=active]:bg-white">Job Postings</TabsTrigger>
             <TabsTrigger value="screening" className="flex-1 data-[state=active]:bg-white">Resume Screening</TabsTrigger>
             <TabsTrigger value="applications" className="flex-1 data-[state=active]:bg-white">Applications</TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1 data-[state=active]:bg-white">Analytics</TabsTrigger>
+            {/* <TabsTrigger value="analytics" className="flex-1 data-[state=active]:bg-white">Analytics</TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="jobs" className="space-y-4 lg:space-y-6">
@@ -965,7 +965,7 @@ const HRDashboard = () => {
           </TabsContent>
 
 
-          <TabsContent value="analytics" className="space-y-4 lg:space-y-6">
+          {/* <TabsContent value="analytics" className="space-y-4 lg:space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6">
               <Card className="border border-gray-200 shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -1029,7 +1029,7 @@ const HRDashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
       </main>
 
