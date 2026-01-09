@@ -48,28 +48,33 @@ const KnowledgeTax = ({ onSave, loading = false }) => {
       setIsLoading(true);
 
       const deptRes = await fetch(
-        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=knowledge&group_by=classification_category&order_by[direction]=desc`
-      );
-      const subDeptRes = await fetch(
-        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=knowledge&group_by=classification_sub_category&order_by[direction]=desc`
+        `${sessionData.url}/table_data?table=s_user_knowledge&filters[sub_institute_id]=${sessionData.subInstituteId}`
       );
 
-      if (!deptRes.ok || !subDeptRes.ok) throw new Error('Network error');
+      if (!deptRes.ok) throw new Error('Network error');
 
       const deptData = await deptRes.json();
-      const subDeptData = await subDeptRes.json();
 
-      const merged = deptData.map((dept) => ({
-        id: dept.id || dept.classification_category,
-        name: dept.classification_category,
-        employees: dept.total_employees || 0,
-        subdepartments: subDeptData
-          .filter((sub) => sub.classification_category === dept.classification_category)
-          .map((sub) => ({
-            id: sub.id || sub.classification_sub_category,
-            name: sub.classification_sub_category,
-            employees: sub.total_employees || 0,
-          })),
+      // Group data by category and collect unique sub_categories
+      const categoryMap = {};
+      deptData.forEach((item) => {
+        const cat = item.category;
+        const sub = item.sub_category;
+        if (!categoryMap[cat]) {
+          categoryMap[cat] = new Set();
+        }
+        categoryMap[cat].add(sub);
+      });
+
+      const merged = Object.keys(categoryMap).map((cat) => ({
+        id: cat,
+        name: cat,
+        employees: 0, // Set to 0 since total_employees is not available from this API
+        subdepartments: Array.from(categoryMap[cat]).map((sub) => ({
+          id: sub,
+          name: sub,
+          employees: 0, // Set to 0 since total_employees is not available from this API
+        })),
       }));
 
       setDepartments(merged);
@@ -93,6 +98,7 @@ const KnowledgeTax = ({ onSave, loading = false }) => {
       formData.append('user_id', sessionData.userId);
       formData.append('attribute', 'knowledge');
       formData.append('classification_category', newDepartment.name.trim());
+      formData.append('variableType', 'Knowledge');
 
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
@@ -124,6 +130,7 @@ const KnowledgeTax = ({ onSave, loading = false }) => {
       formData.append('attribute', 'knowledge');
       formData.append('old_classification_category', editDepartment.oldName.trim());
       formData.append('classification_category', editDepartment.name.trim());
+      formData.append('variableType', 'Knowledge');
 
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
@@ -151,7 +158,7 @@ const KnowledgeTax = ({ onSave, loading = false }) => {
       formData.append('attribute', 'knowledge');
       formData.append('classification_category', departmentName.trim());
       formData.append('classification_sub_category', subName.trim());
-
+      formData.append('variableType', 'Knowledge');
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
         body: formData,
@@ -180,7 +187,7 @@ const KnowledgeTax = ({ onSave, loading = false }) => {
       formData.append('classification_category', editSubDepartment.departmentName.trim());
       formData.append('old_classification_sub_category', editSubDepartment.oldName.trim());
       formData.append('classification_sub_category', editSubDepartment.newName.trim());
-
+      formData.append('variableType', 'Knowledge');
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
         body: formData,

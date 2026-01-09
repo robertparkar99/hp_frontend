@@ -47,29 +47,41 @@ const AttitudeTaxonomy = ({ onSave, loading = false }) => {
     try {
       setIsLoading(true);
 
-      const deptRes = await fetch(
-        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=attitude&group_by=classification_category&order_by[direction]=desc`
-      );
-      const subDeptRes = await fetch(
-        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=attitude&group_by=classification_sub_category&order_by[direction]=desc`
+      const res = await fetch(
+        `${sessionData.url}/table_data?table=s_user_attitude&filters[sub_institute_id]=${sessionData.subInstituteId}`
       );
 
-      if (!deptRes.ok || !subDeptRes.ok) throw new Error('Network error');
+      if (!res.ok) throw new Error('Network error');
 
-      const deptData = await deptRes.json();
-      const subDeptData = await subDeptRes.json();
+      const data = await res.json();
 
-      const merged = deptData.map((dept) => ({
-        id: dept.id || dept.classification_category,
-        name: dept.classification_category,
-        employees: dept.total_employees || 0,
-        subdepartments: subDeptData
-          .filter((sub) => sub.classification_category === dept.classification_category)
-          .map((sub) => ({
-            id: sub.id || sub.classification_sub_category,
-            name: sub.classification_sub_category,
-            employees: sub.total_employees || 0,
-          })),
+      // Group by category
+      const categoryMap = {};
+      data.forEach((item) => {
+        const category = item.category;
+        const subCategory = item.sub_category;
+
+        if (!categoryMap[category]) {
+          categoryMap[category] = {
+            id: category,
+            name: category,
+            employees: 0,
+            subdepartments: {},
+          };
+        }
+
+        if (!categoryMap[category].subdepartments[subCategory]) {
+          categoryMap[category].subdepartments[subCategory] = {
+            id: subCategory,
+            name: subCategory,
+            employees: 0,
+          };
+        }
+      });
+
+      const merged = Object.values(categoryMap).map((dept) => ({
+        ...dept,
+        subdepartments: Object.values(dept.subdepartments),
       }));
 
       setDepartments(merged);
@@ -93,6 +105,7 @@ const AttitudeTaxonomy = ({ onSave, loading = false }) => {
       formData.append('user_id', sessionData.userId);
       formData.append('attribute', 'attitude');
       formData.append('classification_category', newDepartment.name.trim());
+      formData.append('variableType', 'Attitude');
 
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
@@ -124,6 +137,7 @@ const AttitudeTaxonomy = ({ onSave, loading = false }) => {
       formData.append('attribute', 'attitude');
       formData.append('old_classification_category', editDepartment.oldName.trim());
       formData.append('classification_category', editDepartment.name.trim());
+      formData.append('variableType', 'Attitude');
 
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
@@ -151,6 +165,7 @@ const AttitudeTaxonomy = ({ onSave, loading = false }) => {
       formData.append('attribute', 'attitude');
       formData.append('classification_category', departmentName.trim());
       formData.append('classification_sub_category', subName.trim());
+      formData.append('variableType', 'Attitude');
 
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
@@ -180,6 +195,7 @@ const AttitudeTaxonomy = ({ onSave, loading = false }) => {
       formData.append('classification_category', editSubDepartment.departmentName.trim());
       formData.append('old_classification_sub_category', editSubDepartment.oldName.trim());
       formData.append('classification_sub_category', editSubDepartment.newName.trim());
+      formData.append('variableType', 'Attitude');
 
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
