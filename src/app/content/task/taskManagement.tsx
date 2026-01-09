@@ -951,8 +951,8 @@ const TaskManagement = () => {
                         <SelectValue placeholder="Select Observer" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
-                        {ObserverList.map((observer, index) => (
-                          <SelectItem key={index} value={observer.id}>
+                        {ObserverList.filter(observer => observer.id && observer.id !== '').map((observer) => (
+                          <SelectItem key={observer.id} value={observer.id}>
                             {observer.first_name} {observer.middle_name}{" "}
                             {observer.last_name}
                           </SelectItem>
