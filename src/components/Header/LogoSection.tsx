@@ -67,18 +67,15 @@ export const LogoSection: React.FC = () => {
 
   const handleMenuClick = (path: string) => {
     setIsDropdownOpen(false);
-    (window as any).__currentMenuItem = path;
-    window.dispatchEvent(
-      new CustomEvent("menuSelected", {
-        detail: { menu: path, pageType: "page", access: path },
-      })
-    );
+    // Navigate directly using router instead of events for global functionality
+    const routePath = `/content/${path.replace('/page.tsx', '')}`;
+    router.push(routePath);
   };
 
   const menuItems = userData?.user_profile_name === "Admin" ? [{ label: "Rights Management", path: "groupWiseRights/page.tsx" }] : [];
 
   return (
-    <div className="flex relative z-50 items-center">
+    <div className="flex relative items-center">
       {/* icons */}
       <div className="iconDivs flex gap-4 items-center">
         {/* search icon */}

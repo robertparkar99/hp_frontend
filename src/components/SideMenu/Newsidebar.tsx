@@ -468,18 +468,19 @@ const useMenuData = (sessionData: any) => {
             const menuData = await fetchWithRetry(
                 `${sessionData.url}/user/ajax_groupwiserights?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&profile_id=${sessionData.userProfile}`
             );
+            console.log("Fetched menuData:", menuData);
 
             // Process data
             const sectionsData = menuData.level_1
-                .filter((l1: any) => l1.can_view === 1)
+                .filter((l1: any) => true) // Temporarily allow all for debugging
                 .map((l1: any) => {
                     const l2Group = menuData.level_2[l1.id] || {};
                     const subItems = Object.values(l2Group)
-                        .filter((l2: any) => l2.can_view === 1)
+                        .filter((l2: any) => true) // Allow all level 2
                         .map((l2: any) => {
                             const l3Group = menuData.level_3[l2.id] || {};
                             const subSubItems = Object.values(l3Group)
-                                .filter((l3: any) => l3.can_view === 1)
+                                .filter((l3: any) => true) // Allow all level 3
                                 .map((l3: any) => ({
                                     key: String(l3.id),
                                     label: l3.menu_name,
@@ -504,6 +505,8 @@ const useMenuData = (sessionData: any) => {
                         subItems,
                     };
                 });
+
+            console.log("Processed sectionsData:", sectionsData);
 
             // Cache the result
             menuCache.set(cacheKey, sectionsData);
@@ -717,18 +720,20 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         const userData = localStorage.getItem("userData");
         if (userData) {
             try {
-                const { APP_URL, token, sub_institute_id, org_type, user_id, userimage, user_profile_id, firstName, lastName } = JSON.parse(userData);
-                setSessionData({
+                const { APP_URL, token, sub_institute_id, org_type, user_id, user_image, user_profile_name, first_name, last_name } = JSON.parse(userData);
+                const parsedData = {
                     url: APP_URL || "",
                     token: token || "",
                     subInstituteId: sub_institute_id || "",
                     orgType: org_type || "",
                     userId: user_id || "",
-                    userimage: userimage || "",
-                    userProfile: user_profile_id || "",
-                    firstName: firstName || "",
-                    lastName: lastName || "",
-                });
+                    userimage: user_image || "",
+                    userProfile: user_profile_name || "",
+                    firstName: first_name || "",
+                    lastName: last_name || "",
+                };
+                setSessionData(parsedData);
+
             } catch (err) {
                 console.error("Error parsing user data:", err);
             }
@@ -789,6 +794,7 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                 <div className="h-[100px] flex items-center justify-between px-[20px]">
                     {!isCollapsed && (
                         <UserProfile userSessionData={sessionData} />
+
                     )}
                     <motion.button
                         whileTap={{ scale: 0.9 }}

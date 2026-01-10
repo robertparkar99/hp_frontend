@@ -11,6 +11,8 @@ interface UserProfileProps {
 }
 
 export const UserProfile: React.FC<UserProfileProps> = ({ userSessionData }) => {
+  // console.log("UserProfileProps data:", userSessionData);
+
   const defaultImage =
     "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
 
@@ -31,7 +33,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userSessionData }) => 
       <img
         src={imgSrc}
         alt="User icon"
-        className="object-contain shrink-0 rounded-full w-[40px] h-[40px]"
+        // className="object-contain shrink-0 rounded-full w-[40px] h-[40px]"
+        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
         onError={() => setImgSrc(defaultImage)}
       />
 
