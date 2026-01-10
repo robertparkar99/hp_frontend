@@ -651,7 +651,7 @@ const TaskManagement = () => {
                       </SelectTrigger>
 
                       <SelectContent className="max-h-60 max-w-65">
-                        {departmentList.map((dept, index) => (
+                        {departmentList.filter(dept => dept.department_name).map((dept, index) => (
                           <SelectItem key={index} value={dept.department_name}>
                             {dept.department_name}
                           </SelectItem>
@@ -680,7 +680,7 @@ const TaskManagement = () => {
                       </SelectTrigger>
 
                       <SelectContent className="max-h-60 max-w-65">
-                        {jobroleList.map((jobrole, index) => (
+                        {jobroleList.filter(jobrole => jobrole.allocated_standards).map((jobrole, index) => (
                           <SelectItem
                             key={index}
                             value={jobrole.allocated_standards}
@@ -951,7 +951,7 @@ const TaskManagement = () => {
                         <SelectValue placeholder="Select Observer" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
-                        {ObserverList.filter(observer => observer.id && observer.id !== '').map((observer) => (
+                        {ObserverList.filter(observer => observer.id && String(observer.id).trim() !== '').map((observer) => (
                           <SelectItem key={observer.id} value={observer.id}>
                             {observer.first_name} {observer.middle_name}{" "}
                             {observer.last_name}
