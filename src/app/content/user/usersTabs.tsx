@@ -205,7 +205,7 @@ export default function EditProfilePage() {
 
 
           {/* ================= HEADER ================= */}
-          <div className="z-40 border-b border-blue-100">
+            <div className=" border-b border-blue-100">
             <div className="flex items-center gap-3 px-3 py-2">
 
               {/* Back Button */}
@@ -222,7 +222,7 @@ export default function EditProfilePage() {
                 <div className="flex justify-start">
                   <div
                     className="bg-white
-        inline-flex items-center gap-2
+        inline-flex items-center
         pl-2 pr-4 py-1.5
         rounded-full
         border border-blue-200
