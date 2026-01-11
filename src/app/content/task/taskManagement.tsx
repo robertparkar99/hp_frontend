@@ -951,8 +951,10 @@ const TaskManagement = () => {
                         <SelectValue placeholder="Select Observer" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
-                        {ObserverList.filter(observer => observer.id && String(observer.id).trim() !== '').map((observer) => (
-                          <SelectItem key={observer.id} value={observer.id}>
+                        {ObserverList.filter(observer => observer.id && String(observer.id).trim() !== '')
+                          .filter((observer, index, arr) => arr.findIndex(o => o.id === observer.id) === index)
+                          .map((observer) => (
+                          <SelectItem key={observer.id} value={String(observer.id)}>
                             {observer.first_name} {observer.middle_name}{" "}
                             {observer.last_name}
                           </SelectItem>
