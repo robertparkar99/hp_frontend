@@ -354,7 +354,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                     onChange={handleFormChange}
                     value={formData.description}
                   ></textarea>
-                  <button
+                  {/* <button
                     type="button"
                     onClick={() => generateFormContent(formData.skill_name, formData.description)}
                     className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 h-10 w-50"
@@ -364,7 +364,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess }) => {
                       <path d="M13.5 4.938l1.563 1.562a4.001 4.001 0 01-5.656 5.656L8.344 13.5a4 4 0 105.656-5.656l-1.563-1.563a5.5 5.5 0 00-7.778 7.778l1.562 1.563a5.5 5.5 0 007.778-7.778z" />
                     </svg>
                     AI Generate
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>
