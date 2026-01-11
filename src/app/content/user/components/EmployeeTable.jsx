@@ -244,7 +244,6 @@ const EmployeeTable = ({
           </div>
         </div>
       ),
-      minWidth: "200px"
     },
     {
       name: (
