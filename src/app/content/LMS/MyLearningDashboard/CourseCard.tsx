@@ -53,6 +53,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', o
     }
   }, []);
   const [isEnrolling, setIsEnrolling] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
 
 
   const handleEnroll = async () => {
@@ -64,7 +65,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', o
         .split("T")[0];
 
       const response = await fetch(
-        `${sessionData.url}/api/enroll?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&user_id=${sessionData.userId}&id=${course.id}&status=in-progress&start_date=${startDate}&end_date=${endDate}`
+        `${sessionData.url}/api/enroll?user_id=${sessionData.userId}sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`
       );
 
       const data = await response.json();
@@ -73,6 +74,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', o
       // SUCCESS CHECK FIXED ✔
       if (data.status === true) {
         alert("Successfully enrolled in the course!");
+        setIsEnrolled(true);
 
         if (onEnrollSuccess) onEnrollSuccess(); // move to In Progress
       } else {
@@ -236,9 +238,9 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', o
                 <span>Trending</span>
               </div>
             </div>
-            <Button variant="default" className="w-full" onClick={handleEnroll} disabled={isEnrolling}>
+            <Button variant="default" className="w-full" onClick={handleEnroll} disabled={isEnrolling || isEnrolled}>
               <Icon name="Plus" size={16} className="mr-2" />
-              {isEnrolling ? 'Enrolling...' : 'Enroll Now'}
+              {isEnrolled ? 'Enrolled' : isEnrolling ? 'Enrolling...' : 'Enroll Now'}
             </Button>
           </div>
         )}
