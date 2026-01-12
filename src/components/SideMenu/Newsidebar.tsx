@@ -42,6 +42,8 @@ interface SectionItem {
     label: string;
     icon: React.ReactNode;
     subItems: SubItem[];
+    page_type?: string;
+    access_link?: string;
 }
 interface UserSessionDataProps {
     userSessionData: any;
@@ -94,6 +96,7 @@ const SubMenuItem = ({
     router,
     sectionKey,
     onSetActiveSection,
+    setSubOpen,
 }: {
     item: SubItem;
     isExpanded: boolean;
@@ -108,6 +111,7 @@ const SubMenuItem = ({
     router: any;
     sectionKey: string;
     onSetActiveSection: (key: string) => void;
+    setSubOpen: React.Dispatch<React.SetStateAction<SubOpenState>>;
 }) => {
     const handleClick = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -125,6 +129,8 @@ const SubMenuItem = ({
             localStorage.setItem("activeSection", sectionKey);
             localStorage.setItem("activeSubItem", item.key);
             localStorage.removeItem("activeSubSubItem");
+            // Open the sub dropdown
+            setSubOpen(s => ({ ...s, [item.key]: true }));
         } else if (item.page_type === "page" && item.access_link) {
             const normalizedLink = item.access_link.startsWith("/")
                 ? item.access_link
@@ -135,6 +141,8 @@ const SubMenuItem = ({
             localStorage.setItem("activeSection", sectionKey);
             localStorage.setItem("activeSubItem", item.key);
             localStorage.removeItem("activeSubSubItem");
+            // Open the sub dropdown
+            setSubOpen(s => ({ ...s, [item.key]: true }));
         } else if (hasSubItems) {
             onToggle();
             onSetActiveSection(sectionKey);
@@ -280,6 +288,8 @@ const Section = ({
     onSetActiveSubSub,
     router,
     onSetActiveSection,
+    setOpen,
+    setSubOpen,
 }: {
     section: SectionItem;
     isActive: boolean;
@@ -295,13 +305,40 @@ const Section = ({
     onSetActiveSubSub: (key: string | undefined) => void;
     router: any;
     onSetActiveSection: (key: string) => void;
+    setOpen: React.Dispatch<React.SetStateAction<OpenState>>;
+    setSubOpen: React.Dispatch<React.SetStateAction<SubOpenState>>;
 }) => {
     const handleClick = () => {
         if (isCollapsed) {
             onExpandSidebar();
             return;
         }
-        onToggle();
+        if (section.page_type === "link" && section.access_link) {
+            window.open(section.access_link, "_blank");
+            onSetActiveSection(section.key);
+            onSetActiveSub(undefined);
+            onSetActiveSubSub(undefined);
+            localStorage.setItem("activeSection", section.key);
+            localStorage.removeItem("activeSubItem");
+            localStorage.removeItem("activeSubSubItem");
+            // Open the dropdown
+            setOpen(o => ({ ...o, [section.key]: true }));
+        } else if (section.page_type === "page" && section.access_link) {
+            const normalizedLink = section.access_link.startsWith("/")
+                ? section.access_link
+                : `/${section.access_link}`;
+            router.push(normalizedLink);
+            onSetActiveSection(section.key);
+            onSetActiveSub(undefined);
+            onSetActiveSubSub(undefined);
+            localStorage.setItem("activeSection", section.key);
+            localStorage.removeItem("activeSubItem");
+            localStorage.removeItem("activeSubSubItem");
+            // Open the dropdown
+            setOpen(o => ({ ...o, [section.key]: true }));
+        } else {
+            onToggle();
+        }
     };
 
     return (
@@ -411,6 +448,7 @@ const Section = ({
                             router={router}
                             sectionKey={section.key}
                             onSetActiveSection={onSetActiveSection}
+                            setSubOpen={setSubOpen}
                         />
                     ))}
                 </div>
@@ -502,6 +540,8 @@ const useMenuData = (sessionData: any) => {
                         key: String(l1.id),
                         label: l1.menu_name,
                         icon: <i className={l1.icon}></i>,
+                        page_type: l1.page_type,
+                        access_link: l1.access_link,
                         subItems,
                     };
                 });
@@ -665,6 +705,24 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         if (storedActiveSubSubItem) {
             setActiveSubSubItem(storedActiveSubSubItem);
         }
+
+        const storedOpen = localStorage.getItem("sidebarOpenStates");
+        if (storedOpen) {
+            try {
+                setOpen(JSON.parse(storedOpen));
+            } catch (e) {
+                console.warn("Failed to parse sidebarOpenStates", e);
+            }
+        }
+
+        const storedSubOpen = localStorage.getItem("sidebarSubOpenStates");
+        if (storedSubOpen) {
+            try {
+                setSubOpen(JSON.parse(storedSubOpen));
+            } catch (e) {
+                console.warn("Failed to parse sidebarSubOpenStates", e);
+            }
+        }
     }, []);
     const [initialized, setInitialized] = useState(false);
 
@@ -677,6 +735,12 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
             "/" + path.replace(/^\/+/, "").replace(/\/+$/, "");
 
         for (const section of sections) {
+            if (normalizePath(section.access_link) === currentPath) {
+                setActiveSection(section.key);
+                setInitialized(true);
+                return;
+            }
+
             for (const l2 of section.subItems) {
 
                 if (normalizePath(l2.access_link) === currentPath) {
@@ -712,6 +776,24 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
             console.warn("Could not persist sidebar state:", err);
         }
     }, [isCollapsed]);
+
+    // Persist open states
+    useEffect(() => {
+        try {
+            localStorage.setItem("sidebarOpenStates", JSON.stringify(open));
+        } catch (err) {
+            console.warn("Could not persist sidebar open states:", err);
+        }
+    }, [open]);
+
+    // Persist subOpen states
+    useEffect(() => {
+        try {
+            localStorage.setItem("sidebarSubOpenStates", JSON.stringify(subOpen));
+        } catch (err) {
+            console.warn("Could not persist sidebar subOpen states:", err);
+        }
+    }, [subOpen]);
 
     const handleExpandSidebar = () => setIsCollapsed(false);
 
@@ -768,6 +850,8 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
             localStorage.setItem("activeSection", section.key);
             localStorage.setItem("activeSubItem", subKey);
             localStorage.removeItem("activeSubSubItem");
+            // Ensure the section dropdown is open
+            setOpen(o => ({ ...o, [section.key]: true }));
         }
     };
 
@@ -874,6 +958,8 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                                 onSetActiveSubSub={setActiveSubSubItem}
                                 router={router}
                                 onSetActiveSection={setActiveSection}
+                                setOpen={setOpen}
+                                setSubOpen={setSubOpen}
                             />
                         ))
                     )}
