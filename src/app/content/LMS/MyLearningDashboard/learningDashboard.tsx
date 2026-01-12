@@ -154,7 +154,7 @@ const handleEnrollSuccess = (course: Course) => {
 
     try {
       const response = await fetch(
-        `${sessionData.url}/api/enrolled_courses?user_id=${sessionData.userId}&type=API`
+        `${sessionData.url}/api/enrolled_courses?user_id=${sessionData.userId}&type=API&token=${sessionData.token}`
       );
 
       const data = await response.json();
