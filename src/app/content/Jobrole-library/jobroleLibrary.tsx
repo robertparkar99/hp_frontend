@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/popover";
 import AddDialog from "@/components/jobroleComponent/addDialougeOld";
 import EditDialog from "@/components/jobroleComponent/editDialouge";
-import { Atom } from "react-loading-indicators";
 import {
   Funnel,
   Edit,
@@ -47,6 +46,7 @@ import DataTable, { TableColumn, TableStyles } from "react-data-table-component"
 import JobDescriptionModal from "./JobDescriptionModal";
 import ConfigurationModal from "./ConfigurationModal";
 import GenerateAssessmentModal from "./GenerateAssessmentModal";
+import Loader from "@/components/utils/loading";
 
 type JobRole = {
   id: number;
@@ -695,7 +695,7 @@ export default function HomePage() {
       {/* Loader / No Data */}
       {loading ? (
         <div className="flex justify-center items-center h-screen">
-          <Atom color="#525ceaff" size="medium" text="" textColor="" />
+          <Loader/>
         </div>
       ) : searchedRoles.length === 0 ? (
         <div className="text-center text-gray-600">No job roles found.</div>

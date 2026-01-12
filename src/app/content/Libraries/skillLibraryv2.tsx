@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useMemo, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { Atom } from "react-loading-indicators";
 
 import TabsMenu from "../TabMenu/page";
 import SkillTaxonomyCreation from "@/app/content/Libraries/SkillTaxonomyCreation";
@@ -23,10 +22,11 @@ import JobroleTAskTaxonomy from "./jobroleTaskTaxo";
 // import CourseLibrary from "./CourseLibrary";
 import ViewDetail from "../LMS/ViewChepter/ViewDetail";
 import InvisibleLibrary from "../Libraries/Invisible-library/page";
+import Loading from "../../../components/utils/loading"
 // ✅ Loader Component
 const Loader = () => (
   <div className="flex justify-center items-center h-screen">
-    <Atom color="#525ceaff" size="medium" text="" textColor="" />
+    <Loading/>
   </div>
 );
 

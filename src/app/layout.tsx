@@ -2,7 +2,8 @@
 // import { overflow } from 'html2canvas/dist/types/css/property-descriptors/overflow'
 import './globals.css'
 import { X } from 'lucide-react'
- 
+import LayoutWrapper from '../components/LayoutWrapper'
+
 export const metadata = {
   title: 'HP Menu',
   description: 'Simple layout with header, footer, and dynamic content',
@@ -16,7 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />
       </head>
       <body>
-        <main style={{ maxHeight: "100vh", height: "100vh", minHeight: "100vh"}}>{children}</main>
+        <main style={{ maxHeight: "100vh", height: "100vh", minHeight: "100vh"}}>
+          <LayoutWrapper>{children}</LayoutWrapper>
+        </main>
       </body>
     </html>
   </>)

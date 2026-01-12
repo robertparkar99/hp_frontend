@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import "./triangle.css"; // custom CSS
-import { Atom } from "react-loading-indicators";
 import {
   Funnel,
   LayoutGrid,
@@ -36,6 +35,7 @@ import {
 import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/AbilityComponent/viewDialouge";
+import Loader from "@/components/utils/loading";
 
 type ApiItem = {
   id: number;
@@ -211,7 +211,7 @@ export default function Page() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+        <Loader />
       </div>
     );
   }

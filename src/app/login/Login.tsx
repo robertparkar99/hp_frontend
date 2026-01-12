@@ -106,9 +106,9 @@ const Login: React.FC = () => {
                   <h1 className="text-2xl md:text-3xl font-bold mb-1">
                     Company Name
                   </h1>
-                  <p className="text-sm md:text-lg text-center">
+                  {/* <p className="text-sm md:text-lg text-center">
                     One line Description of The Company
-                  </p>
+                  </p> */}
                 </div>
 
                 {/* Right Panel */}
