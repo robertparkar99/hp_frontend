@@ -1,11 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MoreVertical, ChevronDown, MoreHorizontal, Building2Icon, UsersIcon, MapPinIcon, BriefcaseIcon, CreditCardIcon } from "lucide-react";
 import { createPortal } from "react-dom";
-import { Edit, Plus } from "lucide-react";
 import icon from '@/components/AppIcon';
 import { Atom } from "react-loading-indicators"
-import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
 import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
 import { UserCircle, Search } from "lucide-react";
@@ -144,7 +141,6 @@ export default function Dashboard() {
 
   const [orgData, setOrgData] = useState<any>(null);
   const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
-  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [openAssessmentModal, setOpenAssessmentModal] = useState(false);
 
@@ -163,29 +159,8 @@ export default function Dashboard() {
     emp.jobrole?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Add these state variables to your component
-  const [showActions, setShowActions] = useState<number | string | null>(null);
-  const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0 });
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
 
-  // Add these handler functions
-  const handleActionMenuClick = (e: React.MouseEvent, employee: Employee) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMenuCoords({
-      top: rect.bottom + window.scrollY,
-      left: rect.left + window.scrollX,
-    });
-    setShowActions(employee.id);
-    setSelectedEmployee(employee);
-  };
-
-  const handleEditEmployeeMenu = (employee: Employee) => {
-    console.log("Edit employee:", employee);
-    setShowActions(null);
-    // Implement your edit employee logic here
-  };
   // Add this function at the top level of your component (with your other functions)
   const triggerMenuNavigation = (employeeId: number | string | null, menu: string) => {
     ;
@@ -197,28 +172,6 @@ export default function Dashboard() {
     );
   };
 
-
-
-  const handleAssignTaskMenu = (employee: Employee) => {
-    console.log("Assign task to:", employee);
-    setShowActions(null);
-    triggerMenuNavigation(employee.id, 'task/taskManagement.tsx');
-  };
-
-  // Add useEffect to close menu when clicking outside
-  // Add useEffect to close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (showActions !== null) {
-        setShowActions(null);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showActions]);
 
 
 
@@ -239,6 +192,8 @@ export default function Dashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentLevel, setCurrentLevel] = useState<number>(0);
   const [maxLevel, setMaxLevel] = useState<number>(0);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [assessments, setAssessments] = useState<any[]>([]);
 
   const attrArray = [
     { title: "knowledge", icon: "mdi-book-open-page-variant" },
@@ -319,6 +274,9 @@ export default function Dashboard() {
         console.log("Dashboard API Response:", data);
 
         setEmployees(data.employeeList ?? []);
+        const currentUser = data.employeeList?.find((emp: any) => emp.id == sessionData.userId);
+        const userJobrole = currentUser?.jobrole;
+
         setTodayTasks(data.today_task ?? []);
         setWeekTasks(data.week_task ?? []);
         setWidgetOptions(data.widget ?? []);
@@ -353,6 +311,73 @@ export default function Dashboard() {
           totalJobRoles: data.totle_jobroles ?? 0,
           totalSkills: data.totle_skills ?? 0,
         });
+
+        // Fetch courses
+        try {
+          const courseUrl = sessionData.userProfileName === "Admin"
+            ? `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfileName}`
+            : `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfileName}&jobrole=${encodeURIComponent(userJobrole)}&department=${encodeURIComponent(currentUser?.department_name || '')}`;
+
+          const courseRes = await fetch(courseUrl);
+          if (!courseRes.ok) throw new Error(`Course API error: ${courseRes.status}`);
+          const courseData = await courseRes.json();
+          const mappedCourses: any[] = [];
+          if (courseData?.lms_subject) {
+            Object.keys(courseData.lms_subject).forEach((category) => {
+              courseData.lms_subject[category].forEach((item: any) => {
+                if (sessionData.userProfileName === "Admin" || item.jobrole === userJobrole) {
+                  const course = {
+                    id: item.subject_id,
+                    title: item.subject_name,
+                    description: item.standard_name,
+                    thumbnail: item.display_image || placeholderImage,
+                    jobrole: item.jobrole,
+                    category: category
+                  };
+                  mappedCourses.push(course);
+                }
+              });
+            });
+          }
+          setCourses(mappedCourses);
+        } catch (err) {
+          console.error("Error fetching courses:", err);
+        }
+
+        // Fetch assessments
+        try {
+          const assessmentUrl = sessionData.userProfileName === "Admin"
+            ? `${sessionData.url}/lms/assessment_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfileName}`
+            : `${sessionData.url}/lms/assessment_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfileName}&jobrole=${encodeURIComponent(userJobrole)}&department=${encodeURIComponent(currentUser?.department_name || '')}`;
+
+          const assessmentRes = await fetch(assessmentUrl);
+          if (!assessmentRes.ok) throw new Error(`Assessment API error: ${assessmentRes.status}`);
+          const assessmentData = await assessmentRes.json();
+          const mappedAssessments: any[] = [];
+          if (assessmentData?.data && Array.isArray(assessmentData.data)) {
+            assessmentData.data.forEach((item: any) => {
+              const assessment = {
+                id: item.id,
+                title: item.paper_name,
+                description: item.paper_desc,
+                thumbnail: placeholderImage, // No image in data
+                jobrole: item.jobrole || '', // Not in data, placeholder
+                category: item.grade_name || item.standard_name || 'General',
+                status: item.status || 'Active', // Add status if needed
+                openDate: item.open_date,
+                closeDate: item.close_date,
+                totalQuestions: item.total_ques,
+                totalMarks: item.total_marks,
+                duration: item.time_allowed,
+                examType: item.exam_type,
+              };
+              mappedAssessments.push(assessment);
+            });
+          }
+          setAssessments(mappedAssessments);
+        } catch (err) {
+          console.error("Error fetching assessments:", err);
+        }
 
         // Chart data processing...
         if (data.week_task && data.week_task.length > 0) {
@@ -646,20 +671,20 @@ export default function Dashboard() {
 
 
   return (
-    <div className={`h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-60" : "ml-10"}`}>
+    <div className={`min-h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-0 md:ml-60" : "ml-0 md:ml-10"}`}>
       {/* 🔹 Header: Welcome + Search */}
-      <div className="flex items-center justify-between bg-white rounded-xl shadow p-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl shadow p-4 mb-6 gap-4">
 
         {/* Welcome with icon */}
         <div className="flex items-center gap-2">
-          <UserCircle className="w-7 h-7 text-blue-400" />
-          <h1 className="text-xl font-bold text-gray-800">
+          <UserCircle className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
+          <h1 className="text-lg sm:text-xl font-bold text-gray-800">
             Welcome, {sessionData?.userProfileName || "User"}
           </h1>
         </div>
 
         {/* Search bar */}
-        <div className="relative w-64">
+        <div className="relative w-full sm:w-64">
           <input
             type="text"
             placeholder="Search employees..."
@@ -670,14 +695,14 @@ export default function Dashboard() {
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
         </div>
       </div>
-      <div className="grid grid-cols-12 gap-6 ">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Left Section - Adjust column span based on sidebar state */}
-        <div className={`${isSidebarOpen ? "col-span-9" : "col-span-9"} space-y-6`}>
+        <div className="col-span-full md:col-span-9 space-y-6">
           {/* Stats + Chart - Always visible */}
           <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex gap-6">
+            <div className="flex flex-col lg:flex-row gap-6">
               {/* Stats Section */}
-              <div className="grid grid-cols-2 divide-x divide-y border rounded-lg overflow-hidden flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 divide-x divide-y border rounded-lg overflow-hidden flex-1">
                 <div className="flex items-center gap-3 border-b border-r pb-4 pr-6">
                   <div className="flex items-center gap-3 p-4">
                     <div className="w-9 h-9 rounded bg-blue-300 mb-7" />
@@ -722,7 +747,7 @@ export default function Dashboard() {
                   <h2 className="font-semibold mb-4 text-center">Weekly Task Progress</h2>
                   <div className="relative">
                     {/* Y-axis labels */}
-                    <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
+                    <div className="absolute left-0 h-48 sm:h-56 md:h-64 flex flex-col justify-between text-xs text-gray-500">
                       <span>{maxValue}</span>
                       <span>{Math.round(maxValue * 0.8)}</span>
                       <span>{Math.round(maxValue * 0.6)}</span>
@@ -732,7 +757,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Chart content */}
-                    <div className="ml-6 h-48 flex justify-between items-end gap-2">
+                    <div className="ml-6 h-48 sm:h-56 md:h-64 flex justify-between items-end gap-2">
                       {chartData.map((data, i) => (
                         <div key={i} className="flex flex-col items-center flex-1">
                           <div
@@ -773,10 +798,10 @@ export default function Dashboard() {
           </div>
           {/* Conditional rendering based on user role */}
           {sessionData?.userProfileName === "Admin" ? (
-            // Admin view - Skills Heatmap and Matrix
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            // Admin view - Skills Heatmap
+            <div className="grid grid-cols-1 gap-4">
               {/* Left: Enterprise Skills Heatmap */}
-              <div className="col-span-2 bg-white rounded-xl shadow p-4">
+              <div className="bg-white rounded-xl shadow p-4">
                 <h2 className="font-semibold text-lg mb-2">Enterprise Skills Heatmap</h2>
 
                 {/* Legend */}
@@ -796,7 +821,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Heatmap Table */}
-                <div className="h-88 overflow-x-auto scrollbar-hide">
+                <div className="h-64 sm:h-88 overflow-x-auto scrollbar-hide">
                   <table className="w-full border-separate border-spacing-1 text-sm">
                     <thead>
                       <tr className="text-left">
@@ -975,76 +1000,13 @@ export default function Dashboard() {
                   </DialogContent>
                 </Dialog>
               </>
-              {/* Right: Risk & Opportunity Matrix */}
-              <div className="bg-white rounded-xl shadow p-4">
-                <h2 className="font-semibold text-lg">Employee Attendance</h2>
-                <p className="text-xs text-gray-500 mb-3">
-                  Track and manage employee attendance efficiently
-                </p>
-
-                {/* Matrix Visualization */}
-                <div className="relative h-64 border-l-2 border-b-2 border-gray-400 mb-2">
-                  {/* Y-axis label */}
-                  <div className="absolute -left-10 ml-5 top-0 transform -rotate-90 origin-center text-xs font-medium">
-                    High
-                  </div>
-                  <div className="absolute -left-10 ml-5 bottom-0 transform -rotate-90 origin-center text-xs font-medium">
-                    Low
-                  </div>
-                  {/* Data points */}
-                  {skillsMatrixData.map((skill, index) => (
-                    <div
-                      key={index}
-                      className={`absolute w-3 h-3 rounded-full cursor-pointer ${getGapColor(skill.gap)}
-                        ${selectedSkill && selectedSkill.skill === skill.name ?
-                          'ring-2 ring-offset-1 ring-black' : ''}`}
-                      style={{
-                        left: `${skill.availability}%`,
-                        bottom: `${skill.impact}%`,
-                        transform: 'translate(-50%, 50%)'
-                      }}
-                      onClick={() => handleSkillSelect(skill.name)}
-                      title={`${skill.name}: Impact ${skill.impact}%, Availability ${skill.availability}%`}
-                    />
-                  ))}
-                </div>
-
-                {/* Legend */}
-                <div className="flex gap-4 mt-4 text-sm flex-wrap">
-                  <span className="flex items-center gap-1">
-                    <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                    High Priority (High Impact, Scarce)
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                    Strategic Watch (High Impact, Available)
-                  </span>
-                </div>
-
-                {/* Selected skill details */}
-                {selectedSkill && (
-                  <div className="mt-3 p-2 bg-gray-100 rounded text-xs">
-                    <strong>Selected:{selectedSkill.skill}
-                    </strong>
-                    {skillsMatrixData.filter(skill => skill.name === selectedSkill.skill).map(skill => (
-                      <div key={skill.name}>
-                        Impact: {skill.impact}% | Availability: {skill.availability}% | Gap: {skill.gap}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <p className="text-xs text-gray-500 mt-2">
-                  Click on any point to view skill details
-                </p>
-              </div>
             </div>
           ) : (
 
             // Non-admin view - Skill Profile and Growth Opportunities
             <div className="space-y-6">
               {/* My Skill Profile */}
-              <div className="p-4 bg-white rounded-lg shadow h-110 overflow-y-auto hide-scroll">
+              <div className="p-4 bg-white rounded-lg shadow min-h-[27.5rem] h-110 md:h-128 overflow-y-auto hide-scroll">
                 <h2 className="font-semibold text-lg flex items-center gap-2 mb-1">
                   <span>🧑‍💻</span> My Skill Profile
                 </h2>
@@ -1250,11 +1212,11 @@ export default function Dashboard() {
             </div>
           )}
           {/* Employee Table - Full width row */}
-          <div className="col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll mb-15 ">
+          <div className="col-span-full md:col-span-9 bg-white rounded-xl shadow min-h-[24rem] h-96 md:h-[28rem] overflow-x-auto md:overflow-x-visible overflow-y-auto hide-scroll mb-15 ">
               {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
 
               {/* Table Headers with Search Fields */}
-              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
                 {/* Employee Column with Search */}
                 <div className="flex flex-col">
                   <span className="flex items-center mb-1">Employee</span>
@@ -1309,39 +1271,13 @@ export default function Dashboard() {
                     onChange={(e) => handleColumnFilter("status", e.target.value)}
                   />
                 </div>
-
-                {/* Action Column with + Button */}
-                <div className="flex flex-col items-center justify-center">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="flex items-center mb-1">Action</span>
-                    {/* <button
-                      onClick={() => setIsAddUserModalOpen(true)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
-                    >
-                      +
-                    </button> */}
-                    {isAddUserModalOpen && (
-                      <AddUserModal
-                        isOpen={isAddUserModalOpen}
-                        setIsOpen={setIsAddUserModalOpen}
-                        sessionData={sessionData}
-                        userJobroleLists={[]}
-                        userDepartmentLists={[]}
-                        userLOR={[]}
-                        userProfiles={[]}
-                        userLists={[]}
-                      />
-
-                    )}
-                  </div>
-                </div>
               </div>
 
               {/* Employee Rows */}
               {filteredEmployees.map((emp) => (
                 <div
                   key={emp.id}
-                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
+                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <img
@@ -1375,42 +1311,6 @@ export default function Dashboard() {
                   >
                     {emp.status}
                   </span>
-
-                  <div className="flex relative">
-                    <MoreHorizontal
-                      className="w-4 h-4 text-gray-500 cursor-pointer flex-shrink-0"
-                      onClick={(e) => handleActionMenuClick(e, emp)}
-                    />
-
-                    {/* Action Menu */}
-                    {showActions === emp.id && (
-                      <div
-                        className="absolute w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
-                        style={{
-                          top: '100%',
-                          right: 0,
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="py-2">
-                          <button
-                            onClick={() => handleEditEmployeeMenu(emp)}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                          >
-                            <Edit size={16} />
-                            <span>Edit Employee</span>
-                          </button>
-                          <button
-                            onClick={() => handleAssignTaskMenu(emp)}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                          >
-                            <Plus size={16} />
-                            <span>Assign Task</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               ))}
             </div>
@@ -1418,7 +1318,7 @@ export default function Dashboard() {
         </div>
 
         {/* Right Section - Adjust column span based on sidebar state */}
-        <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
+        <div className="col-span-full md:col-span-3 space-y-6">
           <div className="bg-white rounded-lg shadow">
             {/* Tab Navigation */}
             <div className="flex border-b">
@@ -1440,7 +1340,7 @@ export default function Dashboard() {
             <div className="p-4">
               {/* Today's Tasks */}
               {(selectedWidget === "Today Task List" || !selectedWidget) && (
-                <div className="h-61 overflow-y-auto hide-scroll">
+                <div className="h-48 sm:h-56 md:h-64 overflow-y-auto hide-scroll">
                   {/* Header with + button */}
                   <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white dark:bg-gray-900">
                     <h2 className="font-semibold">Today's Task Progress</h2>
@@ -1513,7 +1413,7 @@ export default function Dashboard() {
 
               {/* Weekly Tasks */}
               {selectedWidget === "Week Task List" && (
-                <div className="h-66 overflow-y-auto hide-scroll">
+                <div className="h-52 sm:h-60 md:h-72 overflow-y-auto hide-scroll">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-semibold">Weekly Task Progress</h2>
 
@@ -1586,7 +1486,7 @@ export default function Dashboard() {
           </div>
           <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
             {/* Course List */}
-            <div className=" bg-white rounded-lg shadow h-125 overflow-y-auto hide-scroll">
+            <div className=" bg-white rounded-lg shadow h-80 sm:h-125 overflow-y-auto hide-scroll">
               {/* Header with + button */}
               <div className="sticky top-0 z-10 flex items-center justify-between mb-4 px-4 pt-2 pb-1 bg-white shadow-sm">
                 <h2 className="font-semibold">Course List</h2>
@@ -1598,60 +1498,23 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {todayTasks.length > 0 ? (
-                todayTasks.map((task, index) => {
-                  // ✅ Define color mapping
-                  const badgeColors: Record<string, string> = {
-                    Hard: "text-red-700 bg-red-500 border-red-400",
-                    Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
-                    Low: "text-green-700 bg-green-500 border-green-400",
-                  };
-
-                  return (
-                    <div key={index} className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
-                      }`}>
-                      {/* Badge */}
-                      <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
-                        }`}>
-                        {task.task_type}
-                      </span>
-
-                      {/* Title */}
-                      <p className="mt-2">{task.task_title}</p>
-
-                      {/* Profile */}
-                      <div className="flex items-center gap-2 mt-2">
-                        <img
-                          src={
-                            task.image && task.image !== ""
-                              ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
-                              : placeholderImage
-                          }
-                          alt={task.allocatedUser}
-                          className="w-8 h-8 rounded-full object-cover"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                          }}
-                        />
-                        <div>
-                          <p className="text-sm font-medium">{task.allocatedUser}</p>
-                          <p className="text-xs text-gray-400">
-                            {(() => {
-                              if (!task.task_date) return "";
-                              const d = new Date(task.task_date);
-                              const day = String(d.getDate()).padStart(2, "0");
-                              const month = String(d.getMonth() + 1).padStart(2, "0");
-                              const year = d.getFullYear();
-                              return `${day}-${month}-${year}`;
-                            })()}
-                          </p>
-                        </div>
+              {courses.length > 0 ? (
+                courses.slice(0, 5).map(course => (
+                  <div key={course.id} className="mb-4 border-l-2 pl-3 border-blue-300">
+                    <span className="text-xs font-semibold px-2 py-1 rounded text-blue-700 bg-blue-100 border-blue-400">
+                      {course.category.toLowerCase().includes('task') ? 'Task-Based' : 'Skill-Based'}: {course.category}
+                    </span>
+                    <p className="mt-2">{course.title}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div>
+                        <p className="text-sm font-medium">{course.jobrole}</p>
+                        <p className="text-xs text-gray-400">{course.description}</p>
                       </div>
                     </div>
-                  )
-                })
+                  </div>
+                ))
               ) : (
-                <p className="text-gray-500 text-sm">No course</p>
+                <p className="text-gray-500 text-sm">No courses available</p>
               )}
             </div>
                <AddCourseDialog
@@ -1662,7 +1525,7 @@ export default function Dashboard() {
             />
 
             {/* Assessment List */}
-            <div className="bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll">
+            <div className="bg-white rounded-lg shadow h-64 sm:h-95 overflow-y-auto hide-scroll">
               {/* Header with + button */}
               <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white px-2 pt-2 pb-1 shadow-sm">
                 <h2 className="font-semibold">Assessment List</h2>
@@ -1674,60 +1537,23 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {weekTasks.length > 0 ? (
-                weekTasks.map((task, index) => {
-                  // ✅ Define color mapping
-                  const badgeColors: Record<string, string> = {
-                    Hard: "text-red-700 bg-red-500 border-red-400",
-                    Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
-                    Low: "text-green-700 bg-green-500 border-green-400",
-                  };
-
-                  return (
-                    <div key={index} className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
-                      }`}>
-                      {/* Badge */}
-                      <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
-                        }`}>
-                        {task.task_type}
-                      </span>
-
-                      {/* Title */}
-                      <p className="mt-2">{task.task_title}</p>
-
-                      {/* Profile */}
-                      <div className="flex items-center gap-2 mt-2">
-                        <img
-                          src={
-                            task.image && task.image !== ""
-                              ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
-                              : placeholderImage
-                          }
-                          alt={task.allocatedUser}
-                          className="w-8 h-8 rounded-full object-cover"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                          }}
-                        />
-                        <div>
-                          <p className="text-sm font-medium">{task.allocatedUser}</p>
-                          <p className="text-xs text-gray-400">
-                            {(() => {
-                              if (!task.task_date) return "";
-                              const d = new Date(task.task_date);
-                              const day = String(d.getDate()).padStart(2, "0");
-                              const month = String(d.getMonth() + 1).padStart(2, "0");
-                              const year = d.getFullYear();
-                              return `${day}-${month}-${year}`;
-                            })()}
-                          </p>
-                        </div>
+              {assessments.length > 0 ? (
+                assessments.slice(0, 5).map(assessment => (
+                  <div key={assessment.id} className="mb-4 border-l-2 pl-3 border-green-300">
+                    <span className="text-xs font-semibold px-2 py-1 rounded text-green-700 bg-green-100 border-green-400">
+                      {assessment.category.toLowerCase().includes('task') ? 'Task-Based' : 'Skill-Based'}: {assessment.category}
+                    </span>
+                    <p className="mt-2">{assessment.title}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div>
+                        <p className="text-sm font-medium">{assessment.jobrole}</p>
+                        <p className="text-xs text-gray-400">{assessment.description}</p>
                       </div>
                     </div>
-                  )
-                })
+                  </div>
+                ))
               ) : (
-                <p className="text-gray-500 text-sm">No assessment</p>
+                <p className="text-gray-500 text-sm">No assessments available</p>
               )}
             </div>
             <CreateAssessmentModal

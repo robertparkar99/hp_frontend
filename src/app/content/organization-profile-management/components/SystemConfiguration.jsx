@@ -79,6 +79,7 @@ const SystemConfiguration = () => {
   const [sessionData, setSessionData] = useState({});
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [userDepartment, setUserDepartment] = useState('');
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -457,7 +458,7 @@ const SystemConfiguration = () => {
         "Assigned To",
         "Due Date",
         "Frequency",
-        "Custom Frequency Details",
+        // "Custom Frequency Details",
         "Attachment",
       ],
       ...dataList.map((item, i) => [
@@ -713,6 +714,28 @@ const SystemConfiguration = () => {
 
   const displayData = filteredData.length > 0 ? filteredData : dataList;
 
+  // Create formatted data for print and export with display names
+  const formattedData = displayData.map((row, index) => {
+    const userMap = {};
+    allUsers.forEach(user => {
+      userMap[user.id] = user.name;
+    });
+
+    return {
+      "Sr No.": index + 1,
+      "Name": row.name,
+      "Description": row.description,
+      "Standard Name": row.standard_name || "",
+      "Assigned To": userMap[row.assigned_to] || "N/A",
+      "Due Date": row.duedate || "",
+      "Frequency": row.frequency || "",
+      // "Custom Frequency Details": row.custom_frequency_details || "",
+      "Attachment": row.attachment?.name || row.attachment || "N/A",
+    };
+  });
+
+  const printData = formattedData;
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Add Form */}
@@ -756,7 +779,7 @@ const SystemConfiguration = () => {
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Department" />
             </SelectTrigger>
-            <SelectContent className="max-h-40 max-w-85 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+            <SelectContent className="max-h-40 max-w-85 scroll-smooth overflow-y-auto z-50" side="bottom" align="start" avoidCollisions={false}>
               {departmentOptions.map((dept) => (
                 <SelectItem key={dept.id} value={dept.name} className="whitespace-normal break-words">
                   {dept.name}
@@ -776,7 +799,7 @@ const SystemConfiguration = () => {
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Employee" />
             </SelectTrigger>
-            <SelectContent className="max-h-60 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+            <SelectContent className="max-h-60 scroll-smooth overflow-y-auto z-50" side="bottom" align="start" avoidCollisions={false}>
               {userOptions.map((user) => (
                 <SelectItem key={user.id} value={user.id.toString()} className="whitespace-normal break-words">
                   {user.name}
@@ -809,7 +832,7 @@ const SystemConfiguration = () => {
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Frequency" />
             </SelectTrigger>
-            <SelectContent className="max-h-35 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+            <SelectContent className="max-h-35 scroll-smooth overflow-y-auto z-50" side="bottom" align="start" avoidCollisions={false}>
               {["One-Time", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Custom"].map(
                 (opt) => (
                   <SelectItem key={opt} value={opt} className="whitespace-normal break-words">
@@ -863,9 +886,9 @@ const SystemConfiguration = () => {
           </div>
           <div className="flex space-x-2">
             <PrintButton
-              data={filteredData.length > 0 ? filteredData : dataList}
-              title="Incident Reports"
-              excludedFields={["id"]}
+              data={printData}
+              title="compliance Reports"
+              excludedFields={[]}
               buttonText={
                 <>
                   <span className="mdi mdi-printer-outline"></span>
@@ -873,8 +896,8 @@ const SystemConfiguration = () => {
               }
             />
             <ExcelExportButton
-              sheets={[{ data: filteredData.length > 0 ? filteredData : dataList, sheetName: "Incident Reports" }]}
-              fileName="incident_reports"
+              sheets={[{ data: formattedData, sheetName: "compliance Reports" }]}
+              fileName="compliance_reports"
               buttonText={
                 <>
                   <span className="mdi mdi-file-excel"></span>
@@ -882,8 +905,8 @@ const SystemConfiguration = () => {
               }
             />
             <PdfExportButton
-              data={filteredData.length > 0 ? filteredData : dataList}
-              fileName="incident_reports"
+              data={formattedData}
+              fileName="compliance_reports"
               buttonText={
                 <>
                   <span className="mdi mdi-file-pdf-box"></span>
@@ -949,7 +972,7 @@ const SystemConfiguration = () => {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Department" />
                 </SelectTrigger>
-                <SelectContent className="max-h-60 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+                <SelectContent className="max-h-60 scroll-smooth overflow-y-auto z-50" side="bottom" align="start" avoidCollisions={false}>
                   {departmentOptions.map((dept) => (
                     <SelectItem key={dept.id} value={dept.name} className="whitespace-normal break-words">
                       {dept.name}
@@ -969,7 +992,7 @@ const SystemConfiguration = () => {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select User" />
                 </SelectTrigger>
-                <SelectContent className="max-h-60 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+                <SelectContent className="max-h-60 scroll-smooth overflow-y-auto z-50" side="bottom" align="start" avoidCollisions={false}>
                   {editUserOptions.map((user) => (
                     <SelectItem key={user.id} value={user.id.toString()} className="whitespace-normal break-words">
                       {user.name}
@@ -1001,7 +1024,7 @@ const SystemConfiguration = () => {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Frequency" />
                 </SelectTrigger>
-                <SelectContent className="max-h-60 scroll-smooth overflow-y-auto" side="bottom" align="start" avoidCollisions={false}>
+                <SelectContent className="max-h-60 scroll-smooth overflow-y-auto z-50" side="bottom" align="start" avoidCollisions={false}>
                   {["One-Time", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Custom"].map(
                     (opt) => (
                       <SelectItem key={opt} value={opt} className="whitespace-normal break-words">

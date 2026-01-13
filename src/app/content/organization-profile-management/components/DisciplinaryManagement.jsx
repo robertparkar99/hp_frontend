@@ -739,6 +739,35 @@ const SystemConfiguration = () => {
     },
   };
 
+  // Create maps for display names
+  const departmentMap = {};
+  departmentOptions.forEach(dept => {
+    departmentMap[dept.id] = dept.name;
+  });
+
+  const userMap = {};
+  [...userOptions, ...witnessOptions].forEach(user => {
+    userMap[user.id] = user.name;
+  });
+
+  const displayData = filteredData.length > 0 ? filteredData : dataList;
+
+  // Create formatted data for print and export with display names
+  const formattedData = displayData.map((row, index) => ({
+    "Sr No.": index + 1,
+    "Department": departmentMap[row.department_id] || row.department_name || "",
+    "Employee": userMap[row.employee_id] || row.employee_name || "",
+    "Incident Date-Time": row.incident_datetime || "",
+    "Location": row.location || "",
+    "Misconduct Type": row.misconduct_type || "",
+    "Description": row.description || "",
+    "Witnesses": userMap[row.witness_id] || row.witness_name || "",
+    "Action Taken": row.action_taken || "",
+    "Remarks": row.remarks || "",
+    "Reported By Name": userMap[row.user_id] || row.reported_by_name || "",
+    "Date of Report": row.date_of_report || row.created_date || "",
+  }));
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Form */}
@@ -934,9 +963,9 @@ const SystemConfiguration = () => {
           </div>
           <div className="flex space-x-2">
             <PrintButton
-              data={filteredData.length > 0 ? filteredData : dataList}
+              data={formattedData}
               title="Incident Reports"
-              excludedFields={["id"]}
+              excludedFields={[]}
               buttonText={
                 <>
                   <span className="mdi mdi-printer-outline"></span>
@@ -944,7 +973,7 @@ const SystemConfiguration = () => {
               }
             />
             <ExcelExportButton
-              sheets={[{ data: filteredData.length > 0 ? filteredData : dataList, sheetName: "Incident Reports" }]}
+              sheets={[{ data: formattedData, sheetName: "Incident Reports" }]}
               fileName="incident_reports"
               buttonText={
                 <>
@@ -953,7 +982,7 @@ const SystemConfiguration = () => {
               }
             />
             <PdfExportButton
-              data={filteredData.length > 0 ? filteredData : dataList}
+              data={formattedData}
               fileName="incident_reports"
               buttonText={
                 <>
