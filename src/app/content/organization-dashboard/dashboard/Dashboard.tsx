@@ -261,7 +261,7 @@ export function Dashboard() {
                 value={loading ? "..." : data?.total_employees?.toString() || "0"}
                 // change={{ value: "+12 this month", type: "positive" }}
                 icon={Users}
-                description="Active users in the organization"
+                // description="Active users in the organization"
               />
 
               {/* Eye Icon in top-right */}
@@ -279,7 +279,7 @@ export function Dashboard() {
                 value={loading ? "..." : data?.total_departments?.toString() || "0"}
                 // change={{ value: "+1 this month", type: "positive" }}
                 icon={Building2}
-                description="Active departments and teams"
+                // description="Active departments and teams"
               />
               <button
                 onClick={() => setActiveView("departmentStructure")}
@@ -294,7 +294,7 @@ export function Dashboard() {
               value={loading ? "..." : data?.total_complainces?.toString() || "0"}
               // change={{ value: "-3 from last week", type: "negative" }}
               icon={ShieldCheck}
-              description="Awaiting management approval"
+              // description="Awaiting management approval"
             />
 
             <MetricCard
@@ -302,7 +302,7 @@ export function Dashboard() {
               value={loading ? "..." : data?.total_disciplinary?.toString() || "0"}
               // change={{ value: "+2 vs last quarter", type: "positive" }}
               icon={AudioLines}
-              description="Active disciplinary actions"
+              // descriptio n="Active disciplinary actions"
             />
           </div>
 

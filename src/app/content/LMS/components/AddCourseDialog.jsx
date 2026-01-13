@@ -31,9 +31,12 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
 
   // Additional fields
   const [standardId, setStandardId] = useState("");
+  const [selectedJobrole, setSelectedJobrole] = useState("");
 
   // Standards data
-  const [standards, setStandards] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [jobrolesByDept, setJobrolesByDept] = useState({});
+  const [availableJobroles, setAvailableJobroles] = useState([]);
   const [loadingStandards, setLoadingStandards] = useState(false);
 
   // Session data
@@ -77,26 +80,26 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
         console.log("Department API Response:", json);
 
         if (json && json.data) {
-          // Extract unique departments
-          const deptMap = new Map();
-          Object.keys(json.data).forEach((key) => {
-            json.data[key].forEach((jobrole) => {
-              if (jobrole.department_id && !deptMap.has(jobrole.department_id)) {
-                deptMap.set(jobrole.department_id, {
-                  id: jobrole.department_id,
-                  department_name: jobrole.department_name,
-                });
-              }
-            });
-          });
-          const deptArray = Array.from(deptMap.values());
-          setStandards(deptArray);
-        } else {
-          setStandards([]);
-        }
+           const jobrolesByDeptTemp = {};
+           const deptArray = [];
+           Object.keys(json.data).forEach((deptKey) => {
+             const jobroles = json.data[deptKey];
+             if (jobroles.length > 0) {
+               const deptId = jobroles[0].department_id;
+               jobrolesByDeptTemp[deptId] = jobroles;
+               deptArray.push({ id: deptId, department_name: jobroles[0].department_name });
+             }
+           });
+           setJobrolesByDept(jobrolesByDeptTemp);
+           setDepartments(deptArray);
+         } else {
+           setDepartments([]);
+           setJobrolesByDept({});
+         }
       } catch (err) {
         console.error("Error fetching departments:", err);
-        setStandards([]);
+        setDepartments([]);
+        setJobrolesByDept({});
       } finally {
         setLoadingStandards(false);
       }
@@ -106,6 +109,15 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
       fetchDepartments();
     }
   }, [open, sessionData]);
+
+  // Update available jobroles when department changes
+  useEffect(() => {
+    if (standardId && jobrolesByDept[standardId]) {
+      setAvailableJobroles(jobrolesByDept[standardId]);
+    } else {
+      setAvailableJobroles([]);
+    }
+  }, [standardId, jobrolesByDept]);
 
   // Build form data
   const buildFormData = () => {
@@ -142,6 +154,7 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
     formData.append("subject_type", subjectType);
     formData.append("short_name", shortName);
     formData.append("standard_id", standardId);
+    formData.append("jobrole", selectedJobrole);
 
     return formData;
   };
@@ -155,7 +168,7 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
     }
 
     if (!standardId) {
-      alert("Please select a standard");
+      alert("Please select a department");
       return;
     }
 
@@ -198,6 +211,7 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
         difficulty: "beginner",
         short_name: result.short_name || shortName,
         subject_type: result.subject_type || subjectType,
+        jobrole: result.jobrole || selectedJobrole,
         progress: 0,
         instructor: "Admin",
         isNew: true,
@@ -230,6 +244,7 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
       setSubjectType(course.subject_type || "");
       setShortName(course.short_name || "");
       setStandardId(course.standard_id?.toString() || "");
+      setSelectedJobrole(course.jobrole || "");
       setDisplay(
         course.status === "1" ||
         course.status === 1 ||
@@ -243,6 +258,7 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
       setSubjectType("");
       setShortName("");
       setStandardId("");
+      setSelectedJobrole("");
       setDisplay(true);
     }
     setDisplayImage(null); // Always reset image
@@ -368,7 +384,7 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
                   <SelectValue placeholder="Select Department" />
                 </SelectTrigger>
                 <SelectContent className="w-100">
-                  {standards.map((dept) => (
+                  {departments.map((dept) => (
                     <SelectItem key={dept.id} value={dept.id?.toString() || ""}>
                       {dept.department_name}
                     </SelectItem>
@@ -381,6 +397,28 @@ const AddCourseDialog = ({ open, onOpenChange, onSave, course }) => {
                   Loading standards...
                 </p>
               )}
+            </div>
+
+            {/* Jobrole */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Jobrole
+              </label>
+              <Select
+                value={selectedJobrole}
+                onValueChange={setSelectedJobrole}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Jobrole" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableJobroles.map((jr) => (
+                    <SelectItem key={jr.id} value={jr.jobrole}>
+                      {jr.jobrole}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Sort Order */}
