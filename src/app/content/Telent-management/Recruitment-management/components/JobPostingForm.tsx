@@ -993,7 +993,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
                     <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                   </label>
                   
-                  <Button
+                  {/* <Button
                     type="button"
                     variant="outline"
                     size="sm"
@@ -1003,7 +1003,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
                   >
                     <Plus className="h-3 w-3" />
                     Add New
-                  </Button>
+                  </Button> */}
                 </div>
 
                 {showAddJobRole ? (

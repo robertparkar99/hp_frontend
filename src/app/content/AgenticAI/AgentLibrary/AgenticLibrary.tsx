@@ -1,3 +1,4 @@
+import Loader from '@/components/utils/loading';
 import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -302,7 +303,7 @@ export default function AgenticLibrary() {
           ))}
           {loading ? (
             <div className="col-span-full text-center py-8">
-              <p className="text-gray-500">Loading agents...</p>
+              <Loader/>
             </div>
           ) : (
             fetchedAgents.map((agent) => (

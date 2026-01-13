@@ -33,9 +33,9 @@ import {
   FilterX,
   MoreVertical
 } from "lucide-react";
-import { Atom } from "react-loading-indicators";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/BehaviourComponent/viewDialouge";
+import Loader from "@/components/utils/loading";
 
 interface BehaviourItem {
   id: number;
@@ -605,7 +605,7 @@ const BehaviourGrid = () => {
       {viewMode === "cards" ? (
         loadingCards ? (
           <div className="flex justify-center items-center h-screen">
-            <Atom color="#525ceaff" size="medium" text="" textColor="" />
+            <Loader/>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">

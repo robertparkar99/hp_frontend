@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { mockLogs } from '@/lib/mockData';
 import StatusBadge from '../../AgentDashboard/Component/StatusBadge';
 import { Search, Clock, DollarSign, Zap } from 'lucide-react';
+import Loader from '@/components/utils/loading';
 
 type TaskStatus = 'success' | 'error' | 'training' | 'completed' | string;
 
@@ -165,7 +166,7 @@ export default function RunLogs() {
 
         <TabsContent value="runs" className="space-y-4">
           {loadingRuns ? (
-            <p className="text-muted-foreground">Loading runs...</p>
+            <Loader/>
           ) : filteredRuns.length > 0 ? filteredRuns.map((run) => (
             <Card key={run.id}>
               <CardHeader>
@@ -222,7 +223,7 @@ export default function RunLogs() {
 
         <TabsContent value="logs" className="space-y-4">
           {loadingTraces ? (
-            <p className="text-muted-foreground">Loading traces...</p>
+            <Loader/>
           ) : filteredRuns.map((run) => {
             const runTasks = groupedTraces[run.id] || [];
 

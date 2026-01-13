@@ -90,9 +90,9 @@ const ResetPassword: React.FC = () => {
                   <h1 className="text-2xl md:text-2xl font-bold mb-1 text-center">
                     Energizing Employees
                   </h1>
-                  <p className="text-sm md:text-sm text-center">
+                  {/* <p className="text-sm md:text-sm text-center">
                     One line Description of The Company
-                  </p>
+                  </p> */}
                 </div>
 
                 {/* Right Panel - Password Form */}

@@ -2,6 +2,7 @@
 
 "use client";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -269,6 +270,8 @@ const JobDetailsDialog = ({ job, open, onOpenChange }: JobDetailsDialogProps) =>
 };
 
 const HRDashboard = () => {
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'jobs');
   const [isJobFormOpen, setIsJobFormOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
@@ -282,12 +285,44 @@ const HRDashboard = () => {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
   const [applicationScores, setApplicationScores] = useState<{ [key: number]: number | null }>({});
+
+  // Update activeTab when searchParams changes
+  useEffect(() => {
+    const tab = searchParams.get('tab') || 'jobs';
+    setActiveTab(tab);
+  }, [searchParams]);
 
   // Handle view application details
   const handleViewApplication = (application: JobApplication) => {
     setSelectedApplication(application);
+    // Create a basic candidate object from the application
+    const candidate = {
+      id: application.id.toString(),
+      name: `${application.first_name || ''} ${application.middle_name || ''} ${application.last_name || ''}`.trim(),
+      email: application.email,
+      phone: application.mobile,
+      position: '', // Will be set if job is found
+      experience: application.experience || '',
+      education: application.education || '',
+      location: application.current_location || '',
+      skills: application.skills ? application.skills.split(',').map(s => s.trim()) : [],
+      score: null,
+      status: 'pending' as const,
+      appliedDate: application.applied_date || '',
+      resumeUrl: application.resume_path || '',
+      matchDetails: {
+        skillsMatch: null,
+        experienceMatch: null,
+        educationMatch: null,
+        cultural_fit: null
+      },
+      originalApplication: application,
+      isScreened: false
+    };
+    setSelectedCandidate(candidate);
     setIsApplicationDialogOpen(true);
   };
 
@@ -696,7 +731,7 @@ const HRDashboard = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="jobs" className="space-y-4 lg:space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 lg:space-y-6">
           {/* Mobile Tabs Dropdown */}
           <div className="lg:hidden">
             <select
@@ -1041,6 +1076,7 @@ const HRDashboard = () => {
       />
 <ApplicationDetailsDialog
   application={selectedApplication}
+        candidate={selectedCandidate}
   jobPostings={jobPostings}
   open={isApplicationDialogOpen}
   onOpenChange={setIsApplicationDialogOpen}

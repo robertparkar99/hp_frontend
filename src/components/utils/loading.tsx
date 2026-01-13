@@ -1,35 +1,57 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import Lottie, { LottieRefCurrentProps } from "lottie-react";
+import animationData from "../../../public/assets/loading/loading.json";
 
-const Loading = () => {
-    const [session, setSession] = useState<any>(null);
+type LoaderProps = {
+  isRouteLoading?: boolean;
+};
 
-    useEffect(() => {
-        const userData = localStorage.getItem('userData');
-        setSession(userData);
-    }, []);
+export default function Loader({ isRouteLoading = false }: LoaderProps) {
+  const [isVisible, setIsVisible] = useState(true);
+  const lottieRef = useRef<LottieRefCurrentProps>(null);
 
-    return (<div
-        className="overloadGif flex items-center justify-center w-full h-screen z-[1000] bg-white overflow-hidden"
-        id="overloadGif"
-    >
-        <div className="flex flex-col items-center justify-center min-h-screen bg-white space-y-6">
-            {/* Glowing Ring Spinner */}
-            <div className="relative w-20 h-20">
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-l-blue-500 animate-spin shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
-                <div className="absolute inset-2 rounded-full bg-white dark:bg-gray-900"></div>
-            </div>
+  useEffect(() => {
+    if (lottieRef.current) {
+      lottieRef.current.setSpeed(1.5);
+    }
 
-            {/* Animated Text */}
-            <p className="text-xl font-semibold bg-gradient-to-r from-blue-500 to-bluse-500 text-transparent bg-clip-text animate-pulse tracking-wide">
-                Loading Please Wait...
-            </p>
+    // Minimum loader visibility (prevents flash)
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+    }, 2000);
 
-            {/* Optional subtitle or loader bar */}
-            <div className="w-40 h-2 bg-gradient-to-r from-blue-400 via-bluse-400 to-blue-400 rounded-full animate-pulse"></div>
-        </div>
-    </div>);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const showLoader = isVisible || isRouteLoading;
+
+  if (!showLoader) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white">
+      <div className="relative flex items-center justify-center w-[200px] h-[200px] md:w-[250px] md:h-[250px]">
+        {/* Center Logo */}
+        <img
+          src="/assets/loading/logo.png"
+          alt="Scholar Clone Logo"
+          className="absolute z-10 w-14 md:w-16 top-[62%] left-1/2 -translate-x-1/2 -translate-y-1/2"
+        />
+
+        {/* Lottie Animation */}
+        <Lottie
+          lottieRef={lottieRef}
+          animationData={animationData}
+          loop
+          autoplay
+        />
+      </div>
+
+      <h2 className="mt-2 text-lg md:text-xl font-semibold text-[#2A518A] animate-pulse">
+        Streamlining Success, Energizing Employees
+      </h2>
+    </div>
+  );
 }
 
-export default Loading;

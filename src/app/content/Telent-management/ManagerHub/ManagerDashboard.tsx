@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 // import Navigation from "../Recruitment-management/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import ViewFullProfileDialog from "./ViewFullProfileDialog";
 import {
   CheckCircle,
@@ -37,7 +39,42 @@ interface InterviewFeedback {
   notes: string;
 }
 
+// Dummy data for demonstration
+const dummyInterviewFeedback: InterviewFeedback[] = [
+  {
+    id: 1,
+    candidate: "John Smith",
+    position: "Senior Software Engineer",
+    interviewer: "Sarah Johnson",
+    date: "2024-01-15",
+    status: "Completed",
+    overallRating: 8.5,
+    notes: "Key Strengths: Strong technical skills, good problem-solving\nConcerns: Limited experience with cloud technologies"
+  },
+  {
+    id: 2,
+    candidate: "Emily Davis",
+    position: "Product Manager",
+    interviewer: "Mike Chen",
+    date: "2024-01-14",
+    status: "Completed",
+    overallRating: 9.2,
+    notes: "Key Strengths: Excellent communication, strategic thinking\nConcerns: Needs more experience in agile methodologies"
+  },
+  {
+    id: 3,
+    candidate: "Robert Kim",
+    position: "UX Designer",
+    interviewer: "Lisa Wong",
+    date: "2024-01-13",
+    status: "Pending Review",
+    overallRating: 7.8,
+    notes: "Key Strengths: Creative portfolio, user research skills\nConcerns: Limited experience with design systems"
+  }
+];
+
 const ManagerDashboard = () => {
+  const router = useRouter();
 
   const [interviewFeedback, setInterviewFeedback] = useState<InterviewFeedback[]>([]);
   const [sessionData, setSessionData] = useState<any>(null);
@@ -45,6 +82,24 @@ const ManagerDashboard = () => {
   const [teamOverview, setTeamOverview] = useState<any>(null);
   const [selectedInterview, setSelectedInterview] = useState<InterviewFeedback | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [hiringNotes, setHiringNotes] = useState<{ [key: string]: string }>({});
+
+  const handleHired = async (interview: InterviewFeedback) => {
+    // For demo purposes, simulate API call success
+    console.log('Hiring candidate:', interview.candidate, 'Notes:', hiringNotes[interview.id]);
+
+    // Navigate to offer management with candidate data
+    router.push(`/content/Telent-management/Offer-management?candidate=${encodeURIComponent(interview.candidate)}&position=${encodeURIComponent(interview.position)}`);
+  };
+
+  const handleReject = async (interview: InterviewFeedback) => {
+    // For demo purposes, simulate rejection
+    console.log('Rejecting candidate:', interview.candidate, 'Notes:', hiringNotes[interview.id]);
+
+    // Remove from the list
+    setInterviewFeedback(prev => prev.filter(item => item.id !== interview.id));
+  };
+
   // Fetch session data on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -63,7 +118,7 @@ const ManagerDashboard = () => {
       try {
         const response = await fetch(`${sessionData.url}/api/feedback?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
         const result = await response.json();
-        if (result.status) {
+        if (result.status && result.data) {
           const mappedFeedbacks: InterviewFeedback[] = result.data.map((data: any) => {
             const criteria = JSON.parse(data.evaluation_criteria);
             const totalScore = criteria.reduce((sum: number, item: { score: number }) => sum + item.score, 0);
@@ -80,10 +135,15 @@ const ManagerDashboard = () => {
             };
           });
 
-          setInterviewFeedback(mappedFeedbacks);
+          // Combine API data with dummy data
+          setInterviewFeedback([...mappedFeedbacks, ...dummyInterviewFeedback]);
+        } else {
+          // Use dummy data when API doesn't return data
+          setInterviewFeedback(dummyInterviewFeedback);
         }
       } catch (error) {
-        console.error('Error fetching feedback:', error);
+        console.warn('Using dummy data due to API error:', error);
+        setInterviewFeedback(dummyInterviewFeedback);
       } finally {
         setLoading(false);
       }
@@ -230,7 +290,7 @@ const ManagerDashboard = () => {
                           View Details
                         </Button>
                         <div className="space-x-2">
-                          <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground">
+                          <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/20">
                             <ThumbsDown className="w-4 h-4 mr-2" />
                             Reject
                           </Button>
@@ -298,23 +358,42 @@ const ManagerDashboard = () => {
                           </div>
                         )}
 
+                          {interview.status === "Completed" && (
+                            <div className="mb-4">
+                              <h4 className="font-medium mb-2">Hiring Notes:</h4>
+                              <Textarea
+                                placeholder="Add notes for hiring decision..."
+                                value={hiringNotes[interview.id] || ''}
+                                onChange={(e) => setHiringNotes(prev => ({ ...prev, [interview.id]: e.target.value }))}
+                                className="min-h-[80px]"
+                              />
+                            </div>
+                          )}
+
                         <div className="flex justify-between items-center">
                           <Button variant="outline" onClick={() => { setSelectedInterview(interview); setDialogOpen(true); }}>
                             <Eye className="w-4 h-4 mr-2" />
                             View Full Profile
-                          </Button>
-                          {interview.status === "Pending Review" && (
-                            <div className="space-x-2">
-                              <Button variant="outline">
-                                <MessageSquare className="w-4 h-4 mr-2" />
-                                Add Feedback
-                              </Button>
-                              <Button>
-                                <ThumbsUp className="w-4 h-4 mr-2" />
-                                Recommend
-                              </Button>
-                            </div>
-                          )}
+                            </Button>
+                            {interview.status === "Completed" && (
+                              <div className="space-x-2">
+                                <Button
+                                  variant="outline"
+                                  className="text-destructive border-destructive hover:bg-destructive/20"
+                                  onClick={() => handleReject(interview)}
+                                >
+                                  <ThumbsDown className="w-4 h-4 mr-2" />
+                                  Reject
+                                </Button>
+                                <Button
+                                  className="bg-success hover:bg-success/90 text-success-foreground"
+                                  onClick={() => handleHired(interview)}
+                                >
+                                  <ThumbsUp className="w-4 h-4 mr-2" />
+                                  Hired
+                                </Button>
+                              </div>
+                            )}
                         </div>
                       </div>
                     ))}
