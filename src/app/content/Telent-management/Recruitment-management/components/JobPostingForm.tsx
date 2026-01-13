@@ -1,3 +1,4 @@
+//
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -1191,7 +1192,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
               {/* Salary Range */}
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Minimum Salary ($) {" "}
+                  Minimum Salary {" "}
                   <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <Input
@@ -1208,7 +1209,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
 
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Maximum Salary ($) {" "}
+                  Maximum Salary {" "}
                   <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <Input
