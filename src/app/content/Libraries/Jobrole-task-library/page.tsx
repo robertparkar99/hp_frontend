@@ -1,7 +1,6 @@
 //src/app/content/Libraries/Jobrole-task-library/page.tsx
 "use client";
 import React, { useEffect, useState, useRef } from "react";
-import { Atom } from "react-loading-indicators";
 import { checkPermission } from "@/utils/permissions";
 import {
   Funnel,
@@ -45,6 +44,7 @@ import DataTable, {
   TableStyles,
 } from "react-data-table-component";
 import ConfigurationModal from "../../Jobrole-library/ConfigurationModal";
+import Loader from "@/components/utils/loading";
 
 type JobRoleTask = {
   id: number;
@@ -347,7 +347,7 @@ const CriticalWorkFunctionGrid = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+        <Loader/>
       </div>
     );
   }

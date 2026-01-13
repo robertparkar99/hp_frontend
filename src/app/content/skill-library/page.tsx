@@ -25,8 +25,8 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Atom } from "react-loading-indicators";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import Loader from "@/components/utils/loading";
 
 type Skill = {
   id: number;
@@ -1115,7 +1115,7 @@ export default function Page() {
         <section ref={contentRef} className="w-full h-screen overflow-y-auto scrollbar-hide">
           {loading || (selectedJobRole && loadingJobRoleSkills) ? (
             <div className="flex justify-center items-center h-screen">
-              <Atom color="#525ceaff" size="medium" text="" textColor="" />
+              <Loader/>
             </div>
           ) : columnFilteredSkills.length === 0 ? (
             <div className="flex justify-center items-center h-full">

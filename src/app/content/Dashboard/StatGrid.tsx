@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import icon from '@/components/AppIcon';
-import { Atom } from "react-loading-indicators"
+import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
 import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
 import { UserCircle, Search } from "lucide-react";
@@ -659,13 +659,6 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-600">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
-      </div>
-    );
-  }
   const currentPercent =
     maxLevel > 0 ? Math.min(100, Math.round((currentLevel / maxLevel) * 100)) : 0;
 
