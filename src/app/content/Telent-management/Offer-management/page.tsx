@@ -1,6 +1,6 @@
 "use client";
 import Header from "@/components/Header/Header";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import OfferDashboard from "./OfferDashboard";
 
 export default function OfferManagementPage() {
@@ -26,7 +26,9 @@ export default function OfferManagementPage() {
                 <Header />
             </div>
             <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
-                <OfferDashboard />
+                <Suspense fallback={<div>Loading...</div>}>
+                    <OfferDashboard />
+                </Suspense>
             </div>
         </div>
     );

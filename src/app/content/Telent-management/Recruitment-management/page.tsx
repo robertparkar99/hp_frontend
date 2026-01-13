@@ -2,7 +2,7 @@
 import EmployeeDirectory from "@/app/content/user/index";
 import  Header  from "@/components/Header/Header";
 import Sidebar from "@/components/SideMenu/Newsidebar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import HRDashboard from "./HRDashboard";
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -32,7 +32,9 @@ export default function HomePage() {
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar}  /> */}
         <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
-      <HRDashboard />
+        <Suspense fallback={<div>Loading...</div>}>
+          <HRDashboard />
+        </Suspense>
       </div>
     </div>
   );
