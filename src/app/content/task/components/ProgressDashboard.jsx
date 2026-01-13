@@ -594,8 +594,7 @@ const ProgressDashboard = () => {
         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getApproveStatusColor(row.approve_status)}`}>
           {row.approve_status ? row.approve_status.charAt(0).toUpperCase() + row.approve_status.slice(1).toUpperCase() : 'PENDING'}
         </span>
-      ),
-      minWidth: "150px"
+      )
     },
     {
       name: "Actions",
@@ -629,7 +628,6 @@ const ProgressDashboard = () => {
         </div>
       ),
       ignoreRowClick: true,
-      button: true,
     },
   ];
 
@@ -692,7 +690,14 @@ const ProgressDashboard = () => {
             className="w-40"
           />
 
-          <Button variant="outline" size="sm" iconName="Download" iconPosition="left">
+          <Button
+            variant="outline"
+            size="sm"
+            iconName="Download"
+            iconPosition="left"
+            disabled={true}
+            className="cursor-not-allowed"
+          >
             Export
           </Button>
         </div>

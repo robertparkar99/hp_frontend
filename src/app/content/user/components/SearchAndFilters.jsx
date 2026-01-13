@@ -309,6 +309,8 @@ const SearchAndFilters = ({
           <Button
             variant="outline"
             onClick={onExport}
+            disabled={true}
+            className="cursor-not-allowed"
           >
             <Icon name="Download" size={16} />
             Export

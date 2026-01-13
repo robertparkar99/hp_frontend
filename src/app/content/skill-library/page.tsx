@@ -1215,34 +1215,7 @@ export default function Page() {
         </section>
 
         {/* Floating Action Button for Additional Tools */}
-        <div className="fixed bottom-6 right-6 flex flex-col gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 flex items-center justify-center">
-                <Compass className="w-6 h-6" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-2 mb-2" align="end">
-              <div className="space-y-1">
-                <button className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded">
-                  <Compass className="w-4 h-4" />
-                  Guided Tour
-                </button>
-                <button
-                  onClick={() => setRefreshKey(prev => prev + 1)}
-                  className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Refresh Data
-                </button>
-                <button className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded">
-                  {/* <Heatmap className="w-4 h-4" /> */}
-                  Gap Heatmap
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+        {/* x */}
 
         {/* Dialogs */}
         {dialogOpen.view && activeSkill && (
