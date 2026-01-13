@@ -169,7 +169,7 @@ export function UpcomingInterviews({ onReschedule }: UpcomingInterviewsProps) {
     <Card className="widget-card">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">
-          Today's Interviews ({new Date().toLocaleDateString()})
+          Today's Interviews ({new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })})
         </CardTitle>
         <Button variant="outline" size="sm">
           <Calendar className="h-4 w-4 mr-2" />

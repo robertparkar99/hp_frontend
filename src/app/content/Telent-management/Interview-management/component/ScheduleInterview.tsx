@@ -124,7 +124,7 @@ export default function ScheduleInterview({ interview }: ScheduleInterviewProps)
     if (!sessionData.sub_institute_id) return;
     const fetchCandidates = async () => {
       try {
-        const response = await fetch(`${sessionData.url}/api/job-applications?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`);
+        const response = await fetch(`${sessionData.url}/api/job-applications/shortlisted?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`);
         const data = await response.json();
         if (data.data) {
           setCandidates(data.data);

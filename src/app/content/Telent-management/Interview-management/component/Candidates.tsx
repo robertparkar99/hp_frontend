@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import DataTable,{TableStyles,TableColumn} from "react-data-table-component";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,10 @@ interface SessionData {
   org_type?: string;
 }
 
+interface CandidatesProps {
+  onReviewApplication?: () => void;
+}
+
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "Interview Scheduled":
@@ -63,15 +68,16 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-export default function Candidates() {
-   const [searchTerm, setSearchTerm] = useState<string>("");
-   const [filters, setFilters] = useState<Filters>({});
-   const [candidates, setCandidates] = useState<Candidate[]>([]);
-   const [filteredData, setFilteredData] = useState<Candidate[]>([]);
-   const [currentView, setCurrentView] = useState<'candidates' | 'feedback'>('candidates');
-   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
-   const [sessionData, setSessionData] = useState<SessionData>({});
-   const [loading, setLoading] = useState<boolean>(true);
+export default function Candidates({ onReviewApplication }: CandidatesProps) {
+  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filters, setFilters] = useState<Filters>({});
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [filteredData, setFilteredData] = useState<Candidate[]>([]);
+  const [currentView, setCurrentView] = useState<'candidates' | 'feedback'>('candidates');
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [sessionData, setSessionData] = useState<SessionData>({});
+  const [loading, setLoading] = useState<boolean>(true);
 
   // ---------- Load session ----------
   useEffect(() => {
@@ -313,26 +319,33 @@ export default function Candidates() {
       cell: (row: Candidate) => (
         <div className="flex w-full space-x-1">
           <Button size="sm" variant="outline" className="h-6 px-2 w-16">
-            <Eye className="h-3 w-3 ]" />
+            <Eye className="h-3 w-3" />
             View
           </Button>
-          {/* <Button size="sm" variant="outline" className="h-6 px-2 w-25">
-            <Calendar className="h-2 w-2 ml-2" />
-            Schedule
-          </Button> */}
           <Button size="sm" variant="outline" className="h-6 px-2 w-24">
             <MessageSquare className="h-3 w-3 " />
             Message
           </Button>
-          <Button size="sm" variant="outline" className="h-6 px-2 w-23" onClick={() => { setSelectedCandidate(row); setCurrentView('feedback'); }}>
-            <Star className="h-3 w-3" />
-            Feedback
-          </Button>
+          {row.stage === "Scheduled" && (
+            <Button size="sm" variant="outline" className="h-6 px-2 w-23" onClick={() => { setSelectedCandidate(row); setCurrentView('feedback'); }}>
+              <Star className="h-3 w-3" />
+              Feedback
+            </Button>
+          )}
+          {row.status === "Pending Review" && (
+            <Button size="sm" variant="outline" className="h-6 px-2 w-38" onClick={() => {
+              localStorage.setItem('reviewCandidate', JSON.stringify(row));
+              router.push(`/content/Telent-management/Recruitment-management?tab=screening&candidateId=${row.position}`);
+            }}>
+              <Eye className="h-3 w-3" />
+              Review Application
+            </Button>
+          )}
         </div>
       ),
       ignoreRowClick: true,
       button: true,
-      minWidth: "290px"
+      minWidth: "320px"
     },
   ];
 
