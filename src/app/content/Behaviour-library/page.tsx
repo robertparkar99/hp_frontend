@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -85,6 +85,9 @@ const BehaviourGrid = () => {
   const [sessionData, setSessionData] = useState<SessionData>({});
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [favorites, setFavorites] = useState<{ [key: number]: boolean }>({});
+
+  // State for inline actions menu
+  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
 
   // Dialog state for viewing behaviour details
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
@@ -524,80 +527,48 @@ const BehaviourGrid = () => {
               <Table className="h-5 w-5" />
             </button>
           </div>
-          {/* Action Icons Dropdown */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <MoreVertical className="w-5 h-5 text-gray-600" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-auto p-4 bg-white shadow-xl rounded-xl"
-            >
-              <div className="flex items-center gap-3">
-                {/* Add New Behavior */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Add New Behavior"
-                >
+          <AnimatePresence>
+            {isActionsMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-1"
+              >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Add New Behavior">
                   <Plus className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* AI Suggestions */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="AI Suggestions"
-                >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="AI Suggestions">
                   <Sparkles className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Analytics */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Analytics & Insights"
-                >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Analytics & Insights">
                   <BarChart3 className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Compare */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Compare Behaviors"
-                >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Compare Behaviors">
                   <LayoutGrid className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Favorites */}
-                <button
-                  title="Favorites"
-                                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-
-                >
-                  <Star
-                    className="w-5 h-5 text-gray-600"/>
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Favorites">
+                  <Star className="w-5 h-5 text-gray-600" />
                 </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Settings">
                   <Settings className="w-5 h-5 text-gray-600" />
                 </button>
-                {/* Add Custom Fields */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Add Custom Fields"
-                >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Add Custom Fields">
                   <ListPlus className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Share */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Share & Collaborate"
-                >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Share & Collaborate">
                   <Share2 className="w-5 h-5 text-gray-600" />
                 </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <button
+            onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <MoreVertical className="w-5 h-5 text-gray-600" />
+          </button>
         </div>
       </div>
 

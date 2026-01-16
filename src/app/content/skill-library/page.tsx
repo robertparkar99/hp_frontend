@@ -995,94 +995,92 @@ export default function Page() {
                 <Table className="h-5 w-5" />
               </button>
             </div>
-            {/* Combined Actions Menu */}
-            <div className="relative">
-              <button
-                onClick={toggleActionsMenu}
-                className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                title="More Actions"
-              >
-                <MoreVertical className="w-5 h-5 text-gray-600" />
-              </button>
+            {/* Inline Action Icons when menu is open */}
+            {showActionsMenu && (
+              <>
+                {/* Add Skill */}
+                <button
+                  onClick={async () => {
+                    if (await checkPermission("Library & Taxonomy", "can_add")) {
+                      setDialogOpen({ ...dialogOpen, add: true });
+                    } else {
+                      alert("you don't have rights to add new skill");
+                    }
+                    setShowActionsMenu(false);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  title="Add New Skill"
+                >
+                  <Plus className="w-5 h-5 text-gray-600" />
+                </button>
 
-              {showActionsMenu && (
-                <div className="absolute right-0 top-12 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 actions-menu">
-                  {/* AI Tools Section */}
-                  <div className="p-3 border-b border-gray-100">
-                    {/* Add Options Section */}
-                    <button
-                      onClick={async () => {
-                        if (await checkPermission("Library & Taxonomy", "can_add")) {
-                          setDialogOpen({ ...dialogOpen, add: true });
-                        } else {
-                          alert("you don't have rights to add new skill");
-                        }
-                        setShowActionsMenu(false);
-                      }}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Add New Skill"
-                    >
-                      <Plus className="w-5 h-5 text-gray-600" />
+                {/* Auto Match */}
+                <button
+                  onClick={handleAutoMatch}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  title="Auto-Match"
+                >
+                  <Wand2 className="w-5 h-5 text-gray-600" />
+                </button>
 
-                    </button>
+                {/* Framework */}
+                <button
+                  onClick={() => {
+                    /* Add from framework logic */
+                    setShowActionsMenu(false);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  title="Add from Framework"
+                >
+                  <BookOpen className="w-5 h-5 text-gray-600" />
+                </button>
 
-                    <button
-                      onClick={handleAutoMatch}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Auto-Match"
-                    >
-                      <Wand2 className="w-5 h-5 text-gray-600" />
+                {/* Import */}
+                <button
+                  onClick={() => {
+                    setDialogOpen({ ...dialogOpen, import: true });
+                    setShowActionsMenu(false);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  title="Bulk Skill Import"
+                >
+                  <Upload className="w-5 h-5 text-gray-600" />
+                </button>
 
-                    </button>
+                {/* Export */}
+                <button
+                  onClick={() => {
+                    setDialogOpen({ ...dialogOpen, bulkImport: true });
+                    setShowActionsMenu(false);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  title="Bulk Skill Export"
+                >
+                  <Download className="w-5 h-5 text-gray-600" />
+                </button>
 
+                {/* Settings */}
+                <button
+                  onClick={() => {
+                    setDialogOpen({ ...dialogOpen, settings: true });
+                    setShowActionsMenu(false);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  title="Settings"
+                >
+                  <Settings className="w-5 h-5 text-gray-600" />
+                </button>
+              </>
+            )}
 
-                    <button
-                      onClick={() => {
-                        /* Add from framework logic */
-                        setShowActionsMenu(false);
-                      }}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="add from Framework"
-                    >
-                      <BookOpen className="w-5 h-5 text-gray-600" />
-
-                    </button>
-
-
-                    <button
-                      onClick={() => {
-                        setDialogOpen({ ...dialogOpen, import: true });
-                        setShowActionsMenu(false);
-                      }}
-                      className="p-2 hover:bg-gray-100 rounded transition-colors"
-                      title="Bulk skill Import"
-                    >
-                      <Upload className="h-5 w-5 text-gray-600" />
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setDialogOpen({ ...dialogOpen, bulkImport: true });
-                        setShowActionsMenu(false);
-                      }}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Bulk skill Export"
-                    >
-                      <Download className="w-5 h-5 text-gray-600" />
-
-                    </button>
-                    <button
-                      onClick={() => {
-                        setDialogOpen({ ...dialogOpen, settings: true });
-                        setShowActionsMenu(false);
-                      }}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Settings"
-                    >
-                      <Settings className="w-5 h-5 text-gray-600" />
-
-                    </button>
-
-                  </div>
-                </div>
-
-              )}
-            </div>
+            {/* More Actions Button */}
+            <button
+              onClick={toggleActionsMenu}
+              className="p-2 hover:bg-gray-100 rounded-lg actions-menu-trigger"
+              title="More Actions"
+            >
+              <MoreVertical className="w-5 h-5 text-gray-600" />
+            </button>
           </div>
         </div>
 

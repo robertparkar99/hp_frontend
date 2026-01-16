@@ -687,7 +687,7 @@ export default function JobroleSkillRatingDesign({
       {/* ================= LEFT PANEL ================= */}
       <div className="w-[280px] bg-white rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-3">
         <h2 className="text-[#23395B] font-semibold text-sm mb-2 flex items-center gap-2">
-          📊 Skill Proficiency Overview
+          📊 Competency Overview
         </h2>
 
         <div className="h-[2px] bg-gray-400 mb-3" />
