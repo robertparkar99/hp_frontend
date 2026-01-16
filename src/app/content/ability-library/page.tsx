@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -105,6 +106,14 @@ export default function Page() {
 
   // Dialog state for viewing ability details
   const [selectedAbilityId, setSelectedAbilityId] = useState<number | null>(null);
+
+  // ✅ New state for expanded actions
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Toggle expanded actions
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -413,66 +422,70 @@ export default function Page() {
                 <Table className="h-5 w-5" />
               </button>
             </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  <MoreVertical className="w-5 h-5 text-gray-600" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                className="w-auto p-4 bg-white shadow-xl rounded-xl"
-              >
-                {/* Action Buttons - All in one line */}
-                <div className="flex items-center gap-3">
-                                    {/* Add New Ability */}
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Add New Ability">
-                    <Plus className="w-5 h-5 text-gray-600" />
 
+            {/* Inline Actions Menu */}
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex gap-1"
+                >
+                  {/* Add New Ability */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Add New Ability">
+                    <Plus className="w-5 h-5 text-gray-600" />
                   </button>
 
                   {/* AI Suggestions */}
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="AI Suggestions">
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="AI Suggestions">
                     <Sparkles className="w-5 h-5 text-gray-600" />
-
                   </button>
 
-                  {/* Bulk Actions */}
-
-                  {/* Export/Import */}
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Export abilities">
+                  {/* Export */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Export abilities">
                     <Download className="w-5 h-5 text-gray-600" />
-
                   </button>
 
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Import abilities">
+                  {/* Import */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Import abilities">
                     <Upload className="w-5 h-5 text-gray-600" />
-
                   </button>
-
 
                   {/* Analytics */}
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200  rounded-md text-sm" title="Analytics">
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Analytics">
                     <BarChart3 className="w-5 h-5 text-gray-600" />
-
-                  </button>
-                  <button className="p-2 hover:bg-gray-200 rounded-md" title="Help">
-                    <HelpCircle className="w-5 h-5 text-gray-600" />
-                  </button>
-                  {/* Settings */}
-                  <button className="p-2 hover:bg-gray-200 rounded-md" title="Settings">
-                    <Settings className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Bulk Actions">
-                    <ListChecks className="w-5 h-5 text-gray-600" />
-
                   </button>
 
                   {/* Help */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Help">
+                    <HelpCircle className="w-5 h-5 text-gray-600" />
+                  </button>
 
-                </div>
-              </PopoverContent>
-            </Popover>
+                  {/* Settings */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Settings">
+                    <Settings className="w-5 h-5 text-gray-600" />
+                  </button>
+
+                  {/* Bulk Actions */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Bulk Actions">
+                    <ListChecks className="w-5 h-5 text-gray-600" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* More Actions Button */}
+            <div className="relative">
+              <button
+                onClick={toggleExpanded}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                title="More Actions"
+              >
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

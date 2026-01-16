@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import ViewKnowledge from "@/components/KnowledgeComponent/viewDialouge";
 import {
   Funnel,
@@ -103,6 +104,14 @@ const Honeycomb: React.FC = () => {
 
   // 🔑 View toggle state
   const [viewMode, setViewMode] = useState<"circle" | "table">("circle");
+
+  // ✅ New state for expanded actions
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Toggle expanded actions
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   // Dialog states
   const [activeKnowledge, setActiveKnowledge] = useState<KnowledgeItem | null>(null);
@@ -515,32 +524,54 @@ const Honeycomb: React.FC = () => {
               </button>
             </div>
 
-             <Popover>
-            <PopoverTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            {/* Inline Actions Menu */}
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex gap-1"
+                >
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Add Knowledge"
+                  >
+                    <Plus className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Import Knowledge"
+                  >
+                    <Upload className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Export Knowledge"
+                  >
+                    <Download className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Knowledge Analytics"
+                  >
+                    <Sparkles className="w-5 h-5 text-gray-600" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* More Actions Button */}
+            <div className="relative">
+              <button
+                onClick={toggleExpanded}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                title="More Actions"
+              >
                 <MoreVertical className="w-5 h-5 text-gray-600" />
               </button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-auto p-2 bg-white shadow-xl rounded-xl"
-            >
-              <div className="flex items-center gap-2">
-                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Add Knowledge">
-                  <Plus className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="flex items-center  px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Import Knowledge">
-                  <Upload className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Export Knowledge">
-                  <Download className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Knowledge Analytics">
-                  <Sparkles className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+            </div>
           </div>
         </div>
       </div>

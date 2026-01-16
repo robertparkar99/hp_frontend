@@ -186,7 +186,7 @@ export default function EditProfilePage() {
     },
     {
       id: "skill-rating",
-      label: "Skill Rating",
+      label: "Competency Rating",
       icon: <Star className="mr-2 h-5 w-5 text-slate-700" />,
     },
     {

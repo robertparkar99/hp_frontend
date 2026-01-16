@@ -40,7 +40,10 @@ import {
   AlertCircle,
   Bot,
   Filter,
-  MoreVertical
+  MoreVertical,
+  BookOpen,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import JobDescriptionModal from "./JobDescriptionModal";
@@ -549,7 +552,88 @@ export default function HomePage() {
               <Table className="h-4 w-4" />
             </button>
           </div>
-          {/* Global Actions - Horizontal dropdown */}
+
+          {/* Inline Actions Menu */}
+          <AnimatePresence>
+            {isActionsMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="flex gap-1"
+              >
+                {/* Add New Jobrole */}
+                <button
+                  className="hover:bg-gray-100 px-2 py-2 flex items-center justify-center transition-colors rounded-md "
+                  onClick={() => {
+                    if (!permissions.canAdd) {
+                      alert("You don't have right to add this.");
+                      return;
+                    }
+                    setDialogOpen({ ...dialogOpen, add: true });
+                    setIsActionsMenuOpen(false);
+                  }}
+                  title="Add New Job Role"
+                >
+                  <Plus className="h-5 w-5 text-gray-600" />
+                </button>
+          
+                <button
+                  onClick={() => {
+                    alert("Generate AI Job Role");
+                    setIsActionsMenuOpen(false);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded transition-colors"
+                  title="Generate AI Job Role"
+                >
+                  <Sparkles className="h-5 w-5 text-gray-600" />
+                </button>
+                <button
+                  onClick={() => {
+                    alert("JD Preview");
+                    setIsActionsMenuOpen(false);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded transition-colors"
+                  title="JD Preview"
+                >
+                  <BookOpen className="h-5 w-5 text-gray-600" />
+                </button>
+                <button
+                  onClick={() => {
+                    alert("Sort Ascending");
+                    setIsActionsMenuOpen(false);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded transition-colors"
+                  title="Sort Ascending"
+                >
+                  <ArrowUp className="h-5 w-5 text-gray-600" />
+                </button>
+                <button
+                  onClick={() => {
+                    alert("Sort Descending");
+                    setIsActionsMenuOpen(false);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded transition-colors"
+                  title="Sort Descending"
+                >
+                  <ArrowDown className="h-5 w-5 text-gray-600" />
+                </button>
+                <button
+                  onClick={() => {
+                    setDialogOpen({ ...dialogOpen, settings: true });
+                    setIsActionsMenuOpen(false);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded transition-colors"
+                  title="Settings"
+                >
+                  <Settings className="h-5 w-5 text-gray-600" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* More Actions Button */}
           <div className="relative">
             <button
               onClick={toggleActionsMenu}
@@ -558,78 +642,6 @@ export default function HomePage() {
             >
               <MoreVertical className="h-5 w-5 text-gray-600" />
             </button>
-
-            {/* Horizontal Dropdown Menu */}
-            <AnimatePresence>
-              {isActionsMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex gap-1">
-                    {/* Add New Jobrole */}
-                    <button
-                      className="hover:bg-gray-100 px-2 py-2 flex items-center justify-center transition-colors rounded-md "
-                      onClick={() => {
-                        if (!permissions.canAdd) {
-                          alert("You don't have right to add this.");
-                          return;
-                        }
-                        setDialogOpen({ ...dialogOpen, add: true });
-                      }}
-                      title="Add New Job Role"
-                    >
-                      <Plus className="h-5 w-5 text-gray-600" />
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setDialogOpen({ ...dialogOpen, import: true });
-                        setIsActionsMenuOpen(false);
-                      }}
-                      className="p-2 hover:bg-gray-100 rounded transition-colors"
-                      title="Import Job Roles "
-                    >
-                      <Upload className="h-5 w-5 text-gray-600" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setDialogOpen({ ...dialogOpen, export: true });
-                        setIsActionsMenuOpen(false);
-                      }}
-                      className="p-2 hover:bg-gray-100 rounded transition-colors"
-                      title="Export Job Roles"
-                    >
-                      <Download className="h-5 w-5 text-gray-600" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setDialogOpen({ ...dialogOpen, settings: true });
-                        setIsActionsMenuOpen(false);
-                      }}
-                      className="p-2 hover:bg-gray-100 rounded transition-colors"
-                      title="Settings"
-                    >
-                      <Settings className="h-5 w-5 text-gray-600" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        /* Add custom fields functionality */
-                        setIsActionsMenuOpen(false);
-                      }}
-                      className="p-2 hover:bg-gray-100 rounded transition-colors"
-                      title="Configure Custom Fields"
-                    >
-                      <SlidersHorizontal className="h-5 w-5 text-gray-600" />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
       </div>
