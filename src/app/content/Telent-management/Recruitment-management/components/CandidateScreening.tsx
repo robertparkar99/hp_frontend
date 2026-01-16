@@ -91,7 +91,7 @@ interface Candidate {
   location: string;
   skills: string[];
   score: number | null;
-  status: 'shortlisted' | 'rejected' | 'pending' | 'under_review';
+  status: 'shortlisted' | 'rejected' | 'pending' | 'under_review' | 'hired';
   appliedDate: string;
   resumeUrl: string;
   matchDetails: {
@@ -385,7 +385,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
             case 'shortlisted': return 'shortlisted';
             case 'rejected': return 'rejected';
             case 'under_review': return 'under_review';
-            case 'hired': return 'shortlisted'; // Assuming hired is treated as shortlisted
+            case 'hired': return 'hired';
             default: return 'pending';
           }
         };
@@ -501,6 +501,8 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
         return <Badge className="bg-warning text-warning-foreground">Pending Review</Badge>;
       case 'under_review':
         return <Badge variant="outline">Under Review</Badge>;
+      case 'hired':
+        return <Badge className="bg-purple-100 text-purple-800">Hired</Badge>;
     }
   };
 
@@ -520,7 +522,8 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
     const matchesTab = selectedTab === "all" ||
       (selectedTab === "shortlisted" && candidate.status === "shortlisted") ||
       (selectedTab === "pending" && (candidate.status === "pending" || candidate.status === "under_review")) ||
-      (selectedTab === "rejected" && candidate.status === "rejected");
+      (selectedTab === "rejected" && candidate.status === "rejected") ||
+      (selectedTab === "hired" && candidate.status === "hired");
 
     return matchesSearch && matchesTab;
   });
@@ -531,6 +534,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
     shortlisted: candidates.filter(c => c.status === 'shortlisted').length,
     pending: candidates.filter(c => c.status === 'pending' || c.status === 'under_review').length,
     rejected: candidates.filter(c => c.status === 'rejected').length,
+    hired: candidates.filter(c => c.status === 'hired').length,
     avgScore: screenedCandidates.length > 0 ? Math.round(screenedCandidates.reduce((sum, c) => sum + (c.score || 0), 0) / screenedCandidates.length) : 0
   };
 
@@ -663,7 +667,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       {/* Stats Overview */}
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-4">Candidate Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -707,6 +711,18 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                 <div>
                   <div className="text-2xl font-bold text-destructive">{stats.rejected}</div>
                   <div className="text-xs text-muted-foreground">Rejected</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-5 h-5 text-purple-600" />
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">{stats.hired}</div>
+                  <div className="text-xs text-muted-foreground">Hired</div>
                 </div>
               </div>
             </CardContent>
@@ -779,6 +795,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
               <TabsTrigger value="shortlisted">Shortlisted ({stats.shortlisted})</TabsTrigger>
               <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
               <TabsTrigger value="rejected">Rejected ({stats.rejected})</TabsTrigger>
+              <TabsTrigger value="hired">Hired ({stats.hired})</TabsTrigger>
             </TabsList>
 
             <TabsContent value={selectedTab} className="mt-6">
