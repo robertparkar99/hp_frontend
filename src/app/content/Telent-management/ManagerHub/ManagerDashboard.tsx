@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import ViewFullProfileDialog from "./ViewFullProfileDialog";
+import OfferDashboard from "../Offer-management/OfferDashboard";
 import {
   CheckCircle,
   Clock,
@@ -30,6 +31,7 @@ const Loader = () => (
 
 interface InterviewFeedback {
   id: any;
+  candidateId: number;
   candidate: string;
   position: string;
   interviewer: string;
@@ -40,38 +42,38 @@ interface InterviewFeedback {
 }
 
 // Dummy data for demonstration
-const dummyInterviewFeedback: InterviewFeedback[] = [
-  {
-    id: 1,
-    candidate: "John Smith",
-    position: "Senior Software Engineer",
-    interviewer: "Sarah Johnson",
-    date: "2024-01-15",
-    status: "Completed",
-    overallRating: 8.5,
-    notes: "Key Strengths: Strong technical skills, good problem-solving\nConcerns: Limited experience with cloud technologies"
-  },
-  {
-    id: 2,
-    candidate: "Emily Davis",
-    position: "Product Manager",
-    interviewer: "Mike Chen",
-    date: "2024-01-14",
-    status: "Completed",
-    overallRating: 9.2,
-    notes: "Key Strengths: Excellent communication, strategic thinking\nConcerns: Needs more experience in agile methodologies"
-  },
-  {
-    id: 3,
-    candidate: "Robert Kim",
-    position: "UX Designer",
-    interviewer: "Lisa Wong",
-    date: "2024-01-13",
-    status: "Pending Review",
-    overallRating: 7.8,
-    notes: "Key Strengths: Creative portfolio, user research skills\nConcerns: Limited experience with design systems"
-  }
-];
+// const dummyInterviewFeedback: InterviewFeedback[] = [
+//   {
+//     id: 1,
+//     candidate: "John Smith",
+//     position: "Senior Software Engineer",
+//     interviewer: "Sarah Johnson",
+//     date: "2024-01-15",
+//     status: "Completed",
+//     overallRating: 8.5,
+//     notes: "Key Strengths: Strong technical skills, good problem-solving\nConcerns: Limited experience with cloud technologies"
+//   },
+//   {
+//     id: 2,
+//     candidate: "Emily Davis",
+//     position: "Product Manager",
+//     interviewer: "Mike Chen",
+//     date: "2024-01-14",
+//     status: "Completed",
+//     overallRating: 9.2,
+//     notes: "Key Strengths: Excellent communication, strategic thinking\nConcerns: Needs more experience in agile methodologies"
+//   },
+//   {
+//     id: 3,
+//     candidate: "Robert Kim",
+//     position: "UX Designer",
+//     interviewer: "Lisa Wong",
+//     date: "2024-01-13",
+//     status: "Pending Review",
+//     overallRating: 7.8,
+//     notes: "Key Strengths: Creative portfolio, user research skills\nConcerns: Limited experience with design systems"
+//   }
+// ];
 
 const ManagerDashboard = () => {
   const router = useRouter();
@@ -83,21 +85,64 @@ const ManagerDashboard = () => {
   const [selectedInterview, setSelectedInterview] = useState<InterviewFeedback | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [hiringNotes, setHiringNotes] = useState<{ [key: string]: string }>({});
+  const [activeTab, setActiveTab] = useState("interviews");
+  const [selectedCandidate, setSelectedCandidate] = useState("");
+  const [selectedPosition, setSelectedPosition] = useState("");
+  const [selectedCandidateId, setSelectedCandidateId] = useState(0);
 
   const handleHired = async (interview: InterviewFeedback) => {
-    // For demo purposes, simulate API call success
-    console.log('Hiring candidate:', interview.candidate, 'Notes:', hiringNotes[interview.id]);
+    try {
+      const response = await fetch(`${sessionData.url}/api/interviews/${interview.id}/decision?token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&type=API`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'Hired',
+          notes: hiringNotes[interview.id] || '',
+        }),
+      });
 
-    // Navigate to offer management with candidate data
-    router.push(`/content/Telent-management/Offer-management?candidate=${encodeURIComponent(interview.candidate)}&position=${encodeURIComponent(interview.position)}`);
+      if (response.ok) {
+        // Switch to offer management tab with candidate data
+        setSelectedCandidate(interview.candidate);
+        setSelectedPosition(interview.position);
+        setSelectedCandidateId(interview.candidateId);
+        setActiveTab("offers");
+      } else {
+        console.error('Failed to hire candidate:', response.statusText);
+        alert('Failed to hire candidate. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error hiring candidate:', error);
+      alert('Error hiring candidate. Please try again.');
+    }
   };
 
   const handleReject = async (interview: InterviewFeedback) => {
-    // For demo purposes, simulate rejection
-    console.log('Rejecting candidate:', interview.candidate, 'Notes:', hiringNotes[interview.id]);
+    try {
+      const response = await fetch(`${sessionData.url}/api/interviews/${interview.id}/decision?token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&type=API`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'rejected',
+          notes: hiringNotes[interview.id] || '',
+        }),
+      });
 
-    // Remove from the list
-    setInterviewFeedback(prev => prev.filter(item => item.id !== interview.id));
+      if (response.ok) {
+        // Remove from the list
+        setInterviewFeedback(prev => prev.filter(item => item.id !== interview.id));
+      } else {
+        console.error('Failed to reject candidate:', response.statusText);
+        alert('Failed to reject candidate. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error rejecting candidate:', error);
+      alert('Error rejecting candidate. Please try again.');
+    }
   };
 
   // Fetch session data on mount
@@ -125,6 +170,7 @@ const ManagerDashboard = () => {
             const averageScore = criteria.length > 0 ? totalScore / criteria.length : 0;
             return {
               id: data.id,
+              candidateId: data.candidate_id || data.id,
               candidate: data.candidate_name || '-',
               position: data.job_title || '-',
               interviewer: data.panel_name || '-',
@@ -136,14 +182,11 @@ const ManagerDashboard = () => {
           });
 
           // Combine API data with dummy data
-          setInterviewFeedback([...mappedFeedbacks, ...dummyInterviewFeedback]);
-        } else {
-          // Use dummy data when API doesn't return data
-          setInterviewFeedback(dummyInterviewFeedback);
+          setInterviewFeedback([...mappedFeedbacks]);
         }
       } catch (error) {
         console.warn('Using dummy data due to API error:', error);
-        setInterviewFeedback(dummyInterviewFeedback);
+        // setInterviewFeedback(dummyInterviewFeedback);
       } finally {
         setLoading(false);
       }
@@ -194,7 +237,7 @@ const ManagerDashboard = () => {
   return (
     <div className="min-h-screen bg-background rounded-xl">
       {/* <Navigation /> */}
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Manager Dashboard</h1>
@@ -248,10 +291,11 @@ const ManagerDashboard = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="interviews" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-[#EFF4FF]">
             {/* <TabsTrigger value="requisitions">Pending Requisitions</TabsTrigger> */}
             <TabsTrigger value="interviews">Interview Feedback</TabsTrigger>
+            <TabsTrigger value="offers">Offer Management</TabsTrigger>
             <TabsTrigger value="team">Team Overview</TabsTrigger>
           </TabsList>
 
@@ -316,33 +360,33 @@ const ManagerDashboard = () => {
                 {loading ? (
                   <Loader />
                 ) : (
-                    <div className="space-y-6">
-                      {interviewFeedback.map((interview) => (
-                        <div key={interview.id} className="border border-border rounded-lg p-6">
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-center space-x-4">
-                              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                                <User className="w-6 h-6 text-primary" />
-                              </div>
-                              <div>
-                                <h3 className="text-lg font-semibold">{interview.candidate}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  Applied for {interview.position}
-                                </p>
-                                <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
-                                  <div className="flex items-center space-x-1">
-                                    <Calendar className="w-3 h-3" />
-                                    <span>{interview.date}</span>
-                                  </div>
-                                  <span>Interviewed by {interview.interviewer}</span>
+                  <div className="space-y-6">
+                    {interviewFeedback.map((interview) => (
+                      <div key={interview.id} className="border border-border rounded-lg p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                              <User className="w-6 h-6 text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold">{interview.candidate}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Applied for {interview.position}
+                              </p>
+                              <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
+                                <div className="flex items-center space-x-1">
+                                  <Calendar className="w-3 h-3" />
+                                  <span>{interview.date}</span>
                                 </div>
+                                <span>Interviewed by {interview.interviewer}</span>
                               </div>
                             </div>
-                            <div className="text-right">
-                              {getStatusBadge(interview.status)}
-                              {interview.overallRating && (
-                                <div className="mt-2">
-                                  <div className="text-lg font-bold text-primary">
+                          </div>
+                          <div className="text-right">
+                            {getStatusBadge(interview.status)}
+                            {interview.overallRating && (
+                              <div className="mt-2">
+                                <div className="text-lg font-bold text-primary">
                                   {interview.overallRating}/10
                                 </div>
                                 <div className="text-xs text-muted-foreground">Overall Rating</div>
@@ -358,49 +402,53 @@ const ManagerDashboard = () => {
                           </div>
                         )}
 
-                          {interview.status === "Completed" && (
-                            <div className="mb-4">
-                              <h4 className="font-medium mb-2">Hiring Notes:</h4>
-                              <Textarea
-                                placeholder="Add notes for hiring decision..."
-                                value={hiringNotes[interview.id] || ''}
-                                onChange={(e) => setHiringNotes(prev => ({ ...prev, [interview.id]: e.target.value }))}
-                                className="min-h-[80px]"
-                              />
-                            </div>
-                          )}
+                        {interview.status === "Completed" && (
+                          <div className="mb-4">
+                            <h4 className="font-medium mb-2">Hiring Notes:</h4>
+                            <Textarea
+                              placeholder="Add notes for hiring decision..."
+                              value={hiringNotes[interview.id] || ''}
+                              onChange={(e) => setHiringNotes(prev => ({ ...prev, [interview.id]: e.target.value }))}
+                              className="min-h-[80px]"
+                            />
+                          </div>
+                        )}
 
                         <div className="flex justify-between items-center">
                           <Button variant="outline" onClick={() => { setSelectedInterview(interview); setDialogOpen(true); }}>
                             <Eye className="w-4 h-4 mr-2" />
                             View Full Profile
-                            </Button>
-                            {interview.status === "Completed" && (
-                              <div className="space-x-2">
-                                <Button
-                                  variant="outline"
-                                  className="text-destructive border-destructive hover:bg-destructive/20"
-                                  onClick={() => handleReject(interview)}
-                                >
-                                  <ThumbsDown className="w-4 h-4 mr-2" />
-                                  Reject
-                                </Button>
-                                <Button
-                                  className="bg-success hover:bg-success/90 text-success-foreground"
-                                  onClick={() => handleHired(interview)}
-                                >
-                                  <ThumbsUp className="w-4 h-4 mr-2" />
-                                  Hired
-                                </Button>
-                              </div>
-                            )}
+                          </Button>
+                          {interview.status === "Completed" && (
+                            <div className="space-x-2">
+                              <Button
+                                variant="outline"
+                                className="text-destructive border-destructive hover:bg-destructive/20"
+                                onClick={() => handleReject(interview)}
+                              >
+                                <ThumbsDown className="w-4 h-4 mr-2" />
+                                Reject
+                              </Button>
+                              <Button
+                                className="bg-success hover:bg-success/90 text-success-foreground"
+                                onClick={() => handleHired(interview)}
+                              >
+                                <ThumbsUp className="w-4 h-4 mr-2" />
+                                Hired
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
-                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="offers" className="space-y-6">
+            <OfferDashboard showHeader={false} candidate={selectedCandidate} position={selectedPosition} candidateId={selectedCandidateId} />
           </TabsContent>
 
           <TabsContent value="team" className="space-y-6">
@@ -434,35 +482,71 @@ const ManagerDashboard = () => {
                   <CardTitle>Recent Team Updates</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {(() => {
-                      const uniqueUpdates = [...new Set(teamOverview?.recent_team_updates?.map((update: string) => update === "1 interview(s) scheduled" ? "Applications Support Engineer role needs attention" : update))] as string[];
-                      return uniqueUpdates.map((displayUpdate: string, index: number) => {
-                        let icon = <Clock className="w-5 h-5 text-muted-foreground mt-0.5" />;
-                        let title = displayUpdate;
-                        if (displayUpdate.includes('joined')) {
-                          icon = <CheckCircle className="w-5 h-5 text-success mt-0.5" />;
-                          title = "New hire onboarded";
-                        } else if (displayUpdate.includes('still open')) {
-                          icon = <AlertCircle className="w-5 h-5 text-warning mt-0.5" />;
-                          title = "Position still open";
-                        } else if (displayUpdate.includes('scheduled') || displayUpdate.includes('needs attention')) {
-                          icon = <Clock className="w-5 h-5 text-muted-foreground mt-0.5" />;
-                          title = "Interview scheduled";
-                        }
-                        return (
-                          <div key={index} className="flex items-start space-x-3">
-                            {icon}
-                            <div>
-                              <p className="text-sm font-medium">{title}</p>
-                              <p className="text-xs text-muted-foreground">{displayUpdate}</p>
+                  {(() => {
+                    const updates = teamOverview?.recent_team_updates || [];
+
+                    const grouped = {
+                      open: [] as string[],
+                      interview: [] as string[],
+                    };
+
+                    updates.forEach((update: string) => {
+                      if (update.includes("still open")) {
+                        grouped.open.push(update);
+                      } else if (
+                        update.includes("needs attention") ||
+                        update.includes("scheduled")
+                      ) {
+                        grouped.interview.push(update);
+                      }
+                    });
+
+                    return (
+                      <div className="space-y-6">
+
+                        {/* POSITION STILL OPEN */}
+                        {grouped.open.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <AlertCircle className="w-5 h-5 text-warning" />
+                              <p className="text-sm font-medium">Position still open</p>
                             </div>
+
+                            {grouped.open.map((item, index) => (
+                              <p
+                                key={index}
+                                className="text-xs text-muted-foreground ml-7"
+                              >
+                                {item}
+                              </p>
+                            ))}
                           </div>
-                        );
-                      });
-                    })()}
-                  </div>
+                        )}
+
+                        {/* INTERVIEW SCHEDULED */}
+                        {grouped.interview.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <Clock className="w-5 h-5 text-muted-foreground" />
+                              <p className="text-sm font-medium">Interview scheduled</p>
+                            </div>
+
+                            {grouped.interview.map((item, index) => (
+                              <p
+                                key={index}
+                                className="text-xs text-muted-foreground ml-7"
+                              >
+                                {item}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+
+                      </div>
+                    );
+                  })()}
                 </CardContent>
+
               </Card>
             </div>
           </TabsContent>
