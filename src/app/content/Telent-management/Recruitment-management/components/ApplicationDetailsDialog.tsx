@@ -419,6 +419,7 @@ const ApplicationDetailsDialog = ({
             <Button className="bg-blue-600 hover:bg-blue-700">
               Schedule Interview
             </Button>
+
           </div>
         </div>
       </DialogContent>

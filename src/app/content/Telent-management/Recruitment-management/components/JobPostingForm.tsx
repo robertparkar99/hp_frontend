@@ -1000,7 +1000,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
                     onClick={handleAddNewJobRole}
                     disabled={!formData.department}
                     className="flex items-center gap-1"
-                  >
+                  >A
                     <Plus className="h-3 w-3" />
                     Add New
                   </Button> */}

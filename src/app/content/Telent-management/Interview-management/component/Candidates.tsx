@@ -28,8 +28,9 @@ const PrintButton = dynamic(
 
 // Define TypeScript interfaces
 interface Candidate {
+  candidate_id: number;
   candidate_name: string;
-  position: number;
+  position_id: number; // job_id
   status: string;
   stage: string | null;
   applied_date: string;
@@ -37,6 +38,7 @@ interface Candidate {
   score: string | null;
   panel_id: number | null;
 }
+
 
 interface Filters {
   [key: string]: string;
@@ -58,13 +60,18 @@ const getStatusBadge = (status: string) => {
       return "bg-blue-100 text-blue-800";
     case "Under Review":
     case "Pending Review":
-      return "bg-yellow-100 text-yellow-800";
+      return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
     case "Offer Extended":
-      return "bg-green-100 text-green-800";
+    case "Hired":
+      return "bg-green-100 text-green-800 hover:bg-green-200";
     case "Pending Feedback":
-      return "bg-orange-100 text-orange-800";
+      return "bg-orange-100 text-orange-800 hover:bg-orange-200";
+    case "Rejected":
+      return "bg-red-100 text-red-800 hover:bg-red-200";
+    case "Completed":
+      return "bg-indigo-100 text-indigo-800 hover:bg-indigo-200";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "bg-gray-100 text-gray-800 hover:bg-gray-200";
   }
 };
 
@@ -95,14 +102,55 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
     if (!sessionData.sub_institute_id || !sessionData.url || !sessionData.token) return;
     setLoading(true);
     try {
-      const response = await fetch(`${sessionData.url}/api/candidate?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
-      const data = await response.json();
-      if (data.status) {
-        setCandidates(data.data);
-        setFilteredData(data.data);
+      // Fetch candidates
+      const candidateResponse = await fetch(`${sessionData.url}/api/candidate?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
+      const candidateData = await candidateResponse.json();
+
+      // Fetch feedback
+      const feedbackResponse = await fetch(`${sessionData.url}/api/feedback?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
+      const feedbackData = await feedbackResponse.json();
+
+      if (candidateData.status) {
+        let candidatesWithScores = candidateData.data;
+
+        if (feedbackData.status && feedbackData.data) {
+          // Create a map of candidate_id to overall rating
+          const scoreMap: { [key: string]: number } = {};
+
+          feedbackData.data.forEach((feedback: any) => {
+            try {
+              const criteria = JSON.parse(feedback.evaluation_criteria);
+              const overall = criteria.find(
+                (item: any) => item.name === "Overall Rating"
+              );
+
+              if (overall) {
+                const key = `${feedback.candidate_id}_${feedback.job_id}`;
+                scoreMap[key] = overall.score;
+              }
+            } catch (e) {
+              console.error("Invalid evaluation_criteria", e);
+            }
+          });
+
+
+          // Assign scores to candidates
+          candidatesWithScores = candidateData.data.map((candidate: Candidate) => {
+            const key = `${candidate.candidate_id}_${candidate.position_id}`;
+
+            return {
+              ...candidate,
+              score: scoreMap[key] ? scoreMap[key].toString() : null,
+            };
+          });
+
+          setCandidates(candidatesWithScores);
+          setFilteredData(candidatesWithScores);
+        }
       }
-    } catch (error) {
-      console.error('Error fetching candidates:', error);
+    }
+    catch (error) {
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -117,7 +165,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
     if (term) {
       const filtered = candidates.filter(candidate =>
         candidate.candidate_name.toLowerCase().includes(term.toLowerCase()) ||
-        candidate.position.toString().toLowerCase().includes(term.toLowerCase()) ||
+        candidate.position_id.toString().toLowerCase().includes(term.toLowerCase()) ||
         candidate.status.toLowerCase().includes(term.toLowerCase()) ||
         (candidate.stage || '').toLowerCase().includes(term.toLowerCase()) ||
         candidate.applied_date.toLowerCase().includes(term.toLowerCase()) ||
@@ -144,7 +192,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
     if (searchTerm) {
       filtered = filtered.filter(candidate =>
         candidate.candidate_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.position.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.position_id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
         candidate.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (candidate.stage || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         candidate.applied_date.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -158,8 +206,8 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
       if (filters[key] && filters[key].trim() !== "") {
         filtered = filtered.filter((item) => {
           let value = '';
-          if (key === 'position') {
-            value = item.position.toString().toLowerCase();
+          if (key === 'position_id') {
+            value = item.position_id.toString().toLowerCase();
           } else if (key === 'applied_date') {
             value = new Date(item.applied_date).toLocaleDateString().toLowerCase();
           } else if (key === 'next_interview') {
@@ -205,7 +253,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
         );
       },
       sortable: true,
-      minWidth: "200px"
+      width: "200px"
     },
     {
       name: (
@@ -214,14 +262,14 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("position", e.target.value)}
+            onChange={(e) => handleColumnFilter("position_id", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: Candidate) => row.position.toString(),
+      selector: (row: Candidate) => row.position_id.toString(),
       sortable: true,
-      minWidth: "180px"
+      width: "180px"
     },
     {
       name: (
@@ -242,7 +290,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
         </Badge>
       ),
       sortable: true,
-      minWidth: "160px"
+      width: "160px"
     },
     {
       name: (
@@ -258,7 +306,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
       ),
       selector: (row: Candidate) => row.stage || "-",
       sortable: true,
-      minWidth: "150px"
+      width: "150px"
     },
     {
       name: (
@@ -274,7 +322,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
       ),
       selector: (row: Candidate) => new Date(row.applied_date).toLocaleDateString(),
       sortable: true,
-      minWidth: "120px"
+      width: "120px"
     },
     {
       name: (
@@ -290,7 +338,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
       ),
       selector: (row: Candidate) => row.next_interview ? new Date(row.next_interview).toLocaleString() : "-",
       sortable: true,
-      minWidth: "150px"
+      width: "150px"
     },
     {
       name: (
@@ -312,7 +360,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
         </div>
       ),
       sortable: true,
-      minWidth: "100px"
+      width: "100px"
     },
     {
       name: "Actions",
@@ -332,10 +380,16 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
               Feedback
             </Button>
           )}
+          {row.status === "Completed" && (
+            <Button size="sm" variant="outline" className="h-6 px-2 w-32" onClick={() => { setSelectedCandidate(row); setCurrentView('feedback'); }}>
+              <Star className="h-3 w-3" />
+              Edit Feedback
+            </Button>
+          )}
           {row.status === "Pending Review" && (
             <Button size="sm" variant="outline" className="h-6 px-2 w-38" onClick={() => {
               localStorage.setItem('reviewCandidate', JSON.stringify(row));
-              router.push(`/content/Telent-management/Recruitment-management?tab=screening&candidateId=${row.position}`);
+              router.push(`/content/Telent-management/Recruitment-management?tab=screening&candidateId=${row.position_id}`);
             }}>
               <Eye className="h-3 w-3" />
               Review Application
@@ -344,8 +398,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
         </div>
       ),
       ignoreRowClick: true,
-      button: true,
-      minWidth: "320px"
+      width: "320px"
     },
   ];
 

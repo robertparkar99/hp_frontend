@@ -49,122 +49,15 @@ interface OfferTemplate {
   variables: string[];
 }
 
-// Dummy data for offers
-const dummyOffers: Offer[] = [
-  {
-    id: 1,
-    candidateId: 101,
-    candidateName: "Sarah Johnson",
-    position: "Senior Full-Stack Developer",
-    jobTitle: "Senior Full-Stack Developer",
-    salary: "₹1,20,000 - ₹1,50,000",
-    startDate: "2024-02-15",
-    status: "sent",
-    createdAt: "2024-01-16",
-    expiresAt: "2024-01-30",
-    sentAt: "2024-01-16",
-    notes: "Competitive offer for experienced developer"
-  },
-  {
-    id: 2,
-    candidateId: 102,
-    candidateName: "Michael Chen",
-    position: "Product Manager",
-    jobTitle: "Product Manager",
-    salary: "₹1,80,000 - ₹2,20,000",
-    startDate: "2024-02-20",
-    status: "accepted",
-    createdAt: "2024-01-15",
-    expiresAt: "2024-01-29",
-    sentAt: "2024-01-15",
-    acceptedAt: "2024-01-17",
-    notes: "Accepted via email, starting next month"
-  },
-  {
-    id: 3,
-    candidateId: 104,
-    candidateName: "Robert Kim",
-    position: "DevOps Engineer",
-    jobTitle: "DevOps Engineer",
-    salary: "₹1,40,000 - ₹1,70,000",
-    startDate: "2024-02-10",
-    status: "sent",
-    createdAt: "2024-01-14",
-    expiresAt: "2024-01-28",
-    sentAt: "2024-01-14",
-    notes: "High-priority hire, excellent technical skills"
-  },
-  {
-    id: 4,
-    candidateId: 103,
-    candidateName: "Priya Patel",
-    position: "UX Designer",
-    jobTitle: "UX Designer",
-    salary: "₹90,000 - ₹1,20,000",
-    startDate: "2024-02-25",
-    status: "rejected",
-    createdAt: "2024-01-13",
-    expiresAt: "2024-01-27",
-    sentAt: "2024-01-13",
-    rejectedAt: "2024-01-18",
-    notes: "Candidate declined, seeking higher compensation"
-  }
-];
 
-const dummyTemplates: OfferTemplate[] = [
-  {
-    id: "standard",
-    name: "Standard Employment Offer",
-    content: `Dear [Candidate Name],
+interface OfferDashboardProps {
+  showHeader?: boolean;
+  candidate?: string;
+  position?: string;
+  candidateId?: number;
+}
 
-We are pleased to offer you the position of [Position] at [Company Name]. This offer is contingent upon satisfactory completion of background checks and reference verification.
-
-Position Details:
-- Job Title: [Position]
-- Start Date: [Start Date]
-- Compensation: [Salary]
-- Location: [Location]
-
-Benefits:
-- Health insurance
-- Paid time off
-- Professional development allowance
-
-Please review this offer and let us know your decision by [Expiration Date].
-
-Best regards,
-HR Team`,
-    variables: ["Candidate Name", "Position", "Company Name", "Start Date", "Salary", "Location", "Expiration Date"]
-  },
-  {
-    id: "executive",
-    name: "Executive Offer Letter",
-    content: `Dear [Candidate Name],
-
-On behalf of [Company Name], I am delighted to extend a formal offer for the position of [Position].
-
-Compensation Package:
-- Base Salary: [Salary]
-- Signing Bonus: [Signing Bonus]
-- Equity Package: [Equity]
-
-Benefits and Perks:
-- Comprehensive health coverage
-- Unlimited PTO
-- Executive development program
-- Company vehicle allowance
-
-We believe your leadership and expertise will be invaluable to our team.
-
-Please contact me directly to discuss this opportunity.
-
-Sincerely,
-CEO`,
-    variables: ["Candidate Name", "Position", "Company Name", "Salary", "Signing Bonus", "Equity"]
-  }
-];
-
-export default function OfferDashboard() {
+export default function OfferDashboard({ showHeader = true, candidate, position, candidateId }: OfferDashboardProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -197,13 +90,31 @@ export default function OfferDashboard() {
 
   useEffect(() => {
     // Check for query parameters from hiring decision
-    const candidate = searchParams.get('candidate');
-    const position = searchParams.get('position');
+    const candidateParam = searchParams.get('candidate');
+    const positionParam = searchParams.get('position');
+    const candidateIdParam = searchParams.get('candidateId');
 
+    if (candidateParam && positionParam) {
+      // Pre-fill the form with candidate data
+      setNewOffer(prev => ({
+        ...prev,
+        candidateId: candidateIdParam || '',
+        candidateName: candidateParam,
+        position: positionParam,
+        jobTitle: positionParam
+      }));
+      // Auto-open the create dialog
+      setIsCreateDialogOpen(true);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    // Check for props from parent component
     if (candidate && position) {
       // Pre-fill the form with candidate data
       setNewOffer(prev => ({
         ...prev,
+        candidateId: candidateId ? candidateId.toString() : '',
         candidateName: candidate,
         position: position,
         jobTitle: position
@@ -211,7 +122,7 @@ export default function OfferDashboard() {
       // Auto-open the create dialog
       setIsCreateDialogOpen(true);
     }
-  }, [searchParams]);
+  }, [candidate, position, candidateId]);
 
   useEffect(() => {
     if (!sessionData) return;
@@ -231,10 +142,10 @@ export default function OfferDashboard() {
 
         if (offersResponse.ok) {
           const offersResult = await offersResponse.json();
-          setOffers(offersResult.data || dummyOffers);
+          setOffers(offersResult.data || []);
         } else {
-          // Use dummy data when API fails
-          setOffers(dummyOffers);
+          // No data available
+          setOffers([]);
         }
 
         // Try to fetch templates
@@ -249,15 +160,15 @@ export default function OfferDashboard() {
 
         if (templatesResponse.ok) {
           const templatesResult = await templatesResponse.json();
-          setTemplates(templatesResult.data || dummyTemplates);
+          setTemplates(templatesResult.data || []);
         } else {
-          // Use dummy templates
-          setTemplates(dummyTemplates);
+          // No templates available
+          setTemplates([]);
         }
       } catch (error) {
-        console.warn("Using dummy data due to API error:", error);
-        setOffers(dummyOffers);
-        setTemplates(dummyTemplates);
+        console.warn("API error:", error);
+        setOffers([]);
+        setTemplates([]);
       } finally {
         setLoading(false);
       }
@@ -544,100 +455,101 @@ export default function OfferDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Offer Management</h1>
-          <p className="text-muted-foreground">Create, send, and track job offers</p>
+    <div className="space-y-3 bg-background rounded-xl p-4">
+      {showHeader && (
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Offer Management</h1>
+            <p className="text-muted-foreground">Create, send, and track job offers</p>
+          </div>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create New Offer
+          </Button>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Offer
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Offer</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Candidate Name</label>
-                  <Input
-                    value={newOffer.candidateName}
-                    onChange={(e) => setNewOffer(prev => ({ ...prev, candidateName: e.target.value }))}
-                    placeholder="Enter candidate name"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Position</label>
-                  <Input
-                    value={newOffer.position}
-                    onChange={(e) => setNewOffer(prev => ({ ...prev, position: e.target.value }))}
-                    placeholder="Enter position title"
-                  />
-                </div>
-              </div>
+      )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Salary Range</label>
-                  <Input
-                    value={newOffer.salary}
-                    onChange={(e) => setNewOffer(prev => ({ ...prev, salary: e.target.value }))}
-                    placeholder="e.g., ₹50,000 - ₹70,000"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Start Date</label>
-                  <Input
-                    type="date"
-                    value={newOffer.startDate}
-                    onChange={(e) => setNewOffer(prev => ({ ...prev, startDate: e.target.value }))}
-                  />
-                </div>
-              </div>
-
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Offer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Offer Template</label>
-                <Select value={newOffer.templateId} onValueChange={(value) => setNewOffer(prev => ({ ...prev, templateId: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Notes</label>
-                <Textarea
-                  value={newOffer.notes}
-                  onChange={(e) => setNewOffer(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Add any special terms or notes..."
-                  rows={3}
+                <label className="text-sm font-medium">Candidate Name</label>
+                <Input
+                  value={newOffer.candidateName}
+                  onChange={(e) => setNewOffer(prev => ({ ...prev, candidateName: e.target.value }))}
+                  placeholder="Enter candidate name"
                 />
               </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={createOffer}>
-                  Create Offer
-                </Button>
+              <div>
+                <label className="text-sm font-medium">Position</label>
+                <Input
+                  value={newOffer.position}
+                  onChange={(e) => setNewOffer(prev => ({ ...prev, position: e.target.value }))}
+                  placeholder="Enter position title"
+                />
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Salary Range</label>
+                <Input
+                  value={newOffer.salary}
+                  onChange={(e) => setNewOffer(prev => ({ ...prev, salary: e.target.value }))}
+                  placeholder="e.g., ₹50,000 - ₹70,000"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Start Date</label>
+                <Input
+                  type="date"
+                  value={newOffer.startDate}
+                  onChange={(e) => setNewOffer(prev => ({ ...prev, startDate: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Offer Template</label>
+              <Select value={newOffer.templateId} onValueChange={(value) => setNewOffer(prev => ({ ...prev, templateId: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Notes</label>
+              <Textarea
+                value={newOffer.notes}
+                onChange={(e) => setNewOffer(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Add any special terms or notes..."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={createOffer}>
+                Create Offer
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
