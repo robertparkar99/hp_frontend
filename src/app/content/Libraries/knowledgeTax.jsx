@@ -58,7 +58,8 @@ const KnowledgeTax = ({ onSave, loading = false }) => {
       // Group data by category and collect unique sub_categories
       const categoryMap = {};
       deptData.forEach((item) => {
-        const cat = item.category;
+        // Normalize category name to title case to handle case variations
+        const cat = item.category.replace(/\b\w/g, l => l.toUpperCase());
         const sub = item.sub_category;
         if (!categoryMap[cat]) {
           categoryMap[cat] = new Set();
