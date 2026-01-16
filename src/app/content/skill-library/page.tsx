@@ -25,8 +25,8 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+// import { Atom } from "react-loading-indicators";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
-import Loader from "@/components/utils/loading";
 
 type Skill = {
   id: number;
@@ -1115,7 +1115,7 @@ export default function Page() {
         <section ref={contentRef} className="w-full h-screen overflow-y-auto scrollbar-hide">
           {loading || (selectedJobRole && loadingJobRoleSkills) ? (
             <div className="flex justify-center items-center h-screen">
-              <Loader/>
+              {/* <Atom color="#525ceaff" size="medium" text="" textColor="" /> */}
             </div>
           ) : columnFilteredSkills.length === 0 ? (
             <div className="flex justify-center items-center h-full">
@@ -1215,7 +1215,7 @@ export default function Page() {
         </section>
 
         {/* Floating Action Button for Additional Tools */}
-        <div className="fixed bottom-6 right-6 flex flex-col gap-2">
+        {/* <div className="fixed bottom-6 right-6 flex flex-col gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <button className="w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 flex items-center justify-center">
@@ -1236,13 +1236,13 @@ export default function Page() {
                   Refresh Data
                 </button>
                 <button className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded">
-                  {/* <Heatmap className="w-4 h-4" /> */}
+                  // <Heatmap className="w-4 h-4" />
                   Gap Heatmap
                 </button>
               </div>
             </PopoverContent>
           </Popover>
-        </div>
+        </div> */}
 
         {/* Dialogs */}
         {dialogOpen.view && activeSkill && (
