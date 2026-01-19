@@ -18,6 +18,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface JobApplication {
   id: number;
@@ -74,36 +75,36 @@ interface JobPosting {
 }
 
 interface Candidate {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  position: string;
-  experience: string;
-  education: string;
-  location: string;
-  skills: string[];
-  score: number | null;
-  status: 'shortlisted' | 'rejected' | 'pending' | 'under_review';
-  appliedDate: string;
-  resumeUrl: string;
-  matchDetails: {
-    skillsMatch: number | null;
-    experienceMatch: number | null;
-    educationMatch: number | null;
-    cultural_fit: number | null;
-  };
-  originalApplication: JobApplication;
-  aiRecommendation?: string;
-  culturalFit?: number;
-  reasoning?: string;
-  isScreened: boolean;
-  predictedSuccess?: string;
-  rankingScore?: number;
-  skillMatchDetails?: any[];
-  skillGaps?: string[];
-  strengths?: string[];
-}
+   id: string;
+   name: string;
+   email: string;
+   phone: string;
+   position: string;
+   experience: string;
+   education: string;
+   location: string;
+   skills: string[];
+   score: number | null;
+   status: 'shortlisted' | 'rejected' | 'pending' | 'under_review' | 'hired';
+   appliedDate: string;
+   resumeUrl: string;
+   matchDetails: {
+     skillsMatch: number | null;
+     experienceMatch: number | null;
+     educationMatch: number | null;
+     cultural_fit: number | null;
+   };
+   originalApplication: JobApplication;
+   aiRecommendation?: string;
+   culturalFit?: number;
+   reasoning?: string;
+   isScreened: boolean;
+   predictedSuccess?: string;
+   rankingScore?: number;
+   skillMatchDetails?: any[];
+   skillGaps?: string[];
+   strengths?: string[];
+ }
 
 interface ApplicationDetailsDialogProps {
   application: JobApplication | null;
@@ -125,6 +126,8 @@ const ApplicationDetailsDialog = ({
   showScreeningScores = false
 }: ApplicationDetailsDialogProps) => {
   const [sessionData, setSessionData] = useState<any>(null);
+
+  const router = useRouter();
 
   // Fetch session data on mount
   useEffect(() => {
@@ -416,9 +419,10 @@ const ApplicationDetailsDialog = ({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { onOpenChange(false); router.push(`/content/Telent-management/Interview-management?tab=schedule&candidate=${application.id}&job=${application.job_id}`); }}>
               Schedule Interview
             </Button>
+
           </div>
         </div>
       </DialogContent>

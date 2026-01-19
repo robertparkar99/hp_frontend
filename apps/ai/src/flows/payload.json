@@ -1,0 +1,9 @@
+{
+    "input": {
+        "industry": "Technology",
+        "department": "Engineering",
+        "jobRole": "Senior Backend Developer",
+        "description": "Responsible for backend systems.",
+        "chatHistory": []
+    }
+}

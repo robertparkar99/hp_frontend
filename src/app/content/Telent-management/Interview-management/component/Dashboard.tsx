@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from 'next/navigation';
 import { Calendar, Users, UserCheck, MessageSquare } from "lucide-react";
 
 // ✅ Loader Component
@@ -65,6 +66,18 @@ export function Dashboard() {
     // { key: "feedback", label: "Feedback", icon: MessageSquare },
   ];
 
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tabs.some(t => t.key === tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  const candidate = searchParams.get('candidate');
+  const job = searchParams.get('job');
+
   const handleTabChange = (tabKey: string) => {
     setActiveTab(tabKey);
     setOpenPage(null);
@@ -119,7 +132,7 @@ export function Dashboard() {
             </div>
           </>
         )}
-        {activeTab === "schedule" && <DynamicScheduleInterview interview={selectedInterview} />}
+        {activeTab === "schedule" && <DynamicScheduleInterview interview={selectedInterview} candidateId={candidate || undefined} positionId={job || undefined} />}
         {activeTab === "candidates" && <DynamicCandidates />}
         {activeTab === "interview-panel" && <DynamicInterviewPanels />}
         {/* {activeTab === "feedback" && <DynamicFeedback />} */}

@@ -1,6 +1,7 @@
 //src/app/content/Libraries/Jobrole-task-library/page.tsx
 "use client";
 import React, { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { checkPermission } from "@/utils/permissions";
 import {
   Funnel,
@@ -706,6 +707,63 @@ const CriticalWorkFunctionGrid = () => {
                 </button>
               </div>
 
+              {/* Inline Actions Menu */}
+              <AnimatePresence>
+                {isActionsMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex gap-1"
+                  >
+                    {/* Generate with AI */}
+                    <button
+                      onClick={handleAISuggest}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Generate with AI"
+                    >
+                      <Sparkles className="w-5 h-5 text-gray-600" />
+                    </button>
+
+                    <button
+                      onClick={handleImport}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Upload"
+                    >
+                      <Upload className="w-5 h-5 text-gray-600" />
+                    </button>
+                    {/* Download */}
+                    <button
+                      onClick={handleExport}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Download"
+                    >
+                      <Download className="w-5 h-5 text-gray-600" />
+                    </button>
+
+                    {/* Settings */}
+                    <button
+                      onClick={handleSettings}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Settings"
+                    >
+                      <Settings className="w-5 h-5 text-gray-600" />
+                    </button>
+
+                    {/* Help */}
+                    <button
+                      onClick={handleHelp}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Help"
+                    >
+                      <HelpCircle className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* More Actions Button */}
               <div className="relative">
                 <button
                   onClick={toggleActionsMenu}
@@ -714,70 +772,6 @@ const CriticalWorkFunctionGrid = () => {
                 >
                   <MoreVertical className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Horizontal Dropdown Menu */}
-                {isActionsMenuOpen && (
-                  <div
-                    className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-2"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex gap-1">
-                      {/* Generative AI Assistant */}
-                      <button
-                        onClick={handleAISuggest}
-                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="AI Suggestions"
-                      >
-                        <Sparkles className="w-5 h-5 text-gray-600" />
-                      </button>
-
-                      {/* Bulk Actions */}
-                      {selectedTasks.length > 0 && (
-                        <button
-                          onClick={handleBulkActions}
-                          className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Bulk Actions"
-                        >
-                          <ListChecks className="w-5 h-5 text-gray-600" />
-                        </button>
-                      )}
-
-                      <button
-                        onClick={handleImport}
-                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Import jobrole task"
-                      >
-                        <Upload className="w-5 h-5 text-gray-600" />
-                      </button>
-                      {/* Export */}
-                      <button
-                        onClick={handleExport}
-                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Export jobrole task"
-                      >
-                        <Download className="w-5 h-5 text-gray-600" />
-                      </button>
-
-                      {/* Settings */}
-                      <button
-                        onClick={handleSettings}
-                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Settings"
-                      >
-                        <Settings className="w-5 h-5 text-gray-600" />
-                      </button>
-
-                      {/* Help */}
-                      <button
-                        onClick={handleHelp}
-                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Help"
-                      >
-                        <HelpCircle className="w-5 h-5 text-gray-600" />
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

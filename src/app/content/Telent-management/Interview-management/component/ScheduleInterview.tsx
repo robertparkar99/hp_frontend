@@ -69,11 +69,13 @@ interface Interview {
 
 interface ScheduleInterviewProps {
     interview?: Interview | null;
+  candidateId?: string;
+  positionId?: string;
 }
 
 
 
-export default function ScheduleInterview({ interview }: ScheduleInterviewProps) {
+export default function ScheduleInterview({ interview, candidateId, positionId }: ScheduleInterviewProps) {
    const [date, setDate] = useState<string>("");
    const [selectedPanel, setSelectedPanel] = useState<string>("");
    const [selectedInterviewers, setSelectedInterviewers] = useState<number[]>([]);
@@ -155,6 +157,28 @@ export default function ScheduleInterview({ interview }: ScheduleInterviewProps)
     };
     fetchPanels();
   }, [sessionData.sub_institute_id, sessionData.url, sessionData.token]);
+
+  // Pre-select position and candidate if provided
+
+  useEffect(() => {
+
+    if (positionId && positions.length > 0) {
+
+      setSelectedPosition(positionId);
+
+    }
+
+  }, [positionId, positions]);
+
+  useEffect(() => {
+
+    if (candidateId && candidates.length > 0) {
+
+      setSelectedCandidate(candidateId);
+
+    }
+
+  }, [candidateId, candidates]);
 
     // Pre-fill form if interview is provided
     useEffect(() => {
