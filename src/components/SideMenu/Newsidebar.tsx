@@ -510,15 +510,15 @@ const useMenuData = (sessionData: any) => {
 
             // Process data
             const sectionsData = menuData.level_1
-                .filter((l1: any) => true) // Temporarily allow all for debugging
+                .filter((l1: any) => l1.can_view === 1) // Temporarily allow all for debugging
                 .map((l1: any) => {
                     const l2Group = menuData.level_2[l1.id] || {};
                     const subItems = Object.values(l2Group)
-                        .filter((l2: any) => true) // Allow all level 2
+                        .filter((l2: any) => l2.can_view === 1) // Allow all level 2
                         .map((l2: any) => {
                             const l3Group = menuData.level_3[l2.id] || {};
                             const subSubItems = Object.values(l3Group)
-                                .filter((l3: any) => true) // Allow all level 3
+                                .filter((l3: any) => l3.can_view === 1) // Allow all level 3
                                 .map((l3: any) => ({
                                     key: String(l3.id),
                                     label: l3.menu_name,
@@ -802,7 +802,7 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         const userData = localStorage.getItem("userData");
         if (userData) {
             try {
-                const { APP_URL, token, sub_institute_id, org_type, user_id, user_image, user_profile_name, first_name, last_name } = JSON.parse(userData);
+                const { APP_URL, token, sub_institute_id, org_type, user_id, user_image, user_profile_id, first_name, last_name } = JSON.parse(userData);
                 const parsedData = {
                     url: APP_URL || "",
                     token: token || "",
@@ -810,7 +810,7 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                     orgType: org_type || "",
                     userId: user_id || "",
                     userimage: user_image || "",
-                    userProfile: user_profile_name || "",
+                    userProfile: user_profile_id || "",
                     firstName: first_name || "",
                     lastName: last_name || "",
                 };
