@@ -1,115 +1,52 @@
-// export async function POST(req: Request) {
-//     const payload = await req.json();
+import { NextResponse } from "next/server";
+import { genkit } from "genkit";
+import { googleAI } from "@genkit-ai/google-genai";
+import { z } from "zod";
 
-//     const res = await fetch(
-//         `${process.env.GENKIT_BASE_URL}/flows/jobRoleCompetencyFlow`,
-//         {
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify(payload),
-//         }
-//     );
+// Initialize Genkit with Google AI plugin (singleton pattern for serverless)
+let gkInstance: ReturnType<typeof genkit> | null = null;
 
-//     if (!res.ok) {
-//         return new Response('AI service error', { status: 500 });
-//     }
+function getGenkitInstance() {
+    if (!gkInstance) {
+        gkInstance = genkit({
+            plugins: [googleAI({ apiKey: process.env.GEMINI_API_KEY || "" })],
+        });
+    }
+    return gkInstance;
+}
 
-//     const data = await res.json();
-//     return Response.json(data);
-// }
-
-
-
-
-// import { NextResponse } from 'next/server';
-
-// export async function POST(req: Request) {
-//     try {
-//         const body = await req.json();
-//         console.log('🔵 GENKIT API REQUEST BODY:', body);
-
-//         const genkitRes = await fetch(
-//             'http://localhost:3400/jobRoleCompetencyFlow',
-//             {
-//                 method: 'POST',
-//                 headers: { 'Content-Type': 'application/json' },
-//                 body: JSON.stringify(body),
-//             }
-//         );
-
-//         if (!genkitRes.ok) {
-//             const errText = await genkitRes.text();
-//             throw new Error(errText);
-//         }
-
-//         const data = await genkitRes.json();
-
-//         return NextResponse.json(data.result);
-//     } catch (err: any) {
-//         console.error('🔴 GENKIT API ERROR:', err);
-
-//         return NextResponse.json(
-//             {
-//                 message: 'Genkit execution failed',
-//                 error: err.message,
-//             },
-//             { status: 500 }
-//         );
-//     }
-// }
-
-
-
-
-import { NextResponse } from 'next/server';
-
-export const runtime = "nodejs";
+// Define the flow inline to avoid import issues
+function createJobRoleCompetencyTestFlow(gk: ReturnType<typeof genkit>) {
+    return gk.defineFlow(
+        {
+            name: "jobRoleCompetencyTestFlow",
+            inputSchema: z.any(),
+        },
+        async (input) => {
+            console.log("🟢 TEST FLOW RECEIVED RAW INPUT:", input);
+            return {
+                received: true,
+                timestamp: new Date().toISOString(),
+                payload: input,
+            };
+        }
+    );
+}
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        console.log('🔵 NEXT API REQUEST BODY:', body);
 
-        // Genkit flow server expects the input wrapped in a "data" property
-        const genkitRes = await fetch(
-            'http://localhost:3400/jobRoleCompetencyTestFlow',
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: body }),
-            }
-        );
+        const gk = getGenkitInstance();
+        const flow = createJobRoleCompetencyTestFlow(gk);
 
-        if (!genkitRes.ok) {
-            const errText = await genkitRes.text();
-            throw new Error(errText);
-        }
-
-        const data = await genkitRes.json();
-
-        return NextResponse.json(data);
-    } catch (err: any) {
-        console.error('🔴 GENKIT TEST API ERROR:', err);
-
+        const result = await flow(body);
+        return NextResponse.json(result);
+    } catch (error) {
+        console.error("Error executing Genkit flow:", error);
         return NextResponse.json(
-            {
-                message: 'Genkit test flow failed',
-                error: err.message,
-            },
+            { error: "Flow execution failed", details: String(error) },
             { status: 500 }
         );
     }
 }
-
-
-
-// import { NextResponse } from "next/server";
-// import { jobRoleCompetencyFlow } from "../../../../apps/ai/src/flows/jobRoleCompetencyFlow";
-
-// export async function POST(req: Request) {
-//     const body = await req.json();
-
-//     const result = await jobRoleCompetencyFlow(body);
-
-//     return NextResponse.json(result);
-// }
