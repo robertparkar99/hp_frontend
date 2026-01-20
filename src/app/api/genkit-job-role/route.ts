@@ -32,13 +32,13 @@ function createJobRoleCompetencyTestFlow(gk: ReturnType<typeof genkit>) {
         }
     );
 }
-
+import { jobRoleCompetencyFlow } from "../../../../apps/ai/src/flows/jobRoleCompetencyFlow";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
 
         const gk = getGenkitInstance();
-        const flow = createJobRoleCompetencyTestFlow(gk);
+        const flow = jobRoleCompetencyFlow(gk);
 
         const result = await flow(body);
         return NextResponse.json(result);
