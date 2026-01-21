@@ -777,7 +777,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
 
 
   const analyzeJobDescription = async (jdText: string) => {
-    const res = await fetch("/api/analyzeJD", {
+    const res = await fetch(`${sessionData.APP_URL}/api/gemini/analyze-jd`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
