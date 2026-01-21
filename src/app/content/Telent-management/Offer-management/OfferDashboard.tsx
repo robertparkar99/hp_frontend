@@ -62,6 +62,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   const router = useRouter();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [templates, setTemplates] = useState<OfferTemplate[]>([]);
+  const [positions, setPositions] = useState<{id: number, title: string}[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -75,6 +76,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     candidateName: '',
     position: '',
     jobTitle: '',
+    jobId: '',
     salary: '',
     startDate: '',
     templateId: 'standard',
@@ -89,40 +91,88 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   }, []);
 
   useEffect(() => {
-    // Check for query parameters from hiring decision
-    const candidateParam = searchParams.get('candidate');
-    const positionParam = searchParams.get('position');
-    const candidateIdParam = searchParams.get('candidateId');
+    if (positions.length > 0) {
+      const candidateParam = searchParams.get('candidate');
+      const positionParam = searchParams.get('position');
+      const candidateIdParam = searchParams.get('candidateId');
 
-    if (candidateParam && positionParam) {
-      // Pre-fill the form with candidate data
-      setNewOffer(prev => ({
-        ...prev,
-        candidateId: candidateIdParam || '',
-        candidateName: candidateParam,
-        position: positionParam,
-        jobTitle: positionParam
-      }));
-      // Auto-open the create dialog
-      setIsCreateDialogOpen(true);
+      if (candidateParam && positionParam) {
+        const pos = positions.find(p => p.title === positionParam);
+        if (pos) {
+          setNewOffer(prev => ({
+            ...prev,
+            candidateId: candidateIdParam || '',
+            candidateName: candidateParam,
+            position: pos.title,
+            jobTitle: pos.title,
+            jobId: pos.id.toString()
+          }));
+        } else {
+          const pos2 = positions.find(p => p.id.toString() === positionParam);
+          if (pos2) {
+            setNewOffer(prev => ({
+              ...prev,
+              candidateId: candidateIdParam || '',
+              candidateName: candidateParam,
+              position: pos2.title,
+              jobTitle: pos2.title,
+              jobId: pos2.id.toString()
+            }));
+          } else {
+            setNewOffer(prev => ({
+              ...prev,
+              candidateId: candidateIdParam || '',
+              candidateName: candidateParam,
+              position: positionParam,
+              jobTitle: positionParam,
+              jobId: ''
+            }));
+          }
+        }
+        // Auto-open the create dialog
+        setIsCreateDialogOpen(true);
+      }
     }
-  }, [searchParams]);
+  }, [positions, searchParams]);
 
   useEffect(() => {
-    // Check for props from parent component
-    if (candidate && position) {
-      // Pre-fill the form with candidate data
-      setNewOffer(prev => ({
-        ...prev,
-        candidateId: candidateId ? candidateId.toString() : '',
-        candidateName: candidate,
-        position: position,
-        jobTitle: position
-      }));
+    if (positions.length > 0 && candidate && position) {
+      const pos = positions.find(p => p.title === position);
+      if (pos) {
+        setNewOffer(prev => ({
+          ...prev,
+          candidateId: candidateId ? candidateId.toString() : '',
+          candidateName: candidate,
+          position: pos.title,
+          jobTitle: pos.title,
+          jobId: pos.id.toString()
+        }));
+      } else {
+        const pos2 = positions.find(p => p.id.toString() === position);
+        if (pos2) {
+          setNewOffer(prev => ({
+            ...prev,
+            candidateId: candidateId ? candidateId.toString() : '',
+            candidateName: candidate,
+            position: pos2.title,
+            jobTitle: pos2.title,
+            jobId: pos2.id.toString()
+          }));
+        } else {
+          setNewOffer(prev => ({
+            ...prev,
+            candidateId: candidateId ? candidateId.toString() : '',
+            candidateName: candidate,
+            position: position,
+            jobTitle: position,
+            jobId: ''
+          }));
+        }
+      }
       // Auto-open the create dialog
       setIsCreateDialogOpen(true);
     }
-  }, [candidate, position, candidateId]);
+  }, [positions, candidate, position, candidateId]);
 
   useEffect(() => {
     if (!sessionData) return;
@@ -165,6 +215,23 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           // No templates available
           setTemplates([]);
         }
+
+        // Try to fetch positions
+        const positionsResponse = await fetch(
+          `${sessionData.APP_URL}/api/job-postings?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (positionsResponse.ok) {
+          const positionsResult = await positionsResponse.json();
+          setPositions(positionsResult.data || []);
+        } else {
+          setPositions([]);
+        }
       } catch (error) {
         console.warn("API error:", error);
         setOffers([]);
@@ -181,22 +248,23 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     if (!sessionData) return;
 
     try {
-      const offerData = {
-        ...newOffer,
-        candidateId: parseInt(newOffer.candidateId),
-        createdBy: sessionData.user_id,
-        status: 'sent',
-        sentAt: new Date().toISOString().split('T')[0],
-        expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 14 days from now
-      };
-
-      const response = await fetch(`${sessionData.APP_URL}/api/offers`, {
+      const response = await fetch('http://127.0.0.1:8000/api/talent-offers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.token}`
         },
-        body: JSON.stringify(offerData)
+        body: JSON.stringify({
+          type: "API",
+          token: sessionData.token,
+          sub_institute_id: "3",
+          user_id: sessionData.user_id,
+          position: newOffer.position,
+          application_id: parseInt(newOffer.candidateId),
+          job_id: parseInt(newOffer.jobId),
+          salary: newOffer.salary,
+          start_date: newOffer.startDate,
+          notes: newOffer.notes
+        })
       });
 
       if (response.ok) {
@@ -205,10 +273,17 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
 
         // Add to local state
         const newOfferWithId: Offer = {
-          ...offerData,
           id: result.data?.id || Date.now(),
+          candidateId: parseInt(newOffer.candidateId),
+          candidateName: newOffer.candidateName,
+          position: newOffer.position,
+          jobTitle: newOffer.jobTitle,
+          salary: newOffer.salary,
+          startDate: newOffer.startDate,
+          status: 'sent',
           createdAt: new Date().toISOString().split('T')[0],
-          status: 'sent' as const
+          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 14 days from now
+          notes: newOffer.notes
         };
         setOffers(prev => [...prev, newOfferWithId]);
 
@@ -325,6 +400,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
       candidateName: '',
       position: '',
       jobTitle: '',
+      jobId: '',
       salary: '',
       startDate: '',
       templateId: 'standard',
@@ -486,11 +562,21 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
               </div>
               <div>
                 <label className="text-sm font-medium">Position</label>
-                <Input
-                  value={newOffer.position}
-                  onChange={(e) => setNewOffer(prev => ({ ...prev, position: e.target.value }))}
-                  placeholder="Enter position title"
-                />
+                <Select value={newOffer.jobId} onValueChange={(value) => {
+                  const pos = positions.find(p => p.id.toString() === value);
+                  setNewOffer(prev => ({ ...prev, position: pos ? pos.title : '', jobTitle: pos ? pos.title : '', jobId: value }));
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {positions.map((pos) => (
+                      <SelectItem key={pos.id} value={pos.id.toString()}>
+                        {pos.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -513,7 +599,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
               </div>
             </div>
 
-            <div>
+            {/* <div>
               <label className="text-sm font-medium">Offer Template</label>
               <Select value={newOffer.templateId} onValueChange={(value) => setNewOffer(prev => ({ ...prev, templateId: value }))}>
                 <SelectTrigger>
@@ -527,7 +613,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
 
             <div>
               <label className="text-sm font-medium">Notes</label>
