@@ -25,7 +25,7 @@ interface Course {
 
 interface CourseCardProps {
   course: Course;
-  variant?: 'progress' | 'completed' | 'recommended';
+  variant?: 'progress' | 'completed';
   onEnrollSuccess?: () => void;   // <-- ADD THIS
 }
 
@@ -157,7 +157,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', o
         </p>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          {course.skills.slice(0, 3).map((skill, index) => (
+          {course.skills && Array.isArray(course.skills) && course.skills.slice(0, 3).map((skill, index) => (
             <span
               key={index}
               className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium"
@@ -165,7 +165,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', o
               {skill}
             </span>
           ))}
-          {course.skills.length > 3 && (
+          {course.skills && Array.isArray(course.skills) && course.skills.length > 3 && (
             <span className="px-2 py-1 bg-muted text-muted-foreground rounded-lg text-xs font-medium">
               +{course.skills.length - 3} more
             </span>
@@ -176,11 +176,11 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', o
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
             <div className="flex items-center space-x-1">
               <Icon name="Users" size={14} />
-              <span>{course.enrolledCount.toLocaleString()}</span>
+              <span>{course.enrolledCount ? course.enrolledCount.toLocaleString() : '0'}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Icon name="Star" size={14} />
-              <span>{course.rating}</span>
+              <span>{course.rating || '4.3'}</span>
             </div>
           </div>
           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
@@ -222,28 +222,11 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', o
                 <Icon name="Award" size={16} className="mr-2" />
                 Certificate
               </Button>
-            </div>
+            </div>  
           </div>
         )}
 
-        {variant === 'recommended' && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                <Icon name="Target" size={14} />
-                <span>{course.matchScore}% match</span>
-              </div>
-              <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                <Icon name="TrendingUp" size={14} />
-                <span>Trending</span>
-              </div>
-            </div>
-            <Button variant="default" className="w-full" onClick={handleEnroll} disabled={isEnrolling || isEnrolled}>
-              <Icon name="Plus" size={16} className="mr-2" />
-              {isEnrolled ? 'Enrolled' : isEnrolling ? 'Enrolling...' : 'Enroll Now'}
-            </Button>
-          </div>
-        )}
+      
       </div>
     </div>
   );
