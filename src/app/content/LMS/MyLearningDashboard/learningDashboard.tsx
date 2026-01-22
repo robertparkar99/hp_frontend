@@ -45,7 +45,7 @@ interface Course {
 }
 
 interface Tab {
-  id: 'progress' | 'completed' | 'recommended';
+  id: 'progress' | 'completed';
   label: string;
   count: number;
 }
@@ -167,12 +167,14 @@ const handleEnrollSuccess = (course: Course) => {
           description: item.subject_name,
           thumbnail: item.display_image,
           progress: item.progress || 0,
+          timeRemaining: 0,
+          nextLesson: '',
           skills: [item.subject_name],
-          level: 'Beginner',
-          duration: 0,
-          lessons: 0,
-          enrolledCount: 0,
-          rating: 0
+          level: 'Beginner' as const,
+          duration: 120,
+          lessons: 8,
+          enrolledCount: 150,
+          rating: 4.3
         }));
 
         setInProgressCourses(mapped);
@@ -226,10 +228,10 @@ const handleEnrollSuccess = (course: Course) => {
     nextLesson: '',
     skills: [api.subject_name],
     level: 'Beginner' as const,
-    duration: 0,
-    lessons: 0,
-    enrolledCount: 0,
-    rating: 0
+    duration: 120,
+    lessons: 8,
+    enrolledCount: 150,
+    rating: 4.3
   });
 
   const coursesInProgress: Course[] = enrolledCourses.length > 0 ? enrolledCourses : inProgressCourses;
@@ -287,7 +289,7 @@ const handleEnrollSuccess = (course: Course) => {
   const tabs: Tab[] = [
     { id: 'progress', label: 'In Progress', count: coursesInProgress.length },
     { id: 'completed', label: 'Completed', count: completedCourses.length },
-    { id: 'recommended', label: 'Recommended', count: recommendedCourses.length }
+    // { id: 'recommended', label: 'Recommended', count: recommendedCourses.length }
   ];
 
   const getCurrentCourses = (): Course[] => {
@@ -296,8 +298,6 @@ const handleEnrollSuccess = (course: Course) => {
         return coursesInProgress;
       case 'completed':
         return completedCourses;
-      case 'recommended':
-        return recommendedCourses;
       default:
         return coursesInProgress;
     }
@@ -376,7 +376,7 @@ const handleEnrollSuccess = (course: Course) => {
                     <CourseCard
                       key={course.id}
                       course={course}
-                      variant={activeTab}
+                      // variant={activeTab}
                       onEnrollSuccess={() => handleEnrollSuccess(course)}
                     />
                   ))}
@@ -394,7 +394,7 @@ const handleEnrollSuccess = (course: Course) => {
                     <p className="text-muted-foreground mb-4">
                       {activeTab === 'progress' && "Start learning by enrolling in a course"}
                       {activeTab === 'completed' && "Complete your first course to see it here"}
-                      {activeTab === 'recommended' && "We'll recommend courses based on your learning history"}
+                      {/* {activeTab === 'recommended' && "We'll recommend courses based on your learning history"} */}
                     </p>
                     <Button variant="outline">
                       <Search className="mr-2 h-4 w-4" />

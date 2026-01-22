@@ -30,6 +30,20 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
   const [selectedChapterId, setSelectedChapterId] = useState(null)
   const [selectedStandardId, setSelectedStandardId] = useState(null)
   const [showFullQuestionBank, setShowFullQuestionBank] = useState(false) // New state for full view
+  const [courseCompleted, setCourseCompleted] = useState(() => {
+    if (typeof window !== 'undefined' && subject_id && standard_id) {
+      const completedCourses = JSON.parse(localStorage.getItem('completedCourses') || '[]');
+      return completedCourses.includes(`${subject_id}-${standard_id}`);
+    }
+    return false;
+  })
+  const [contentOpened, setContentOpened] = useState(() => {
+    if (typeof window !== 'undefined' && subject_id && standard_id) {
+      const openedCourses = JSON.parse(localStorage.getItem('openedCourses') || '[]');
+      return openedCourses.includes(`${subject_id}-${standard_id}`);
+    }
+    return false;
+  })
 
   // Session data state
   const [sessionData, setSessionData] = useState({
@@ -206,6 +220,21 @@ if (onClose) {
       } // 👈 go back to course tab
 };
 
+  const handleMarkCompleted = () => {
+    if (!contentOpened) {
+      alert("Please read the content first.");
+      return;
+    }
+    alert("Successfully completed the course.");
+    setCourseCompleted(true);
+    const completedCourses = JSON.parse(localStorage.getItem('completedCourses') || '[]');
+    const courseKey = `${subject_id}-${standard_id}`;
+    if (!completedCourses.includes(courseKey)) {
+      completedCourses.push(courseKey);
+      localStorage.setItem('completedCourses', JSON.stringify(completedCourses));
+    }
+  };
+
   // Format course details for CourseHero
   const formatCourseForHero = () => {
     if (!courseDetails) return null
@@ -269,6 +298,15 @@ if (onClose) {
             onSaveContent={handleSaveContent}
             onEditContent={handleEditContent}
             onQuestionContent={handleOpenQuestionBank}
+            onViewCourse={() => {
+              setContentOpened(true);
+              const openedCourses = JSON.parse(localStorage.getItem('openedCourses') || '[]');
+              const courseKey = `${subject_id}-${standard_id}`;
+              if (!openedCourses.includes(courseKey)) {
+                openedCourses.push(courseKey);
+                localStorage.setItem('openedCourses', JSON.stringify(openedCourses));
+              }
+            }}
             sessionInfo={sessionData}
             courseDisplayName={courseDetails?.display_name || "Untitled Course"}
             standardName={standardDetails?.name || "Standard"}
@@ -325,6 +363,15 @@ if (onClose) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-500 hover:text-blue-700 underline"
+                                    onClick={() => {
+                                      setContentOpened(true);
+                                      const openedCourses = JSON.parse(localStorage.getItem('openedCourses') || '[]');
+                                      const courseKey = `${subject_id}-${standard_id}`;
+                                      if (!openedCourses.includes(courseKey)) {
+                                        openedCourses.push(courseKey);
+                                        localStorage.setItem('openedCourses', JSON.stringify(openedCourses));
+                                      }
+                                    }}
                                   >
                                     {res.filename}
                                   </a>
@@ -407,18 +454,34 @@ if (onClose) {
               Browse and manage Module
             </p>
           </div>
-  {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
-          <Button
-            onClick={() => {
-              setChapterToEdit(null)
-              setChapterToDelete(null)
-              setIsAddDialogOpen(true)
-            }}
-            className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
-          >
-            <Icon name="Plus" size={16} /> Create Module
-          </Button>
-  ):null}
+          {/* <div className="flex items-center gap-2">
+            {!courseCompleted && (
+              <Button
+                onClick={handleMarkCompleted}
+                disabled={!contentOpened}
+                className={`flex items-center gap-2 ${contentOpened ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}`}
+              >
+                <Icon name="CheckCircle" size={16} /> Mark As Completed
+              </Button>
+            )}
+            {courseCompleted && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-lg">
+                <Icon name="CheckCircle" size={16} /> Course Completed
+              </div>
+            )}
+            {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
+              <Button
+                onClick={() => {
+                  setChapterToEdit(null)
+                  setChapterToDelete(null)
+                  setIsAddDialogOpen(true)
+                }}
+                className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+              >
+                <Icon name="Plus" size={16} /> Create Module
+              </Button>
+            ) : null}
+          </div> */}
         </div>
 
         {/* Course Hero */}
