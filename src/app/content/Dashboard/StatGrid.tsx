@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Interfaces
 interface Employee {
@@ -182,6 +183,9 @@ export default function Dashboard() {
     totalSkills: 0,
   });
   const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [dailyChartData, setDailyChartData] = useState<ChartData[]>([]);
+  const [weeklyChartData, setWeeklyChartData] = useState<ChartData[]>([]);
+  const [monthlyChartData, setMonthlyChartData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [sessionData, setSessionData] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -279,6 +283,19 @@ export default function Dashboard() {
 
         setTodayTasks(data.today_task ?? []);
         setWeekTasks(data.week_task ?? []);
+
+        // Process daily chart data
+        const dailyData: ChartData[] = [];
+        const statusCounts = { COMPLETED: 0, IN_PROGRESS: 0, PENDING: 0 };
+        data.today_task.forEach((task: any) => {
+          if (task.status in statusCounts) {
+            statusCounts[task.status as keyof typeof statusCounts]++;
+          }
+        });
+        dailyData.push({ label: 'Completed', value: statusCounts.COMPLETED, status: 'COMPLETED' });
+        dailyData.push({ label: 'In Progress', value: statusCounts.IN_PROGRESS, status: 'IN_PROGRESS' });
+        dailyData.push({ label: 'Pending', value: statusCounts.PENDING, status: 'PENDING' });
+        setDailyChartData(dailyData);
         setWidgetOptions(data.widget ?? []);
         setMySkills(data.mySKill ?? []);
         setMyGrowth(data.myGrowth ?? []);
@@ -436,6 +453,8 @@ export default function Dashboard() {
               };
             });
           setChartData(processedChartData);
+          setWeeklyChartData(processedChartData);
+          setMonthlyChartData(processedChartData);
         }
       } catch (err) {
         console.error("Error fetching dashboard:", err);
@@ -513,6 +532,39 @@ export default function Dashboard() {
       default:
         return "bg-gray-300";
     }
+  };
+
+  const renderChart = (data: ChartData[]) => {
+    const maxValue = Math.max(...data.map((d) => d.value), 1);
+    return (
+      <div className="relative">
+        {/* Y-axis labels */}
+        <div className="absolute left-0 h-48 sm:h-56 md:h-64 flex flex-col justify-between text-xs text-gray-500">
+          <span>{maxValue}</span>
+          <span>{Math.round(maxValue * 0.8)}</span>
+          <span>{Math.round(maxValue * 0.6)}</span>
+          <span>{Math.round(maxValue * 0.4)}</span>
+          <span>{Math.round(maxValue * 0.2)}</span>
+          <span>0</span>
+        </div>
+
+        {/* Chart content */}
+        <div className="ml-6 h-48 sm:h-56 md:h-64 flex justify-between items-end gap-2">
+          {data.map((item, i) => (
+            <div key={i} className="flex flex-col items-center flex-1">
+              <div
+                className={`w-full rounded-t ${getStatusColor(item.status)}`}
+                style={{
+                  height: `${(item.value / maxValue) * 100}%`,
+                  minHeight: item.value > 0 ? '4px' : '0'
+                }}
+              />
+              <span className="text-xs text-gray-500 mt-2">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   // Get color for matrix points based on gap level
@@ -734,37 +786,26 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Chart - Only show if no widget selected or Weekly Task Progress selected */}
+              {/* Chart */}
               <div className="bg-white rounded-lg shadow p-4">
                 <div className="flex-1">
-                  <h2 className="font-semibold mb-4 text-center">Weekly Task Progress</h2>
-                  <div className="relative">
-                    {/* Y-axis labels */}
-                    <div className="absolute left-0 h-48 sm:h-56 md:h-64 flex flex-col justify-between text-xs text-gray-500">
-                      <span>{maxValue}</span>
-                      <span>{Math.round(maxValue * 0.8)}</span>
-                      <span>{Math.round(maxValue * 0.6)}</span>
-                      <span>{Math.round(maxValue * 0.4)}</span>
-                      <span>{Math.round(maxValue * 0.2)}</span>
-                      <span>0</span>
-                    </div>
-
-                    {/* Chart content */}
-                    <div className="ml-6 h-48 sm:h-56 md:h-64 flex justify-between items-end gap-2">
-                      {chartData.map((data, i) => (
-                        <div key={i} className="flex flex-col items-center flex-1">
-                          <div
-                            className={`w-full rounded-t ${getStatusColor(data.status)}`}
-                            style={{
-                              height: `${(data.value / maxValue) * 100}%`,
-                              minHeight: data.value > 0 ? '4px' : '0'
-                            }}
-                          />
-                          <span className="text-xs text-gray-500 mt-2">{data.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <h2 className="font-semibold mb-4 text-center">Task Progress</h2>
+                  <Tabs defaultValue="weekly" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="daily">Daily</TabsTrigger>
+                      <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                      <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="daily">
+                      {renderChart(dailyChartData)}
+                    </TabsContent>
+                    <TabsContent value="weekly">
+                      {renderChart(weeklyChartData)}
+                    </TabsContent>
+                    <TabsContent value="monthly">
+                      {renderChart(monthlyChartData)}
+                    </TabsContent>
+                  </Tabs>
 
                   {/* Chart Legend */}
                   <div className="flex justify-center mt-4 gap-4 text-xs">
@@ -795,7 +836,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 gap-4">
               {/* Left: Enterprise Skills Heatmap */}
               <div className="bg-white rounded-xl shadow p-4">
-                <h2 className="font-semibold text-lg mb-2">Enterprise Skills Heatmap</h2>
+                <h2 className="font-semibold text-lg mb-2">Skills Heatmap</h2>
 
                 {/* Legend */}
                 <div className="flex gap-4 text-sm mb-3">
