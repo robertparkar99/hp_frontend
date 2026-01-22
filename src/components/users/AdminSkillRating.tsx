@@ -46,6 +46,7 @@ interface RatedSkill {
   id: number;
   skill_level: string;
   title?: string;
+  skill?: string;
   category?: string;
   sub_category?: string;
   created_at?: string;
@@ -141,7 +142,7 @@ const renderCircles = (value: number, max: number) => {
   );
 };
 
-// Detailed Ratings Component
+// Detailed Ratings Component - Expandable Individual Details
 const renderDetailedRatings = (ratedSkill: RatedSkill) => {
   const detailedRatings = ratedSkill.detailed_ratings || {
     knowledge: ratedSkill.knowledge_ratings || {},
@@ -163,51 +164,30 @@ const renderDetailedRatings = (ratedSkill: RatedSkill) => {
     return { yesCount, totalCount, percentage: totalCount > 0 ? Math.round((yesCount / totalCount) * 100) : 0 };
   };
 
+  // Check if there are any ratings to show
+  const hasAnyRatings = attrArray.some(attr => {
+    const ratings = detailedRatings[attr.title as keyof typeof detailedRatings] || {};
+    return Object.keys(ratings).length > 0;
+  });
+
+  if (!hasAnyRatings) {
+    return null; // Don't show if no ratings
+  }
+
   return (
     <div className="mt-4 border-t pt-3">
-      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-        <span className="mdi mdi-chart-bar mr-1"></span>
-        Detailed Ratings:
-      </h4>
-
       {/* Expandable Detailed View */}
       <details className="group">
         <summary className="text-sm font-medium text-gray-600 cursor-pointer hover:text-gray-800 list-none flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg">
           <span>View Individual Attribute Ratings</span>
           <span className="mdi mdi-chevron-down group-open:mdi-chevron-up transition-transform"></span>
         </summary>
-        {/* Compact View */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          {attrArray.map((attr) => {
-            const ratings = detailedRatings[attr.title as keyof typeof detailedRatings] || {};
-            const { yesCount, totalCount, percentage } = getScore(ratings);
-
-            return (
-              <div key={attr.title} className={`bg-${attr.color}-50 border border-${attr.color}-200 rounded-lg p-2`}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium capitalize flex items-center">
-                    <span className={`mdi ${attr.icon} mr-1 text-${attr.color}-600`}></span>
-                    {attr.title}:
-                  </span>
-                  <span className={`text-xs font-bold text-${attr.color}-700`}>
-                    {yesCount}/{totalCount}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <div
-                    className={`bg-${attr.color}-500 h-1.5 rounded-full`}
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
-                <div className="text-xs text-gray-500 mt-1 text-right">{percentage}%</div>
-              </div>
-            );
-          })}
-        </div>
         <div className="mt-3 space-y-3">
           {attrArray.map((attr) => {
             const ratings = detailedRatings[attr.title as keyof typeof detailedRatings] || {};
             const { yesCount, totalCount, percentage } = getScore(ratings);
+
+            if (totalCount === 0) return null; // Skip if no attributes
 
             return (
               <div key={attr.title} className="border rounded-lg p-3 bg-white">
@@ -392,7 +372,7 @@ export default function Page({
   const calculateOverallSkillIndex = () => {
     if (!userRatedSkills || userRatedSkills.length === 0) return "0.0";
     const totalRating = userRatedSkills.reduce((sum: number, skill: RatedSkill) => {
-      const rating = parseInt(skill.skill_level) || 0;
+      const rating = parseInt(skill.skill_level.replace("Level ", "")) || 0;
       return sum + rating;
     }, 0);
     return (totalRating / userRatedSkills.length).toFixed(1);
@@ -441,7 +421,7 @@ export default function Page({
 
   // Prepare chart data
   const fullChartData = userRatedSkills.map((s: RatedSkill) => {
-    const rating = parseInt(s.skill_level) || 0;
+    const rating = parseInt(s.skill_level.replace("Level ", "")) || 0;
     const max = SkillLevels.length;
 
     const remaining = max - rating;
@@ -456,7 +436,7 @@ export default function Page({
             : "Novice");
 
     return {
-      skill: s.title || "Unknown",
+      skill: s.title || s.skill || "Unknown",
       rating,
       remaining,
       max,
@@ -563,7 +543,7 @@ export default function Page({
 
                 {(() => {
                   const totalRating = userRatedSkills.reduce((sum: number, skill: RatedSkill) => {
-                    const rating = parseInt(skill.skill_level) || 0;
+                    const rating = parseInt(skill.skill_level.replace("Level ", "")) || 0;
                     return sum + rating;
                   }, 0);
 
@@ -578,15 +558,15 @@ export default function Page({
 
                   const proficiencyCounts = {
                     advanced: userRatedSkills.filter(skill => {
-                      const rating = parseInt(skill.skill_level) || 0;
+                      const rating = parseInt(skill.skill_level.replace("Level ", "")) || 0;
                       return rating >= 5;
                     }).length,
                     intermediate: userRatedSkills.filter(skill => {
-                      const rating = parseInt(skill.skill_level) || 0;
+                      const rating = parseInt(skill.skill_level.replace("Level ", "")) || 0;
                       return rating >= 3 && rating < 5;
                     }).length,
                     beginner: userRatedSkills.filter(skill => {
-                      const rating = parseInt(skill.skill_level) || 0;
+                      const rating = parseInt(skill.skill_level.replace("Level ", "")) || 0;
                       return rating < 3;
                     }).length
                   };
@@ -754,7 +734,7 @@ export default function Page({
                 userRatedSkills.map((ratedSkill: RatedSkill) => {
                   const totalLevels = SkillLevels.length;
                   const currentLevel = ratedSkill.skill_level
-                    ? parseInt(ratedSkill.skill_level)
+                    ? parseInt(ratedSkill.skill_level.replace("Level ", ""))
                     : 1;
                   const completionPercentage = Math.round((currentLevel / totalLevels) * 100);
                   const status =
@@ -774,7 +754,7 @@ export default function Page({
                     : "N/A";
 
                   const selfRating = ratedSkill.skill_level !== undefined ?
-                    parseFloat(ratedSkill.skill_level) || 0 : 0;
+                    parseFloat(ratedSkill.skill_level.replace("Level ", "")) || 0 : 0;
                   const expected = ratedSkill.proficiency_level !== undefined ?
                     parseFloat(ratedSkill.proficiency_level) || 0 : 0;
 
@@ -785,7 +765,7 @@ export default function Page({
                     >
                       <div className="flex justify-between items-center mb-2">
                         <h3 className="font-semibold text-gray-800 text-base">
-                          {ratedSkill.title || "Untitled Skill"}
+                          {ratedSkill.title || ratedSkill.skill || "Untitled Skill"}
                         </h3>
                         <span className="font-medium text-gray-500 flex items-center space-x-1 text-xs">
                           Gap:{(() => {
@@ -851,7 +831,7 @@ export default function Page({
     </div>
 
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors 
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors
         focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
         hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
     >
@@ -860,7 +840,64 @@ export default function Page({
   </div>
 </div>
 
-                      {/* Add detailed ratings here */}
+                      {/* KAAB Ratings Summary - Always Visible */}
+                      <div className="mt-4 border-t pt-3">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                          <span className="mdi mdi-chart-bar mr-1"></span>
+                          KAAB Ratings:
+                        </h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {(() => {
+                            const detailedRatings = ratedSkill.detailed_ratings || {
+                              knowledge: ratedSkill.knowledge_ratings || {},
+                              ability: ratedSkill.ability_ratings || {},
+                              behaviour: ratedSkill.behaviour_ratings || {},
+                              attitude: ratedSkill.attitude_ratings || {}
+                            };
+
+                            const attrArray = [
+                              { title: "knowledge", icon: "mdi-book-open-page-variant", color: "blue" },
+                              { title: "ability", icon: "mdi-lightbulb-on", color: "green" },
+                              { title: "behaviour", icon: "mdi-account-group", color: "purple" },
+                              { title: "attitude", icon: "mdi-emoticon-happy-outline", color: "orange" },
+                            ];
+
+                            const getScore = (ratings: Record<string, string>) => {
+                              const yesCount = Object.values(ratings).filter(val => val === "yes").length;
+                              const totalCount = Object.keys(ratings).length;
+                              return { yesCount, totalCount, percentage: totalCount > 0 ? Math.round((yesCount / totalCount) * 100) : 0 };
+                            };
+
+                            return attrArray.map((attr) => {
+                              const ratings = detailedRatings[attr.title as keyof typeof detailedRatings] || {};
+                              const { yesCount, totalCount, percentage } = getScore(ratings);
+
+                              return (
+                                <div key={attr.title} className={`bg-${attr.color}-50 border border-${attr.color}-200 rounded-lg p-2`}>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-medium capitalize flex items-center">
+                                      <span className={`mdi ${attr.icon} mr-1 text-${attr.color}-600`}></span>
+                                      {attr.title}:
+                                    </span>
+                                    <span className={`text-xs font-bold text-${attr.color}-700`}>
+                                      {yesCount}/{totalCount}
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div
+                                      className={`bg-${attr.color}-500 h-1.5 rounded-full`}
+                                      style={{ width: `${percentage}%` }}
+                                    ></div>
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1 text-right">{percentage}%</div>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
+
+                      {/* Add detailed ratings expandable here */}
                       {renderDetailedRatings(ratedSkill)}
                     </div>
                   );
