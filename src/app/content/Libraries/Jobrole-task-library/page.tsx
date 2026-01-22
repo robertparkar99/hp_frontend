@@ -111,6 +111,10 @@ const CriticalWorkFunctionGrid = () => {
   // ✅ New state for dropdown menu
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
 
+  // Refs for menu and button
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
   // Load session data
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -143,7 +147,13 @@ const CriticalWorkFunctionGrid = () => {
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isActionsMenuOpen) {
+      if (
+        isActionsMenuOpen &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node) &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
         setIsActionsMenuOpen(false);
       }
     };
@@ -708,64 +718,67 @@ const CriticalWorkFunctionGrid = () => {
               </div>
 
               {/* Inline Actions Menu */}
-              <AnimatePresence>
-                {isActionsMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex gap-1"
-                  >
-                    {/* Generate with AI */}
-                    <button
-                      onClick={handleAISuggest}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Generate with AI"
+              <div ref={menuRef}>
+                <AnimatePresence>
+                  {isActionsMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex gap-1"
                     >
-                      <Sparkles className="w-5 h-5 text-gray-600" />
-                    </button>
+                      {/* Generate with AI */}
+                      <button
+                        onClick={handleAISuggest}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Generate with AI"
+                      >
+                        <Sparkles className="w-5 h-5 text-gray-600" />
+                      </button>
 
-                    <button
-                      onClick={handleImport}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Upload"
-                    >
-                      <Upload className="w-5 h-5 text-gray-600" />
-                    </button>
-                    {/* Download */}
-                    <button
-                      onClick={handleExport}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Download"
-                    >
-                      <Download className="w-5 h-5 text-gray-600" />
-                    </button>
+                      <button
+                        onClick={handleImport}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Upload"
+                      >
+                        <Upload className="w-5 h-5 text-gray-600" />
+                      </button>
+                      {/* Download */}
+                      <button
+                        onClick={handleExport}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Download"
+                      >
+                        <Download className="w-5 h-5 text-gray-600" />
+                      </button>
 
-                    {/* Settings */}
-                    <button
-                      onClick={handleSettings}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Settings"
-                    >
-                      <Settings className="w-5 h-5 text-gray-600" />
-                    </button>
+                      {/* Settings */}
+                      <button
+                        onClick={handleSettings}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Settings"
+                      >
+                        <Settings className="w-5 h-5 text-gray-600" />
+                      </button>
 
-                    {/* Help */}
-                    <button
-                      onClick={handleHelp}
-                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Help"
-                    >
-                      <HelpCircle className="w-5 h-5 text-gray-600" />
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      {/* Help */}
+                      <button
+                        onClick={handleHelp}
+                        className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Help"
+                      >
+                        <HelpCircle className="w-5 h-5 text-gray-600" />
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* More Actions Button */}
               <div className="relative">
                 <button
+                  ref={buttonRef}
                   onClick={toggleActionsMenu}
                   className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                   title="More Actions"

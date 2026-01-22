@@ -1,7 +1,7 @@
 //
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkPermission } from "@/utils/permissions";
 import {
@@ -92,6 +92,8 @@ export default function HomePage() {
 
   // ✅ New state for dropdown menu
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const [sessionData, setSessionData] = useState({
     url: "",
@@ -140,6 +142,9 @@ export default function HomePage() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isActionsMenuOpen) {
+        const target = event.target as Node;
+        if (buttonRef.current && buttonRef.current.contains(target)) return;
+        if (menuRef.current && menuRef.current.contains(target)) return;
         setIsActionsMenuOpen(false);
       }
     };
@@ -557,6 +562,7 @@ export default function HomePage() {
           <AnimatePresence>
             {isActionsMenuOpen && (
               <motion.div
+                ref={menuRef}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
@@ -636,6 +642,7 @@ export default function HomePage() {
           {/* More Actions Button */}
           <div className="relative">
             <button
+              ref={buttonRef}
               onClick={toggleActionsMenu}
               className="p-2 hover:bg-gray-100 rounded transition-colors"
               title="More Actions"
