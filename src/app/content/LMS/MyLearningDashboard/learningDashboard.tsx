@@ -304,10 +304,10 @@ const handleEnrollSuccess = (course: Course) => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background rounded-xl">
       {/* <Header /> */}
 
-      <main className="pt-16 pb-20 md:pb-8">
+      <main className="pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* <Breadcrumb /> */}
 
