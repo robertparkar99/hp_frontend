@@ -1,4 +1,4 @@
-// 'use client'
+  // 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -13,29 +13,30 @@ import AiCourseDialog from './components/AiCourseDialog'
 import ViewDetail from '../LMS/ViewChepter/ViewDetail'
 
 type Course = {
-   id: number
-   subject_id: number
-   standard_id: number
-   title: string
-   description: string
-   thumbnail: string
-   contentType: string
-   category: string
-   difficulty: string
-   short_name: string
-   subject_type: string
-   progress: number
-   instructor: string
-   isNew: boolean
-   isMandatory: boolean
-   display_name: string
-   sort_order: string
-   status: string
-   subject_category?: string
-   is_external?: boolean
-   external_url?: string
-   platform?: string
-   jobrole?: string
+    id: number
+    subject_id: number
+    standard_id: number
+    title: string
+    description: string
+    thumbnail: string
+    contentType: string
+    category: string
+    difficulty: string
+    short_name: string
+    subject_type: string
+    progress: number
+    instructor: string
+    isNew: boolean
+    isMandatory: boolean
+    display_name: string
+    sort_order: string
+    status: string
+    subject_category?: string
+    is_external?: boolean
+    external_url?: string
+    platform?: string
+    jobrole?: string
+    enrollment_status: string | null
 }
 
 type Filters = {
@@ -157,7 +158,8 @@ const LearningCatalog: React.FC = () => {
               sort_order: item.sort_order ?? '1',
               status: item.status ?? '1',
               subject_category: category, // Add subject_category for filtering
-              jobrole: item.jobrole ?? undefined
+              jobrole: item.jobrole ?? undefined,
+              enrollment_status: item.enrollment_status ?? null
             }
             mappedCourses.push(course)
 

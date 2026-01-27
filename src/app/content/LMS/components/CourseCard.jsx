@@ -32,11 +32,8 @@ const CourseCard = ({
   const [loading, setLoading] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [enrolled, setEnrolled] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
-      return enrolledCourses.includes(course.id);
-    }
-    return course.enrolled || false;
+    // Use enrollment_status from API: if null, not enrolled; otherwise enrolled
+    return course.enrollment_status !== null;
   });
   const [correctSubjectId, setCorrectSubjectId] = useState(null);
   const [jobRoles, setJobRoles] = useState([]);
@@ -280,13 +277,15 @@ const CourseCard = ({
       // Check if enrollment was successful
       if (data.message && data.message.toLowerCase().includes("success")) {
         setEnrolled(true);
+        course.enrollment_status = 'enrolled'; // Update enrollment status
 
         // Persist enrollment in localStorage
-        const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
-        if (!enrolledCourses.includes(course.id)) {
-          enrolledCourses.push(course.id);
-          localStorage.setItem('enrolledCourses', JSON.stringify(enrolledCourses));
-        }
+          const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
+          if (!enrolledCourses.some(c => c.id === course.id)) {
+            course.contentType = contentType; // Add content type
+            enrolledCourses.push(course);
+            localStorage.setItem('enrolledCourses', JSON.stringify(enrolledCourses));
+          }
 
         // Notify parent component if callback exists
         if (onEnroll) {
