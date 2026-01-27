@@ -160,16 +160,16 @@ const handleEnrollSuccess = (course: Course) => {
       const data = await response.json();
       console.log("ENROLLED COURSES:", data);
 
-      if (data.status === true && Array.isArray(data.courses)) {
-        const mapped = data.courses.map((item: any) => ({
-          id: item.subject_id,
-          title: item.subject_name,
-          description: item.subject_name,
-          thumbnail: item.display_image,
-          progress: item.progress || 0,
+      if (data.status === true && Array.isArray(data.data)) {
+        const mapped = data.data.map((item: any) => ({
+          id: item.id,
+          title: item.display_name,
+          description: item.subject_type,
+          thumbnail: item.display_image || 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=225&fit=crop',
+          progress: 0,
           timeRemaining: 0,
           nextLesson: '',
-          skills: [item.subject_name],
+          skills: [item.subject_type],
           level: 'Beginner' as const,
           duration: 120,
           lessons: 8,
