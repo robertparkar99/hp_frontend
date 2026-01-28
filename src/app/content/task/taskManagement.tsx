@@ -48,7 +48,9 @@ interface JobRole {
 }
 
 interface Skill {
-  title: string;
+  jobrole_skill_id: number;
+  jobrole: string;
+  skill: string;
 }
 
 interface Task {
@@ -466,7 +468,12 @@ const TaskManagement = () => {
       console.log("TASK_ALLOCATED_TO:", finalAllocatedTo);
       formData.append("task_title", selTask);
       formData.append("task_description", taskDescription);
-      formData.append("skills", selSkill.join(","));
+      const selectedSkills = selSkill.map(id => {
+        const skill = skillList.find(s => s.jobrole_skill_id.toString() === id);
+        return skill ? skill.skill : '';
+      }).filter(name => name);
+      formData.append("skill_id", selSkill.join(","));
+      formData.append("skills", selectedSkills.join(","));
       formData.append("manageby", selObserver);
       formData.append("observation_point", observationPoint);
       formData.append("KRA", kras);
@@ -482,6 +489,8 @@ const TaskManagement = () => {
       console.log("Submitting form data:", {
         task_title: selTask,
         task_description: taskDescription,
+        skill_id: selSkill,
+        skills: selectedSkills,
         repeat_days: repeatDays,
         repeat_until: formattedRepeatUntil,
         task_type: taskType,
@@ -552,7 +561,7 @@ const TaskManagement = () => {
       }
       setMessage(1);
 
-      const skillsData = '[' + skillList.map(skill => skill.title).join(',') + ']';
+      const skillsData = '[' + skillList.map(skill => skill.skill).join(',') + ']';
       const response = await fetch(`${sessionData.url}/gemini_chat`, {
         method: 'POST',
         headers: {
@@ -586,7 +595,11 @@ const TaskManagement = () => {
         setObservationPoint(geminiData.observation_point);
         setKras(geminiData.kras);
         setKpis(geminiData.kpis);
-        setSelSkill(geminiData.skill_required);
+        const selectedSkillIds = geminiData.skill_required.map((skillName: string) => {
+          const skillObj = skillList.find(s => s.skill === skillName);
+          return skillObj ? skillObj.jobrole_skill_id.toString() : '';
+        }).filter(id => id);
+        setSelSkill(selectedSkillIds);
         setTaskType(geminiData.task_type || "Medium");
       } else {
         setMessage(3);
@@ -926,8 +939,8 @@ const TaskManagement = () => {
                     >
                       <option value="">Select Required Skills</option>
                       {skillList.map((skill, index) => (
-                        <option key={index} value={skill.title}>
-                          {skill.title}
+                        <option key={index} value={skill.jobrole_skill_id.toString()}>
+                          {skill.skill}
                         </option>
                       ))}
                     </select>
