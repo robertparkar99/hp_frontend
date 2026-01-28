@@ -21,7 +21,6 @@ export default function GenkitTestPage() {
                     department: 'Nursing',
                     jobRole: 'Charge Nurse',
                     description: 'An experienced RN who oversees a specific unit or shift. They manage patient flow, assign nursing staff to patients, handle immediate administrative issues, serve as a clinical resource, and ensure smooth communication between staff, physicians, and management. They maintain clinical duties while taking on leadership responsibilities',
-                    subInstituteId: "3",
                 }),
             });
 

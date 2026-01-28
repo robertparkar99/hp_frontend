@@ -7,6 +7,8 @@ import { seniorExpertPrompt } from './prompts/seniorExpertPrompt.js';
 // Import flows
 import { jobRoleCompetencyFlow } from './flows/jobRoleCompetencyFlow.js';
 
+import { jobRoleCompetencyTestFlow } from './flows/jobRoleCompetencyTestFlow.js';
+
 // Initialize genkit with the plugin
 const gk = genkit({
   plugins: [googleAIPlugin]
@@ -25,11 +27,15 @@ export const seniorExpertPromptDef = gk.definePrompt(
 // 2. Define the Job Role Competency Flow
 
 const jobRoleCompetencyFlowInstance = jobRoleCompetencyFlow(gk);
+const jobRoleCompetencyTestFlowInstance = jobRoleCompetencyTestFlow(gk);
 
 // 3. Start the Flow Server
 
 startFlowServer({
-  flows: [jobRoleCompetencyFlowInstance],
+  flows: [
+    jobRoleCompetencyFlowInstance,
+    jobRoleCompetencyTestFlowInstance,
+  ],
   port: 3400,
 });
 

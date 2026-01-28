@@ -565,7 +565,7 @@ const ProgressDashboard = () => {
         <div className="flex items-center space-x-1">
           <div className={`w-2 h-2 rounded-full ${getPriorityColor(row.task_type).replace('text-', 'bg-')}`} />
           <span className={`text-xs font-medium ${getPriorityColor(row.task_type)}`}>
-            {row.task_type.charAt(0).toUpperCase() + row.task_type.slice(1)}
+            {row.task_type ? row.task_type.charAt(0).toUpperCase() + row.task_type.slice(1) : 'N/A'}
           </span>
         </div>
       ),
@@ -593,7 +593,7 @@ const ProgressDashboard = () => {
       sortable: true,
       cell: row => (
         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getApproveStatusColor(row.approve_status)}`}>
-          {row.approve_status ? row.approve_status.charAt(0).toUpperCase() + row.approve_status.slice(1).toUpperCase() : 'PENDING'}
+          {row.approve_status ? row.approve_status.charAt(0).toUpperCase() + row.approve_status.slice(1).toLowerCase() : 'Pending'}
         </span>
       )
     },
