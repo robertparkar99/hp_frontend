@@ -53,6 +53,7 @@ interface RatedSkill {
   proficiency_level?: string;
   self_rating?: number;
   SkillLevels?: string[];
+  skill_id?: number;
   // Add detailed ratings fields
   detailed_ratings?: {
     knowledge: Record<string, string>;
@@ -66,12 +67,30 @@ interface RatedSkill {
   attitude_ratings?: Record<string, string>;
 }
 
+interface UserRatingData {
+  id: number;
+  user_id: number;
+  jobrole_id: number;
+  skill_ids: string;
+  knowledge_ids: string;
+  ability_ids: string | null;
+  attitude_ids: string | null;
+  behavior_ids: string | null;
+  sub_institute_id: number;
+  created_by: number;
+  updated_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
 interface JobroleSkilladd1Props {
-  skills: Skill[];
-  userRatedSkills: RatedSkill[];
-  parentSetUserRatedSkills: React.Dispatch<React.SetStateAction<RatedSkill[]>>;
+  sub_institute_id: number;
+  type: string;
+  type_id: number;
+  title: string;
+  user_id: number;
+  jobrole_id: number;
   SkillLevels: any[];
-  userJobroleSkills: any[];
 }
 
 // ✅ Tooltip Component for Chart
@@ -311,23 +330,18 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
 };
 
 export default function Page({
-  skills: initialSkills,
-  userRatedSkills: initialUserRatedSkills,
-  parentSetUserRatedSkills,
-  SkillLevels,
-  userJobroleSkills,
+  sub_institute_id = 3,
+  type = "jobrole",
+  type_id = 3154,
+  title = "Nurse Manager",
+  user_id = 6,
+  jobrole_id = 3154,
+  SkillLevels = [],
 }: JobroleSkilladd1Props) {
-  const [skills, setSkills] = useState<Skill[]>(initialSkills || []);
-  const [userRatedSkills, setUserRatedSkills] = useState<RatedSkill[]>(initialUserRatedSkills || []);
-
-  // Compute un-rated skills
-  const unRatedSkills = skills.filter(
-    skill =>
-      !userRatedSkills.some(
-        rated =>
-          rated.id === skill.skill_id || rated.title === skill.skill
-      )
-  );
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [userRatedSkills, setUserRatedSkills] = useState<RatedSkill[]>([]);
+  const [userRatingData, setUserRatingData] = useState<UserRatingData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selfRating, setSelfRating] = useState<any>(0);
@@ -336,53 +350,209 @@ export default function Page({
   const [showEmptyState, setShowEmptyState] = useState(false);
   const [showFullscreenChart, setShowFullscreenChart] = useState(false);
 
-  // Check if chart data is empty
+  // Fetch all skills from first API
+  const fetchAllSkills = async () => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/get-kaba?sub_institute_id=${sub_institute_id}&type=${type}&type_id=${type_id}&title=${encodeURIComponent(title)}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Fetched skills data:", data);
+        
+        // Transform the API response to match our Skill interface
+        const transformedSkills: Skill[] = data.skills?.map((skill: any) => ({
+          ability: skill.ability || [],
+          category: skill.category || "",
+          description: skill.description || "",
+          jobrole: skill.jobrole || "",
+          jobrole_skill_id: skill.jobrole_skill_id || 0,
+          knowledge: skill.knowledge || [],
+          behaviour: skill.behaviour || [],
+          attitude: skill.attitude || [],
+          proficiency_level: skill.proficiency_level || "Beginner",
+          skill: skill.skill || "",
+          skill_id: skill.skill_id || 0,
+          sub_category: skill.sub_category || "",
+          title: skill.title || skill.skill || ""
+        })) || [];
+        
+        setSkills(transformedSkills);
+        return transformedSkills;
+      }
+    } catch (error) {
+      console.error("Error fetching skills:", error);
+    }
+    return [];
+  };
+
+  // Fetch user rating data from second API
+  const fetchUserRatingData = async () => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/table_data/?table=user_rating_details&filters[sub_institute_id]=${sub_institute_id}&filters[user_id]=${user_id}&filters[jobrole_id]=${jobrole_id}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Fetched user rating data:", data);
+        
+        if (data.length > 0) {
+          setUserRatingData(data[0]);
+          return data[0];
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user rating data:", error);
+    }
+    return null;
+  };
+
+  // Process and combine data from both APIs
+  const processSkillsData = (allSkills: Skill[], ratingData: UserRatingData | null) => {
+    if (!ratingData) {
+      // No rating data, all skills are unrated
+      setUserRatedSkills([]);
+      return;
+    }
+
+    // Parse the JSON strings from the API response
+    const skillRatings = JSON.parse(ratingData.skill_ids);
+    const knowledgeRatings = JSON.parse(ratingData.knowledge_ids);
+    const abilityRatings = ratingData.ability_ids ? JSON.parse(ratingData.ability_ids) : {};
+    const behaviorRatings = ratingData.behavior_ids ? JSON.parse(ratingData.behavior_ids) : {};
+    const attitudeRatings = ratingData.attitude_ids ? JSON.parse(ratingData.attitude_ids) : {};
+
+    // Create rated skills array
+    const ratedSkillsArray: RatedSkill[] = [];
+    
+    allSkills.forEach(skill => {
+      const skillId = skill.skill_id.toString();
+      if (skillRatings[skillId]) {
+        // Get detailed ratings for this specific skill
+        const skillKnowledge = skill.knowledge || [];
+        const skillAbility = skill.ability || [];
+        const skillBehaviour = skill.behaviour || [];
+        const skillAttitude = skill.attitude || [];
+
+        // Create knowledge ratings object for this skill
+        const knowledgeRatingObj: Record<string, string> = {};
+        skillKnowledge.forEach((knowledgeItem: any) => {
+          const knowledgeId = knowledgeItem.knowledge_id?.toString();
+          if (knowledgeId && knowledgeRatings[knowledgeId]) {
+            knowledgeRatingObj[knowledgeItem.knowledge || "Unknown"] = 
+              knowledgeRatings[knowledgeId] > 2 ? "yes" : "no";
+          }
+        });
+
+        // Create ability ratings object for this skill
+        const abilityRatingObj: Record<string, string> = {};
+        skillAbility.forEach((abilityItem: any) => {
+          const abilityId = abilityItem.ability_id?.toString();
+          if (abilityId && abilityRatings[abilityId]) {
+            abilityRatingObj[abilityItem.ability || "Unknown"] = 
+              abilityRatings[abilityId] > 2 ? "yes" : "no";
+          }
+        });
+
+        // Create behaviour ratings object for this skill
+        const behaviourRatingObj: Record<string, string> = {};
+        skillBehaviour.forEach((behaviourItem: any) => {
+          const behaviourId = behaviourItem.behaviour_id?.toString();
+          if (behaviourId && behaviorRatings[behaviourId]) {
+            behaviourRatingObj[behaviourItem.behaviour || "Unknown"] = 
+              behaviorRatings[behaviourId] > 2 ? "yes" : "no";
+          }
+        });
+
+        // Create attitude ratings object for this skill
+        const attitudeRatingObj: Record<string, string> = {};
+        skillAttitude.forEach((attitudeItem: any) => {
+          const attitudeId = attitudeItem.attitude_id?.toString();
+          if (attitudeId && attitudeRatings[attitudeId]) {
+            attitudeRatingObj[attitudeItem.attitude || "Unknown"] = 
+              attitudeRatings[attitudeId] > 2 ? "yes" : "no";
+          }
+        });
+
+        const ratedSkill: RatedSkill = {
+          id: skill.skill_id,
+          skill_id: skill.skill_id,
+          skill_level: `Level ${skillRatings[skillId]}`,
+          title: skill.title || skill.skill,
+          skill: skill.skill,
+          category: skill.category,
+          sub_category: skill.sub_category,
+          created_at: ratingData.created_at,
+          proficiency_level: skill.proficiency_level,
+          self_rating: parseInt(skillRatings[skillId]),
+          knowledge_ratings: knowledgeRatingObj,
+          ability_ratings: abilityRatingObj,
+          behaviour_ratings: behaviourRatingObj,
+          attitude_ratings: attitudeRatingObj,
+          detailed_ratings: {
+            knowledge: knowledgeRatingObj,
+            ability: abilityRatingObj,
+            behaviour: behaviourRatingObj,
+            attitude: attitudeRatingObj
+          }
+        };
+
+        ratedSkillsArray.push(ratedSkill);
+      }
+    });
+
+    console.log("Processed rated skills:", ratedSkillsArray);
+    setUserRatedSkills(ratedSkillsArray);
+  };
+
+  // Fetch data on component mount
   useEffect(() => {
-    const hasChartData = userRatedSkills && userRatedSkills.length > 0;
-    setShowEmptyState(!hasChartData);
-  }, [userRatedSkills]);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch both APIs in parallel
+        const [allSkills, ratingData] = await Promise.all([
+          fetchAllSkills(),
+          fetchUserRatingData()
+        ]);
 
-  // Fetch rated skills with self_rating and proficiency_level
-  // useEffect(() => {
-  //   const fetchUserRatedSkills = async () => {
-  //     try {
-  //       const userData = localStorage.getItem("userData");
-  //       if (!userData) return;
+        // Process the data
+        processSkillsData(allSkills, ratingData);
 
-  //       const { APP_URL, token, user_id } = JSON.parse(userData);
-  //       const response = await fetch(
-  //         `${APP_URL}/user-rated-skills?user_id=${user_id}&token=${token}&include_proficiency=true`
-  //       );
+        // Check if we should show empty state
+        const hasRatedSkills = ratingData && ratingData.skill_ids && ratingData.skill_ids !== "{}";
+        setShowEmptyState(!hasRatedSkills);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setShowEmptyState(true);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  //       if (response.ok) {
-  //         const data = await response.json();
-  //         console.log("Fetched rated skills:", data.userRatedSkills);
-  //         setUserRatedSkills(data.userRatedSkills || []);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching user rated skills:", error);
-  //     }
-  //   };
+    fetchData();
+  }, [sub_institute_id, type_id, user_id, jobrole_id]);
 
-  //   if (!initialUserRatedSkills || initialUserRatedSkills.length === 0) {
-  //     fetchUserRatedSkills();
-  //   }
-  // }, [initialUserRatedSkills]);
+  // Compute un-rated skills
+  const unRatedSkills = skills.filter(
+    skill => !userRatedSkills.some(rated => rated.skill_id === skill.skill_id)
+  );
 
   const calculateOverallSkillIndex = () => {
     if (!userRatedSkills || userRatedSkills.length === 0) return "0.0";
     const totalRating = userRatedSkills.reduce((sum: number, skill: RatedSkill) => {
-      const rating = parseInt(skill.skill_level.replace("Level ", "")) || 0;
+      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
       return sum + rating;
     }, 0);
     return (totalRating / userRatedSkills.length).toFixed(1);
   };
 
   const overallSkillIndex = calculateOverallSkillIndex();
-  const percentage = Math.round((parseFloat(overallSkillIndex) / 5) * 100);
-  const improvement = "+0.3";
+  const percentage = Math.round((parseFloat(overallSkillIndex) / (SkillLevels.length || 5)) * 100);
 
-  const totalLevels = SkillLevels.length;
+  const totalLevels = SkillLevels.length || 5;
 
   const overallStatus =
     percentage >= 80
@@ -412,17 +582,10 @@ export default function Page({
         ? "text-yellow-600"
         : "text-red-600";
 
-  const attrArray = [
-    { title: "knowledge", icon: "mdi-book-open-page-variant" },
-    { title: "ability", icon: "mdi-lightbulb-on" },
-    { title: "behaviour", icon: "mdi-account-group" },
-    { title: "attitude", icon: "mdi-emoticon-happy-outline" },
-  ];
-
   // Prepare chart data
   const fullChartData = userRatedSkills.map((s: RatedSkill) => {
-    const rating = parseInt(s.skill_level.replace("Level ", "")) || 0;
-    const max = SkillLevels.length;
+    const rating = parseInt(s.skill_level?.replace("Level ", "") || "0");
+    const max = totalLevels;
 
     const remaining = max - rating;
     const level =
@@ -447,6 +610,17 @@ export default function Page({
 
   // Limited chart data for main view (first 6 items)
   const limitedChartData = fullChartData.slice(0, 6);
+
+  if (loading) {
+    return (
+      <main className="p-6 flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading skills data...</p>
+        </div>
+      </main>
+    );
+  }
 
   if (showEmptyState) {
     return (
@@ -543,12 +717,12 @@ export default function Page({
 
                 {(() => {
                   const totalRating = userRatedSkills.reduce((sum: number, skill: RatedSkill) => {
-                    const rating = parseInt(skill.skill_level.replace("Level ", "")) || 0;
+                    const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                     return sum + rating;
                   }, 0);
 
                   const averageRating = userRatedSkills.length > 0 ? totalRating / userRatedSkills.length : 0;
-                  const maxRating = SkillLevels.length;
+                  const maxRating = totalLevels;
                   const percentage = Math.round((averageRating / maxRating) * 100);
 
                   const improvement = userRatedSkills.length > 0 ?
@@ -558,15 +732,15 @@ export default function Page({
 
                   const proficiencyCounts = {
                     advanced: userRatedSkills.filter(skill => {
-                      const rating = parseInt(skill.skill_level.replace("Level ", "")) || 0;
+                      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                       return rating >= 5;
                     }).length,
                     intermediate: userRatedSkills.filter(skill => {
-                      const rating = parseInt(skill.skill_level.replace("Level ", "")) || 0;
+                      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                       return rating >= 3 && rating < 5;
                     }).length,
                     beginner: userRatedSkills.filter(skill => {
-                      const rating = parseInt(skill.skill_level.replace("Level ", "")) || 0;
+                      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                       return rating < 3;
                     }).length
                   };
@@ -732,7 +906,7 @@ export default function Page({
             <div className="space-y-5 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
               {userRatedSkills && userRatedSkills.length > 0 ? (
                 userRatedSkills.map((ratedSkill: RatedSkill) => {
-                  const totalLevels = SkillLevels.length;
+                  const totalLevels = SkillLevels.length || 5;
                   const currentLevel = ratedSkill.skill_level
                     ? parseInt(ratedSkill.skill_level.replace("Level ", ""))
                     : 1;
@@ -816,29 +990,29 @@ export default function Page({
                         <p>Expected</p>
                       </div>
 
-                  <div className="grid grid-cols-2 gap-4 mt-2 text-xs items-center">
-  {/* Self Rating */}
-  <div className="flex items-center space-x-2">
-    {renderCircles(selfRating, SkillLevels.length)}
-    <span className="ml-2 text-sm font-medium">{selfRating}/{SkillLevels.length}</span>
-  </div>
+                      <div className="grid grid-cols-2 gap-4 mt-2 text-xs items-center">
+                        {/* Self Rating */}
+                        <div className="flex items-center space-x-2">
+                          {renderCircles(selfRating, totalLevels)}
+                          <span className="ml-2 text-sm font-medium">{selfRating}/{totalLevels}</span>
+                        </div>
 
-  {/* Expected Rating */}
-  <div className="flex items-center justify-between w-full">
-    <div className="flex items-center space-x-2">
-      {renderCircles(expected, SkillLevels.length)}
-      <span className="ml-2 text-sm font-medium">{expected}/{SkillLevels.length}</span>
-    </div>
+                        {/* Expected Rating */}
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center space-x-2">
+                            {renderCircles(expected, totalLevels)}
+                            <span className="ml-2 text-sm font-medium">{expected}/{totalLevels}</span>
+                          </div>
 
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors
-        focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
-        hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
-    >
-      {status}
-    </span>
-  </div>
-</div>
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors
+                              focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
+                              hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
+                          >
+                            {status}
+                          </span>
+                        </div>
+                      </div>
 
                       {/* KAAB Ratings Summary - Always Visible */}
                       <div className="mt-4 border-t pt-3">

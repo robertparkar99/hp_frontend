@@ -43,11 +43,7 @@ const ChapterCard = ({
   // For component updates
   const [_, forceUpdate] = useState(0);
 
-  // State to track completion status
-  const [completionStatus, setCompletionStatus] = useState('not_started');
-  // Track if we're checking for completion
-  const [checkingCompletion, setCheckingCompletion] = useState(false);
-  // State to enable Read & Mark button upon clicking View
+  // State to enable content viewing tracking
   const [isButtonEnabled, setIsButtonEnabled] = useState(false);
   
   // Track opened tabs
@@ -88,16 +84,11 @@ const ChapterCard = ({
       forceUpdate(n => n + 1); // Force re-render
     }
 
-    // Check if any content is viewed to enable button
-    const anyViewed = Object.values(viewedContentRef.current).some(viewed => viewed);
-    setIsButtonEnabled(anyViewed);
-
-    // Load completion status
-    const savedCompletionStatus = localStorage.getItem(`completion_status_${id}`);
-    if (savedCompletionStatus) {
-      setCompletionStatus(savedCompletionStatus);
-    }
-  }, [id]);
+    // Check if all content is viewed
+    const allContents = Object.values(contents).flat();
+    const allViewed = allContents.length > 0 && allContents.every(content => viewedContentRef.current[content.id]);
+    setIsButtonEnabled(allViewed);
+  }, [id, contents]);
 
   // Save viewed content to localStorage whenever it changes
   useEffect(() => {
@@ -152,20 +143,20 @@ const ChapterCard = ({
 
       // Open in a new tab
       const newTab = window.open(fileUrl, "_blank", "noopener,noreferrer");
-      
+
       if (newTab) {
         // Store reference to the opened tab
         openedTabsRef.current[content.id] = newTab;
-        
-        // Immediately mark as viewed
-        markContentAsViewed(content.id);
-        
+
         // Set up interval to check if user has closed the tab
         const checkTabClosed = setInterval(() => {
           if (newTab.closed) {
             clearInterval(checkTabClosed);
             delete openedTabsRef.current[content.id];
-            
+
+            // Mark as viewed after tab is closed
+            markContentAsViewed(content.id);
+
             // Check if we should enable Read & Mark button
             checkAndUpdateCompletion();
           }
@@ -204,35 +195,13 @@ const ChapterCard = ({
   const checkAndUpdateCompletion = () => {
     // Force a check of all content
     const allContents = Object.values(contents).flat();
-    const allViewed = allContents.length > 0 && 
+    const allViewed = allContents.length > 0 &&
       allContents.every(content => viewedContentRef.current[content.id]);
-    
-    if (allViewed && completionStatus !== 'completed') {
-      forceUpdate(n => n + 1); // Force re-render to update button state
-    }
+
+    setIsButtonEnabled(allViewed);
+    forceUpdate(n => n + 1); // Force re-render to update button state
   };
 
-  // Handle Read & Mark button click
-  const handleReadAndMark = () => {
-    setCheckingCompletion(true);
-
-    // Show success message
-    alert("Successfully completed the course.");
-
-    // Update completion status
-    setCompletionStatus('completed');
-    localStorage.setItem(`completion_status_${id}`, 'completed');
-
-    // Call the completion callback if provided
-    if (onCompleteCourse) {
-      onCompleteCourse(id);
-    }
-
-    // Force re-render to show completed status
-    forceUpdate(n => n + 1);
-
-    setCheckingCompletion(false);
-  };
 
   // delete content
   const handleDeleteContent = async (contentId) => {
@@ -260,9 +229,8 @@ const ChapterCard = ({
         localStorage.setItem(`viewed_content_${id}`, JSON.stringify(viewedContentRef.current));
         forceUpdate(n => n + 1);
 
-        // Update button enabled state
-        const anyViewed = Object.values(viewedContentRef.current).some(viewed => viewed);
-        setIsButtonEnabled(anyViewed);
+        // Update completion status
+        checkAndUpdateCompletion();
       }
     } catch (err) {
       console.error("❌ Error deleting content:", err);
@@ -298,7 +266,6 @@ const ChapterCard = ({
       
       // Clear local storage for this chapter
       localStorage.removeItem(`viewed_content_${id}`);
-      localStorage.removeItem(`completion_status_${id}`);
     } catch (error) {
       console.error("Error deleting chapter:", error);
       alert("Something went wrong while deleting the chapter.");
@@ -377,7 +344,7 @@ const ChapterCard = ({
       />
 
       <Accordion type="multiple" className="space-y-4">
-        <Card key={id} className={`overflow-hidden border-2 ${completionStatus === 'completed' ? 'border-green-300 bg-green-50/30' : 'border-blue-100'} shadow-md hover:shadow-lg transition-shadow`}>
+        <Card key={id} className="overflow-hidden border-2 border-blue-100 shadow-md hover:shadow-lg transition-shadow">
           <AccordionItem value={String(id)} className="border-0">
             <CardHeader className="py-3">
               <div className="flex items-center justify-between">
@@ -398,12 +365,6 @@ const ChapterCard = ({
                         </Badge>
                       )}
 
-                      {/* Completion Status Badge */}
-                      {completionStatus === 'completed' && (
-                        <Badge className="bg-green-100 text-green-800 border border-green-300 hover:bg-green-200">
-                          Completed
-                        </Badge>
-                      )}
 
                       {/* 🔖 Elegant Bookmark */}
                       <button
@@ -428,32 +389,6 @@ const ChapterCard = ({
                   </div>
                 </AccordionTrigger>
                 <div className="flex items-center gap-2 ml-2">
-                  {/* Read & Mark Button */}
-                  {completionStatus !== 'completed' && (
-                    <Button
-                      size="sm"
-                      variant={isButtonEnabled ? "default" : "outline"}
-                      className={`h-8 px-3 ${isButtonEnabled ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReadAndMark();
-                      }}
-                      disabled={!isButtonEnabled || checkingCompletion}
-                      title={isButtonEnabled ? "Mark course as completed" : "View all content first"}
-                    >
-                      {checkingCompletion ? (
-                        <>
-                          <Icon name="Loader" size={13} className="mr-1 animate-spin" />
-                          Checking...
-                        </>
-                      ) : (
-                        <>
-                          <Icon name="CheckCircle" size={13} className="mr-1" />
-                          Mark AS Completed
-                        </>
-                      )}
-                    </Button>
-                  )}
 
                   {/* Add content */}
                   {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
