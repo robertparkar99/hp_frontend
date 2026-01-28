@@ -26,12 +26,13 @@ interface Course {
 interface CourseCardProps {
   course: Course;
   variant?: 'progress' | 'completed';
-  onEnrollSuccess?: () => void;   // <-- ADD THIS
+  onEnrollSuccess?: () => void;
+  onContinue?: () => void;
 }
 
 
 
-const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', onEnrollSuccess }) => {
+const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', onEnrollSuccess, onContinue }) => {
   const [sessionData, setSessionData] = useState({
     url: '',
     token: '',
@@ -200,6 +201,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, variant = 'progress', o
             <Button
               variant="default"
               className="w-full"
+              onClick={onContinue}
             >
               <Icon name="Play" size={16} className="mr-2" />
               Continue Learning

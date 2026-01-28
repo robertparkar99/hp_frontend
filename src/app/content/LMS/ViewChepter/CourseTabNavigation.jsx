@@ -1,10 +1,12 @@
 
 
-import React from "react"
+import React, { useState } from "react"
 import Icon from "../../../../components/AppIcon"
 import { Button } from "../../../../components/ui/button"
 
-const CourseTabNavigation = ({ activeTab, onTabChange, chapters }) => {
+const CourseTabNavigation = ({ activeTab, onTabChange, chapters, isCourseCompleted, onMarkCourseCompleted, isButtonEnabled, checkingCompletion }) => {
+  const [completionStatus, setCompletionStatus] = useState(isCourseCompleted ? 'completed' : 'pending');
+
   // ✅ Calculate dynamic counts
   const modulesCount = chapters?.length || 0
 
@@ -19,6 +21,22 @@ const CourseTabNavigation = ({ activeTab, onTabChange, chapters }) => {
         )
       )
     }, 0) || 0
+
+  const handleMarkCompleted = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/enroll/34?sub_institute_id=3&type=API&token=1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5&user_id=6&course_id=116&status=completed&start_date=2026-01-24&end_date=2026-01-26');
+      if (!response.ok) {
+        throw new Error('Failed to update enrollment');
+      }
+      const data = await response.json();
+      alert(data.message || 'Course enrollment updated successfully');
+      setCompletionStatus('completed');
+      if (onMarkCourseCompleted) onMarkCourseCompleted();
+    } catch (error) {
+      console.error(error);
+      alert('Failed to mark course as completed');
+    }
+  };
 
   const tabs = [
     {
@@ -39,45 +57,79 @@ const CourseTabNavigation = ({ activeTab, onTabChange, chapters }) => {
 
   return (
     <div className="bg-card rounded-lg border border-border overflow-hidden shadow-card">
-      <div className="flex overflow-x-auto">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id
-          return (
-            <Button
-              key={tab.id}
-              variant="ghost"
-              className={`group flex-shrink-0 px-6 py-4 rounded-none border-b-2 transition-all duration-200 ${
-                isActive
-                  ? "border-blue-500 text-blue-500 bg-blue-500/10 hover:border-blue-600 hover:text-blue-600 hover:bg-blue-600/10"
-                  : "border-transparent text-muted-foreground hover:text-blue-400 hover:bg-blue-400/5"
-              }`}
-              onClick={() => onTabChange(tab.id)}
-            >
-              <div className="flex items-center gap-2">
-                <Icon name={tab.icon} size={18} />
-                <div className="text-left">
-                  <div className="font-medium flex items-center gap-1">
-                    {tab.label}
-                    {tab.count !== null && (
-                      <span
-                        className={`ml-1 text-xs px-2 py-0.5 rounded-full transition-colors duration-200 ${
-                          isActive
-                            ? "bg-blue-500 text-white group-hover:bg-blue-600"
-                            : "bg-muted text-foreground group-hover:bg-blue-400 group-hover:text-white"
-                        }`}
-                      >
-                        {tab.count}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs opacity-75 hidden sm:block">
-                    {tab.description}
+      <div className="flex overflow-x-auto justify-between items-center">
+        <div className="flex">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id
+            return (
+              <Button
+                key={tab.id}
+                variant="ghost"
+                className={`group flex-shrink-0 px-6 py-4 rounded-none border-b-2 transition-all duration-200 ${
+                  isActive
+                    ? "border-blue-500 text-blue-500 bg-blue-500/10 hover:border-blue-600 hover:text-blue-600 hover:bg-blue-600/10"
+                    : "border-transparent text-muted-foreground hover:text-blue-400 hover:bg-blue-400/5"
+                }`}
+                onClick={() => onTabChange(tab.id)}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon name={tab.icon} size={18} />
+                  <div className="text-left">
+                    <div className="font-medium flex items-center gap-1">
+                      {tab.label}
+                      {tab.count !== null && (
+                        <span
+                          className={`ml-1 text-xs px-2 py-0.5 rounded-full transition-colors duration-200 ${
+                            isActive
+                              ? "bg-blue-500 text-white group-hover:bg-blue-600"
+                              : "bg-muted text-foreground group-hover:bg-blue-400 group-hover:text-white"
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs opacity-75 hidden sm:block">
+                      {tab.description}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Button>
+            )
+          })}
+        </div>
+
+        {/* Mark as Complete Button */}
+        {completionStatus !== 'completed' && (
+          <div className="pr-4">
+            <Button
+              size="sm"
+              variant={isButtonEnabled ? "default" : "outline"}
+              className={`h-8 px-3 ${isButtonEnabled ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'}`}
+              onClick={handleMarkCompleted}
+              disabled={!isButtonEnabled || checkingCompletion}
+              title={isButtonEnabled ? "Mark course as completed" : "View all content first"}
+            >
+              {checkingCompletion ? (
+                <>
+                  <Icon name="Loader" size={13} className="mr-1 animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                <>
+                  <Icon name="CheckCircle" size={13} className="mr-1" />
+                  Mark AS Completed
+                </>
+              )}
             </Button>
-          )
-        })}
+          </div>
+        )}
+
+        {completionStatus === 'completed' && (
+          <div className="pr-4">
+            <span className="text-green-600 font-medium">Completed</span>
+          </div>
+        )}
       </div>
     </div>
   )
