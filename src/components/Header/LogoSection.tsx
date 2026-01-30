@@ -4,12 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Bot } from 'lucide-react';
+import WelcomeModal from '@/app/content/Onboarding/Competency-Management/WelcomeModal';
 
 export const LogoSection: React.FC = () => {
   const router = useRouter();
   const [userData, setUserData] = useState<any | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number }>({
@@ -144,6 +146,12 @@ export const LogoSection: React.FC = () => {
               className="bg-white shadow-lg rounded-md border border-gray-200 w-48"
             >
               <ul className="py-0">
+                <li
+                  onClick={() => setIsWelcomeModalOpen(true)}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700"
+                >
+                  Start Tour
+                </li>
                 {menuItems.map((item, idx) => (
                   <li
                     key={idx}
@@ -212,6 +220,15 @@ export const LogoSection: React.FC = () => {
           <p className="text-sm font-medium">{userData?.user_name}</p>
         )}
       </div>
+
+      <WelcomeModal
+        isOpen={isWelcomeModalOpen}
+        onClose={() => setIsWelcomeModalOpen(false)}
+        onStartTour={() => {
+          setIsWelcomeModalOpen(false);
+          // Start tour logic here
+        }}
+      />
     </div>
   );
 };

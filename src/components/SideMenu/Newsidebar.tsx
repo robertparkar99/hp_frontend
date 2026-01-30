@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import { useRouter } from "next/navigation";
 import { CornerDownRight, ChevronLeft, ChevronRight, Home } from "lucide-react"; // Added Home icon
 import { motion, AnimatePresence } from "framer-motion";
 import { UserProfile } from "./UserProfile";
 import GlobalFooter from "./GlobalFooter"; // Import GlobalFooter
+import { SidebarTourGuide } from "./SidebarTour";
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -239,6 +240,7 @@ const SubMenuItem = ({
                                 >
                                     {item.subItems.map((subItem: any, subSubIndex: number) => (
                                         <button
+                                            id={`tour-subsub-${subItem.key}`}
                                             key={`subsub-${subSubIndex}-${subItem.key}`}
                                             className={`flex items-center gap-[22px] py-2 px-2 mb-1 rounded-md cursor-pointer w-full
     ${activeSubSubItem === subItem.key
@@ -314,6 +316,7 @@ const Section = ({
                     >
                         <button
                             type="button"
+                            id={`tour-section-${section.key}`}
                             onClick={handleClick}
                             className="w-full h-full flex items-center justify-between px-[11px] transition-colors rounded-md"
                             aria-expanded={open}
@@ -355,6 +358,7 @@ const Section = ({
                     <div className="w-full h-[60px] bg-white relative">
                         <button
                             type="button"
+                            id={`tour-section-${section.key}`}
                             onClick={handleClick}
                                 className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors rounded-md"
                             aria-expanded={open}
@@ -567,6 +571,7 @@ const DashboardSection = ({
                     >
                         <button
                             type="button"
+                            id="tour-dashboard"
                             onClick={handleDashboardClick}
                             className="w-full h-full flex items-center justify-between px-[11px] transition-colors rounded-md"
                         >
@@ -636,8 +641,13 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         lastName: "",
     });
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const tourGuideRef = useRef<SidebarTourGuide | null>(null);
 
     const { sections, loading, error, fetchMenuData } = useMenuData(sessionData);
+
+    const expandSidebar = () => setIsCollapsed(false);
+    const expandSection = (sectionKey: string) => setOpen(o => ({ ...o, [sectionKey]: true }));
+    const expandSub = (subKey: string) => setSubOpen(s => ({ ...s, [subKey]: true }));
 
     // Initialize collapse state and active states from localStorage
     useEffect(() => {
@@ -741,6 +751,14 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
             fetchMenuData();
         }
     }, [sessionData.url, sessionData.subInstituteId, fetchMenuData]);
+
+    // Initialize tour when sections are loaded
+    useEffect(() => {
+        if (sections.length > 0 && !loading) {
+            tourGuideRef.current = new SidebarTourGuide(sections, expandSidebar, expandSection, expandSub, setActiveSection);
+            tourGuideRef.current.startTour();
+        }
+    }, [sections, loading]);
 
     const handleSectionToggle = (key: string) => {
         setOpen((o) => ({ ...o, [key]: !o[key] }));
