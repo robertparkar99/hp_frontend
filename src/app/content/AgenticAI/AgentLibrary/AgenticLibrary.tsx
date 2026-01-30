@@ -1,5 +1,7 @@
+import Loader from '@/components/utils/loading';
 import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 interface Agent {
   id: string;
@@ -241,6 +243,40 @@ function AgentCard({ agent }: { agent: Agent }) {
 }
 
 export default function AgenticLibrary() {
+  const [fetchedAgents, setFetchedAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const response = await fetch('https://pariharajit6348-agenticai.hf.space/agents');
+        if (response.ok) {
+          const data = await response.json();
+          const mappedAgents: Agent[] = data.map((agent: any) => ({
+            id: agent.id,
+            name: agent.name,
+            icon: Brain, // default icon
+            module: agent.module,
+            summary: agent.description,
+            function: agent.system_prompt,
+            workflow: ['Agent is deployed and ready to use'], // default
+            outputs: ['AI-generated responses'], // default
+            cta: 'View Agent',
+            ctaLink: `/content/AgenticAI/AgentDetail?id=${agent.id}`,
+          }));
+          setFetchedAgents(mappedAgents);
+        } else {
+          console.error('Failed to fetch agents');
+        }
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAgents();
+  }, []);
+
   return (
     <div className="min-h-screen">
       <div className="max-w-7xl px-2 sm:px-6 lg:px-8 py-4">
@@ -265,6 +301,15 @@ export default function AgenticLibrary() {
           {agents.map((agent) => (
             <AgentCard key={agent.id} agent={agent} />
           ))}
+          {loading ? (
+            <div className="col-span-full text-center py-8">
+              <Loader/>
+            </div>
+          ) : (
+            fetchedAgents.map((agent) => (
+              <AgentCard key={agent.id} agent={agent} />
+            ))
+          )}
         </div>
 
         <div className="mt-12 p-6 bg-white rounded-lg shadow-sm border border-gray-200">

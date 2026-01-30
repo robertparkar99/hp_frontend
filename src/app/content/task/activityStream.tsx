@@ -103,11 +103,17 @@ const ActivityStream = () => {
 
       const data = await response.json();
       setTasks(Array.isArray(data.allTask) ? data.allTask : []);
-      setTodayTaskList(data.today?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false})) || []);
-      setUpcomingTaskList(data.upcoming?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false})) || []);
+      setTodayTaskList([
+        ...(data.today?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || []),
+        ...(data.today?.complianceAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || [])
+      ]);
+      setUpcomingTaskList([
+        ...(data.upcoming?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || []),
+        ...(data.upcoming?.complianceAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || [])
+      ]);
       setRecentTaskLists([
-        ...(data.recent?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false})) || []),
-        ...(data.recent?.jobRoleTasks?.map((t: any) => ({...t, is_jobrole_task: true})) || [])
+        ...(data.recent?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || []),
+        ...(data.recent?.complianceAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || [])
       ]);
     } catch (error) {
       console.error('Error fetching tasks:', error);

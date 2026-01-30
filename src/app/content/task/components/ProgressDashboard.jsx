@@ -1,4 +1,4 @@
-
+//
 import React, { useEffect, useState, useMemo } from 'react';
 import Icon from '@/components/AppIcon';
 import Button from '@/components/taskComponent/ui/Button';
@@ -404,6 +404,7 @@ const ProgressDashboard = () => {
         </div>
       ),
       selector: row => row.task_title,
+      width: '250px',
       sortable: true,
       cell: row => (
         <div className="flex items-center space-x-3">
@@ -416,7 +417,6 @@ const ProgressDashboard = () => {
           </div>
         </div>
       ),
-      minWidth: "250px"
     },
     {
       name: (
@@ -439,7 +439,6 @@ const ProgressDashboard = () => {
       ),
       selector: row => row.ALLOCATED_TO,
       sortable: true,
-      minWidth: "150px"
     },
     {
       name: (
@@ -469,7 +468,6 @@ const ProgressDashboard = () => {
         return '';
       },
       sortable: true,
-      minWidth: "150px"
     },
     {
       name: (
@@ -492,7 +490,6 @@ const ProgressDashboard = () => {
       ),
       selector: row => row.jobrole,
       sortable: true,
-      minWidth: "150px"
     },
     {
       name: (
@@ -515,7 +512,6 @@ const ProgressDashboard = () => {
       ),
       selector: row => row.task_date,
       sortable: true,
-      minWidth: "120px"
     },
     {
       name: (
@@ -543,7 +539,6 @@ const ProgressDashboard = () => {
           {row.status}
         </span>
       ),
-      minWidth: "140px"
     },
     {
       name: (
@@ -570,11 +565,10 @@ const ProgressDashboard = () => {
         <div className="flex items-center space-x-1">
           <div className={`w-2 h-2 rounded-full ${getPriorityColor(row.task_type).replace('text-', 'bg-')}`} />
           <span className={`text-xs font-medium ${getPriorityColor(row.task_type)}`}>
-            {row.task_type.charAt(0).toUpperCase() + row.task_type.slice(1)}
+            {row.task_type ? row.task_type.charAt(0).toUpperCase() + row.task_type.slice(1) : 'N/A'}
           </span>
         </div>
       ),
-      minWidth: "120px"
     },
     {
       name: (
@@ -599,10 +593,9 @@ const ProgressDashboard = () => {
       sortable: true,
       cell: row => (
         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getApproveStatusColor(row.approve_status)}`}>
-          {row.approve_status ? row.approve_status.charAt(0).toUpperCase() + row.approve_status.slice(1).toUpperCase() : 'PENDING'}
+          {row.approve_status ? row.approve_status.charAt(0).toUpperCase() + row.approve_status.slice(1).toLowerCase() : 'Pending'}
         </span>
-      ),
-      minWidth: "150px"
+      )
     },
     {
       name: "Actions",
@@ -636,8 +629,6 @@ const ProgressDashboard = () => {
         </div>
       ),
       ignoreRowClick: true,
-      button: true,
-      minWidth: "100px"
     },
   ];
 
@@ -700,7 +691,14 @@ const ProgressDashboard = () => {
             className="w-40"
           />
 
-          <Button variant="outline" size="sm" iconName="Download" iconPosition="left">
+          <Button
+            variant="outline"
+            size="sm"
+            iconName="Download"
+            iconPosition="left"
+            disabled={true}
+            className="cursor-not-allowed"
+          >
             Export
           </Button>
         </div>

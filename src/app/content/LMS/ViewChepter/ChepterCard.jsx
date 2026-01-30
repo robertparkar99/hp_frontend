@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Icon from "@/components/AppIcon";
 import { Button } from "../../../../components/ui/button";
 import {
@@ -31,11 +31,23 @@ const ChapterCard = ({
   sessionInfo,
   courseDisplayName,
   standardName,
+  onCompleteCourse, // New prop to handle course completion
 }) => {
   const [loading, setLoading] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedContent, setSelectedContent] = useState(null);
+  
+  // State to track viewed content - using ref to avoid unnecessary re-renders
+  const viewedContentRef = useRef({});
+  // For component updates
+  const [_, forceUpdate] = useState(0);
+
+  // State to enable content viewing tracking
+  const [isButtonEnabled, setIsButtonEnabled] = useState(false);
+  
+  // Track opened tabs
+  const openedTabsRef = useRef({});
 
   const id = course.id || course.chapter_id;
   const title = course.title || course.chapter_name || "Untitled Chapter";
@@ -48,6 +60,12 @@ const ChapterCard = ({
     0
   );
 
+  // Check if all content has been viewed - memoized
+  const allContentViewed = React.useMemo(() => {
+    const allContents = Object.values(contents).flat();
+    return allContents.length > 0 && allContents.every(content => viewedContentRef.current[content.id]);
+  }, [contents, viewedContentRef.current]);
+
   // Color palette
   const categoryColors = {
     default: " border-blue-200",
@@ -58,55 +76,47 @@ const ChapterCard = ({
     link: " border-blue-200"
   };
 
-  // Handle preview content - opens in new tab
-  // const handleViewContent = async (content) => {
-  //   if (!content || !content.id) {
-  //     alert("No content available to preview.");
-  //     return;
-  //   }
+  // Load viewed content from localStorage on component mount
+  useEffect(() => {
+    const savedViewedContent = localStorage.getItem(`viewed_content_${id}`);
+    if (savedViewedContent) {
+      viewedContentRef.current = JSON.parse(savedViewedContent);
+      forceUpdate(n => n + 1); // Force re-render
+    }
 
-  //   try {
-  //     // Fetch content details to get the filename
-  //     const url = `${sessionInfo.url}/lms/content_master/${content.id}/edit?type=API&sub_institute_id=${sessionInfo.sub_institute_id || 1}`;
-  //     const response = await fetch(url);
+    // Check if all content is viewed
+    const allContents = Object.values(contents).flat();
+    const allViewed = allContents.length > 0 && allContents.every(content => viewedContentRef.current[content.id]);
+    setIsButtonEnabled(allViewed);
+  }, [id, contents]);
 
-  //     if (!response.ok) {
-  //       throw new Error(`Failed to fetch content details: ${response.status}`);
-  //     }
+  // Save viewed content to localStorage whenever it changes
+  useEffect(() => {
+    if (Object.keys(viewedContentRef.current).length > 0) {
+      localStorage.setItem(`viewed_content_${id}`, JSON.stringify(viewedContentRef.current));
+    }
+  }, [viewedContentRef.current, id]);
 
-  //     const data = await response.json();
-  //     const filename = data.content_data?.filename;
+  // Function to mark content as viewed
+  const markContentAsViewed = (contentId) => {
+    viewedContentRef.current[contentId] = true;
+    localStorage.setItem(`viewed_content_${id}`, JSON.stringify(viewedContentRef.current));
+    forceUpdate(n => n + 1); // Force re-render to update UI
+  };
 
-  //     if (!filename) {
-  //       alert("No file available for this content.");
-  //       return;
-  //     }
-
-  //     // Construct the full URL with the S3 path
-  //     const fileUrl = `https://s3-triz.fra1.digitaloceanspaces.com/public/hp_lms_content_file/${filename}`;
-
-  //     // Open the file in a new tab
-  //     window.open(fileUrl, '_blank', 'noopener,noreferrer');
-
-  //     // Also call the onViewCourse callback if provided
-  //     if (onViewCourse) {
-  //       onViewCourse(content);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching content details:", error);
-  //     alert("Failed to load content. Please try again.");
-  //   }
-  // };
+  // Handle preview content - opens in new tab and tracks it
   const handleViewContent = async (content) => {
     if (!content || !content.id) {
       alert("No content available to preview.");
       return;
     }
 
+    // Enable the Read & Mark button as soon as View is clicked
+    setIsButtonEnabled(true);
+
     try {
       // Fetch content details
-      const url = `${sessionInfo.url}/lms/content_master/${content.id}/edit?type=API&sub_institute_id=${sessionInfo.sub_institute_id || 1
-        }`;
+      const url = `${sessionInfo.url}/lms/content_master/${content.id}/edit?type=API&sub_institute_id=${sessionInfo.sub_institute_id || 1}`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -132,7 +142,44 @@ const ChapterCard = ({
       }
 
       // Open in a new tab
-      window.open(fileUrl, "_blank", "noopener,noreferrer");
+      const newTab = window.open(fileUrl, "_blank", "noopener,noreferrer");
+
+      if (newTab) {
+        // Store reference to the opened tab
+        openedTabsRef.current[content.id] = newTab;
+
+        // Set up interval to check if user has closed the tab
+        const checkTabClosed = setInterval(() => {
+          if (newTab.closed) {
+            clearInterval(checkTabClosed);
+            delete openedTabsRef.current[content.id];
+
+            // Mark as viewed after tab is closed
+            markContentAsViewed(content.id);
+
+            // Check if we should enable Read & Mark button
+            checkAndUpdateCompletion();
+          }
+        }, 1000);
+        
+        // Also check on focus/blur events
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === 'visible') {
+            // User has returned to this tab
+            checkAndUpdateCompletion();
+          }
+        };
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // Cleanup
+        newTab.onbeforeunload = () => {
+          clearInterval(checkTabClosed);
+          delete openedTabsRef.current[content.id];
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+          checkAndUpdateCompletion();
+        };
+      }
 
       // Callback
       if (onViewCourse) {
@@ -142,6 +189,17 @@ const ChapterCard = ({
       console.error("Error fetching content details:", error);
       alert("Failed to load content. Please try again.");
     }
+  };
+
+  // Function to check and update completion status
+  const checkAndUpdateCompletion = () => {
+    // Force a check of all content
+    const allContents = Object.values(contents).flat();
+    const allViewed = allContents.length > 0 &&
+      allContents.every(content => viewedContentRef.current[content.id]);
+
+    setIsButtonEnabled(allViewed);
+    forceUpdate(n => n + 1); // Force re-render to update button state
   };
 
 
@@ -164,6 +222,16 @@ const ChapterCard = ({
       const data = await res.json();
       alert(data.message || "Content deleted.");
       if (onDeleteContent) onDeleteContent(contentId);
+
+      // Remove from viewed content if it was viewed
+      if (viewedContentRef.current[contentId]) {
+        delete viewedContentRef.current[contentId];
+        localStorage.setItem(`viewed_content_${id}`, JSON.stringify(viewedContentRef.current));
+        forceUpdate(n => n + 1);
+
+        // Update completion status
+        checkAndUpdateCompletion();
+      }
     } catch (err) {
       console.error("❌ Error deleting content:", err);
       alert("Failed to delete content.");
@@ -195,6 +263,9 @@ const ChapterCard = ({
       const data = await response.json();
       alert(data.message);
       if (onDeleteCourse) onDeleteCourse(id);
+      
+      // Clear local storage for this chapter
+      localStorage.removeItem(`viewed_content_${id}`);
     } catch (error) {
       console.error("Error deleting chapter:", error);
       alert("Something went wrong while deleting the chapter.");
@@ -239,6 +310,22 @@ const ChapterCard = ({
     setSelectedContent(null);
   };
 
+  // Add an event listener for page visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // User has returned to this tab, check completion
+        checkAndUpdateCompletion();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   return (
     <>
       {/* ✅ Add/Edit Dialog */}
@@ -259,50 +346,50 @@ const ChapterCard = ({
       <Accordion type="multiple" className="space-y-4">
         <Card key={id} className="overflow-hidden border-2 border-blue-100 shadow-md hover:shadow-lg transition-shadow">
           <AccordionItem value={String(id)} className="border-0">
-            <CardHeader className="py-3 ">
-              {/* <CardHeader className="py-3 bg-gradient-to-r from-blue-50 to-cyan-50"> */}
+            <CardHeader className="py-3">
               <div className="flex items-center justify-between">
-                <AccordionTrigger className="hover:no-underline flex-1 text-left [&>svg]:ml-auto ">
+                <AccordionTrigger className="hover:no-underline flex-1 text-left [&>svg]:ml-auto">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 rounded-full">
                       <Icon name="BookOpen" size={18} className="text-blue-600" />
                     </div>
-                  <div className="flex items-center gap-2">
-  <CardTitle className="text-base flex items-center gap-2">{title}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-base flex items-center gap-2">{title}</CardTitle>
 
-  {totalContentCount > 0 && (
-    <Badge
-      variant="secondary"
-      className="text-[13px] text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-full border border-blue-200"
-    >
-      {totalContentCount} {totalContentCount === 1 ? "item" : "items"}
-    </Badge>
-  )}
+                      {totalContentCount > 0 && (
+                        <Badge
+                          variant="secondary"
+                          className="text-[13px] text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-full border border-blue-200"
+                        >
+                          {totalContentCount} {totalContentCount === 1 ? "item" : "items"}
+                        </Badge>
+                      )}
 
-  {/* 🔖 Elegant Bookmark */}
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      setBookmarked((prev) => !prev);
-    }}
-    className="p-1 rounded-md transition-all hover:scale-105"
-    title={bookmarked ? "Remove Bookmark" : "Add Bookmark"}
-  >
-    <Icon
-      name="Bookmark"
-      size={18}
-      className={
-        bookmarked
-          ? "stroke-yellow-500 fill-yellow-300 drop-shadow-sm"
-          : "stroke-yellow-400 fill-transparent hover:stroke-yellow-500"
-      }
-    />
-  </button>
-</div>
 
+                      {/* 🔖 Elegant Bookmark */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBookmarked((prev) => !prev);
+                        }}
+                        className="p-1 rounded-md transition-all hover:scale-105"
+                        title={bookmarked ? "Remove Bookmark" : "Add Bookmark"}
+                      >
+                        <Icon
+                          name="Bookmark"
+                          size={18}
+                          className={
+                            bookmarked
+                              ? "stroke-yellow-500 fill-yellow-300 drop-shadow-sm"
+                              : "stroke-yellow-400 fill-transparent hover:stroke-yellow-500"
+                          }
+                        />
+                      </button>
+                    </div>
                   </div>
                 </AccordionTrigger>
                 <div className="flex items-center gap-2 ml-2">
+
                   {/* Add content */}
                   {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                     <Button
@@ -317,9 +404,9 @@ const ChapterCard = ({
                       }}
                     >
                       <Icon name="Plus" size={13} />
-                      {/* Add */}
                     </Button>
                   ) : null}
+                  
                   {/*Question bank open*/}
                   {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                     <Button
@@ -335,7 +422,6 @@ const ChapterCard = ({
                       }}
                     >
                       <Icon name="FileQuestion" size={13} />
-                      {/* Add */}
                     </Button>
                   ) : null}
 
@@ -352,15 +438,16 @@ const ChapterCard = ({
                       }}
                     >
                       <Icon name="Edit" size={13} />
-                      {/* Edit */}
                     </Button>
                   ) : null}
+                  
                   {/* Delete chapter */}
                   {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-8 px-2 bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:text-red-800" title="Delete content"
+                      className="h-8 px-2 bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:text-red-800"
+                      title="Delete content"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteClick();
@@ -368,21 +455,8 @@ const ChapterCard = ({
                       disabled={loading}
                     >
                       <Icon name="Trash" size={13} />
-                      {/* Delete */}
                     </Button>
                   ) : null}
-
-                  {/* ✨ New Optional Actions */}
-                  <Button size="sm" variant="outline" className="h-8 px-2 bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100" title="Manage Contributors">
-                    <Icon name="Users" size={14} />
-                  </Button>
-                  <Button size="sm" variant="outline" className="h-8 px-2 bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100" title="AI Assist">
-                    <Icon name="Bot" size={14} />
-                  </Button>
-                  <Button size="sm" variant="outline" className="h-8 px-2 bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100" title="Analytics">
-                    <Icon name="BarChart2" size={14} />
-                  </Button>
-
                 </div>
               </div>
             </CardHeader>
@@ -401,7 +475,6 @@ const ChapterCard = ({
                               </div>
                               <div className="text-left">
                                 <h4 className="text-sm font-semibold ">{category}</h4>
-                                {/* <p className="text-xs text-blue-600 bg-blue-100 hover:bg-blue-200">{items.length} {items.length === 1 ? 'item' : 'items'}</p> */}
                                 <p className="text-xs text-blue-700 bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded-full border border-blue-200">
                                   {items.length} {items.length === 1 ? 'item' : 'items'}
                                 </p>
@@ -415,18 +488,23 @@ const ChapterCard = ({
                             {items.map((content, index) => {
                               const FileIcon = getFileIcon(content.file_type);
                               const itemColor = getCategoryColor(content.file_type);
+                              const isViewed = viewedContentRef.current[content.id];
 
                               return (
                                 <Card key={content.id} className={`border ${itemColor} hover:shadow-md transition-shadow`}>
                                   <CardContent className="px-4 py-3">
                                     <div className="flex items-center justify-between gap-1">
                                       <div className="flex items-center gap-4 flex-1">
-                                        {/* <span className="flex items-center justify-center w-7 h-7 rounded-full bg-white text-blue-700 text-xs font-semibold shadow-sm border border-blue-200">
+                                        <div className="flex items-center gap-2">
+                                          <span className={`flex items-center justify-center w-7 h-7 rounded-full bg-white text-xs font-semibold shadow-sm border ${index % 2 === 0 ? 'text-green-600 border-green-200' : 'text-red-600 border-red-200'}`}>
                                             {index + 1}
-                                          </span> */}
-                                        <span className={`flex items-center justify-center w-7 h-7 rounded-full bg-white text-xs font-semibold shadow-sm border ${index % 2 === 0 ? 'text-green-600 border-green-200' : 'text-red-600 border-red-200'}`}>
-                                          {index + 1}
-                                        </span>
+                                          </span>
+                                          {isViewed && (
+                                            <span className="text-green-600" title="Viewed">
+                                              <Icon name="Eye" size={14} />
+                                            </span>
+                                          )}
+                                        </div>
                                         <div className="p-1.5 bg-white rounded-full shadow-sm">
                                           <FileIcon />
                                         </div>
@@ -438,16 +516,16 @@ const ChapterCard = ({
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2">
-
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="h-7 w-7 p-0 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800"
+                                          className={`h-7 w-7 p-0 ${isViewed ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}`}
                                           onClick={() => handleViewContent(content)}
-                                          title="Preview"
+                                          title={isViewed ? "Viewed - Click to view again" : "Preview"}
                                         >
                                           <Icon name="Eye" size={13} />
                                         </Button>
+                                        
                                         {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                                           <Button
                                             size="sm"
@@ -463,6 +541,7 @@ const ChapterCard = ({
                                             <Icon name="Edit" size={13} />
                                           </Button>
                                         ) : null}
+                                        
                                         {["ADMIN", "HR"].includes(sessionInfo.user_profile_name?.toUpperCase()) ? (
                                           <Button
                                             size="sm"
@@ -474,12 +553,6 @@ const ChapterCard = ({
                                             <Icon name="Trash" size={13} />
                                           </Button>
                                         ) : null}
-
-
-                                        <Button size="sm" variant="outline" className="h-7 w-7 p-0 bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-800" title="Download">
-                                          <Icon name="Download" size={13} />
-                                        </Button>
-
                                       </div>
                                     </div>
                                   </CardContent>

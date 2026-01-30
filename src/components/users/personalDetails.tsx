@@ -42,7 +42,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
         ? new Date(userDetails.birthdate).toISOString().split("T")[0]
         : "",
       mobile: userDetails?.mobile || "",
-     department: userDetails?.department_id || "",
+      department: userDetails?.department_id || "",
       jobrole: userDetails?.allocated_standards || "",
       responsibility_level: userDetails?.subject_ids || "",
       gender: userDetails?.gender || "M",
@@ -145,7 +145,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
   }, [formData.personal.department, fullJobroleData]);
 
 
-  
+
 
 
   const tabs = [
@@ -213,46 +213,46 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
     handleInputChange("attendance", "working_days", currentDays);
   };
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-  setLoading(true);
-  try {
-    const formDataToSend = new FormData();
-    formDataToSend.append("type", "API");
-    formDataToSend.append("_method", "PUT");
-    formDataToSend.append(
-      "sub_institute_id",
-      sessionData?.subInstituteId || ""
-    );
-    formDataToSend.append("user_id", sessionData?.userId || "");
-    formDataToSend.append("_token", sessionData?.token || "");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setLoading(true);
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("type", "API");
+      formDataToSend.append("_method", "PUT");
+      formDataToSend.append(
+        "sub_institute_id",
+        sessionData?.subInstituteId || ""
+      );
+      formDataToSend.append("user_id", sessionData?.userId || "");
+      formDataToSend.append("_token", sessionData?.token || "");
 
-    // Personal data - ensure department_id is the ID, not name
-    formDataToSend.append("name_suffix", formData.personal.name_suffix);
-    formDataToSend.append("first_name", formData.personal.first_name);
-    formDataToSend.append("middle_name", formData.personal.middle_name);
-    formDataToSend.append("last_name", formData.personal.last_name);
-    formDataToSend.append("email", formData.personal.email);
-    formDataToSend.append("mobile", formData.personal.mobile);
-    
-    // This is the critical fix - ensure department_id is the ID
-    formDataToSend.append("department_id", formData.personal.department);
-    
-    formDataToSend.append("allocated_standards", formData.personal.jobrole);
-    formDataToSend.append(
-      "subject_ids",
-      formData.personal.responsibility_level
-    );
-    formDataToSend.append("gender", formData.personal.gender);
-    formDataToSend.append(
-      "user_profile_id",
-      formData.personal.user_profile_id
-    );
-    formDataToSend.append("join_year", formData.personal.join_year);
-    formDataToSend.append("status", formData.personal.status);
-    formDataToSend.append("password", formData.personal.plain_password);
-    formDataToSend.append("birthdate", formData.personal.birthdate);
+      // Personal data - ensure department_id is the ID, not name
+      formDataToSend.append("name_suffix", formData.personal.name_suffix);
+      formDataToSend.append("first_name", formData.personal.first_name);
+      formDataToSend.append("middle_name", formData.personal.middle_name);
+      formDataToSend.append("last_name", formData.personal.last_name);
+      formDataToSend.append("email", formData.personal.email);
+      formDataToSend.append("mobile", formData.personal.mobile);
+
+      // This is the critical fix - ensure department_id is the ID
+      formDataToSend.append("department_id", formData.personal.department);
+
+      formDataToSend.append("allocated_standards", formData.personal.jobrole);
+      formDataToSend.append(
+        "subject_ids",
+        formData.personal.responsibility_level
+      );
+      formDataToSend.append("gender", formData.personal.gender);
+      formDataToSend.append(
+        "user_profile_id",
+        formData.personal.user_profile_id
+      );
+      formDataToSend.append("join_year", formData.personal.join_year);
+      formDataToSend.append("status", formData.personal.status);
+      formDataToSend.append("password", formData.personal.plain_password);
+      formDataToSend.append("birthdate", formData.personal.birthdate);
 
       // Only append the image file if it exists (new upload)
       if (formData.personal.imageFile) {
@@ -346,39 +346,39 @@ const handleSubmit = async (e: React.FormEvent) => {
       // Additional fields from your example
       // formDataToSend.append("jobtitle_id", formData.personal.jobrole); // For jobrole ID
       formDataToSend.append("department_id", formData.personal.department);
-    
-    formDataToSend.append("load", "6");
-    formDataToSend.append("submit", "Update");
 
-    const response = await fetch(
-      `${sessionData?.url}/user/add_user/${userDetails?.id}`,
-      {
-        method: "POST",
-        body: formDataToSend,
-        headers: {
-          Accept: "application/json",
-        },
+      formDataToSend.append("load", "6");
+      formDataToSend.append("submit", "Update");
+
+      const response = await fetch(
+        `${sessionData?.url}/user/add_user/${userDetails?.id}`,
+        {
+          method: "POST",
+          body: formDataToSend,
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update user");
       }
-    );
 
-    if (!response.ok) {
-      throw new Error("Failed to update user");
+      const result = await response.json();
+      setLoading(false);
+      alert(result.message);
+      if (onUpdate) {
+        onUpdate();
+      }
+      console.log("Update successful:", result);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      setLoading(false);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const result = await response.json();
-    setLoading(false);
-    alert(result.message);
-    if (onUpdate) {
-      onUpdate();
-    }
-    console.log("Update successful:", result);
-  } catch (error) {
-    console.error("Error updating user:", error);
-    setLoading(false);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
   return (
     <>
       {isLoading ? (
@@ -655,68 +655,75 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                     {/* Department Section */}
                     <div className="form-row">
-  
-<div className="input-field">
-  <label className="block mb-1 text-sm font-medium text-gray-700">
-    Department
-  </label>
-  <select
-    className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
-    value={formData.personal.department}
-    disabled={isReadOnly}
-    onChange={(e) =>
-      handleInputChange("personal", "department", Number(e.target.value))
-    }
-  >
 
-  <option value="">Select Department</option>
+                      <div className="input-field relative overflow-hidden">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          Department
+                        </label>
 
-  {/* Build department dropdown from fullJobroleData */}
-  {fullJobroleData &&
-    Object.keys(fullJobroleData).map((deptName) => {
-      const first = fullJobroleData[deptName][0]; // always contains department_id + name
-      return (
-        <option key={first.department_id} value={first.department_id}>
-          {first.department_name}
-        </option>
-      );
-    })}
-</select>
+                        <select
+                          className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px]
+      bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter
+      border-none outline-none
+      shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]
+      ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}
+    `}
+                          value={formData.personal.department}
+                          disabled={isReadOnly}
+                          onChange={(e) =>
+                            handleInputChange("personal", "department", Number(e.target.value))
+                          }
+                        >
+                          <option value="">Select Department</option>
 
-</div>
-                     <div className="input-field">
-  <label className="block mb-1 text-sm font-medium text-gray-700">
-    Job Role
-  </label>
-  <select
-    className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
-    value={formData.personal.jobrole}
-    disabled={isReadOnly}
-    onChange={(e) =>
-      handleInputChange(
-        "personal",
-        "jobrole",
-        e.target.value
-      )
-    }
-  >
-    <option value="">Select Jobrole</option>
-    {filteredJobroles && filteredJobroles.length > 0 ? (
-      filteredJobroles.map((jobrole: any) => (
-        <option
-          key={jobrole.id}
-          value={jobrole.id}
-        >
-          {jobrole.jobrole}
-        </option>
-      ))
-    ) : (
-      <option value="" disabled>
-        No job roles available
-      </option>
-    )}
-  </select>
-</div>
+                          {fullJobroleData &&
+                            Object.keys(fullJobroleData).map((deptName) => {
+                              const first = fullJobroleData[deptName][0];
+                              return (
+                                <option
+                                  key={first.department_id}
+                                  value={first.department_id}
+                                  className="truncate"
+                                >
+                                  {first.department_name}
+                                </option>
+                              );
+                            })}
+                        </select>
+                      </div>
+                      <div className="input-field">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          Job Role
+                        </label>
+                        <select
+                          className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
+                          value={formData.personal.jobrole}
+                          disabled={isReadOnly}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "personal",
+                              "jobrole",
+                              e.target.value
+                            )
+                          }
+                        >
+                          <option value="">Select Jobrole</option>
+                          {filteredJobroles && filteredJobroles.length > 0 ? (
+                            filteredJobroles.map((jobrole: any) => (
+                              <option
+                                key={jobrole.id}
+                                value={jobrole.id}
+                              >
+                                {jobrole.jobrole}
+                              </option>
+                            ))
+                          ) : (
+                            <option value="" disabled>
+                              No job roles available
+                            </option>
+                          )}
+                        </select>
+                      </div>
                     </div>
 
                     {/* Job Section */}
@@ -799,6 +806,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         <select
                           className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.personal.user_profile_id}
+                          disabled={isReadOnly}
                           onChange={(e) =>
                             handleInputChange(
                               "personal",
@@ -856,6 +864,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         <select
                           className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.personal.status}
+                          disabled={isReadOnly}
                           onChange={(e) =>
                             handleInputChange(
                               "personal",

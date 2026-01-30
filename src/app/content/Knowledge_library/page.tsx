@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import ViewKnowledge from "@/components/KnowledgeComponent/viewDialouge";
 import {
   Funnel,
@@ -45,11 +46,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Atom } from "react-loading-indicators";
 import { Button } from "@/components/ui/button";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
-import { generateDetailTourSteps } from "@/lib/tourSteps";
+import { generateDetailTourSteps } from "@/lib/tourSteps";import Loader from "@/components/utils/loading";
+
 interface KnowledgeItem {
   id: number;
   category: string;
@@ -111,6 +112,14 @@ const Honeycomb: React.FC<PageProps> = ({ showDetailTour }) => {
 
   // 🔑 View toggle state
   const [viewMode, setViewMode] = useState<"circle" | "table">("circle");
+
+  // ✅ New state for expanded actions
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Toggle expanded actions
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   // Dialog states
   const [activeKnowledge, setActiveKnowledge] = useState<KnowledgeItem | null>(null);
@@ -564,7 +573,7 @@ const Honeycomb: React.FC<PageProps> = ({ showDetailTour }) => {
       <div className="w-full flex justify-center">
         {isLoading ? (
           <div className="flex justify-center items-center h-80">
-            <Atom color="#525ceaff" size="medium" text="" textColor="" />
+            <Loader/>
           </div>
         ) : columnFilteredData.length === 0 ? (
           <div className="text-center py-12">

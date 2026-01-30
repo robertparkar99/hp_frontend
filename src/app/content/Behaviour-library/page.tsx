@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -33,11 +33,11 @@ import {
   FilterX,
   MoreVertical
 } from "lucide-react";
-import { Atom } from "react-loading-indicators";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/BehaviourComponent/viewDialouge";
 import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
 import { generateDetailTourSteps } from "@/lib/tourSteps";
+import Loader from "@/components/utils/loading";
 
 interface BehaviourItem {
   id: number;
@@ -91,6 +91,9 @@ const BehaviourGrid = ({ showDetailTour }: PageProps) => {
   const [sessionData, setSessionData] = useState<SessionData>({});
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [favorites, setFavorites] = useState<{ [key: number]: boolean }>({});
+
+  // State for inline actions menu
+  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
 
   // Dialog state for viewing behaviour details
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
@@ -569,61 +572,36 @@ const BehaviourGrid = ({ showDetailTour }: PageProps) => {
                 >
                   <Plus className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* AI Suggestions */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="AI Suggestions"
-                >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="AI Suggestions">
                   <Sparkles className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Analytics */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Analytics & Insights"
-                >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Analytics & Insights">
                   <BarChart3 className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Compare */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Compare Behaviors"
-                >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Compare Behaviors">
                   <LayoutGrid className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Favorites */}
-                <button
-                  title="Favorites"
-                                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-
-                >
-                  <Star
-                    className="w-5 h-5 text-gray-600"/>
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Favorites">
+                  <Star className="w-5 h-5 text-gray-600" />
                 </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Settings">
                   <Settings className="w-5 h-5 text-gray-600" />
                 </button>
-                {/* Add Custom Fields */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Add Custom Fields"
-                >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Add Custom Fields">
                   <ListPlus className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Share */}
-                <button
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Share & Collaborate"
-                >
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Share & Collaborate">
                   <Share2 className="w-5 h-5 text-gray-600" />
                 </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <button
+            onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <MoreVertical className="w-5 h-5 text-gray-600" />
+          </button>
         </div>
       </div>
 
@@ -631,7 +609,7 @@ const BehaviourGrid = ({ showDetailTour }: PageProps) => {
       {viewMode === "cards" ? (
         loadingCards ? (
           <div className="flex justify-center items-center h-screen">
-            <Atom color="#525ceaff" size="medium" text="" textColor="" />
+            <Loader/>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">

@@ -2,6 +2,7 @@
 
 "use client";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -97,15 +98,15 @@ interface JobApplication {
   deleted_at: string | null;
 }
 
-interface Application {
-  id: number;
-  name: string;
-  position: string;
-  status: string;
-  appliedDate: string;
-  experience: string;
-  score: number;
-}
+// interface Application {
+//   id: number;
+//   name: string;
+//   position: string;
+//   status: string;
+//   appliedDate: string;
+//   experience: string;
+//   score: number;
+// }
 
 interface EditJobData {
   id: number;
@@ -269,6 +270,8 @@ const JobDetailsDialog = ({ job, open, onOpenChange }: JobDetailsDialogProps) =>
 };
 
 const HRDashboard = () => {
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'jobs');
   const [isJobFormOpen, setIsJobFormOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
@@ -282,11 +285,44 @@ const HRDashboard = () => {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
+  const [applicationScores, setApplicationScores] = useState<{ [key: number]: number | null }>({});
+
+  // Update activeTab when searchParams changes
+  useEffect(() => {
+    const tab = searchParams.get('tab') || 'jobs';
+    setActiveTab(tab);
+  }, [searchParams]);
 
   // Handle view application details
   const handleViewApplication = (application: JobApplication) => {
     setSelectedApplication(application);
+    // Create a basic candidate object from the application
+    const candidate = {
+      id: application.id.toString(),
+      name: `${application.first_name || ''} ${application.middle_name || ''} ${application.last_name || ''}`.trim(),
+      email: application.email,
+      phone: application.mobile,
+      position: '', // Will be set if job is found
+      experience: application.experience || '',
+      education: application.education || '',
+      location: application.current_location || '',
+      skills: application.skills ? application.skills.split(',').map(s => s.trim()) : [],
+      score: null,
+      status: 'pending' as const,
+      appliedDate: application.applied_date || '',
+      resumeUrl: application.resume_path || '',
+      matchDetails: {
+        skillsMatch: null,
+        experienceMatch: null,
+        educationMatch: null,
+        cultural_fit: null
+      },
+      originalApplication: application,
+      isScreened: false
+    };
+    setSelectedCandidate(candidate);
     setIsApplicationDialogOpen(true);
   };
 
@@ -345,6 +381,8 @@ const HRDashboard = () => {
 
       if (result.data && Array.isArray(result.data)) {
         setJobApplications(result.data);
+        // Fetch scores for applications
+        fetchApplicationScores(result.data);
       } else {
         setJobApplications([]);
       }
@@ -354,6 +392,34 @@ const HRDashboard = () => {
     } finally {
       setApplicationsLoading(false);
     }
+  };
+
+  // Fetch screening scores for applications
+  const fetchApplicationScores = async (applications: JobApplication[]) => {
+    const scores: { [key: number]: number | null } = {};
+    await Promise.all(
+      applications.map(async (app) => {
+        try {
+          const screeningResponse = await fetch(
+            `${sessionData.APP_URL}/api/talent-screening-results/candidate/${app.id}?type=API&token=${sessionData.token}`
+          );
+          if (screeningResponse.ok) {
+            const screeningData = await screeningResponse.json();
+            if (screeningData.success) {
+              scores[app.id] = screeningData.competency_match;
+            } else {
+              scores[app.id] = null;
+            }
+          } else {
+            scores[app.id] = null;
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch screening data for application ${app.id}:`, error);
+          scores[app.id] = null;
+        }
+      })
+    );
+    setApplicationScores(scores);
   };
 
   // Fetch job postings from API
@@ -517,36 +583,36 @@ const HRDashboard = () => {
     setEditingJob(null);
   };
 
-  // Static data for other sections
-  const recentApplications: Application[] = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      position: "Senior Full-Stack Developer",
-      status: "Interview Scheduled",
-      appliedDate: "2024-01-18",
-      experience: "5 years",
-      score: 92
-    },
-    {
-      id: 2,
-      name: "Michael Chen",
-      position: "Product Manager",
-      status: "Under Review",
-      appliedDate: "2024-01-17",
-      experience: "7 years",
-      score: 88
-    },
-    {
-      id: 3,
-      name: "Emily Rodriguez",
-      position: "Senior Full-Stack Developer",
-      status: "Shortlisted",
-      appliedDate: "2024-01-16",
-      experience: "6 years",
-      score: 85
-    }
-  ];
+  // // Static data for other sections
+  // const recentApplications: Application[] = [
+  //   {
+  //     id: 1,
+  //     name: "Sarah Johnson",
+  //     position: "Senior Full-Stack Developer",
+  //     status: "Interview Scheduled",
+  //     appliedDate: "2024-01-18",
+  //     experience: "5 years",
+  //     score: 92
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Michael Chen",
+  //     position: "Product Manager",
+  //     status: "Under Review",
+  //     appliedDate: "2024-01-17",
+  //     experience: "7 years",
+  //     score: 88
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "Emily Rodriguez",
+  //     position: "Senior Full-Stack Developer",
+  //     status: "Shortlisted",
+  //     appliedDate: "2024-01-16",
+  //     experience: "6 years",
+  //     score: 85
+  //   }
+  // ];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -665,7 +731,7 @@ const HRDashboard = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="jobs" className="space-y-4 lg:space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 lg:space-y-6">
           {/* Mobile Tabs Dropdown */}
           <div className="lg:hidden">
             <select
@@ -678,7 +744,7 @@ const HRDashboard = () => {
               <option value="jobs">Job Postings</option>
               <option value="screening">Resume Screening</option>
               <option value="applications">Applications</option>
-              <option value="analytics">Analytics</option>
+              {/* <option value="analytics">Analytics</option> */}
             </select>
           </div>
 
@@ -687,7 +753,7 @@ const HRDashboard = () => {
             <TabsTrigger value="jobs" className="flex-1 data-[state=active]:bg-white">Job Postings</TabsTrigger>
             <TabsTrigger value="screening" className="flex-1 data-[state=active]:bg-white">Resume Screening</TabsTrigger>
             <TabsTrigger value="applications" className="flex-1 data-[state=active]:bg-white">Applications</TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1 data-[state=active]:bg-white">Analytics</TabsTrigger>
+            {/* <TabsTrigger value="analytics" className="flex-1 data-[state=active]:bg-white">Analytics</TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="jobs" className="space-y-4 lg:space-y-6">
@@ -813,9 +879,7 @@ const HRDashboard = () => {
           </TabsContent> */}
           <TabsContent value="screening">
             <CandidateScreening
-              jobApplications={jobApplications}
               jobPostings={jobPostings}
-              loading={applicationsLoading}
               onRefresh={fetchJobApplications}
             />
           </TabsContent>
@@ -844,13 +908,7 @@ const HRDashboard = () => {
                 ) : (
                   <div className="space-y-3">
                     {jobApplications.map((application) => {
-                      // Generate a consistent random score based on application ID
-                      const getRandomScore = (id: number) => {
-                        // Use the ID to generate a consistent "random" score between 60-100
-                        return (id % 40) + 60;
-                      };
-
-                      const score = getRandomScore(application.id);
+                      const score = applicationScores[application.id];
 
                       // Find the job title for this application
                       const job = jobPostings.find(j => j.id === application.job_id);
@@ -892,10 +950,9 @@ const HRDashboard = () => {
                             <div className="flex items-center justify-between lg:justify-end lg:space-x-6">
                               <div className="flex items-center space-x-4 lg:space-x-6">
                                 <div className="text-center">
-                                  <div className={`text-lg font-bold ${score >= 85 ? 'text-green-600' :
-                                      score >= 70 ? 'text-blue-600' : 'text-orange-600'
-                                    }`}>
-                                    {score}%
+                                  <div className={`text-lg font-bold ${score !== null ? (score >= 85 ? 'text-green-600' :
+                                    score >= 70 ? 'text-blue-600' : 'text-orange-600') : 'text-gray-500'}`}>
+                                    {score !== null ? `${score}%` : 'Pending'}
                                   </div>
                                   <div className="text-xs text-gray-500">Score</div>
                                 </div>
@@ -943,7 +1000,7 @@ const HRDashboard = () => {
           </TabsContent>
 
 
-          <TabsContent value="analytics" className="space-y-4 lg:space-y-6">
+          {/* <TabsContent value="analytics" className="space-y-4 lg:space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6">
               <Card className="border border-gray-200 shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -1007,7 +1064,7 @@ const HRDashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
       </main>
 
@@ -1019,6 +1076,7 @@ const HRDashboard = () => {
       />
 <ApplicationDetailsDialog
   application={selectedApplication}
+        candidate={selectedCandidate}
   jobPostings={jobPostings}
   open={isApplicationDialogOpen}
   onOpenChange={setIsApplicationDialogOpen}

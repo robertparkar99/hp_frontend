@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from 'next/navigation';
 import { Calendar, Users, UserCheck, MessageSquare } from "lucide-react";
 
 // ✅ Loader Component
@@ -37,17 +38,45 @@ import { DashboardStats } from "./DashboardStats";
 import { UpcomingInterviews } from "./UpcomingInterviews";
 import { CandidatePipeline } from "./CandidatePipeline";
 
+interface Interview {
+  id: number;
+  candidateName: string;
+  position: string;
+  positionId: number;
+  candidateId: number;
+  panelId: number;
+  date: string;
+  time: string;
+  duration: string;
+  location: string;
+  interviewers: string[];
+  status: string;
+}
+
 export function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [openPage, setOpenPage] = useState<string | null>(null);
+  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
 
   const tabs = [
     { key: "dashboard", label: "Dashboard", icon: UserCheck },
     { key: "schedule", label: "Schedule Interview", icon: Calendar },
     { key: "candidates", label: "Candidates", icon: Users },
     { key: "interview-panel", label: "Interview Panel", icon: UserCheck },
-    { key: "feedback", label: "Feedback", icon: MessageSquare },
+    // { key: "feedback", label: "Feedback", icon: MessageSquare },
   ];
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tabs.some(t => t.key === tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  const candidate = searchParams.get('candidate');
+  const job = searchParams.get('job');
 
   const handleTabChange = (tabKey: string) => {
     setActiveTab(tabKey);
@@ -98,15 +127,15 @@ export function Dashboard() {
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <UpcomingInterviews />
+              <UpcomingInterviews onReschedule={(interview) => { setSelectedInterview(interview); setActiveTab("schedule"); }} />
               <CandidatePipeline />
             </div>
           </>
         )}
-        {activeTab === "schedule" && <DynamicScheduleInterview />}
+        {activeTab === "schedule" && <DynamicScheduleInterview interview={selectedInterview} candidateId={candidate || undefined} positionId={job || undefined} />}
         {activeTab === "candidates" && <DynamicCandidates />}
         {activeTab === "interview-panel" && <DynamicInterviewPanels />}
-        {activeTab === "feedback" && <DynamicFeedback />}
+        {/* {activeTab === "feedback" && <DynamicFeedback />} */}
       </Suspense>
     </div>
   );

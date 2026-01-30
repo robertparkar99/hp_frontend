@@ -48,7 +48,9 @@ interface JobRole {
 }
 
 interface Skill {
-  title: string;
+  jobrole_skill_id: number;
+  jobrole: string;
+  skill: string;
 }
 
 interface Task {
@@ -466,7 +468,12 @@ const TaskManagement = () => {
       console.log("TASK_ALLOCATED_TO:", finalAllocatedTo);
       formData.append("task_title", selTask);
       formData.append("task_description", taskDescription);
-      formData.append("skills", selSkill.join(","));
+      const selectedSkills = selSkill.map(id => {
+        const skill = skillList.find(s => s.jobrole_skill_id.toString() === id);
+        return skill ? skill.skill : '';
+      }).filter(name => name);
+      formData.append("skill_id", selSkill.join(","));
+      formData.append("skills", selectedSkills.join(","));
       formData.append("manageby", selObserver);
       formData.append("observation_point", observationPoint);
       formData.append("KRA", kras);
@@ -482,6 +489,8 @@ const TaskManagement = () => {
       console.log("Submitting form data:", {
         task_title: selTask,
         task_description: taskDescription,
+        skill_id: selSkill,
+        skills: selectedSkills,
         repeat_days: repeatDays,
         repeat_until: formattedRepeatUntil,
         task_type: taskType,
@@ -552,7 +561,7 @@ const TaskManagement = () => {
       }
       setMessage(1);
 
-      const skillsData = '[' + skillList.map(skill => skill.title).join(',') + ']';
+      const skillsData = '[' + skillList.map(skill => skill.skill).join(',') + ']';
       const response = await fetch(`${sessionData.url}/gemini_chat`, {
         method: 'POST',
         headers: {
@@ -586,7 +595,11 @@ const TaskManagement = () => {
         setObservationPoint(geminiData.observation_point);
         setKras(geminiData.kras);
         setKpis(geminiData.kpis);
-        setSelSkill(geminiData.skill_required);
+        const selectedSkillIds = geminiData.skill_required.map((skillName: string) => {
+          const skillObj = skillList.find(s => s.skill === skillName);
+          return skillObj ? skillObj.jobrole_skill_id.toString() : '';
+        }).filter(id => id);
+        setSelSkill(selectedSkillIds);
         setTaskType(geminiData.task_type || "Medium");
       } else {
         setMessage(3);
@@ -646,20 +659,12 @@ const TaskManagement = () => {
                         fetchDepartmentWiseEmployees(value);
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
                         <SelectValue placeholder="Select Department" />
                       </SelectTrigger>
 
-                      <SelectContent
-                        side="bottom"
-                        align="start"
-                        sideOffset={6}
-                        avoidCollisions={false}
-                        className="max-w-[350px] overflow-y-auto"
-                        onWheel={(e) => e.stopPropagation()}
-                      >
-
-                        {departmentList.map((dept, index) => (
+                      <SelectContent className="max-h-60 max-w-65">
+                        {departmentList.filter(dept => dept.department_name).map((dept, index) => (
                           <SelectItem key={index} value={dept.department_name}>
                             {dept.department_name}
                           </SelectItem>
@@ -683,12 +688,12 @@ const TaskManagement = () => {
                         getEmployeeList(value);
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
                         <SelectValue placeholder="Select Job Role" />
                       </SelectTrigger>
 
-                      <SelectContent className="max-h-[260px] overflow-y-auto">
-                        {jobroleList.map((jobrole, index) => (
+                      <SelectContent className="max-h-60 max-w-65">
+                        {jobroleList.filter(jobrole => jobrole.allocated_standards).map((jobrole, index) => (
                           <SelectItem
                             key={index}
                             value={jobrole.allocated_standards}
@@ -712,7 +717,7 @@ const TaskManagement = () => {
                     </label>
                     <select
                       id="assignTo"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none resize"
+                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
                       value={selEmployee}
                       onChange={(e) => {
                         const selectedOptions = Array.from(
@@ -856,20 +861,22 @@ const TaskManagement = () => {
                       Repeat Once in every{" "}
                       <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                     </label>
-                    <select
-                      id="days"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                    <Select
                       value={repeatDays}
-                      onChange={(e) => setRepeatDays(e.target.value)}
+                      onValueChange={(value) => setRepeatDays(value)}
                       required
                     >
-                      <option value="">Select Days</option>
-                      {Array.from({ length: 14 }, (_, i) => i + 1).map((day) => (
-                        <option key={day} value={day}>
-                          {day} {day === 1 ? "day" : "days"}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
+                        <SelectValue placeholder="Select Days" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {Array.from({ length: 14 }, (_, i) => i + 1).map((day) => (
+                          <SelectItem key={day} value={day.toString()}>
+                            {day} {day === 1 ? "day" : "days"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Repeat Until - FIXED */}
@@ -916,7 +923,7 @@ const TaskManagement = () => {
                     </label>
                     <select
                       id="skillsRequired"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none resize"
+                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
                       multiple
                       value={selSkill}
                       onChange={(e) => {
@@ -932,8 +939,8 @@ const TaskManagement = () => {
                     >
                       <option value="">Select Required Skills</option>
                       {skillList.map((skill, index) => (
-                        <option key={index} value={skill.title}>
-                          {skill.title}
+                        <option key={index} value={skill.jobrole_skill_id.toString()}>
+                          {skill.skill}
                         </option>
                       ))}
                     </select>
@@ -948,21 +955,25 @@ const TaskManagement = () => {
                       Observer{" "}
                       <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                     </label>
-                    <select
-                      id="observer"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                    <Select
                       value={selObserver}
-                      onChange={(e) => setSelObserver(e.target.value)}
+                      onValueChange={(value) => setSelObserver(value)}
                       required
                     >
-                      <option value="">Select Observer</option>
-                      {ObserverList.map((observer, index) => (
-                        <option key={index} value={observer.id}>
-                          {observer.first_name} {observer.middle_name}{" "}
-                          {observer.last_name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
+                        <SelectValue placeholder="Select Observer" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {ObserverList.filter(observer => observer.id && String(observer.id).trim() !== '')
+                          .filter((observer, index, arr) => arr.findIndex(o => o.id === observer.id) === index)
+                          .map((observer) => (
+                          <SelectItem key={observer.id} value={String(observer.id)}>
+                            {observer.first_name} {observer.middle_name}{" "}
+                            {observer.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* KRAs */}

@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import DataTable,{TableStyles,TableColumn} from "react-data-table-component";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Eye, Calendar, MessageSquare, Download } from "lucide-react";
+import { Search, Filter, Eye, Calendar, MessageSquare, Download, Star } from "lucide-react";
 import dynamic from 'next/dynamic';
+import Feedback from './Feedback';
 
 const ExcelExportButton = dynamic(
   () => import('@/components/exportButtons/excelExportButton').then(mod => mod.ExcelExportButton),
@@ -26,112 +28,153 @@ const PrintButton = dynamic(
 
 // Define TypeScript interfaces
 interface Candidate {
-  id: number;
-  name: string;
-  email: string;
-  position: string;
+  candidate_id: number;
+  candidate_name: string;
+  position_id: number; // job_id
   status: string;
-  stage: string;
-  appliedDate: string;
-  nextInterview: string | null;
-  score: number;
+  stage: string | null;
+  applied_date: string;
+  next_interview: string | null;
+  score: string | null;
+  panel_id: number | null;
 }
+
 
 interface Filters {
   [key: string]: string;
 }
+interface SessionData {
+  url?: string;
+  token?: string;
+  sub_institute_id?: string | number;
+  org_type?: string;
+}
 
-const candidatesData: Candidate[] = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    email: "sarah.j@email.com",
-    position: "Senior Software Engineer",
-    status: "Interview Scheduled",
-    stage: "Technical Interview",
-    appliedDate: "2024-01-15",
-    nextInterview: "2024-01-20 10:00 AM",
-    score: 8.5,
-  },
-  {
-    id: 2,
-    name: "Michael Rodriguez",
-    email: "m.rodriguez@email.com",
-    position: "Product Manager",
-    status: "Under Review",
-    stage: "Application Review",
-    appliedDate: "2024-01-12",
-    nextInterview: null,
-    score: 7.8,
-  },
-  {
-    id: 3,
-    name: "Lisa Zhang",
-    email: "lisa.zhang@email.com",
-    position: "UX Designer",
-    status: "Interview Scheduled",
-    stage: "Final Interview",
-    appliedDate: "2024-01-10",
-    nextInterview: "2024-01-22 2:00 PM",
-    score: 9.2,
-  },
-  {
-    id: 4,
-    name: "David Chen",
-    email: "david.chen@email.com",
-    position: "Data Scientist", 
-    status: "Offer Extended",
-    stage: "Offer Stage",
-    appliedDate: "2024-01-08",
-    nextInterview: null,
-    score: 9.0,
-  },
-  {
-    id: 5,
-    name: "Emma Wilson",
-    email: "emma.w@email.com",
-    position: "Marketing Manager",
-    status: "Pending Feedback",
-    stage: "Phone Screening",
-    appliedDate: "2024-01-14",
-    nextInterview: null,
-    score: 7.5,
-  },
-];
+interface CandidatesProps {
+  onReviewApplication?: () => void;
+}
 
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "Interview Scheduled":
       return "bg-blue-100 text-blue-800";
     case "Under Review":
-      return "bg-yellow-100 text-yellow-800";
+    case "Pending Review":
+      return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
     case "Offer Extended":
-      return "bg-green-100 text-green-800";
+    case "Hired":
+      return "bg-green-100 text-green-800 hover:bg-green-200";
     case "Pending Feedback":
-      return "bg-orange-100 text-orange-800";
+      return "bg-orange-100 text-orange-800 hover:bg-orange-200";
+    case "Rejected":
+      return "bg-red-100 text-red-800 hover:bg-red-200";
+    case "Completed":
+      return "bg-indigo-100 text-indigo-800 hover:bg-indigo-200";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "bg-gray-100 text-gray-800 hover:bg-gray-200";
   }
 };
 
-export default function Candidates() {
+export default function Candidates({ onReviewApplication }: CandidatesProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filters, setFilters] = useState<Filters>({});
-  const [filteredData, setFilteredData] = useState<Candidate[]>(candidatesData);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [filteredData, setFilteredData] = useState<Candidate[]>([]);
+  const [currentView, setCurrentView] = useState<'candidates' | 'feedback'>('candidates');
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [sessionData, setSessionData] = useState<SessionData>({});
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // ---------- Load session ----------
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        const { APP_URL, token, sub_institute_id, org_type } =
+          JSON.parse(userData);
+        setSessionData({ url: APP_URL, token, sub_institute_id, org_type });
+      }
+    }
+  }, []);
+
+  const fetchCandidates = async () => {
+    if (!sessionData.sub_institute_id || !sessionData.url || !sessionData.token) return;
+    setLoading(true);
+    try {
+      // Fetch candidates
+      const candidateResponse = await fetch(`${sessionData.url}/api/candidate?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
+      const candidateData = await candidateResponse.json();
+
+      // Fetch feedback
+      const feedbackResponse = await fetch(`${sessionData.url}/api/feedback?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
+      const feedbackData = await feedbackResponse.json();
+
+      if (candidateData.status) {
+        let candidatesWithScores = candidateData.data;
+
+        if (feedbackData.status && feedbackData.data) {
+          // Create a map of candidate_id to overall rating
+          const scoreMap: { [key: string]: number } = {};
+
+          feedbackData.data.forEach((feedback: any) => {
+            try {
+              const criteria = JSON.parse(feedback.evaluation_criteria);
+              const overall = criteria.find(
+                (item: any) => item.name === "Overall Rating"
+              );
+
+              if (overall) {
+                const key = `${feedback.candidate_id}_${feedback.job_id}`;
+                scoreMap[key] = overall.score;
+              }
+            } catch (e) {
+              console.error("Invalid evaluation_criteria", e);
+            }
+          });
+
+
+          // Assign scores to candidates
+          candidatesWithScores = candidateData.data.map((candidate: Candidate) => {
+            const key = `${candidate.candidate_id}_${candidate.position_id}`;
+
+            return {
+              ...candidate,
+              score: scoreMap[key] ? scoreMap[key].toString() : null,
+            };
+          });
+
+          setCandidates(candidatesWithScores);
+          setFilteredData(candidatesWithScores);
+        }
+      }
+    }
+    catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCandidates();
+  }, [sessionData.sub_institute_id, sessionData.url, sessionData.token]);
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     if (term) {
-      const filtered = candidatesData.filter(candidate =>
-        candidate.name.toLowerCase().includes(term.toLowerCase()) ||
-        candidate.position.toLowerCase().includes(term.toLowerCase()) ||
-        candidate.email.toLowerCase().includes(term.toLowerCase()) ||
+      const filtered = candidates.filter(candidate =>
+        candidate.candidate_name.toLowerCase().includes(term.toLowerCase()) ||
+        candidate.position_id.toString().toLowerCase().includes(term.toLowerCase()) ||
         candidate.status.toLowerCase().includes(term.toLowerCase()) ||
-        candidate.stage.toLowerCase().includes(term.toLowerCase())
+        (candidate.stage || '').toLowerCase().includes(term.toLowerCase()) ||
+        candidate.applied_date.toLowerCase().includes(term.toLowerCase()) ||
+        (candidate.next_interview || '').toLowerCase().includes(term.toLowerCase()) ||
+        (candidate.score || '').toLowerCase().includes(term.toLowerCase())
       );
       setFilteredData(filtered);
     } else {
-      setFilteredData(candidatesData);
+      setFilteredData(candidates);
     }
   };
 
@@ -143,14 +186,18 @@ export default function Candidates() {
   };
 
   useEffect(() => {
-    let filtered = [...candidatesData];
+    let filtered = [...candidates];
 
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(candidate =>
-        candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.email.toLowerCase().includes(searchTerm.toLowerCase())
+        candidate.candidate_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.position_id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (candidate.stage || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.applied_date.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (candidate.next_interview || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (candidate.score || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -158,14 +205,27 @@ export default function Candidates() {
     Object.keys(filters).forEach((key) => {
       if (filters[key] && filters[key].trim() !== "") {
         filtered = filtered.filter((item) => {
-          const value = (item[key as keyof Candidate] || "").toString().toLowerCase();
+          let value = '';
+          if (key === 'position_id') {
+            value = item.position_id.toString().toLowerCase();
+          } else if (key === 'applied_date') {
+            value = new Date(item.applied_date).toLocaleDateString().toLowerCase();
+          } else if (key === 'next_interview') {
+            value = (item.next_interview || '').toLowerCase();
+          } else if (key === 'score') {
+            value = (item.score || '').toLowerCase();
+          } else if (key === 'stage') {
+            value = (item.stage || '').toLowerCase();
+          } else {
+            value = (item[key as keyof Candidate] as string || '').toLowerCase();
+          }
           return value.includes(filters[key]);
         });
       }
     });
 
     setFilteredData(filtered);
-  }, [filters, searchTerm]);
+  }, [filters, searchTerm, candidates]);
 
   const columns :TableColumn<Candidate>[]= [
     {
@@ -175,20 +235,25 @@ export default function Candidates() {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("name", e.target.value)}
+            onChange={(e) => handleColumnFilter("candidate_name", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: Candidate) => row.name,
-      cell: (row: Candidate) => (
-        <div>
-          <p className="font-medium">{row.name}</p>
-          <p className="text-sm text-muted-foreground">{row.email}</p>
-        </div>
-      ),
+      selector: (row: Candidate) => row.candidate_name,
+      cell: (row: Candidate) => {
+        const parts = row.candidate_name.split(' ');
+        const email = parts.pop() || '';
+        const name = parts.join(' ');
+        return (
+          <div>
+            <p className="font-medium">{name}</p>
+            {/* <p className="text-sm text-muted-foreground">{email}</p> */}
+          </div>
+        );
+      },
       sortable: true,
-      minWidth: "200px"
+      width: "200px"
     },
     {
       name: (
@@ -197,14 +262,14 @@ export default function Candidates() {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("position", e.target.value)}
+            onChange={(e) => handleColumnFilter("position_id", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: Candidate) => row.position,
+      selector: (row: Candidate) => row.position_id.toString(),
       sortable: true,
-      minWidth: "180px"
+      width: "180px"
     },
     {
       name: (
@@ -225,7 +290,7 @@ export default function Candidates() {
         </Badge>
       ),
       sortable: true,
-      minWidth: "160px"
+      width: "160px"
     },
     {
       name: (
@@ -239,9 +304,9 @@ export default function Candidates() {
           />
         </div>
       ),
-      selector: (row: Candidate) => row.stage,
+      selector: (row: Candidate) => row.stage || "-",
       sortable: true,
-      minWidth: "150px"
+      width: "150px"
     },
     {
       name: (
@@ -250,14 +315,14 @@ export default function Candidates() {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("appliedDate", e.target.value)}
+            onChange={(e) => handleColumnFilter("applied_date", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: Candidate) => new Date(row.appliedDate).toLocaleDateString(),
+      selector: (row: Candidate) => new Date(row.applied_date).toLocaleDateString(),
       sortable: true,
-      minWidth: "120px"
+      width: "120px"
     },
     {
       name: (
@@ -266,14 +331,14 @@ export default function Candidates() {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("nextInterview", e.target.value)}
+            onChange={(e) => handleColumnFilter("next_interview", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: Candidate) => row.nextInterview || "-",
+      selector: (row: Candidate) => row.next_interview ? new Date(row.next_interview).toLocaleString() : "-",
       sortable: true,
-      minWidth: "150px"
+      width: "150px"
     },
     {
       name: (
@@ -287,37 +352,53 @@ export default function Candidates() {
           />
         </div>
       ),
-      selector: (row: Candidate) => row.score,
+      selector: (row: Candidate) => row.score || "-",
       cell: (row: Candidate) => (
         <div className="flex items-center">
-          <span className="font-medium">{row.score}</span>
-          <span className="text-muted-foreground">/10</span>
+          <span className="font-medium">{row.score ? parseFloat(row.score) : '-'}</span>
+          {row.score && <span className="text-muted-foreground">/10</span>}
         </div>
       ),
       sortable: true,
-      minWidth: "100px"
+      width: "100px"
     },
     {
       name: "Actions",
       cell: (row: Candidate) => (
-        <div className="flex space-x-2">
-          <Button size="sm" variant="outline" className="h-8">
-            <Eye className="h-3 w-3 mr-1" />
+        <div className="flex w-full space-x-1">
+          <Button size="sm" variant="outline" className="h-6 px-2 w-16">
+            <Eye className="h-3 w-3" />
             View
           </Button>
-          <Button size="sm" variant="outline" className="h-8">
-            <Calendar className="h-3 w-3 mr-1" />
-            Schedule
-          </Button>
-          <Button size="sm" variant="outline" className="h-8">
-            <MessageSquare className="h-3 w-3 mr-1" />
+          <Button size="sm" variant="outline" className="h-6 px-2 w-24">
+            <MessageSquare className="h-3 w-3 " />
             Message
           </Button>
+          {row.stage === "Scheduled" && (
+            <Button size="sm" variant="outline" className="h-6 px-2 w-23" onClick={() => { setSelectedCandidate(row); setCurrentView('feedback'); }}>
+              <Star className="h-3 w-3" />
+              Feedback
+            </Button>
+          )}
+          {row.status === "Completed" && (
+            <Button size="sm" variant="outline" className="h-6 px-2 w-32" onClick={() => { setSelectedCandidate(row); setCurrentView('feedback'); }}>
+              <Star className="h-3 w-3" />
+              Edit Feedback
+            </Button>
+          )}
+          {row.status === "Pending Review" && (
+            <Button size="sm" variant="outline" className="h-6 px-2 w-38" onClick={() => {
+              localStorage.setItem('reviewCandidate', JSON.stringify(row));
+              router.push(`/content/Telent-management/Recruitment-management?tab=screening&candidateId=${row.position_id}`);
+            }}>
+              <Eye className="h-3 w-3" />
+              Review Application
+            </Button>
+          )}
         </div>
       ),
       ignoreRowClick: true,
-      button: true,
-      minWidth: "250px"
+      width: "320px"
     },
   ];
 
@@ -357,6 +438,10 @@ export default function Candidates() {
     },
   };
 
+  if (currentView === 'feedback' && selectedCandidate) {
+    return <Feedback candidate={selectedCandidate} onBack={() => setCurrentView('candidates')} onRefresh={fetchCandidates} />;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -367,35 +452,35 @@ export default function Candidates() {
           </p>
         </div>
        <div className="flex space-x-2">
-            <PrintButton
-              data={filteredData.length > 0 ? filteredData : candidatesData}
-              title="Incident Reports"
-              excludedFields={["id"]}
-              buttonText={
-                <>
-                  <span className="mdi mdi-printer-outline"></span>
-                </>
-              }
-            />
-            <ExcelExportButton
-              sheets={[{ data: filteredData.length > 0 ? filteredData : candidatesData, sheetName: "Incident Reports" }]}
-              fileName="incident_reports"
-              buttonText={
-                <>
-                  <span className="mdi mdi-file-excel"></span>
-                </>
-              }
-            />
-            <PdfExportButton
-              data={filteredData.length > 0 ? filteredData : candidatesData}
-              fileName="incident_reports"
-              buttonText={
-                <>
-                  <span className="mdi mdi-file-pdf-box"></span>
-                </>
-              }
-            />
-          </div>
+         <PrintButton
+           data={filteredData.length > 0 ? filteredData : candidates}
+           title="Candidates"
+           excludedFields={["panel_id"]}
+           buttonText={
+             <>
+               <span className="mdi mdi-printer-outline"></span>
+             </>
+           }
+         />
+         <ExcelExportButton
+           sheets={[{ data: filteredData.length > 0 ? filteredData : candidates, sheetName: "Candidates" }]}
+           fileName="candidates"
+           buttonText={
+             <>
+               <span className="mdi mdi-file-excel"></span>
+             </>
+           }
+         />
+         <PdfExportButton
+           data={filteredData.length > 0 ? filteredData : candidates}
+           fileName="candidates"
+           buttonText={
+             <>
+               <span className="mdi mdi-file-pdf-box"></span>
+             </>
+           }
+         />
+       </div>
       </div>
 
       {/* Search and Filters */}
@@ -425,23 +510,30 @@ export default function Candidates() {
           <CardTitle className="text-xl">All Candidates ({filteredData.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={columns}
-            data={filteredData}
-            customStyles={customStyles}
-            pagination
-            highlightOnHover
-            responsive
-            noDataComponent={
-              <div className="p-8 text-center text-muted-foreground">
-                <div className="text-lg font-medium mb-2">No candidates found</div>
-                <div className="text-sm">Try adjusting your search or filters</div>
-              </div>
-            }
-            persistTableHead
-            paginationPerPage={10}
-            paginationRowsPerPageOptions={[10, 25, 50, 100]}
-          />
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="mt-2 text-muted-foreground">Loading candidates...</div>
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={filteredData}
+              customStyles={customStyles}
+              pagination
+              highlightOnHover
+              responsive
+              noDataComponent={
+                <div className="p-8 text-center text-muted-foreground">
+                  <div className="text-lg font-medium mb-2">No candidates found</div>
+                  <div className="text-sm">Try adjusting your search or filters</div>
+                </div>
+              }
+              persistTableHead
+              paginationPerPage={10}
+              paginationRowsPerPageOptions={[10, 25, 50, 100]}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

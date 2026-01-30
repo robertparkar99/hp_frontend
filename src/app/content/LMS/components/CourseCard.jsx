@@ -31,6 +31,10 @@ const CourseCard = ({
   const [contentType, setContentType] = useState("none");
   const [loading, setLoading] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [enrolled, setEnrolled] = useState(() => {
+    // Use enrollment_status from API: if null, not enrolled; otherwise enrolled
+    return course.enrollment_status !== null;
+  });
   const [correctSubjectId, setCorrectSubjectId] = useState(null);
   const [jobRoles, setJobRoles] = useState([]);
   const isDefault = imgSrc === DEFAULT_IMAGE;
@@ -223,13 +227,89 @@ const CourseCard = ({
   };
 
   const handleEnroll = async () => {
-    if (!onEnroll) return;
-    
+    if (!sessionInfo || !sessionInfo.token || !sessionInfo.user_id || !sessionInfo.sub_institute_id) {
+      console.error("❌ Session info missing for enrollment");
+      alert("Please login to enroll in courses");
+      return;
+    }
+
+    if (enrolled) {
+      alert("You are already enrolled in this course!");
+      return;
+    }
+
     setEnrolling(true);
+    
     try {
-      await onEnroll(course);
+      // Prepare enrollment data
+      const enrollmentData = {
+        user_id: sessionInfo.user_id,
+        sub_institute_id: sessionInfo.sub_institute_id,
+        type: "API",
+        token: sessionInfo.token,
+        course_id: course.id,
+        subject_id: correctSubjectId || course.subject_id,
+        standard_id: course.standard_id,
+        start_date: new Date().toISOString().split('T')[0], // Today's date
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 60 days from now
+        status: "enrolled"
+      };
+
+      console.log("📤 Sending enrollment request:", enrollmentData);
+
+      // Make API call to enroll endpoint
+      const response = await fetch("http://127.0.0.1:8000/api/enroll", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify(enrollmentData),
+      });
+
+      const data = await response.json();
+      console.log("📥 Enrollment response:", data);
+
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      }
+
+      // Check if enrollment was successful
+      if (data.message && data.message.toLowerCase().includes("success")) {
+        setEnrolled(true);
+        course.enrollment_status = 'enrolled'; // Update enrollment status
+
+        // Persist enrollment in localStorage
+          const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
+          if (!enrolledCourses.some(c => c.id === course.id)) {
+            course.contentType = contentType; // Add content type
+            enrolledCourses.push(course);
+            localStorage.setItem('enrolledCourses', JSON.stringify(enrolledCourses));
+          }
+
+        // Notify parent component if callback exists
+        if (onEnroll) {
+          await onEnroll(course, data);
+        }
+
+        // Show success message
+        alert("✅ Successfully enrolled in the course!");
+
+        // Open View Details page after enrollment
+        handleViewDetails();
+
+        // Optionally update course object
+        course.enrolled = true;
+        if (data.data && data.data.id) {
+          course.enrollmentId = data.data.id;
+        }
+      } else {
+        throw new Error(data.message || "Enrollment failed");
+      }
+      
     } catch (error) {
-      console.error("Error enrolling in course:", error);
+      console.error("❌ Enrollment error:", error);
+      alert(`Failed to enroll: ${error.message}`);
     } finally {
       setEnrolling(false);
     }
@@ -372,7 +452,10 @@ const CourseCard = ({
   // ---------------- LIST VIEW ----------------
   if (viewMode === "list") {
     return (
-      <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all duration-200">
+      <div
+        className={`bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all duration-200 ${enrolled ? 'cursor-pointer' : ''}`}
+        onClick={enrolled ? handleViewDetails : undefined}
+      >
         <div className="flex items-start space-x-4">
           <div className="relative flex-shrink-0">
             <Image
@@ -478,20 +561,22 @@ const CourseCard = ({
                     />
                   </div>
                 )}
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm" onClick={handleViewDetails}>
-                    View Details
-                  </Button>
-                  <Button 
-                    size="sm" 
+                <div className="flex items-center justify-end">
+                  <Button
+                    size="sm"
                     onClick={handleEnroll}
-                    disabled={enrolling}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={enrolling || enrolled}
+                    className={`${enrolled ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'} text-white`}
                   >
                     {enrolling ? (
                       <>
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-2"></div>
                         Enrolling...
+                      </>
+                    ) : enrolled ? (
+                      <>
+                        <Icon name="CheckCircle" size={14} className="mr-2" />
+                        Enrolled
                       </>
                     ) : (
                       "Enroll Now"
@@ -509,9 +594,10 @@ const CourseCard = ({
   // ---------------- GRID VIEW ----------------
   return (
     <div
-      className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col"
+      className={`bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col ${enrolled ? 'cursor-pointer' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={enrolled ? handleViewDetails : undefined}
     >
       <div className="relative">
         <div className="flex items-center justify-center w-full h-48 bg-gray-100 rounded-md overflow-hidden">
@@ -582,17 +668,6 @@ const CourseCard = ({
         <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
           <span className="font-medium mr-1">Job Role:</span> {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
         </p>
-        
-        {/* <div className="text-sm text-muted-foreground mb-4">
-          <div className="flex items-center">
-            <span className="font-medium mr-1">Short Name:</span>
-            {course.short_name}
-          </div>
-          <div className="flex items-center">
-            <span className="font-medium mr-1">Course Type:</span>
-            {course.subject_type}
-          </div>
-        </div> */}
 
         <div className="flex items-center justify-between mt-auto p-3 rounded-lg">
           <div className="flex justify-between items-center w-full text-xs">
@@ -611,19 +686,29 @@ const CourseCard = ({
           </div>
         </div>
 
-   <div className="flex space-x-2">
-  <Button variant="outline" size="sm" onClick={handleViewDetails} className="min-w-[180px] flex-1">
-    View Details
-  </Button>
-  <Button 
-    size="sm" 
-    onClick={handleEnroll}
-    disabled={enrolling}
-    className="min-w-[70px] flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-  >
-    Enroll
-  </Button>
-</div>
+        <div className="flex justify-center mt-4">
+          <Button
+            size="sm"
+            onClick={handleEnroll}
+            disabled={enrolling || enrolled}
+            className={`w-full ${
+              enrolled
+                ? 'bg-green-600 hover:bg-green-700 text-white'
+                : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+            }`}
+          >
+            {enrolling ? (
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+            ) : enrolled ? (
+              <>
+                <Icon name="CheckCircle" size={14} className="mr-1" />
+                Enrolled
+              </>
+            ) : (
+              "Enroll"
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

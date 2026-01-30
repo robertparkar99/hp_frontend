@@ -69,37 +69,37 @@ export const LogoSection: React.FC = () => {
 
   const handleMenuClick = (path: string) => {
     setIsDropdownOpen(false);
-    (window as any).__currentMenuItem = path;
-    window.dispatchEvent(
-      new CustomEvent("menuSelected", {
-        detail: { menu: path, pageType: "page", access: path },
-      })
-    );
+    // Navigate directly using router instead of events for global functionality
+    const routePath = `/content/${path.replace('/page.tsx', '')}`;
+    router.push(routePath);
   };
 
   const menuItems = userData?.user_profile_name === "Admin" ? [{ label: "Rights Management", path: "groupWiseRights/page.tsx" }] : [];
 
   return (
-    <div className="flex relative z-50 items-center">
+    <div className="flex relative items-center">
       {/* icons */}
       <div className="iconDivs flex gap-4 items-center">
         {/* search icon */}
-        <div className="searchIcon cursor-pointer">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="#3B3B3B"
-            className="w-6 h-6 text-black"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-4.35-4.35M10.5 17a6.5 6.5 0 100-13 6.5 6.5 0 000 13z"
-            />
-          </svg>
-        </div>
+       <div
+  className="searchIcon cursor-not-allowed opacity-40 grayscale pointer-events-none"
+  title="Search is disabled"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="#3B3B3B"
+    className="w-6 h-6"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M21 21l-4.35-4.35M10.5 17a6.5 6.5 0 100-13 6.5 6.5 0 000 13z"
+    />
+  </svg>
+</div>
 
         {/* setting icon with dropdown */}
         <div ref={buttonRef} onClick={toggleDropdown} className="cursor-pointer">

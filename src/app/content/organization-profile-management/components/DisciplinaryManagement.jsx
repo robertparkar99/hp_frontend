@@ -44,7 +44,7 @@ const SystemConfiguration = () => {
     location: '',
     misconductType: '',
     description: '',
-    witnessIds: [],
+    witnessIds: '',
     actionTaken: '',
     remarks: '',
   });
@@ -55,7 +55,7 @@ const SystemConfiguration = () => {
     location: '',
     misconductType: '',
     description: '',
-    witnessIds: [],
+    witnessIds: '',
     actionTaken: '',
     remarks: '',
   });
@@ -479,7 +479,7 @@ const SystemConfiguration = () => {
           location: '',
           misconductType: '',
           description: '',
-          witnessIds: [],
+          witnessIds: '',
           actionTaken: '',
           remarks: '',
         });
@@ -739,6 +739,35 @@ const SystemConfiguration = () => {
     },
   };
 
+  // Create maps for display names
+  const departmentMap = {};
+  departmentOptions.forEach(dept => {
+    departmentMap[dept.id] = dept.name;
+  });
+
+  const userMap = {};
+  [...userOptions, ...witnessOptions].forEach(user => {
+    userMap[user.id] = user.name;
+  });
+
+  const displayData = filteredData.length > 0 ? filteredData : dataList;
+
+  // Create formatted data for print and export with display names
+  const formattedData = displayData.map((row, index) => ({
+    "Sr No.": index + 1,
+    "Department": departmentMap[row.department_id] || row.department_name || "",
+    "Employee": userMap[row.employee_id] || row.employee_name || "",
+    "Incident Date-Time": row.incident_datetime || "",
+    "Location": row.location || "",
+    "Misconduct Type": row.misconduct_type || "",
+    "Description": row.description || "",
+    "Witnesses": userMap[row.witness_id] || row.witness_name || "",
+    "Action Taken": row.action_taken || "",
+    "Remarks": row.remarks || "",
+    "Reported By Name": userMap[row.user_id] || row.reported_by_name || "",
+    "Date of Report": row.date_of_report || row.created_date || "",
+  }));
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Form */}
@@ -758,7 +787,7 @@ const SystemConfiguration = () => {
               <SelectValue placeholder="Select Department" />
             </SelectTrigger>
 
-            <SelectContent className="max-h-60 w-73">
+            <SelectContent className="max-h-60 max-w-85">
               {departmentOptions.map((dept) => (
                 <SelectItem
                   key={dept.id}
@@ -776,17 +805,25 @@ const SystemConfiguration = () => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-          <select
+          <Select
             value={formData.employeeId}
-            onChange={(e) => handleChange('employeeId', e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            onValueChange={(val) => handleChange("employeeId", val)}
             required
           >
-            <option value="">Select Employee</option>
-            {userOptions.map((user) => (
-              <option key={user.id} value={user.id}>{user.name}</option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2">
+              <SelectValue placeholder="Select Employee" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              {userOptions.map((user) => (
+                <SelectItem
+                  key={user.id}
+                  value={String(user.id)}
+                >
+                  {user.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Incident Date-Time */}
@@ -819,19 +856,22 @@ const SystemConfiguration = () => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Type of Misconduct{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-          <select
+          <Select
             value={formData.misconductType}
-            onChange={(e) => handleChange('misconductType', e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            onValueChange={(val) => handleChange("misconductType", val)}
             required
           >
-            <option value="">Select Type</option>
-            <option value="Late Arrival">Late Arrival</option>
-            <option value="Absenteeism">Absenteeism</option>
-            <option value="Misbehavior">Misbehavior</option>
-            <option value="Violation of Policy">Violation of Policy</option>
-            <option value="Others">Others</option>
-          </select>
+            <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2">
+              <SelectValue placeholder="Select Type" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              <SelectItem value="Late Arrival">Late Arrival</SelectItem>
+              <SelectItem value="Absenteeism">Absenteeism</SelectItem>
+              <SelectItem value="Misbehavior">Misbehavior</SelectItem>
+              <SelectItem value="Violation of Policy">Violation of Policy</SelectItem>
+              <SelectItem value="Others">Others</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Description */}
@@ -853,18 +893,24 @@ const SystemConfiguration = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Witness
             </label>
-            <select
-              value={formData.witnessIds || ""}
-              onChange={(e) => handleChange("witnessIds", e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            <Select
+              value={formData.witnessIds}
+              onValueChange={(val) => handleChange("witnessIds", val)}
             >
-              <option value="">Select Witness</option>
-              {witnessOptions.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2">
+                <SelectValue placeholder="Select Witness" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {witnessOptions.map((user) => (
+                  <SelectItem
+                    key={user.id}
+                    value={String(user.id)}
+                  >
+                    {user.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
 
@@ -872,19 +918,22 @@ const SystemConfiguration = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken{" "}
               <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-            <select
+            <Select
               value={formData.actionTaken}
-              onChange={(e) => handleChange('actionTaken', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              onValueChange={(val) => handleChange("actionTaken", val)}
               required
             >
-              <option value="">Select Action</option>
-              <option value="Warning">Warning</option>
-              <option value="Suspension">Suspension</option>
-              <option value="Termination">Termination</option>
-              <option value="Counseling">Counseling</option>
-              <option value="Others">Others</option>
-            </select>
+              <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2">
+                <SelectValue placeholder="Select Action" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="Warning">Warning</SelectItem>
+                <SelectItem value="Suspension">Suspension</SelectItem>
+                <SelectItem value="Termination">Termination</SelectItem>
+                <SelectItem value="Counseling">Counseling</SelectItem>
+                <SelectItem value="Others">Others</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -914,9 +963,9 @@ const SystemConfiguration = () => {
           </div>
           <div className="flex space-x-2">
             <PrintButton
-              data={filteredData.length > 0 ? filteredData : dataList}
+              data={formattedData}
               title="Incident Reports"
-              excludedFields={["id"]}
+              excludedFields={[]}
               buttonText={
                 <>
                   <span className="mdi mdi-printer-outline"></span>
@@ -924,7 +973,7 @@ const SystemConfiguration = () => {
               }
             />
             <ExcelExportButton
-              sheets={[{ data: filteredData.length > 0 ? filteredData : dataList, sheetName: "Incident Reports" }]}
+              sheets={[{ data: formattedData, sheetName: "Incident Reports" }]}
               fileName="incident_reports"
               buttonText={
                 <>
@@ -933,7 +982,7 @@ const SystemConfiguration = () => {
               }
             />
             <PdfExportButton
-              data={filteredData.length > 0 ? filteredData : dataList}
+              data={formattedData}
               fileName="incident_reports"
               buttonText={
                 <>
@@ -967,33 +1016,49 @@ const SystemConfiguration = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Department{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-              <select
+              <Select
                 value={editFormData.departmentId}
-                onChange={(e) => handleEditChange('departmentId', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                onValueChange={(val) => handleEditChange("departmentId", val)}
                 required
               >
-                <option value="">Select Department</option>
-                {departmentOptions.map((dept) => (
-                  <option key={dept.id} value={dept.id}>{dept.name}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2">
+                  <SelectValue placeholder="Select Department" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {departmentOptions.map((dept) => (
+                    <SelectItem
+                      key={dept.id}
+                      value={String(dept.id)}
+                    >
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Employee */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-              <select
+              <Select
                 value={editFormData.employeeId}
-                onChange={(e) => handleEditChange('employeeId', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                onValueChange={(val) => handleEditChange("employeeId", val)}
                 required
               >
-                <option value="">Select Employee</option>
-                {editUserOptions.map((user) => (
-                  <option key={user.id} value={user.id}>{user.name}</option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2">
+                  <SelectValue placeholder="Select Employee" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {editUserOptions.map((user) => (
+                    <SelectItem
+                      key={user.id}
+                      value={String(user.id)}
+                    >
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Incident Date-Time */}
@@ -1026,19 +1091,22 @@ const SystemConfiguration = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Type of Misconduct{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-              <select
+              <Select
                 value={editFormData.misconductType}
-                onChange={(e) => handleEditChange('misconductType', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                onValueChange={(val) => handleEditChange("misconductType", val)}
                 required
               >
-                <option value="">Select Type</option>
-                <option value="Late Arrival">Late Arrival</option>
-                <option value="Absenteeism">Absenteeism</option>
-                <option value="Misbehavior">Misbehavior</option>
-                <option value="Violation of Policy">Violation of Policy</option>
-                <option value="Others">Others</option>
-              </select>
+                <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2">
+                  <SelectValue placeholder="Select Type" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="Late Arrival">Late Arrival</SelectItem>
+                  <SelectItem value="Absenteeism">Absenteeism</SelectItem>
+                  <SelectItem value="Misbehavior">Misbehavior</SelectItem>
+                  <SelectItem value="Violation of Policy">Violation of Policy</SelectItem>
+                  <SelectItem value="Others">Others</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Description */}
@@ -1059,40 +1127,47 @@ const SystemConfiguration = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Witness{" "}
                   <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-                <select
-                  value={editFormData.witnessIds}   // ensure string
-                  onChange={(e) => handleEditChange("witnessIds", e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                <Select
+                  value={editFormData.witnessIds}
+                  onValueChange={(val) => handleEditChange("witnessIds", val)}
                   required
                 >
-                  <option value="">Select Witness</option>
-
-                  {witnessOptions.map((user) => (
-                    <option key={user.id} value={String(user.id)}
-                    >
-                      {user.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <SelectValue placeholder="Select Witness" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {witnessOptions.map((user) => (
+                      <SelectItem
+                        key={user.id}
+                        value={String(user.id)}
+                      >
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Action Taken */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken{" "}
                   <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-                <select
+                <Select
                   value={editFormData.actionTaken}
-                  onChange={(e) => handleEditChange('actionTaken', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  onValueChange={(val) => handleEditChange("actionTaken", val)}
                   required
                 >
-                  <option value="">Select Action</option>
-                  <option value="Warning">Warning</option>
-                  <option value="Suspension">Suspension</option>
-                  <option value="Termination">Termination</option>
-                  <option value="Counseling">Counseling</option>
-                  <option value="Others">Others</option>
-                </select>
+                  <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <SelectValue placeholder="Select Action" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <SelectItem value="Warning">Warning</SelectItem>
+                    <SelectItem value="Suspension">Suspension</SelectItem>
+                    <SelectItem value="Termination">Termination</SelectItem>
+                    <SelectItem value="Counseling">Counseling</SelectItem>
+                    <SelectItem value="Others">Others</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

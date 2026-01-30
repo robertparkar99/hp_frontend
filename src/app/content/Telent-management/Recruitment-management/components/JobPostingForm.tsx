@@ -1,3 +1,4 @@
+//
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -261,12 +262,17 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
         const data = await response.json();
         console.log("Departments response:", data);
 
-        const transformedDepartments = Array.isArray(data)
-          ? data.map((dept: any, index: number) => ({
-            id: dept.id ? String(dept.id) : String(index + 1),
-            department: dept.department
-          }))
-          : [];
+        let departmentsArray = [];
+        if (Array.isArray(data)) {
+          departmentsArray = data;
+        } else if (typeof data === 'object' && data !== null) {
+          departmentsArray = Object.values(data).flat();
+        }
+
+        const transformedDepartments = departmentsArray.map((dept: any, index: number) => ({
+          id: dept.department_id ? String(dept.department_id) : String(index + 1),
+          department: dept.department
+        }));
 
         setDepartments(transformedDepartments);
       } catch (err) {
@@ -318,14 +324,19 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
         const data = await response.json();
         console.log("Job roles response:", data);
 
-        const transformedJobRoles = Array.isArray(data)
-          ? data.map((role: any, index: number) => ({
-            id: role.id ? String(role.id) : String(index + 1),
-            jobrole: role.jobrole,
-            department: role.department || selectedDepartment.department,
-            description: role.description || ""
-          }))
-          : [];
+        let jobRolesArray = [];
+        if (Array.isArray(data)) {
+          jobRolesArray = data;
+        } else if (typeof data === 'object' && data !== null) {
+          jobRolesArray = Object.values(data).flat();
+        }
+
+        const transformedJobRoles = jobRolesArray.map((role: any, index: number) => ({
+          id: role.id ? String(role.id) : String(index + 1),
+          jobrole: role.jobrole,
+          department: role.department || selectedDepartment.department,
+          description: role.description || ""
+        }));
 
         setJobRoles(transformedJobRoles);
       } catch (err) {
@@ -766,7 +777,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
 
 
   const analyzeJobDescription = async (jdText: string) => {
-    const res = await fetch("/api/analyzeJD", {
+    const res = await fetch(`${sessionData.APP_URL}/api/gemini/analyze-jd`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -983,17 +994,17 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
                     <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                   </label>
                   
-                  <Button
+                  {/* <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleAddNewJobRole}
                     disabled={!formData.department}
                     className="flex items-center gap-1"
-                  >
+                  >A
                     <Plus className="h-3 w-3" />
                     Add New
-                  </Button>
+                  </Button> */}
                 </div>
 
                 {showAddJobRole ? (
@@ -1181,7 +1192,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
               {/* Salary Range */}
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Minimum Salary ($) {" "}
+                  Minimum Salary {" "}
                   <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <Input
@@ -1198,7 +1209,7 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
 
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Maximum Salary ($) {" "}
+                  Maximum Salary {" "}
                   <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                 </label>
                 <Input

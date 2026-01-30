@@ -9,7 +9,6 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from 'recharts';
-import { Atom } from 'react-loading-indicators';
 
 // Types
 interface SkillData {
@@ -212,11 +211,6 @@ function App({ usersJobroleComponent = [], userCategory }: RadarProps) {
         return null;
     };
 
-    if (loading) return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <Atom color="#525ceaff" size="medium" text="" textColor="" />
-        </div>
-    );
 
     if (error) return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">

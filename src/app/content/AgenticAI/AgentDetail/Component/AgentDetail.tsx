@@ -1,10 +1,10 @@
 "use client";
+import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockAgents, mockRuns } from '@/lib/mockData';
 import StatusBadge from '../../AgentDashboard/Component/StatusBadge';
 import { ArrowLeft, Settings, Play, Pause } from 'lucide-react';
 // Agent Detail Component
@@ -12,8 +12,91 @@ export default function AgentDetail() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const router = useRouter();
-  const agent = mockAgents.find((a) => a.id === id);
-  const agentRuns = mockRuns.filter((r) => r.agentId === id);
+  const [runs, setRuns] = useState<any[]>([]);
+  const [agent, setAgent] = useState<any>(null);
+  const agentRuns = runs.filter((r) => r.agent_id === id);
+
+  const startAgentRun = async (agentId: string) => {
+    try {
+      const response = await fetch(`https://pariharajit6348-agenticai.hf.space/agents/${agentId}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        alert("Agent run started successfully");
+        console.log('Agent run started:', data);
+        // Refetch runs after starting
+        fetchRuns();
+      } else {
+        console.error('Failed to start agent run');
+      }
+    } catch (error) {
+      alert("Error starting agent run");
+      console.error('Error starting agent run:', error);
+    }
+    fetchRuns()
+      ;
+  };
+
+  const fetchRuns = async () => {
+    try {
+      const res = await fetch("https://pariharajit6348-agenticai.hf.space/runs");
+      const json = await res.json();
+      setRuns(Array.isArray(json) ? json : []);
+    } catch (err) {
+      console.error("❌ Failed to fetch runs", err);
+      setRuns([]);
+    }
+  };
+
+  useEffect(() => {
+    const fetchAgent = async () => {
+      if (!id) return;
+      try {
+        const res = await fetch("https://pariharajit6348-agenticai.hf.space/agents");
+        const json = await res.json();
+        const agents = Array.isArray(json) ? json : [];
+        const foundAgent = agents.find((a: any) => a.id?.toString() === id);
+        if (foundAgent) {
+          setAgent({
+            id: foundAgent.id?.toString() || "",
+            name: foundAgent.name || " e",
+            description: foundAgent.description || "",
+            module: foundAgent.module || "",
+            submodule: foundAgent.sub_module || "",
+            role: "agent",
+            status: foundAgent.status as any,
+            model: "gpt-4",
+            temperature: foundAgent.temperature || 0.7,
+            maxTokens: foundAgent.max_tokens || 1024,
+            systemPrompt: foundAgent.system_prompt || "",
+            tools: [],
+            createdAt: foundAgent.created_at || new Date().toISOString(),
+            lastRun: foundAgent.created_at || new Date().toISOString(),
+            totalRuns: 0,
+            successRate: 100,
+          });
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch agent", err);
+      }
+    };
+
+    const fetchRuns = async () => {
+      try {
+        const res = await fetch("https://pariharajit6348-agenticai.hf.space/runs");
+        const json = await res.json();
+        setRuns(Array.isArray(json) ? json : []);
+      } catch (err) {
+        console.error("❌ Failed to fetch runs", err);
+        setRuns([]);
+      }
+    };
+
+    fetchAgent();
+    fetchRuns();
+  }, [id]);
 
   if (!agent) {
     return (
@@ -51,7 +134,7 @@ export default function AgentDetail() {
               Pause
             </Button>
           ) : (
-            <Button className="gap-2">
+              <Button className="gap-2" onClick={() => startAgentRun(agent.id)}>
               <Play className="h-4 w-4" />
               Activate
             </Button>
@@ -65,7 +148,7 @@ export default function AgentDetail() {
             <CardTitle className="text-sm">Total Runs</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{agent.totalRuns}</p>
+            <p className="text-2xl font-bold">{agentRuns.length}</p>
           </CardContent>
         </Card>
         <Card>
@@ -129,7 +212,7 @@ export default function AgentDetail() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {agent.tools.map((tool) => (
+                {agent.tools.map((tool: string) => (
                   <Badge key={tool} variant="secondary">
                     {tool}
                   </Badge>
@@ -140,20 +223,22 @@ export default function AgentDetail() {
         </TabsContent>
 
         <TabsContent value="runs" className="space-y-4">
-          {agentRuns.map((run) => (
+          {agentRuns.length > 0 ? agentRuns.map((run) => (
             <Card key={run.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Run {run.id}</CardTitle>
-                  <StatusBadge status={run.status} />
+                  <StatusBadge status={run.status || 'unknown'} />
                 </div>
-                <CardDescription>{new Date(run.startTime).toLocaleString()}</CardDescription>
+                <CardDescription>{new Date(run.created_at || run.startTime).toLocaleString()}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div>
-                  <p className="text-sm font-medium">Input:</p>
-                  <p className="text-sm text-muted-foreground">{run.input}</p>
-                </div>
+                {run.input && (
+                  <div>
+                    <p className="text-sm font-medium">Input:</p>
+                    <p className="text-sm text-muted-foreground">{run.input}</p>
+                  </div>
+                )}
                 {run.output && (
                   <div>
                     <p className="text-sm font-medium">Output:</p>
@@ -161,13 +246,16 @@ export default function AgentDetail() {
                   </div>
                 )}
                 <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span>Duration: {run.duration}s</span>
-                  <span>Tokens: {run.tokensUsed}</span>
-                  <span>Cost: ${run.cost.toFixed(3)}</span>
+                  {run.tool && <span>Tool: {run.tool}</span>}
+                  {run.duration && <span>Duration: {run.duration}s</span>}
+                  {run.tokensUsed && <span>Tokens: {run.tokensUsed}</span>}
+                  {run.cost && <span>Cost: ${run.cost.toFixed(3)}</span>}
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )) : (
+            <p className="text-muted-foreground">No runs available for this agent</p>
+          )}
         </TabsContent>
 
         <TabsContent value="reflection">

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -55,12 +56,20 @@ interface JobPosting {
   created_at: string;
 }
 
+// interface Department {
+//   id: number;
+//   industries: string;
+//   department: string;
+//   sub_department: string;
+// }
+
 interface Department {
-  id: number;
+  department_id: number;
   industries: string;
   department: string;
   sub_department: string;
 }
+
 
 interface ApiResponse {
   data?: JobPosting[];
@@ -140,6 +149,9 @@ const CandidatePortal = () => {
     current_company: "",
     current_role: ""
   });
+
+  // Form errors state
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   // Fetch session data on component mount
   useEffect(() => {
@@ -236,7 +248,7 @@ const CandidatePortal = () => {
         }
 
         console.log(`💼 Raw job data: ${jobData.length} jobs`);
-        
+
         // DEBUG: Log all jobs to see their status
         console.log("🔍 ALL JOBS WITH STATUS:");
         jobData.forEach((job, index) => {
@@ -259,8 +271,21 @@ const CandidatePortal = () => {
             return isActive;
           })
           .map(job => {
-            const departmentInfo = departmentData.find(dept => dept.id === job.department_id);
-            const departmentName = departmentInfo ? departmentInfo.department : `Department ${job.department_id}`;
+            // const departmentInfo = departmentData.find(dept => dept.id === job.department_id);
+            const departmentInfo = departmentData.find(
+              dept => dept.department_id === job.department_id
+            );
+            const departmentName = departmentInfo
+              ? departmentInfo.department
+              : "Unknown Department";
+
+            console.log({
+              jobDepartmentId: job.department_id,
+              matchedDepartment: departmentInfo,
+              shownName: departmentName
+            });
+
+            // const departmentName = departmentInfo ? departmentInfo.department : `Department ${job.department_id}`;
 
             const salaryRange = job.min_salary && job.max_salary
               ? `₹${parseInt(job.min_salary).toLocaleString()} - ₹${parseInt(job.max_salary).toLocaleString()}`
@@ -299,6 +324,7 @@ const CandidatePortal = () => {
               created_at: job.created_at || new Date().toISOString()
             };
           });
+    
 
         console.log(`✅ Processed ${processedJobs.length} active jobs`);
         setJobListings(processedJobs);
@@ -456,6 +482,11 @@ const CandidatePortal = () => {
       ...prev,
       [field]: value
     }));
+    // Clear error for this field
+    setErrors(prev => ({
+      ...prev,
+      [field]: ""
+    }));
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -470,7 +501,7 @@ const CandidatePortal = () => {
   // Utility function to display file links in S3 format
   const renderFileLink = (filePath: string, fileName: string) => {
     if (!filePath) return null;
-    
+
     return (
       <p className="text-xs text-gray-500 mt-1">
         Uploaded file:{" "}
@@ -493,11 +524,20 @@ const CandidatePortal = () => {
       'employment_type', 'experience', 'education', 'expected_salary', 'skills'
     ];
 
+    let hasErrors = false;
+    const newErrors: {[key: string]: string} = {};
+
     for (const field of requiredFields) {
       if (!formData[field] || formData[field].toString().trim() === '') {
-        alert(`Please fill in the ${field.replace('_', ' ')} field.`);
-        return false;
+        newErrors[field] = `${field.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} is required`;
+        hasErrors = true;
       }
+    }
+
+    setErrors(newErrors);
+
+    if (hasErrors) {
+      return false;
     }
 
     // Validate resume file
@@ -716,10 +756,53 @@ ${formData.current_role || "Not provided"}
 
             console.log("🧠 Screening Result:", screeningResult);
 
+            // ===============================
+            // STORE SCREENING RESULTS IN EXTERNAL API
+            // ===============================
+            try {
+              const talentScreeningPayload = {
+                candidate_id: result.data?.id || result.data?.candidate_id || "14", // Use actual candidate ID from response
+                competency_match: screeningResult.competency_match || 0,
+                cultural_fit: screeningResult.cultural_fit || "Medium",
+                predicted_success: screeningResult.predicted_success || "Possible",
+                overall_fit_score: screeningResult.competency_match || 0, // Using competency_match as overall score
+                ranking_score: Math.round((screeningResult.competency_match || 0) * 0.95), // Slightly lower than competency match
+                skill_gaps: screeningResult.skill_gaps || [],
+                strengths: screeningResult.strengths || [],
+                skill_match_details: screeningResult.skill_match_details || [],
+                recommendation: screeningResult.recommendation || "Request Additional Info",
+                deepseek_analysis: {
+                  summary: screeningResult.summary || "Analysis completed",
+                  reasoning: `Candidate shows ${screeningResult.competency_match}% competency match with ${screeningResult.cultural_fit} cultural fit. ${screeningResult.strengths?.length || 0} key strengths identified.`
+                },
+                sub_institute_id: sessionData?.sub_institute_id || 3
+              };
+
+              console.log("📤 Storing screening results:", talentScreeningPayload);
+
+              const storeResponse = await fetch(`${sessionData.APP_URL}/api/talent-screening-results?type=API&token=${sessionData.token}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(talentScreeningPayload)
+              });
+
+              if (storeResponse.ok) {
+                const storeResult = await storeResponse.json();
+                console.log("✅ Screening results stored successfully:", storeResult);
+              } else {
+                console.error("❌ Failed to store screening results:", storeResponse.status, await storeResponse.text());
+              }
+
+            } catch (storeError) {
+              console.error("❌ Error storing screening results:", storeError);
+            }
+
             alert(
               `AI Recommendation: ${screeningResult.recommendation}
-Fit Score: ${screeningResult.competency_match}%
-Cultural Fit: ${screeningResult.cultural_fit}`
+                Fit Score: ${screeningResult.competency_match}%
+                Cultural Fit: ${screeningResult.cultural_fit}`
             );
 
           } catch (error) {
@@ -945,6 +1028,7 @@ Cultural Fit: ${screeningResult.cultural_fit}`
 
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <Badge variant="outline">{job.department}</Badge>
+
                         <div className="flex gap-2">
                           <Button variant="outline">Learn More</Button>
 
@@ -967,7 +1051,7 @@ Cultural Fit: ${screeningResult.cultural_fit}`
                                     <Input
                                       id="first_name"
                                       value={formData.first_name}
-                                      onChange={(e) => handleInputChange('first_name', e.target.value)} 
+                                      onChange={(e) => handleInputChange('first_name', e.target.value)}
                                       placeholder="John"
                                       required
                                     />
@@ -1050,26 +1134,48 @@ Cultural Fit: ${screeningResult.cultural_fit}`
                                   </div>
 
                                   <div className="space-y-2">
-                                    <label htmlFor="experience" className="text-sm font-medium">Experience *</label>
-                                    <Input
-                                      id="experience"
-                                      value={formData.experience}
-                                      onChange={(e) => handleInputChange('experience', e.target.value)}
-                                      placeholder="5 years"
-                                      required
-                                    />
+                                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                      Experience {" "}
+                                      <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
+                                    </label>
+                                    <Select value={formData.experience} onValueChange={(value) => handleInputChange('experience', value)}>
+                                      <SelectTrigger className={errors.experience ? "border-red-500" : ""}>
+                                        <SelectValue placeholder="Select experience level" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Entry Level (0-2 years)">Entry Level (0-2 years)</SelectItem>
+                                        <SelectItem value="Mid Level (3-5 years)">Mid Level (3-5 years)</SelectItem>
+                                        <SelectItem value="Senior Level (6-10 years)">Senior Level (6-10 years)</SelectItem>
+                                        <SelectItem value="Lead Level (10+ years)">Lead Level (10+ years)</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    {errors.experience && (
+                                      <p className="text-sm font-medium text-destructive">{errors.experience}</p>
+                                    )}
                                   </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                  <label htmlFor="education" className="text-sm font-medium">Education *</label>
-                                  <Input
-                                    id="education"
-                                    value={formData.education}
-                                    onChange={(e) => handleInputChange('education', e.target.value)}
-                                    placeholder="Bachelor's Degree in Computer Science"
-                                    required
-                                  />
+                                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    Education {" "}
+                                    <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
+                                  </label>
+                                  <Select value={formData.education} onValueChange={(value) => handleInputChange('education', value)}>
+                                    <SelectTrigger className={errors.education ? "border-red-500" : ""}>
+                                      <SelectValue placeholder="Select education level" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="High School Diploma">High School Diploma</SelectItem>
+                                      <SelectItem value="Associate Degree">Associate Degree</SelectItem>
+                                      <SelectItem value="Bachelor's Degree">Bachelor's Degree</SelectItem>
+                                      <SelectItem value="Master's Degree">Master's Degree</SelectItem>
+                                      <SelectItem value="PhD">PhD</SelectItem>
+                                      <SelectItem value="Not Required">Not Required</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {errors.education && (
+                                    <p className="text-sm font-medium text-destructive">{errors.education}</p>
+                                  )}
                                 </div>
 
                                 <div className="space-y-2">
@@ -1154,13 +1260,13 @@ Cultural Fit: ${screeningResult.cultural_fit}`
             </div>
 
             {/* Load More */}
-            {filteredJobListings.length > 0 && (
+            {/* {filteredJobListings.length > 0 && (
               <div className="text-center mt-8">
                 <Button variant="outline" size="lg">
                   Load More Jobs
                 </Button>
               </div>
-            )}
+            )} */}
           </TabsContent>
 
           <TabsContent value="upload">

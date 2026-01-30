@@ -1,24 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Progress } from "@/components/ui/progress";
 import { Code, BarChart3, Users, Brain, ChevronRight } from "lucide-react";
 
 // Type definitions
 interface Skill {
-    id: number;
-    name: string;
-    category: string;
-    progress: number;
-    level: 'Beginner' | 'Intermediate' | 'Advanced';
-    coursesCompleted: number;
-    totalCourses: number;
+    skill_name: string;
+    sub_category: string;
+    progress_percentage: number;
+    proficiency_level: 'Beginner' | 'Intermediate' | 'Advanced';
+    courses_completed: number;
+    total_courses: number;
+    status: string;
     icon: string;
     color: 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
+}
+
+interface Overall {
+    overall_progress_percentage: number;
+    total_skills: number;
+    skills_in_progress: number;
+    average_progress: number;
+}
+
+interface ApiResponse {
+    status: boolean;
+    message: string;
+    data: {
+        skill_progress: Omit<Skill, 'icon' | 'color'>[];
+        overall: Overall;
+    };
 }
 
 // Icon mapper component
 const SkillIcon = ({ name, size = 18, className = '' }: { name: string; size?: number; className?: string }) => {
     const iconProps = { size, className };
-    
+
     switch (name.toLowerCase()) {
         case 'code':
             return <Code {...iconProps} />;
@@ -34,56 +50,102 @@ const SkillIcon = ({ name, size = 18, className = '' }: { name: string; size?: n
     }
 };
 
-const SkillProgressTracker: React.FC = () => {
-    const skills: Skill[] = [
-        {
-            id: 1,
-            name: "React Development",
-            category: "Frontend",
-            progress: 85,
-            level: "Advanced",
-            coursesCompleted: 8,
-            totalCourses: 12,
-            icon: "code",
-            color: "primary"
-        },
-        {
-            id: 2,
-            name: "Data Analysis",
-            category: "Analytics",
-            progress: 65,
-            level: "Intermediate",
-            coursesCompleted: 5,
-            totalCourses: 9,
-            icon: "bar-chart-3",
-            color: "secondary"
-        },
-        {
-            id: 3,
-            name: "Project Management",
-            category: "Leadership",
-            progress: 45,
-            level: "Beginner",
-            coursesCompleted: 3,
-            totalCourses: 8,
-            icon: "users",
-            color: "warning"
-        },
-        {
-            id: 4,
-            name: "Machine Learning",
-            category: "AI/ML",
-            progress: 30,
-            level: "Beginner",
-            coursesCompleted: 2,
-            totalCourses: 10,
-            icon: "brain",
-            color: "success"
-        }
-    ];
+// Helper functions to assign icon and color based on skill name
+const getSkillIcon = (skillName: string): string => {
+    const lower = skillName.toLowerCase();
+    if (lower.includes('digital')) return 'code';
+    if (lower.includes('functional')) return 'bar-chart-3';
+    if (lower.includes('leadership')) return 'users';
+    if (lower.includes('soft')) return 'brain';
+    if (lower.includes('technical')) return 'code';
+    return 'code';
+};
 
-    // Calculate overall progress
-    const overallProgress = Math.round(skills.reduce((acc, skill) => acc + skill.progress, 0) / skills.length);
+const getSkillColor = (skillName: string): Skill['color'] => {
+    const lower = skillName.toLowerCase();
+    if (lower.includes('digital')) return 'primary';
+    if (lower.includes('functional')) return 'secondary';
+    if (lower.includes('leadership')) return 'warning';
+    if (lower.includes('soft')) return 'success';
+    if (lower.includes('technical')) return 'danger';
+    return 'primary';
+};
+
+const SkillProgressTracker: React.FC = () => {
+    const [skills, setSkills] = useState<Skill[]>([]);
+    const [overall, setOverall] = useState<Overall | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>('');
+    const [sessionData, setSessionData] = useState({
+        url: '',
+        token: '',
+        subInstituteId: '',
+        orgType: '',
+        userId: '',
+    });
+
+    useEffect(() => {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+            const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+            setSessionData({
+                url: APP_URL,
+                token,
+                subInstituteId: sub_institute_id,
+                orgType: org_type,
+                userId: user_id,
+            });
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!sessionData.url) return;
+
+        const fetchSkillProgress = async () => {
+            try {
+                const response = await fetch(`${sessionData.url}/api/skill-development/progress?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch skill progress');
+                }
+                const data: ApiResponse = await response.json();
+                if (data.status) {
+                    const mappedSkills: Skill[] = data.data.skill_progress.map((skill) => ({
+                        ...skill,
+                        icon: getSkillIcon(skill.skill_name),
+                        color: getSkillColor(skill.skill_name),
+                    }));
+                    setSkills(mappedSkills);
+                    setOverall(data.data.overall);
+                } else {
+                    setError(data.message);
+                }
+            } catch (err) {
+                setError('Error fetching data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSkillProgress();
+    }, [sessionData]);
+
+    if (loading) {
+        return (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                <div className="text-center">Loading...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                <div className="text-center text-red-500">{error}</div>
+            </div>
+        );
+    }
+
+    if (!overall) return null;
 
     const getColorClass = (color: Skill['color']): string => {
         switch (color) {
@@ -118,8 +180,8 @@ const SkillProgressTracker: React.FC = () => {
             </div>
 
             <div className="space-y-6">
-                {skills.map((skill) => (
-                    <div key={skill.id} className="space-y-3">
+                {skills.map((skill, index) => (
+                    <div key={index} className="space-y-3">
                         <div className="flex items-start justify-between">
                             <div className="flex items-start space-x-3">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getBackgroundColorClass(skill.color)}`}>
@@ -130,13 +192,20 @@ const SkillProgressTracker: React.FC = () => {
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="font-medium text-gray-900">{skill.name}</h3>
-                                    <p className="text-sm text-gray-500">{skill.category}</p>
+                                    {/* Primary: Skill Name */}
+                                    <h3 className="text-sm font-semibold text-gray-900">
+                                        {skill.skill_name}
+                                    </h3>
+
+                                    {/* Secondary: Sub Category */}
+                                    <h5 className="text-xs font-normal text-gray-500">
+                                        {skill.sub_category}
+                                    </h5>
                                 </div>
                             </div>
                             <div className="text-right">
                                 <div className="text-sm font-medium text-gray-900 mb-1">
-                                    {skill.progress}%
+                                    {skill.progress_percentage}%
                                 </div>
                                 <div className="w-12 h-12 relative">
                                     <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 100 100">
@@ -157,7 +226,7 @@ const SkillProgressTracker: React.FC = () => {
                                             strokeWidth="8"
                                             fill="none"
                                             strokeDasharray="251.2"
-                                            strokeDashoffset={251.2 - (skill.progress / 100) * 251.2}
+                                            strokeDashoffset={251.2 - (skill.progress_percentage / 100) * 251.2}
                                             className={getColorClass(skill.color)}
                                         />
                                     </svg>
@@ -167,23 +236,22 @@ const SkillProgressTracker: React.FC = () => {
 
                         <div className="ml-12">
                             <div className="flex items-center justify-between text-sm mb-2">
-                                <span className={`px-2 py-1 rounded-lg font-medium ${
-                                    skill.level === 'Beginner' ? 'bg-emerald-100 text-emerald-700' :
-                                    skill.level === 'Intermediate' ? 'bg-amber-100 text-amber-700' : 
-                                    'bg-red-100 text-red-700'
-                                }`}>
-                                    {skill.level}
+                                <span className={`px-2 py-1 rounded-lg font-medium ${skill.proficiency_level === 'Beginner' ? 'bg-emerald-100 text-emerald-700' :
+                                        skill.proficiency_level === 'Intermediate' ? 'bg-amber-100 text-amber-700' :
+                                            'bg-red-100 text-red-700'
+                                    }`}>
+                                    {skill.proficiency_level}
                                 </span>
                                 <span className="text-gray-500">
-                                    {skill.coursesCompleted}/{skill.totalCourses} courses
+                                    {skill.courses_completed}/{skill.total_courses} courses
                                 </span>
                             </div>
                             <div className="space-y-1">
                                 <div className="flex justify-between items-center text-xs">
                                     <span className="text-gray-500">Progress</span>
-                                    <span className="font-medium text-gray-700">{skill.progress}%</span>
+                                    <span className="font-medium text-gray-700">{skill.progress_percentage}%</span>
                                 </div>
-                                <Progress value={skill.progress} className="h-2" />
+                                <Progress value={skill.progress_percentage} className="h-2" />
                             </div>
                         </div>
                     </div>
@@ -214,17 +282,17 @@ const SkillProgressTracker: React.FC = () => {
                                         strokeWidth="8"
                                         fill="none"
                                         strokeDasharray="251.2"
-                                        strokeDashoffset={251.2 - (overallProgress / 100) * 251.2}
+                                        strokeDashoffset={251.2 - (overall.overall_progress_percentage / 100) * 251.2}
                                         className="text-blue-500"
                                     />
                                 </svg>
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-lg font-bold text-gray-900">{overallProgress}%</span>
+                                    <span className="text-lg font-bold text-gray-900">{overall.overall_progress_percentage}%</span>
                                 </div>
                             </div>
                         </div>
                         <div className="text-left">
-                            <p className="text-sm text-gray-500">{skills.length} skills in progress</p>
+                            <p className="text-sm text-gray-500">{overall.skills_in_progress} skills in progress</p>
                             <p className="text-xs text-gray-500 mt-1">Average across all skills</p>
                         </div>
                     </div>

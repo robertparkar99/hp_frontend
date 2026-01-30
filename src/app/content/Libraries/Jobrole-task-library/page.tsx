@@ -1,7 +1,8 @@
 //src/app/content/Libraries/Jobrole-task-library/page.tsx
 "use client";
 import React, { useEffect, useState, useRef } from "react";
-import { Atom } from "react-loading-indicators";
+import { motion, AnimatePresence } from "framer-motion";
+import { checkPermission } from "@/utils/permissions";
 import {
   Funnel,
   Square,
@@ -46,6 +47,7 @@ import DataTable, {
 import ConfigurationModal from "../../Jobrole-library/ConfigurationModal";
 import ShepherdTour from "../../Onboarding/Competency-Management/ShepherdTour";
 import { generateDetailTourSteps } from "@/lib/tourSteps";
+import Loader from "@/components/utils/loading";
 
 type JobRoleTask = {
   id: number;
@@ -87,6 +89,12 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
     orgType: "",
     userId: "",
   });
+
+  const [permissions, setPermissions] = useState({
+    canAdd: false,
+    canEdit: false,
+    canDelete: false,
+  });
   const [selectedJobRole, setSelectedJobRole] = useState<number | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -117,6 +125,10 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
   // ✅ New state for dropdown menu
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
 
+  // Refs for menu and button
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
   // Load session data
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -133,10 +145,29 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
     }
   }, []);
 
+  // Load permissions
+  useEffect(() => {
+    if (sessionData.userId) {
+      const fetchPermissions = async () => {
+        const canAdd = await checkPermission("Library & Taxonomy", "can_add");
+        const canEdit = await checkPermission("Library & Taxonomy", "can_edit");
+        const canDelete = await checkPermission("Library & Taxonomy", "can_delete");
+        setPermissions({ canAdd, canEdit, canDelete });
+      };
+      fetchPermissions();
+    }
+  }, [sessionData.userId]);
+
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isActionsMenuOpen) {
+      if (
+        isActionsMenuOpen &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node) &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
         setIsActionsMenuOpen(false);
       }
     };
@@ -349,7 +380,7 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+        <Loader/>
       </div>
     );
   }
@@ -491,7 +522,13 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
       cell: (row) => (
         <div className="flex space-x-2">
           <button
-            onClick={() => handleEditClick(row.id, row.jobrole)}
+            onClick={() => {
+              if (!permissions.canEdit) {
+                alert("You don't have right to edit this.");
+                return;
+              }
+              handleEditClick(row.id, row.jobrole);
+            }}
             className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
           >
             <Edit size={14} />
@@ -503,7 +540,13 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
             <Copy size={14} />
           </button>
           <button
-            onClick={() => handleDeleteClick(row.id)}
+            onClick={() => {
+              if (!permissions.canDelete) {
+                alert("You don't have right to delete this.");
+                return;
+              }
+              handleDeleteClick(row.id);
+            }}
             className="bg-red-500 hover:bg-red-700 text-white text-xs py-1 px-2 rounded"
           >
             <Trash size={14} />
@@ -578,6 +621,10 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
               {/* AI Generate Button */}
               <button
                 onClick={() => {
+                  if (!permissions.canAdd) {
+                    alert("You don't have right to add this.");
+                    return;
+                  }
                   setShowRadioButtons((prev) => !prev);
 
                   // Reset selection when hiding radios
@@ -692,54 +739,38 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
                 </button>
               </div>
 
-              <div className="relative">
-                <button
-                  onClick={toggleActionsMenu}
-                  className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="More Actions"
-                >
-                  <MoreVertical className="w-5 h-5 text-gray-600" />
-                </button>
-
-                {/* Horizontal Dropdown Menu */}
-                {isActionsMenuOpen && (
-                  <div
-                    className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-2"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex gap-1">
-                      {/* Generative AI Assistant */}
+              {/* Inline Actions Menu */}
+              <div ref={menuRef}>
+                <AnimatePresence>
+                  {isActionsMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex gap-1"
+                    >
+                      {/* Generate with AI */}
                       <button
                         onClick={handleAISuggest}
                         className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="AI Suggestions"
+                        title="Generate with AI"
                       >
                         <Sparkles className="w-5 h-5 text-gray-600" />
                       </button>
 
-                      {/* Bulk Actions */}
-                      {selectedTasks.length > 0 && (
-                        <button
-                          onClick={handleBulkActions}
-                          className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Bulk Actions"
-                        >
-                          <ListChecks className="w-5 h-5 text-gray-600" />
-                        </button>
-                      )}
-
                       <button
                         onClick={handleImport}
                         className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Import jobrole task"
+                        title="Upload"
                       >
                         <Upload className="w-5 h-5 text-gray-600" />
                       </button>
-                      {/* Export */}
+                      {/* Download */}
                       <button
                         onClick={handleExport}
                         className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Export jobrole task"
+                        title="Download"
                       >
                         <Download className="w-5 h-5 text-gray-600" />
                       </button>
@@ -761,9 +792,21 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
                       >
                         <HelpCircle className="w-5 h-5 text-gray-600" />
                       </button>
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* More Actions Button */}
+              <div className="relative">
+                <button
+                  ref={buttonRef}
+                  onClick={toggleActionsMenu}
+                  className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="More Actions"
+                >
+                  <MoreVertical className="w-5 h-5 text-gray-600" />
+                </button>
               </div>
             </div>
           </div>
@@ -840,14 +883,26 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
                   )}
                   <button
                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                    onClick={() => handleEditClick(item.id, item.jobrole)}
+                    onClick={() => {
+                      if (!permissions.canEdit) {
+                        alert("You don't have right to edit this.");
+                        return;
+                      }
+                      handleEditClick(item.id, item.jobrole);
+                    }}
                   >
                     <Edit size={16} />
                   </button>
 
                   <button
                     className="p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                    onClick={() => handleDeleteClick(item.id)}
+                    onClick={() => {
+                      if (!permissions.canDelete) {
+                        alert("You don't have right to delete this.");
+                        return;
+                      }
+                      handleDeleteClick(item.id);
+                    }}
                   >
                     <Trash size={16} />
                   </button>

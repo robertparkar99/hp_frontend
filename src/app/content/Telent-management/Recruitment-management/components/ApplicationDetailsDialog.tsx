@@ -2,19 +2,23 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Briefcase, 
-  GraduationCap, 
-  IndianRupee, 
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  GraduationCap,
+  IndianRupee,
   CalendarDays,
   Download,
   X,
-  Building
+  Building,
+  Star,
+  TrendingUp
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface JobApplication {
   id: number;
@@ -70,21 +74,73 @@ interface JobPosting {
   deleted_at: string | null;
 }
 
+interface Candidate {
+   id: string;
+   name: string;
+   email: string;
+   phone: string;
+   position: string;
+   experience: string;
+   education: string;
+   location: string;
+   skills: string[];
+   score: number | null;
+   status: 'shortlisted' | 'rejected' | 'pending' | 'under_review' | 'hired';
+   appliedDate: string;
+   resumeUrl: string;
+   matchDetails: {
+     skillsMatch: number | null;
+     experienceMatch: number | null;
+     educationMatch: number | null;
+     cultural_fit: number | null;
+   };
+   originalApplication: JobApplication;
+   aiRecommendation?: string;
+   culturalFit?: number;
+   reasoning?: string;
+   isScreened: boolean;
+   predictedSuccess?: string;
+   rankingScore?: number;
+   skillMatchDetails?: any[];
+   skillGaps?: string[];
+   strengths?: string[];
+ }
+
 interface ApplicationDetailsDialogProps {
   application: JobApplication | null;
+  candidate: Candidate | null;
   jobPostings: JobPosting[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDownloadResume?: (application: JobApplication) => void;
+  showScreeningScores?: boolean;
 }
 
 const ApplicationDetailsDialog = ({
   application,
+  candidate,
   jobPostings,
   open,
   onOpenChange,
-  onDownloadResume
+  onDownloadResume,
+  showScreeningScores = false
 }: ApplicationDetailsDialogProps) => {
+  const [sessionData, setSessionData] = useState<any>(null);
+
+  const router = useRouter();
+
+  // Fetch session data on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+        setSessionData({ url: APP_URL, token, sub_institute_id });
+      }
+    }
+  }, []);
+
+
   if (!application) return null;
 
   // Find the job posting for this application
@@ -211,6 +267,58 @@ const ApplicationDetailsDialog = ({
             </div>
           )}
 
+          {/* AI Screening Results */}
+          {candidate && candidate.isScreened && (
+            <div className="border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Star className="w-5 h-5 mr-2 text-yellow-600" />
+                AI Screening Results
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{candidate.matchDetails.skillsMatch || 0}%</div>
+                  <div className="text-sm text-gray-600">Skills Match</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{candidate.matchDetails.experienceMatch || 0}%</div>
+                  <div className="text-sm text-gray-600">Experience Match</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-600">{candidate.matchDetails.educationMatch || 0}%</div>
+                  <div className="text-sm text-gray-600">Education Match</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-purple-600">{candidate.matchDetails.cultural_fit || 0}%</div>
+                  <div className="text-sm text-gray-600">Cultural Fit</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-indigo-600">{candidate.predictedSuccess || 'Likely'}</div>
+                  <div className="text-sm text-gray-600">Predicted Success</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{candidate.rankingScore || 0}/100</div>
+                  <div className="text-sm text-gray-600">Ranking Score</div>
+                </div>
+              </div>
+              <div className="text-center mb-4">
+
+                <Badge className="px-3 py-1 text-sm font-semibold bg-green-100 text-green-800 hover:bg-green-200">
+                  {candidate.score && candidate.score >= 70 ? 'Good' : candidate.score && candidate.score >= 50 ? 'Fair' : 'Poor'}
+                </Badge>
+                <div className="text-sm text-gray-600">Overall Outcome</div>
+              </div>
+              {candidate.aiRecommendation && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <TrendingUp className="w-4 h-4 mr-2 text-blue-600" />
+                    <span className="font-medium text-blue-900">AI Recommendation</span>
+                  </div>
+                  <p className="text-blue-800">{candidate.aiRecommendation}</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Contact Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border border-gray-200 rounded-lg p-6">
@@ -311,9 +419,10 @@ const ApplicationDetailsDialog = ({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { onOpenChange(false); router.push(`/content/Telent-management/Interview-management?tab=schedule&candidate=${application.id}&job=${application.job_id}`); }}>
               Schedule Interview
             </Button>
+
           </div>
         </div>
       </DialogContent>

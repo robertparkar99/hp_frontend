@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Progress } from "@/components/ui/progress";
 import { Flame, Target, Zap, Award, Users, CheckCircle } from "lucide-react";
 
@@ -31,19 +31,21 @@ interface PeerComparison {
   percentile: number;
   averageProgress: number;
   yourProgress: number;
+  message: string;
 }
 
 interface StatsData {
   streak: Streak;
   weeklyGoal: WeeklyGoal;
   achievements: Achievement[];
+  overallProgress: number;
   peerComparison: PeerComparison;
 }
 
 // Icon mapper component
 const IconMapper = ({ name, size = 20, color = 'currentColor' }: { name: string; size?: number; color?: string }) => {
   const iconProps = { size, color };
-  
+
   switch (name.toLowerCase()) {
     case 'flame':
       return <Flame {...iconProps} />;
@@ -64,50 +66,134 @@ const IconMapper = ({ name, size = 20, color = 'currentColor' }: { name: string;
 };
 
 const LearningStats: React.FC = () => {
-  const stats: StatsData = {
-    streak: {
-      current: 12,
-      best: 28,
-      target: 30
-    },
-    weeklyGoal: {
-      completed: 8,
-      target: 12,
-      unit: "hours"
-    },
-    achievements: [
-      {
-        id: 1,
-        name: "Fast Learner",
-        description: "Complete 5 courses in a month",
-        icon: "zap",
-        earned: true,
-        earnedDate: "2025-07-15"
-      },
-      {
-        id: 2,
-        name: "Skill Master",
-        description: "Reach advanced level in any skill",
-        icon: "award",
-        earned: true,
-        earnedDate: "2025-07-20"
-      },
-      {
-        id: 3,
-        name: "Consistent Learner",
-        description: "Maintain 30-day learning streak",
-        icon: "target",
-        earned: false,
-        progress: 40
-      }
-    ],
-    peerComparison: {
-      rank: 3,
-      totalPeers: 25,
-      percentile: 88,
-      averageProgress: 65,
-      yourProgress: 78
+  const [streak, setStreak] = useState({ current: 0, best: 0, target: 30 });
+  const [weeklyGoal, setWeeklyGoal] = useState({ completed: 0, target: 12, unit: "hours" });
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [overallProgress, setOverallProgress] = useState(0);
+  const [peerComparison, setPeerComparison] = useState({ rank: 0, totalPeers: 0, percentile: 0, averageProgress: 0, yourProgress: 0, message: "" });
+
+  const iconMap: { [key: string]: string } = {
+    "Fast Learner": "zap",
+    "Skill Master": "award",
+    "Consistent Learner": "target"
+  };
+
+  const calculateProgress = (progressStr: string): number => {
+    if (progressStr === "Achieved") return 100;
+    const parts = progressStr.split('/');
+    if (parts.length === 2) {
+      const num = parseInt(parts[0]);
+      const den = parseInt(parts[1]);
+      return Math.round((num / den) * 100);
     }
+    return 0;
+  };
+
+  const [sessionData, setSessionData] = useState({
+    url: '',
+    token: '',
+    subInstituteId: '',
+    orgType: '',
+    userId: '',
+});
+
+useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+        const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+        setSessionData({
+            url: APP_URL,
+            token,
+            subInstituteId: sub_institute_id,
+            orgType: org_type,
+            userId: user_id,
+        });
+    }
+}, []);
+
+  useEffect(() => {
+    if (sessionData.url && sessionData.token && sessionData.subInstituteId && sessionData.userId) {
+      fetch(`${sessionData.url}/api/skill-development/streak?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status) {
+            setStreak({
+              current: data.data.current_streak,
+              best: data.data.best_streak,
+              target: data.data.goal
+            });
+          }
+        })
+        .catch(err => console.error('Error fetching streak data:', err));
+    }
+  }, [sessionData]);
+
+  useEffect(() => {
+    if (sessionData.url && sessionData.token && sessionData.subInstituteId && sessionData.userId) {
+      fetch(`${sessionData.url}/api/skill-development/weekly-goal?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status) {
+            setWeeklyGoal({
+              completed: data.data.current_hours,
+              target: data.data.goal_hours,
+              unit: "hours"
+            });
+          }
+        })
+        .catch(err => console.error('Error fetching weekly goal data:', err));
+    }
+  }, [sessionData]);
+
+  useEffect(() => {
+    if (sessionData.url && sessionData.token && sessionData.subInstituteId && sessionData.userId) {
+      fetch(`${sessionData.url}/api/skill-development/achievements?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status) {
+            const mappedAchievements = data.data.achievements.map((item: any, index: number) => ({
+              id: index ,
+              name: item.title,
+              description: item.description,
+              icon: iconMap[item.title] ,
+              earned: item.earned,
+              earnedDate: item.earned_date ? new Date(item.earned_date).toLocaleDateString() : undefined,
+              progress: item.earned ? undefined : calculateProgress(item.progress)
+            }));
+            setAchievements(mappedAchievements);
+            setOverallProgress(data.data.overall_progress);
+          }
+        })
+        .catch(err => console.error('Error fetching achievements data:', err));
+    }
+  }, [sessionData]);
+
+  useEffect(() => {
+    if (sessionData.url && sessionData.token && sessionData.subInstituteId && sessionData.userId) {
+      fetch(`${sessionData.url}/api/skill-development/peer-comparison?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status) {
+            setPeerComparison({
+              rank: data.data.rank,
+              totalPeers: data.data.total_peers,
+              percentile: data.data.percentile,
+              averageProgress: data.data.peer_average,
+              yourProgress: data.data.your_progress,
+              message: data.data.message
+            });
+          }
+        })
+        .catch(err => console.error('Error fetching peer comparison data:', err));
+    }
+  }, [sessionData]);
+
+  const stats: StatsData = {
+    streak: streak,
+    weeklyGoal: weeklyGoal,
+    achievements: achievements,
+    overallProgress: overallProgress,
+    peerComparison: peerComparison
   };
 
   const weeklyGoalPercentage = Math.round((stats.weeklyGoal.completed / stats.weeklyGoal.target) * 100);
@@ -123,7 +209,7 @@ const LearningStats: React.FC = () => {
             <Flame size={20} className="text-amber-500" />
           </div>
         </div>
-        
+
         <div className="text-center mb-4">
           <div className="text-4xl font-bold text-foreground mb-2">{stats.streak.current}</div>
           <p className="text-sm text-muted-foreground">days in a row</p>
@@ -207,17 +293,15 @@ const LearningStats: React.FC = () => {
             View All
           </button>
         </div>
-
         <div className="space-y-4">
           {stats.achievements.map((achievement) => (
             <div key={achievement.id} className="flex items-center space-x-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                achievement.earned 
-                  ? 'bg-emerald-100' :'bg-gray-100'
-              }`}>
-                <IconMapper 
-                  name={achievement.icon} 
-                  size={20} 
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${achievement.earned
+                  ? 'bg-emerald-100' : 'bg-gray-100'
+                }`}>
+                <IconMapper
+                  name={achievement.icon}
+                  size={20}
                   color={achievement.earned ? '#10b981' : '#6b7280'}
                 />
               </div>
@@ -243,6 +327,13 @@ const LearningStats: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-muted-foreground">Overall Progress</span>
+            <span className="text-sm font-medium text-foreground">{stats.overallProgress}%</span>
+          </div>
+          <Progress value={stats.overallProgress} className="h-2" />
         </div>
       </div>
 
@@ -285,7 +376,7 @@ const LearningStats: React.FC = () => {
 
           <div className="pt-4 border-t border-gray-200 text-center">
             <p className="text-sm text-emerald-600 font-medium">
-              You're in the top {100 - stats.peerComparison.percentile}% of learners!
+              {stats.peerComparison.message}
             </p>
           </div>
         </div>

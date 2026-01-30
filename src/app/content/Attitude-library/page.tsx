@@ -19,12 +19,12 @@ import {
   Funnel, LayoutGrid, Table, Plus, Download, Upload,
   Sparkles, Settings, Eye, Pencil, Trash2, Copy, Search, MoreVertical
 } from "lucide-react";
-import { Atom } from "react-loading-indicators";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/AttitudeComponent/viewDialouge";
 import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
 import { generateDetailTourSteps } from "@/lib/tourSteps";
+import Loader from "@/components/utils/loading";
 
 // ---------- Types ----------
 type CardData = {
@@ -89,6 +89,9 @@ export default function Index({ showDetailTour }: PageProps) {
       setShowTour(true);
     }
   }, [showDetailTour]);
+
+  // State for inline actions menu
+  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
 
   // ✅ Table filters
   const [columnFilters, setColumnFilters] = useState({
@@ -362,13 +365,13 @@ export default function Index({ showDetailTour }: PageProps) {
   // ✅ Table filtering
   const filteredData = cards.filter(
     (row) =>
-      row.classification_item
+      (row.classification_item || '')
         .toLowerCase()
         .includes(columnFilters.classification_item.toLowerCase()) &&
-      row.classification_category
+      (row.classification_category || '')
         .toLowerCase()
         .includes(columnFilters.classification_category.toLowerCase()) &&
-      row.classification_sub_category
+      (row.classification_sub_category || '')
         .toLowerCase()
         .includes(columnFilters.classification_sub_category.toLowerCase())
   );
@@ -456,27 +459,27 @@ export default function Index({ showDetailTour }: PageProps) {
                 <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Add New Attitude">
                   <Plus className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* AI Suggestions */}
-                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Get AI Suggestions">
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Get AI Suggestions">
                   <Sparkles className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Import/Export */}
-                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Import ">
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Import">
                   <Upload className="w-5 h-5 text-gray-600" />
                 </button>
-                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Export ">
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Export">
                   <Download className="w-5 h-5 text-gray-600" />
                 </button>
-
-                {/* Settings */}
-                <button className="p-2 rounded-lg hover:bg-gray-100" title="Settings">
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Settings">
                   <Settings className="w-5 h-5 text-gray-600" />
                 </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <button
+            onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <MoreVertical className="w-5 h-5 text-gray-600" />
+          </button>
         </div>
       </div>
 
@@ -637,7 +640,7 @@ function CardGrid({
   if (loadingCards) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+        <Loader />
       </div>
     );
   }
