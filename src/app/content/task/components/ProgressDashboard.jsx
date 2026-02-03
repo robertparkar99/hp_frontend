@@ -358,37 +358,7 @@ const ProgressDashboard = () => {
         throw new Error(errorData.message || 'Failed to update task');
       }
 
-      // Check if task is rejected and trigger webhook
-      if (currentTask.approve_status?.toLowerCase() === 'rejected') {
-        try {
-          const webhookUrl = 'https://dev.triz.co.in/webhook/449cab91-32ac-4c27-ab77-b6a9389185c4';
 
-          // Prepare payload for webhook
-          const webhookPayload = {
-            ...currentTask,
-            updated_at: new Date().toISOString(),
-            updated_by: sessionData.user_id,
-            sub_institute_id: sessionData.sub_institute_id
-          };
-
-          // Send data to n8n webhook via POST
-          fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(webhookPayload)
-          }).then(res => {
-            console.log('Webhook triggered successfully (POST)', res.status);
-          }).catch(err => {
-            console.error('Error triggering webhook:', err);
-            // We don't block the main flow if webhook fails, just log it
-          });
-
-        } catch (webhookError) {
-          console.error('Unexpected error in webhook trigger:', webhookError);
-        }
-      }
 
       const result = await response.json();
       alert(result.message || 'Task updated successfully');
