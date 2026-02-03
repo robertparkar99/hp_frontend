@@ -361,7 +361,7 @@ const ProgressDashboard = () => {
       // Check if task is rejected and trigger webhook
       if (currentTask.approve_status?.toLowerCase() === 'rejected') {
         try {
-          const webhookUrl = 'http://202.47.117.61:5678/webhook/7de60965-19fb-4c32-816d-7206652660aa';
+          const webhookUrl = 'http://202.47.117.61:5678/webhook-test/449cab91-32ac-4c27-ab77-b6a9389185c4';
 
           // Prepare payload for webhook
           const webhookPayload = {
