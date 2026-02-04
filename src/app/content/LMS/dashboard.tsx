@@ -312,8 +312,12 @@ const LearningCatalog: React.FC = () => {
     setSearchQuery('')
   }
 
-  const handleEnroll = (courseId: number) => {
-    console.log(`📚 Enrolling in course ${courseId}`)
+  const handleEnroll = async (course: any, data?: any) => {
+    console.log(`📚 Enrollment result for course ${course?.id}:`, data)
+    // Refresh courses after enrollment to update enrollment_status
+    if (sessionData) {
+      fetchCourses()
+    }
   }
 
   const handleViewDetails = (subject_id: number, standard_id: number) => {
@@ -326,7 +330,7 @@ const LearningCatalog: React.FC = () => {
 
   const handleCloseViewDetail = () => {
     setIsViewOpen(false)
-    // Refresh courses after returning from view detail
+    // Refresh courses after returning from view detail to update enrollment status
     if (sessionData) {
       fetchCourses()
     }

@@ -45,6 +45,8 @@ interface Course {
   lessons: number;
   enrolledCount: number;
   rating: number;
+  enrollment_status?: string | null;
+  jobrole?: string;
 }
 
 interface Tab {
@@ -65,6 +67,7 @@ interface ApiSubject {
   chapter_list: string;
   content_category: string;
   sub_institute_id: number;
+  jobrole?: string;
 }
 
 // Icon mapper for ProgressOverviewCard
@@ -98,27 +101,27 @@ const MyLearningDashboard: React.FC = () => {
   });
 
   // Load session data
-useEffect(() => {
-  const userData = localStorage.getItem("userData");
-  if (userData) {
-    const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
-    setSessionData({
-      url: APP_URL,
-      token,
-      subInstituteId: sub_institute_id,
-      orgType: org_type,
-      userId: user_id,
-    });
-  }
-}, []);
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+        orgType: org_type,
+        userId: user_id,
+      });
+    }
+  }, []);
 
-// ✅ STEP-2: Load enrolled courses from localStorage on page refresh
-useEffect(() => {
-  const savedEnrolled = localStorage.getItem("enrolledCourses");
-  if (savedEnrolled) {
-    setInProgressCourses(JSON.parse(savedEnrolled));  // Load previous enrolled courses
-  }
-}, []);
+  // STEP-2: Load enrolled courses from localStorage on page refresh
+  useEffect(() => {
+    const savedEnrolled = localStorage.getItem("enrolledCourses");
+    if (savedEnrolled) {
+      setInProgressCourses(JSON.parse(savedEnrolled));
+    }
+  });
 
 
   const [activeTab, setActiveTab] = useState<'progress' | 'completed' | 'recommended'>('progress');
@@ -129,6 +132,7 @@ useEffect(() => {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [viewSubjectId, setViewSubjectId] = useState(0);
   const [viewStandardId, setViewStandardId] = useState(0);
+  const [coursesLoading, setCoursesLoading] = useState(false);
 
   const fetchCoursesAndRefresh = () => {
     // Switch to Progress tab
@@ -140,38 +144,39 @@ useEffect(() => {
     setActiveTab("progress"); // move user to In Progress tab
   };
 
-const handleEnrollSuccess = (course: Course) => {
-  setInProgressCourses(prev => {
-    const updated = [...prev, course];
-    localStorage.setItem("enrolledCourses", JSON.stringify(updated)); // SAVE
-    return updated;
-  });
+  const handleEnrollSuccess = (course: Course) => {
+    setInProgressCourses(prev => {
+      const updated = [...prev, course];
+      localStorage.setItem("enrolledCourses", JSON.stringify(updated));
+      return updated;
+    });
 
-  setApiSubjects(prev =>
-    prev.filter(c => c.subject_id !== course.id)
-  );
+    setApiSubjects(prev =>
+      prev.filter(c => c.subject_id !== course.id)
+    );
 
-  setActiveTab("progress");
-};
+    setActiveTab("progress");
+  };
 
-const handleContinueLearning = (subject_id: number, standard_id: number) => {
-  setViewSubjectId(subject_id);
-  setViewStandardId(standard_id);
-  setIsViewOpen(true);
-};
+  const handleContinueLearning = (subject_id: number, standard_id: number) => {
+    setViewSubjectId(subject_id);
+    setViewStandardId(standard_id);
+    setIsViewOpen(true);
+  };
 
-const handleCloseViewDetail = () => {
-  setIsViewOpen(false);
-  // Refresh enrolled courses when returning from view detail
-  if (sessionData.url && sessionData.userId) {
-    fetchEnrolledCourses();
-  }
-};
+  const handleCloseViewDetail = () => {
+    setIsViewOpen(false);
+    // Refresh enrolled courses when returning from view detail
+    if (sessionData.url && sessionData.userId) {
+      fetchEnrolledCourses();
+    }
+  };
 
 
   const fetchEnrolledCourses = async () => {
     if (!sessionData.url || !sessionData.userId) return;
 
+    setCoursesLoading(true);
     try {
       const response = await fetch(
         `${sessionData.url}/api/enrolled_courses?user_id=${sessionData.userId}&type=API&token=${sessionData.token}`
@@ -189,7 +194,7 @@ const handleCloseViewDetail = () => {
           standard_id: item.standard_id || 0,
           title: item.display_name,
           description: item.subject_type,
-          thumbnail: item.display_image || 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=225&fit=crop',
+          thumbnail: item.display_image || 'https://erp.triz.co.in/storage/SubStdMapping/SubStdMap_2020-12-29_05-56-03.svg',
           progress: 0,
           timeRemaining: 0,
           nextLesson: '',
@@ -198,7 +203,9 @@ const handleCloseViewDetail = () => {
           duration: 120,
           lessons: 8,
           enrolledCount: 150,
-          rating: 4.3
+          rating: 4.3,
+          jobrole: item.jobrole || data.jobrole || null,
+          enrollment_status: item.enrollment_status || null
         }));
 
         // Separate completed and in-progress courses
@@ -215,6 +222,8 @@ const handleCloseViewDetail = () => {
 
     } catch (error) {
       console.log("ERROR fetching enrolled:", error);
+    } finally {
+      setCoursesLoading(false);
     }
   };
 
@@ -223,7 +232,6 @@ const handleCloseViewDetail = () => {
       fetchEnrolledCourses();
     }
   }, [sessionData]);
-
 
 
 
@@ -237,8 +245,7 @@ const handleCloseViewDetail = () => {
       try {
         const response = await fetch(`${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=Admin`);
         const data = await response.json();
-        console.log('API Response:', data); // For debugging
-        // Aggregate all subjects from all categories
+        console.log('API Response:', data);
         const allSubjects: ApiSubject[] = Object.values(data.lms_subject || {}).flat() as ApiSubject[];
         setApiSubjects(allSubjects);
       } catch (error) {
@@ -248,7 +255,6 @@ const handleCloseViewDetail = () => {
 
     if (sessionData.url) {
       fetchCourses();
-      
     }
   }, [sessionData.url, sessionData.subInstituteId, sessionData.userId]);
 
@@ -257,7 +263,7 @@ const handleCloseViewDetail = () => {
     subject_id: api.subject_id,
     standard_id: api.standard_id,
     title: api.subject_name,
-    description: api.subject_name,
+    description: api.standard_name,
     thumbnail: api.display_image || 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=225&fit=crop',
     progress: 0,
     timeRemaining: 0,
@@ -267,7 +273,9 @@ const handleCloseViewDetail = () => {
     duration: 120,
     lessons: 8,
     enrolledCount: 150,
-    rating: 4.3
+    rating: 4.3,
+    jobrole: api.jobrole,
+    enrollment_status: null
   });
 
   const coursesInProgress: Course[] = enrolledCourses.length > 0 ? enrolledCourses : inProgressCourses;
@@ -281,13 +289,13 @@ const handleCloseViewDetail = () => {
     setApiSubjects(prev => prev.filter(c => c.subject_id !== course.id));
   };
 
-  // Dynamic data for progress overview - using consistent icon names
+  // Dynamic data for progress overview
   const overviewStats: OverviewStat[] = [
     {
       title: "Courses In Progress",
       value: coursesInProgress.length,
       total: null,
-      icon: "book-open", // consistent lowercase with hyphen
+      icon: "book-open",
       color: "primary",
       trend: { type: "up", value: `+${coursesInProgress.length} enrolled` },
       description: coursesInProgress.length > 0 ? "Keep up the momentum!" : "Start learning today!"
@@ -296,7 +304,7 @@ const handleCloseViewDetail = () => {
       title: "Completed Courses",
       value: completedCoursesState.length,
       total: null,
-      icon: "check-circle", // consistent lowercase with hyphen
+      icon: "check-circle",
       color: "success",
       trend: { type: "up", value: `+${completedCoursesState.length} completed` },
       description: completedCoursesState.length > 0 ? "Great progress!" : "Complete your first course"
@@ -305,7 +313,7 @@ const handleCloseViewDetail = () => {
       title: "Skills Earned",
       value: coursesInProgress.length + completedCoursesState.length,
       total: apiSubjects.length + coursesInProgress.length + completedCoursesState.length,
-      icon: "award", // consistent lowercase
+      icon: "award",
       color: "secondary",
       trend: { type: "up", value: `+${coursesInProgress.length + completedCoursesState.length} skills` },
       description: `${apiSubjects.length + coursesInProgress.length + completedCoursesState.length - (coursesInProgress.length + completedCoursesState.length)} more to reach your goal`
@@ -314,7 +322,7 @@ const handleCloseViewDetail = () => {
       title: "Learning Hours",
       value: coursesInProgress.reduce((total, course) => total + (course.duration || 0), 0),
       total: 60,
-      icon: "clock", // consistent lowercase
+      icon: "clock",
       color: "warning",
       trend: { type: "up", value: `+${coursesInProgress.reduce((total, course) => total + (course.duration || 0), 0)} hours` },
       description: `${60 - coursesInProgress.reduce((total, course) => total + (course.duration || 0), 0)} hours to monthly goal`
@@ -325,7 +333,6 @@ const handleCloseViewDetail = () => {
   const tabs: Tab[] = [
     { id: 'progress', label: 'In Progress', count: coursesInProgress.length },
     { id: 'completed', label: 'Completed', count: completedCoursesState.length },
-    // { id: 'recommended', label: 'Recommended', count: recommendedCourses.length }
   ];
 
   const getCurrentCourses = (): Course[] => {
@@ -370,7 +377,6 @@ const handleCloseViewDetail = () => {
                   <ProgressOverviewCard
                     key={index}
                     {...stat}
-                  // Pass the IconMapper component or use a different approach
                   />
                 ))}
               </div>
@@ -401,28 +407,36 @@ const handleCloseViewDetail = () => {
                       </div>
                     </div>
 
-                    {/* Course Grid */}
-                    {/* Course Grid */}
-                    <div
-                      className="grid grid-cols-1 xl:grid-cols-2 gap-6 overflow-y-auto hide-scrollbar"
-                      style={{
-                        maxHeight: "500px",   // shows only first 4 cards approx
-                        paddingRight: "6px",
-                      }}
-                    >
-                      {getCurrentCourses().map((course) => (
-                        <CourseCard
-                          key={course.id}
-                          course={course}
-                          // variant={activeTab}
-                          onEnrollSuccess={() => handleEnrollSuccess(course)}
-                          onContinue={() => handleContinueLearning(course.subject_id || course.id, course.standard_id || 0)}
-                        />
-                      ))}
-                    </div>
+                    {/* Loading Indicator */}
+                    {coursesLoading && (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <span className="ml-3 text-muted-foreground">Loading courses...</span>
+                      </div>
+                    )}
 
+                    {/* Course Grid */}
+                    {!coursesLoading && (
+                      <div
+                        className="grid grid-cols-1 xl:grid-cols-2 gap-6 overflow-y-auto hide-scrollbar"
+                        style={{
+                          maxHeight: "500px",
+                          paddingRight: "6px",
+                        }}
+                      >
+                        {getCurrentCourses().map((course) => (
+                          <CourseCard
+                            key={course.id}
+                            course={course}
+                            onEnrollSuccess={() => handleEnrollSuccess(course)}
+                            onContinue={() => handleContinueLearning(course.subject_id || course.id, course.standard_id || 0)}
+                          />
+                        ))}
+                      </div>
+                    )}
 
-                    {getCurrentCourses().length === 0 && (
+                    {/* Empty State */}
+                    {!coursesLoading && getCurrentCourses().length === 0 && (
                       <div className="text-center py-12">
                         <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                           <BookOpen className="h-6 w-6 text-muted-foreground" />
@@ -433,7 +447,6 @@ const handleCloseViewDetail = () => {
                         <p className="text-muted-foreground mb-4">
                           {activeTab === 'progress' && "Start learning by enrolling in a course"}
                           {activeTab === 'completed' && "Complete your first course to see it here"}
-                          {/* {activeTab === 'recommended' && "We'll recommend courses based on your learning history"} */}
                         </p>
                         <Button variant="outline">
                           <Search className="mr-2 h-4 w-4" />

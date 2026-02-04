@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import Icon from "../../../../components/AppIcon"
 import { Button } from "../../../../components/ui/button"
 
-const CourseTabNavigation = ({ activeTab, onTabChange, chapters, isCourseCompleted, onMarkCourseCompleted, isButtonEnabled, checkingCompletion }) => {
+const CourseTabNavigation = ({ activeTab, onTabChange, chapters, isCourseCompleted, onMarkCourseCompleted, isButtonEnabled }) => {
   const [completionStatus, setCompletionStatus] = useState(isCourseCompleted ? 'completed' : 'pending');
 
   // ✅ Calculate dynamic counts
@@ -22,19 +22,9 @@ const CourseTabNavigation = ({ activeTab, onTabChange, chapters, isCourseComplet
       )
     }, 0) || 0
 
-  const handleMarkCompleted = async () => {
-    try {
-      const response = await fetch('http://127.0.0.1:8000/api/enroll/34?sub_institute_id=3&type=API&token=1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5&user_id=6&course_id=116&status=completed&start_date=2026-01-24&end_date=2026-01-26');
-      if (!response.ok) {
-        throw new Error('Failed to update enrollment');
-      }
-      const data = await response.json();
-      alert(data.message || 'Course enrollment updated successfully');
-      setCompletionStatus('completed');
-      if (onMarkCourseCompleted) onMarkCourseCompleted();
-    } catch (error) {
-      console.error(error);
-      alert('Failed to mark course as completed');
+  const handleMarkCompleted = () => {
+    if (onMarkCourseCompleted) {
+      onMarkCourseCompleted();
     }
   };
 
@@ -107,20 +97,11 @@ const CourseTabNavigation = ({ activeTab, onTabChange, chapters, isCourseComplet
               variant={isButtonEnabled ? "default" : "outline"}
               className={`h-8 px-3 ${isButtonEnabled ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'}`}
               onClick={handleMarkCompleted}
-              disabled={!isButtonEnabled || checkingCompletion}
+              disabled={!isButtonEnabled}
               title={isButtonEnabled ? "Mark course as completed" : "View all content first"}
             >
-              {checkingCompletion ? (
-                <>
-                  <Icon name="Loader" size={13} className="mr-1 animate-spin" />
-                  Checking...
-                </>
-              ) : (
-                <>
-                  <Icon name="CheckCircle" size={13} className="mr-1" />
-                  Mark AS Completed
-                </>
-              )}
+              <Icon name="CheckCircle" size={13} className="mr-1" />
+              Mark AS Completed
             </Button>
           </div>
         )}
