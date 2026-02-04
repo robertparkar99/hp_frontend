@@ -168,9 +168,16 @@ export default function JobroleSkillRatingDesign({
     if (typeof item === 'string') {
       return { id: `${type}_${index}`, title: item, description: '', proficiency_level: 5 };
     } else {
-      return { 
-        id: item.id || `${type}_${index}`, 
-        title: item.title || item, 
+      let resolvedId: string | number | undefined = item.id;
+      if (type === 'skill') resolvedId = item.skill_id ?? item.id;
+      else if (type === 'knowledge') resolvedId = item.knowledge_id ?? item.id;
+      else if (type === 'ability') resolvedId = item.ability_id ?? item.id;
+      else if (type === 'attitude') resolvedId = item.attitude_id ?? item.id;
+      else if (type === 'behaviour') resolvedId = item.behaviour_id ?? item.id;
+
+      return {
+        id: (resolvedId !== undefined && resolvedId !== null) ? String(resolvedId) : `${type}_${index}`,
+        title: item.title || item.skill || item.knowledge || item.ability || item.attitude || item.behaviour || item,
         description: item.description || '',
         proficiency_level: item.proficiency_level || 5
       };
