@@ -286,13 +286,23 @@ if (onClose) {
         alert("Successfully completed the course.");
         setCourseCompleted(true);
 
-        // Update localStorage
+        // Update localStorage for completed courses
         const completedCourses = JSON.parse(localStorage.getItem('completedCourses') || '[]');
         const courseKey = `${subject_id}-${standard_id}`;
         if (!completedCourses.includes(courseKey)) {
           completedCourses.push(courseKey);
           localStorage.setItem('completedCourses', JSON.stringify(completedCourses));
         }
+
+        // Update enrollment_status in localStorage for enrolled courses
+        const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
+        const updatedEnrolledCourses = enrolledCourses.map(course => {
+          if (course.subject_id === subject_id && course.standard_id === standard_id) {
+            return { ...course, enrollment_status: 'completed' };
+          }
+          return course;
+        });
+        localStorage.setItem('enrolledCourses', JSON.stringify(updatedEnrolledCourses));
 
         // Notify parent component to refresh
         if (onClose) {
@@ -383,6 +393,7 @@ if (onClose) {
             sessionInfo={sessionData}
             courseDisplayName={courseDetails?.display_name || "Untitled Course"}
             standardName={standardDetails?.name || "Standard"}
+            onContentViewed={() => setContentViewTrigger(prev => prev + 1)}
           />
         ) : (
           <div className="text-center text-muted-foreground py-10">
@@ -437,7 +448,13 @@ if (onClose) {
                                     rel="noopener noreferrer"
                                     className="text-blue-500 hover:text-blue-700 underline"
                                     onClick={() => {
+                                      // Mark content as viewed
+                                      const viewedContent = JSON.parse(localStorage.getItem(`viewed_content_${ch.id}`) || '{}');
+                                      viewedContent[res.id] = true;
+                                      localStorage.setItem(`viewed_content_${ch.id}`, JSON.stringify(viewedContent));
+
                                       setContentOpened(true);
+                                      setContentViewTrigger(prev => prev + 1);
                                       const openedCourses = JSON.parse(localStorage.getItem('openedCourses') || '[]');
                                       const courseKey = `${subject_id}-${standard_id}`;
                                       if (!openedCourses.includes(courseKey)) {

@@ -5,7 +5,7 @@ import Image from "../../../../components/AppImage";
 import Icon from "@/components/AppIcon";
 import { Button } from "../../../../components/ui/button";
 import ProgressIndicator from "../../../../components/ui/BreadcrumbNavigation";
-import {
+import { 
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -35,8 +35,44 @@ const CourseCard = ({
     // Use enrollment_status from API: if null, not enrolled; otherwise enrolled
     return course.enrollment_status !== null;
   });
+  const [completed, setCompleted] = useState(() => {
+    // Check if course is completed from enrollment_status or localStorage
+    if (course.enrollment_status === 'completed') {
+      return true;
+    }
+    if (typeof window !== 'undefined') {
+      const completedCourses = JSON.parse(localStorage.getItem('completedCourses') || '[]');
+      return completedCourses.includes(`${course.subject_id}-${course.standard_id}`);
+    }
+    return false;
+  });
   const [correctSubjectId, setCorrectSubjectId] = useState(null);
   const [jobRoles, setJobRoles] = useState([]);
+
+  // Sync completed state with localStorage
+  useEffect(() => {
+    const checkCompletion = () => {
+      if (course.enrollment_status === 'completed') {
+        setCompleted(true);
+        return;
+      }
+      if (typeof window !== 'undefined') {
+        const completedCourses = JSON.parse(localStorage.getItem('completedCourses') || '[]');
+        const isCompleted = completedCourses.includes(`${course.subject_id}-${course.standard_id}`);
+        setCompleted(isCompleted);
+        // Also update enrollment_status if course is completed
+        if (isCompleted && course.enrollment_status !== 'completed') {
+          course.enrollment_status = 'completed';
+        }
+      }
+    };
+
+    checkCompletion();
+
+    // Listen for storage events to sync across tabs
+    window.addEventListener('storage', checkCompletion);
+    return () => window.removeEventListener('storage', checkCompletion);
+  }, [course.subject_id, course.standard_id, course.enrollment_status]);
   const isDefault = imgSrc === DEFAULT_IMAGE;
 
   useEffect(() => {
@@ -565,13 +601,18 @@ const CourseCard = ({
                   <Button
                     size="sm"
                     onClick={handleEnroll}
-                    disabled={enrolling || enrolled}
-                    className={`${enrolled ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'} text-white`}
+                    disabled={enrolling || enrolled || completed}
+                    className={`${completed ? 'bg-blue-600 hover:bg-blue-700' : enrolled ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'} text-white`}
                   >
                     {enrolling ? (
                       <>
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-2"></div>
                         Enrolling...
+                      </>
+                    ) : completed ? (
+                      <>
+                        <Icon name="Award" size={14} className="mr-2" />
+                        Completed
                       </>
                     ) : enrolled ? (
                       <>
@@ -690,15 +731,22 @@ const CourseCard = ({
           <Button
             size="sm"
             onClick={handleEnroll}
-            disabled={enrolling || enrolled}
+            disabled={enrolling || enrolled || completed}
             className={`w-full ${
-              enrolled
+              completed
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : enrolled
                 ? 'bg-green-600 hover:bg-green-700 text-white'
                 : 'bg-primary hover:bg-primary/90 text-primary-foreground'
             }`}
           >
             {enrolling ? (
               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+            ) : completed ? (
+              <>
+                <Icon name="Award" size={14} className="mr-1" />
+                Completed
+              </>
             ) : enrolled ? (
               <>
                 <Icon name="CheckCircle" size={14} className="mr-1" />

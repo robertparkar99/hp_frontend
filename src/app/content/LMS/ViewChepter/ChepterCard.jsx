@@ -32,6 +32,7 @@ const ChapterCard = ({
   courseDisplayName,
   standardName,
   onCompleteCourse, // New prop to handle course completion
+  onContentViewed, // New prop to notify when content is viewed
 }) => {
   const [loading, setLoading] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
@@ -43,11 +44,6 @@ const ChapterCard = ({
   // For component updates
   const [_, forceUpdate] = useState(0);
 
-  // State to enable content viewing tracking
-  const [isButtonEnabled, setIsButtonEnabled] = useState(false);
-  
-  // Track opened tabs
-  const openedTabsRef = useRef({});
 
   const id = course.id || course.chapter_id;
   const title = course.title || course.chapter_name || "Untitled Chapter";
@@ -60,11 +56,6 @@ const ChapterCard = ({
     0
   );
 
-  // Check if all content has been viewed - memoized
-  const allContentViewed = React.useMemo(() => {
-    const allContents = Object.values(contents).flat();
-    return allContents.length > 0 && allContents.every(content => viewedContentRef.current[content.id]);
-  }, [contents, viewedContentRef.current]);
 
   // Color palette
   const categoryColors = {
@@ -83,11 +74,6 @@ const ChapterCard = ({
       viewedContentRef.current = JSON.parse(savedViewedContent);
       forceUpdate(n => n + 1); // Force re-render
     }
-
-    // Check if all content is viewed
-    const allContents = Object.values(contents).flat();
-    const allViewed = allContents.length > 0 && allContents.every(content => viewedContentRef.current[content.id]);
-    setIsButtonEnabled(allViewed);
   }, [id, contents]);
 
   // Save viewed content to localStorage whenever it changes
@@ -102,6 +88,9 @@ const ChapterCard = ({
     viewedContentRef.current[contentId] = true;
     localStorage.setItem(`viewed_content_${id}`, JSON.stringify(viewedContentRef.current));
     forceUpdate(n => n + 1); // Force re-render to update UI
+    if (onContentViewed) {
+      onContentViewed();
+    }
   };
 
   // Handle preview content - opens in new tab and tracks it
@@ -110,9 +99,6 @@ const ChapterCard = ({
       alert("No content available to preview.");
       return;
     }
-
-    // Enable the Read & Mark button as soon as View is clicked
-    setIsButtonEnabled(true);
 
     try {
       // Fetch content details
@@ -145,40 +131,8 @@ const ChapterCard = ({
       const newTab = window.open(fileUrl, "_blank", "noopener,noreferrer");
 
       if (newTab) {
-        // Store reference to the opened tab
-        openedTabsRef.current[content.id] = newTab;
-
-        // Set up interval to check if user has closed the tab
-        const checkTabClosed = setInterval(() => {
-          if (newTab.closed) {
-            clearInterval(checkTabClosed);
-            delete openedTabsRef.current[content.id];
-
-            // Mark as viewed after tab is closed
-            markContentAsViewed(content.id);
-
-            // Check if we should enable Read & Mark button
-            checkAndUpdateCompletion();
-          }
-        }, 1000);
-        
-        // Also check on focus/blur events
-        const handleVisibilityChange = () => {
-          if (document.visibilityState === 'visible') {
-            // User has returned to this tab
-            checkAndUpdateCompletion();
-          }
-        };
-        
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        
-        // Cleanup
-        newTab.onbeforeunload = () => {
-          clearInterval(checkTabClosed);
-          delete openedTabsRef.current[content.id];
-          document.removeEventListener('visibilitychange', handleVisibilityChange);
-          checkAndUpdateCompletion();
-        };
+        // Mark as viewed immediately when opened
+        markContentAsViewed(content.id);
       }
 
       // Callback
@@ -191,16 +145,6 @@ const ChapterCard = ({
     }
   };
 
-  // Function to check and update completion status
-  const checkAndUpdateCompletion = () => {
-    // Force a check of all content
-    const allContents = Object.values(contents).flat();
-    const allViewed = allContents.length > 0 &&
-      allContents.every(content => viewedContentRef.current[content.id]);
-
-    setIsButtonEnabled(allViewed);
-    forceUpdate(n => n + 1); // Force re-render to update button state
-  };
 
 
   // delete content
@@ -228,9 +172,6 @@ const ChapterCard = ({
         delete viewedContentRef.current[contentId];
         localStorage.setItem(`viewed_content_${id}`, JSON.stringify(viewedContentRef.current));
         forceUpdate(n => n + 1);
-
-        // Update completion status
-        checkAndUpdateCompletion();
       }
     } catch (err) {
       console.error("❌ Error deleting content:", err);
@@ -310,21 +251,6 @@ const ChapterCard = ({
     setSelectedContent(null);
   };
 
-  // Add an event listener for page visibility changes
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // User has returned to this tab, check completion
-        checkAndUpdateCompletion();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
 
   return (
     <>
