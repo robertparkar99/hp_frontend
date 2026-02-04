@@ -35,7 +35,7 @@ interface Skill {
   knowledge: any[];
   behaviour: any[];
   attitude: any[];
-  proficiency_level: string;
+  proficiency_level: string | number;
   skill: string;
   skill_id: number;
   sub_category: string;
@@ -101,7 +101,7 @@ const CustomTooltip = ({ active, payload }: any) => {
       <div className="bg-white border border-gray-300 p-3 rounded shadow-md">
         <p className="font-semibold text-gray-800">{data.skill}</p>
         <p className="text-sm text-gray-600">
-          Rating: {data.rating}/{data.max}
+          Rating: {data.rating}/{data.proficiency_level}
         </p>
         <p className="text-sm text-gray-600">
           proficiency : {data.proficiency_level || "Not Set"}
@@ -178,7 +178,10 @@ const renderDetailedRatings = (ratedSkill: RatedSkill) => {
   ];
 
   const getScore = (ratings: Record<string, string>) => {
-    const yesCount = Object.values(ratings).filter(val => val === "yes").length;
+    const yesCount = Object.values(ratings).filter(val => {
+      const v = String(val).toLowerCase();
+      return v === "yes" || v === "true" || v === "1";
+    }).length;
     const totalCount = Object.keys(ratings).length;
     return { yesCount, totalCount, percentage: totalCount > 0 ? Math.round((yesCount / totalCount) * 100) : 0 };
   };
@@ -217,25 +220,29 @@ const renderDetailedRatings = (ratedSkill: RatedSkill) => {
                   </h5>
                 </div>
                 <div className="grid grid-cols-1 gap-2">
-                  {Object.entries(ratings).map(([attribute, value]) => (
-                    <div key={attribute} className="flex items-center justify-between text-sm py-1 border-b border-gray-100 last:border-b-0">
-                      <span className="text-gray-600 flex-1 truncate mr-2">{attribute}</span>
-                      <span className={`flex items-center ${value === "yes" ? "text-green-600" : "text-red-600"
-                        }`}>
-                        {value === "yes" ? (
-                          <>
+                  {Object.entries(ratings).map(([attribute, value]) => {
+                    const v = String(value).toLowerCase();
+                    const isYes = v === "yes" || v === "true" || v === "1";
+                    const isNo = v === "no" || v === "false" || v === "0";
+                    return (
+                      <div key={attribute} className="flex items-center justify-between text-sm py-1 border-b border-gray-100 last:border-b-0">
+                        <span className="text-gray-600 flex-1 truncate mr-2">{attribute}</span>
+                        {isYes ? (
+                          <span className="flex items-center text-green-600">
                             <CheckCircle className="h-4 w-4 mr-1" />
                             <span className="text-xs font-medium">Yes</span>
-                          </>
-                        ) : (
-                          <>
+                          </span>
+                        ) : isNo ? (
+                          <span className="flex items-center text-red-600">
                             <XCircle className="h-4 w-4 mr-1" />
                             <span className="text-xs font-medium">No</span>
-                          </>
+                          </span>
+                        ) : (
+                          <span className="text-gray-700 text-xs font-medium">{String(value)}</span>
                         )}
-                      </span>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -273,53 +280,56 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
       {/* Chart Container */}
       <div className="flex-1">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData.map((entry) => ({
-              ...entry,
-              remaining: entry.max - entry.rating,
-            }))}
-            margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="skill"
-              angle={-45}
-              textAnchor="end"
-              height={80}
-              interval={0}
-            />
-            <YAxis
-              type="number"
-              allowDecimals={false}
-              domain={[0, max]}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="rating" stackId="a" name="Current Rating">
-              {chartData.map((_, index) => (
-                <Cell key={`cell-rating-${index}`} fill="#3B82F6" />
-              ))}
-            </Bar>
-            <Bar dataKey="remaining" stackId="a" name="Remaining">
-              {chartData.map((entry, index) => {
-                const color = entry.remaining === 0 ? "#3B82F6" : "#1E40AF";
-                return <Cell key={`cell-remaining-${index}`} fill={color} />;
-              })}
-            </Bar>
-          </BarChart>
+         <BarChart
+  data={chartData}
+  margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+>
+  <CartesianGrid strokeDasharray="3 3" />
+
+  <XAxis
+    dataKey="skill"
+    angle={-45}
+    textAnchor="end"
+    height={80}
+    interval={0}
+  />
+
+  <YAxis allowDecimals={false} domain={[0, SkillLevels.length || 5]} />
+
+  <Tooltip />
+
+  {/* Rated */}
+  <Bar
+    dataKey="rated"
+    name="Rated"
+    fill="#3B82F6"
+    radius={[4, 4, 0, 0]}
+  />
+
+  {/* Expected */}
+  <Bar
+    dataKey="expected"
+    name="Expected"
+    fill="#22C55E"
+    radius={[4, 4, 0, 0]}
+  />
+</BarChart>
+
         </ResponsiveContainer>
       </div>
 
       {/* Legend */}
-      <div className="flex gap-4 mt-4 justify-center pt-4 border-t">
-        <div className="flex items-center gap-2">
-          <div style={{ backgroundColor: "#3B82F6", width: 20, height: 20 }}></div>
-          <span className="text-sm">Current Rating</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div style={{ backgroundColor: "#1E40AF", width: 20, height: 20 }}></div>
-          <span className="text-sm">Highest Rating Possible</span>
-        </div>
-      </div>
+      <div className="flex gap-6 justify-center mt-4">
+  <div className="flex items-center gap-2">
+    <div className="w-4 h-4 bg-blue-500 rounded"></div>
+    <span className="text-sm">Rated</span>
+  </div>
+  <div className="flex items-center gap-2">
+    <div className="w-4 h-4 bg-green-500 rounded"></div>
+    <span className="text-sm">Expected</span>
+  </div>
+</div>
+
 
       {/* Skills Count */}
       <div className="text-center mt-2 text-sm text-gray-600">
@@ -350,34 +360,78 @@ export default function Page({
   const [showEmptyState, setShowEmptyState] = useState(false);
   const [showFullscreenChart, setShowFullscreenChart] = useState(false);
 
+  const [sessionData, setSessionData] = useState({
+    APP_URL: "",
+    token: "",
+    sub_institute_id: sub_institute_id,
+    org_type: "",
+    user_id: user_id,
+  });
+
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData);
+        setSessionData({
+          APP_URL: parsed.APP_URL || "",
+          token: parsed.token || "",
+          sub_institute_id: parsed.sub_institute_id ?? sub_institute_id,
+          org_type: parsed.org_type || "",
+          user_id: parsed.user_id ?? user_id,
+        });
+      } catch {
+        // ignore
+      }
+    }
+  }, [sub_institute_id, user_id]);
+
+  const parseExpectedLevel = (value: string | number | undefined): number => {
+    if (value === undefined || value === null) return 5;
+    if (typeof value === "number" && !isNaN(value)) return Math.max(1, Math.min(5, value));
+    const str = String(value);
+    const match = str.match(/\d+/);
+    if (match) {
+      const num = parseInt(match[0], 10);
+      return Math.max(1, Math.min(5, num));
+    }
+    const lower = str.toLowerCase();
+    if (lower.includes("novice")) return 1;
+    if (lower.includes("beginner")) return 2;
+    if (lower.includes("intermediate")) return 3;
+    if (lower.includes("advanced")) return 5;
+    return 5;
+  };
+
   // Fetch all skills from first API
   const fetchAllSkills = async () => {
     try {
+      const base = sessionData.APP_URL || "http://127.0.0.1:8000";
       const response = await fetch(
-        `http://127.0.0.1:8000/get-kaba?sub_institute_id=${sub_institute_id}&type=${type}&type_id=${type_id}&title=${encodeURIComponent(title)}`
+        `${base}/get-kaba?sub_institute_id=${sessionData.sub_institute_id}&type=${type}&type_id=${type_id}&title=${encodeURIComponent(title)}`
       );
       
       if (response.ok) {
         const data = await response.json();
-        console.log("Fetched skills data:", data);
+        console.log("Fetched skills jobroke data:", data.title);
         
         // Transform the API response to match our Skill interface
-        const transformedSkills: Skill[] = data.skills?.map((skill: any) => ({
+        const transformedSkills: Skill[] = (data.skills || data.skill || []).map((skill: any) => ({
           ability: skill.ability || [],
           category: skill.category || "",
           description: skill.description || "",
-          jobrole: skill.jobrole || "",
+          jobrole: data.title || "",
           jobrole_skill_id: skill.jobrole_skill_id || 0,
           knowledge: skill.knowledge || [],
           behaviour: skill.behaviour || [],
           attitude: skill.attitude || [],
-          proficiency_level: skill.proficiency_level || "Beginner",
-          skill: skill.skill || "",
-          skill_id: skill.skill_id || 0,
+          proficiency_level: skill.proficiency_level ?? "Level 5",
+          skill: skill.title || "",
+          skill_id: skill.id || 0,
           sub_category: skill.sub_category || "",
           title: skill.title || skill.skill || ""
         })) || [];
-        
+        // console.log('kya hume transfomed skills mil rahe hai??',data.skill);
         setSkills(transformedSkills);
         return transformedSkills;
       }
@@ -390,8 +444,9 @@ export default function Page({
   // Fetch user rating data from second API
   const fetchUserRatingData = async () => {
     try {
+      const base = sessionData.APP_URL || "http://127.0.0.1:8000";
       const response = await fetch(
-        `http://127.0.0.1:8000/table_data/?table=user_rating_details&filters[sub_institute_id]=${sub_institute_id}&filters[user_id]=${user_id}&filters[jobrole_id]=${jobrole_id}`
+        `${base}/table_data/?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${sessionData.user_id}&filters[jobrole_id]=${jobrole_id}`
       );
       
       if (response.ok) {
@@ -416,7 +471,6 @@ export default function Page({
       setUserRatedSkills([]);
       return;
     }
-
     // Parse the JSON strings from the API response
     const skillRatings = JSON.parse(ratingData.skill_ids);
     const knowledgeRatings = JSON.parse(ratingData.knowledge_ids);
@@ -428,7 +482,7 @@ export default function Page({
     const ratedSkillsArray: RatedSkill[] = [];
     
     allSkills.forEach(skill => {
-      const skillId = skill.skill_id.toString();
+      const skillId = skill.skill_id;
       if (skillRatings[skillId]) {
         // Get detailed ratings for this specific skill
         const skillKnowledge = skill.knowledge || [];
@@ -441,8 +495,8 @@ export default function Page({
         skillKnowledge.forEach((knowledgeItem: any) => {
           const knowledgeId = knowledgeItem.knowledge_id?.toString();
           if (knowledgeId && knowledgeRatings[knowledgeId]) {
-            knowledgeRatingObj[knowledgeItem.knowledge || "Unknown"] = 
-              knowledgeRatings[knowledgeId] > 2 ? "yes" : "no";
+            knowledgeRatingObj[knowledgeItem.knowledge || "Unknown"] =
+              String(knowledgeRatings[knowledgeId]);
           }
         });
 
@@ -451,8 +505,8 @@ export default function Page({
         skillAbility.forEach((abilityItem: any) => {
           const abilityId = abilityItem.ability_id?.toString();
           if (abilityId && abilityRatings[abilityId]) {
-            abilityRatingObj[abilityItem.ability || "Unknown"] = 
-              abilityRatings[abilityId] > 2 ? "yes" : "no";
+            abilityRatingObj[abilityItem.ability || "Unknown"] =
+              String(abilityRatings[abilityId]);
           }
         });
 
@@ -461,8 +515,8 @@ export default function Page({
         skillBehaviour.forEach((behaviourItem: any) => {
           const behaviourId = behaviourItem.behaviour_id?.toString();
           if (behaviourId && behaviorRatings[behaviourId]) {
-            behaviourRatingObj[behaviourItem.behaviour || "Unknown"] = 
-              behaviorRatings[behaviourId] > 2 ? "yes" : "no";
+            behaviourRatingObj[behaviourItem.behaviour || "Unknown"] =
+              String(behaviorRatings[behaviourId]);
           }
         });
 
@@ -471,8 +525,8 @@ export default function Page({
         skillAttitude.forEach((attitudeItem: any) => {
           const attitudeId = attitudeItem.attitude_id?.toString();
           if (attitudeId && attitudeRatings[attitudeId]) {
-            attitudeRatingObj[attitudeItem.attitude || "Unknown"] = 
-              attitudeRatings[attitudeId] > 2 ? "yes" : "no";
+            attitudeRatingObj[attitudeItem.attitude || "Unknown"] =
+              String(attitudeRatings[attitudeId]);
           }
         });
 
@@ -485,7 +539,7 @@ export default function Page({
           category: skill.category,
           sub_category: skill.sub_category,
           created_at: ratingData.created_at,
-          proficiency_level: skill.proficiency_level,
+          proficiency_level: String(skill.proficiency_level),
           self_rating: parseInt(skillRatings[skillId]),
           knowledge_ratings: knowledgeRatingObj,
           ability_ratings: abilityRatingObj,
@@ -583,30 +637,17 @@ export default function Page({
         : "text-red-600";
 
   // Prepare chart data
-  const fullChartData = userRatedSkills.map((s: RatedSkill) => {
-    const rating = parseInt(s.skill_level?.replace("Level ", "") || "0");
-    const max = totalLevels;
+ const fullChartData = userRatedSkills.map((s: RatedSkill) => {
+  const rated = parseInt(s.skill_level?.replace("Level ", "") || "0");
+  const expected = parseExpectedLevel(s.proficiency_level);
 
-    const remaining = max - rating;
-    const level =
-      s.proficiency_level ||
-      (rating >= 6
-        ? "Advanced"
-        : rating >= 4
-          ? "Intermediate"
-          : rating >= 2
-            ? "Beginner"
-            : "Novice");
+  return {
+    skill: s.title || s.skill || "Unknown",
+    rated,
+    expected,
+  };
+});
 
-    return {
-      skill: s.title || s.skill || "Unknown",
-      rating,
-      remaining,
-      max,
-      level,
-      proficiency_level: s.proficiency_level,
-    };
-  });
 
   // Limited chart data for main view (first 6 items)
   const limitedChartData = fullChartData.slice(0, 6);
@@ -671,41 +712,46 @@ export default function Page({
             <div className="lg:col-span-2 h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={limitedChartData.map((entry) => ({
-                    ...entry,
-                    remaining: entry.max - entry.rating,
-                  }))}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="skill" />
-                  <YAxis type="number" allowDecimals={false} domain={[0, totalLevels]} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="rating" stackId="a" name="Current Rating">
-                    {limitedChartData.map((_, index) => (
-                      <Cell key={`cell-rating-${index}`} fill="#3B82F6" />
-                    ))}
-                  </Bar>
-                  <Bar dataKey="remaining" stackId="a" name="Remaining">
-                    {limitedChartData.map((entry, index) => {
-                      const color = entry.remaining === 0 ? "#3B82F6" : "#1E40AF";
-                      return <Cell key={`cell-remaining-${index}`} fill={color} />;
-                    })}
-                  </Bar>
-                </BarChart>
+  data={limitedChartData}
+  margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+>
+  <CartesianGrid strokeDasharray="3 3" />
+
+  <XAxis dataKey="skill" />
+  <YAxis allowDecimals={false} domain={[0, totalLevels]} />
+
+  <Tooltip />
+
+  {/* Rated */}
+  <Bar
+    dataKey="rated"
+    name="Rated"
+    fill="#3B82F6"
+    radius={[4, 4, 0, 0]}
+  />
+
+  {/* Expected */}
+  <Bar
+    dataKey="expected"
+    name="Expected"
+    fill="#22C55E"
+    radius={[4, 4, 0, 0]}
+  />
+</BarChart>
               </ResponsiveContainer>
 
               {/* Legend */}
-              <div className="flex gap-4 mt-4 justify-center">
-                <div className="flex items-center gap-2">
-                  <div style={{ backgroundColor: "#3B82F6", width: 20, height: 20 }}></div>
-                  <span className="text-sm">Current Rating</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div style={{ backgroundColor: "#1E40AF", width: 20, height: 20 }}></div>
-                  <span className="text-sm">Highest Rating Possible</span>
-                </div>
-              </div>
+              <div className="flex gap-6 justify-center mt-4">
+  <div className="flex items-center gap-2">
+    <div className="w-4 h-4 bg-blue-500 rounded"></div>
+    <span className="text-sm">Rated</span>
+  </div>
+  <div className="flex items-center gap-2">
+    <div className="w-4 h-4 bg-green-500 rounded"></div>
+    <span className="text-sm">Expected</span>
+  </div>
+</div>
+
             </div>
 
             {/* Overall Skill Index */}
@@ -875,7 +921,7 @@ export default function Page({
                     </div>
                     <p className="text-xs text-gray-600 mt-2">Job Role: {skill.jobrole}</p>
                     <div className="flex gap-3 mt-3">
-                      <button
+                      {/* <button
                         onClick={() => {
                           setSelectedSkill(skill);
                           setIsEditModalOpen(true);
@@ -883,7 +929,7 @@ export default function Page({
                         className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                       >
                         View More
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 ))
@@ -906,11 +952,11 @@ export default function Page({
             <div className="space-y-5 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
               {userRatedSkills && userRatedSkills.length > 0 ? (
                 userRatedSkills.map((ratedSkill: RatedSkill) => {
-                  const totalLevels = SkillLevels.length || 5;
+                  const totalLevels = ratedSkill.proficiency_level || 5;
                   const currentLevel = ratedSkill.skill_level
                     ? parseInt(ratedSkill.skill_level.replace("Level ", ""))
                     : 1;
-                  const completionPercentage = Math.round((currentLevel / totalLevels) * 100);
+                  const completionPercentage = Math.round((currentLevel / Number(totalLevels)) * 100);
                   const status =
                     completionPercentage >= 80
                       ? "On Track"
@@ -929,8 +975,7 @@ export default function Page({
 
                   const selfRating = ratedSkill.skill_level !== undefined ?
                     parseFloat(ratedSkill.skill_level.replace("Level ", "")) || 0 : 0;
-                  const expected = ratedSkill.proficiency_level !== undefined ?
-                    parseFloat(ratedSkill.proficiency_level) || 0 : 0;
+      const expected = parseExpectedLevel(ratedSkill.proficiency_level);
 
                   return (
                     <div
@@ -1037,7 +1082,10 @@ export default function Page({
                             ];
 
                             const getScore = (ratings: Record<string, string>) => {
-                              const yesCount = Object.values(ratings).filter(val => val === "yes").length;
+                              const yesCount = Object.values(ratings).filter(val => {
+                                const v = String(val).toLowerCase();
+                                return v === "yes" || v === "true" || v === "1";
+                              }).length;
                               const totalCount = Object.keys(ratings).length;
                               return { yesCount, totalCount, percentage: totalCount > 0 ? Math.round((yesCount / totalCount) * 100) : 0 };
                             };
