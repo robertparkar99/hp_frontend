@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       inputText: inputText,
       textMode: "generate",
       format: "presentation",
-      themeName: "Oasis",
+      // themeName removed - no longer supported by Gamma API
 
       // 🔥 FIX: dynamic slide count from frontend
       numCards: slideCount,
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     console.log("🧮 Slide Count:", slideCount);
 
     const response = await fetch(
-      "https://public-api.gamma.app/v0.2/generations",
+      "https://public-api.gamma.app/v1.0/generations",
       {
         method: "POST",
         headers: {
