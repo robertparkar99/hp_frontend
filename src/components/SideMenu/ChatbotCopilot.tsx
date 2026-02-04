@@ -21,6 +21,13 @@ interface Message {
     insights?: string;
     canEscalate?: boolean;
     intent?: string;
+    action?: string;
+    missingFields?: string[];
+    entities?: {
+      industry?: string;
+      jobRole?: string;
+      department?: string;
+    };
   };
 }
 
@@ -55,6 +62,20 @@ export default function ChatbotCopilot({
   const [conversationId, setConversationId] = useState<string>();
   const [showEscalationModal, setShowEscalationModal] = useState(false);
   const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 1 | -1 } | null>(null);
+
+  // Phase 3: Genkit Form State
+  const [formData, setFormData] = useState<{
+    industry: string;
+    department: string;
+    jobRole: string;
+    description: string;
+  }>({
+    industry: '',
+    department: '',
+    jobRole: '',
+    description: ''
+  });
+  const [pendingFormMessageId, setPendingFormMessageId] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -104,6 +125,96 @@ export default function ChatbotCopilot({
     }
   };
 
+  // Phase 3: Form handling functions
+  const handleFormChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFormSubmit = async (messageId: string) => {
+    setIsLoading(true);
+    setPendingFormMessageId(messageId);
+    console.log('Form Data:', formData);  
+    try {
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `Generate competency profile for ${formData.jobRole} in ${formData.department} department of ${formData.industry} industry with skills, knowledge, and abilities.`,
+          sessionId,
+          conversationHistory: messages.slice(-6).map(m => ({
+            role: m.type === 'user' ? 'user' : 'assistant',
+            content: m.content
+          })),
+          formData // Pass form data to backend
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
+
+      const data = await response.json();
+
+      const botMessage: Message = {
+        id: data.id || uuidv4(),
+        type: 'bot',
+        content: data.answer || 'I couldn\'t process that request.',
+        timestamp: new Date(),
+        conversationId: data.conversationId,
+        metadata: {
+          sql: data.sql,
+          tablesUsed: data.tables_used,
+          insights: data.insights,
+          canEscalate: data.canEscalate,
+          action: data.action,
+          missingFields: data.missingFields,
+          entities: data.entities
+        }
+      };
+
+      setConversationId(data.conversationId);
+      setMessages(prev => [...prev, botMessage]);
+      console.log('formData', formData);
+      if(formData.jobRole!==''){
+        // Reset form
+      setFormData({
+        industry: '',
+        department: '',
+        jobRole: '',
+        description: ''
+      });
+      }
+      setPendingFormMessageId(null);
+
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: 'Sorry, I encountered an error while processing your request.',
+        timestamp: new Date(),
+        metadata: {
+          canEscalate: true
+        }
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      setPendingFormMessageId(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFormSkip = () => {
+    setFormData({
+      industry: '',
+      department: '',
+      jobRole: '',
+      description: ''
+    });
+    setPendingFormMessageId(null);
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -150,7 +261,10 @@ export default function ChatbotCopilot({
           sql: data.sql,
           tablesUsed: data.tables_used,
           insights: data.insights,
-          canEscalate: data.canEscalate
+          canEscalate: data.canEscalate,
+          action: data.action,
+          missingFields: data.missingFields,
+          entities: data.entities
         }
       };
 
@@ -202,6 +316,97 @@ export default function ChatbotCopilot({
       .replace(/\b(SELECT|FROM|WHERE|JOIN|LEFT|RIGHT|INNER|OUTER|GROUP BY|ORDER BY|HAVING|LIMIT)\b/gi, '\n$1')
       .replace(/,/g, ',\n  ')
       .trim();
+  };
+  // Phase 3: Genkit Form Component
+  const GenkitForm = ({ messageId }: { messageId: string }) => {
+    const missingFields = messages.find(m => m.id === messageId)?.metadata?.missingFields || [];
+
+    return (
+      <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-200 shadow-sm">
+        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <Bot className="w-4 h-4 text-blue-600" />
+          Complete Competency Profile
+        </h4>
+
+        <div className="space-y-3">
+          {missingFields.includes('Industry') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Industry</label>
+              <input
+                type="text"
+                value={formData.industry}
+                onChange={(e) => handleFormChange('industry', e.target.value)}
+                placeholder="e.g., Healthcare, Technology"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
+          )}
+
+          {missingFields.includes('Department') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Department</label>
+              <input
+                type="text"
+                value={formData.department}
+                onChange={(e) => handleFormChange('department', e.target.value)}
+                placeholder="e.g., Nursing, IT, Operations"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
+          )}
+
+          {missingFields.includes('Job Role') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Job Role</label>
+              <input
+                type="text"
+                value={formData.jobRole}
+                onChange={(e) => handleFormChange('jobRole', e.target.value)}
+                placeholder="e.g., Charge Nurse, Software Engineer"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
+          )}
+
+          {missingFields.includes('Description') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => handleFormChange('description', e.target.value)}
+                placeholder="Brief description of the role..."
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => handleFormSubmit(messageId)}
+            disabled={isLoading || pendingFormMessageId !== null}
+            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading && pendingFormMessageId === messageId ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating...
+              </span>
+            ) : (
+              'Generate Profile'
+            )}
+          </button>
+          <button
+            onClick={handleFormSkip}
+            disabled={isLoading}
+            className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
   };
 
   //   if (!isOpen) {
@@ -364,6 +569,38 @@ export default function ChatbotCopilot({
                     minute: '2-digit'
                   })}
                 </span>
+                {/* Phase 3: Genkit Form */}
+                {message.type === 'bot' && message.metadata?.action === 'SHOW_GENKIT_FORM' && (
+                  <GenkitForm messageId={message.id} />
+                )}
+
+                {/* Phase 6: Contextual Follow-ups */}
+                {message.type === 'bot' && message.metadata?.intent === 'JOB_ROLE_COMPETENCY' && message.metadata?.action === 'SHOW_GENKIT_RESPONSE' && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {message.metadata?.entities?.jobRole && (
+                      <>
+                        <button
+                          onClick={() => setInput(`Compare ${message.metadata?.entities?.jobRole} with similar roles`)}
+                          className="px-3 py-1.5 text-xs font-medium bg-purple-50 text-purple-700 rounded-full border border-purple-200 hover:bg-purple-100 transition-colors"
+                        >
+                          Compare with similar roles
+                        </button>
+                        <button
+                          onClick={() => setInput(`What are the critical skills for ${message.metadata?.entities?.jobRole}?`)}
+                          className="px-3 py-1.5 text-xs font-medium bg-green-50 text-green-700 rounded-full border border-green-200 hover:bg-green-100 transition-colors"
+                        >
+                          Show critical skills
+                        </button>
+                        <button
+                          onClick={() => setInput(`What about a senior version of ${message.metadata?.entities?.jobRole}?`)}
+                          className="px-3 py-1.5 text-xs font-medium bg-orange-50 text-orange-700 rounded-full border border-orange-200 hover:bg-orange-100 transition-colors"
+                        >
+                          Senior version
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -391,7 +628,7 @@ export default function ChatbotCopilot({
         {/* Input Area */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/50">
           {/* Save JD Button */}
-          <div className="flex justify-end mb-2">
+          {/* <div className="flex justify-end mb-2">
             <button
               onClick={() => {
                 console.log("Save JD clicked");
@@ -406,7 +643,7 @@ export default function ChatbotCopilot({
 >
               Save JD
             </button>
-          </div>
+          </div> */}
 
           <div className="relative flex flex-col gap-2 bg-white border border-gray-300 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
             <textarea
