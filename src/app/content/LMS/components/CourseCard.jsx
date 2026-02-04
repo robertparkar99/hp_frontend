@@ -294,7 +294,7 @@ const CourseCard = ({
       console.log("📤 Sending enrollment request:", enrollmentData);
 
       // Make API call to enroll endpoint
-      const response = await fetch("http://127.0.0.1:8000/api/enroll", {
+      const response = await fetch(`${sessionInfo.APP_URL}/api/enroll`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
