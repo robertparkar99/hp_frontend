@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff } from 'lucide-react';
 
 import { submitFeedback } from "@/lib1/feedback-service";
 import { v4 as uuidv4 } from 'uuid';
@@ -62,6 +62,70 @@ export default function ChatbotCopilot({
   const [conversationId, setConversationId] = useState<string>();
   const [showEscalationModal, setShowEscalationModal] = useState(false);
   const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 1 | -1 } | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const originalInputRef = useRef<string>(''); // specific for keeping track of text before voice started
+
+  // Voice to text logic
+  const toggleListening = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      return;
+    }
+
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Your browser does not support speech recognition. Please try Chrome.');
+      return;
+    }
+
+    // @ts-ignore - SpeechRecognition is not standard in all browsers yet
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+
+    // "More accurate and perfect" settings
+    recognition.continuous = true; // Keep listening even if user pauses
+    recognition.interimResults = true; // Show results in real-time
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      originalInputRef.current = input; // Store current text so we append to it
+    };
+
+    recognition.onresult = (event: any) => {
+      let currentTranscript = '';
+
+      // Combine all results (both final and interim)
+      for (let i = 0; i < event.results.length; ++i) {
+        currentTranscript += event.results[i][0].transcript;
+      }
+
+      // Update state with: what we had before + what we just heard
+      // We use the Ref to ensure smooth appending without duplication
+      const prefix = originalInputRef.current;
+      const spacing = prefix && !prefix.endsWith(' ') ? ' ' : '';
+      setInput(prefix + spacing + currentTranscript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      if (event.error === 'not-allowed') {
+        alert('Microphone access denied.');
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      // NOTE: If you want it to restart automatically (always listening), put recognition.start() here.
+      // But for a chatbot input, "click to speak" is usually better UX than "always on".
+    };
+
+    recognition.start();
+  };
 
   // Phase 3: Genkit Form State
   const [formData, setFormData] = useState<{
@@ -133,7 +197,7 @@ export default function ChatbotCopilot({
   const handleFormSubmit = async (messageId: string) => {
     setIsLoading(true);
     setPendingFormMessageId(messageId);
-    console.log('Form Data:', formData);  
+    console.log('Form Data:', formData);
     try {
       const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -177,14 +241,14 @@ export default function ChatbotCopilot({
       setConversationId(data.conversationId);
       setMessages(prev => [...prev, botMessage]);
       console.log('formData', formData);
-      if(formData.jobRole!==''){
+      if (formData.jobRole !== '') {
         // Reset form
-      setFormData({
-        industry: '',
-        department: '',
-        jobRole: '',
-        description: ''
-      });
+        setFormData({
+          industry: '',
+          department: '',
+          jobRole: '',
+          description: ''
+        });
       }
       setPendingFormMessageId(null);
 
@@ -660,10 +724,27 @@ export default function ChatbotCopilot({
                 AI-generated content may be incorrect
               </span>
 
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                className="p-2 rounded-full
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleListening}
+                  className={`p-2 rounded-full transition-all duration-150 shadow-sm hover:shadow-md
+                    ${isListening
+                      ? 'bg-red-50 text-red-600 animate-pulse border border-red-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  title="Voice Input"
+                >
+                  {isListening ? (
+                    <MicOff className="w-4 h-4" />
+                  ) : (
+                    <Mic className="w-4 h-4" />
+                  )}
+                </button>
+
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim() || isLoading}
+                  className="p-2 rounded-full
                           bg-blue-700 text-white
                           hover:bg-blue-700
                           hover:-translate-y-[1px]
@@ -671,13 +752,14 @@ export default function ChatbotCopilot({
                           disabled:bg-blue-200
                           transition-all duration-150
                           shadow-sm hover:shadow-md"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </button>
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
