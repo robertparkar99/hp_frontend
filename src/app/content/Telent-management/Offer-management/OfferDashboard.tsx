@@ -176,7 +176,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   }, [positions, candidate, position, candidateId]);
 
   useEffect(() => {
-    if (!sessionData || !sessionData.APP_URL) return;
+    if (!sessionData || !sessionData.APP_URL || !sessionData.token) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -202,7 +202,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
 
         // Try to fetch real offers data
         const offersResponse = await fetch(
-          `${sessionData.APP_URL}/api/offers?type=API&token=${sessionData.token}`,
+          `${sessionData.APP_URL}/api/offers?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -301,7 +301,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
         body: JSON.stringify({
           type: "API",
           token: sessionData.token,
-          sub_institute_id: "3",
+          sub_institute_id: sessionData.sub_institute_id,
           user_id: sessionData.user_id,
           position: newOffer.position,
           application_id: parseInt(newOffer.candidateId),
@@ -852,10 +852,10 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
                 </div>
 
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => sendOffer(offer)}>
+                  {/* <Button variant="outline" size="sm" onClick={() => sendOffer(offer)}>
                     <Send className="w-4 h-4 mr-2" />
                     Resend
-                  </Button>
+                  </Button> */}
                   <Button variant="destructive" size="sm" onClick={() => rejectOffer(offer)}>
                     <X className="w-4 h-4 mr-2" />
                     Reject
