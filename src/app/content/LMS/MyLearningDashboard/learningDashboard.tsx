@@ -208,12 +208,14 @@ const MyLearningDashboard: React.FC = () => {
           enrollment_status: item.enrollment_status || null
         }));
 
-        // Separate completed and in-progress courses
+        // Separate completed and in-progress courses based on enrollment_status
+        // Enrolled courses (enrollment_status === 'enrolled') → In Progress tab
+        // Completed courses (enrollment_status === 'completed') → Completed tab
         const completed = mapped.filter((course: Course) =>
-          completedCoursesKeys.includes(`${course.subject_id}-${course.standard_id}`)
+          course.enrollment_status === 'completed'
         );
         const inProgress = mapped.filter((course: Course) =>
-          !completedCoursesKeys.includes(`${course.subject_id}-${course.standard_id}`)
+          course.enrollment_status === 'enrolled'
         );
 
         setInProgressCourses(inProgress);
