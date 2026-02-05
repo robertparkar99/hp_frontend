@@ -78,6 +78,7 @@ interface JobApplication {
   deleted_at: string | null;
   current_company?: string;
   current_role?: string;
+  position?: string;
 }
 
 interface Candidate {
@@ -373,7 +374,12 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
             )
           : [];
 
-        const jobTitle = job ? job.title : `Job ID: ${application.job_id}`;
+        const jobTitle =
+  job?.title ||
+  application.position ||
+  (application as any).job_title ||
+  `Job ID: ${application.job_id}`;
+
 
         // Parse skills from string to array
         const skillsArray = application.skills ? application.skills.split(',').map(skill => skill.trim()) : [];

@@ -238,7 +238,8 @@ const ManagerDashboard = () => {
     <div className="min-h-screen bg-background rounded-xl">
       {/* <Navigation /> */}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"> */}
+      <main className="p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Manager Dashboard</h1>
           <p className="text-muted-foreground">Review requisitions and provide interview feedback</p>

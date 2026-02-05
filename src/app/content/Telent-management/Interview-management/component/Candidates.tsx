@@ -31,6 +31,7 @@ interface Candidate {
   candidate_id: number;
   candidate_name: string;
   position_id: number; // job_id
+  position: string;
   status: string;
   stage: string | null;
   applied_date: string;
@@ -165,7 +166,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
     if (term) {
       const filtered = candidates.filter(candidate =>
         candidate.candidate_name.toLowerCase().includes(term.toLowerCase()) ||
-        candidate.position_id.toString().toLowerCase().includes(term.toLowerCase()) ||
+        candidate.position.toLowerCase().includes(term.toLowerCase()) ||
         candidate.status.toLowerCase().includes(term.toLowerCase()) ||
         (candidate.stage || '').toLowerCase().includes(term.toLowerCase()) ||
         candidate.applied_date.toLowerCase().includes(term.toLowerCase()) ||
@@ -192,7 +193,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
     if (searchTerm) {
       filtered = filtered.filter(candidate =>
         candidate.candidate_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.position_id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+        candidate.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
         candidate.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (candidate.stage || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         candidate.applied_date.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -206,8 +207,8 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
       if (filters[key] && filters[key].trim() !== "") {
         filtered = filtered.filter((item) => {
           let value = '';
-          if (key === 'position_id') {
-            value = item.position_id.toString().toLowerCase();
+          if (key === 'position_name') {
+            value = item.position.toLowerCase();
           } else if (key === 'applied_date') {
             value = new Date(item.applied_date).toLocaleDateString().toLowerCase();
           } else if (key === 'next_interview') {
@@ -262,12 +263,13 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("position_id", e.target.value)}
+            onChange={(e) => handleColumnFilter("position_name", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: Candidate) => row.position_id.toString(),
+      selector: (row: Candidate) => row.position,
+      cell: (row: Candidate) => row.position,
       sortable: true,
       width: "180px"
     },
