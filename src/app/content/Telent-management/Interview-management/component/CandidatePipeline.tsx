@@ -19,11 +19,20 @@ interface PipelineData {
 export function CandidatePipeline() {
   const [pipelineData, setPipelineData] = useState<PipelineData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionData, setSessionData] = useState<any>(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      setSessionData(JSON.parse(userData));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchPipelineData = async () => {
+      if (!sessionData || !sessionData.APP_URL) return;
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/candidate-pipeline?sub_institute_id=3&type=API&token=1078|LFXrQZWcwl5wl9lhhC5EyFNDvKLPHxF9NogOmtW652502ae5');
+        const response = await fetch(`${sessionData.APP_URL}/api/candidate-pipeline?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
         const result = await response.json();
         if (result.data) {
           setPipelineData(result.data);
