@@ -5,7 +5,7 @@ import icon from '@/components/AppIcon';
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
 import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
-import { UserCircle, Search } from "lucide-react";
+import { UserCircle, Search, AlertCircle } from "lucide-react";
 
 import {
   Dialog,
@@ -124,6 +124,64 @@ interface SkillMatrixData {
   gap: "critical" | "high" | "medium" | "low";
 }
 
+// Task Progress Card API Response Interfaces
+interface TaskProgressResponse {
+  success: boolean;
+  data: {
+    daily: TaskPeriodData;
+    weekly: TaskPeriodData;
+    monthly: MonthlyTaskData;
+  };
+  message: string;
+}
+
+interface TaskPeriodData {
+  count: number;
+  tasks: TaskItem[];
+  date_range?: {
+    start: string;
+    end: string;
+  };
+  date_wise_counts: DateWiseCount[];
+}
+
+interface MonthlyTaskData {
+  count: number;
+  tasks: TaskItem[];
+  date_range?: {
+    start: string;
+    end: string;
+  };
+  month_wise_counts: MonthWiseCount[];
+}
+
+interface TaskItem {
+  id: number;
+  task_title: string;
+  status: string;
+  created_at: string;
+  updated_at: string | null;
+}
+
+interface DateWiseCount {
+  date: string;
+  Completed: number;
+  Pending: number;
+  "In Progress": number;
+  total: number;
+  PENDING: number;
+}
+
+interface MonthWiseCount {
+  month: string;
+  Completed: number;
+  Pending: number;
+  "In Progress": number;
+  total: number;
+  COMPLETED?: number;
+  PENDING: number;
+}
+
 export default function Dashboard() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [todayTasks, setTodayTasks] = useState<Task[]>([]);
@@ -198,6 +256,23 @@ export default function Dashboard() {
   const [maxLevel, setMaxLevel] = useState<number>(0);
   const [courses, setCourses] = useState<any[]>([]);
   const [assessments, setAssessments] = useState<any[]>([]);
+  
+  // Task Progress Card State
+  const [taskProgressData, setTaskProgressData] = useState<TaskProgressResponse | null>(null);
+  const [taskProgressLoading, setTaskProgressLoading] = useState<boolean>(true);
+  const [taskProgressError, setTaskProgressError] = useState<string | null>(null);
+  
+  // Tooltip state for chart hover
+  const [tooltipData, setTooltipData] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    date: string;
+    completed: number;
+    pending: number;
+    inProgress: number;
+    total: number;
+  } | null>(null);
 
   const attrArray = [
     { title: "knowledge", icon: "mdi-book-open-page-variant" },
@@ -263,6 +338,34 @@ export default function Dashboard() {
     }
   }, []);
 
+  // Fetch Task Progress Card data
+  const fetchTaskProgress = async () => {
+    if (!sessionData) return;
+    try {
+      setTaskProgressLoading(true);
+      const apiUrl = `${sessionData.url}/api/tasks/counts?token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`;
+      
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data: TaskProgressResponse = await response.json();
+      setTaskProgressData(data);
+      setTaskProgressError(null);
+    } catch (err) {
+      console.error("Error fetching task progress data:", err);
+      setTaskProgressError(err instanceof Error ? err.message : "Failed to fetch task data");
+    } finally {
+      setTaskProgressLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTaskProgress();
+  }, [sessionData, todayTasks, weekTasks]);
+
   // Fetch dashboard data
   useEffect(() => {
     if (!sessionData) return;
@@ -297,7 +400,42 @@ export default function Dashboard() {
         dailyData.push({ label: 'Pending', value: statusCounts.PENDING, status: 'PENDING' });
         setDailyChartData(dailyData);
         setWidgetOptions(data.widget ?? []);
-        setMySkills(data.mySKill ?? []);
+        
+        // Fetch saved skill ratings and filter mySkills to only show rated skills
+        const fetchRatedSkills = async () => {
+          try {
+            const currentJobroleId = currentUser?.jobrole_id || data.employeeList?.find((emp: any) => emp.id == sessionData.userId)?.jobrole_id;
+            
+            const ratingsRes = await fetch(
+              `${sessionData.url}/table_data/?table=user_rating_details&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[user_id]=${sessionData.userId}&filters[jobrole_id]=${currentJobroleId}`
+            );
+            
+            let ratedSkillIds: string[] = [];
+            if (ratingsRes.ok) {
+              const ratingsData = await ratingsRes.json();
+              if (ratingsData.length > 0 && ratingsData[0].skill_ids) {
+                const skillIdsObj = JSON.parse(ratingsData[0].skill_ids);
+                ratedSkillIds = Object.keys(skillIdsObj);
+              }
+            }
+            
+            // Filter mySkills to only include rated skills
+            const allSkills = data.mySKill ?? [];
+            const ratedSkills = ratedSkillIds.length > 0 
+              ? allSkills.filter((skill: any) => {
+                  const skillId = skill.skill_id?.toString() || skill.jobrole_skill_id?.toString();
+                  return ratedSkillIds.includes(skillId);
+                })
+              : allSkills;
+            
+            setMySkills(ratedSkills);
+          } catch (err) {
+            console.error("Error fetching rated skills:", err);
+            setMySkills(data.mySKill ?? []);
+          }
+        };
+        
+        fetchRatedSkills();
         setMyGrowth(data.myGrowth ?? []);
         setDepartments(data.departmentList || []);
         setSkillHeatmap(data.skillHeatmap || {});
@@ -342,14 +480,23 @@ export default function Dashboard() {
           if (courseData?.lms_subject) {
             Object.keys(courseData.lms_subject).forEach((category) => {
               courseData.lms_subject[category].forEach((item: any) => {
-                if (sessionData.userProfileName === "Admin" || item.jobrole === userJobrole) {
+                // Check if course is enrolled (either by enrollment_status or in localStorage)
+                const isEnrolled = item.enrollment_status !== null ||
+                  (() => {
+                    const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
+                    return enrolledCourses.some((c: any) => c.id === item.subject_id);
+                  })();
+                
+                // Only show enrolled courses
+                if (isEnrolled && (sessionData.userProfileName === "Admin" || item.jobrole === userJobrole)) {
                   const course = {
                     id: item.subject_id,
                     title: item.subject_name,
                     description: item.standard_name,
                     thumbnail: item.display_image || placeholderImage,
                     jobrole: item.jobrole,
-                    category: category
+                    category: category,
+                    enrollment_status: item.enrollment_status
                   };
                   mappedCourses.push(course);
                 }
@@ -520,18 +667,43 @@ export default function Dashboard() {
       });
     }
   }, [orgData, sisterConcerns]);
-  // Chart bar color
+  // Chart bar color based on task status
+  // ✅ Completed → Green line
+  // 🔵 In Progress → Blue line
+  // 🟡 Pending → Yellow line
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const normalizedStatus = status?.toUpperCase();
+    switch (normalizedStatus) {
       case "COMPLETED":
-        return "bg-blue-800";
+      case "DONE":
+        return "bg-green-500 hover:bg-green-400";
       case "IN_PROGRESS":
-        return "bg-blue-500";
+      case "INPROGRESS":
+      case "PROGRESS":
+        return "bg-blue-500 hover:bg-blue-400";
       case "PENDING":
-        return "bg-blue-300";
+      case "WAITING":
+        return "bg-yellow-400 hover:bg-yellow-300";
       default:
-        return "bg-gray-300";
+        return "bg-gray-300 hover:bg-gray-200";
     }
+  };
+
+  // Get bar color based on task counts (for bar chart visualization)
+  // Color priority: Completed > In Progress > Pending
+  const getBarColor = (completed: number, inProgress: number, pending: number) => {
+    if (completed > 0) return "bg-green-500 hover:bg-green-400";
+    if (inProgress > 0) return "bg-blue-500 hover:bg-blue-400";
+    if (pending > 0) return "bg-yellow-400 hover:bg-yellow-300";
+    return "bg-gray-300 hover:bg-gray-200";
+  };
+
+  // Get bar color based on task status - returns color based on highest priority status present
+  const getTaskBarColor = (Completed: number, InProgress: number, Pending: number) => {
+    if (Completed > 0) return "bg-green-500 hover:bg-green-400";
+    if (InProgress > 0) return "bg-blue-500 hover:bg-blue-400";
+    if (Pending > 0) return "bg-yellow-400 hover:bg-yellow-300";
+    return "bg-gray-300 hover:bg-gray-200";
   };
 
   const renderChart = (data: ChartData[]) => {
@@ -789,28 +961,289 @@ export default function Dashboard() {
               {/* Chart */}
               <div className="bg-white rounded-lg shadow p-4">
                 <div className="flex-1">
-                  <h2 className="font-semibold mb-4 text-center">Task Progress</h2>
-                  <Tabs defaultValue="weekly" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="daily">Daily</TabsTrigger>
-                      <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                      <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="daily">
-                      {renderChart(dailyChartData)}
-                    </TabsContent>
-                    <TabsContent value="weekly">
-                      {renderChart(weeklyChartData)}
-                    </TabsContent>
-                    <TabsContent value="monthly">
-                      {renderChart(monthlyChartData)}
-                    </TabsContent>
-                  </Tabs>
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <h2 className="font-semibold text-center">Task Progress</h2>
+                    <button 
+                      onClick={() => {
+                        const userData = localStorage.getItem("userData");
+                        if (userData) {
+                          const { token, sub_institute_id, user_id } = JSON.parse(userData);
+                          fetch(`${sessionData.url}/api/tasks/counts?token=${token}&sub_institute_id=${sub_institute_id}&user_id=${user_id}`)
+                            .then(res => res.json())
+                            .then(data => {
+                              setTaskProgressData(data);
+                              setTaskProgressError(null);
+                            })
+                            .catch(err => {
+                              console.error("Error refreshing task data:", err);
+                              setTaskProgressError(err instanceof Error ? err.message : "Failed to refresh");
+                            });
+                        }
+                      }}
+                      className="p-1 rounded hover:bg-gray-100 transition-colors"
+                      title="Refresh task data"
+                    >
+                      {/* <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={taskProgressLoading ? "animate-spin" : ""}>
+                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                        <path d="M21 3v5h-5" />
+                      </svg> */}
+                    </button>
+                  </div>
+                  
+                  {taskProgressLoading ? (
+                    <div className="flex items-center justify-center h-48">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : taskProgressError ? (
+                    <div className="flex items-center justify-center h-48 text-red-500">
+                      <AlertCircle className="h-5 w-5 mr-2" />
+                      <span>Error: {taskProgressError}</span>
+                    </div>
+                  ) : taskProgressData && taskProgressData.success ? (
+                    <Tabs defaultValue="weekly" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="daily">Daily</TabsTrigger>
+                        <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                        <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                      </TabsList>
+                      
+                      {/* Daily */}
+                      <TabsContent value="daily">
+                        {taskProgressData.data.daily.date_wise_counts.length > 0 ? (
+                          <div className="relative">
+                            <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
+                              <span>{Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total))}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total)) * 0.8)}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total)) * 0.6)}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total)) * 0.4)}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total)) * 0.2)}</span>
+                              <span>0</span>
+                            </div>
+                            <div className="ml-6 h-48 flex justify-between items-end gap-2">
+                              {taskProgressData.data.daily.date_wise_counts.map((item, i) => {
+                                const maxVal = Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total), 1);
+                                const height = (item.total / maxVal) * 100;
+                                return (
+                                  <div 
+                                    key={i} 
+                                    className="flex flex-col items-center flex-1 cursor-pointer"
+                                    onMouseEnter={(e) => {
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setTooltipData({
+                                        visible: true,
+                                        x: rect.left + rect.width / 2,
+                                        y: rect.top,
+                                        date: item.date,
+                                        completed: item.Completed,
+                                        pending: item.PENDING,
+                                        inProgress: item["In Progress"],
+                                        total: item.total
+                                      });
+                                    }}
+                                    onMouseLeave={() => setTooltipData(null)}
+                                  >
+                                    <div className={`w-full rounded-t transition-colors ${getTaskBarColor(item.Completed, item["In Progress"], item.PENDING)}`} style={{ height: `${height}%`, minHeight: item.total > 0 ? '4px' : '0' }} />
+                                    <span className="text-xs text-gray-500 mt-2">
+                                      {new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                         {tooltipData && tooltipData.visible && (
+  <div
+   className="fixed z-50 w-52 rounded-lg bg-white text-gray-800 text-xs shadow-lg border border-gray-200 p-3 pointer-events-none transition-opacity duration-150"
+
+    style={{
+      left: tooltipData.x,
+      top: tooltipData.y - 10,
+      transform: "translateX(-50%) translateY(-100%)",
+    }}
+  >
+    {/* Date */}
+    <div className="text-sm font-semibold text-center mb-2 text-gray-700">
+      {tooltipData.date}
+    </div>
+
+    {/* Status rows */}
+    <div className="space-y-1">
+      <div className="flex justify-between">
+        <span className="text-green-500">Completed</span>
+        <span className="font-medium">{tooltipData.completed}</span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-blue-500">In Progress</span>
+        <span className="font-medium">{tooltipData.inProgress}</span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-yellow-400">Pending</span>
+        <span className="font-medium">{tooltipData.pending}</span>
+      </div>
+    </div>
+
+    {/* Total */}
+    <div className="mt-2 pt-2 border-t border-gray-200 flex justify-between font-semibold text-gray-700">
+      <span>Total</span>
+      <span>{tooltipData.total}</span>
+    </div>
+  </div>
+)}
+
+                          </div>
+                        ) : (
+                          <p className="text-center text-gray-500 py-8">No daily data</p>
+                        )}
+                      </TabsContent>
+                      
+                      {/* Weekly */}
+                      <TabsContent value="weekly">
+                        {taskProgressData.data.weekly.date_wise_counts.length > 0 ? (
+                          <div className="relative">
+                            <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
+                              <span>{Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total))}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.8)}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.6)}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.4)}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.2)}</span>
+                              <span>0</span>
+                            </div>
+                            <div className="ml-6 h-48 flex justify-between items-end gap-2">
+                              {taskProgressData.data.weekly.date_wise_counts.map((item, i) => {
+                                const maxVal = Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total), 1);
+                                const height = (item.total / maxVal) * 100;
+                                return (
+                                  <div 
+                                    key={i} 
+                                    className="flex flex-col items-center flex-1 cursor-pointer"
+                                    onMouseEnter={(e) => {
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setTooltipData({
+                                        visible: true,
+                                        x: rect.left + rect.width / 2,
+                                        y: rect.top,
+                                        date: item.date,
+                                        completed: item.Completed,
+                                        pending: item.PENDING,
+                                        inProgress: item["In Progress"],
+                                        total: item.total
+                                      });
+                                    }}
+                                    onMouseLeave={() => setTooltipData(null)}
+                                  >
+                                    <div className={`w-full rounded-t transition-colors ${getTaskBarColor(item.Completed, item["In Progress"], item.PENDING)}`} style={{ height: `${height}%`, minHeight: item.total > 0 ? '4px' : '0' }} />
+                                    <span className="text-xs text-gray-500 mt-2">
+                                      {new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                            {/* Tooltip */}
+                            {tooltipData && tooltipData.visible && (
+                              <div 
+                                className="fixed z-50 w-52 rounded-lg bg-white text-gray-800 text-xs shadow-lg border border-gray-200 p-3 pointer-events-none transition-opacity duration-150"
+
+                                style={{ 
+                                  left: tooltipData.x, 
+                                  top: tooltipData.y - 10,
+                                  transform: 'translateX(-50%) translateY(-100%)'
+                                }}
+                              >
+                                <p className="font-semibold mb-1">{new Date(tooltipData.date).toLocaleDateString()}</p>
+                                <div className="space-y-0.5">
+                                  <p className="text-green-500">Completed: {tooltipData.completed}</p>
+                                  <p className="text-blue-500">In Progress: {tooltipData.inProgress}</p>
+                                  <p className="text-yellow-400">Pending: {tooltipData.pending}</p>
+                                  <p className="font-semibold mt-1 border-t border-gray-700 pt-1">Total: {tooltipData.total}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-center text-gray-500 py-8">No weekly data</p>
+                        )}
+                      </TabsContent>
+                      
+                      {/* Monthly */}
+                      <TabsContent value="monthly">
+                        {taskProgressData.data.monthly.month_wise_counts.length > 0 ? (
+                          <div className="relative">
+                            <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
+                              <span>{Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total))}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.8)}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.6)}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.4)}</span>
+                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.2)}</span>
+                              <span>0</span>
+                            </div>
+                            <div className="ml-6 h-48 flex justify-between items-end gap-2">
+                              {taskProgressData.data.monthly.month_wise_counts.map((item, i) => {
+                                const maxVal = Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total), 1);
+                                const height = (item.total / maxVal) * 100;
+                                return (
+                                  <div 
+                                    key={i} 
+                                    className="flex flex-col items-center flex-1 cursor-pointer"
+                                    onMouseEnter={(e) => {
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setTooltipData({
+                                        visible: true,
+                                        x: rect.left + rect.width / 2,
+                                        y: rect.top,
+                                        date: item.month,
+                                        completed: item.Completed,
+                                        pending: item.PENDING,
+                                        inProgress: item["In Progress"],
+                                        total: item.total
+                                      });
+                                    }}
+                                    onMouseLeave={() => setTooltipData(null)}
+                                  >
+                                    <div className={`w-full rounded-t transition-colors ${getTaskBarColor(item.Completed, item["In Progress"], item.PENDING)}`} style={{ height: `${height}%`, minHeight: item.total > 0 ? '4px' : '0' }} />
+                                    <span className="text-xs text-gray-500 mt-2">{item.month}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                            {/* Tooltip */}
+                            {tooltipData && tooltipData.visible && (
+                              <div 
+                                className="fixed z-50 w-52 rounded-lg bg-white text-gray-800 text-xs shadow-lg border border-gray-200 p-3 pointer-events-none transition-opacity duration-150"
+
+                                style={{ 
+                                  left: tooltipData.x, 
+                                  top: tooltipData.y - 10,
+                                  transform: 'translateX(-50%) translateY(-100%)'
+                                }}
+                              >
+                                <p className="font-semibold mb-1">{tooltipData.date}</p>
+                                <div className="space-y-0.5">
+                                  <p className="text-green-400">Completed: {tooltipData.completed}</p>
+                                  <p className="text-blue-400">In Progress: {tooltipData.inProgress}</p>
+                                  <p className="text-yellow-400">Pending: {tooltipData.pending}</p>
+                                  <p className="font-semibold mt-1 border-t border-gray-700 pt-1">Total: {tooltipData.total}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-center text-gray-500 py-8">No monthly data</p>
+                        )}
+                      </TabsContent>
+                    </Tabs>
+                  ) : (
+                    <p className="text-center text-gray-500 py-8">No task data available</p>
+                  )}
 
                   {/* Chart Legend */}
                   <div className="flex justify-center mt-4 gap-4 text-xs">
                     <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 bg-blue-800 rounded"></div>
+                      <div className="w-3 h-3 bg-green-500 rounded"></div>
                       <span>Completed</span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -818,7 +1251,7 @@ export default function Dashboard() {
                       <span>In Progress</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 bg-blue-300 rounded"></div>
+                      <div className="w-3 h-3 bg-yellow-400 rounded"></div>
                       <span>Pending</span>
                     </div>
                     <div className="flex items-center gap-1">
