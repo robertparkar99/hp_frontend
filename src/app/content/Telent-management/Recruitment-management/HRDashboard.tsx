@@ -712,7 +712,8 @@ const HRDashboard = () => {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 lg:py-6">
+      {/* <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 lg:py-6"> */}
+      <main className="p-6">
         {/* Desktop Header */}
         <div className="hidden lg:flex justify-between items-center mb-6">
           <div>

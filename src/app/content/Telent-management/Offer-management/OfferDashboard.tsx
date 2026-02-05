@@ -32,7 +32,7 @@ interface Offer {
   jobTitle: string;
   salary: string;
   startDate: string;
-  status: 'sent' | 'accepted' | 'rejected' | 'expired';
+  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
   createdAt: string;
   expiresAt: string;
   sentAt?: string;
@@ -70,6 +70,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   const [dialogType, setDialogType] = useState<'details' | 'contract'>('details');
   const [sessionData, setSessionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isCreatingOffer, setIsCreatingOffer] = useState(false);
 
   const [newOffer, setNewOffer] = useState({
     candidateId: '',
@@ -175,11 +176,30 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   }, [positions, candidate, position, candidateId]);
 
   useEffect(() => {
-    if (!sessionData) return;
+    if (!sessionData || !sessionData.APP_URL) return;
 
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Try to fetch job-applications data for candidate names
+        const applicationsResponse = await fetch(
+          `${sessionData.APP_URL}/api/job-applications?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        let candidateMap: { [key: number]: string } = {};
+        if (applicationsResponse.ok) {
+          const applicationsResult = await applicationsResponse.json();
+          applicationsResult.data.forEach((app: any) => {
+            const fullName = [app.first_name, app.middle_name, app.last_name].filter(Boolean).join(' ');
+            candidateMap[app.id] = fullName || `Candidate ${app.id}`;
+          });
+        }
+
         // Try to fetch real offers data
         const offersResponse = await fetch(
           `${sessionData.APP_URL}/api/offers?type=API&token=${sessionData.token}`,
@@ -192,7 +212,31 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
 
         if (offersResponse.ok) {
           const offersResult = await offersResponse.json();
-          setOffers(offersResult.data || []);
+          const mappedOffers = offersResult.data.map((item: any) => {
+            const createdAt = new Date(item.created_at).toISOString().split('T')[0];
+            const startDate = item.start_date;
+            const expiresAt = item.expires_at ? new Date(item.expires_at).toISOString().split('T')[0] : '';
+            const sentAt = item.sent_at ? new Date(item.sent_at).toISOString().split('T')[0] : undefined;
+            const rejectedAt = item.rejected_at ? new Date(item.rejected_at).toISOString().split('T')[0] : undefined;
+            return {
+              id: item.id,
+              candidateId: item.application_id,
+              candidateName: candidateMap[item.application_id] || `Candidate ${item.application_id}`,
+              position: item.position,
+              jobTitle: item.position,
+              salary: item.salary,
+              startDate,
+              status: item.status as 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired',
+              createdAt,
+              expiresAt,
+              sentAt,
+              acceptedAt: undefined,
+              rejectedAt,
+              offerLetterUrl: item.offer_letter_url,
+              notes: item.notes,
+            };
+          });
+          setOffers(mappedOffers);
         } else {
           // No data available
           setOffers([]);
@@ -247,8 +291,9 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   const createOffer = async () => {
     if (!sessionData) return;
 
+    setIsCreatingOffer(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/talent-offers', {
+      const response = await fetch(`${sessionData.APP_URL}/api/talent-offers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -280,9 +325,9 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           jobTitle: newOffer.jobTitle,
           salary: newOffer.salary,
           startDate: newOffer.startDate,
-          status: 'sent',
+          status: 'draft',
           createdAt: new Date().toISOString().split('T')[0],
-          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 14 days from now
+          expiresAt: '',
           notes: newOffer.notes
         };
         setOffers(prev => [...prev, newOfferWithId]);
@@ -295,6 +340,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     } catch (error) {
       console.error('Error creating offer:', error);
       alert('Error creating offer');
+    } finally {
+      setIsCreatingOffer(false);
     }
   };
 
@@ -302,13 +349,16 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     if (!sessionData) return;
 
     try {
-      const response = await fetch(`${sessionData.APP_URL}/api/offers/${offerId}`, {
+      const response = await fetch(`${sessionData.APP_URL}/api/talent-offers/${offerId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.token}`
         },
-        body: JSON.stringify(updates)
+        body: JSON.stringify({
+          type: "API",
+          token: sessionData.token,
+          ...updates
+        })
       });
 
       if (response.ok) {
@@ -330,13 +380,14 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     if (!sessionData) return;
 
     try {
-      const response = await fetch(`${sessionData.APP_URL}/api/offers/${offer.id}/send`, {
+      const response = await fetch(`${sessionData.APP_URL}/api/talent-offers/${offer.id}/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.token}`
         },
         body: JSON.stringify({
+          type: "API",
+          token: sessionData.token,
           candidateEmail: `${offer.candidateName.toLowerCase().replace(' ', '.')}@example.com`,
           offerDetails: offer
         })
@@ -345,7 +396,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
       if (response.ok) {
         updateOffer(offer.id, {
           status: 'sent',
-          sentAt: new Date().toISOString().split('T')[0]
+          sentAt: new Date().toISOString().split('T')[0],
+          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 14 days from now
         });
         alert('Offer sent successfully!');
       } else {
@@ -364,13 +416,14 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     if (!reason) return;
 
     try {
-      const response = await fetch(`${sessionData.APP_URL}/api/offers/${offer.id}/reject`, {
+      const response = await fetch(`${sessionData.APP_URL}/api/talent-offers/${offer.id}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.token}`
         },
         body: JSON.stringify({
+          type: "API",
+          token: sessionData.token,
           candidateEmail: `${offer.candidateName.toLowerCase().replace(' ', '.')}@example.com`,
           rejectionReason: reason,
           offerDetails: offer
@@ -410,6 +463,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'draft':
+        return <Badge variant="secondary">Draft</Badge>;
       case 'sent':
         return <Badge className="bg-blue-100 text-blue-800">Sent</Badge>;
       case 'accepted':
@@ -426,6 +481,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   const getStatusCounts = () => {
     return {
       total: offers.length,
+      draft: offers.filter(o => o.status === 'draft').length,
       sent: offers.filter(o => o.status === 'sent').length,
       accepted: offers.filter(o => o.status === 'accepted').length,
       rejected: offers.filter(o => o.status === 'rejected').length
@@ -647,8 +703,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">{stats.sent}</div>
-            <p className="text-xs text-muted-foreground">Sent</p>
+            <div className="text-2xl font-bold text-gray-600">{stats.draft}</div>
+            <p className="text-xs text-muted-foreground">Draft</p>
           </CardContent>
         </Card>
         <Card>
@@ -730,6 +786,45 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
               <p className="text-gray-500">No offers found.</p>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="draft" className="space-y-4">
+          {offers.filter(o => o.status === 'draft').map((offer) => (
+            <Card key={offer.id}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-gray-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">{offer.candidateName}</h3>
+                      <p className="text-sm text-gray-600">{offer.position}</p>
+                      <p className="text-xs text-gray-500">Created: {offer.createdAt}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {getStatusBadge(offer.status)}
+                    <div className="mt-2">
+                      <p className="text-sm font-medium">{offer.salary}</p>
+                      <p className="text-xs text-gray-500">Start: {offer.startDate}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => sendOffer(offer)}>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => rejectOffer(offer)}>
+                    <X className="w-4 h-4 mr-2" />
+                    Reject
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </TabsContent>
 
         <TabsContent value="sent" className="space-y-4">

@@ -31,70 +31,214 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+
+interface FunnelItem {
+  name: string;
+  value: number;
+  fill?: string;
+}
 
 const Index = () => {
-  // KPI Data
-  const kpiData = [
+  const [dropoffData, setDropoffData] = useState<any[]>([]);
+  const [funnelData, setFunnelData] = useState<any[]>([]);
+  const [requisitionData, setRequisitionData] = useState<any[]>([]);
+  const [kpiData, setKpiData] = useState<any[]>([]);
+  const [sessionData, setSessionData] = useState<any>(null);
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      setSessionData(JSON.parse(userData));
+    }
+  }, []);
+
+  const { domain, ticks } = useMemo(() => {
+    if (funnelData.length === 0) return { domain: [0, 1400], ticks: [0, 350, 700, 1050, 1400] };
+    const maxValue = Math.max(...funnelData.map((d: any) => d.value));
+    const domain = [0, maxValue];
+    const ticks = [0, Math.round(maxValue / 4), Math.round(maxValue / 2), Math.round(3 * maxValue / 4), maxValue];
+    return { domain, ticks };
+  }, [funnelData]);
+
+  // KPI Structure
+  const kpiStructure = [
     {
       title: "Open Positions",
-      value: "24",
       change: "+3",
       trend: "up",
       icon: Briefcase,
     },
     {
       title: "Interview-to-Offer Ratio",
-      value: "68%",
       change: "+5%",
       trend: "up",
       icon: Target,
     },
     {
       title: "Offer Acceptance Rate",
-      value: "85%",
       change: "+2%",
       trend: "up",
       icon: Award,
     },
     {
       title: "Candidate Drop-off Rate",
-      value: "32%",
       change: "-4%",
       trend: "down",
       icon: Users,
     },
     {
       title: "Team Performance Trend",
-      value: "4.2",
       change: "+0.3",
       trend: "up",
       icon: TrendingUp,
     },
     {
       title: "Avg Time-to-Fill",
-      value: "28 days",
       change: "-3 days",
       trend: "down",
       icon: Clock,
     },
   ];
 
-  // Funnel Data with specific colors matching the image
-  const funnelData = [
-    { name: "Applications", value: 1250, fill: "#3b82f6" }, // Blue
-    { name: "Shortlisted", value: 450, fill: "#10b981" }, // Green
-    { name: "Interviewed", value: 180, fill: "#f59e0b" }, // Amber
-    { name: "Offers", value: 85, fill: "#ef4444" }, // Red
-    { name: "Hired", value: 72, fill: "#8b5cf6" }, // Purple
-  ];
 
-  // Drop-off Analysis Data
-  const dropoffData = [
-    { stage: "Application", voluntary: 120, involuntary: 680 },
-    { stage: "Shortlist", voluntary: 80, involuntary: 190 },
-    { stage: "Interview", voluntary: 25, involuntary: 70 },
-    { stage: "Offer", voluntary: 8, involuntary: 5 },
-  ];
+  const fetchDropoffData = async () => {
+    try {
+      const response = await fetch(
+        `${sessionData.APP_URL}/api/talent-acquisition/dropoff?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Dropoff data:', result.data);
+        setDropoffData(Array.isArray(result.data) ? result.data : []);
+      } else {
+        // Keep default data if API fails
+        console.warn("Failed to fetch dropoff data");
+      }
+    } catch (error) {
+      console.warn("Error fetching dropoff data:", error);
+    }
+  };
+
+  const fetchFunnelData = async () => {
+    try {
+      const response = await fetch(
+        `${sessionData.APP_URL}/api/talent-acquisition/funnel?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Funnel data:', result.data);
+        const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+        setFunnelData(
+          Array.isArray(result.data)
+            ? result.data.map((item: any, index: number) => ({
+              ...item,
+              fill: item.fill || colors[index % colors.length],
+            }))
+            : []
+        );
+      } else {
+        // Keep default data if API fails
+        console.warn("Failed to fetch funnel data");
+      }
+    } catch (error) {
+      console.warn("Error fetching funnel data:", error);
+    }
+  };
+
+  const fetchKpiData = async () => {
+    try {
+      const response = await fetch(
+        `${sessionData.APP_URL}/api/talent-acquisition/kpis?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('KPI data:', result);
+        // Update the structure with API values
+        const updatedKpiData = kpiStructure.map(kpi => {
+          if (kpi.title === "Open Positions") {
+            return { ...kpi, value: result.open_positions.toString() };
+          } else if (kpi.title === "Interview-to-Offer Ratio") {
+            return { ...kpi, value: result.interview_to_offer_ratio.toString() };
+          } else if (kpi.title === "Candidate Drop-off Rate") {
+            return { ...kpi, value: result.drop_off_rate.toFixed(2) };
+          }
+          return { ...kpi, value: "N/A" };
+        });
+        setKpiData(updatedKpiData);
+      } else {
+        console.warn("Failed to fetch KPI data");
+        setKpiData(kpiStructure.map(k => ({ ...k, value: "N/A" })));
+      }
+    } catch (error) {
+      console.warn("Error fetching KPI data:", error);
+      setKpiData(kpiStructure.map(k => ({ ...k, value: "Error" })));
+    }
+  };
+
+  const fetchRequisitionData = async () => {
+    try {
+      const response = await fetch(
+        `${sessionData.APP_URL}/api/talent-acquisition/requisitions?page=1&limit=10&department=all-dept&location=all-loc&timePeriod=monthly&jobLevel=all-level&diversity=all-gender&status=active&sortBy=age&order=desc&type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Requisition data:', result.data);
+        setRequisitionData(Array.isArray(result.data) ? result.data : []);
+      } else {
+        // Keep default data if API fails
+        console.warn("Failed to fetch requisition data");
+      }
+    } catch (error) {
+      console.warn("Error fetching requisition data:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!sessionData) {
+      console.log('No session data, no data available');
+      setFunnelData([]);
+      setDropoffData([]);
+      setKpiData(kpiStructure.map(k => ({ ...k, value: "N/A" })));
+      setRequisitionData([]);
+      return;
+    }
+
+    // Fetch all data in parallel to improve performance
+    Promise.all([
+      fetchKpiData(),
+      fetchDropoffData(),
+      fetchFunnelData(),
+      fetchRequisitionData()
+    ]).catch((error) => {
+      console.warn("Error fetching some data:", error);
+    });
+  }, [sessionData]);
+
+
 
   // Team Performance Trend Data
   const performanceData = [
@@ -132,9 +276,8 @@ const Index = () => {
               <div className="flex items-center justify-between gap-4 pt-1 border-t border-border/50">
                 <span className="text-xs text-muted-foreground">Change:</span>
                 <span
-                  className={`text-xs font-semibold flex items-center gap-1 ${
-                    change >= 0 ? "text-success" : "text-destructive"
-                  }`}
+                  className={`text-xs font-semibold flex items-center gap-1 ${change >= 0 ? "text-success" : "text-destructive"
+                    }`}
                 >
                   {change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {change >= 0 ? "+" : ""}
@@ -149,49 +292,6 @@ const Index = () => {
     return null;
   };
 
-  // Requisition Table Data
-  const requisitionData = [
-    {
-      title: "Senior React Developer",
-      age: 15,
-      interviewed: 8,
-      offers: 2,
-      hires: 1,
-      status: "Active",
-    },
-    {
-      title: "Product Manager",
-      age: 32,
-      interviewed: 12,
-      offers: 1,
-      hires: 0,
-      status: "Active",
-    },
-    {
-      title: "UX Designer",
-      age: 8,
-      interviewed: 5,
-      offers: 1,
-      hires: 1,
-      status: "Closed",
-    },
-    {
-      title: "Backend Engineer",
-      age: 45,
-      interviewed: 6,
-      offers: 0,
-      hires: 0,
-      status: "Active",
-    },
-    {
-      title: "DevOps Engineer",
-      age: 22,
-      interviewed: 9,
-      offers: 2,
-      hires: 1,
-      status: "Active",
-    },
-  ];
 
   // Alerts Data
   const alerts = [
@@ -244,55 +344,54 @@ const Index = () => {
 
         {/* KPI Tiles */}
         {/* KPI Tiles */}
-<section className="mb-8">
-  <h2 className="text-lg font-semibold mb-6 text-foreground">
-    Key Performance Indicators
-  </h2>
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold mb-6 text-foreground">
+            Key Performance Indicators
+          </h2>
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-5">
-    {kpiData.map((kpi, index) => (
-      <Card
-        key={index}
-        className="rounded-2xl border border-border bg-card hover:shadow-lg transition-all duration-200"
-      >
-        <CardContent className="p-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground font-medium mb-1">
-                {kpi.title}
-              </p>
-              <p className="text-3xl font-extrabold text-foreground leading-tight">
-                {kpi.value}
-              </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-5">
+            {kpiData.map((kpi, index) => (
+              <Card
+                key={index}
+                className="rounded-2xl border border-border bg-card hover:shadow-lg transition-all duration-200"
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground font-medium mb-1">
+                        {kpi.title}
+                      </p>
+                      <p className="text-3xl font-extrabold text-foreground leading-tight">
+                        {kpi.value}
+                      </p>
 
-              <div className="flex items-center gap-1 mt-2">
-                {kpi.trend === "up" ? (
-                  <TrendingUp className="h-3.5 w-3.5 text-green-600" />
-                ) : (
-                  <TrendingDown className="h-3.5 w-3.5 text-red-500" />
-                )}
-                <span
-                  className={`text-sm font-semibold ${
-                    kpi.trend === "up" ? "text-green-600" : "text-red-500"
-                  }`}
-                >
-                  {kpi.change}
-                </span>
-                <span className="text-xs text-muted-foreground ml-1">
-                  vs last period
-                </span>
-              </div>
-            </div>
+                      <div className="flex items-center gap-1 mt-2">
+                        {kpi.trend === "up" ? (
+                          <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                        ) : (
+                          <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+                        )}
+                        <span
+                          className={`text-sm font-semibold ${kpi.trend === "up" ? "text-green-600" : "text-red-500"
+                            }`}
+                        >
+                          {kpi.change}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-1">
+                          vs last period
+                        </span>
+                      </div>
+                    </div>
 
-            <div className="p-2.5 bg-primary/10 rounded-xl">
-              <kpi.icon className="h-5 w-5 text-primary" />
-            </div>
+                    <div className="p-2.5 bg-primary/10 rounded-xl">
+                      <kpi.icon className="h-5 w-5 text-primary" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </CardContent>
-      </Card>
-    ))}
-  </div>
-</section>
+        </section>
 
 
         {/* Charts Row 1 */}
@@ -322,8 +421,8 @@ const Index = () => {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    domain={[0, 1400]}
-                    ticks={[0, 350, 700, 1050, 1400]}
+                    domain={domain}
+                    ticks={ticks}
                   />
                   <YAxis
                     type="category"
@@ -506,36 +605,33 @@ const Index = () => {
                   alert.type === "error"
                     ? "border-red-200 bg-red-50"
                     : alert.type === "warning"
-                    ? "border-amber-200 bg-amber-50"
-                    : "border-green-200 bg-green-50"
+                      ? "border-amber-200 bg-amber-50"
+                      : "border-green-200 bg-green-50"
                 }
               >
                 <alert.icon
-                  className={`h-4 w-4 ${
-                    alert.type === "error"
+                  className={`h-4 w-4 ${alert.type === "error"
                       ? "text-red-600"
                       : alert.type === "warning"
                       ? "text-amber-600"
                       : "text-green-600"
-                  }`}
+                    }`}
                 />
                 <AlertDescription>
-                  <p className={`font-semibold mb-1 ${
-                    alert.type === "error"
+                  <p className={`font-semibold mb-1 ${alert.type === "error"
                       ? "text-red-800"
                       : alert.type === "warning"
                       ? "text-amber-800"
                       : "text-green-800"
-                  }`}>
+                    }`}>
                     {alert.title}
                   </p>
-                  <p className={`text-sm ${
-                    alert.type === "error"
+                  <p className={`text-sm ${alert.type === "error"
                       ? "text-red-700"
                       : alert.type === "warning"
                       ? "text-amber-700"
                       : "text-green-700"
-                  }`}>
+                    }`}>
                     {alert.description}
                   </p>
                 </AlertDescription>
