@@ -134,7 +134,6 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
             }
           });
 
-
           // Assign scores to candidates
           candidatesWithScores = candidateData.data.map((candidate: Candidate) => {
             const key = `${candidate.candidate_id}_${candidate.position_id}`;
@@ -144,10 +143,10 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
               score: scoreMap[key] ? scoreMap[key].toString() : null,
             };
           });
-
-          setCandidates(candidatesWithScores);
-          setFilteredData(candidatesWithScores);
         }
+
+        setCandidates(candidatesWithScores);
+        setFilteredData(candidatesWithScores);
       }
     }
     catch (error) {
