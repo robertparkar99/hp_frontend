@@ -61,12 +61,13 @@ const Navbar: React.FC = () => {
       ) : (
         <>
           {/* 🔹 Top Navbar */}
-          <nav className="flex justify-between items-center flex-wrap gap-10 px-[16px] py-[10px] bg-white shadow-[0px_4px_4px_rgba(71,160,255,0.25)]">
+          <nav className="w-full max-w-full flex justify-between items-center flex-wrap gap-2 sm:gap-4 px-3 sm:px-4 py-[10px] bg-white shadow-[0px_4px_4px_rgba(71,160,255,0.25)]">
             <UserProfile userSessionData={sessionData} />
             <LogoSection />
             <button
               onClick={handleMenuToggle}
-              className="lg:hidden text-gray-600 hover:text-blue-500"
+              className="lg:hidden min-h-10 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             >
               {isMenuOpen ? "Close" : "Menu"}
             </button>
