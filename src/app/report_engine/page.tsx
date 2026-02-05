@@ -7,7 +7,7 @@ const ReportEnginePage = () => {
                 title="Dynamic Report Engine"
                 width="1140"
                 height="541.25"
-                src="https://app.powerbi.com/reportEmbed?reportId=630ea57b-f6ef-459a-8de0-34cbf2f4c880&autoAuth=true&ctid=2aec0306-98a8-409a-aba6-fd9c91a591dd"
+                src="https://lookerstudio.google.com/embed/reporting/22f1fa8e-3aeb-4d85-9a77-2adec0b116a0/page/NTbnF"
                 frameBorder="0"
                 allowFullScreen={true}
             ></iframe>
