@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StatusBadge from '../../AgentDashboard/Component/StatusBadge';
 import { ArrowLeft, Settings, Play, Pause } from 'lucide-react';
+import { KnowledgeToolForm, EmailToolForm, VisualizationToolForm, WebSearchToolForm, SQLExecutionToolForm, FileToolForm } from './ToolForms';
 // Agent Detail Component
 export default function AgentDetail() {
   const searchParams = useSearchParams();
@@ -14,6 +15,29 @@ export default function AgentDetail() {
   const router = useRouter();
   const [runs, setRuns] = useState<any[]>([]);
   const [agent, setAgent] = useState<any>(null);
+  const [agentTools, setAgentTools] = useState<string[]>([]);
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
+
+  // const handleToolSubmit = async (data: any) => {
+  //   try {
+  //     // Assuming there's an API endpoint to submit tool data
+  //     const response = await fetch('/api/agentic_tools/submit', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify(data),
+  //     });
+  //     if (response.ok) {
+  //       alert('Tool data submitted successfully');
+  //       setSelectedTool(null); // Hide form after submit
+  //     } else {
+  //       alert('Failed to submit tool data');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error submitting tool data:', error);
+  //     alert('Error submitting tool data');
+  //   }
+  // };
+
   const agentRuns = runs.filter((r) => r.agent_id === id);
 
   const startAgentRun = async (agentId: string) => {
@@ -38,6 +62,30 @@ export default function AgentDetail() {
     fetchRuns()
       ;
   };
+  const fetchAgentTools = async () => {
+    if (!id) return;
+
+    try {
+      const res = await fetch(
+        `https://karan-01-agentic-tools.hf.space/api/agentic_tools/${id}`
+      );
+
+      if (!res.ok) {
+        console.error("❌ Failed to fetch agent tools");
+        return;
+      }
+
+      const data = await res.json();
+
+      console.log("✅ Agent Tools API Response:", data);
+
+      // tools array set
+      setAgentTools(Array.isArray(data.tools) ? data.tools : []);
+    } catch (error) {
+      console.error("❌ Error fetching agent tools:", error);
+    }
+  };
+
 
   const fetchRuns = async () => {
     try {
@@ -96,6 +144,7 @@ export default function AgentDetail() {
 
     fetchAgent();
     fetchRuns();
+    fetchAgentTools();
   }, [id]);
 
   if (!agent) {
@@ -212,12 +261,34 @@ export default function AgentDetail() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {agent.tools.map((tool: string) => (
-                  <Badge key={tool} variant="secondary">
-                    {tool}
-                  </Badge>
-                ))}
+                {agentTools.length > 0 ? (
+                  agentTools.map((tool) => (
+                    <Badge
+                      key={tool}
+                      variant={selectedTool === tool ? "default" : "secondary"}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedTool(selectedTool === tool ? null : tool)}
+                    >
+                      {tool}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No tools assigned to this agent
+                  </p>
+                )}
               </div>
+              {selectedTool && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold mb-2">Fill in the form for tool execution</h3>
+                  {selectedTool === 'knowledge_base' && <KnowledgeToolForm agentId={agent.id}  />}
+                  {selectedTool === 'email' && <EmailToolForm agentId={agent.id}  />}
+                  {selectedTool === 'data_viz' && <VisualizationToolForm agentId={agent.id} />}
+                  {selectedTool === 'web_search' && <WebSearchToolForm agentId={agent.id}  />}
+                  {selectedTool === 'sql_query' && <SQLExecutionToolForm agentId={agent.id} />}
+                  {selectedTool === 'file' && <FileToolForm agentId={agent.id} />}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

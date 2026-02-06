@@ -93,6 +93,14 @@ const validateStep = (step: number, data: FormDataType): ErrorType => {
   return errors;
 };
 
+interface SessionData {
+  url?: string;
+  token?: string;
+  sub_institute_id?: string;
+  org_type?: string;
+  user_profile_id?: string;
+}
+
 
 export default function CreateAgent() {
   const router = useRouter();
@@ -101,6 +109,7 @@ export default function CreateAgent() {
   const isEdit = !!editId;
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [sessionData, setSessionData] = useState<SessionData>({});
 
   const [formData, setFormData] = useState<FormDataType>({
     name: "",
@@ -119,7 +128,19 @@ export default function CreateAgent() {
   const [createdAgent, setCreatedAgent] = useState<any>(null);
   const [sentPayload, setSentPayload] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [moduleOptions, setModuleOptions] = useState<{ id: number, menu_name: string }[]>([]);
 
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        const { APP_URL, token, sub_institute_id, org_type, user_profile_id } =
+          JSON.parse(userData);
+        setSessionData({ url: APP_URL, token, sub_institute_id, org_type, user_profile_id });
+      }
+    }
+  }, []);
   // Load draft
   useEffect(() => {
     const draft = localStorage.getItem(DRAFT_KEY);
@@ -167,6 +188,24 @@ export default function CreateAgent() {
     }, 800);
     return () => clearTimeout(t);
   }, [formData]);
+
+  // Fetch module options from API
+  useEffect(() => {
+    if (!sessionData || !sessionData.url) return;
+    const fetchModuleOptions = async () => {
+      try {
+        const response = await fetch(`${sessionData.url}/user/ajax_groupwiserights?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&profile_id=${sessionData.user_profile_id}`);
+        if (response.ok) {
+          const data = await response.json();
+          const filteredModules = (data.level_1 || []).filter((item: any) => item.can_view === 1);
+          setModuleOptions(filteredModules);
+        }
+      } catch (error) {
+        console.error('Error fetching module options:', error);
+      }
+    };
+    fetchModuleOptions();
+  }, [sessionData]);
 
   // --------------------------------------------------
   // FIELD UPDATE
@@ -244,6 +283,36 @@ export default function CreateAgent() {
         setCreatedAgent(data);
         alert(`${isEdit ? 'Agent updated' : 'Agent created'} successfully`);
         // Keep draft for refresh
+
+        // Store selected tools in localStorage as array
+        localStorage.setItem('selected_tools', JSON.stringify(formData.tools));
+
+        // If creating (not editing), send to external API
+        if (!isEdit) {
+          const payload2 = {
+            agent_id: data.id, // Assuming response has 'id' as agent_id
+            agent_name: data.name, // Assuming response has 'name' as agent_name
+            tools: formData.tools // Send as array
+          };
+
+          try {
+            const response2 = await fetch('https://karan-01-agentic-tools.hf.space/api/agentic_tools/create', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(payload2),
+            });
+            if (response2.ok) {
+              const data2 = await response2.json();
+              console.log('Tools sent successfully:', data2);
+            } else {
+              console.error('Error sending tools:', response2.status, response2.statusText);
+            }
+          } catch (error) {
+            console.error('Error sending tools to API:', error);
+          }
+        }
       } else {
         const errorText = await response.text();
         setErrorMessage(`Failed to ${isEdit ? 'update' : 'create'} agent: ${response.status} ${response.statusText} - ${errorText}`);
@@ -382,11 +451,21 @@ export default function CreateAgent() {
             <CardContent className="space-y-4">
               <div>
                 <Label>Module</Label>
-                <Input
-                  placeholder="e.g. research"
+                <Select
                   value={formData.module}
-                  onChange={(e) => updateField("module", e.target.value)}
-                />
+                  onValueChange={(v) => updateField("module", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {moduleOptions.map((option) => (
+                      <SelectItem key={option.id} value={option.menu_name}>
+                        {option.menu_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {errors.module && (
                   <p className="text-red-500 text-sm">{errors.module}</p>
                 )}
