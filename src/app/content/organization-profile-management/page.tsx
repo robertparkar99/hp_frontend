@@ -42,11 +42,8 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="mb-5">
-        <Header />
-      </div>
-      {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} userSessionData={sessionData} /> */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-3`}>
+      <Header />
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:ml-[280px]" : "lg:ml-[80px]"} mr-0 lg:mr-4 mt-0 lg:mt-3`}>
         <Profile />
       </div>
     </>

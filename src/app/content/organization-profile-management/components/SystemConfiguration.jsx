@@ -879,12 +879,12 @@ const SystemConfiguration = () => {
       </form>
 
       {/* Data Table */}
-      <div className="mt-2">
-        <div className="flex justify-between items-center mb-4 py-4">
-          <div className="space-x-4">
+      <div className="mt-2 w-full overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 py-4 gap-4 w-full">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
             {/* Pagination controls if needed */}
           </div>
-          <div className="flex space-x-2">
+          <div className="flex items-center gap-2 flex-nowrap flex-shrink-0">
             <PrintButton
               data={printData}
               title="compliance Reports"
