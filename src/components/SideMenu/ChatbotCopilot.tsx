@@ -48,7 +48,7 @@ export default function ChatbotCopilot({
     {
       id: '1',
       type: 'bot',
-      content: 'Hello! 👋 I\'m your AI Data Assistant. I can help you analyze data, generate SQL queries, and provide insights. What would you like to know?',
+      content: 'Hello! I am Support Agent, your assistant to help you with your queries. How can I assist you today?',
       timestamp: new Date()
     }
   ]);
@@ -64,6 +64,7 @@ export default function ChatbotCopilot({
   const [showEscalationModal, setShowEscalationModal] = useState(false);
   const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 1 | -1 } | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [showNewConversationModal, setShowNewConversationModal] = useState(false);
   const recognitionRef = useRef<any>(null);
   const originalInputRef = useRef<string>(''); // specific for keeping track of text before voice started
 
@@ -380,7 +381,7 @@ export default function ChatbotCopilot({
       {
         id: '1',
         type: 'bot',
-        content: 'Hello! 👋 I\'m your AI Data Assistant. How can I help you today?',
+        content: 'Hello! I am Support Agent, your assistant to help you with your queries. How can I assist you today?',
         timestamp: new Date(),
         metadata: {
           canEscalate: false
@@ -568,18 +569,29 @@ export default function ChatbotCopilot({
               transition={{ duration: 0.3 }}
               className="flex-shrink-0" // Ensure header doesn't shrink
             >
-              <div className="flex items-center justify-between px-5 py-4 bg-blue-600 text-white">
+              <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white rounded-t-3xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <Bot className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                    <Bot className="w-6 h-6 text-blue-600" />
                   </div>
-                  <h3 className="font-bold text-lg leading-tight">Data Copilot</h3>
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight">Support Agent</h3>
+                    <p className="text-xs text-white/90">Hello! I am Support Agent, your assistant to help you with...</p>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-1">
                   <button
+                    onClick={() => setShowNewConversationModal(true)}
+                    className="p-2 hover:bg-white/20 rounded-full text-white/90 transition-colors"
+                    title="New Conversation"
+                  >
+                    <MessageSquare className="w-5 h-5" />
+                  </button>
+                  <button
                     onClick={() => setIsOpen(false)}
                     className="p-2 hover:bg-white/20 rounded-full text-white/90 transition-colors"
+                    title="Minimize"
                   >
                     <Minimize2 className="w-5 h-5" />
                   </button>
@@ -595,6 +607,19 @@ export default function ChatbotCopilot({
                 open: { opacity: 1, transition: { staggerChildren: 0.05 } }
               }}
             >
+              {/* Logo/Branding Section */}
+              <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg flex items-center justify-center">
+                  <Bot className="w-12 h-12 text-white" />
+                </div>
+                <div className="text-center">
+                  <h4 className="font-semibold text-gray-800">Support Agent</h4>
+                  <p className="text-sm text-gray-500 mt-1 max-w-[280px]">
+                    Hello! I am Support Agent, your assistant to help you with your queries. How can I assist you today?
+                  </p>
+                </div>
+              </div>
+
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -750,6 +775,65 @@ export default function ChatbotCopilot({
               )}
 
               <div ref={messagesEndRef} />
+
+              {/* New Conversation Modal */}
+              <AnimatePresence>
+                {showNewConversationModal && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/50 to-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4"
+                    onClick={() => setShowNewConversationModal(false)}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0, y: 20 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      exit={{ scale: 0.8, opacity: 0, y: 20 }}
+                      transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full border border-gray-100"
+                    >
+                      {/* Header with gradient */}
+                      <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                            <MessageSquare className="w-6 h-6 text-white" />
+                          </div>
+                          <h3 className="text-xl font-bold text-white">Create New Conversation</h3>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="px-6 py-6">
+                        <p className="text-sm text-gray-600 leading-relaxed mb-6">
+                          Are you sure you want to start a new conversation? This will clear the current chat history.
+                        </p>
+
+                        <div className="flex flex-col gap-3">
+                          <button
+                            onClick={() => {
+                              clearChat();
+                              setShowNewConversationModal(false);
+                            }}
+                            className="w-full px-5 py-3.5 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                          >
+                            <MessageSquare className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                            New conversation
+                          </button>
+                          <button
+                            onClick={() => setShowNewConversationModal(false)}
+                            className="w-full px-5 py-3.5 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                          >
+                            <X className="w-5 h-5" />
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
 
             {/* Input - Wrap in motion */}
