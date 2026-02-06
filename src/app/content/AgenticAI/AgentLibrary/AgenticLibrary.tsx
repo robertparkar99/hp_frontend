@@ -249,7 +249,7 @@ export default function AgenticLibrary() {
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const response = await fetch('https://pariharajit6348-agenticai.hf.space/agents');
+        const response = await fetch('https://pariharajit6348-agenticai.hf.space/agents?status=active');
         if (response.ok) {
           const data = await response.json();
           const mappedAgents: Agent[] = data.map((agent: any) => ({
