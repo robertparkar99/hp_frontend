@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Prevent horizontal scrolling on all screens */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 /* ---break---  */
 @custom-variant dark (&:is(.dark *));
 

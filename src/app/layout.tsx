@@ -11,13 +11,13 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (<>
-    <html lang="en " style={{overflowX:"hidden"}}>
+    <html lang="en " style={{overflowX:"hidden", maxWidth: "100%"}}>
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"></link>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />
       </head>
-      <body>
-        <main style={{ maxHeight: "100vh", height: "100vh", minHeight: "100vh"}}>
+      <body style={{overflowX: "hidden", maxWidth: "100vw"}}>
+        <main style={{ maxHeight: "100vh", height: "100vh", minHeight: "100vh", overflowX: "hidden"}}>
           <LayoutWrapper>{children}</LayoutWrapper>
         </main>
       </body>

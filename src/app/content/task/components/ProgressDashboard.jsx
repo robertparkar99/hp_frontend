@@ -656,40 +656,40 @@ const ProgressDashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="w-full space-y-6">
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-3">
         {/* <div>
           <h2 className="text-xl font-semibold text-foreground">Assignment Progress</h2>
           <p className="text-muted-foreground text-sm">Track and monitor task assignment progress</p>
         </div> */}
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
           <Select
             options={departmentOptions}
             value={departmentFilter}
             onChange={setDepartmentFilter}
-            className="w-40"
+            className="w-full min-w-[140px] md:w-40"
           />
 
           <Select
             options={jobroleOptions}
             value={jobroleFilter}
             onChange={setJobroleFilter}
-            className="w-40"
+            className="w-full min-w-[140px] md:w-40"
           />
 
           <Select
             options={timeOptions}
             value={timeFilter}
             onChange={setTimeFilter}
-            className="w-40"
+            className="w-full min-w-[120px] md:w-40"
           />
 
           <Select
             options={statusOptions}
             value={statusFilter}
             onChange={setStatusFilter}
-            className="w-40"
+            className="w-full min-w-[120px] md:w-40"
           />
 
           <Button
@@ -698,25 +698,25 @@ const ProgressDashboard = () => {
             iconName="Download"
             iconPosition="left"
             disabled={true}
-            className="cursor-not-allowed"
+            className="cursor-not-allowed w-full md:w-auto"
           >
             Export
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-card border border-border rounded-lg p-6">
-            <div className="flex items-left space-x-10">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-around ${stat.color}`}>
+          <div key={index} className="bg-card border border-border rounded-lg p-4 md:p-6">
+            <div className="flex items-center justify-between">
+              <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center ${stat.color}`}>
                 <Icon name={stat.icon} size={24} />
               </div>
-              <div className={`flex items-center`}>
-                <h3 className={`text-2xl font-bold ${stat.digit}`}>{stat.value}</h3>
+              <div className="flex items-center">
+                <h3 className="text-xl md:text-2xl font-bold">{stat.value}</h3>
               </div>
             </div>
-            <div className="mt-4">
+            <div className="mt-3 md:mt-4">
               <p className="text-sm text-muted-foreground">{stat.label}</p>
             </div>
           </div>

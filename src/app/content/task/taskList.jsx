@@ -38,19 +38,19 @@ const TaskAssignment = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background rounded-xl">
-      <main className="p-4">
-          {/* Page Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-              <h1 className="text-2xl font-bold text-foreground">Task Progress Assignment</h1>
-                <p className="text-muted-foreground text-sm">
-                  Assign learning tasks, assessments, and development activities to employees
-                </p>
-              </div>
-              
-              <div className="flex items-center space-x-2">
+    <div className="w-full bg-background">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
+        {/* Page Header */}
+        <div className="mb-6 md:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">Task Progress Assignment</h1>
+              <p className="text-muted-foreground text-sm mt-1">
+                Assign learning tasks, assessments, and development activities to employees
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-2">
                 {/* <Button
                   variant="outline"
                   size="sm"
@@ -71,15 +71,15 @@ const TaskAssignment = () => {
             </div>
 
             {/* View Tabs */}
-            <div className="flex space-x-1 bg-[#EFF4FF] p-1 rounded-lg w-fit">
+            <div className="flex flex-wrap gap-1 bg-[#EFF4FF] p-1 rounded-lg w-full sm:w-fit">
               {views.map((view) => (
                 <button
                   key={view.id}
                   onClick={() => setActiveView(view.id)}
-                  className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md transition-smooth ${
+                  className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-md transition-smooth whitespace-nowrap ${
                     activeView === view.id
                       ? 'bg-card text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-[##EAF7FF]'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-[#EAF7FF]'
                   }`}
                 >
                   <Icon name={view.icon} size={16} />
@@ -91,9 +91,9 @@ const TaskAssignment = () => {
 
           {/* Content */}
           {activeView === 'assignment' && (
-            <div className="flex">
+            <div className="flex flex-col lg:flex-row gap-6">
               {/* Task Creation Panel */}
-                <TaskManagement />
+              <TaskManagement />
             </div>
           )}
 
@@ -104,7 +104,7 @@ const TaskAssignment = () => {
           {/* {activeView === 'calendar' && (
             <CalendarIntegration />
           )} */}
-      </main>
+        </main>
 
       {/* Assignment Preview Modal */}
       {showPreview && (
