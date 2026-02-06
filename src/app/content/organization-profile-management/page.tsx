@@ -6,7 +6,13 @@ import { useState, useEffect } from "react";
 
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    // Initialize from localStorage synchronously to prevent layout shift
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("sidebarOpen") === "true";
+    }
+    return false;
+  });
 
   // Sync with localStorage and handle sidebar state changes
   useEffect(() => {
@@ -43,7 +49,7 @@ export default function HomePage() {
   return (
     <>
       <Header />
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:ml-[280px]" : "lg:ml-[80px]"} mr-0 lg:mr-4 mt-0 lg:mt-3`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-[280px]" : "md:ml-[80px]"} ml-0 mr-0 lg:mr-4 mt-0 lg:mt-3`}>
         <Profile />
       </div>
     </>
