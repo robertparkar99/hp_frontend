@@ -867,8 +867,9 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
             />
 
             <aside
-                className={`fixed left-0 top-0 z-40 h-screen bg-[#FFFDFD] transition-all duration-300 ease-out flex flex-col ${isCollapsed ? "w-[80px]" : "w-[280px]"
-                    } ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+                className={`fixed left-0 top-0 z-40 h-screen bg-[#FFFDFD] transition-all duration-300 ease-out flex flex-col ${
+                    isCollapsed ? "w-[80px]" : "w-[280px]"
+                } ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
                 style={{
                     borderRadius: "0 15px 15px 0",
                     boxShadow: "2px 4px 15px 0 rgba(71, 160, 255, 0.25)",
