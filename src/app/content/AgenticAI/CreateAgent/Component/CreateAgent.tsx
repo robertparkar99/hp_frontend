@@ -197,7 +197,9 @@ export default function CreateAgent() {
         const response = await fetch(`${sessionData.url}/user/ajax_groupwiserights?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&profile_id=${sessionData.user_profile_id}`);
         if (response.ok) {
           const data = await response.json();
-          const filteredModules = (data.level_1 || []).filter((item: any) => item.can_view === 1);
+          const filteredModules = (data.level_1 || [])
+            .filter((item: any) => item.can_view === 1)
+            .slice(0, 5);
           setModuleOptions(filteredModules);
         }
       } catch (error) {
