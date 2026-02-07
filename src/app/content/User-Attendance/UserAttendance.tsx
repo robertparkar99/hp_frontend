@@ -300,7 +300,7 @@ function App() {
   };
 
   return (
-    <div className="p-8 min-h-screen bg-background rounded-xl ">
+    <div className="p-4 md:p-6 min-h-screen bg-background rounded-xl">
       <div className="flex items-center  justify-between mb-6">
             <div >
               <h1 className="text-2xl font-bold text-foreground">User Attendance</h1>
@@ -324,7 +324,7 @@ function App() {
             </div>
 
             {/* From Date */}
-            <div className="mb-28">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">From Date</label>
               <input
                 type="date"
@@ -335,7 +335,7 @@ function App() {
             </div>
 
             {/* To Date */}
-            <div className="mb-28">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">To Date</label>
               <input
                 type="date"
@@ -350,7 +350,7 @@ function App() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSearch}
-              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white rounded-lg  mb-28 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white rounded-lg mb-4 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
             >
               <Search className="w-4 h-4 text-black" />
               <span className="text-black">Search</span>
@@ -361,7 +361,7 @@ function App() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowForm(true)}
-              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium border border-transparent rounded-lg  mb-28 rounded-lg bg-gray-100 "
+              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium border border-transparent rounded-lg mb-4 rounded-lg bg-gray-100"
             >
               <Plus className="w-4 h-4 " />
               <span>Add</span>

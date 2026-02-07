@@ -31,7 +31,7 @@ export default function HomePage() {
       <div className="mb-5">
         <Header />
       </div>
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"}`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-0 md:ml-24 lg:ml-76" : "ml-0 md:ml-24"} px-4 py-4`}>
         <Index />
       </div>
     </>
