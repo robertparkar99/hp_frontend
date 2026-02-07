@@ -30,7 +30,7 @@ export default function HomePage() {
         <Header />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:ml-[304px]" : "lg:ml-20"} ml-0 p-4 md:p-6`}>
         <EmployeeDirectory />
       </div>
     </>
