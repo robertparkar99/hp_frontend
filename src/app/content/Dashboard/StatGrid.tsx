@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "@/hooks/use-toast";
 import icon from '@/components/AppIcon';
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
@@ -170,6 +171,8 @@ interface DateWiseCount {
   "In Progress": number;
   total: number;
   PENDING: number;
+  COMPLETED?: number;
+  IN_PROGRESS?: number;
 }
 
 interface MonthWiseCount {
@@ -179,7 +182,8 @@ interface MonthWiseCount {
   "In Progress": number;
   total: number;
   COMPLETED?: number;
-  PENDING: number;
+  PENDING?: number;
+  IN_PROGRESS?: number;
 }
 
 export default function Dashboard() {
@@ -338,6 +342,21 @@ export default function Dashboard() {
     }
   }, []);
 
+  // Show today's pending tasks toast when Dashboard page opens
+  useEffect(() => {
+    if (todayTasks.length > 0) {
+      const pendingCount = todayTasks.filter((task: Task) => task.status === "Pending" || task.status === "PENDING").length;
+      
+      if (pendingCount > 0) {
+        toast({
+          title: "Today's Pending Tasks",
+          description: `You have ${pendingCount} pending task${pendingCount > 1 ? 's' : ''} for today.`,
+          variant: "default",
+        });
+      }
+    }
+  }, [todayTasks]);
+
   // Fetch Task Progress Card data
   const fetchTaskProgress = async () => {
     if (!sessionData) return;
@@ -353,6 +372,42 @@ export default function Dashboard() {
       
       const data: TaskProgressResponse = await response.json();
       setTaskProgressData(data);
+      
+      // Get today's date in consistent format (use local date to avoid UTC issues)
+      const today = new Date();
+      const todayStr = today.toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
+      
+      // Calculate today's pending tasks only
+      let todayPendingCount = 0;
+      
+      // Count from daily date_wise_counts for today
+      if (data.data?.daily?.date_wise_counts) {
+        const todayData = data.data.daily.date_wise_counts.find((d: any) => {
+          const countDate = new Date(d.date).toLocaleDateString('en-CA');
+          return countDate === todayStr;
+        });
+        if (todayData) {
+          todayPendingCount += todayData.Pending || 0;
+        }
+      }
+      
+      // Also check weekly date_wise_counts for today
+      if (data.data?.weekly?.date_wise_counts) {
+        const todayData = data.data.weekly.date_wise_counts.find((d: any) => {
+          const countDate = new Date(d.date).toLocaleDateString('en-CA');
+          return countDate === todayStr;
+        });
+        if (todayData) {
+          todayPendingCount += todayData.Pending || 0;
+        }
+      }
+      
+      localStorage.setItem('pendingTasksCount', todayPendingCount.toString());
+      console.log('StatGrid dispatching taskCountUpdated:', todayPendingCount);
+      
+      // Dispatch event to notify other components
+      window.dispatchEvent(new CustomEvent('taskCountUpdated', { detail: { count: todayPendingCount } }));
+      
       setTaskProgressError(null);
     } catch (err) {
       console.error("Error fetching task progress data:", err);
@@ -706,6 +761,43 @@ export default function Dashboard() {
     return "bg-gray-300 hover:bg-gray-200";
   };
 
+  // Render proportional task bar with multiple colors
+  const renderProportionalTaskBar = (Completed: number, InProgress: number, Pending: number, total: number) => {
+    if (total === 0) {
+      return <div className="w-full bg-gray-200 rounded" style={{ height: '4px' }} />;
+    }
+
+    const completedPercent = (Completed / total) * 100;
+    const inProgressPercent = (InProgress / total) * 100;
+    const pendingPercent = (Pending / total) * 100;
+
+    return (
+      <div className="w-full flex rounded overflow-hidden" style={{ height: '100%', minHeight: '4px' }}>
+        {completedPercent > 0 && (
+          <div 
+            className="bg-green-500 transition-colors" 
+            style={{ width: `${completedPercent}%` }}
+            title={`Completed: ${Completed}`}
+          />
+        )}
+        {inProgressPercent > 0 && (
+          <div 
+            className="bg-blue-500 transition-colors" 
+            style={{ width: `${inProgressPercent}%` }}
+            title={`In Progress: ${InProgress}`}
+          />
+        )}
+        {pendingPercent > 0 && (
+          <div 
+            className="bg-yellow-400 transition-colors" 
+            style={{ width: `${pendingPercent}%` }}
+            title={`Pending: ${Pending}`}
+          />
+        )}
+      </div>
+    );
+  };
+
   const renderChart = (data: ChartData[]) => {
     const maxValue = Math.max(...data.map((d) => d.value), 1);
     return (
@@ -1021,8 +1113,6 @@ export default function Dashboard() {
                             </div>
                             <div className="ml-6 h-48 flex justify-between items-end gap-2">
                               {taskProgressData.data.daily.date_wise_counts.map((item, i) => {
-                                const maxVal = Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total), 1);
-                                const height = (item.total / maxVal) * 100;
                                 return (
                                   <div 
                                     key={i} 
@@ -1034,15 +1124,15 @@ export default function Dashboard() {
                                         x: rect.left + rect.width / 2,
                                         y: rect.top,
                                         date: item.date,
-                                        completed: item.Completed,
-                                        pending: item.PENDING,
-                                        inProgress: item["In Progress"],
+                                        completed: item.COMPLETED ?? item.Completed ?? 0,
+                                        pending: item.PENDING ?? item.Pending ?? 0,
+                                        inProgress: item.IN_PROGRESS ?? item["In Progress"] ?? 0,
                                         total: item.total
                                       });
                                     }}
                                     onMouseLeave={() => setTooltipData(null)}
                                   >
-                                    <div className={`w-full rounded-t transition-colors ${getTaskBarColor(item.Completed, item["In Progress"], item.PENDING)}`} style={{ height: `${height}%`, minHeight: item.total > 0 ? '4px' : '0' }} />
+                                    {renderProportionalTaskBar(item.COMPLETED ?? item.Completed ?? 0, item.IN_PROGRESS ?? item["In Progress"] ?? 0, item.PENDING ?? item.Pending ?? 0, item.total)}
                                     <span className="text-xs text-gray-500 mt-2">
                                       {new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' })}
                                     </span>
@@ -1112,8 +1202,6 @@ export default function Dashboard() {
                             </div>
                             <div className="ml-6 h-48 flex justify-between items-end gap-2">
                               {taskProgressData.data.weekly.date_wise_counts.map((item, i) => {
-                                const maxVal = Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total), 1);
-                                const height = (item.total / maxVal) * 100;
                                 return (
                                   <div 
                                     key={i} 
@@ -1125,15 +1213,15 @@ export default function Dashboard() {
                                         x: rect.left + rect.width / 2,
                                         y: rect.top,
                                         date: item.date,
-                                        completed: item.Completed,
-                                        pending: item.PENDING,
-                                        inProgress: item["In Progress"],
+                                        completed: item.COMPLETED ?? item.Completed ?? 0,
+                                        pending: item.PENDING ?? item.Pending ?? 0,
+                                        inProgress: item.IN_PROGRESS ?? item["In Progress"] ?? 0,
                                         total: item.total
                                       });
                                     }}
                                     onMouseLeave={() => setTooltipData(null)}
                                   >
-                                    <div className={`w-full rounded-t transition-colors ${getTaskBarColor(item.Completed, item["In Progress"], item.PENDING)}`} style={{ height: `${height}%`, minHeight: item.total > 0 ? '4px' : '0' }} />
+                                    {renderProportionalTaskBar(item.COMPLETED ?? item.Completed ?? 0, item.IN_PROGRESS ?? item["In Progress"] ?? 0, item.PENDING ?? item.Pending ?? 0, item.total)}
                                     <span className="text-xs text-gray-500 mt-2">
                                       {new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' })}
                                     </span>
@@ -1182,8 +1270,6 @@ export default function Dashboard() {
                             </div>
                             <div className="ml-6 h-48 flex justify-between items-end gap-2">
                               {taskProgressData.data.monthly.month_wise_counts.map((item, i) => {
-                                const maxVal = Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total), 1);
-                                const height = (item.total / maxVal) * 100;
                                 return (
                                   <div 
                                     key={i} 
@@ -1195,15 +1281,15 @@ export default function Dashboard() {
                                         x: rect.left + rect.width / 2,
                                         y: rect.top,
                                         date: item.month,
-                                        completed: item.Completed,
-                                        pending: item.PENDING,
-                                        inProgress: item["In Progress"],
+                                        completed: item.COMPLETED ?? item.Completed ?? 0,
+                                        pending: item.PENDING ?? item.Pending ?? 0,
+                                        inProgress: item.IN_PROGRESS ?? item["In Progress"] ?? 0,
                                         total: item.total
                                       });
                                     }}
                                     onMouseLeave={() => setTooltipData(null)}
                                   >
-                                    <div className={`w-full rounded-t transition-colors ${getTaskBarColor(item.Completed, item["In Progress"], item.PENDING)}`} style={{ height: `${height}%`, minHeight: item.total > 0 ? '4px' : '0' }} />
+                                    {renderProportionalTaskBar(item.COMPLETED ?? item.Completed ?? 0, item.IN_PROGRESS ?? item["In Progress"] ?? 0, item.PENDING ?? item.Pending ?? 0, item.total)}
                                     <span className="text-xs text-gray-500 mt-2">{item.month}</span>
                                   </div>
                                 );
