@@ -48,7 +48,7 @@ interface JobRole {
 }
 
 interface Skill {
-  jobrole_skill_id: number;
+  skill_id: number;
   jobrole: string;
   skill: string;
 }
@@ -469,7 +469,7 @@ const TaskManagement = () => {
       formData.append("task_title", selTask);
       formData.append("task_description", taskDescription);
       const selectedSkills = selSkill.map(id => {
-        const skill = skillList.find(s => s.jobrole_skill_id.toString() === id);
+        const skill = skillList.find(s => s.skill_id.toString() === id);
         return skill ? skill.skill : '';
       }).filter(name => name);
       formData.append("skill_id", selSkill.join(","));
@@ -597,7 +597,7 @@ const TaskManagement = () => {
         setKpis(geminiData.kpis);
         const selectedSkillIds = geminiData.skill_required.map((skillName: string) => {
           const skillObj = skillList.find(s => s.skill === skillName);
-          return skillObj ? skillObj.jobrole_skill_id.toString() : '';
+          return skillObj ? skillObj.skill_id.toString() : '';
         }).filter(id => id);
         setSelSkill(selectedSkillIds);
         setTaskType(geminiData.task_type || "Medium");
@@ -939,7 +939,7 @@ const TaskManagement = () => {
                     >
                       <option value="">Select Required Skills</option>
                       {skillList.map((skill, index) => (
-                        <option key={index} value={skill.jobrole_skill_id.toString()}>
+                        <option key={index} value={skill.skill_id.toString()}>
                           {skill.skill}
                         </option>
                       ))}
