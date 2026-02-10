@@ -48,7 +48,7 @@ export default function ChatbotCopilot({
     {
       id: '1',
       type: 'bot',
-      content: 'Hello! I am Support Agent, your assistant to help you with your queries. How can I assist you today?',
+      content: 'Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?',
       timestamp: new Date()
     }
   ]);
@@ -381,7 +381,7 @@ export default function ChatbotCopilot({
       {
         id: '1',
         type: 'bot',
-        content: 'Hello! I am Support Agent, your assistant to help you with your queries. How can I assist you today?',
+        content: 'Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?',
         timestamp: new Date(),
         metadata: {
           canEscalate: false
@@ -551,8 +551,8 @@ export default function ChatbotCopilot({
             }}
             transition={{
               type: "spring",
-              damping: 25, // Higher damping for smooth motion
-              stiffness: 140, // Slightly faster while maintaining smoothness
+              damping: 30, // Higher damping for less bounce on close
+              stiffness: 400, // Higher stiffness for faster snap
               mass: 1,
               staggerChildren: 0.1,
               delayChildren: 0.2
@@ -575,8 +575,8 @@ export default function ChatbotCopilot({
                     <Bot className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg leading-tight">Support Agent</h3>
-                    <p className="text-xs text-white/90">Hello! I am Support Agent, your assistant to help you with...</p>
+                    <h3 className="font-bold text-lg leading-tight">Conversational AI</h3>
+                    <p className="text-xs text-white/90">Hello! I am Conversational AI, your assistant to help you with...</p>
                   </div>
                 </div>
 
@@ -613,9 +613,9 @@ export default function ChatbotCopilot({
                   <Bot className="w-12 h-12 text-white" />
                 </div>
                 <div className="text-center">
-                  <h4 className="font-semibold text-gray-800">Support Agent</h4>
+                  <h4 className="font-semibold text-gray-800">Conversational AI</h4>
                   <p className="text-sm text-gray-500 mt-1 max-w-[280px]">
-                    Hello! I am Support Agent, your assistant to help you with your queries. How can I assist you today?
+                    Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?
                   </p>
                 </div>
               </div>
