@@ -521,10 +521,11 @@ export default function ChatbotCopilot({
             exit="closed"
             variants={{
               closed: {
-                opacity: 1,
-                scaleX: 0.1,
-                scaleY: 0.05,
+                opacity: 0,
+                scaleX: 0,
+                scaleY: 0,
                 y: 0,
+                zIndex: 30, // Below button
                 borderRadius: "50%",
                 transition: {
                   type: "spring", damping: 25, stiffness: 140, mass: 1,
@@ -536,6 +537,7 @@ export default function ChatbotCopilot({
                 scaleX: 1,
                 scaleY: 1,
                 y: 0,
+                zIndex: 50, // Above everything
                 borderRadius: "24px",
                 transition: {
                   type: "spring", damping: 25, stiffness: 140, mass: 1,
@@ -551,13 +553,13 @@ export default function ChatbotCopilot({
             }}
             transition={{
               type: "spring",
-              damping: 30, // Higher damping for less bounce on close
-              stiffness: 400, // Higher stiffness for faster snap
+              damping: 28, // Adjusted for smoother motion
+              stiffness: 260, // Slower than 400, snappier than 140
               mass: 1,
               staggerChildren: 0.1,
               delayChildren: 0.2
             }}
-            className="fixed right-0 z-50 flex flex-col bg-white shadow-2xl border-l border-gray-200
+            className="fixed right-0 flex flex-col bg-white shadow-2xl border-l border-gray-200
                  top-[64px] h-[calc(100vh-64px)] w-[400px] overflow-hidden"
           >
             {/* Header - Wrap in motion for stagger */}
