@@ -169,7 +169,7 @@ const LeaveAuthorization = () => {
   };
 
   return (
-    <div className="space-y-6 min-h-screen bg-background rounded-xl">
+    <div className="space-y-6 min-h-screen bg-background rounded-xl w-full overflow-x-hidden">
       {/* 🔹 Filter Section */}
       <Card className="card-simple">
         <CardContent className="p-4">
