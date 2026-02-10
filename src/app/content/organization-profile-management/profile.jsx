@@ -51,13 +51,13 @@ const OrganizationProfileManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background rounded-xl">
-      <div>
-        <main className="p-6">
+    <div className="min-h-screen bg-background rounded-xl w-full">
+      <div className="w-full">
+        <main className="p-4 md:p-6">
           {/* Header Section */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Organization Profile Management</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-foreground">Organization Profile Management</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Manage your organization's information, Department structure.
               </p>
@@ -65,13 +65,13 @@ const OrganizationProfileManagement = () => {
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-card border border-border rounded-lg mb-6">
-            <div className="flex space-x-0 border-b border-border">
+          <div className="bg-card border border-border rounded-lg mb-6 w-full overflow-x-auto scrollbar-hide">
+            <div className="flex space-x-0 border-b border-border min-w-max">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-micro border-b-2 ${
+                  className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-micro border-b-2 whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-blue-400 text-blue-400 bg-primary/5' :'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   }`}
@@ -83,7 +83,7 @@ const OrganizationProfileManagement = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="space-y-6">
+          <div className="space-y-6 w-full overflow-hidden">
             {renderTabContent()}
           </div>
         </main>

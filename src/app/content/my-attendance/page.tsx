@@ -32,7 +32,7 @@ const App: React.FC = () => {
       <Header  />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:ml-[304px]" : "lg:ml-24"} ml-0 p-4 md:p-6`}>
        <AttendanceDashboard />
        </div>
     </>

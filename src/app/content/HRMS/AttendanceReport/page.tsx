@@ -26,12 +26,14 @@ export default function HomePage() {
   };
   return (
     <>
-      <div className="mb-5">
+      <div className="mb-6">
         <Header />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
-        <AttendanceReport />
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-76" : "md:ml-24"} px-4 md:px-6 lg:px-8 pb-6`}>
+        <div className="space-y-6">
+          <AttendanceReport />
+        </div>
       </div>
     </>
   );

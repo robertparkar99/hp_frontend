@@ -83,7 +83,7 @@ const ProgressDashboard = () => {
       );
 
       if (!response.ok) throw new Error('Failed to delete task');
-      
+
       const result = await response.json();
       alert(result.message || 'Task deleted successfully');
       fetchAllData();
@@ -96,7 +96,7 @@ const ProgressDashboard = () => {
   const timeOptions = [
     { value: 'all', label: 'priority' },
     { value: 'High', label: 'High' },
-    {value: 'Medium', label: 'Medium' },
+    { value: 'Medium', label: 'Medium' },
     { value: 'Low', label: 'Low' },
   ];
 
@@ -160,7 +160,7 @@ const ProgressDashboard = () => {
       // Apply column filters first
       const matchesColumnFilters = Object.entries(filters).every(([key, filterValue]) => {
         if (!filterValue) return true;
-        
+
         // Handle department filtering for both string and object formats
         let cellValue = '';
         if (key === 'department') {
@@ -172,7 +172,7 @@ const ProgressDashboard = () => {
         } else {
           cellValue = task[key] ? task[key].toString().toLowerCase() : '';
         }
-        
+
         return cellValue.toString().toLowerCase().includes(filterValue.toLowerCase());
       });
 
@@ -189,8 +189,8 @@ const ProgressDashboard = () => {
 
       // const matchesStatus = statusFilter === 'all' || task.status.toUpperCase() === statusFilter;
       const matchesStatus =
-    statusFilter === 'all' ||
-    (task.status && task.status.toUpperCase() === statusFilter);
+        statusFilter === 'all' ||
+        (task.status && task.status.toUpperCase() === statusFilter);
 
       // Handle department filtering for both string and object formats
       let taskDepartment = '';
@@ -200,7 +200,7 @@ const ProgressDashboard = () => {
         taskDepartment = task.department.department_name || task.department.name || '';
       }
       const matchesDepartment = departmentFilter === 'all' || taskDepartment === departmentFilter;
-      
+
       const matchesJobrole = jobroleFilter === 'all' || task.jobrole === jobroleFilter;
 
       return matchesColumnFilters && matchesTime && matchesStatus && matchesDepartment && matchesJobrole;
@@ -221,7 +221,7 @@ const ProgressDashboard = () => {
         trend: 'up',
         icon: 'FileText',
         color: 'text-blue-400 bg-[#e9e9e9]',
-        digit : 'text-blue-400',
+        digit: 'text-blue-400',
       },
       {
         label: 'Completed',
@@ -230,7 +230,7 @@ const ProgressDashboard = () => {
         trend: 'up',
         icon: 'CheckCircle',
         color: 'text-success bg-[#e9e9e9]',
-        digit : 'text-success',
+        digit: 'text-success',
       },
       {
         label: 'In Progress',
@@ -239,7 +239,7 @@ const ProgressDashboard = () => {
         trend: 'up',
         icon: 'Clock',
         color: 'text-warning bg-[#e9e9e9]',
-        digit : 'text-warning',
+        digit: 'text-warning',
       },
       {
         label: 'Overdue',
@@ -248,7 +248,7 @@ const ProgressDashboard = () => {
         trend: 'down',
         icon: 'AlertTriangle',
         color: 'text-danger bg-[#e9e9e9]',
-        digit : 'text-danger',
+        digit: 'text-danger',
       }
     ];
   }, [filteredData]);
@@ -324,19 +324,19 @@ const ProgressDashboard = () => {
     e.preventDefault();
     try {
       const formData = new FormData();
-      
+
       // Append all task data
       Object.keys(currentTask).forEach(key => {
         if (key !== 'task_attachment') {
           formData.append(key, currentTask[key]);
         }
       });
-      
+
       // Append new file if selected
       if (selectedFile) {
         formData.append('task_attachment', selectedFile);
       }
-      
+
       // Add required fields
       formData.append('type', 'API');
       formData.append('token', sessionData.token);
@@ -357,6 +357,8 @@ const ProgressDashboard = () => {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to update task');
       }
+
+
 
       const result = await response.json();
       alert(result.message || 'Task updated successfully');
@@ -612,11 +614,10 @@ const ProgressDashboard = () => {
           <Button
             variant="ghost"
             size="icon"
-            className={`h-8 w-8 text-xs py-1 px-2 rounded ${
-              sessionData.user_profile_name?.toLowerCase().includes('employee')
-                ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                : 'bg-red-500 hover:bg-red-700 text-white'
-            }`}
+            className={`h-8 w-8 text-xs py-1 px-2 rounded ${sessionData.user_profile_name?.toLowerCase().includes('employee')
+              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+              : 'bg-red-500 hover:bg-red-700 text-white'
+              }`}
             onClick={() => {
               if (!sessionData.user_profile_name?.toLowerCase().includes('employee') && window.confirm('Are you sure you want to delete this task?')) {
                 handleDeleteTask(row.id);
@@ -642,12 +643,12 @@ const ProgressDashboard = () => {
         textAlign: "left",
       },
     },
-    cells: { 
-      style: { 
-        fontSize: "13px", 
+    cells: {
+      style: {
+        fontSize: "13px",
         textAlign: "left",
         padding: "16px",
-      } 
+      }
     },
     table: {
       style: { border: "1px solid #ddd", borderRadius: "8px", overflow: "hidden" },
@@ -655,40 +656,40 @@ const ProgressDashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="w-full space-y-6">
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-3">
         {/* <div>
           <h2 className="text-xl font-semibold text-foreground">Assignment Progress</h2>
           <p className="text-muted-foreground text-sm">Track and monitor task assignment progress</p>
         </div> */}
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
           <Select
             options={departmentOptions}
             value={departmentFilter}
             onChange={setDepartmentFilter}
-            className="w-40"
+            className="w-full min-w-[140px] md:w-40"
           />
 
           <Select
             options={jobroleOptions}
             value={jobroleFilter}
             onChange={setJobroleFilter}
-            className="w-40"
+            className="w-full min-w-[140px] md:w-40"
           />
 
           <Select
             options={timeOptions}
             value={timeFilter}
             onChange={setTimeFilter}
-            className="w-40"
+            className="w-full min-w-[120px] md:w-40"
           />
 
           <Select
             options={statusOptions}
             value={statusFilter}
             onChange={setStatusFilter}
-            className="w-40"
+            className="w-full min-w-[120px] md:w-40"
           />
 
           <Button
@@ -697,25 +698,25 @@ const ProgressDashboard = () => {
             iconName="Download"
             iconPosition="left"
             disabled={true}
-            className="cursor-not-allowed"
+            className="cursor-not-allowed w-full md:w-auto"
           >
             Export
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-card border border-border rounded-lg p-6">
-            <div className="flex items-left space-x-10">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-around ${stat.color}`}>
+          <div key={index} className="bg-card border border-border rounded-lg p-4 md:p-6">
+            <div className="flex items-center justify-between">
+              <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center ${stat.color}`}>
                 <Icon name={stat.icon} size={24} />
               </div>
-              <div className={`flex items-center`}>
-               <h3 className={`text-2xl font-bold ${stat.digit}`}>{stat.value}</h3>
+              <div className="flex items-center">
+                <h3 className="text-xl md:text-2xl font-bold">{stat.value}</h3>
               </div>
             </div>
-            <div className="mt-4">
+            <div className="mt-3 md:mt-4">
               <p className="text-sm text-muted-foreground">{stat.label}</p>
             </div>
           </div>
@@ -752,7 +753,7 @@ const ProgressDashboard = () => {
           {currentTask && (
             <form onSubmit={handleEditSubmit} className="space-y-4">
               {/* ... rest of the edit form remains the same ... */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Input
                     label="Task Title"
@@ -922,7 +923,7 @@ const ProgressDashboard = () => {
                   </div>
                 </div>
                 <div>
-                <Input
+                  <Input
                     label="Repeat Once in every "
                     value={currentTask.repeat_days}
                     onChange={(e) => handleInputChange('repeat_days', e.target.value)}
@@ -930,11 +931,11 @@ const ProgressDashboard = () => {
                 </div>
               </div>
 
-              <DialogFooter className="flex justify-center space-x-4" style={{ display: 'flex', justifyContent: "center"}}>
-                <Button id="cancel" variant="outline" onClick={() => setIsEditModalOpen(false)} > 
+              <DialogFooter className="flex justify-center space-x-4" style={{ display: 'flex', justifyContent: "center" }}>
+                <Button id="cancel" variant="outline" onClick={() => setIsEditModalOpen(false)} >
                   Cancel
                 </Button>
-                <Button id="update" type="submit"  className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60">
+                <Button id="update" type="submit" className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60">
                   Update
                 </Button>
               </DialogFooter>

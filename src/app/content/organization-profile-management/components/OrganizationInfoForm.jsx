@@ -603,16 +603,16 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
     value === null || value === '' ? placeholder : value;
 
   return (
-    <form onSubmit={handleSubmit} encType="multipart/form-data">
+    <form onSubmit={handleSubmit} encType="multipart/form-data" className="w-full">
       {/* MAIN FORM */}
-      <div className="bg-card border border-border rounded-lg p-6 mb-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-card border border-border rounded-lg p-4 md:p-6 mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
           <h3 className="text-lg font-semibold text-foreground">Organization Information</h3>
           {/* <Icon name="Building2" size={20} className="text-muted-foreground" /> */}
         </div>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-5 md:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Legal Name{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
@@ -658,7 +658,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Industry</label>
               {/* <select
@@ -671,7 +671,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
               <select
               value={sessionData.org_type}
               disabled // ✅ disables selection
-              className="w-full px-3 py-2 border border-input  rounded-md text-sm shadow-sm"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm shadow-sm"
             >
               <option value="">Select industry</option>
               {industryOptions.map((option, index) => (
@@ -711,24 +711,23 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Work Week{" "}
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+              <label className="block text-sm font-medium">Work Week{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-            <select
-              value={displayValue(formData.work_week, '')}
-              onChange={(e) => handleInputChange('work_week', e.target.value)}
-              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              required
-            >
-              <option value="">Select work week</option>
-              {workWeekOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              <select
+                value={displayValue(formData.work_week, '')}
+                onChange={(e) => handleInputChange('work_week', e.target.value)}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                required
+              >
+                <option value="">Select work week</option>
+                {workWeekOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -742,14 +741,14 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Mobile No</label>
-              <div className="flex">
+              <div className="flex flex-col sm:flex-row">
                 <select
                   value={displayValue(formData.country_code, '+91')}
                   onChange={(e) => handleInputChange('country_code', e.target.value)}
-                  className="w-24 px-3 py-2 border border-input bg-background rounded-l-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full sm:w-24 px-3 py-2 border border-input bg-background rounded-t-md sm:rounded-l-md sm:rounded-t-none text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {countryCodeOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -761,7 +760,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
                   value={displayValue(formData.mobile_no, '')}
                   placeholder="Enter mobile number"
                   onChange={(e) => handleInputChange('mobile_no', e.target.value)}
-                  className="rounded-l-none border-l-0"
+                  className="rounded-t-none sm:rounded-l-none border-t-0 sm:border-l-0"
                 />
               </div>
             </div>
@@ -786,15 +785,15 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
 
           <div>
             <label className="block text-sm font-medium mb-2">Organization Logo</label>
-            <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                 {logoPreview ? (
                   <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
                 ) : (
                   <Icon name="Building2" size={24} className="text-muted-foreground" />
                 )}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 w-full sm:w-auto">
                 <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" id="logo-upload" />
                 <label
                   htmlFor="logo-upload"
@@ -812,26 +811,26 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
 
       {/* SISTER COMPANY FORMS */}
       {sisterCompanies.map((sister, index) => (
-        <div key={index} className="border border-border rounded-lg p-5 mb-6 relative">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-base font-semibold text-foreground">
+        <div key={index} className="border border-border rounded-lg p-4 md:p-5 mb-4 md:mb-6 relative">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+            <h4 className="text-base font-semibold text-foreground break-words">
               {displayValue(sister.legal_name, `Sister Concern Company #${index + 1}`)}
             </h4>
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 flex-shrink-0">
               {index === 0 && (
-                <button type="button" onClick={addSisterCompany} className="p-1 rounded-full bg-blue-400 text-white hover:bg-blue-500" title="Add another sister company">
-                  <Icon name="Plus" size={16} />
+                <button type="button" onClick={addSisterCompany} className="p-1.5 rounded-full bg-blue-400 text-white hover:bg-blue-500" title="Add another sister company">
+                  <Icon name="Plus" size={18} />
                 </button>
               )}
               {index !== 0 && (
-                <button type="button" onClick={() => removeSisterCompany(index)} className="p-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90" title="Remove this sister company">
-                  <Icon name="Minus" size={16} />
+                <button type="button" onClick={() => removeSisterCompany(index)} className="p-1.5 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90" title="Remove this sister company">
+                  <Icon name="Minus" size={18} />
                 </button>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Legal Name</label>
               <Input
@@ -931,14 +930,14 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-4">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Mobile No</label>
-              <div className="flex">
+              <div className="flex flex-col sm:flex-row">
                 <select
                   value={displayValue(sister.country_code, '+91')}
                   onChange={(e) => handleSisterChange(index, 'country_code', e.target.value)}
-                  className="w-24 px-3 py-2 border border-input bg-background rounded-l-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full sm:w-24 px-3 py-2 border border-input bg-background rounded-t-md sm:rounded-l-md sm:rounded-t-none text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {countryCodeOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -950,7 +949,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
                   value={displayValue(sister.mobile_no, '')}
                   placeholder="Enter mobile number"
                   onChange={(e) => handleSisterChange(index, 'mobile_no', e.target.value)}
-                  className="rounded-l-none border-l-0"
+                  className="rounded-t-none sm:rounded-l-none border-t-0 sm:border-l-0"
                 />
               </div>
             </div>
@@ -975,15 +974,15 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
 
           <div className="mt-4">
             <label className="block text-sm font-medium mb-2">Company Logo</label>
-            <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                 {sister.logoPreview ? (
                   <img src={sister.logoPreview} alt="Sister company logo" className="w-full h-full object-cover" />
                 ) : (
                   <Icon name="Building2" size={24} className="text-muted-foreground" />
                 )}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 w-full sm:w-auto">
                 <input
                   type="file"
                   accept="image/*"
@@ -1005,8 +1004,8 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         </div>
       ))}
 
-      <div className="mt-6 col-span-1 md:col-span-3 flex justify-center">
-        <Button id="submit" type="submit" disabled={loading} className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+      <div className="mt-6 flex justify-center w-full">
+        <Button id="submit" type="submit" disabled={loading} className="px-8 py-2.5 md:py-3 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700 w-full sm:w-auto min-w-[140px]">
           {loading ? 'Saving...' : 'Submit'}
         </Button>
       </div>

@@ -334,22 +334,22 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
   if (isLoading) return <Loading />;
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6">
+    <div className="bg-card border border-border rounded-lg p-4 md:p-6">
       {/* Top Toolbar Area */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 w-full">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
           {/* Search */}
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-none">
             <Icon name="Search" size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Search departments..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-88"
+              className="pl-9 w-full sm:w-72 md:w-88"
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-nowrap">
           {/* Settings */}
           <Button variant="outline" size="sm" title='settings'>
             <Icon name="Settings" size={16} />
@@ -427,8 +427,8 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
           return (
             <div key={department.id} className="border border-border rounded-lg p-4">
               {/* HEADER AREA */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-3 w-full">
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
                   <Icon name="Building2" size={20} className="text-blue-400" />
 
                   {/* INLINE EDIT MODE */}
@@ -451,7 +451,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
                 </div>
 
                 {/* ACTIONS */}
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 flex-nowrap flex-shrink-0">
                   {!isEditing && (
                     <Button
                       variant="ghost"

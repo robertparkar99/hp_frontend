@@ -110,8 +110,8 @@ const MainScreen: React.FC = () => {
   // ✅ Dynamic Content View
   return !isLoading ? (
     <main
-      className={`flex overflow-scroll flex-col w-auto pr-2 pl-2 bg-white rounded-2xl shadow-sm pb-6 h-[87vh] hide-scroll transition-all duration-300 ${
-        isSidebarOpen ? "ml-72" : "ml-20"
+      className={`flex overflow-scroll flex-col w-full pr-2 pl-2 bg-white rounded-2xl shadow-sm pb-6 h-[87vh] hide-scroll transition-all duration-300 ${
+        isSidebarOpen ? "md:ml-64 lg:ml-72" : "ml-0"
       }`}
     >
       <div className="self-center mt-4 w-full max-w-[1360px] max-md:max-w-full">

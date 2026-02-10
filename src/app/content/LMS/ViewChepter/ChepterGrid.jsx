@@ -20,7 +20,8 @@ const ChepterGrid = ({
   sessionInfo,
   courseDisplayName,
   standardName,
-  viewMode = "list" // Added default value for viewMode
+  viewMode = "list", // Added default value for viewMode
+  onContentViewed, // New prop
 }) => {
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -116,6 +117,7 @@ const ChepterGrid = ({
             contents={course.contents}   // ✅ Pass chapter contents directly
             courseDisplayName={courseDisplayName}  // ✅ Pass course display name
             standardName={standardName}
+            onContentViewed={onContentViewed}  // ✅ Pass callback
           />
         ))}
       </div>

@@ -83,7 +83,7 @@ export default function Index({
   const [selectedSkillLevel, setSelectedSkillLevel] = useState<string>("");
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [viewPart, setViewPart] = useState<any>("chart Box");
+  const [viewPart, setViewPart] = useState<any>("jobrole-skillrating");
   const [activeTab, setActiveTab] = useState<string>("knowledge");
 
   // FIXED: Initialize with empty objects for string values
@@ -972,12 +972,19 @@ export default function Index({
         <div className="max-w-7xl mx-auto mt-10">
           <div className="relative">
             <div className="absolute -top-15 right-0 flex gap-5 z-10">
-              <span
+              {/* <span
                 className="mdi mdi-star-box-multiple-outline text-xl cursor-pointer p-2 bg-yellow-100 text-yellow-600 shadow hover:bg-yellow-200 hover:text-yellow-700 transition-all rounded-md"
                 title="Star Box"
                 onClick={() => {
                   setViewPart("default");
                 }}
+              ></span> */}
+
+
+               <span
+                className="mdi mdi-star-box-multiple-outline text-xl cursor-pointer p-2 bg-yellow-100 text-yellow-600 shadow hover:bg-yellow-200 hover:text-yellow-700 transition-all rounded-md"
+                title="Jobrole Skill Rating"
+                onClick={() => setViewPart("jobrole-skillrating")}
               ></span>
 
               <span
@@ -988,11 +995,7 @@ export default function Index({
                 }}
               ></span>
 
-              <span
-                className="mdi mdi-cog-outline text-xl cursor-pointer p-2 bg-gray-100 text-gray-700 shadow hover:bg-gray-200 hover:text-gray-900 transition-all rounded-md"
-                title="Jobrole Skill Rating"
-                onClick={() => setViewPart("jobrole-skillrating")}
-              ></span>
+             
             </div>
 
             {viewPart === "rated skill" ? (
