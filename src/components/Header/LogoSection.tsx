@@ -187,7 +187,7 @@ export const LogoSection: React.FC = () => {
         </div> */}
 
         {/* chatbot icon */}
-        <div className="cursor-pointer relative z-35">
+        <div className="cursor-pointer relative z-40">
           <button
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
