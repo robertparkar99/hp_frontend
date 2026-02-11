@@ -293,16 +293,45 @@ const TaskManagement = () => {
       setPreviouslyAllocatedTasks([]);
     } else {
       try {
-        const response = await fetch(
+        // Fetch skills from the new user-skills API
+        const skillResponse = await fetch(
+          `${sessionData.url}/api/user-skills/${userId}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`
+        );
+        const skillData = await skillResponse.json();
+        
+        // Transform skills to match Skill interface
+        const transformedSkills: Skill[] = [];
+        
+        if (skillData.data && Array.isArray(skillData.data)) {
+          skillData.data.forEach((item: any) => {
+            transformedSkills.push({
+              skill_id: item.skill_id || item.id || 0,
+              jobrole: item.jobrole || item.job_role || '',
+              skill: item.skill || item.skill_name || item.name || ''
+            });
+          });
+        } else if (Array.isArray(skillData)) {
+          skillData.forEach((item: any) => {
+            transformedSkills.push({
+              skill_id: item.skill_id || item.id || 0,
+              jobrole: item.jobrole || item.job_role || '',
+              skill: item.skill || item.skill_name || item.name || ''
+            });
+          });
+        }
+        
+        setSkillList(transformedSkills);
+        
+        // Fetch tasks from the original employee details API
+        const taskResponse = await fetch(
           `${sessionData.url}/user/add_user/${userId}/edit?type=API&token=${sessionData.token}` +
           `&sub_institute_id=${sessionData.subInstituteId}` +
           `&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
         );
-
-        const data = await response.json();
-        setSkillList(data.jobroleSkills || []);
-        setTaskList(data.jobroleTasks || []);
-        setTaskListArr(data.jobroleTasks || []);
+        
+        const taskData = await taskResponse.json();
+        setTaskList(taskData.jobroleTasks || []);
+        setTaskListArr(taskData.jobroleTasks || []);
         
         // Fetch previously allocated tasks for this employee
         await fetchPreviouslyAllocatedTasks(userId);
@@ -514,6 +543,10 @@ const TaskManagement = () => {
 
       if (response.ok) {
         alert("Task created successfully for all selected employees!");
+        
+        // Send notification to all assigned users (this also updates the count)
+        await sendTaskNotification(selEmployee, selTask);
+        
         resetForm();
       } else {
         throw new Error(result.message || "Failed to create task");
@@ -526,6 +559,68 @@ const TaskManagement = () => {
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Function to send notification to assigned users
+  const sendTaskNotification = async (userIds: string[], taskTitle: string) => {
+    try {
+      for (const userId of userIds) {
+        // Create notification object
+        const notification = {
+          id: Date.now().toString() + '_' + userId,
+          user_id: userId,
+          title: "New Task Assigned",
+          message: `You have been assigned a new task: ${taskTitle}`,
+          type: "task_assignment",
+          sender_id: sessionData.userId,
+          read: false,
+          created_at: new Date().toISOString(),
+        };
+
+        // Store notification in localStorage for the specific user
+        // This ensures only the assigned user can see their notifications
+        const storageKey = `notifications_${userId}`;
+        const existingNotifications = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        existingNotifications.push(notification);
+        localStorage.setItem(storageKey, JSON.stringify(existingNotifications));
+
+        // Also update the pendingTasksCount in localStorage
+        const currentCount = parseInt(localStorage.getItem('pendingTasksCount') || '0', 10);
+        localStorage.setItem('pendingTasksCount', (currentCount + 1).toString());
+
+        // Also try to send to backend API if available
+        try {
+          const notificationRes = await fetch(
+            `${sessionData.url}/api/send-notification`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${sessionData.token}`,
+              },
+              body: JSON.stringify({
+                user_id: userId,
+                title: "New Task Assigned",
+                message: `You have been assigned a new task: ${taskTitle}`,
+                type: "task_assignment",
+                sender_id: sessionData.userId,
+              }),
+            }
+          );
+
+          if (!notificationRes.ok) {
+            console.error(`Failed to send notification to user ${userId} via API`);
+          }
+        } catch (apiError) {
+          console.warn('Backend notification API not available, using localStorage only');
+        }
+      }
+
+      // Dispatch event to update notification count in header
+      window.dispatchEvent(new CustomEvent('notificationUpdated'));
+    } catch (error) {
+      console.error("Error sending notifications:", error);
     }
   };
 
