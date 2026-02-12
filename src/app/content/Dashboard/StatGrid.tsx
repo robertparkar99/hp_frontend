@@ -125,6 +125,28 @@ interface SkillMatrixData {
   gap: "critical" | "high" | "medium" | "low";
 }
 
+// Interface for Course API Response
+interface SuggestedCourseResponse {
+  status: number;
+  message: string;
+  data: SuggestedCourse[];
+}
+
+interface SuggestedCourse {
+  id: number;
+  employee_id: number;
+  course_id: number;
+  course_name: string;
+  task_id: number;
+  sub_institute_id: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: null;
+  create_by: null;
+  updated_by: null;
+  deleted_by: null;
+}
+
 // Task Progress Card API Response Interfaces
 interface TaskProgressResponse {
   success: boolean;
@@ -522,45 +544,36 @@ export default function Dashboard() {
           totalSkills: data.totle_skills ?? 0,
         });
 
-        // Fetch courses
+        // Fetch suggested courses from new API
         try {
-          const courseUrl = sessionData.userProfileName === "Admin"
-            ? `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfileName}`
-            : `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfileName}&jobrole=${encodeURIComponent(userJobrole)}&department=${encodeURIComponent(currentUser?.department_name || '')}`;
-
-          const courseRes = await fetch(courseUrl);
+          const courseApiUrl = `${sessionData.url}/getSuggestedCoursesByUser?user_id=${sessionData.userId}&sub_institute_id=${sessionData.subInstituteId}`;
+          
+          const courseRes = await fetch(courseApiUrl);
           if (!courseRes.ok) throw new Error(`Course API error: ${courseRes.status}`);
-          const courseData = await courseRes.json();
-          const mappedCourses: any[] = [];
-          if (courseData?.lms_subject) {
-            Object.keys(courseData.lms_subject).forEach((category) => {
-              courseData.lms_subject[category].forEach((item: any) => {
-                // Check if course is enrolled (either by enrollment_status or in localStorage)
-                const isEnrolled = item.enrollment_status !== null ||
-                  (() => {
-                    const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
-                    return enrolledCourses.some((c: any) => c.id === item.subject_id);
-                  })();
-                
-                // Only show enrolled courses
-                if (isEnrolled && (sessionData.userProfileName === "Admin" || item.jobrole === userJobrole)) {
-                  const course = {
-                    id: item.subject_id,
-                    title: item.subject_name,
-                    description: item.standard_name,
-                    thumbnail: item.display_image || placeholderImage,
-                    jobrole: item.jobrole,
-                    category: category,
-                    enrollment_status: item.enrollment_status
-                  };
-                  mappedCourses.push(course);
-                }
-              });
-            });
-          }
+          
+          const courseData: SuggestedCourseResponse = await courseRes.json();
+          
+          // Map the new API response to the courses state
+          const mappedCourses: any[] = courseData.data?.map((item: SuggestedCourse) => ({
+            id: item.id,
+            title: item.course_name,
+            description: '',
+            thumbnail: placeholderImage,
+            jobrole: '',
+            category: 'Suggested Course',
+            enrollment_status: null,
+            course_id: item.course_id,
+            task_id: item.task_id,
+            employee_id: item.employee_id,
+            sub_institute_id: item.sub_institute_id,
+            created_at: item.created_at,
+            updated_at: item.updated_at
+          })) || [];
+          
           setCourses(mappedCourses);
         } catch (err) {
-          console.error("Error fetching courses:", err);
+          console.error("Error fetching suggested courses:", err);
+          setCourses([]);
         }
 
         // Fetch assessments
@@ -2055,15 +2068,9 @@ export default function Dashboard() {
                 courses.slice(0, 5).map(course => (
                   <div key={course.id} className="mb-4 border-l-2 pl-3 border-blue-300">
                     <span className="text-xs font-semibold px-2 py-1 rounded text-blue-700 bg-blue-100 border-blue-400">
-                      {course.category.toLowerCase().includes('task') ? 'Task-Based' : 'Skill-Based'}: {course.category}
+                      {course.category}
                     </span>
-                    <p className="mt-2">{course.title}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div>
-                        <p className="text-sm font-medium">{course.jobrole}</p>
-                        <p className="text-xs text-gray-400">{course.description}</p>
-                      </div>
-                    </div>
+                    <p className="mt-2 font-medium">{course.title}</p>
                   </div>
                 ))
               ) : (
