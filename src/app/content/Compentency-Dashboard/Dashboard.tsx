@@ -74,8 +74,8 @@ const SelectItem = ({ children, ...props }: any) => (
 // Navigation tabs
 const NAVIGATION_TABS = [
   { id: "balance-equity", name: "Role–Task–Skill Balance & Equity" },
-  { id: "health-completeness", name: "Competency Health & Completeness" },
-  { id: "alignment-standardization", name: "Alignment & Standardization" },
+  // { id: "health-completeness", name: "Competency Health & Completeness" },
+  // { id: "alignment-standardization", name: "Alignment & Standardization" },
   { id: "stakeholder-lenses", name: "Stakeholder-Specific Lenses" },
 ];
 
