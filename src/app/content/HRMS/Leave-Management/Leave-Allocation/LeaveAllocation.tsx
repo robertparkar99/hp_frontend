@@ -608,7 +608,7 @@ export default function LeaveAllocation() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
             <div className="flex items-center space-x-3">
               <Switch
                 id="department-wise"
@@ -639,7 +639,7 @@ export default function LeaveAllocation() {
       {isDepartmentWise && (
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-xl font-semibold flex items-center gap-2">
                   <Building className="w-5 h-5" />
@@ -714,7 +714,7 @@ export default function LeaveAllocation() {
                       </div>
                     </div>
 
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
                       <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-all">
                         <Save className="w-4 h-4 mr-2" />
                         Save Allocation
@@ -749,7 +749,7 @@ export default function LeaveAllocation() {
       {!isDepartmentWise && (
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-xl font-semibold flex items-center gap-2">
                   <User className="w-5 h-5" />
@@ -837,7 +837,7 @@ export default function LeaveAllocation() {
                       </div>
                     </div>
 
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
                       <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-all">
                         <Save className="w-4 h-4 mr-2" />
                         Save Allocation

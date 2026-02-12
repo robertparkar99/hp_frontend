@@ -1506,16 +1506,16 @@ const SalaryStructure: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-background rounded-xl">
+    <div className="p-4 sm:p-6 space-y-6 bg-background rounded-xl">
       {/* Header */}
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Salary Structure Management</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Salary Structure Management</h1>
         {date && date.getFullYear() !== 2026 && (
           <div className="flex items-center gap-3">
             <Button
               onClick={handleRollover}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2 w-full sm:w-auto"
             >
               Roll Over Salary
             </Button>
