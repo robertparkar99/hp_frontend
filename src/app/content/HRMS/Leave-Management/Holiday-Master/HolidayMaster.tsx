@@ -510,21 +510,21 @@ const HolidayMaster = () => {
     <div className="min-h-screen bg-background rounded-xl">
       {/* Modern Gradient Header */}
       <div className="bg-[#6fb2f2] text-primary-foreground rounded-xl ">
-        <div className="px-6 py-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+        <div className="px-4 sm:px-6 py-6 sm:py-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                  <Calendar className="h-6 w-6 text-white" />
+                <div className="p-2 sm:p-3 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">Holiday Master</h1>
-                  <p className="text-white/90 text-lg">Manage holidays and day-offs for your organization</p>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white">Holiday Master</h1>
+                  <p className="text-white/90 text-sm sm:text-lg">Manage holidays and day-offs for your organization</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               {/* <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
                 <Filter className="h-5 w-5 text-white/80" />
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
@@ -563,7 +563,7 @@ const HolidayMaster = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="px-6 -mt-4 pb-6">
+      <div className="px-4 sm:px-6 -mt-4 pb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="bg-gradient-to-br from-card to-card/80 border-border/30 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-4">

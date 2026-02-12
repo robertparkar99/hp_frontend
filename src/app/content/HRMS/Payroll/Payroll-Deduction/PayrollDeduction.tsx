@@ -482,7 +482,7 @@ export default function PayrollDeductionsPage() {
       <h1 className="text-2xl font-bold mb-6">Payroll Deduction Management</h1>
 
       {/* Filters */}
-      <div className="grid grid-cols-5 gap-4 items-end mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end mb-6">
         {/* Deduction Type */}
         <div>
           <Label>Deduction Type</Label>

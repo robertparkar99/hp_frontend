@@ -1023,18 +1023,18 @@ export default function MonthlyPayrollPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Monthly Payroll Management</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Monthly Payroll Management</h1>
           <p className="text-sm text-gray-500">Dynamic columns based on API header data</p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col lg:flex-row gap-4 w-full">
-        <div className="flex gap-4 w-full lg:w-auto">
-          <div className="flex-1">
+        <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+          <div className="flex-1 min-w-[200px]">
             <EmployeeSelector
               multiSelect
               empMultiSelect
@@ -1042,11 +1042,11 @@ export default function MonthlyPayrollPage() {
               onSelectDepartment={setSelectedDepartments}
               selectedEmployee={selectedEmployees}
               onSelectEmployee={setSelectedEmployees}
-              className="w-150"
+              className="w-full"
             />
           </div>
 
-          <div className="w-35 mt-1">
+          <div className="w-full sm:w-35 mt-1">
             <Label className="mb-2">Select Month</Label>
             <Select value={month} onValueChange={setMonth}>
               <SelectTrigger className="w-full">
@@ -1062,7 +1062,7 @@ export default function MonthlyPayrollPage() {
         </div>
 
         <div className="flex items-start gap-3 mt-1">
-          <div className="w-35">
+          <div className="w-full sm:w-35">
             <Label className="mb-2">Select Year</Label>
             <Select value={year} onValueChange={setYear}>
               <SelectTrigger className="w-full">
