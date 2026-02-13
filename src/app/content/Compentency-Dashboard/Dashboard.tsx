@@ -852,8 +852,8 @@ function BalanceEquityView() {
 
   return (
     <div className="space-y-6">
-      {/* First Row: Side by Side Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* First Row: Side by Side Layout (60-40 ratio) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
         {/* Workload Heatmap */}
         <Card className="shadow-sm border rounded-xl">
           <CardContent className="p-5">
