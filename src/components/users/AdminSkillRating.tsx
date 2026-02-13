@@ -368,23 +368,19 @@ export default function Page({
     user_id: user_id,
   });
 
-  useEffect(() => {
-    const userData = localStorage.getItem("userData");
+ useEffect(() => {
+    const userData = localStorage.getItem('userData');
     if (userData) {
-      try {
-        const parsed = JSON.parse(userData);
-        setSessionData({
-          APP_URL: parsed.APP_URL || "",
-          token: parsed.token || "",
-          sub_institute_id: parsed.sub_institute_id ?? sub_institute_id,
-          org_type: parsed.org_type || "",
-          user_id: parsed.user_id ?? user_id,
-        });
-      } catch {
-        // ignore
-      }
+      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        APP_URL: APP_URL,
+        token,
+        sub_institute_id: sub_institute_id,
+        org_type: org_type,
+        user_id: user_id,
+      });
     }
-  }, [sub_institute_id, user_id]);
+  }, []);
 
   const parseExpectedLevel = (value: string | number | undefined): number => {
     if (value === undefined || value === null) return 5;
@@ -406,7 +402,7 @@ export default function Page({
   // Fetch all skills from first API
   const fetchAllSkills = async () => {
     try {
-      const base = sessionData.APP_URL || "http://127.0.0.1:8000";
+      const base = sessionData.APP_URL || "https://hp.triz.co.in        ";
       const response = await fetch(
         `${base}/get-kaba?sub_institute_id=${sessionData.sub_institute_id}&type=${type}&type_id=${type_id}&title=${encodeURIComponent(title)}`
       );

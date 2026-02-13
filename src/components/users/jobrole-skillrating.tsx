@@ -214,7 +214,7 @@ export default function JobroleSkillRatingDesign({
 
     try {
       const response = await fetch(
-        `${sessionData.url}/table_data/?table=user_rating_details&filters[sub_institute_id]=${subInstituteId}&filters[user_id]=${sessionData.userId}&filters[jobrole_id]=${jobroleId}`
+        `${sessionData.url}/table_data?table=user_rating_details&filters[sub_institute_id]=${subInstituteId}&filters[user_id]=${sessionData.userId}&filters[jobrole_id]=${jobroleId}`
       );
       
       if (response.ok) {
