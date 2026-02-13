@@ -744,7 +744,7 @@ function BalanceEquityView() {
   const [similarityThreshold, setSimilarityThreshold] = useState(50);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [hoveredRole, setHoveredRole] = useState<string | null>(null);
-  const [heatmapData, setHeatmapData] = useState(HEATMAP);
+  const [heatmapData, setHeatmapData] = useState<any[]>([]);
   const [nodes, setNodes] = useState<any[]>([]);
   const [edges, setEdges] = useState<any[]>([]);
   const [scorecardData, setScorecardData] = useState<any>(null);
@@ -851,9 +851,9 @@ function BalanceEquityView() {
   const uniqueDepartments = Array.from(new Set(nodes.map((node: any) => node.department)));
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left Side */}
-      <div className="lg:col-span-2 space-y-6">
+    <div className="space-y-6">
+      {/* First Row: Side by Side Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Workload Heatmap */}
         <Card className="shadow-sm border rounded-xl">
           <CardContent className="p-5">
@@ -893,163 +893,6 @@ function BalanceEquityView() {
           </CardContent>
         </Card>
 
-        {/* Task Risk Analysis */}
-        <Card className="shadow-sm border rounded-xl">
-          <CardContent className="p-5">
-            <h3 className="text-lg font-semibold mb-1">Task Risk Analysis</h3>
-            <p className="text-xs text-slate-400 mb-4">Task-wise coverage (bubble size = criticality)</p>
-
-            <div className="w-full h-52 bg-white border rounded-md">
-              <svg viewBox="0 0 600 220" className="w-full h-full">
-                <line x1="40" y1="200" x2="560" y2="200" stroke="#e7e7e7" />
-                <line x1="40" y1="200" x2="40" y2="20" stroke="#e7e7e7" />
-                <circle cx="120" cy="80" r="7" fill="#3b82f6" />
-                <circle cx="200" cy="100" r="6" fill="#10b981" />
-                <circle cx="280" cy="60" r="8" fill="#f59e0b" />
-                <circle cx="380" cy="120" r="7" fill="#ef4444" />
-                <circle cx="460" cy="150" r="6" fill="#8b5cf6" />
-              </svg>
-            </div>
-
-            <p className="mt-3 text-xs text-slate-500">
-              High risk, low coverage tasks require immediate attention. Bubble size indicates task criticality.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Right Side */}
-      <div className="space-y-6">
-        {/* Role Similarity Network */}
-        <Card className="shadow-sm border rounded-xl">
-          <CardContent className="p-5">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-1">Role Similarity Network</h3>
-                <p className="text-xs text-slate-400">Visualize overlaps between roles based on skill/task similarity</p>
-              </div>
-              <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                Similarity ≥ 50%
-              </div>
-            </div>
-
-            {/* Network Visualization */}
-            <div className="w-full h-64 bg-white border rounded-md relative overflow-hidden mb-4">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                {/* Draw connections */}
-                {filteredConnections.map((conn, i) => {
-                  const source = filteredRoles.find((n: any) => n.id === conn.source);
-                  const target = filteredRoles.find((n: any) => n.id === conn.target);
-                  if (!source || !target) return null;
-
-                  return (
-                    <line
-                      key={i}
-                      x1={source.x}
-                      y1={source.y}
-                      x2={target.x}
-                      y2={target.y}
-                      stroke={DEPARTMENT_COLORS[source.department] || '#64748B'}
-                      strokeWidth={(conn.similarity / 100) * 3}
-                      strokeOpacity={0.4}
-                      className="transition-all duration-200"
-                    />
-                  );
-                })}
-
-                {/* Draw nodes */}
-                {filteredRoles.map((role: any) => {
-                  return (
-                    <g
-                      key={role.id}
-                      className="cursor-pointer transition-all duration-200"
-                    >
-                      <circle
-                        cx={role.x}
-                        cy={role.y}
-                        r={role.size * 2}
-                        fill={DEPARTMENT_COLORS[role.department] || '#64748B'}
-                        stroke="#fff"
-                        strokeWidth="1"
-                        className="transition-all duration-200"
-                      />
-                      <text
-                        x={role.x}
-                        y={role.y + 0.8}
-                        textAnchor="middle"
-                        fontSize="2.5"
-                        fill="white"
-                        fontWeight="bold"
-                        className="pointer-events-none select-none"
-                      >
-                        {role.label.split(' ').map((word: string) => word[0]).join('')}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-            </div>
-
-            {/* Filters & Controls */}
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-slate-600 font-medium">Similarity Threshold</label>
-                  <span className="text-xs text-slate-500">50%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  defaultValue={50}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider"
-                />
-                <div className="text-xs text-slate-400 mt-1">
-                  Show connections with similarity ≥ 50%
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-600 font-medium mb-2 block">Department Filter</label>
-                <select
-                  value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(e.target.value)}
-                  className="w-full text-xs border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Departments</option>
-                  {uniqueDepartments.map((dept: string) => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Department Colors Legend */}
-              <div>
-                <label className="text-xs text-slate-600 font-medium mb-2 block">Department Colors</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {uniqueDepartments.map((dept: string) => (
-                    <div key={dept} className="flex items-center text-xs">
-                      <div
-                        className="w-3 h-3 rounded mr-2 flex-shrink-0"
-                        style={{ backgroundColor: DEPARTMENT_COLORS[dept] || '#64748B' }}
-                      ></div>
-                      <span className="text-slate-700 truncate">{dept}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Node size info */}
-              <div className="text-xs text-slate-500 border-t pt-3">
-                <div className="flex justify-between">
-                  <span>Node size: Role importance</span>
-                  <span>Edge thickness: Similarity strength</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Coverage Scorecards */}
         <Card className="shadow-sm border rounded-xl">
           <CardContent className="p-5">
@@ -1084,6 +927,136 @@ function BalanceEquityView() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Second Row: Role Similarity Network (Full Width) */}
+      <Card className="shadow-sm border rounded-xl">
+        <CardContent className="p-5">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">Role Similarity Network</h3>
+              <p className="text-xs text-slate-400">Visualize overlaps between roles based on skill/task similarity</p>
+            </div>
+            <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+              Similarity ≥ 50%
+            </div>
+          </div>
+
+          {/* Network Visualization */}
+          <div className="w-full h-64 bg-white border rounded-md relative overflow-hidden mb-4">
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+              {/* Draw connections */}
+              {filteredConnections.map((conn, i) => {
+                const source = filteredRoles.find((n: any) => n.id === conn.source);
+                const target = filteredRoles.find((n: any) => n.id === conn.target);
+                if (!source || !target) return null;
+
+                return (
+                  <line
+                    key={i}
+                    x1={source.x}
+                    y1={source.y}
+                    x2={target.x}
+                    y2={target.y}
+                    stroke={DEPARTMENT_COLORS[source.department] || '#64748B'}
+                    strokeWidth={(conn.similarity / 100) * 3}
+                    strokeOpacity={0.4}
+                    className="transition-all duration-200"
+                  />
+                );
+              })}
+
+              {/* Draw nodes */}
+              {filteredRoles.map((role: any) => {
+                return (
+                  <g
+                    key={role.id}
+                    className="cursor-pointer transition-all duration-200"
+                  >
+                    <circle
+                      cx={role.x}
+                      cy={role.y}
+                      r={role.size * 2}
+                      fill={DEPARTMENT_COLORS[role.department] || '#64748B'}
+                      stroke="#fff"
+                      strokeWidth="1"
+                      className="transition-all duration-200"
+                    />
+                    <text
+                      x={role.x}
+                      y={role.y + 0.8}
+                      textAnchor="middle"
+                      fontSize="2.5"
+                      fill="white"
+                      fontWeight="bold"
+                      className="pointer-events-none select-none"
+                    >
+                      {role.label.split(' ').map((word: string) => word[0]).join('')}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+
+          {/* Filters & Controls */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs text-slate-600 font-medium">Similarity Threshold</label>
+                <span className="text-xs text-slate-500">50%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                defaultValue={50}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider"
+              />
+              <div className="text-xs text-slate-400 mt-1">
+                Show connections with similarity ≥ 50%
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-600 font-medium mb-2 block">Department Filter</label>
+              <select
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+                className="w-full text-xs border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Departments</option>
+                {uniqueDepartments.map((dept: string) => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Department Colors Legend */}
+            <div>
+              <label className="text-xs text-slate-600 font-medium mb-2 block">Department Colors</label>
+              <div className="grid grid-cols-4 gap-2">
+                {uniqueDepartments.map((dept: string) => (
+                  <div key={dept} className="flex items-center text-xs">
+                    <div
+                      className="w-3 h-3 rounded mr-1 flex-shrink-0"
+                      style={{ backgroundColor: DEPARTMENT_COLORS[dept] || '#64748B' }}
+                    ></div>
+                    <span className="text-slate-700 truncate">{dept}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Node size info */}
+          <div className="mt-4 text-xs text-slate-500 border-t pt-3">
+            <div className="flex justify-between">
+              <span>Node size: Role importance</span>
+              <span>Edge thickness: Similarity strength</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
