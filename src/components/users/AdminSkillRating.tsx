@@ -402,7 +402,7 @@ export default function Page({
   // Fetch all skills from first API
   const fetchAllSkills = async () => {
     try {
-      const base = sessionData.APP_URL || "https://hp.triz.co.in        ";
+      const base = sessionData.APP_URL || "https://hp.triz.co.in";
       const response = await fetch(
         `${base}/get-kaba?sub_institute_id=${sessionData.sub_institute_id}&type=${type}&type_id=${type_id}&title=${encodeURIComponent(title)}`
       );
@@ -440,9 +440,9 @@ export default function Page({
   // Fetch user rating data from second API
   const fetchUserRatingData = async () => {
     try {
-      const base = sessionData.APP_URL || "http://127.0.0.1:8000";
+      const base = sessionData.APP_URL || "https://hp.triz.co.in";
       const response = await fetch(
-        `${base}/table_data/?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${sessionData.user_id}&filters[jobrole_id]=${jobrole_id}`
+        `${base}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${sessionData.user_id}&filters[jobrole_id]=${jobrole_id}`
       );
       
       if (response.ok) {
