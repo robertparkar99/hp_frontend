@@ -405,28 +405,30 @@ const SearchToolbar = ({
         </div>
 
         {/* Toolbar actions */}
-        <div className="flex items-center space-x-1">
-          <div className="flex items-center gap-1 relative">
-            <div className="relative" ref={advancedRef}>
-              <Button variant="ghost" size="icon" title="Settings / Manage Fields">
-                <Icon name="Settings" size={18} />
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 relative bg-muted/30 rounded-lg p-1">
+            <div className="relative flex items-center gap-0.5">
+              <Button variant="ghost" size="icon" title="Settings / Manage Fields" className="h-8 w-8">
+                <Icon name="Settings" size={16} />
               </Button>
 
-              <Button variant="ghost" size="icon" title="Refresh Catalog">
-                <Icon name="RotateCcw" size={18} />
+              <Button variant="ghost" size="icon" title="Refresh Catalog" className="h-8 w-8">
+                <Icon name="RotateCcw" size={16} />
               </Button>
 
-              <Button variant="ghost" size="icon" title="AI Insights / Reports">
-                <Icon name="BarChart3" size={18} />
+              <Button variant="ghost" size="icon" title="AI Insights / Reports" className="h-8 w-8">
+                <Icon name="BarChart3" size={16} />
               </Button>
 
-              <Button variant="ghost" size="icon" title="Share / Publish Module">
-                <Icon name="Share2" size={18} />
+              <Button variant="ghost" size="icon" title="Share / Publish Module" className="h-8 w-8">
+                <Icon name="Share2" size={16} />
               </Button>
 
-              <Button variant="ghost" size="icon" title="Help / Info">
-                <Icon name="CircleHelp" size={18} />
+              <Button variant="ghost" size="icon" title="Help / Info" className="h-8 w-8">
+                <Icon name="CircleHelp" size={16} />
               </Button>
+
+              <div className="w-px h-6 bg-border mx-1"></div>
 
               <Button
                 variant="outline"
@@ -435,33 +437,33 @@ const SearchToolbar = ({
                   setIsAdvancedOpen(!isAdvancedOpen);
                   setShowMoreFilters(false);
                 }}
-                className={isAdvancedOpen ? 'bg-primary/10 text-primary' : ''}
+                className={`h-8 ${isAdvancedOpen ? 'bg-primary/10 text-primary' : ''}`}
                 disabled={loading}
               >
-                <Icon name="Filter" size={14} className="mr-2" />
-                Filters
-                {loading && <span className="ml-2">...</span>}
+                <Icon name="Filter" size={14} className="mr-1.5" />
+                <span className="hidden sm:inline">Filters</span>
+                {loading && <span className="ml-1">...</span>}
               </Button>
-
-              {isAdvancedOpen && (
-                <div className="absolute mt-2 left-0 z-50 w-[360px] bg-background border border-border shadow-lg rounded-md p-4 flex flex-col gap-6 max-h-96 overflow-y-auto">
-                  {filtersList.map((section) =>
-                    section.options.length > 0
-                      ? renderFilterGroup(section.title, section.key, section.options)
-                      : null
-                  )}
-                </div>
-              )}
             </div>
+
+            {isAdvancedOpen && (
+              <div className="absolute mt-2 left-0 z-50 w-[360px] bg-background border border-border shadow-lg rounded-md p-4 flex flex-col gap-6 max-h-96 overflow-y-auto">
+                {filtersList.map((section) =>
+                  section.options.length > 0
+                    ? renderFilterGroup(section.title, section.key, section.options)
+                    : null
+                )}
+              </div>
+            )}
           </div>
 
           {/* View toggle */}
-          <div className="flex items-center border border-border rounded-md">
+          <div className="flex items-center border border-border rounded-md overflow-hidden ml-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('grid')}
-              className={`rounded-r-none border-r border-border ${
+              className={`rounded-none border-r border-border h-9 px-3 ${
                 viewMode === 'grid'
                   ? 'bg-blue-400 text-white hover:bg-blue-500'
                   : 'bg-transparent'
@@ -474,7 +476,7 @@ const SearchToolbar = ({
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('list')}
-              className={`rounded-l-none ${
+              className={`rounded-none h-9 px-3 ${
                 viewMode === 'list'
                   ? 'bg-blue-400 text-white hover:bg-blue-500'
                   : 'bg-transparent'
