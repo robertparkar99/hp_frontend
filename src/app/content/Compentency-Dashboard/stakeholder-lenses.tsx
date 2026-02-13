@@ -83,30 +83,33 @@ const Progress = ({ value, className }: any) => (
 // View Toggle Component
 const ViewToggle = ({ currentView, onViewChange }: any) => {
   return (
-    <div className="flex bg-muted/50 rounded-lg p-1 w-fit">
+    <div className="flex flex-col sm:flex-row gap-2 bg-muted/50 rounded-lg p-1 w-full sm:w-fit">
       <Button
         variant={currentView === "competency-density" ? "default" : "ghost"}
-        className={`px-4 py-2 text-sm ${currentView === "competency-density" ? "shadow-sm" : ""}`}
+        className={`px-3 py-2 text-xs sm:text-sm ${currentView === "competency-density" ? "shadow-sm" : ""}`}
         onClick={() => onViewChange("competency-density")}
       >
-        <TrendingUp className="h-4 w-4 mr-2" />
-        Competency Density
+        <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+        <span className="hidden sm:inline">Competency Density</span>
+        <span className="sm:hidden">Density</span>
       </Button>
       <Button
         variant={currentView === "skills-heatmap" ? "default" : "ghost"}
-        className={`px-4 py-2 text-sm ${currentView === "skills-heatmap" ? "shadow-sm" : ""}`}
+        className={`px-3 py-2 text-xs sm:text-sm ${currentView === "skills-heatmap" ? "shadow-sm" : ""}`}
         onClick={() => onViewChange("skills-heatmap")}
       >
-        <Layers className="h-4 w-4 mr-2" />
-        Skills Heatmap
+        <Layers className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+        <span className="hidden sm:inline">Skills Heatmap</span>
+        <span className="sm:hidden">Heatmap</span>
       </Button>
       <Button
         variant={currentView === "skills-gap" ? "default" : "ghost"}
-        className={`px-4 py-2 text-sm ${currentView === "skills-gap" ? "shadow-sm" : ""}`}
+        className={`px-3 py-2 text-xs sm:text-sm ${currentView === "skills-gap" ? "shadow-sm" : ""}`}
         onClick={() => onViewChange("skills-gap")}
       >
-        <Globe className="h-4 w-4 mr-2" />
-        Skills Gap
+        <Globe className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+        <span className="hidden sm:inline">Skills Gap</span>
+        <span className="sm:hidden">Gap</span>
       </Button>
     </div>
   );
@@ -135,8 +138,8 @@ export const FilterControls = ({
   };
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between">
+    <Card className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium text-foreground">Filters & Controls</span>
@@ -145,7 +148,7 @@ export const FilterControls = ({
           variant="ghost"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground w-full sm:w-auto"
         >
           {isExpanded ? "Hide" : "Show"}
         </Button>
@@ -292,8 +295,8 @@ export const GapChart = ({ data, onSkillClick }: GapChartProps) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   return (
-    <Card className="p-6">
-      <ResponsiveContainer width="100%" height={480}>
+    <Card className="p-4 sm:p-6">
+      <ResponsiveContainer width="100%" height={320} minHeight={250}>
         <ComposedChart
           data={data}
           margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
@@ -400,7 +403,7 @@ export const SkillDrillPanel = ({ skill, onClose }: SkillDrillPanelProps) => {
   ];
 
   return (
-    <div className="fixed right-0 top-0 z-50 h-full w-full overflow-y-auto bg-card shadow-2xl sm:w-[480px]">
+    <div className="fixed right-0 top-0 z-50 h-full w-full sm:w-[480px] overflow-y-auto bg-card shadow-2xl">
       <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card p-4">
         <div>
           <h2 className="text-lg font-bold text-foreground">{skill.skill_name}</h2>
@@ -604,13 +607,13 @@ const CompetencyKPICard = ({ label, value, trend, trendValue, icon }: any) => {
   const trendColor = trend === "up" ? "text-green-600" : trend === "down" ? "text-red-600" : "text-yellow-600";
   
   return (
-    <Card className="p-6 bg-gradient-to-br from-card to-card/80 border-none shadow-sm hover:shadow-md transition-shadow">
+    <Card className="p-4 sm:p-6 bg-gradient-to-br from-card to-card/80 border-none shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{value}</p>
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="text-xl sm:text-2xl font-bold text-foreground mt-1">{value}</p>
           {trend && trendValue && (
-            <p className={`text-sm mt-1 flex items-center gap-1 ${trendColor}`}>
+            <p className={`text-xs sm:text-sm mt-1 flex items-center gap-1 ${trendColor}`}>
               <TrendingUp className="h-3 w-3" />
               {trendValue}
             </p>
@@ -627,36 +630,36 @@ const CompetencyKPICard = ({ label, value, trend, trendValue, icon }: any) => {
 // Competency Dashboard Header Component
 const CompetencyDashboardHeader = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* KPI Strip */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <CompetencyKPICard
           label="Fastest Growing Role"
           value="Data Scientist"
           trend="up"
           trendValue="+45% growth"
-          icon={<Target className="h-8 w-8" />}
+          icon={<Target className="h-6 w-6 sm:h-8 sm:w-8" />}
         />
         <CompetencyKPICard
           label="Average Growth (Top 10)"
           value="+12%"
           trend="up"
           trendValue="YoY increase"
-          icon={<TrendingUp className="h-8 w-8" />}
+          icon={<TrendingUp className="h-6 w-6 sm:h-8 sm:w-8" />}
         />
         <CompetencyKPICard
           label="Total Roles Analyzed"
           value="127"
           trend="stable"
           trendValue="Active roles"
-          icon={<Users className="h-8 w-8" />}
+          icon={<Users className="h-6 w-6 sm:h-8 sm:w-8" />}
         />
         <CompetencyKPICard
           label="Projection Horizon"
           value="2026"
           trend="stable"
           trendValue="3 years ahead"
-          icon={<Calendar className="h-8 w-8" />}
+          icon={<Calendar className="h-6 w-6 sm:h-8 sm:w-8" />}
         />
       </div>
     </div>
@@ -666,13 +669,13 @@ const CompetencyDashboardHeader = () => {
 // Trend Chart Component for Competency Density
 const CompetencyTrendChart = ({ selectedRole }: any) => {
   return (
-    <Card className="p-6 border-none shadow-sm">
+    <Card className="p-4 sm:p-6 border-none shadow-sm">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Competency Density Trends</h3>
-        <p className="text-sm text-muted-foreground">Historical data (solid) and projections (dashed) for top roles</p>
+        <h3 className="text-base sm:text-lg font-semibold text-foreground">Competency Density Trends</h3>
+        <p className="text-xs sm:text-sm text-muted-foreground">Historical data (solid) and projections (dashed) for top roles</p>
       </div>
       
-      <div className="h-96">
+      <div className="h-64 sm:h-80 lg:h-96">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={trendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -754,19 +757,19 @@ const CompetencyRoleSidebar = ({ selectedRole, onRoleSelect }: any) => {
   };
 
   return (
-    <Card className="p-6 border-none shadow-sm h-fit">
-      <div className="space-y-4">
+    <Card className="p-4 sm:p-6 border-none shadow-sm h-fit sticky top-4">
+      <div className="space-y-3 sm:space-y-4">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Role Rankings</h3>
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          <h3 className="text-base sm:text-lg font-semibold text-foreground">Role Rankings</h3>
         </div>
 
         {/* Category Filter */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">Job Category</Label>
+          <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Job Category</Label>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="h-9">
+            <SelectTrigger className="h-8 sm:h-9">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
@@ -859,47 +862,47 @@ const CompetencyDrillDownPanel = ({ selectedRole }: any) => {
   const role = roleDetails[selectedRole as keyof typeof roleDetails];
 
   return (
-    <Card className="p-6 border-none shadow-sm">
-      <div className="space-y-6">
+    <Card className="p-4 sm:p-6 border-none shadow-sm">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Badge className="bg-primary text-primary-foreground">
+        <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3">
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <Badge className="bg-primary text-primary-foreground text-xs">
                 Rank #{role.rank}
               </Badge>
-              <h3 className="text-xl font-bold text-foreground">{selectedRole}</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-foreground">{selectedRole}</h3>
             </div>
-            <p className="text-muted-foreground">{role.description}</p>
+            <p className="text-sm text-muted-foreground line-clamp-2">{role.description}</p>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-primary">{role.densityScore}</p>
-            <p className="text-sm text-muted-foreground">Density Score</p>
+          <div className="text-left sm:text-right">
+            <p className="text-xl sm:text-2xl font-bold text-primary">{role.densityScore}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Density Score</p>
           </div>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-green-50 p-4 rounded-lg border">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-green-50 p-3 sm:p-4 rounded-lg border">
             <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium">Projected Growth</span>
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+              <span className="text-xs sm:text-sm font-medium">Projected Growth</span>
             </div>
-            <p className="text-lg font-bold text-green-600">{role.projectedGrowth}</p>
+            <p className="text-base sm:text-lg font-bold text-green-600">{role.projectedGrowth}</p>
           </div>
           
-          <div className="bg-blue-50 p-4 rounded-lg border">
+          <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border">
             <div className="flex items-center gap-2 mb-1">
-              <Target className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium">Current Score</span>
+              <Target className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+              <span className="text-xs sm:text-sm font-medium">Current Score</span>
             </div>
-            <p className="text-lg font-bold text-blue-600">{role.densityScore}</p>
+            <p className="text-base sm:text-lg font-bold text-blue-600">{role.densityScore}</p>
           </div>
           
-          <div className="bg-purple-50 p-4 rounded-lg border">
+          <div className="bg-purple-50 p-3 sm:p-4 rounded-lg border">
             <div className="flex items-center gap-2 mb-1">
-              <Briefcase className="h-4 w-4 text-purple-600" />
-              <span className="text-sm font-medium">Departments</span>
+              <Briefcase className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
+              <span className="text-xs sm:text-sm font-medium">Departments</span>
             </div>
             <p className="text-sm font-medium">{role.departments.length} Active</p>
           </div>
@@ -907,17 +910,17 @@ const CompetencyDrillDownPanel = ({ selectedRole }: any) => {
 
         {/* Top Competencies */}
         <div>
-          <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
+          <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+            <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             Top Driving Competencies
           </h4>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {role.topCompetencies.map((competency, index) => (
-              <div key={index} className="space-y-2">
+              <div key={index} className="space-y-1 sm:space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{competency.name}</span>
+                  <span className="font-medium text-xs sm:text-sm">{competency.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">{competency.weight}%</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground">{competency.weight}%</span>
                     <TrendingUp 
                       className={`h-3 w-3 ${
                         competency.trend === "up" ? "text-green-600" : "text-yellow-600"
@@ -927,7 +930,7 @@ const CompetencyDrillDownPanel = ({ selectedRole }: any) => {
                 </div>
                 <Progress 
                   value={competency.weight} 
-                  className="h-2"
+                  className="h-1.5 sm:h-2"
                 />
               </div>
             ))}
@@ -960,9 +963,9 @@ const FilterBar = ({ onExport, onReset }: any) => {
   const [period, setPeriod] = useState("1year");
 
   return (
-    <div className="flex flex-wrap items-center gap-3 p-4 bg-card border-b border-border">
+    <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-card border-b border-border">
       <Select value={department} onValueChange={setDepartment}>
-        <SelectTrigger className="h-9 w-[180px]">
+        <SelectTrigger className="h-9 w-full sm:w-[140px] lg:w-[180px]">
           <SelectValue placeholder="Department" />
         </SelectTrigger>
         <SelectContent>
@@ -975,7 +978,7 @@ const FilterBar = ({ onExport, onReset }: any) => {
       </Select>
 
       <Select value={level} onValueChange={setLevel}>
-        <SelectTrigger className="h-9 w-[180px]">
+        <SelectTrigger className="h-9 w-full sm:w-[120px] lg:w-[180px]">
           <SelectValue placeholder="Level" />
         </SelectTrigger>
         <SelectContent>
@@ -987,7 +990,7 @@ const FilterBar = ({ onExport, onReset }: any) => {
       </Select>
 
       <Select value={location} onValueChange={setLocation}>
-        <SelectTrigger className="h-9 w-[180px]">
+        <SelectTrigger className="h-9 w-full sm:w-[130px] lg:w-[180px]">
           <SelectValue placeholder="Location" />
         </SelectTrigger>
         <SelectContent>
@@ -1000,7 +1003,7 @@ const FilterBar = ({ onExport, onReset }: any) => {
       </Select>
 
       <Select value={period} onValueChange={setPeriod}>
-        <SelectTrigger className="h-9 w-[180px]">
+        <SelectTrigger className="h-9 w-full sm:w-[120px] lg:w-[180px]">
           <SelectValue placeholder="Period" />
         </SelectTrigger>
         <SelectContent>
@@ -1011,14 +1014,14 @@ const FilterBar = ({ onExport, onReset }: any) => {
         </SelectContent>
       </Select>
 
-      <div className="ml-auto flex gap-2">
-        <Button variant="outline" size="sm" onClick={onReset}>
-          <RotateCcw className="h-4 w-4 mr-2" />
-          Reset
+      <div className="ml-auto flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+        <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={onReset}>
+          <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">Reset</span>
         </Button>
-        <Button variant="default" size="sm" onClick={onExport}>
-          <Download className="h-4 w-4 mr-2" />
-          Export
+        <Button variant="default" size="sm" className="flex-1 sm:flex-none" onClick={onExport}>
+          <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">Export</span>
         </Button>
       </div>
     </div>
@@ -1028,19 +1031,19 @@ const FilterBar = ({ onExport, onReset }: any) => {
 // HeatmapLegend Component
 const HeatmapLegend = () => {
   return (
-    <div className="flex items-center gap-4 p-4 bg-card rounded-lg border border-border">
-      <span className="text-sm font-medium text-foreground">Gap Severity:</span>
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-card rounded-lg border border-border">
+      <span className="text-xs sm:text-sm font-medium text-foreground">Gap Severity:</span>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
         <div className="flex items-center gap-1">
-          <div className="w-8 h-4 bg-green-200 rounded"></div>
+          <div className="w-6 h-3 sm:w-8 sm:h-4 bg-green-200 rounded"></div>
           <span className="text-xs text-muted-foreground">Low (&lt;10%)</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-8 h-4 bg-yellow-200 rounded"></div>
+          <div className="w-6 h-3 sm:w-8 sm:h-4 bg-yellow-200 rounded"></div>
           <span className="text-xs text-muted-foreground">Moderate (10-25%)</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-8 h-4 bg-red-200 rounded"></div>
+          <div className="w-6 h-3 sm:w-8 sm:h-4 bg-red-200 rounded"></div>
           <span className="text-xs text-muted-foreground">Critical (&gt;25%)</span>
         </div>
       </div>
@@ -1082,18 +1085,18 @@ const InsightCards = () => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:p-6">
       {insights.map((insight) => (
         <Card key={insight.title} className="hover:shadow-md transition-shadow">
-          <div className="p-6">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
               <insight.icon className={`h-4 w-4 ${
                 insight.variant === "critical" ? "text-destructive" :
                 insight.variant === "success" ? "text-success" : "text-warning"
               }`} />
-              <h3 className="text-sm font-medium text-muted-foreground">{insight.title}</h3>
+              <h3 className="text-xs sm:text-sm font-medium text-muted-foreground">{insight.title}</h3>
             </div>
-            <div className="text-lg font-semibold">{insight.value}</div>
+            <div className="text-base sm:text-lg font-semibold truncate">{insight.value}</div>
             <div className={`text-xs mt-1 ${
               insight.variant === "critical" ? "text-destructive" :
               insight.variant === "success" ? "text-success" : "text-warning"
@@ -1129,15 +1132,15 @@ const SidePanel = ({ isOpen, onClose, selectedCell }: any) => {
   ];
 
   return (
-    <div className="fixed right-0 top-0 h-full w-96 bg-card border-l border-border shadow-2xl z-50 overflow-y-auto animate-in slide-in-from-right duration-300">
-      <div className="sticky top-0 bg-card border-b border-border p-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Skill Gap Insights</h3>
+    <div className="fixed right-0 top-0 h-full w-full sm:w-[380px] md:w-[420px] lg:w-96 bg-card border-l border-border shadow-2xl z-50 overflow-y-auto animate-in slide-in-from-right duration-300">
+      <div className="sticky top-0 bg-card border-b border-border p-3 sm:p-4 flex items-center justify-between">
+        <h3 className="text-base sm:text-lg font-semibold">Skill Gap Insights</h3>
         <Button variant="ghost" size="sm" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Cluster Summary */}
         <div>
           <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -1260,17 +1263,17 @@ const HeatmapGrid = ({ data, roles, skills, onCellClick }: any) => {
   return (
     <div className="overflow-auto rounded-lg border border-border bg-card">
       <div className="inline-block min-w-full">
-        <div className="grid" style={{ gridTemplateColumns: `150px repeat(${skills.length}, 100px)` }}>
+        <div className="grid" style={{ gridTemplateColumns: `120px repeat(${skills.length}, 80px)` }}>
           {/* Header Row */}
-          <div className="sticky top-0 left-0 z-20 bg-card border-b border-r border-border p-3 font-semibold">
+          <div className="sticky top-0 left-0 z-20 bg-card border-b border-r border-border p-2 sm:p-3 font-semibold text-xs sm:text-sm">
             Role / Skill
           </div>
           {skills.map((skill: string) => (
             <div
               key={skill}
-              className="sticky top-0 z-10 bg-card border-b border-border p-3 text-xs font-medium text-center"
+              className="sticky top-0 z-10 bg-card border-b border-border p-1 sm:p-3 text-xs font-medium text-center"
             >
-              <div className="transform -rotate-45 origin-left whitespace-nowrap">{skill}</div>
+              <div className="transform -rotate-45 origin-left whitespace-nowrap text-xs">{skill}</div>
             </div>
           ))}
 
@@ -1278,7 +1281,8 @@ const HeatmapGrid = ({ data, roles, skills, onCellClick }: any) => {
           {roles.map((role: string) => (
             <React.Fragment key={role}>
               <div
-                className="sticky left-0 z-10 bg-card border-r border-b border-border p-3 text-sm font-medium"
+                className="sticky left-0 z-10 bg-card border-r border-b border-border p-2 sm:p-3 text-xs sm:text-sm font-medium truncate"
+                title={role}
               >
                 {role}
               </div>
@@ -1290,7 +1294,7 @@ const HeatmapGrid = ({ data, roles, skills, onCellClick }: any) => {
                 return (
                   <div
                     key={cellKey}
-                    className={`relative border-b border-r border-border p-3 cursor-pointer transition-all duration-200 ${getIntensityClass(gap)} ${hoveredCell === cellKey ? "ring-2 ring-primary ring-inset scale-105" : ""}`}
+                    className={`relative border-b border-r border-border p-1 sm:p-3 cursor-pointer transition-all duration-200 ${getIntensityClass(gap)} ${hoveredCell === cellKey ? "ring-2 ring-primary ring-inset scale-105" : ""}`}
                     onMouseEnter={() => setHoveredCell(cellKey)}
                     onMouseLeave={() => setHoveredCell(null)}
                     onClick={() => onCellClick?.({ 
@@ -1305,7 +1309,7 @@ const HeatmapGrid = ({ data, roles, skills, onCellClick }: any) => {
                       {gap > 0 ? `${gap}%` : ""}
                     </div>
                     {hoveredCell === cellKey && (
-                      <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2 z-30 bg-popover text-popover-foreground px-3 py-2 rounded-md shadow-lg text-xs whitespace-nowrap border border-border">
+                      <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2 z-30 bg-popover text-popover-foreground px-2 py-1 sm:px-3 sm:py-2 rounded-md shadow-lg text-xs whitespace-nowrap border border-border">
                         <div className="font-semibold">{role}</div>
                         <div className="text-muted-foreground">{skill}</div>
                         <div className="text-primary font-semibold mt-1">{gap}% gap</div>
@@ -1378,8 +1382,8 @@ const SkillsHeatmapView = () => {
     <div className="min-h-screen bg-background">
       <FilterBar onExport={handleExport} onReset={handleReset} />
       
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="space-y-4">
+      <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="space-y-3 sm:space-y-4">
           <HeatmapLegend />
           <HeatmapGrid 
             data={sampleData} 
@@ -1510,10 +1514,10 @@ const SkillsGapDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-6">
+      <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
         {/* KPI Chips */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <KPIChip
             icon={Users}
             label="Total Employees"
@@ -1568,10 +1572,10 @@ const CompetencyDensityDashboard = () => {
   const [selectedRole, setSelectedRole] = useState<string | undefined>();
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       <CompetencyDashboardHeader />
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Sidebar */}
         <div className="lg:col-span-1">
           <CompetencyRoleSidebar 
@@ -1581,7 +1585,7 @@ const CompetencyDensityDashboard = () => {
         </div>
         
         {/* Main Content */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-3 space-y-4 sm:space-y-6">
           <CompetencyTrendChart selectedRole={selectedRole} />
           <CompetencyDrillDownPanel selectedRole={selectedRole} />
         </div>
@@ -1596,9 +1600,9 @@ export const CombinedDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="p-6 border-b border-border">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">
+      <div className="p-4 sm:p-6 border-b border-border">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
             {currentView === "skills-gap" ? "Skills Gap Analysis" : 
              currentView === "competency-density" ? "Competency Density Dashboard" : 
              "Skills Heatmap Analysis"}

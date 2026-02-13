@@ -87,7 +87,7 @@ const SkillLibrary = () => {
   }
 
   return (
-    <div className="bg-background rounded-xl p-5 min-h-screen">
+    <div className="bg-background rounded-xl p-4 sm:p-5 min-h-screen overflow-x-hidden flex flex-col">
       <TabsMenu
         tabs={["Skill Library", "Jobrole Library", "Jobrole Task Library", "Knowledge", "Ability", "Attitude", "Behaviour", "Invisible Library"]}
         activeTab={activeTab}
