@@ -385,7 +385,8 @@ const LearningCatalog: React.FC = () => {
       subject_category: 'external',
       is_external: true,
       external_url: externalCourse.url,
-      platform: externalCourse.platform
+      platform: externalCourse.platform,
+      enrollment_status: 'enrolled'
     };
 
     // Add to courses list and sort by id to show latest first
@@ -409,37 +410,39 @@ const LearningCatalog: React.FC = () => {
       {!isViewOpen ? (
         <div className="min-h-screen bg-background rounded-xl">
           <main>
-            <div className="max-w-full o px-4 sm:px-6 lg:px-8 py-8">
+            <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
               {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
                     Learning Catalog
                   </h1>
-                  <p className="text-muted-foreground mt-2 text-sm">
+                  <p className="text-muted-foreground mt-1 text-sm truncate">
                     Discover and enroll in courses to advance your skills and career
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {sessionData &&
                     sessionData.user_profile_name &&
                     ["ADMIN", "HR"].includes(sessionData.user_profile_name.toUpperCase()) ? (
                     <>
                       <Button
                         onClick={() => handleExternalDialogOpen(true)}
-                        className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+                        className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors text-xs sm:text-sm whitespace-nowrap"
                       >
-                        <Icon name="Plus" size={16} className="mr-2" />
-                        External Course
+                        <Icon name="Plus" size={16} className="mr-1 sm:mr-2 flex-shrink-0" />
+                        <span className="hidden sm:inline">External</span>
+                        <span className="sm:hidden">Course</span>
                       </Button>
                       
                       <Button
                         onClick={() => setIsAiDialogOpen(true)}
-                        className="flex items-center gap-2 bg-[#e8f0ff] text-blue-700 hover:bg-blue-100 transition-colors"
+                        className="flex items-center gap-2 bg-[#e8f0ff] text-blue-700 hover:bg-blue-100 transition-colors text-xs sm:text-sm whitespace-nowrap"
                       >
-                        <span className="mdi mdi-creation text-xl"></span>
-                        Build with AI
+                        <span className="mdi mdi-creation text-lg sm:text-xl flex-shrink-0"></span>
+                        <span className="hidden sm:inline">Build with AI</span>
+                        <span className="sm:hidden">AI</span>
                       </Button>
 
                       <Button
@@ -447,9 +450,9 @@ const LearningCatalog: React.FC = () => {
                           setCourseToEdit(null)
                           setIsAddDialogOpen(true)
                         }}
-                        className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+                        className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors text-xs sm:text-sm whitespace-nowrap"
                       >
-                        <Icon name="Plus" size={16} className="mr-2" />
+                        <Icon name="Plus" size={16} className="mr-1 sm:mr-2 flex-shrink-0" />
                         Create Course
                       </Button>
                     </>
@@ -457,10 +460,10 @@ const LearningCatalog: React.FC = () => {
 
                   <Button
                     variant="outline"
-                    className="lg:hidden"
+                    className="lg:hidden text-xs sm:text-sm"
                     onClick={() => setIsFilterDrawerOpen(true)}
                   >
-                    <Icon name="Filter" size={16} className="mr-2" />
+                    <Icon name="Filter" size={16} className="mr-1 sm:mr-2 flex-shrink-0" />
                     Filters
                   </Button>
                 </div>
