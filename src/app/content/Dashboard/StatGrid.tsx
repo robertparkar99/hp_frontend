@@ -1,3 +1,4 @@
+//
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -138,6 +139,7 @@ interface SuggestedCourse {
   course_id: number;
   course_name: string;
   task_id: number;
+  task_title: string;
   sub_institute_id: number;
   created_at: string;
   updated_at: string;
@@ -564,6 +566,7 @@ export default function Dashboard() {
             enrollment_status: null,
             course_id: item.course_id,
             task_id: item.task_id,
+            task_title: item.task_title,
             employee_id: item.employee_id,
             sub_institute_id: item.sub_institute_id,
             created_at: item.created_at,
@@ -774,7 +777,94 @@ export default function Dashboard() {
     return "bg-gray-300 hover:bg-gray-200";
   };
 
-  // Render proportional task bar with multiple colors
+  // Render stacked task bar chart with combined colors in single bar
+  const renderTaskBarChart = (data: any[], isMonthly: boolean = false) => {
+    const maxValue = Math.max(...data.map(d => d.total), 1);
+    const chartHeight = 192; // h-48 = 192px
+
+    return (
+      <div className="relative">
+        {/* Y-axis labels */}
+        <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500 pr-2">
+          <span>{maxValue}</span>
+          <span>{Math.round(maxValue * 0.75)}</span>
+          <span>{Math.round(maxValue * 0.5)}</span>
+          <span>{Math.round(maxValue * 0.25)}</span>
+          <span>0</span>
+        </div>
+        
+        {/* Chart area */}
+        <div className="ml-10 h-48 flex items-end gap-3">
+          {data.map((item, i) => {
+            const completed = item.COMPLETED ?? item.Completed ?? 0;
+            const inProgress = item.IN_PROGRESS ?? item["In Progress"] ?? 0;
+            const pending = item.PENDING ?? item.Pending ?? 0;
+            const total = item.total;
+            
+            // Calculate heights for stacked bar
+            // Bar height represents the total count
+            const barHeight = total > 0 ? (total / maxValue) * chartHeight : 0;
+            // Segment heights are proportional to their counts relative to total
+            const completedHeight = total > 0 ? (completed / total) * barHeight : 0;
+            const inProgressHeight = total > 0 ? (inProgress / total) * barHeight : 0;
+            const pendingHeight = total > 0 ? (pending / total) * barHeight : 0;
+            
+            return (
+              <div 
+                key={i} 
+                className="flex flex-col items-center flex-1 cursor-pointer group"
+                onMouseEnter={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setTooltipData({
+                    visible: true,
+                    x: rect.left + rect.width / 2,
+                    y: rect.top,
+                    date: isMonthly ? item.month : item.date,
+                    completed,
+                    pending,
+                    inProgress,
+                    total: item.total
+                  });
+                }}
+                onMouseLeave={() => setTooltipData(null)}
+              >
+                {/* Stacked bar container */}
+                <div className="w-8 h-40 flex flex-col justify-end rounded-t overflow-hidden">
+                  {/* Pending bar (bottom) */}
+                  <div 
+                    className="w-full bg-yellow-400 transition-all duration-200 group-hover:bg-yellow-500"
+                    style={{ height: `${pendingHeight}px` }}
+                    title={`Pending: ${pending}`}
+                  />
+                  {/* In Progress bar (middle) */}
+                  <div 
+                    className="w-full bg-blue-500 transition-all duration-200 group-hover:bg-blue-600"
+                    style={{ height: `${inProgressHeight}px` }}
+                    title={`In Progress: ${inProgress}`}
+                  />
+                  {/* Completed bar (top) */}
+                  <div 
+                    className="w-full bg-green-500 transition-all duration-200 group-hover:bg-green-600"
+                    style={{ height: `${completedHeight}px` }}
+                    title={`Completed: ${completed}`}
+                  />
+                </div>
+                {/* Total value label */}
+                <span className="text-xs text-gray-700 font-medium mt-1">
+                  {total > 0 ? total : '-'}
+                </span>
+                <span className="text-xs text-gray-500 mt-1">
+                  {isMonthly ? item.month : item.date}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Render proportional task bar with multiple colors (legacy - kept for compatibility)
   const renderProportionalTaskBar = (Completed: number, InProgress: number, Pending: number, total: number) => {
     if (total === 0) {
       return <div className="w-full bg-gray-200 rounded" style={{ height: '4px' }} />;
@@ -1204,65 +1294,8 @@ export default function Dashboard() {
                       {/* Weekly */}
                       <TabsContent value="weekly">
                         {taskProgressData.data.weekly.date_wise_counts.length > 0 ? (
-                          <div className="relative">
-                            <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
-                              <span>{Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total))}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.8)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.6)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.4)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.2)}</span>
-                              <span>0</span>
-                            </div>
-                            <div className="ml-6 h-48 flex justify-between items-end gap-2">
-                              {taskProgressData.data.weekly.date_wise_counts.map((item, i) => {
-                                return (
-                                  <div 
-                                    key={i} 
-                                    className="flex flex-col items-center flex-1 cursor-pointer"
-                                    onMouseEnter={(e) => {
-                                      const rect = e.currentTarget.getBoundingClientRect();
-                                      setTooltipData({
-                                        visible: true,
-                                        x: rect.left + rect.width / 2,
-                                        y: rect.top,
-                                        date: item.date,
-                                        completed: item.COMPLETED ?? item.Completed ?? 0,
-                                        pending: item.PENDING ?? item.Pending ?? 0,
-                                        inProgress: item.IN_PROGRESS ?? item["In Progress"] ?? 0,
-                                        total: item.total
-                                      });
-                                    }}
-                                    onMouseLeave={() => setTooltipData(null)}
-                                  >
-                                    {renderProportionalTaskBar(item.COMPLETED ?? item.Completed ?? 0, item.IN_PROGRESS ?? item["In Progress"] ?? 0, item.PENDING ?? item.Pending ?? 0, item.total)}
-                                    <span className="text-xs text-gray-500 mt-2">
-                                      {new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            
-                            {/* Tooltip */}
-                            {tooltipData && tooltipData.visible && (
-                              <div 
-                                className="fixed z-50 w-52 rounded-lg bg-white text-gray-800 text-xs shadow-lg border border-gray-200 p-3 pointer-events-none transition-opacity duration-150"
-
-                                style={{ 
-                                  left: tooltipData.x, 
-                                  top: tooltipData.y - 10,
-                                  transform: 'translateX(-50%) translateY(-100%)'
-                                }}
-                              >
-                                <p className="font-semibold mb-1">{new Date(tooltipData.date).toLocaleDateString()}</p>
-                                <div className="space-y-0.5">
-                                  <p className="text-green-500">Completed: {tooltipData.completed}</p>
-                                  <p className="text-blue-500">In Progress: {tooltipData.inProgress}</p>
-                                  <p className="text-yellow-400">Pending: {tooltipData.pending}</p>
-                                  <p className="font-semibold mt-1 border-t border-gray-700 pt-1">Total: {tooltipData.total}</p>
-                                </div>
-                              </div>
-                            )}
+                          <div className="py-4">
+                            {renderTaskBarChart(taskProgressData.data.weekly.date_wise_counts, false)}
                           </div>
                         ) : (
                           <p className="text-center text-gray-500 py-8">No weekly data</p>
@@ -1272,63 +1305,8 @@ export default function Dashboard() {
                       {/* Monthly */}
                       <TabsContent value="monthly">
                         {taskProgressData.data.monthly.month_wise_counts.length > 0 ? (
-                          <div className="relative">
-                            <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
-                              <span>{Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total))}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.8)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.6)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.4)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.2)}</span>
-                              <span>0</span>
-                            </div>
-                            <div className="ml-6 h-48 flex justify-between items-end gap-2">
-                              {taskProgressData.data.monthly.month_wise_counts.map((item, i) => {
-                                return (
-                                  <div 
-                                    key={i} 
-                                    className="flex flex-col items-center flex-1 cursor-pointer"
-                                    onMouseEnter={(e) => {
-                                      const rect = e.currentTarget.getBoundingClientRect();
-                                      setTooltipData({
-                                        visible: true,
-                                        x: rect.left + rect.width / 2,
-                                        y: rect.top,
-                                        date: item.month,
-                                        completed: item.COMPLETED ?? item.Completed ?? 0,
-                                        pending: item.PENDING ?? item.Pending ?? 0,
-                                        inProgress: item.IN_PROGRESS ?? item["In Progress"] ?? 0,
-                                        total: item.total
-                                      });
-                                    }}
-                                    onMouseLeave={() => setTooltipData(null)}
-                                  >
-                                    {renderProportionalTaskBar(item.COMPLETED ?? item.Completed ?? 0, item.IN_PROGRESS ?? item["In Progress"] ?? 0, item.PENDING ?? item.Pending ?? 0, item.total)}
-                                    <span className="text-xs text-gray-500 mt-2">{item.month}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            
-                            {/* Tooltip */}
-                            {tooltipData && tooltipData.visible && (
-                              <div 
-                                className="fixed z-50 w-52 rounded-lg bg-white text-gray-800 text-xs shadow-lg border border-gray-200 p-3 pointer-events-none transition-opacity duration-150"
-
-                                style={{ 
-                                  left: tooltipData.x, 
-                                  top: tooltipData.y - 10,
-                                  transform: 'translateX(-50%) translateY(-100%)'
-                                }}
-                              >
-                                <p className="font-semibold mb-1">{tooltipData.date}</p>
-                                <div className="space-y-0.5">
-                                  <p className="text-green-400">Completed: {tooltipData.completed}</p>
-                                  <p className="text-blue-400">In Progress: {tooltipData.inProgress}</p>
-                                  <p className="text-yellow-400">Pending: {tooltipData.pending}</p>
-                                  <p className="font-semibold mt-1 border-t border-gray-700 pt-1">Total: {tooltipData.total}</p>
-                                </div>
-                              </div>
-                            )}
+                          <div className="py-4">
+                            {renderTaskBarChart(taskProgressData.data.monthly.month_wise_counts, true)}
                           </div>
                         ) : (
                           <p className="text-center text-gray-500 py-8">No monthly data</p>
@@ -2071,6 +2049,9 @@ export default function Dashboard() {
                       {course.category}
                     </span>
                     <p className="mt-2 font-medium">{course.title}</p>
+                    {course.task_title && (
+                      <p className="text-xs text-gray-500 mt-1">{course.task_title}</p>
+                    )}
                   </div>
                 ))
               ) : (
@@ -2144,3 +2125,4 @@ export default function Dashboard() {
 function triggerMenuNavigation(id: string | number, arg1: string) {
   throw new Error("Function not implemented.");
 }
+
