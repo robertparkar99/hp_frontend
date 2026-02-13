@@ -3,7 +3,7 @@ import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { Bot, Bell, X } from 'lucide-react';
+import { Bot } from 'lucide-react';
 
 export const LogoSection: React.FC = () => {
   const router = useRouter();
@@ -15,7 +15,6 @@ export const LogoSection: React.FC = () => {
   const [notificationTasks, setNotificationTasks] = useState<any[]>([]);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [showAutoNotification, setShowAutoNotification] = useState(false);
-  const [forceUpdate, setForceUpdate] = useState(0); // For forcing re-render
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -61,84 +60,46 @@ export const LogoSection: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Load pending tasks count from localStorage and listen for updates
+  // Simple notification count from localStorage
   useEffect(() => {
-    const loadPendingCount = async () => {
+    const loadNotificationCount = () => {
       const storedData = localStorage.getItem("userData");
       if (storedData) {
         const parsedData = JSON.parse(storedData);
-        try {
-          // Fetch fresh data to get today's count
-          const apiUrl = `${parsedData.APP_URL}/api/tasks/counts?token=${parsedData.token}&sub_institute_id=${parsedData.sub_institute_id}&user_id=${parsedData.user_id}`;
-          const response = await fetch(apiUrl);
-          if (response.ok) {
-            const data = await response.json();
-            
-            // Get today's date in consistent format (use local date to avoid UTC issues)
-            const today = new Date();
-            const todayStr = today.toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
-            
-            let todayPendingCount = 0;
-            
-            // Count from daily date_wise_counts for today
-            if (data.data?.daily?.date_wise_counts) {
-              const todayData = data.data.daily.date_wise_counts.find((d: any) => {
-                const countDate = new Date(d.date).toLocaleDateString('en-CA');
-                return countDate === todayStr;
-              });
-              if (todayData) {
-                todayPendingCount += todayData.Pending || 0;
-              }
-            }
-            
-            // Also check weekly date_wise_counts for today
-            if (data.data?.weekly?.date_wise_counts) {
-              const todayData = data.data.weekly.date_wise_counts.find((d: any) => {
-                const countDate = new Date(d.date).toISOString().split('T')[0];
-                return countDate === todayStr;
-              });
-              if (todayData) {
-                todayPendingCount += todayData.Pending || 0;
-              }
-            }
-            console.log('Initial badge count:', todayPendingCount);
-            setPendingTasksCount(todayPendingCount);
-            localStorage.setItem('pendingTasksCount', todayPendingCount.toString());
-          }
-        } catch (err) {
-          console.error("Error fetching task count:", err);
-          // Fallback to localStorage
-          const count = localStorage.getItem('pendingTasksCount');
-          if (count) {
-            setPendingTasksCount(parseInt(count, 10));
-          }
-        }
-      } else {
-        const count = localStorage.getItem('pendingTasksCount');
-        if (count) {
-          setPendingTasksCount(parseInt(count, 10));
-        }
+        const userId = parsedData.user_id;
+        
+        // Get local notifications for this user
+        const localNotificationsKey = `notifications_${userId}`;
+        const localNotifications = JSON.parse(localStorage.getItem(localNotificationsKey) || '[]');
+        const localCount = localNotifications.length;
+        
+        // Also get the stored pendingTasksCount from localStorage
+        const storedCount = parseInt(localStorage.getItem('pendingTasksCount') || '0', 10);
+        
+        // Use the maximum of both (in case of sync issues)
+        const totalCount = Math.max(localCount, storedCount);
+        
+        console.log('Notification count loaded:', { localCount, storedCount, totalCount });
+        setPendingTasksCount(totalCount);
       }
     };
     
-    // Initial load
-    loadPendingCount();
+    loadNotificationCount();
     
-    // Listen for updates from other components
-    const handleTaskCountUpdate = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      console.log('taskCountUpdated event received:', detail);
-      if (detail && typeof detail.count === 'number') {
-        setPendingTasksCount(detail.count);
-        setForceUpdate(prev => prev + 1); // Force re-render
-        console.log('Badge count updated from event:', detail.count);
-      }
+    // Listen for updates
+    const handleNotificationUpdate = () => {
+      loadNotificationCount();
     };
     
-    window.addEventListener('taskCountUpdated', handleTaskCountUpdate);
+    window.addEventListener('notificationUpdated', handleNotificationUpdate);
+    window.addEventListener('refreshTaskCount', handleNotificationUpdate);
+    window.addEventListener('taskCountUpdated', handleNotificationUpdate);
     
-    return () => window.removeEventListener('taskCountUpdated', handleTaskCountUpdate);
-  }, [mounted]);
+    return () => {
+      window.removeEventListener('notificationUpdated', handleNotificationUpdate);
+      window.removeEventListener('refreshTaskCount', handleNotificationUpdate);
+    };
+  }, []);
 
   // Auto-show notification when there are pending tasks (similar to WhatsApp notification)
   useEffect(() => {
@@ -195,6 +156,20 @@ export const LogoSection: React.FC = () => {
       if (storedData) {
         const parsedData = JSON.parse(storedData);
         try {
+          // Also fetch from localStorage notifications stored for this user
+          const localNotificationsKey = `notifications_${parsedData.user_id}`;
+          const localNotifications = JSON.parse(localStorage.getItem(localNotificationsKey) || '[]');
+          
+          // Transform local notifications to match task format
+          const localNotificationTasks = localNotifications.map((notif: any) => ({
+            task_title: notif.message,
+            created_at: notif.created_at,
+            status: 'PENDING',
+            period: 'Notification',
+            displayDate: new Date(notif.created_at).toLocaleDateString(),
+            isLocalNotification: true
+          }));
+          
           const apiUrl = `${parsedData.APP_URL}/api/tasks/counts?token=${parsedData.token}&sub_institute_id=${parsedData.sub_institute_id}&user_id=${parsedData.user_id}`;
           const response = await fetch(apiUrl);
           if (response.ok) {
@@ -262,19 +237,12 @@ export const LogoSection: React.FC = () => {
                 }));
             }
             
-            // Use the count from date_wise_counts (matching badge)
-            setNotificationTasks(todayPendingTasks);
-            setPendingTasksCount(todayPendingCount);
-            setForceUpdate(prev => prev + 1); // Force re-render
-            console.log('Badge count updated:', todayPendingCount);
+            // Merge local notifications with API tasks
+            const allTasks = [...todayPendingTasks, ...localNotificationTasks];
             
-            // Update localStorage
-            localStorage.setItem('pendingTasksCount', todayPendingCount.toString());
-            
-            // Dispatch event to update other components
-            window.dispatchEvent(new CustomEvent('taskCountUpdated', { 
-              detail: { count: todayPendingCount } 
-            }));
+            // Set notification tasks for display only (don't update count here)
+            setNotificationTasks(allTasks);
+            console.log('Notification tasks loaded:', allTasks.length);
           }
         } catch (err) {
           console.error("Error fetching notification tasks:", err);
@@ -396,30 +364,34 @@ export const LogoSection: React.FC = () => {
             document.body
           )}
         {/* notification icon */}
-        <div 
-          ref={notificationRef}
-          onClick={toggleNotification}
-          className="notificationIcon cursor-pointer relative"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#3B3B3B"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-6 h-6 text-black"
-          >
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-          {pendingTasksCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
-              {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
-            </span>
-          )}
-        </div>
+      
+<div 
+  ref={notificationRef}
+  onClick={toggleNotification}
+  className="notificationIcon cursor-pointer relative"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#3B3B3B"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="w-6 h-6 text-black"
+  >
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+  </svg>
+  {/* Red dot when no notifications, badge with count when there are notifications */}
+  {pendingTasksCount === 0 ? (
+    <span className="absolute -top-0.5 -right-0.5 bg-red-500 rounded-full h-2 w-2"></span>
+  ) : (
+    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+      {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
+    </span>
+  )}
+</div>
 
         {/* chatbot icon */}
         <div className="cursor-pointer relative z-35">
