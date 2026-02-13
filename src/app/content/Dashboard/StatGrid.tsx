@@ -1916,7 +1916,7 @@ export default function Dashboard() {
                           </span>
 
                           {/* Title */}
-                          <p className="mt-2">Task:{task.task_title}</p>
+                          <p className="mt-2">{task.task_title}</p>
 
                           {/* Profile */}
                           <div className="flex items-center gap-2 mt-2">
@@ -2050,7 +2050,7 @@ export default function Dashboard() {
                     </span>
                     <p className="mt-2 font-medium">{course.title}</p>
                     {course.task_title && (
-                      <p className="text-xs text-gray-500 mt-1">{course.task_title}</p>
+                      <p className="text-xs text-gray-500 mt-1">Task: {course.task_title}</p>
                     )}
                   </div>
                 ))
