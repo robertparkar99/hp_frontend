@@ -567,20 +567,28 @@ export default function Page() {
         fontSize: "14px",
         backgroundColor: "#D1E7FF",
         color: "black",
-        whiteSpace: "nowrap",
         textAlign: "left",
+        padding: "12px 8px",
       },
     },
     cells: {
       style: {
         fontSize: "13px",
         textAlign: "left",
+        padding: "12px 8px",
+        minWidth: "120px",
       },
     },
     table: {
       style: {
         borderRadius: "20px",
         overflow: "hidden",
+        minWidth: "100%",
+      },
+    },
+    rows: {
+      style: {
+        minHeight: "48px",
       },
     },
   };
@@ -760,11 +768,11 @@ export default function Page() {
   return (
     <>
       {/* Top Bar with Search, Filters, and Action Icons */}
-      <div className={`flex flex-col gap-4 mb-6 transition-all duration-300 ${headerShrunk ? 'p-2' : 'p-4'}`}>
+      <div className={`flex flex-col gap-4 mb-6 transition-all duration-300 ${headerShrunk ? 'p-2' : 'p-4'} w-full`}>
         {/* First Row: Search and Main Actions */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
           {/* Left: Search */}
-          <div className="flex-1 max-w-md">
+          <div className="flex-1 max-w-full sm:max-w-md w-full">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
@@ -778,7 +786,7 @@ export default function Page() {
           </div>
 
           {/* Right: Main Action Icons */}
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center">
 
 
             {/* Filter Button */}
@@ -1086,12 +1094,12 @@ export default function Page() {
 
         {/* Second Row: Batch Actions when skills are selected */}
         {selectedSkills.length > 0 && (
-          <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-3 bg-blue-50 rounded-lg">
             <CheckSquare className="w-4 h-4 text-blue-600" />
             <span className="text-sm font-medium">
               {selectedSkills.length} skill{selectedSkills.length > 1 ? 's' : ''} selected
             </span>
-            <div className="flex gap-2 ml-4">
+            <div className="flex flex-wrap gap-2 ml-0 sm:ml-4">
               <button
                 onClick={handleBulkDelete}
                 className="flex items-center gap-1 px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
@@ -1109,8 +1117,8 @@ export default function Page() {
       </div>
 
       {/* Content Section */}
-      <div className="flex gap-6 flex-col">
-        <section ref={contentRef} className="w-full h-screen overflow-y-auto scrollbar-hide">
+      <div className="flex gap-6 flex-col flex-1">
+        <section ref={contentRef} className="w-full overflow-y-auto scrollbar-hide">
           {loading || (selectedJobRole && loadingJobRoleSkills) ? (
             <div className="flex justify-center items-center h-screen">
               {/* <Atom color="#525ceaff" size="medium" text="" textColor="" /> */}
@@ -1197,7 +1205,7 @@ export default function Page() {
             </div>
           ) : (
             // 📋 DataTable View with column filters
-            <div className="w-full">
+            <div className="w-full overflow-x-auto">
               <DataTable
                 columns={columns}
                 data={columnFilteredSkills}
@@ -1207,6 +1215,7 @@ export default function Page() {
                 striped
                 responsive
                 persistTableHead
+                dense
               />
             </div>
           )}

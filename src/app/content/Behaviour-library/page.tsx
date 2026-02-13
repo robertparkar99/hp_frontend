@@ -405,8 +405,8 @@ const BehaviourGrid = () => {
     <>
       {/* 🔽 Search Bar (Conditional) */}
       {showSearch && (
-        <div className="px-4 mb-4">
-          <div className="relative max-w-md">
+        <div className="px-4 mb-4 w-full">
+          <div className="relative w-full max-w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
@@ -420,10 +420,10 @@ const BehaviourGrid = () => {
       )}
 
       {/* 🔽 Filters + Toggle + Clear Filters */}
-      <div className="flex p-4 justify-between items-center gap-1 mb-4">
-        <div className="flex items-center gap-1">
+      <div className="flex flex-col sm:flex-row p-4 justify-between items-start sm:items-center gap-3 mb-4 w-full">
+        <div className="flex items-center gap-1 w-full sm:w-auto">
           {/* Search Input */}
-          <div className="relative w-96">
+          <div className="relative w-full max-w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
@@ -435,7 +435,7 @@ const BehaviourGrid = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
 
 
           {/* Utility Icons Dropdown */}
@@ -534,7 +534,7 @@ const BehaviourGrid = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.2 }}
-                className="flex items-center gap-1"
+                className="flex flex-wrap items-center gap-1"
               >
                 <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Add New Behavior">
                   <Plus className="w-5 h-5 text-gray-600" />
@@ -575,7 +575,7 @@ const BehaviourGrid = () => {
       {/* 🔽 Switch View */}
       {viewMode === "cards" ? (
         loadingCards ? (
-          <div className="flex justify-center items-center h-screen">
+          <div className="flex justify-center items-center h-full min-h-[400px]">
             <Loader/>
           </div>
         ) : (
@@ -645,15 +645,17 @@ const BehaviourGrid = () => {
           </div>
         )
       ) : (
-        <DataTable
-          columns={columns}
-          data={filteredData}
-          customStyles={customStyles}
-          progressPending={loadingCards}
-          highlightOnHover
-          pagination
-          dense
-        />
+        <div className="w-full overflow-x-auto">
+          <DataTable
+            columns={columns}
+            data={filteredData}
+            customStyles={customStyles}
+            progressPending={loadingCards}
+            highlightOnHover
+            pagination
+            dense
+          />
+        </div>
       )}
 
       {/* Behaviour View Dialog */}
