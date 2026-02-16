@@ -89,11 +89,13 @@ body {
 /* added on 11-04-2025 by uma  */
 .contentDiv {
   display: flex;
+  width: 100%;
 }
 
 .mainDiv {
   width: 100%;
-  
+  flex: 1;
+  min-width: 0;
 }
 
 .historyDiv {
@@ -123,6 +125,19 @@ body {
   position: absolute;
   top: 0;
   width: 17%;
+}
+
+/* Responsive adjustments for sidebar spacing */
+@media screen and (max-width: 768px) {
+  .contentDiv {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+  
+  .mainDiv {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
 }
 .no-shadow{
 box-shadow : none !important;

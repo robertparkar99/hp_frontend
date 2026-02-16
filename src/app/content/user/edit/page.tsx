@@ -25,12 +25,12 @@ export default function HomePage() {
     setMobileOpen(false);
   };
   return (
-    <div>
+    <div className="w-full">
       <div className="mb-5">
       <Header  />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar}  /> */}
-        <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
+        <div className={`transition-all duration-300 w-full p-2 ${isSidebarOpen ? "md:ml-[280px]" : "md:ml-[80px]"}`}>
       <EditProfilePage />
       </div>
     </div>
