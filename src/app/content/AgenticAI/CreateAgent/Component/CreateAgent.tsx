@@ -129,6 +129,9 @@ export default function CreateAgent() {
   const [sentPayload, setSentPayload] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [moduleOptions, setModuleOptions] = useState<{ id: number, menu_name: string }[]>([]);
+  const [roleOptions, setRoleOptions] = useState<{ id: number, name: string }[]>([]);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
 
   useEffect(() => {
@@ -189,25 +192,78 @@ export default function CreateAgent() {
     return () => clearTimeout(t);
   }, [formData]);
 
+  // Fetch role options from API
+  useEffect(() => {
+    const fetchRoleOptions = async () => {
+      try {
+        const response = await fetch(
+          'https://hp.triz.co.in/table_data?table=tbluserprofilemaster&filters[sub_institute_id]=3&filters[status]=1'
+        );
+
+        if (!response.ok) {
+          setIsLoadingRoles(false);
+          return;
+        }
+
+        const data = await response.json();
+        setRoleOptions(data);
+      } catch (error) {
+        console.error('Error fetching role options:', error);
+      } finally {
+        setIsLoadingRoles(false);
+      }
+    };
+
+    fetchRoleOptions();
+  }, []);
+
   // Fetch module options from API
   useEffect(() => {
     if (!sessionData || !sessionData.url) return;
+
     const fetchModuleOptions = async () => {
       try {
-        const response = await fetch(`${sessionData.url}/user/ajax_groupwiserights?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&profile_id=${sessionData.user_profile_id}`);
-        if (response.ok) {
-          const data = await response.json();
-          const filteredModules = (data.level_1 || [])
-            .filter((item: any) => item.can_view === 1)
-            .slice(0, 5);
-          setModuleOptions(filteredModules);
-        }
+        const response = await fetch(
+          `${sessionData.url}/user/ajax_groupwiserights?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&profile_id=${sessionData.user_profile_id}`
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        // ✅ Flatten level_3 object into array
+        const level3Items: any[] = Object.values(data.level_3 || {})
+          .flatMap((group: any) => Object.values(group));
+
+        console.log("ALL LEVEL 3:", level3Items);
+
+        // ✅ Apply your exclude conditions
+        const filteredModules = level3Items.filter((item: any) =>
+          item.can_view === 1 &&
+          item.parent_id !== 122 &&
+          !(item.page_type === "" && item.access_link === "") &&
+          item.page_type !== "blade"
+        );
+
+        console.log("FILTERED:", filteredModules);
+
+        // Extract only the required fields with proper typing
+        const moduleOptions: { id: number; menu_name: string }[] = filteredModules.map((item: any) => ({
+          id: item.id,
+          menu_name: item.menu_name
+        }));
+
+        setModuleOptions(moduleOptions);
+
       } catch (error) {
         console.error('Error fetching module options:', error);
       }
     };
+
     fetchModuleOptions();
   }, [sessionData]);
+
+
 
   // --------------------------------------------------
   // FIELD UPDATE
@@ -254,6 +310,7 @@ export default function CreateAgent() {
     setErrorMessage('');
     setCreatedAgent(null);
     setSentPayload(null);
+    setIsSubmitting(true);
 
     try {
       const payload = {
@@ -322,6 +379,8 @@ export default function CreateAgent() {
       }
     } catch (error: any) {
       setErrorMessage(`Error creating agent: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -451,36 +510,42 @@ export default function CreateAgent() {
               <CardTitle>Model Configuration</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Module */}
               <div>
                 <Label>Module</Label>
                 <Select
-                  value={formData.module}
+                  defaultValue={formData.module}
                   onValueChange={(v) => updateField("module", v)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select module" />
                   </SelectTrigger>
                   <SelectContent>
-                    {moduleOptions.map((option) => (
-                      <SelectItem key={option.id} value={option.menu_name}>
-                        {option.menu_name}
-                      </SelectItem>
-                    ))}
+                    {moduleOptions.length > 0 ? (
+                      moduleOptions.map((option) => (
+                        <SelectItem key={option.id} value={option.menu_name}>
+                          {option.menu_name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-muted-foreground">No modules available</div>
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.module && (
                   <p className="text-red-500 text-sm">{errors.module}</p>
                 )}
               </div>
-              {/* Submodule */}
+
+              {/* Model */}
               <div>
                 <Label>Model</Label>
                 <Select
-                  value={formData.submodule}
+                  defaultValue={formData.submodule}
                   onValueChange={(v) => updateField("submodule", v)}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="gpt-4">GPT-4</SelectItem>
@@ -493,11 +558,25 @@ export default function CreateAgent() {
               {/* Role */}
               <div>
                 <Label>Role</Label>
-                <Input
-                  placeholder="e.g. Interview Assistant"
-                  value={formData.role}
-                  onChange={(e) => updateField("role", e.target.value)}
-                />
+                <Select
+                  defaultValue={formData.role}
+                  onValueChange={(v) => updateField("role", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingRoles ? "Loading..." : "Select role"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleOptions.length > 0 ? (
+                      roleOptions.map((option) => (
+                        <SelectItem key={option.id} value={option.name}>
+                          {option.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-muted-foreground">No roles available</div>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
 
@@ -592,7 +671,9 @@ export default function CreateAgent() {
               Next
             </Button>
           ) : (
-              <Button type="submit">{isEdit ? 'Update Agent' : 'Create Agent'}</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating agent...' : isEdit ? 'Update Agent' : 'Create Agent'}
+              </Button>
           )}
         </div>
       </form>
