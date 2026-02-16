@@ -11,7 +11,7 @@ import { TrendingUp, Users, Calendar, Target, ChevronDown, TrendingDown, Minus, 
 
 // UI Components (simplified versions for single file)
 const Badge = ({ className, variant, children, ...props }: any) => (
-  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${className}`} {...props}>k
+  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${className}`} {...props}>
     {children}
   </span>
 );
@@ -74,8 +74,6 @@ const SelectItem = ({ children, ...props }: any) => (
 // Navigation tabs
 const NAVIGATION_TABS = [
   { id: "balance-equity", name: "Role–Task–Skill Balance & Equity" },
-  // { id: "health-completeness", name: "Competency Health & Completeness" },
-  // { id: "alignment-standardization", name: "Alignment & Standardization" },
   { id: "stakeholder-lenses", name: "Stakeholder-Specific Lenses" },
 ];
 
@@ -355,7 +353,6 @@ const KPICard = ({ label, value, trend, trendValue, icon }: any) => {
 const DashboardHeader = () => {
   return (
     <div className="space-y-6 animate-slide-up">
-
       {/* KPI Strip */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
@@ -676,9 +673,8 @@ const DrillDownPanel = ({ selectedRole }: any) => {
 };
 
 export default function MainDashboard() {
-  const [activeTab, setActiveTab] = useState("balance-equity"); // Changed default to "balance-equity"
+  const [activeTab, setActiveTab] = useState("balance-equity");
 
-  // This ensures the tab is always set to "balance-equity" on component mount
   useEffect(() => {
     setActiveTab("balance-equity");
   }, []);
@@ -694,7 +690,7 @@ export default function MainDashboard() {
       case "stakeholder-lenses":
         return <CompetencyDashboard />;
       default:
-        return <BalanceEquityView />; // Fallback to balance-equity
+        return <BalanceEquityView />;
     }
   };
 
@@ -741,7 +737,7 @@ export default function MainDashboard() {
 
 // Role–Task–Skill Balance & Equity View
 function BalanceEquityView() {
-  const [similarityThreshold, setSimilarityThreshold] = useState(50);
+  const [similarityThreshold, setSimilarityThreshold] = useState(63);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [hoveredRole, setHoveredRole] = useState<string | null>(null);
   const [heatmapData, setHeatmapData] = useState<any[]>([]);
@@ -799,7 +795,7 @@ function BalanceEquityView() {
         .catch(err => console.error('Error fetching heatmap data:', err));
 
       // Fetch role similarity data
-      fetch(`${sessionData.url}/api/competency/role-similarity?threshold=0.5&sub_institude_id=${sessionData.subInstituteId}`, {
+      fetch(`${sessionData.url}/api/competency/role-similarity?threshold=${similarityThreshold}&sub_institute_id=${sessionData.subInstituteId}`, {
         credentials: 'include',
         headers: {
           'Authorization': `Bearer ${sessionData.token}`,
@@ -807,16 +803,27 @@ function BalanceEquityView() {
       })
         .then(res => res.json())
         .then(data => {
-          // Map nodes with positions
-          const centerX = 50;
-          const centerY = 50;
-          const radius = 35;
+          // Map nodes with positions in a circular layout
+          const centerX = 250;
+          const centerY = 250;
+
+          // Dynamic radius based on node count
+          const baseRadius = 100;
+          const radius = Math.max(baseRadius, data.nodes.length * 8);
           const mappedNodes = data.nodes.map((node: any, index: number) => {
             const angle = (index / data.nodes.length) * 2 * Math.PI;
-            const x = centerX + radius * Math.cos(angle);
-            const y = centerY + radius * Math.sin(angle);
-            const size = node.importance * 0.3;
-            return { ...node, x, y, size };
+            const x = node.x ?? centerX + radius * Math.cos(angle);
+            const y = node.y ?? centerY + radius * Math.sin(angle);
+            // Scale node size: importance * 10 for larger nodes
+            const size = node.importance * 8;
+            return { 
+              ...node, 
+              x, 
+              y, 
+              size, 
+              uniqueKey: `${node.id}-${index}`,
+              label: node.label || node.name || node.id
+            };
           });
           setNodes(mappedNodes);
           setEdges(data.edges);
@@ -836,7 +843,41 @@ function BalanceEquityView() {
         })
         .catch(err => console.error('Error fetching scorecard data:', err));
     }
-  }, [sessionData]);
+  }, [sessionData, similarityThreshold]);
+
+  // Use sample data if no API data is available
+  useEffect(() => {
+    if (nodes.length === 0) {
+      // Map sample roles to nodes format
+      const sampleNodes = ROLES.map((role, index) => {
+        const angle = (index / ROLES.length) * 2 * Math.PI;
+        const centerX = 150;
+        const centerY = 150;
+        const radius = 100;
+        return {
+          id: role.id,
+          label: role.name,
+          department: role.department,
+          importance: role.size,
+          x: centerX + radius * Math.cos(angle),
+          y: centerY + radius * Math.sin(angle),
+          size: role.size * 12,
+          color: DEPARTMENT_COLORS[role.department] || '#64748B',
+          uniqueKey: role.id
+        };
+      });
+      setNodes(sampleNodes);
+      setEdges(CONNECTIONS.map(conn => ({
+        source: conn.source,
+        target: conn.target,
+        similarity: conn.strength * 100
+      })));
+    }
+    
+    if (heatmapData.length === 0) {
+      setHeatmapData(HEATMAP);
+    }
+  }, []);
 
   const filteredRoles = selectedDepartment === "all"
     ? nodes
@@ -849,6 +890,14 @@ function BalanceEquityView() {
   );
 
   const uniqueDepartments = Array.from(new Set(nodes.map((node: any) => node.department)));
+
+  // Get department colors for legend
+  const departmentColorMap = nodes.reduce((acc: any, node: any) => {
+    if (node.department && !acc[node.department]) {
+      acc[node.department] = node.color || DEPARTMENT_COLORS[node.department] || '#64748B';
+    }
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-6">
@@ -863,7 +912,7 @@ function BalanceEquityView() {
             <div className="space-y-3">
               {heatmapData.map((row, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-40 text-xs text-slate-600">{row.label}</div>
+                  <div className="w-40 text-xs text-slate-600 truncate" title={row.label}>{row.label}</div>
                   <div className="flex-1 bg-slate-100 h-5 rounded-full overflow-hidden relative">
                     <div className={`h-full ${row.color}`} style={{ width: `${row.value}%` }}></div>
                   </div>
@@ -873,15 +922,15 @@ function BalanceEquityView() {
               ))}
             </div>
 
-            <div className="mt-4 text-xs text-slate-400 flex justify-between">
-              <div>
-                <span className="inline-flex items-center mr-3">
+            <div className="mt-4 text-xs text-slate-400 flex flex-wrap justify-between">
+              <div className="flex flex-wrap gap-3">
+                <span className="inline-flex items-center">
                   <span className="w-3 h-3 bg-green-400 rounded mr-1"></span>Low (0–25)
                 </span>
-                <span className="inline-flex items-center mr-3">
+                <span className="inline-flex items-center">
                   <span className="w-3 h-3 bg-amber-400 rounded mr-1"></span>Medium (26–60)
                 </span>
-                <span className="inline-flex items-center mr-3">
+                <span className="inline-flex items-center">
                   <span className="w-3 h-3 bg-red-500 rounded mr-1"></span>High (61–80)
                 </span>
                 <span className="inline-flex items-center">
@@ -915,7 +964,10 @@ function BalanceEquityView() {
                       {item.display || `${item.current || 0}% / ${item.target || 0}%`}
                     </span>
                   </div>
-                  <Progress value={item.current && item.target ? (item.current / item.target) * 100 : 0} className="h-2" />
+                  <Progress 
+                    value={item.current && item.target ? (item.current / item.target) * 100 : 0} 
+                    className="h-2" 
+                  />
                 </div>
               ))}
             </div>
@@ -937,14 +989,14 @@ function BalanceEquityView() {
               <p className="text-xs text-slate-400">Visualize overlaps between roles based on skill/task similarity</p>
             </div>
             <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-              Similarity ≥ 50%
+              Similarity ≥ {similarityThreshold}%
             </div>
           </div>
 
-          {/* Network Visualization */}
-          <div className="w-full h-64 bg-white border rounded-md relative overflow-hidden mb-4">
-            <svg viewBox="0 0 100 100" className="w-full h-full">
-              {/* Draw connections */}
+          {/* Network Visualization - Fixed with larger circles */}
+          <div className="w-full h-[400px] bg-white border rounded-md relative overflow-hidden mb-4">
+            <svg viewBox="0 0 500 500" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+              {/* Draw connections first so they appear behind nodes */}
               {filteredConnections.map((conn, i) => {
                 const source = filteredRoles.find((n: any) => n.id === conn.source);
                 const target = filteredRoles.find((n: any) => n.id === conn.target);
@@ -952,46 +1004,87 @@ function BalanceEquityView() {
 
                 return (
                   <line
-                    key={i}
+                    key={`${conn.source}-${conn.target}-${i}`}
                     x1={source.x}
                     y1={source.y}
                     x2={target.x}
                     y2={target.y}
-                    stroke={DEPARTMENT_COLORS[source.department] || '#64748B'}
-                    strokeWidth={(conn.similarity / 100) * 3}
-                    strokeOpacity={0.4}
+                    stroke={source.color || DEPARTMENT_COLORS[source.department] || '#64748B'}
+                    strokeWidth={Math.max(1.5, (conn.similarity / 100) * 6)}
+                    strokeOpacity={0.5}
                     className="transition-all duration-200"
                   />
                 );
               })}
 
-              {/* Draw nodes */}
+              {/* Draw nodes with larger circles */}
               {filteredRoles.map((role: any) => {
+                const isHovered = hoveredRole === role.id;
+                
                 return (
                   <g
-                    key={role.id}
+                    key={role.uniqueKey || role.id}
                     className="cursor-pointer transition-all duration-200"
+                    onMouseEnter={() => setHoveredRole(role.id)}
+                    onMouseLeave={() => setHoveredRole(null)}
                   >
+                    {/* Glow effect on hover */}
+                    {isHovered && (
+                      <circle
+                        cx={role.x}
+                        cy={role.y}
+                        r={role.size * 1.2}
+                        fill="none"
+                        stroke={role.color || DEPARTMENT_COLORS[role.department] || '#64748B'}
+                        strokeWidth="3"
+                        strokeOpacity="0.3"
+                      />
+                    )}
+                    
+                    {/* Main circle - LARGER SIZE */}
                     <circle
                       cx={role.x}
                       cy={role.y}
-                      r={role.size * 2}
-                      fill={DEPARTMENT_COLORS[role.department] || '#64748B'}
+                      r={role.size} // Size is already multiplied by 12 in the node mapping
+                      fill={role.color || DEPARTMENT_COLORS[role.department] || '#64748B'}
                       stroke="#fff"
-                      strokeWidth="1"
+                      strokeWidth="2"
                       className="transition-all duration-200"
+                      style={{
+                        filter: isHovered ? 'drop-shadow(0 0 6px rgba(0,0,0,0.3))' : 'none',
+                        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+                        transformOrigin: `${role.x}px ${role.y}px`
+                      }}
                     />
+                    
+                    {/* Role initials - LARGER FONT */}
                     <text
                       x={role.x}
-                      y={role.y + 0.8}
+                      y={role.y + 2}
                       textAnchor="middle"
-                      fontSize="2.5"
+                      dominantBaseline="middle"
+                      fontSize={role.size * 0.6}
                       fill="white"
                       fontWeight="bold"
                       className="pointer-events-none select-none"
                     >
-                      {role.label.split(' ').map((word: string) => word[0]).join('')}
+                      {role.label.split(' ').map((word: string) => word[0]).join('').substring(0, 3)}
                     </text>
+                    
+                    {/* Role label on hover */}
+                    {isHovered && (
+                      <text
+                        x={role.x}
+                        y={role.y - role.size - 5}
+                        textAnchor="middle"
+                        fontSize="6"
+                        fill="#1e293b"
+                        fontWeight="bold"
+                        className="pointer-events-none select-none bg-white bg-opacity-75 px-1 py-0.5 rounded"
+                      >
+                        {role.label}
+                      </text>
+                    )}
                   </g>
                 );
               })}
@@ -999,21 +1092,22 @@ function BalanceEquityView() {
           </div>
 
           {/* Filters & Controls */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs text-slate-600 font-medium">Similarity Threshold</label>
-                <span className="text-xs text-slate-500">50%</span>
+                <span className="text-xs text-slate-500">{similarityThreshold}%</span>
               </div>
               <input
                 type="range"
                 min="0"
                 max="100"
-                defaultValue={50}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider"
+                value={similarityThreshold}
+                onChange={(e) => setSimilarityThreshold(Number(e.target.value))}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
               />
               <div className="text-xs text-slate-400 mt-1">
-                Show connections with similarity ≥ 50%
+                Show connections with similarity ≥ {similarityThreshold}%
               </div>
             </div>
 
@@ -1031,29 +1125,30 @@ function BalanceEquityView() {
               </select>
             </div>
 
-            {/* Department Colors Legend */}
+            {/* Color Legend */}
             <div>
-              <label className="text-xs text-slate-600 font-medium mb-2 block">Department Colors</label>
-              <div className="grid grid-cols-4 gap-2">
-                {uniqueDepartments.map((dept: string) => (
+              <label className="text-xs text-slate-600 font-medium mb-2 block">Role Colors</label>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(departmentColorMap).slice(0, 6).map(([dept, color]: [string, any]) => (
                   <div key={dept} className="flex items-center text-xs">
                     <div
-                      className="w-3 h-3 rounded mr-1 flex-shrink-0"
-                      style={{ backgroundColor: DEPARTMENT_COLORS[dept] || '#64748B' }}
+                      className="w-3 h-3 rounded-full mr-1 flex-shrink-0"
+                      style={{ backgroundColor: color }}
                     ></div>
-                    <span className="text-slate-700 truncate">{dept}</span>
+                    <span className="text-slate-700 truncate capitalize">{dept}</span>
                   </div>
                 ))}
+                {Object.keys(departmentColorMap).length > 6 && (
+                  <span className="text-xs text-slate-400">+{Object.keys(departmentColorMap).length - 6} more</span>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Node size info */}
-          <div className="mt-4 text-xs text-slate-500 border-t pt-3">
-            <div className="flex justify-between">
-              <span>Node size: Role importance</span>
-              <span>Edge thickness: Similarity strength</span>
-            </div>
+          {/* Node size and edge thickness info */}
+          <div className="mt-4 text-xs text-slate-500 border-t pt-3 flex justify-between">
+            <span>⚪ Node size: Role importance (larger = more critical)</span>
+            <span>📊 Edge thickness: Similarity strength (thicker = more overlap)</span>
           </div>
         </CardContent>
       </Card>
