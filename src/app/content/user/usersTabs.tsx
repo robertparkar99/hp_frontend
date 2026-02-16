@@ -205,15 +205,15 @@ export default function EditProfilePage() {
 
 
           {/* ================= HEADER ================= */}
-            <div className=" border-b border-blue-100">
-            <div className="flex items-center gap-3 px-3 py-2">
+            <div className="border-b border-blue-100">
+            <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2">
 
               {/* Back Button */}
               <button
                 onClick={handleGoBack}
                 className="shrink-0 text-black"
               >
-                <ArrowLeft size={20} />
+                <ArrowLeft size={18} className="sm:w-5 sm:h-5" />
               </button>
 
 
@@ -223,11 +223,11 @@ export default function EditProfilePage() {
                   <div
                     className="bg-white
         inline-flex items-center
-        pl-2 pr-4 py-1.5
+        pl-1 sm:pl-2 pr-2 sm:pr-4 py-1 sm:py-1.5
         rounded-full
         border border-blue-200
         bg-gradient-to-r from-white to-[#D9FFF6]
-        max-w-screen-lg
+        w-full sm:max-w-screen-lg
       "
                   >
                     {tabs.map((tab) => (
@@ -236,15 +236,13 @@ export default function EditProfilePage() {
                         onClick={() => setActiveTab(tab.id)}
                         className={cn(
                           `
-            flex items-center gap-1.5
+            flex items-center gap-1 sm:gap-1.5
             whitespace-nowrap
             rounded-full
             transition-all
-            text-[12.5px] font-medium
+            text-[10px] sm:text-[11px] md:text-[12.5px] font-medium
 
-            px-3 py-1.5
-            md:px-2 md:py-1
-            lg:px-3 lg:py-1.5
+            px-1.5 sm:px-2 md:px-3 py-1 sm:py-1.5
             `,
                           activeTab === tab.id
                             ? "bg-emerald-500 text-white shadow"
@@ -253,11 +251,11 @@ export default function EditProfilePage() {
                       >
                         {React.cloneElement(tab.icon, {
                           className: cn(
-                            "h-3.5 w-3.5",
+                            "h-3 w-3 sm:h-3.5 sm:w-3.5",
                             activeTab === tab.id ? "text-white" : "text-slate-600"
                           ),
                         })}
-                        <span className="leading-none">{tab.label}</span>
+                        <span className="leading-none hidden sm:inline">{tab.label}</span>
                       </button>
                     ))}
                   </div>
@@ -269,7 +267,7 @@ export default function EditProfilePage() {
 
 
           {/* ================= CONTENT SECTION ================= */}
-          <div className="flex-1 px-4 py-4">
+          <div className="flex-1 px-2 sm:px-4 py-3 sm:py-4 w-full overflow-x-hidden">
 
             {activeTab === "personal-info" && (
               <PersonalDetails
