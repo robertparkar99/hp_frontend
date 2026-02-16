@@ -388,14 +388,13 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
           {/* Header Section */}
           <div className="header-ajit mb-8">
             <div className="header-section">
-              <div className="h-full bg-[url('/Header.png')] bg-contain bg-no-repeat">
-                <div className="rounded-lg">
+              <div className="header-background-wrapper">
+                <div className="header-image-container">
                   {formData.personal.image.startsWith("blob:") ? (
                     <img
                       src={formData.personal.image}
                       alt="User icon"
-                      style={{ transform: "translate(28%,21%)" }}
-                      className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
+                      className="header-profile-img"
                       onError={(e) => {
                         e.currentTarget.src =
                           "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
@@ -405,8 +404,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     <img
                       src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails?.image}`}
                       alt="User icon"
-                      style={{ transform: "translate(28%,21%)" }}
-                      className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
+                      className="header-profile-img"
                       onError={(e) => {
                         e.currentTarget.src =
                           "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
@@ -415,21 +413,15 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                   )}
 
                 </div>
-                <div
-                  className="header-content"
-                  style={{ transform: "translate(12%,-175%)" }}
-                >
-                  <span className="text-2xl font-bold">
+                <div className="header-content header-name">
+                  <span className="header-name-text">
                     {formData.personal.first_name}{" "}
                     {formData.personal.middle_name}{" "}
                     {formData.personal.last_name}
                   </span>
                 </div>
-                <div
-                  className="header-content"
-                  style={{ transform: "translate(12%,95%)" }}
-                >
-                  <span className="text-[20px]">
+                <div className="header-content header-jobrole">
+                  <span className="header-jobrole-text">
                     {userDetails?.userJobrole}
                   </span>
                 </div>
@@ -438,26 +430,17 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
           </div>
 
           {/* Main Content */}
-          <div className="flex mt-14">
+          <div className="main-content-wrapper">
             {/* Sidebar Menu */}
             <div className="sidebar-menu">
               {tabs.map((item) => (
                 <div
                   key={item.id}
-                  className={`cursor-pointer transition-colors duration-200 px-3 py-2 border-b-1 border-[1px solid rgba(71, 160, 255, 0.1)] ${activeSection === item.id
-                    ? "bg-[#47a0ff]"
-                    : "bg-white text-gray-600 hover:bg-blue-100"
-                    }`}
+                  className={`sidebar-menu-item ${activeSection === item.id ? "active" : ""}`}
                   onClick={() => handleTabClick(item.id as TabId, item.href)}
                 >
-                  <i
-                    className={`${item.icon} ${activeSection === item.id ? "text-white" : "text-gray-600"
-                      } w-5 h-5 mr-2`}
-                  ></i>
-                  <span
-                    className={`${activeSection === item.id ? "text-white" : "text-gray-600"
-                      }`}
-                  >
+                  <i className={`${item.icon} sidebar-menu-icon`}></i>
+                  <span className="sidebar-menu-text">
                     {item.href ? (
                       <a href={item.href} onClick={(e) => e.preventDefault()}>
                         {item.text}
@@ -471,7 +454,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
             </div>
 
             {/* Content Sections */}
-            <div className="content-area w-full ml-10 bg-white rounded-lg">
+            <div className="content-area">
               {/* Form Content */}
               <div className="form-content">
                 <h2 className="section-title">
@@ -494,11 +477,10 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     {/* Name Section */}
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Suffix
                         </label>
                         <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.personal.name_suffix}
                           onChange={(e) =>
                             handleInputChange(
@@ -517,7 +499,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         </select>
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           First Name
                         </label>
                         <input
@@ -537,7 +519,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Middle Name
                         </label>
                         <input
@@ -554,7 +536,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         />
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Last Name
                         </label>
                         <input
@@ -575,7 +557,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     {/* Contact Section */}
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Email
                         </label>
                         <input
@@ -591,8 +573,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                       </div>
-                      <div className="input-field relative">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                      <div className="input-field input-with-icon">
+                        <label>
                           Password
                         </label>
                         <input
@@ -608,8 +590,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                         <i
-                          className={`fa fa-eye${toggleState ? "-slash" : ""
-                            } absolute right-3 top-8 cursor-pointer text-gray-500 hover:text-gray-700`}
+                          className={`fa fa-eye${toggleState ? "-slash" : ""} password-toggle-icon`}
                           onClick={() => setToggleState(!toggleState)}
                         ></i>
                       </div>
@@ -617,7 +598,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Birthdate
                         </label>
                         <input
@@ -634,7 +615,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         />
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Mobile
                         </label>
                         <input
@@ -655,19 +636,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     {/* Department Section */}
                     <div className="form-row">
-
-                      <div className="input-field relative overflow-hidden">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                      <div className="input-field">
+                        <label>
                           Department
                         </label>
-
                         <select
-                          className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px]
-      bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter
-      border-none outline-none
-      shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]
-      ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}
-    `}
+                          className={isReadOnly ? 'readonly-select' : ''}
                           value={formData.personal.department}
                           disabled={isReadOnly}
                           onChange={(e) =>
@@ -675,7 +649,6 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         >
                           <option value="">Select Department</option>
-
                           {fullJobroleData &&
                             Object.keys(fullJobroleData).map((deptName) => {
                               const first = fullJobroleData[deptName][0];
@@ -683,7 +656,6 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                                 <option
                                   key={first.department_id}
                                   value={first.department_id}
-                                  className="truncate"
                                 >
                                   {first.department_name}
                                 </option>
@@ -692,11 +664,11 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         </select>
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Job Role
                         </label>
                         <select
-                          className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
+                          className={isReadOnly ? 'readonly-select' : ''}
                           value={formData.personal.jobrole}
                           disabled={isReadOnly}
                           onChange={(e) =>
@@ -729,11 +701,10 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     {/* Job Section */}
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Responsibility Level
                         </label>
                         <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.personal.responsibility_level}
                           onChange={(e) =>
                             handleInputChange(
@@ -751,8 +722,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                                 value={level.id}
                                 selected={userDetails?.subject_ids == level.id}
                               >
-                                {level.level}{" "}
-                                {/* Assuming the field is called 'level' */}
+                                {level.level}
                               </option>
                             ))
                           ) : (
@@ -763,11 +733,11 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         </select>
                       </div>
                       <div className="input-field">
-                        <label className="block text-[#393939] text-[14px] font-normal font-inter mb-2">
+                        <label>
                           Gender
                         </label>
                         <div className="flex gap-4">
-                          <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
+                          <label className="gender-radio-label">
                             <input
                               type="radio"
                               name="gender"
@@ -776,12 +746,11 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               onChange={() =>
                                 handleInputChange("personal", "gender", "M")
                               }
-                              className="accent-blue-500 no-shadow"
-
+                              className="gender-radio-input"
                             />
                             Male
                           </label>
-                          <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
+                          <label className="gender-radio-label">
                             <input
                               type="radio"
                               name="gender"
@@ -790,7 +759,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               onChange={() =>
                                 handleInputChange("personal", "gender", "F")
                               }
-                              className="accent-pink-500 no-shadow"
+                              className="gender-radio-input"
                             />
                             Female
                           </label>
@@ -800,11 +769,11 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           User Profile
                         </label>
                         <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                          className={isReadOnly ? 'readonly-select' : ''}
                           value={formData.personal.user_profile_id}
                           disabled={isReadOnly}
                           onChange={(e) =>
@@ -825,8 +794,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                                   userDetails?.user_profile_id == userProfile.id
                                 }
                               >
-                                {userProfile.name}{" "}
-                                {/* Assuming the field is called 'level' */}
+                                {userProfile.name}
                               </option>
                             ))
                           ) : (
@@ -837,7 +805,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         </select>
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Joining Year
                         </label>
                         <input
@@ -858,11 +826,11 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     {/* Status Section */}
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Inactive Status
                         </label>
                         <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                          className={isReadOnly ? 'readonly-select' : ''}
                           value={formData.personal.status}
                           disabled={isReadOnly}
                           onChange={(e) =>
@@ -874,27 +842,23 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         >
                           <option value="">Status</option>
-                          <option
-                            value="1"
-                          >
+                          <option value="1">
                             Active
                           </option>
-                          <option
-                            value="0"
-                          >
+                          <option value="0">
                             In-Active
                           </option>
                         </select>
                       </div>
-                      <div className="input-field w-full">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                      <div className="input-field">
+                        <label>
                           User Image
                         </label>
-                        <div className="flex items-center gap-4">
+                        <div className="file-input-wrapper">
                           <input
                             type="file"
                             accept="image/*"
-                            className="file-input px-4 py-1 rounded-full shadow-[inset_0px_2px_8px_rgba(0,0,0,0.15)] bg-[#f4faff] text-sm text-[#393939]"
+                            className="file-input"
                             onChange={(e) => {
                               if (e.target.files && e.target.files[0]) {
                                 const file = e.target.files[0];
@@ -915,19 +879,18 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                           {/* Image Preview */}
                           {formData.personal.image && (
-                            <div className="relative">
-                              {/* Check if image is a blob URL (new upload) or S3 URL */}
+                            <div className="image-preview-container">
                               {formData.personal.image.startsWith("blob:") ? (
                                 <img
                                   src={formData.personal.image}
                                   alt="Preview"
-                                  className="h-12 w-12 object-cover rounded-full"
+                                  className="image-preview"
                                 />
                               ) : (
                                 <img
                                   src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${formData.personal.image}`}
                                   alt="Preview"
-                                  className="h-12 w-12 object-cover rounded-full"
+                                  className="image-preview"
                                   onError={(e) => {
                                     // If image fails to load (doesn't exist on S3), clear the preview
                                     handleInputChange("personal", "image", "");
@@ -938,7 +901,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               {/* Remove button */}
                               <button
                                 type="button"
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                className="image-remove-btn"
                                 onClick={() =>
                                   handleInputChange("personal", "image", "")
                                 }
@@ -968,7 +931,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                   <div className="form-grid">
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Address
                         </label>
                         <input
@@ -985,7 +948,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         />
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           City
                         </label>
                         <input
@@ -1005,7 +968,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           State
                         </label>
                         <input
@@ -1022,7 +985,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         />
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Pincode
                         </label>
                         <input
@@ -1040,15 +1003,14 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                       </div>
                     </div>
 
-                    <div className="w-full">
-                      <div className="input-field w-full">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                    <div className="form-row single-column">
+                      <div className="input-field">
+                        <label>
                           Temporary address
                         </label>
                         <textarea
                           name="address_2"
                           id="address_2"
-                          className="w-full"
                           value={formData.address.user_address2}
                           onChange={(e) =>
                             handleInputChange(
@@ -1067,11 +1029,10 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                   <div className="form-grid">
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Supervisor / Subordinate
                         </label>
                         <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.reporting.subordinate}
                           onChange={(e) =>
                             handleInputChange(
@@ -1099,11 +1060,10 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         </select>
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Employee Name
                         </label>
                         <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.reporting.employee_name}
                           onChange={(e) =>
                             handleInputChange(
@@ -1138,11 +1098,10 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Reporting Method
                         </label>
                         <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.reporting.reporting_method}
                           onChange={(e) =>
                             handleInputChange(
@@ -1164,16 +1123,16 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                 {activeSection === "attendance" && (
                   <div className="form-grid">
                     <div className="form-row">
-                      <div className="input-field w-full">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                      <div className="input-field">
+                        <label>
                           Working Days
                         </label>
-                        <div className="flex items-center gap-8">
+                        <div className="working-days-container">
                           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
                             (day, index) => (
                               <label
                                 key={index}
-                                className="flex items-center gap-2 text-sm font-medium text-gray-700"
+                                className="working-day-label"
                               >
                                 <input
                                   type="checkbox"
@@ -1181,7 +1140,6 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                                     day
                                   )}
                                   onChange={() => handleCheckboxChange(day)}
-                                  className="no-shadow"
                                 />
                                 {day}
                               </label>
@@ -1225,12 +1183,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     ].map((item, index) => (
                       <div key={index} className="form-row">
                         <div className="input-field">
-                          <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                             {item.day} In Time
                           </label>
                           <input
                             type="time"
-                            className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                            className="time-input"
                             value={
                               formData.attendance[
                               item.inField as keyof typeof formData.attendance
@@ -1246,12 +1204,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           />
                         </div>
                         <div className="input-field">
-                          <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                             {item.day} Out Time
                           </label>
                           <input
                             type="time"
-                            className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                            className="time-input"
                             value={
                               formData.attendance[
                               item.outField as keyof typeof formData.attendance
@@ -1275,13 +1233,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                   <div className="form-grid">
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Bank Name
                         </label>
                         <input
                           type="text"
                           placeholder="Test Bank"
-                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                           value={formData.deposit.bank_name}
                           onChange={(e) =>
                             handleInputChange(
@@ -1293,13 +1250,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         />
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Branch Name
                         </label>
                         <input
                           type="text"
                           placeholder="Main Branch"
-                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                           value={formData.deposit.branch_name}
                           onChange={(e) =>
                             handleInputChange(
@@ -1314,13 +1270,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Account
                         </label>
                         <input
                           type="text"
                           placeholder="1234567890"
-                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                           value={formData.deposit.account}
                           onChange={(e) =>
                             handleInputChange(
@@ -1332,13 +1287,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         />
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           IFSC
                         </label>
                         <input
                           type="text"
                           placeholder="TEST0001234"
-                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                           value={formData.deposit.ifsc}
                           onChange={(e) =>
                             handleInputChange("deposit", "ifsc", e.target.value)
@@ -1349,13 +1303,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     <div className="form-row">
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Amount
                         </label>
                         <input
                           type="text"
                           placeholder="50000.00"
-                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                           value={formData.deposit.amount}
                           onChange={(e) =>
                             handleInputChange(
@@ -1367,11 +1320,10 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                         />
                       </div>
                       <div className="input-field">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <label>
                           Transfer Type
                         </label>
                         <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.deposit.transfer_type}
                           onChange={(e) =>
                             handleInputChange(
@@ -1390,10 +1342,10 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                   </div>
                 )}
 
-                <div className="flex justify-center mt-8">
+                <div className="submit-button-container">
                   <button
                     type="submit"
-                    className="px-8 py-2 rounded-full text-white font-medium transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-lg"
+                    className="submit-button"
                   >
                     {isSubmitting ? "Updating..." : "Update"}
                   </button>
