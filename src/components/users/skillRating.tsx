@@ -968,10 +968,10 @@ export default function Index({
   // Part 3/3 (final) - UI rendering remains mostly the same
   return (
     <>
-      <div className="h-[fit-height] bg-gray-50 p-4 md:p-8">
-        <div className="max-w-7xl mx-auto mt-10">
+      <div className="h-[fit-height] bg-gray-50 p-2 sm:p-4 md:p-8">
+        <div className="max-w-7xl mx-auto mt-4 sm:mt-6 md:mt-10">
           <div className="relative">
-            <div className="absolute -top-15 right-0 flex gap-5 z-10">
+            <div className="absolute -top-8 sm:-top-12 md:-top-15 right-0 flex gap-2 sm:gap-3 md:gap-5 z-10">
               {/* <span
                 className="mdi mdi-star-box-multiple-outline text-xl cursor-pointer p-2 bg-yellow-100 text-yellow-600 shadow hover:bg-yellow-200 hover:text-yellow-700 transition-all rounded-md"
                 title="Star Box"
@@ -982,20 +982,20 @@ export default function Index({
 
 
                <span
-                className="mdi mdi-star-box-multiple-outline text-xl cursor-pointer p-2 bg-yellow-100 text-yellow-600 shadow hover:bg-yellow-200 hover:text-yellow-700 transition-all rounded-md"
+                className="mdi mdi-star-box-multiple-outline text-lg sm:text-xl cursor-pointer p-1.5 sm:p-2 bg-yellow-100 text-yellow-600 shadow hover:bg-yellow-200 hover:text-yellow-700 transition-all rounded-md"
                 title="Jobrole Skill Rating"
                 onClick={() => setViewPart("jobrole-skillrating")}
               ></span>
 
               <span
-                className="mdi mdi-chart-bar text-xl cursor-pointer p-2 bg-blue-100 text-blue-600 shadow hover:bg-blue-200 hover:text-blue-700 transition-all rounded-md"
+                className="mdi mdi-chart-bar text-lg sm:text-xl cursor-pointer p-1.5 sm:p-2 bg-blue-100 text-blue-600 shadow hover:bg-blue-200 hover:text-blue-700 transition-all rounded-md"
                 title="Admin Skill Rating"
                 onClick={() => {
                   setViewPart("rated skill");
                 }}
               ></span>
 
-             
+              
             </div>
 
             {viewPart === "rated skill" ? (
@@ -1013,15 +1013,15 @@ export default function Index({
                 jobroleTitle={userJobroleSkills[0]?.jobrole || "Community Care Associate"}
               />
             ) : (
-              <div className="flex flex-col xl:flex-row gap-6 xl:gap-8">
+              <div className="flex flex-col lg:flex-row xl:flex-row gap-4 sm:gap-6 xl:gap-8">
                 {/* Left Panel */}
-                <div className="w-full xl:w-[280px] min-h-[472px] bg-white rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-2">
-                  <h2 className="text-[#23395B] font-bold text-md mb-3" style={{ fontFamily: "Inter, sans-serif" }}>
+                <div className="w-full lg:w-[240px] xl:w-[280px] min-h-[300px] sm:min-h-[400px] md:min-h-[472px] bg-white rounded-xl sm:rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-2">
+                  <h2 className="text-[#23395B] font-bold text-sm sm:text-md mb-2 sm:mb-3" style={{ fontFamily: "Inter, sans-serif" }}>
                     📈 Competency Overview
                   </h2>
-                  <div className="w-full h-0.5 bg-[#686868] mb-8"></div>
+                  <div className="w-full h-0.5 bg-[#686868] mb-4 sm:mb-8"></div>
 
-                  <div className="h-[472px] overflow-y-auto">
+                  <div className="h-[250px] sm:h-[350px] md:h-[472px] overflow-y-auto">
                     {userJobroleSkills.map((skill: any, index: any) => {
                       const ratedSkill = localRatedSkills?.find((rated: any) =>
                         rated.skill_id === skill.skill_id
@@ -1037,15 +1037,15 @@ export default function Index({
                             handleSkillSelect(skill, index);
                           }}
                         >
-                          <div className={`h-[36px] flex items-center transition-all duration-300 ${skill.skill_id === selectedSkill?.skill_id
+                          <div className={`h-[32px] sm:h-[36px] flex items-center transition-all duration-300 ${skill.skill_id === selectedSkill?.skill_id
                             ? "bg-[#47A0FF] text-black"
                             : ratedSkill
                               ? "bg-green-50 text-green-700 border border-green-200"
                               : "bg-white group-hover:bg-[#47A0FF] group-hover:text-black"
                             } mb-1`}
                           >
-                            <div className="flex items-center justify-between w-full pl-[24px] pr-[8px]">
-                              <span className={`text-[12px] truncate ${skill.skill_id === selectedSkill?.skill_id
+                            <div className="flex items-center justify-between w-full pl-[16px] sm:pl-[24px] pr-[8px]">
+                              <span className={`text-[10px] sm:text-[12px] truncate ${skill.skill_id === selectedSkill?.skill_id
                                 ? "text-black"
                                 : ratedSkill
                                   ? "text-green-700"
@@ -1055,7 +1055,7 @@ export default function Index({
                                 {skill.skill.length > 20 ? `${skill.skill.slice(0, 20)}...` : skill.skill}
                                 {ratedSkill && hasKAAB && " ✓"} {/* Only show checkmark when KAAB values exist */}
                               </span>
-                              <svg width="16" height="17" viewBox="0 0 24 25" fill="none">
+                              <svg width="14" height="15" viewBox="0 0 24 25" fill="none" className="sm:w-4 sm:h-4">
                                 <path d="M7.84467 21.376C7.55178 21.0831 7.55178 20.6083 7.84467 20.3154L14.5643 13.5957L7.84467 6.87601C7.55178 6.58311 7.55178 6.1083 7.84467 5.8154C8.13756 5.5225 8.61244 5.5225 8.90533 5.8154L16.1553 13.0654C16.4482 13.3583 16.4482 13.8331 16.1553 14.126L8.90533 21.376C8.61244 21.6689 8.13756 21.6689 7.84467 21.376Z" fill="#393939" />
                               </svg>
                             </div>
@@ -1067,20 +1067,20 @@ export default function Index({
                 </div>
 
                 {/* Center Panel */}
-                <div className="w-full flex-1 flex flex-col gap-6 ">
-                  <div className="w-full bg-white rounded-2xl p-4 shadow-sm border-2 border-[#D4EBFF]">
-                    <div className="w-full flex justify-between items-center mb-4">
-                      <h1 className="text-[#393939] font-bold text-xs md:text-xl" style={{ fontFamily: "Inter, sans-serif" }}>
+                <div className="w-full flex-1 flex flex-col gap-4 sm:gap-6 ">
+                  <div className="w-full bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border-2 border-[#D4EBFF]">
+                    <div className="w-full flex justify-between items-center mb-3 sm:mb-4">
+                      <h1 className="text-[#393939] font-bold text-xs sm:text-sm md:text-xl" style={{ fontFamily: "Inter, sans-serif" }}>
                         Are you proficient in {selectedSkill?.skill || "this skill"}?
                       </h1>
                       <span
-                        className="mdi mdi-information-variant-circle text-2xl cursor-pointer text-blue-600"
+                        className="mdi mdi-information-variant-circle text-xl sm:text-2xl cursor-pointer text-blue-600"
                         title="Skill Detail"
                         onClick={() => setIsEditModalOpen(true)}
                       ></span>
                     </div>
 
-                    <hr className="border-gray-500 mb-6" />
+                    <hr className="border-gray-500 mb-4 sm:mb-6" />
 
                     {/* Skill Level Selection with Description */}
                     <div className="flex flex-col items-center gap-6">

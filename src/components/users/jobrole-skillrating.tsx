@@ -860,33 +860,33 @@ export default function JobroleSkillRatingDesign({
   }
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
       {/* Left Panel */}
-      <div className="w-[280px] bg-white rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-3">
-        <h2 className="text-[#23395B] font-semibold text-sm mb-2 flex items-center gap-2">
+      <div className="w-full lg:w-[260px] xl:w-[280px] bg-white rounded-xl sm:rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-2 sm:p-3">
+        <h2 className="text-[#23395B] font-semibold text-xs sm:text-sm mb-2 flex items-center gap-2">
           📊 Competency Overview
         </h2>
-        <div className="h-[2px] bg-gray-400 mb-3" />
+        <div className="h-[2px] bg-gray-400 mb-2 sm:mb-3" />
 
         <div className="space-y-2">
           {tabConfig.map((tab) => (
             <div key={tab.key} className="border border-gray-200 rounded-lg">
               <div
                 onClick={() => setExpandedTab(expandedTab === tab.key ? null : tab.key)}
-                className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 rounded-t-lg"
+                className="flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 cursor-pointer hover:bg-gray-50 rounded-t-lg"
               >
-                <div className="flex items-center gap-2">
-                  <span className={`mdi ${tab.icon} text-sm`}></span>
-                  <span className="text-sm font-medium">{tab.label}</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className={`mdi ${tab.icon} text-xs sm:text-sm`}></span>
+                  <span className="text-xs sm:text-sm font-medium">{tab.label}</span>
                 </div>
-                <span className={`text-sm transition-transform ${expandedTab === tab.key ? 'rotate-90' : ''}`}>
+                <span className={`text-xs sm:text-sm transition-transform ${expandedTab === tab.key ? 'rotate-90' : ''}`}>
                   ›
                 </span>
               </div>
 
               {expandedTab === tab.key && (
-                <div className="px-3 pb-3 bg-gray-50 rounded-b-lg">
-                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                <div className="px-2 sm:px-3 pb-2 sm:pb-3 bg-gray-50 rounded-b-lg">
+                  <div className="space-y-1.5 sm:space-y-2 max-h-[150px] sm:max-h-[200px] overflow-y-auto">
                     {categories[tab.key].map((item, index) => {
                       const hasSaved = getItemSavedRating(tab.key, item.id) !== null;
                       const hasCurrentSelection = levelSelections[tab.key][item.id] !== undefined;
@@ -905,25 +905,25 @@ export default function JobroleSkillRatingDesign({
                               setSelectedItems(prev => ({ ...prev, [key]: null }));
                             });
                           }}
-                          className={`w-full border p-2 rounded-lg cursor-pointer transition relative
+                          className={`w-full border p-1.5 sm:p-2 rounded-lg cursor-pointer transition relative
                             ${isSelected ? "border-blue-500 bg-blue-50" : "border-blue-100 bg-white"}
                             hover:bg-gray-50
                           `}
                         >
-                          <p className="text-xs font-medium">{item.title}</p>
+                          <p className="text-[10px] sm:text-xs font-medium truncate pr-4">{item.title}</p>
                           
                           {/* Status indicators */}
-                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
+                          <div className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
                             {hasSaved && (
-                              <div className="w-2 h-2 bg-green-500 rounded-full" title="Saved rating"></div>
+                              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full" title="Saved rating"></div>
                             )}
                             {hasCurrentSelection && !hasSaved && (
-                              <div className="w-2 h-2 bg-yellow-500 rounded-full" title="New rating"></div>
+                              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-500 rounded-full" title="New rating"></div>
                             )}
                             {hasCurrentSelection && hasSaved && 
                               levelSelections[tab.key][item.id]?.proficiency_level?.match(/\d+/)?.[0] !== 
                               getItemSavedRating(tab.key, item.id) && (
-                              <div className="w-2 h-2 bg-orange-500 rounded-full" title="Rating changed"></div>
+                              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-500 rounded-full" title="Rating changed"></div>
                             )}
                           </div>
                         </div>
@@ -938,37 +938,37 @@ export default function JobroleSkillRatingDesign({
       </div>
 
       {/* Center Panel */}
-      <div className="flex-1 bg-white rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold text-gray-800">
+      <div className="flex-1 bg-white rounded-xl sm:rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-3 sm:p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <h1 className="text-base sm:text-lg font-semibold text-gray-800">
               {currentItem?.title || "Select an item"}
             </h1>
             <div className="flex gap-2">
               {hasSavedRating && (
-                <span className={`px-2 py-1 text-xs rounded-full ${
+                <span className={`px-2 py-1 text-[10px] sm:text-xs rounded-full ${
                   hasLevelChanged ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
                 }`}>
                   {hasLevelChanged ? '✎ Changed' : '✓ Rated'}
                 </span>
               )}
               {!hasSavedRating && currentSelectedLevel && (
-                <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                <span className="px-2 py-1 text-[10px] sm:text-xs bg-yellow-100 text-yellow-800 rounded-full">
                   New Rating
                 </span>
               )}
             </div>
           </div>
-          <span className="text-blue-600 text-xl cursor-pointer">ℹ️</span>
+          <span className="text-blue-600 text-lg sm:text-xl cursor-pointer">ℹ️</span>
         </div>
 
         {currentItem && (
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
             {currentItem.description || ""}
           </p>
         )}
 
-        <hr className="mb-6" />
+        <hr className="mb-4 sm:mb-6" />
 
         {currentCategory && currentItem ? (
           <>
@@ -1004,7 +1004,7 @@ export default function JobroleSkillRatingDesign({
                       key={level.id}
                       onClick={() => handleLevelSelect(level)}
                       className={`
-                        relative w-[64px] h-[38px] flex items-center justify-center text-sm font-semibold
+                        relative w-[48px] sm:w-[56px] md:w-[64px] h-[32px] sm:h-[35px] md:h-[38px] flex items-center justify-center text-xs sm:text-sm font-semibold
                         transition-all duration-200 ${bgColors[index]}
                         ${index === 0 ? "rounded-l-full" : ""}
                         ${index === currentLevels.length - 1 ? "rounded-r-full" : ""}
@@ -1014,7 +1014,7 @@ export default function JobroleSkillRatingDesign({
                     >
                       {levelNumber}
                       {isSavedLevel && !isSelected && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div>
                       )}
                     </button>
                   );
@@ -1024,34 +1024,34 @@ export default function JobroleSkillRatingDesign({
 
             {/* Selected Level Description */}
             {currentSelectedLevel && (
-              <div className="bg-gray-50 rounded-xl p-6 mt-6 space-y-4">
+              <div className="bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 mt-4 sm:mt-6 space-y-3 sm:space-y-4">
                 {currentSelectedLevel.type_description && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm font-semibold text-gray-800 whitespace-nowrap">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
+                    <span className="text-xs sm:text-sm font-semibold text-gray-800 whitespace-nowrap">
                       Type Description :
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-xs sm:text-sm text-gray-600">
                       {currentSelectedLevel.type_description}
                     </span>
                   </div>
                 )}
 
                 {currentSelectedLevel.descriptor && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm font-semibold text-gray-800 whitespace-nowrap">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
+                    <span className="text-xs sm:text-sm font-semibold text-gray-800 whitespace-nowrap">
                       Descriptor :
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-xs sm:text-sm text-gray-600">
                       {currentSelectedLevel.descriptor}
                     </span>
                   </div>
                 )}
 
-                <div className="flex items-start gap-2">
-                  <span className="text-sm font-semibold text-gray-800 whitespace-nowrap">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
+                  <span className="text-xs sm:text-sm font-semibold text-gray-800 whitespace-nowrap">
                     {currentCategory === 'skill' ? 'Level Description' : 'Indicators'} :
                   </span>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-xs sm:text-sm text-gray-600">
                     {currentSelectedLevel.indicators || currentSelectedLevel.description}
                   </span>
                 </div>
@@ -1059,17 +1059,17 @@ export default function JobroleSkillRatingDesign({
             )}
           </>
         ) : (
-          <div className="text-center text-gray-500">
+          <div className="text-center text-gray-500 text-sm">
             Please select a Skill or KAAB item from the left panel to view details.
           </div>
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200">
           <button
             onClick={() => navigateItem('prev')}
             disabled={!canGoPrev}
-            className={`px-6 py-2 rounded-full font-medium shadow-md border transition-all
+            className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-full text-sm font-medium shadow-md border transition-all
               ${canGoPrev 
                 ? "bg-gradient-to-r from-blue-400 to-blue-500 text-white border-blue-300 hover:from-blue-500 hover:to-blue-600"
                 : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
@@ -1080,7 +1080,7 @@ export default function JobroleSkillRatingDesign({
           <button
             onClick={() => navigateItem('next')}
             disabled={!canGoNext}
-            className={`px-6 py-2 rounded-full font-medium shadow-md border transition-all
+            className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-full text-sm font-medium shadow-md border transition-all
               ${canGoNext
                 ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-400 hover:from-blue-600 hover:to-blue-700"
                 : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
@@ -1092,11 +1092,11 @@ export default function JobroleSkillRatingDesign({
       </div>
 
       {/* Action Buttons */}
-      <div className="fixed bottom-6 right-6 flex gap-3 z-50">
+      <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 flex flex-col sm:flex-row gap-2 sm:gap-3 z-50">
         {hasChanges && (
           <button
             onClick={resetToSaved}
-            className="px-4 py-2 rounded-full bg-gray-600 text-white shadow hover:bg-gray-700 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm bg-gray-600 text-white shadow hover:bg-gray-700 transition-colors"
             title="Reset to Saved Ratings"
           >
             Reset Changes
@@ -1104,13 +1104,13 @@ export default function JobroleSkillRatingDesign({
         )}
         <button
           onClick={validateAndSaveAllSkills}
-          className="px-4 py-2 rounded-full bg-green-600 text-white shadow hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm bg-green-600 text-white shadow hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           title="Validate & Save All KAAB Ratings"
           disabled={isProcessing || !hasChanges}
         >
           {isProcessing ? (
             <span className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               Saving...
             </span>
           ) : (
