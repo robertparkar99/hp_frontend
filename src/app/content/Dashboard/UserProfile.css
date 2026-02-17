@@ -1391,6 +1391,16 @@
 
 .gender-radio-input {
     accent-color: #47a0ff;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .gender-radio-input {
+        width: 14px;
+        height: 14px;
+    }
 }
 
 @media (max-width: 768px) {
