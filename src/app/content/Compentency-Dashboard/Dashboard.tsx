@@ -803,6 +803,10 @@ function BalanceEquityView() {
       })
         .then(res => res.json())
         .then(data => {
+          console.log('API Response:', data);
+          console.log('Nodes count:', data.nodes?.length);
+          console.log('Edges count:', data.edges?.length);
+          console.log('Sample edge:', data.edges?.[0]);
           // Map nodes with positions in a circular layout
           const centerX = 250;
           const centerY = 250;
@@ -845,49 +849,71 @@ function BalanceEquityView() {
     }
   }, [sessionData, similarityThreshold]);
 
-  // Use sample data if no API data is available
-  useEffect(() => {
-    if (nodes.length === 0) {
-      // Map sample roles to nodes format
-      const sampleNodes = ROLES.map((role, index) => {
-        const angle = (index / ROLES.length) * 2 * Math.PI;
-        const centerX = 150;
-        const centerY = 150;
-        const radius = 100;
-        return {
-          id: role.id,
-          label: role.name,
-          department: role.department,
-          importance: role.size,
-          x: centerX + radius * Math.cos(angle),
-          y: centerY + radius * Math.sin(angle),
-          size: role.size * 12,
-          color: DEPARTMENT_COLORS[role.department] || '#64748B',
-          uniqueKey: role.id
-        };
-      });
-      setNodes(sampleNodes);
-      setEdges(CONNECTIONS.map(conn => ({
-        source: conn.source,
-        target: conn.target,
-        similarity: conn.strength * 100
-      })));
+
+
+  // ID and similarity helpers with normalization
+  const toId = (val: any): string => {
+    if (val && typeof val === 'object') {
+      const candidate = val.id ?? val.nodeId ?? val.roleId ?? val.value ?? val.key;
+      return candidate !== undefined && candidate !== null ? String(candidate) : '';
     }
-    
-    if (heatmapData.length === 0) {
-      setHeatmapData(HEATMAP);
-    }
-  }, []);
+    return val !== undefined && val !== null ? String(val) : '';
+  };
+
+  // Helper function to get node ID (string) with fallback for different field names
+  const getNodeId = (node: any): string => {
+    return toId(node?.id ?? node?.roleId ?? node?.nodeId);
+  };
 
   const filteredRoles = selectedDepartment === "all"
     ? nodes
     : nodes.filter((node: any) => node.department === selectedDepartment);
 
-  const filteredConnections = edges.filter((edge: any) =>
-    edge.similarity >= similarityThreshold &&
-    filteredRoles.some((node: any) => node.id === edge.source) &&
-    filteredRoles.some((node: any) => node.id === edge.target)
-  );
+  // Helper function to get similarity percentage (0–100), handling 0–1 and string values
+  const getSimilarity = (edge: any): number => {
+    let raw: any = edge?.similarity ?? edge?.score ?? edge?.weight ?? edge?.percentage ?? 0;
+    if (typeof raw === 'string') {
+      const parsed = parseFloat(raw);
+      raw = isNaN(parsed) ? 0 : parsed;
+    }
+    // If API returns 0–1, convert to percentage; clamp to [0,100]
+    if (raw > 0 && raw <= 1) raw = raw * 100;
+    if (raw < 0) raw = 0;
+    if (raw > 100) raw = 100;
+    return Number(raw);
+  };
+
+  // Helper to get edge source/target with fallback for different field names
+  const getEdgeSource = (edge: any): string => {
+    return toId(edge?.source ?? edge?.sourceId ?? edge?.from ?? edge?.sourceNode);
+  };
+  const getEdgeTarget = (edge: any): string => {
+    return toId(edge?.target ?? edge?.targetId ?? edge?.to ?? edge?.targetNode);
+  };
+
+  const filteredConnections = edges.filter((edge: any) => {
+    const sourceId: string = getEdgeSource(edge);
+    const targetId: string = getEdgeTarget(edge);
+    const similarity = getSimilarity(edge);
+    return (
+      similarity >= similarityThreshold &&
+      filteredRoles.some((node: any) => getNodeId(node) === String(sourceId)) &&
+      filteredRoles.some((node: any) => getNodeId(node) === String(targetId))
+    );
+  });
+
+  // If no edges pass the threshold filter, show all edges between visible nodes
+  const displayConnections = filteredConnections.length > 0 ? filteredConnections : edges.filter((edge: any) => {
+    const sourceId: string = getEdgeSource(edge);
+    const targetId: string = getEdgeTarget(edge);
+    return (
+      filteredRoles.some((node: any) => getNodeId(node) === String(sourceId)) &&
+      filteredRoles.some((node: any) => getNodeId(node) === String(targetId))
+    );
+  });
+
+  console.log('Debug - Edges:', edges.length, 'Filtered connections:', filteredConnections.length, 'Display connections:', displayConnections.length);
+  console.log('Debug - similarityThreshold:', similarityThreshold);
 
   const uniqueDepartments = Array.from(new Set(nodes.map((node: any) => node.department)));
 
@@ -956,7 +982,7 @@ function BalanceEquityView() {
             </div>
 
             <div className="space-y-3">
-              {(scorecardData?.metrics || SCORECARD).map((item: { name?: string; title?: string; display?: string; current?: number; target?: number }, i: number) => (
+              {(scorecardData?.metrics || []).map((item: { name?: string; title?: string; display?: string; current?: number; target?: number }, i: number) => (
                 <div key={i}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-slate-700">{item.name || item.title}</span>
@@ -997,20 +1023,22 @@ function BalanceEquityView() {
           <div className="w-full h-[400px] bg-white border rounded-md relative overflow-hidden mb-4">
             <svg viewBox="0 0 500 500" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
               {/* Draw connections first so they appear behind nodes */}
-              {filteredConnections.map((conn, i) => {
-                const source = filteredRoles.find((n: any) => n.id === conn.source);
-                const target = filteredRoles.find((n: any) => n.id === conn.target);
+              {displayConnections.map((conn, i) => {
+                const sourceId = getEdgeSource(conn);
+                const targetId = getEdgeTarget(conn);
+                const source = filteredRoles.find((n: any) => getNodeId(n) === sourceId);
+                const target = filteredRoles.find((n: any) => getNodeId(n) === targetId);
                 if (!source || !target) return null;
 
                 return (
                   <line
-                    key={`${conn.source}-${conn.target}-${i}`}
+                    key={`${sourceId}-${targetId}-${i}`}
                     x1={source.x}
                     y1={source.y}
                     x2={target.x}
                     y2={target.y}
                     stroke={source.color || DEPARTMENT_COLORS[source.department] || '#64748B'}
-                    strokeWidth={Math.max(1.5, (conn.similarity / 100) * 6)}
+                    strokeWidth={Math.max(1.5, (getSimilarity(conn) / 100) * 6)}
                     strokeOpacity={0.5}
                     className="transition-all duration-200"
                   />
