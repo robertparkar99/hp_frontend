@@ -239,14 +239,14 @@ const ManagerDashboard = () => {
       {/* <Navigation /> */}
 
       {/* <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"> */}
-      <main className="p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Manager Dashboard</h1>
-          <p className="text-muted-foreground">Review requisitions and provide interview feedback</p>
+      <main className="p-4 md:p-6">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Manager Dashboard</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Review requisitions and provide interview feedback</p>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
@@ -293,11 +293,11 @@ const ManagerDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-[#EFF4FF]">
+          <TabsList className="bg-[#EFF4FF] flex flex-wrap h-auto p-1 gap-1 w-full max-w-full overflow-x-auto">
             {/* <TabsTrigger value="requisitions">Pending Requisitions</TabsTrigger> */}
-            <TabsTrigger value="interviews">Interview Feedback</TabsTrigger>
-            <TabsTrigger value="offers">Offer Management</TabsTrigger>
-            <TabsTrigger value="team">Team Overview</TabsTrigger>
+            <TabsTrigger value="interviews" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-white data-[state=active]:shadow-md">Interview Feedback</TabsTrigger>
+            <TabsTrigger value="offers" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-white data-[state=active]:shadow-md">Offer Management</TabsTrigger>
+            <TabsTrigger value="team" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-white data-[state=active]:shadow-md">Team Overview</TabsTrigger>
           </TabsList>
 
           {/* <TabsContent value="requisitions" className="space-y-6">
@@ -363,10 +363,10 @@ const ManagerDashboard = () => {
                 ) : (
                   <div className="space-y-6">
                     {interviewFeedback.map((interview) => (
-                      <div key={interview.id} className="border border-border rounded-lg p-6">
-                        <div className="flex justify-between items-start mb-4">
+                      <div key={interview.id} className="border border-border rounded-lg p-4 md:p-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                           <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
                               <User className="w-6 h-6 text-primary" />
                             </div>
                             <div>
@@ -374,16 +374,17 @@ const ManagerDashboard = () => {
                               <p className="text-sm text-muted-foreground">
                                 Applied for {interview.position}
                               </p>
-                              <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
+                              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-4 text-xs text-muted-foreground mt-1">
                                 <div className="flex items-center space-x-1">
                                   <Calendar className="w-3 h-3" />
                                   <span>{interview.date}</span>
                                 </div>
+                                <span className="sm:hidden">•</span>
                                 <span>Interviewed by {interview.interviewer}</span>
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right sm:ml-4">
                             {getStatusBadge(interview.status)}
                             {interview.overallRating && (
                               <div className="mt-2">
@@ -415,23 +416,23 @@ const ManagerDashboard = () => {
                           </div>
                         )}
 
-                        <div className="flex justify-between items-center">
-                          <Button variant="outline" onClick={() => { setSelectedInterview(interview); setDialogOpen(true); }}>
+                        <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                          <Button variant="outline" onClick={() => { setSelectedInterview(interview); setDialogOpen(true); }} className="w-full sm:w-auto">
                             <Eye className="w-4 h-4 mr-2" />
                             View Full Profile
                           </Button>
                           {interview.status === "Completed" && (
-                            <div className="space-x-2">
+                            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                               <Button
                                 variant="outline"
-                                className="text-destructive border-destructive hover:bg-destructive/20"
+                                className="text-destructive border-destructive hover:bg-destructive/20 w-full sm:w-auto"
                                 onClick={() => handleReject(interview)}
                               >
                                 <ThumbsDown className="w-4 h-4 mr-2" />
                                 Reject
                               </Button>
                               <Button
-                                className="bg-success hover:bg-success/90 text-success-foreground"
+                                className="bg-success hover:bg-success/90 text-success-foreground w-full sm:w-auto"
                                 onClick={() => handleHired(interview)}
                               >
                                 <ThumbsUp className="w-4 h-4 mr-2" />
@@ -453,21 +454,21 @@ const ManagerDashboard = () => {
           </TabsContent>
 
           <TabsContent value="team" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Department Hiring Status</CardTitle>
+                  <CardTitle className="text-lg md:text-xl">Department Hiring Status</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {teamOverview?.data?.map((dept: any) => {
                       const percentage = dept.total_positions > 0 ? (dept.hired / dept.total_positions) * 100 : 0;
                       return (
-                        <div key={dept.department_name} className="flex justify-between items-center">
+                        <div key={dept.department_name} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                           <span className="text-sm font-medium">{dept.department_name}</span>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-muted-foreground">{dept.hired}/{dept.total_positions} filled</span>
-                            <div className="w-20 bg-secondary rounded-full h-2">
+                          <div className="flex items-center space-x-2 w-full sm:w-auto">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">{dept.hired}/{dept.total_positions} filled</span>
+                            <div className="w-16 md:w-20 bg-secondary rounded-full h-2">
                               <div className="bg-primary h-2 rounded-full" style={{ width: `${percentage}%` }}></div>
                             </div>
                           </div>
@@ -480,7 +481,7 @@ const ManagerDashboard = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Team Updates</CardTitle>
+                  <CardTitle className="text-lg md:text-xl">Recent Team Updates</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {(() => {
