@@ -673,7 +673,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       {/* Stats Overview */}
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-4">Candidate Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -751,14 +751,14 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       {/* Search and Filters */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <CardTitle>Candidate Screening Results</CardTitle>
-            <div className="flex space-x-2">
-              <div className="relative">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <CardTitle className="text-lg">Candidate Screening Results</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder="Search candidates..."
-                  className="pl-10 w-48 sm:w-64"
+                  className="pl-10 w-full sm:w-48 md:w-64"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -796,12 +796,12 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
         </CardHeader>
         <CardContent>
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsList className="flex-wrap">
-              <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
-              <TabsTrigger value="shortlisted">Shortlisted ({stats.shortlisted})</TabsTrigger>
-              <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
-              <TabsTrigger value="rejected">Rejected ({stats.rejected})</TabsTrigger>
-              <TabsTrigger value="hired">Hired ({stats.hired})</TabsTrigger>
+            <TabsList className="flex flex-wrap justify-start h-auto py-2 gap-1">
+              <TabsTrigger value="all" className="text-xs sm:text-sm">All ({stats.total})</TabsTrigger>
+              <TabsTrigger value="shortlisted" className="text-xs sm:text-sm">Shortlisted ({stats.shortlisted})</TabsTrigger>
+              <TabsTrigger value="pending" className="text-xs sm:text-sm">Pending ({stats.pending})</TabsTrigger>
+              <TabsTrigger value="rejected" className="text-xs sm:text-sm">Rejected ({stats.rejected})</TabsTrigger>
+              <TabsTrigger value="hired" className="text-xs sm:text-sm">Hired ({stats.hired})</TabsTrigger>
             </TabsList>
 
             <TabsContent value={selectedTab} className="mt-6">
@@ -848,8 +848,8 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="flex items-center space-x-2 mb-2 justify-end">
+                        <div className="text-left lg:text-right lg:min-w-[150px]">
+                          <div className="flex items-center gap-2 mb-2 lg:justify-end">
                             <Star className="w-5 h-5 text-primary" />
                               <span className="text-2xl font-bold text-primary" title={candidate.isScreened && candidate.score !== null ? `AI Screening Score: ${candidate.score}%` : 'Screening in progress'}>
                                 {candidate.isScreened && candidate.score !== null ? `${candidate.score}%` : 'Pending'}
@@ -873,7 +873,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
 
                       {/* Match Details */}
                         {candidate.isScreened ? (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                             <div className="text-center">
                               <div className="text-lg font-semibold">{candidate.matchDetails.skillsMatch || 0}%</div>
                               <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
@@ -913,7 +913,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                       {candidate.isScreened && (
                         <div className="mb-4 space-y-3">
                             {(candidate.predictedSuccess || candidate.rankingScore !== undefined) && (
-                              <div className="flex items-center gap-4">
+                              <div className="flex flex-wrap items-center gap-4">
                                 {candidate.predictedSuccess && (
                                   <div className="flex flex-col gap-1">
                                     <Badge
