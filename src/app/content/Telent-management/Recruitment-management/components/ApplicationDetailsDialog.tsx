@@ -187,10 +187,10 @@ const ApplicationDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-2xl md:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold text-gray-900">
+          <div className="flex items-center justify-between pr-8">
+            <DialogTitle className="text-xl md:text-2xl font-bold text-gray-900">
               Application Details
             </DialogTitle>
             {/* <Button
@@ -206,19 +206,19 @@ const ApplicationDetailsDialog = ({
 
         <div className="space-y-6">
           {/* Applicant Basic Info */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                  <User className="w-8 h-8 text-blue-600" />
+          <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="flex items-center gap-3 sm:space-x-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">{fullName || 'Unknown Applicant'}</h2>
-                  <p className="text-gray-600">{application.email}</p>
-                  <div className="flex items-center space-x-4 mt-2">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">{fullName || 'Unknown Applicant'}</h2>
+                  <p className="text-gray-600 text-sm">{application.email}</p>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
                     {getStatusBadge(application.status)}
                     <span className="text-sm text-gray-500">
-                      Applied on {formatDate(application.applied_date)}
+                      {formatDate(application.applied_date)}
                     </span>
                   </div>
                 </div>
@@ -228,10 +228,11 @@ const ApplicationDetailsDialog = ({
                 <Button
                   onClick={handleDownloadResume}
                   variant="outline"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2 text-sm"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download Resume</span>
+                  <span className="hidden sm:inline">Download Resume</span>
+                  <span className="sm:hidden">Resume</span>
                 </Button>
               )}
             </div>
@@ -239,7 +240,7 @@ const ApplicationDetailsDialog = ({
 
           {/* Job Information */}
           {job && (
-            <div className="border border-gray-200 rounded-lg p-6">
+            <div className="border border-gray-200 rounded-lg p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Building className="w-5 h-5 mr-2 text-blue-600" />
                 Job Information
@@ -250,15 +251,15 @@ const ApplicationDetailsDialog = ({
                   <p className="text-sm text-gray-600">{job.location}</p>
                 </div>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                     <span className="text-gray-600">Employment Type:</span>
                     <span className="font-medium">{job.employment_type}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                     <span className="text-gray-600">Experience Required:</span>
                     <span className="font-medium">{job.experience}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                     <span className="text-gray-600">Education:</span>
                     <span className="font-medium">{job.education}</span>
                   </div>
@@ -269,12 +270,12 @@ const ApplicationDetailsDialog = ({
 
           {/* AI Screening Results */}
           {candidate && candidate.isScreened && (
-            <div className="border border-gray-200 rounded-lg p-6">
+            <div className="border border-gray-200 rounded-lg p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Star className="w-5 h-5 mr-2 text-yellow-600" />
                 AI Screening Results
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">{candidate.matchDetails.skillsMatch || 0}%</div>
                   <div className="text-sm text-gray-600">Skills Match</div>
@@ -320,8 +321,8 @@ const ApplicationDetailsDialog = ({
           )}
 
           {/* Contact Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="border border-gray-200 rounded-lg p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="border border-gray-200 rounded-lg p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Mail className="w-5 h-5 mr-2 text-green-600" />
                 Contact Information
@@ -352,7 +353,7 @@ const ApplicationDetailsDialog = ({
             </div>
 
             {/* Professional Information */}
-            <div className="border border-gray-200 rounded-lg p-6">
+            <div className="border border-gray-200 rounded-lg p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Briefcase className="w-5 h-5 mr-2 text-purple-600" />
                 Professional Information
@@ -394,7 +395,7 @@ const ApplicationDetailsDialog = ({
 
           {/* Skills */}
           {application.skills && (
-            <div className="border border-gray-200 rounded-lg p-6">
+            <div className="border border-gray-200 rounded-lg p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills</h3>
               <div className="flex flex-wrap gap-2">
                 {application.skills.split(',').map((skill, index) => (
@@ -408,14 +409,14 @@ const ApplicationDetailsDialog = ({
 
           {/* Certifications */}
           {application.certifications && (
-            <div className="border border-gray-200 rounded-lg p-6">
+            <div className="border border-gray-200 rounded-lg p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Certifications</h3>
               <p className="text-gray-700 whitespace-pre-wrap">{application.certifications}</p>
             </div>
           )}
 
           {/* Application Actions */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4 border-t border-gray-200">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>

@@ -31,7 +31,7 @@ export default function HomePage() {
       <Header  />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar}  /> */}
-        <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
+        <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:ml-76" : "lg:ml-24"} p-2 ml-0`}>
         <Suspense fallback={<div>Loading...</div>}>
           <HRDashboard />
         </Suspense>
