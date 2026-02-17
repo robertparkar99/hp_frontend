@@ -94,8 +94,8 @@ export function Dashboard() {
       </div>
 
       {/* Navigation Menu Toggle */}
-      <div className="flex items-center justify-between border-b border-gray-300 pb-2 mb-4">
-        <div className="flex space-x-6">
+      <div className="border-b border-gray-300 pb-2 mb-4">
+        <div className="flex overflow-x-auto scrollbar-hide -mx-2 px-2">
           {tabs.map((tab) => {
             const IconComponent = tab.icon;
             const isActive = activeTab === tab.key && !openPage;
@@ -104,7 +104,7 @@ export function Dashboard() {
               <button
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
-                className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 pb-2 px-2 text-sm font-medium whitespace-nowrap transition-colors ${
                   isActive
                     ? "border-b-2 border-blue-500 text-blue-600"
                     : "text-gray-600 hover:text-blue-500"
