@@ -277,7 +277,7 @@ export default function Home() {
             dateFormat="dd-MM-yyyy"
           />
         </div>
-        <div className="sm:col-span-2 lg:col-span-2 flex flex-col gap-4">
+        <div className="w-full">
           <EmployeeSelector
             multiSelect
             empMultiSelect={true}
@@ -324,14 +324,13 @@ export default function Home() {
       )}
 
       {/* Data Table */}
-      <div className="rounded-2xl overflow-hidden shadow overflow-x-auto">
+      <div className="rounded-2xl shadow overflow-x-auto">
         <DataTable
           columns={columns}
           data={data}
           pagination
           highlightOnHover
-          responsive
-          scrollX={true}
+          responsive={true}
           noDataComponent={loading ? "Loading..." : "No data available"}
           customStyles={customStyles}
           paginationRowsPerPageOptions={[10, 25, 50, 100]}
