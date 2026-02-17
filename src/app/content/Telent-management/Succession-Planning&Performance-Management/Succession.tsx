@@ -362,7 +362,7 @@ export default function TalentManagementPage() {
   };
 
   return (
-    <div className="space-y-6 p-4 bg-background rounded-xl">
+    <div className="space-y-6 p-4 bg-background rounded-xl max-md:rounded-none max-md:p-3">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Talent Management Dashboard</h1>
