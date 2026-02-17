@@ -26,12 +26,12 @@ export default function HomePage() {
     setMobileOpen(false);
   };
   return (
-    <div>
+    <div className="overflow-x-hidden">
       <div className="mb-5">
       <Header  />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar}  /> */}
-        <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
+        <div className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-76" : "md:ml-24"} ml-0 px-2 md:px-4`}>
       <ManagerDashboard />
       </div>
     </div>
