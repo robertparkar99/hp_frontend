@@ -42,7 +42,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
         ? new Date(userDetails.birthdate).toISOString().split("T")[0]
         : "",
       mobile: userDetails?.mobile || "",
-     department: userDetails?.department_id || "",
+      department: userDetails?.department_id || "",
       jobrole: userDetails?.allocated_standards || "",
       responsibility_level: userDetails?.subject_ids || "",
       gender: userDetails?.gender || "M",
@@ -145,7 +145,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
   }, [formData.personal.department, fullJobroleData]);
 
 
-  
+
 
 
   const tabs = [
@@ -213,46 +213,46 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
     handleInputChange("attendance", "working_days", currentDays);
   };
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-  setLoading(true);
-  try {
-    const formDataToSend = new FormData();
-    formDataToSend.append("type", "API");
-    formDataToSend.append("_method", "PUT");
-    formDataToSend.append(
-      "sub_institute_id",
-      sessionData?.subInstituteId || ""
-    );
-    formDataToSend.append("user_id", sessionData?.userId || "");
-    formDataToSend.append("_token", sessionData?.token || "");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setLoading(true);
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("type", "API");
+      formDataToSend.append("_method", "PUT");
+      formDataToSend.append(
+        "sub_institute_id",
+        sessionData?.subInstituteId || ""
+      );
+      formDataToSend.append("user_id", sessionData?.userId || "");
+      formDataToSend.append("_token", sessionData?.token || "");
 
-    // Personal data - ensure department_id is the ID, not name
-    formDataToSend.append("name_suffix", formData.personal.name_suffix);
-    formDataToSend.append("first_name", formData.personal.first_name);
-    formDataToSend.append("middle_name", formData.personal.middle_name);
-    formDataToSend.append("last_name", formData.personal.last_name);
-    formDataToSend.append("email", formData.personal.email);
-    formDataToSend.append("mobile", formData.personal.mobile);
-    
-    // This is the critical fix - ensure department_id is the ID
-    formDataToSend.append("department_id", formData.personal.department);
-    
-    formDataToSend.append("allocated_standards", formData.personal.jobrole);
-    formDataToSend.append(
-      "subject_ids",
-      formData.personal.responsibility_level
-    );
-    formDataToSend.append("gender", formData.personal.gender);
-    formDataToSend.append(
-      "user_profile_id",
-      formData.personal.user_profile_id
-    );
-    formDataToSend.append("join_year", formData.personal.join_year);
-    formDataToSend.append("status", formData.personal.status);
-    formDataToSend.append("password", formData.personal.plain_password);
-    formDataToSend.append("birthdate", formData.personal.birthdate);
+      // Personal data - ensure department_id is the ID, not name
+      formDataToSend.append("name_suffix", formData.personal.name_suffix);
+      formDataToSend.append("first_name", formData.personal.first_name);
+      formDataToSend.append("middle_name", formData.personal.middle_name);
+      formDataToSend.append("last_name", formData.personal.last_name);
+      formDataToSend.append("email", formData.personal.email);
+      formDataToSend.append("mobile", formData.personal.mobile);
+
+      // This is the critical fix - ensure department_id is the ID
+      formDataToSend.append("department_id", formData.personal.department);
+
+      formDataToSend.append("allocated_standards", formData.personal.jobrole);
+      formDataToSend.append(
+        "subject_ids",
+        formData.personal.responsibility_level
+      );
+      formDataToSend.append("gender", formData.personal.gender);
+      formDataToSend.append(
+        "user_profile_id",
+        formData.personal.user_profile_id
+      );
+      formDataToSend.append("join_year", formData.personal.join_year);
+      formDataToSend.append("status", formData.personal.status);
+      formDataToSend.append("password", formData.personal.plain_password);
+      formDataToSend.append("birthdate", formData.personal.birthdate);
 
       // Only append the image file if it exists (new upload)
       if (formData.personal.imageFile) {
@@ -346,39 +346,39 @@ const handleSubmit = async (e: React.FormEvent) => {
       // Additional fields from your example
       // formDataToSend.append("jobtitle_id", formData.personal.jobrole); // For jobrole ID
       formDataToSend.append("department_id", formData.personal.department);
-    
-    formDataToSend.append("load", "6");
-    formDataToSend.append("submit", "Update");
 
-    const response = await fetch(
-      `${sessionData?.url}/user/add_user/${userDetails?.id}`,
-      {
-        method: "POST",
-        body: formDataToSend,
-        headers: {
-          Accept: "application/json",
-        },
+      formDataToSend.append("load", "6");
+      formDataToSend.append("submit", "Update");
+
+      const response = await fetch(
+        `${sessionData?.url}/user/add_user/${userDetails?.id}`,
+        {
+          method: "POST",
+          body: formDataToSend,
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update user");
       }
-    );
 
-    if (!response.ok) {
-      throw new Error("Failed to update user");
+      const result = await response.json();
+      setLoading(false);
+      alert(result.message);
+      if (onUpdate) {
+        onUpdate();
+      }
+      console.log("Update successful:", result);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      setLoading(false);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const result = await response.json();
-    setLoading(false);
-    alert(result.message);
-    if (onUpdate) {
-      onUpdate();
-    }
-    console.log("Update successful:", result);
-  } catch (error) {
-    console.error("Error updating user:", error);
-    setLoading(false);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
   return (
     <>
       {isLoading ? (
@@ -388,8 +388,8 @@ const handleSubmit = async (e: React.FormEvent) => {
           {/* Header Section */}
             <div className="header-ajit mb-8" id="pd-header">
             <div className="header-section">
-              <div className="h-full bg-[url('/Header.png')] bg-contain bg-no-repeat">
-                <div className="rounded-lg">
+                <div className="header-background-wrapper">
+                  <div className="header-image-container">
                   {formData.personal.image.startsWith("blob:") ? (
                     <img
                       src={formData.personal.image}
@@ -438,27 +438,18 @@ const handleSubmit = async (e: React.FormEvent) => {
           </div>
 
           {/* Main Content */}
-          <div className="flex mt-14">
+            <div className="main-content-wrapper">
             {/* Sidebar Menu */}
               <div className="sidebar-menu" id="pd-sidebar">
               {tabs.map((item) => (
                 <div
                   key={item.id}
                   id={`pd-tab-${item.id}`}
-                  className={`cursor-pointer transition-colors duration-200 px-3 py-2 border-b-1 border-[1px solid rgba(71, 160, 255, 0.1)] ${activeSection === item.id
-                    ? "bg-[#47a0ff]"
-                    : "bg-white text-gray-600 hover:bg-blue-100"
-                    }`}
+                  className={`sidebar-menu-item ${activeSection === item.id ? "active" : ""}`}
                   onClick={() => handleTabClick(item.id as TabId, item.href)}
                 >
-                  <i
-                    className={`${item.icon} ${activeSection === item.id ? "text-white" : "text-gray-600"
-                      } w-5 h-5 mr-2`}
-                  ></i>
-                  <span
-                    className={`${activeSection === item.id ? "text-white" : "text-gray-600"
-                      }`}
-                  >
+                  <i className={`${item.icon} sidebar-menu-icon`}></i>
+                  <span className="sidebar-menu-text">
                     {item.href ? (
                       <a href={item.href} onClick={(e) => e.preventDefault()}>
                         {item.text}
@@ -472,7 +463,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             </div>
 
             {/* Content Sections */}
-            <div className="content-area w-full ml-10 bg-white rounded-lg">
+              <div className="content-area">
               {/* Form Content */}
               <div className="form-content">
                 <h2 className="section-title">
@@ -495,11 +486,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                     {/* Name Section */}
                     <div className="form-row">
                         <div className="input-field" id="field-suffix">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Suffix
                         </label>
-                        <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                          <select
                           value={formData.personal.name_suffix}
                           onChange={(e) =>
                             handleInputChange(
@@ -518,7 +508,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         </select>
                       </div>
                         <div className="input-field" id="field-firstname">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label id="field-firstname">
                           First Name
                         </label>
                         <input
@@ -538,7 +528,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                     <div className="form-row">
                         <div className="input-field" id="field-middlename">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Middle Name
                         </label>
                         <input
@@ -555,7 +545,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         />
                       </div>
                         <div className="input-field" id="field-lastname">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Last Name
                         </label>
                         <input
@@ -576,7 +566,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     {/* Contact Section */}
                     <div className="form-row">
                         <div className="input-field" id="field-email">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Email
                         </label>
                         <input
@@ -592,8 +582,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                           }
                         />
                       </div>
-                        <div className="input-field relative" id="field-password">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <div className="input-field input-with-icon" id="field-password">
+                          <label>
                           Password
                         </label>
                         <input
@@ -609,8 +599,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                           }
                         />
                         <i
-                          className={`fa fa-eye${toggleState ? "-slash" : ""
-                            } absolute right-3 top-8 cursor-pointer text-gray-500 hover:text-gray-700`}
+                            className={`fa fa-eye${toggleState ? "-slash" : ""} password-toggle-icon`}
                           onClick={() => setToggleState(!toggleState)}
                         ></i>
                       </div>
@@ -618,7 +607,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                     <div className="form-row">
                         <div className="input-field" id="field-birthdate">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Birthdate
                         </label>
                         <input
@@ -635,7 +624,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         />
                       </div>
                         <div className="input-field" id="field-mobile">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Mobile
                         </label>
                         <input
@@ -655,79 +644,76 @@ const handleSubmit = async (e: React.FormEvent) => {
                     </div>
 
                     {/* Department Section */}
-                    <div className="form-row">
-  
-<div className="input-field">
-  <label className="block mb-1 text-sm font-medium text-gray-700">
-    Department
-  </label>
-  <select
-    className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
-    value={formData.personal.department}
-    disabled={isReadOnly}
-    onChange={(e) =>
-      handleInputChange("personal", "department", Number(e.target.value))
-    }
-  >
-
-  <option value="">Select Department</option>
-
-  {/* Build department dropdown from fullJobroleData */}
-  {fullJobroleData &&
-    Object.keys(fullJobroleData).map((deptName) => {
-      const first = fullJobroleData[deptName][0]; // always contains department_id + name
-      return (
-        <option key={first.department_id} value={first.department_id}>
-          {first.department_name}
-        </option>
-      );
-    })}
-</select>
-
-</div>
-                     <div className="input-field">
-  <label className="block mb-1 text-sm font-medium text-gray-700">
-    Job Role
-  </label>
-  <select
-    className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
-    value={formData.personal.jobrole}
-    disabled={isReadOnly}
-    onChange={(e) =>
-      handleInputChange(
-        "personal",
-        "jobrole",
-        e.target.value
-      )
-    }
-  >
-    <option value="">Select Jobrole</option>
-    {filteredJobroles && filteredJobroles.length > 0 ? (
-      filteredJobroles.map((jobrole: any) => (
-        <option
-          key={jobrole.id}
-          value={jobrole.id}
-        >
-          {jobrole.jobrole}
-        </option>
-      ))
-    ) : (
-      <option value="" disabled>
-        No job roles available
-      </option>
-    )}
-  </select>
-</div>
+                      <div className="form-row">
+                        <div className="input-field">
+                          <label>
+                            Department
+                          </label>
+                          <select
+                            className={isReadOnly ? 'readonly-select' : ''}
+                            value={formData.personal.department}
+                            disabled={isReadOnly}
+                            onChange={(e) =>
+                              handleInputChange("personal", "department", Number(e.target.value))
+                            }
+                          >
+                            <option value="">Select Department</option>
+                            {fullJobroleData &&
+                              Object.keys(fullJobroleData).map((deptName) => {
+                              const first = fullJobroleData[deptName][0];
+                              return (
+                                <option
+                                  key={first.department_id}
+                                  value={first.department_id}
+                                >
+                                  {first.department_name}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                        <div className="input-field">
+                          <label>
+                            Job Role
+                          </label>
+                          <select
+                            className={isReadOnly ? 'readonly-select' : ''}
+                            value={formData.personal.jobrole}
+                            disabled={isReadOnly}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "personal",
+                                "jobrole",
+                                e.target.value
+                              )
+                            }
+                          >
+                            <option value="">Select Jobrole</option>
+                            {filteredJobroles && filteredJobroles.length > 0 ? (
+                              filteredJobroles.map((jobrole: any) => (
+                                <option
+                                  key={jobrole.id}
+                                  value={jobrole.id}
+                                >
+                                  {jobrole.jobrole}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="" disabled>
+                                No job roles available
+                              </option>
+                            )}
+                          </select>
+                        </div>
                     </div>
 
                     {/* Job Section */}
                     <div className="form-row">
                         <div className="input-field" id="field-responsibility">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Responsibility Level
                         </label>
-                        <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                          <select
                           value={formData.personal.responsibility_level}
                           onChange={(e) =>
                             handleInputChange(
@@ -745,8 +731,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                                 value={level.id}
                                 selected={userDetails?.subject_ids == level.id}
                               >
-                                {level.level}{" "}
-                                {/* Assuming the field is called 'level' */}
+                                {level.level}
                               </option>
                             ))
                           ) : (
@@ -757,11 +742,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                         </select>
                       </div>
                         <div className="input-field" id="field-gender">
-                        <label className="block text-[#393939] text-[14px] font-normal font-inter mb-2">
+                          <label>
                           Gender
                         </label>
                         <div className="flex gap-4">
-                          <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
+                            <label className="gender-radio-label">
                             <input
                               type="radio"
                               name="gender"
@@ -770,12 +755,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                               onChange={() =>
                                 handleInputChange("personal", "gender", "M")
                               }
-                              className="accent-blue-500 no-shadow"
-
+                                className="gender-radio-input"
                             />
                             Male
                           </label>
-                          <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
+                            <label className="gender-radio-label">
                             <input
                               type="radio"
                               name="gender"
@@ -784,7 +768,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                               onChange={() =>
                                 handleInputChange("personal", "gender", "F")
                               }
-                              className="accent-pink-500 no-shadow"
+                                className="gender-radio-input"
                             />
                             Female
                           </label>
@@ -794,12 +778,13 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                     <div className="form-row">
                         <div className="input-field" id="field-userprofile">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           User Profile
                         </label>
                         <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                            className={isReadOnly ? 'readonly-select' : ''}
                           value={formData.personal.user_profile_id}
+                            disabled={isReadOnly}
                           onChange={(e) =>
                             handleInputChange(
                               "personal",
@@ -818,8 +803,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                                   userDetails?.user_profile_id == userProfile.id
                                 }
                               >
-                                {userProfile.name}{" "}
-                                {/* Assuming the field is called 'level' */}
+                                {userProfile.name}
                               </option>
                             ))
                           ) : (
@@ -830,7 +814,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         </select>
                       </div>
                         <div className="input-field" id="field-joiningyear">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Joining Year
                         </label>
                         <input
@@ -851,12 +835,13 @@ const handleSubmit = async (e: React.FormEvent) => {
                     {/* Status Section */}
                     <div className="form-row">
                         <div className="input-field" id="field-status">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Inactive Status
                         </label>
                         <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                            className={isReadOnly ? 'readonly-select' : ''}
                           value={formData.personal.status}
+                            disabled={isReadOnly}
                           onChange={(e) =>
                             handleInputChange(
                               "personal",
@@ -866,27 +851,23 @@ const handleSubmit = async (e: React.FormEvent) => {
                           }
                         >
                           <option value="">Status</option>
-                          <option
-                            value="1"
-                          >
+                            <option value="1">
                             Active
                           </option>
-                          <option
-                            value="0"
-                          >
+                            <option value="0">
                             In-Active
                           </option>
                         </select>
                       </div>
-                        <div className="input-field w-full" id="field-userimage">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <div className="input-field" id="field-userimage">
+                          <label>
                           User Image
                         </label>
-                        <div className="flex items-center gap-4">
+                          <div className="file-input-wrapper">
                           <input
                             type="file"
                             accept="image/*"
-                            className="file-input px-4 py-1 rounded-full shadow-[inset_0px_2px_8px_rgba(0,0,0,0.15)] bg-[#f4faff] text-sm text-[#393939]"
+                              className="file-input"
                             onChange={(e) => {
                               if (e.target.files && e.target.files[0]) {
                                 const file = e.target.files[0];
@@ -907,19 +888,18 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                           {/* Image Preview */}
                           {formData.personal.image && (
-                            <div className="relative">
-                              {/* Check if image is a blob URL (new upload) or S3 URL */}
+                              <div className="image-preview-container">
                               {formData.personal.image.startsWith("blob:") ? (
                                 <img
                                   src={formData.personal.image}
                                   alt="Preview"
-                                  className="h-12 w-12 object-cover rounded-full"
+                                    className="image-preview"
                                 />
                               ) : (
                                 <img
                                   src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${formData.personal.image}`}
                                   alt="Preview"
-                                  className="h-12 w-12 object-cover rounded-full"
+                                      className="image-preview"
                                   onError={(e) => {
                                     // If image fails to load (doesn't exist on S3), clear the preview
                                     handleInputChange("personal", "image", "");
@@ -930,7 +910,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                               {/* Remove button */}
                               <button
                                 type="button"
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                  className="image-remove-btn"
                                 onClick={() =>
                                   handleInputChange("personal", "image", "")
                                 }
@@ -960,7 +940,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <div className="form-grid" id="pd-section-address">
                     <div className="form-row">
                         <div className="input-field" id="field-address">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Address
                         </label>
                         <input
@@ -977,7 +957,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         />
                       </div>
                         <div className="input-field" id="field-city">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           City
                         </label>
                         <input
@@ -997,7 +977,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                     <div className="form-row">
                         <div className="input-field" id="field-state">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           State
                         </label>
                         <input
@@ -1014,7 +994,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         />
                       </div>
                         <div className="input-field" id="field-pincode">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Pincode
                         </label>
                         <input
@@ -1032,15 +1012,14 @@ const handleSubmit = async (e: React.FormEvent) => {
                       </div>
                     </div>
 
-                    <div className="w-full">
-                      <div className="input-field w-full">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                      <div className="form-row single-column">
+                        <div className="input-field">
+                          <label>
                           Temporary address
                         </label>
                         <textarea
                           name="address_2"
-                          id="address_2"
-                          className="w-full"
+                            id="address_2"
                           value={formData.address.user_address2}
                           onChange={(e) =>
                             handleInputChange(
@@ -1059,11 +1038,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <div className="form-grid" id="pd-section-reporting">
                     <div className="form-row">
                         <div className="input-field" id="field-supervisor">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Supervisor / Subordinate
                         </label>
-                        <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                          <select
                           value={formData.reporting.subordinate}
                           onChange={(e) =>
                             handleInputChange(
@@ -1091,11 +1069,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                         </select>
                       </div>
                         <div className="input-field" id="field-employeename">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Employee Name
                         </label>
-                        <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                          <select
                           value={formData.reporting.employee_name}
                           onChange={(e) =>
                             handleInputChange(
@@ -1130,11 +1107,10 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                     <div className="form-row">
                         <div className="input-field" id="field-reportingmethod">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Reporting Method
                         </label>
-                        <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                          <select
                           value={formData.reporting.reporting_method}
                           onChange={(e) =>
                             handleInputChange(
@@ -1156,16 +1132,16 @@ const handleSubmit = async (e: React.FormEvent) => {
                 {activeSection === "attendance" && (
                     <div className="form-grid" id="pd-section-attendance">
                     <div className="form-row">
-                      <div className="input-field w-full" id="field-workingdays">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                        <div className="input-field" id="field-workingdays">
+                          <label>
                           Working Days
                         </label>
-                        <div className="flex items-center gap-8">
+                          <div className="working-days-container">
                           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
                             (day, index) => (
                               <label
                                 key={index}
-                                className="flex items-center gap-2 text-sm font-medium text-gray-700"
+                                className="working-day-label"
                               >
                                 <input
                                   type="checkbox"
@@ -1173,7 +1149,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                                     day
                                   )}
                                   onChange={() => handleCheckboxChange(day)}
-                                  className="no-shadow"
                                 />
                                 {day}
                               </label>
@@ -1217,12 +1192,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                     ].map((item, index) => (
                       <div key={index} className="form-row">
                         <div className="input-field">
-                          <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                             {item.day} In Time
                           </label>
                           <input
                             type="time"
-                            className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                            className="time-input"
                             value={
                               formData.attendance[
                               item.inField as keyof typeof formData.attendance
@@ -1238,12 +1213,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                           />
                         </div>
                         <div className="input-field">
-                          <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                             {item.day} Out Time
                           </label>
                           <input
                             type="time"
-                            className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                            className="time-input"
                             value={
                               formData.attendance[
                               item.outField as keyof typeof formData.attendance
@@ -1267,13 +1242,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <div className="form-grid" id="pd-section-deposit">
                     <div className="form-row">
                       <div className="input-field" id="field-bankname">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Bank Name
                         </label>
                         <input
                           type="text"
-                          placeholder="Test Bank"
-                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                            placeholder="Test Bank"
                           value={formData.deposit.bank_name}
                           onChange={(e) =>
                             handleInputChange(
@@ -1285,13 +1259,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                         />
                       </div>
                       <div className="input-field" id="field branchname">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Branch Name
                         </label>
                         <input
                           type="text"
-                          placeholder="Main Branch"
-                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                            placeholder="Main Branch"
                           value={formData.deposit.branch_name}
                           onChange={(e) =>
                             handleInputChange(
@@ -1306,13 +1279,12 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                     <div className="form-row">
                       <div className="input-field" id="field-account">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Account
                         </label>
                         <input
                           type="text"
-                          placeholder="1234567890"
-                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                            placeholder="1234567890"
                           value={formData.deposit.account}
                           onChange={(e) =>
                             handleInputChange(
@@ -1324,13 +1296,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                         />
                       </div>
                       <div className="input-field" id="field-ifsc">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           IFSC
                         </label>
                         <input
                           type="text"
-                          placeholder="TEST0001234"
-                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                            placeholder="TEST0001234"
                           value={formData.deposit.ifsc}
                           onChange={(e) =>
                             handleInputChange("deposit", "ifsc", e.target.value)
@@ -1341,13 +1312,12 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                     <div className="form-row">
                       <div className="input-field" id="field-amount">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Amount
                         </label>
                         <input
                           type="text"
-                          placeholder="50000.00"
-                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
+                            placeholder="50000.00"
                           value={formData.deposit.amount}
                           onChange={(e) =>
                             handleInputChange(
@@ -1359,11 +1329,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                         />
                       </div>
                       <div className="input-field" id="field-transfertype">
-                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          <label>
                           Transfer Type
                         </label>
-                        <select
-                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
+                          <select
                           value={formData.deposit.transfer_type}
                           onChange={(e) =>
                             handleInputChange(
@@ -1382,11 +1351,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </div>
                 )}
 
-                  <div className="flex justify-center mt-8" id="pd-submit-section">
+                  <div className="submit-button-container" id="pd-submit-section">
                   <button
-                    type="submit"
-                      id="pd-submit-btn"
-                    className="px-8 py-2 rounded-full text-white font-medium transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-lg"
+                      type="submit" id="pd-submit-btn"
+                      className="submit-button"
                   >
                     {isSubmitting ? "Updating..." : "Update"}
                   </button>

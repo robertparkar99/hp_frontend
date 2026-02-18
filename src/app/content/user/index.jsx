@@ -355,7 +355,7 @@ const EmployeeDirectory = () => {
     <div className="min-h-screen bg-background rounded-xl">
   <main className="pb-16">
     <div className="max-w-7xl mx-auto px-4 py-8">
-          <div id="employee-directory-header" className="mb-8">
+      <div className="mb-8">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Employee Directory</h1>
@@ -428,7 +428,7 @@ const EmployeeDirectory = () => {
                   <span className="ml-2 text-primary">({selectedEmployees.length} selected)</span>
                 )}
               </div>
-                  <div id="view-mode-toggle-container" className="flex items-center space-x-2">
+              <div id="view-mode-toggle-container" className="flex items-center space-x-2">
                 <Button
                       id="view-mode-table"
                   variant="outline"
@@ -442,7 +442,6 @@ const EmployeeDirectory = () => {
                   </svg>
                 </Button>
                 <Button
-                      id="view-mode-cards"
                   variant="outline"
                   size="sm"
                   onClick={() => setViewMode('cards')}
@@ -483,20 +482,20 @@ const EmployeeDirectory = () => {
             </div>
           ) : viewMode === 'table' ? (
               <div id="employee-table-section">
-                <EmployeeTable
-                  employees={paginatedEmployees}
-                  selectedEmployees={selectedEmployees}
-                  onSelectEmployee={handleSelectEmployee}
-                  onSelectAll={handleSelectAll}
-                  onSort={handleSort}
-                  sortConfig={sortConfig}
-                  onViewProfile={handleViewProfile}
-                  onAssignTask={handleAssignTask}
-                  onEdit={handleEdit}
-                />
-              </div>
+            <EmployeeTable
+              employees={paginatedEmployees}
+              selectedEmployees={selectedEmployees}
+              onSelectEmployee={handleSelectEmployee}
+              onSelectAll={handleSelectAll}
+              onSort={handleSort}
+              sortConfig={sortConfig}
+              onViewProfile={handleViewProfile}
+              onAssignTask={handleAssignTask}
+              onEdit={handleEdit}
+            />
+            </div>
           ) : (
-                <div id="employee-card-container" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6">
+            <div id="employee-card-container" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6">
               {paginatedEmployees.map((employee) => (
                 <EmployeeCard
                   key={employee.id}
@@ -510,16 +509,17 @@ const EmployeeDirectory = () => {
           )}
 
           {/* Pagination moved INSIDE the grid */}
+          
           {totalPages > 1 && (
-            <div id="pagination-controls">
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={sortedEmployees.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
-                onItemsPerPageChange={handleItemsPerPageChange}
-              />
+             <div id="pagination-controls">
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={sortedEmployees.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
             </div>
           )}
     </div>

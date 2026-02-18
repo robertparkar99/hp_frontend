@@ -353,7 +353,7 @@ export default function AddUserModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent id="add-user-modal-dialog" className="max-w-4xl overflow-y-auto max-h-[95vh]">
+      <DialogContent id="add-user-modal-dialog"  className="max-w-4xl overflow-y-auto max-h-[95vh]">
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Personal Information */}
           <section id="personal-info-section">
