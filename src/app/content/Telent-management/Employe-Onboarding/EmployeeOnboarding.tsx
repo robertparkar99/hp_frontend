@@ -90,13 +90,13 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background rounded-xl">
+    <div className="min-h-screen bg-background rounded-xl max-md:rounded-none">
       {/* <Header 
         userName="Sarah Johnson"
         onLogoutClick={() => toast({ title: "Logged out" })}
       /> */}
       
-      <main className="container mx-auto px-6 py-6 space-y-8">
+      <main className="container mx-auto px-6 py-6 space-y-8 max-md:px-3">
         {/* Welcome Hero Section */}
         <WelcomeHero 
           userName="Sarah"

@@ -73,7 +73,7 @@ export default function Reviews() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex flex-col bg-background">
       {/* <AppSidebar /> */}
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -93,7 +93,7 @@ export default function Reviews() {
                   Filter
                 </Button>
                 {userRole !== 'employee' && (
-                  <Button variant="gradient">
+                  <Button variant="default">
                     <Plus className="h-4 w-4" />
                     New Review
                   </Button>
@@ -102,7 +102,7 @@ export default function Reviews() {
             </div>
 
             {/* Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
               <Card className="shadow-card">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
@@ -171,7 +171,7 @@ export default function Reviews() {
               <CardContent>
                 <div className="space-y-4">
                   {mockReviewData.map((review) => (
-                    <div key={review.id} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                    <div key={review.id} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors max-md:flex-col max-md:items-start max-md:gap-3">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
                           <span className="text-white font-medium">
@@ -185,7 +185,7 @@ export default function Reviews() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-6 max-md:gap-3 max-md:flex-wrap max-md:justify-end">
                         <div className="text-center">
                           <div className="text-sm text-muted-foreground">Score</div>
                           <div className="font-bold">
