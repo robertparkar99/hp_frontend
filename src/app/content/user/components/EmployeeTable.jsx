@@ -117,6 +117,15 @@ const EmployeeTable = ({
     const routePath = menuRoutes[menu];
 
     if (routePath) {
+      // Set tour trigger for the target page
+      if (menu === 'user/usersTabs.tsx') {
+        sessionStorage.setItem('triggerPageTour', 'edit-employee');
+      } else if (menu === 'task/taskManagement.tsx') {
+        sessionStorage.setItem('triggerPageTour', 'task-assignment');
+        // Clear the tour completion flag so the tour will start even if previously completed
+        localStorage.removeItem('taskManagementTourCompleted');
+      }
+
       // Use router.push to navigate
       window.location.href = routePath;
     }
@@ -137,6 +146,28 @@ const EmployeeTable = ({
     setClickedButtonRect(rect);
     setShowActions(showActions === employeeId ? null : employeeId);
   };
+
+  // Listen for tour events to auto-open the actions menu
+  useEffect(() => {
+    const handleTourShowActions = (event) => {
+      const { employeeId } = event.detail || {};
+      if (employeeId && safeEmployees.length > 0) {
+        const targetEmployee = safeEmployees.find(emp => emp.id === employeeId) || safeEmployees[0];
+        if (targetEmployee) {
+          // Find the button element and get its position
+          const button = document.querySelector('.table-actions-menu-first');
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            setClickedButtonRect(rect);
+            setShowActions(targetEmployee.id);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('tour:showActions', handleTourShowActions);
+    return () => window.removeEventListener('tour:showActions', handleTourShowActions);
+  }, [safeEmployees]);
 
  
   const handleColumnFilter = (columnKey, value) => {
@@ -244,6 +275,7 @@ const EmployeeTable = ({
           </div>
         </div>
       ),
+      minWidth: "200px"
     },
     {
       name: (
@@ -341,13 +373,14 @@ const EmployeeTable = ({
     },
     {
       name: "Actions",
-      cell: (row) => (
+      cell: (row, index) => (
         <div className="relative">
           <Button
+            id="table-actions-menu"
             variant="ghost"
             size="icon"
             onClick={(e) => handleMenuToggle(row.id, e)}
-            className="h-8 w-8"
+            className={`h-8 w-8 ${index === 0 ? 'table-actions-menu-first' : ''}`}
           >
             <Icon name="MoreHorizontal" size={16} />
           </Button>

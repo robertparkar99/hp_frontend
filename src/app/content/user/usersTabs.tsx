@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import React from "react";
 import Loading from "@/components/utils/loading";
 import Radar from "@/app/Radar/page";
+import EditEmployeeTour from "./components/EditEmployeeTour";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export default function EditProfilePage() {
   const [uploadDoc, setdocumentTypeLists] = useState<any>();
   const [userJobroleComponent, setUserJobroleComponents] = useState<any>();
   const [userCategory, setUserCategory] = useState<any>("");
+  const [showTour, setShowTour] = useState(false);
   // near your other states
   const [fullJobroleData, setFullJobroleData] = useState<any>({});
 
@@ -86,6 +88,19 @@ export default function EditProfilePage() {
         userProfile: user_profile_name,
         syear,
       });
+    }
+  }, []);
+
+  // Check if tour should start (when navigated from employee directory tour)
+  useEffect(() => {
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+    console.log('[Edit Employee] triggerPageTour value:', triggerTour);
+
+    if (triggerTour === 'edit-employee') {
+      console.log('[Edit Employee] Starting page tour automatically');
+      setShowTour(true);
+      // Clean up the flag
+      sessionStorage.removeItem('triggerPageTour');
     }
   }, []);
 
@@ -158,6 +173,10 @@ export default function EditProfilePage() {
 
   const handleGoBack = () => router.back();
 
+  const handleTourComplete = () => {
+    setShowTour(false);
+  };
+
   const tabs = [
     {
       id: "personal-info",
@@ -186,7 +205,7 @@ export default function EditProfilePage() {
     },
     {
       id: "skill-rating",
-      label: "Competency Rating",
+      label: "Skill Rating",
       icon: <Star className="mr-2 h-5 w-5 text-slate-700" />,
     },
     {
@@ -205,44 +224,48 @@ export default function EditProfilePage() {
 
 
           {/* ================= HEADER ================= */}
-            <div className="border-b border-blue-100">
-            <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2">
+            <div className="z-40 border-b border-blue-100" id="edit-employee-header">
+            <div className="flex items-center gap-3 px-3 py-2">
 
               {/* Back Button */}
               <button
+                  id="edit-employee-back"
                 onClick={handleGoBack}
                 className="shrink-0 text-black"
               >
-                <ArrowLeft size={18} className="sm:w-5 sm:h-5" />
+                <ArrowLeft size={20} />
               </button>
 
 
               {/* Tabs Scroll Area */}
-              <div className="flex-1 overflow-x-auto scrollbar-hide">
+                <div className="flex-1 overflow-x-auto scrollbar-hide" id="edit-employee-tabs">
                 <div className="flex justify-start">
                   <div
                     className="bg-white
-        inline-flex items-center
-        pl-1 sm:pl-2 pr-2 sm:pr-4 py-1 sm:py-1.5
+        inline-flex items-center gap-2
+        pl-2 pr-4 py-1.5
         rounded-full
         border border-blue-200
         bg-gradient-to-r from-white to-[#D9FFF6]
-        w-full sm:max-w-screen-lg
+        max-w-screen-lg
       "
                   >
                     {tabs.map((tab) => (
                       <button
                         key={tab.id}
+                        id={`tab-${tab.id}`}
                         onClick={() => setActiveTab(tab.id)}
                         className={cn(
                           `
-            flex items-center gap-1 sm:gap-1.5
+            flex items-center gap-1.5
             whitespace-nowrap
             rounded-full
             transition-all
-            text-[10px] sm:text-[11px] md:text-[12.5px] font-medium
+            text-[12.5px] font-medium
 
-            px-1.5 sm:px-2 md:px-3 py-1 sm:py-1.5
+            px-3 py-1.5
+            md:px-2 md:py-1
+            lg:px-3 lg:py-1.5
             `,
                           activeTab === tab.id
                             ? "bg-emerald-500 text-white shadow"
@@ -251,11 +274,11 @@ export default function EditProfilePage() {
                       >
                         {React.cloneElement(tab.icon, {
                           className: cn(
-                            "h-3 w-3 sm:h-3.5 sm:w-3.5",
+                            "h-3.5 w-3.5",
                             activeTab === tab.id ? "text-white" : "text-slate-600"
                           ),
                         })}
-                        <span className="leading-none hidden sm:inline">{tab.label}</span>
+                        <span className="leading-none">{tab.label}</span>
                       </button>
                     ))}
                   </div>
@@ -267,61 +290,78 @@ export default function EditProfilePage() {
 
 
           {/* ================= CONTENT SECTION ================= */}
-          <div className="flex-1 px-2 sm:px-4 py-3 sm:py-4 w-full overflow-x-hidden">
+          <div className="flex-1 px-4 py-4">
 
             {activeTab === "personal-info" && (
-              <PersonalDetails
-                userDetails={userDetails}
-                userdepartment={userdepartment}
-                userJobroleLists={userJobroleLists}
-                fullJobroleData={fullJobroleData}
-                userLOR={userLOR}
-                userProfiles={userProfiles}
-                userLists={userLists}
-                sessionData={sessionData}
-                onUpdate={fetchInitialData}
-              />
+                <div id="content-personal-info">
+                  <PersonalDetails
+                    userDetails={userDetails}
+                    userdepartment={userdepartment}
+                    userJobroleLists={userJobroleLists}
+                    fullJobroleData={fullJobroleData}
+                    userLOR={userLOR}
+                    userProfiles={userProfiles}
+                    userLists={userLists}
+                    sessionData={sessionData}
+                    onUpdate={fetchInitialData}
+                  />
+                </div>
             )}
 
             {activeTab === "upload-docs" && (
-              <UploadDoc
-                uploadDoc={uploadDoc}
-                sessionData={sessionData}
-                clickedID={clickedUser}
-                documentLists={documentLists}
-              />
+                <div id="content-upload-docs">
+                  <UploadDoc
+                    uploadDoc={uploadDoc}
+                    sessionData={sessionData}
+                    clickedID={clickedUser}
+                    documentLists={documentLists}
+                  />
+                </div>
             )}
 
             {activeTab === "jobrole-skill" && (
-              <JobRoleSkill userJobroleSkills={userJobroleSkills} />
+                <div id="content-jobrole-skill">
+                  <JobRoleSkill userJobroleSkills={userJobroleSkills} />
+                </div>
             )}
 
             {activeTab === "jobrole-tasks" && (
-              <JobRoleTasks userJobroleTask={userJobroleTask} />
+                <div id="content-jobrole-tasks">
+                  <JobRoleTasks userJobroleTask={userJobroleTask} />
+                </div>
             )}
 
             {activeTab === "responsibility" && (
-              <LOR SelLOR={SelLORs} />
+                <div id="content-responsibility">
+                  <LOR SelLOR={SelLORs} />
+                </div>
             )}
 
             {activeTab === "skill-rating" && (
-              <Skillrating
-                skills={userRatingSkills}
-                clickedUser={clickedUser}
-                userRatedSkills={userRatedSkills}
-                userJobroleSkills={userJobroleSkills}
-              />
+                <div id="content-skill-rating">
+                  <Skillrating
+                    skills={userRatingSkills}
+                    clickedUser={clickedUser}
+                    userRatedSkills={userRatedSkills}
+                    userJobroleSkills={userJobroleSkills}
+                  />
+                </div>
             )}
 
             {activeTab === "Jobrole-Type" && (
-              <Radar
-                usersJobroleComponent={userJobroleComponent}
-                userCategory={userCategory}
-              />
+                <div id="content-competency">
+                  <Radar
+                    usersJobroleComponent={userJobroleComponent}
+                    userCategory={userCategory}
+                  />
+                </div>
             )}
           </div>
         </div>
       )}
+
+      {/* Tour Component */}
+      {showTour && <EditEmployeeTour onComplete={handleTourComplete} onSwitchView={() => { }} />}
     </>
   );
 

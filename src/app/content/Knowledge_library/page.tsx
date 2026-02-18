@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import ViewKnowledge from "@/components/KnowledgeComponent/viewDialouge";
 import {
   Funnel,
@@ -46,10 +45,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Atom } from "react-loading-indicators";
 import { Button } from "@/components/ui/button";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
-import Loader from "@/components/utils/loading";
-
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "@/lib/tourSteps";
 interface KnowledgeItem {
   id: number;
   category: string;
@@ -75,7 +75,11 @@ interface KnowledgeItem {
   deleted_at: any;
 }
 
-const Honeycomb: React.FC = () => {
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+const Honeycomb: React.FC<PageProps> = ({ showDetailTour }) => {
   const [data, setData] = useState<KnowledgeItem[]>([]);
   const [filteredData, setFilteredData] = useState<KnowledgeItem[]>([]);
   const [sessionData, setSessionData] = useState({
@@ -86,6 +90,9 @@ const Honeycomb: React.FC = () => {
     userId: "",
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
 
   // Dropdown state
   const [category, setCategory] = useState<string>("");
@@ -104,14 +111,6 @@ const Honeycomb: React.FC = () => {
 
   // 🔑 View toggle state
   const [viewMode, setViewMode] = useState<"circle" | "table">("circle");
-
-  // ✅ New state for expanded actions
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // Toggle expanded actions
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
 
   // Dialog states
   const [activeKnowledge, setActiveKnowledge] = useState<KnowledgeItem | null>(null);
@@ -170,6 +169,13 @@ const Honeycomb: React.FC = () => {
 
     fetchData();
   }, [sessionData]);
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
   // Apply dropdown filters
   useEffect(() => {
@@ -448,7 +454,7 @@ const Honeycomb: React.FC = () => {
             {/* Filters */}
             <Popover>
               <PopoverTrigger asChild>
-                <button className="p-2 hover:bg-gray-100 rounded-md transition-colors">
+                <button title="Filter" className="p-2 hover:bg-gray-100 rounded-md transition-colors">
                   <Funnel className="w-5 h-5" />
                 </button>
               </PopoverTrigger>
@@ -524,54 +530,32 @@ const Honeycomb: React.FC = () => {
               </button>
             </div>
 
-            {/* Inline Actions Menu */}
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex gap-1"
-                >
-                  <button
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Add Knowledge"
-                  >
-                    <Plus className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <button
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Import Knowledge"
-                  >
-                    <Upload className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <button
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Export Knowledge"
-                  >
-                    <Download className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <button
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Knowledge Analytics"
-                  >
-                    <Sparkles className="w-5 h-5 text-gray-600" />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* More Actions Button */}
-            <div className="relative">
-              <button
-                onClick={toggleExpanded}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                title="More Actions"
-              >
-                <MoreVertical className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
+             <Popover>
+             <PopoverTrigger asChild>
+               <button title="More Actions" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                 <MoreVertical className="w-5 h-5 text-gray-600" />
+               </button>
+             </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-auto p-2 bg-white shadow-xl rounded-xl"
+            >
+              <div className="flex items-center gap-2">
+                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Add Knowledge">
+                  <Plus className="w-5 h-5 text-gray-600" />
+                </button>
+                <button className="flex items-center  px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Import Knowledge">
+                  <Upload className="w-5 h-5 text-gray-600" />
+                </button>
+                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Export Knowledge">
+                  <Download className="w-5 h-5 text-gray-600" />
+                </button>
+                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Knowledge Analytics">
+                  <Sparkles className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
           </div>
         </div>
       </div>
@@ -580,7 +564,7 @@ const Honeycomb: React.FC = () => {
       <div className="w-full flex justify-center">
         {isLoading ? (
           <div className="flex justify-center items-center h-80">
-            <Loader/>
+            <Atom color="#525ceaff" size="medium" text="" textColor="" />
           </div>
         ) : columnFilteredData.length === 0 ? (
           <div className="text-center py-12">
@@ -621,7 +605,7 @@ const Honeycomb: React.FC = () => {
                         left: `${x}px`,
                         top: `${y}px`,
                       }}
-                      className="absolute rounded-full bg-gradient-to-b from-[#9FD0FF] to-[#50A8FF] border border-[#50A8FF] flex flex-col items-center justify-center text-center text-[11px] font-medium text-black p-3 hover:bg-[#f67232] hover:scale-110 transition duration-300 cursor-pointer"
+                      className="knowledge-bubble absolute rounded-full bg-gradient-to-b from-[#9FD0FF] to-[#50A8FF] border border-[#50A8FF] flex flex-col items-center justify-center text-center text-[11px] font-medium text-black p-3 hover:bg-[#f67232] hover:scale-110 transition duration-300 cursor-pointer"
                       onClick={() => {
                         setActiveKnowledge(item);
                         setDialogOpen({ view: true });
@@ -662,6 +646,19 @@ const Honeycomb: React.FC = () => {
             setActiveKnowledge(null);
           }}
           onSuccess={() => {}}
+        />
+      )}
+
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps('Knowledge')}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
         />
       )}
     </>

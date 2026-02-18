@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { PayrollDeductionTour } from "./PayrollDeductionTourSteps";
 
 type Employee = {
   id: number;
@@ -72,6 +73,9 @@ export default function PayrollDeductionsPage() {
 
   // Store all user entered amounts (both submitted and unsaved)
   const [userEnteredAmounts, setUserEnteredAmounts] = useState<Record<string, Record<number, string>>>({});
+
+  // Initialize tour instance
+  const [tour, setTour] = useState<PayrollDeductionTour | null>(null);
 
   // ✅ Load session data from localStorage
   useEffect(() => {
@@ -477,17 +481,38 @@ export default function PayrollDeductionsPage() {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 2000 + 11 }, (_, i) => 2000 + i);
 
+  // Check for tour trigger from sidebar navigation
+  useEffect(() => {
+    // Check if page was accessed via sidebar tour flow
+    const triggerPageTour = sessionStorage.getItem('triggerPageTour');
+    const isTourTriggered = triggerPageTour === 'payroll-deduction' || triggerPageTour === 'true';
+
+    // Only start tour if triggered via sidebar, not on normal page load/refresh
+    if (isTourTriggered) {
+      // Clear the trigger so tour doesn't restart on refresh
+      sessionStorage.removeItem('triggerPageTour');
+
+      // Initialize and start tour after a short delay
+      const tourInstance = new PayrollDeductionTour();
+      setTour(tourInstance);
+
+      setTimeout(() => {
+        tourInstance.startTour();
+      }, 1000);
+    }
+  }, []);
+
   return (
     <div className="p-6 bg-background rounded-xl min-h-screen">
-      <h1 className="text-2xl font-bold mb-6">Payroll Deduction Management</h1>
+      <h1 id="payroll-deduction-title" className="text-2xl font-bold mb-6">Payroll Deduction Management</h1>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end mb-6">
+      <div className="grid grid-cols-5 gap-4 items-end mb-6">
         {/* Deduction Type */}
         <div>
           <Label>Deduction Type</Label>
           <Select value={deductionType} onValueChange={setDeductionType}>
-            <SelectTrigger>
+            <SelectTrigger id="deduction-type-select">
               <SelectValue placeholder="Select Deduction Type" />
             </SelectTrigger>
             <SelectContent>
@@ -501,7 +526,7 @@ export default function PayrollDeductionsPage() {
         <div>
           <Label>Payroll Name</Label>
           <Select value={payrollName} onValueChange={setPayrollName}>
-            <SelectTrigger>
+            <SelectTrigger id="payroll-name-select">
               <SelectValue placeholder="Select Payroll Name" />
             </SelectTrigger>
             <SelectContent>
@@ -521,7 +546,7 @@ export default function PayrollDeductionsPage() {
         <div>
           <Label>Select Month</Label>
           <Select value={month} onValueChange={setMonth}>
-            <SelectTrigger>
+            <SelectTrigger id="month-select">
               <SelectValue placeholder="Select Month" />
             </SelectTrigger>
             <SelectContent>
@@ -551,7 +576,7 @@ export default function PayrollDeductionsPage() {
         <div>
           <Label>Select Year</Label>
           <Select value={year} onValueChange={setYear}>
-            <SelectTrigger>
+            <SelectTrigger id="year-select">
               <SelectValue placeholder="Select Year" />
             </SelectTrigger>
             <SelectContent>
@@ -567,6 +592,7 @@ export default function PayrollDeductionsPage() {
         {/* Search Button */}
         <div>
           <Button
+            id="search-button"
             onClick={handleSearch}
             disabled={loading}
             className="mt-8 bg-gray-200 text-black hover:bg-gray-300 w-full"
@@ -580,18 +606,21 @@ export default function PayrollDeductionsPage() {
       {searched && (
         <div className="flex gap-3 flex-wrap justify-end mb-4">
           <Button
+            id="export-print"
             onClick={() => window.print()}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
             <Printer className="w-5 h-5" />
           </Button>
           <Button
+            id="export-pdf"
             onClick={exportToPDF}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
             PDF
           </Button>
           <Button
+            id="export-excel"
             onClick={exportToExcel}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
@@ -627,6 +656,7 @@ export default function PayrollDeductionsPage() {
           {/* Submit Button */}
           <div className="flex justify-end mt-6">
             <Button
+              id="submit-button"
               onClick={handleSubmit}
               disabled={submitting || employees.length === 0}
               className="px-8 py-2 bg-green-600 text-white hover:bg-green-700 text-lg font-semibold"

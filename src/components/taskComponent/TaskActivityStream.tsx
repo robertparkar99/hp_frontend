@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Task, Employee, TaskReply } from './types/task';
 import { TaskCard } from './TaskCard';
 import { EmployeeCard } from './EmployeeCard';
@@ -30,6 +30,8 @@ import {
   format,
   subDays
 } from 'date-fns';
+
+import TaskActivityStreamTour from './TaskActivityStreamTour';
 
 // Mock data - replace with your actual data source
 const mockEmployees: Employee[] = [
@@ -156,6 +158,36 @@ export function TaskActivityStream() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
+  const [showTour, setShowTour] = useState(false);
+
+  // Check if tour should start (only when navigated from sidebar tour)
+  useEffect(() => {
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+    console.log('[TaskActivityStream] triggerPageTour value:', triggerTour);
+
+    if (triggerTour === 'task-activity') {
+      console.log('[TaskActivityStream] Starting page tour automatically');
+      setShowTour(true);
+      // Clean up the flag
+      sessionStorage.removeItem('triggerPageTour');
+    }
+  }, []);
+
+  // Handle tour completion
+  const handleTourComplete = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('taskActivityStreamTourSeen', 'true');
+    }
+    setShowTour(false);
+  };
+
+  // Start tour manually
+  const startTour = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('taskActivityStreamTourSeen');
+    }
+    setShowTour(true);
+  };
 
   const handleStatusUpdate = (taskId: string, newStatus: Task['status'], replyMessage?: string) => {
     setTasks(prevTasks => 
@@ -221,13 +253,20 @@ export function TaskActivityStream() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
-          <p className="text-gray-600">Manage and track task progress across your team</p>
+        <div id="task-activity-header" className="mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
+              <p className="text-gray-600">Manage and track task progress across your team</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={startTour}>
+              Start Tour
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div id="task-stats-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -278,7 +317,7 @@ export function TaskActivityStream() {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Filters */}
-            <Card className="mb-6">
+            <Card id="task-filters-section" className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Filter className="w-5 h-5" />
@@ -292,6 +331,7 @@ export function TaskActivityStream() {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
+                        id="task-search-input"
                         placeholder="Search tasks..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -299,7 +339,7 @@ export function TaskActivityStream() {
                       />
                     </div>
                   </div>
-                  <div>
+                  <div id="task-status-filter">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
                       <SelectTrigger>
@@ -314,7 +354,7 @@ export function TaskActivityStream() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
+                  <div id="task-employee-filter">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Employee</label>
                     <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                       <SelectTrigger>
@@ -335,17 +375,17 @@ export function TaskActivityStream() {
             </Card>
 
             {/* Task Tabs */}
-            <Tabs defaultValue="today" className="w-full">
+            <Tabs id="task-tabs" defaultValue="today" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="today" className="flex items-center gap-2">
+                <TabsTrigger id="tab-today" value="today" className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Today ({todayTasks.length})
                 </TabsTrigger>
-                <TabsTrigger value="upcoming" className="flex items-center gap-2">
+                <TabsTrigger id="tab-upcoming" value="upcoming" className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   Upcoming ({upcomingTasks.length})
                 </TabsTrigger>
-                <TabsTrigger value="recent" className="flex items-center gap-2">
+                <TabsTrigger id="tab-recent" value="recent" className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4" />
                   Recent ({recentTasks.length})
                 </TabsTrigger>
@@ -355,11 +395,12 @@ export function TaskActivityStream() {
                 {todayTasks.length > 0 ? (
                   todayTasks.map(task => (
                     <TaskCard
-                    sessionData={null}
+                      sessionData={null}
                       key={task.id}
                       task={task}
                       onStatusUpdate={handleStatusUpdate}
                       employees={employees}
+                      onRefetch={() => { }}
                     />
                   ))
                 ) : (
@@ -375,11 +416,12 @@ export function TaskActivityStream() {
                 {upcomingTasks.length > 0 ? (
                   upcomingTasks.map(task => (
                     <TaskCard
-                    sessionData={null}
+                      sessionData={null}
                       key={task.id}
                       task={task}
                       onStatusUpdate={handleStatusUpdate}
                       employees={employees}
+                      onRefetch={() => { }}
                     />
                   ))
                 ) : (
@@ -395,11 +437,12 @@ export function TaskActivityStream() {
                 {recentTasks.length > 0 ? (
                   recentTasks.map(task => (
                     <TaskCard
-                      sessionData={null} // Add missing required prop
+                      sessionData={null}
                       key={task.id}
                       task={task}
                       onStatusUpdate={handleStatusUpdate}
                       employees={employees}
+                      onRefetch={() => { }}
                     />
                   ))
                 ) : (
@@ -414,7 +457,7 @@ export function TaskActivityStream() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div id="team-overview-sidebar" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -433,6 +476,9 @@ export function TaskActivityStream() {
           </div>
         </div>
       </div>
+
+      {/* Tour Component */}
+      {showTour && <TaskActivityStreamTour onComplete={handleTourComplete} />}
     </div>
   );
 }

@@ -426,7 +426,7 @@ useEffect(() => {
               className="relative w-full bg-white border border-gray-300 rounded-lg pl-3 pr-10 py-3 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400"
             >
               <div className="flex items-center flex-wrap gap-2">
-                {displayEmployee ? (
+                  {displayEmployee && !Array.isArray(displayEmployee) ? (
                   <div className="flex items-center gap-2">
                     <img
                       src={displayEmployee.avatar}
@@ -462,7 +462,7 @@ useEffect(() => {
                     key={emp.id}
                     onClick={() => handleEmployeeSelect(emp)}
                     className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 ${
-                      displayEmployee && displayEmployee.id === emp.id
+                      displayEmployee && !Array.isArray(displayEmployee) && displayEmployee.id === emp.id
                         ? "bg-blue-100"
                         : ""
                     }`}

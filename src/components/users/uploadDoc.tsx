@@ -138,18 +138,18 @@ const UploadDocumentPage: React.FC<UploadDocProps> = ({ uploadDoc, sessionData, 
   };
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 w-full max-w-5xl mx-auto bg-white shadow-xl rounded-xl mt-4 sm:mt-6 md:mt-10 border border-gray-200">
-      <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Upload Document</h2>
+    <div className="p-6 max-w-5xl mx-auto bg-white shadow-xl rounded-xl mt-10 border border-gray-200" id="upload-doc-container">
+      <h2 className="text-xl font-semibold text-gray-800 mb-6">Upload Document</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 md:space-y-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 items-end">
-          <div className="flex flex-col">
-            <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Document Type</label>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end" id="upload-form-fields">
+          <div className="flex flex-col" id="doc-type-field">
+            <label className="text-sm font-medium text-gray-700 mb-1">Document Type</label>
             <select
               value={documentType}
               onChange={(e) => setDocumentType(e.target.value)}
               required
-              className="h-10 sm:h-12 md:h-[44px] w-full px-3 sm:px-4 rounded-md border border-gray-300 bg-white text-gray-700 text-sm sm:text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="h-[44px] w-full px-4 rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             >
               <option value="">Select</option>
               {uploadDoc.map((type) => (
@@ -160,76 +160,78 @@ const UploadDocumentPage: React.FC<UploadDocProps> = ({ uploadDoc, sessionData, 
             </select>
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Document Title</label>
+          <div className="flex flex-col" id="doc-title-field">
+            <label className="text-sm font-medium text-gray-700 mb-1">Document Title</label>
             <input
               type="text"
+              id="doc-title-input"
               placeholder="Enter title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="h-10 sm:h-12 md:h-[44px] w-full px-3 sm:px-4 rounded-md border border-gray-300 text-gray-700 text-sm sm:text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="h-[44px] w-full px-4 rounded-md border border-gray-300 text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
           </div>
 
-         <div className="flex flex-col sm:col-span-2 md:col-span-1">
-      <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1">File</label>
+         <div className="flex flex-col" id="doc-file-field">
+      <label className="text-sm font-medium text-gray-700 mb-1">File</label>
 
-      <div className="relative w-full">
+      <div className="relative w-full" id="doc-file-input">
         {/* Icon inside input */}
-        <Download className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-blue-600 pointer-events-none" />
+        <Download className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-600 pointer-events-none" />
 
         <input
           type="file"
           required
           accept=".pdf,.doc,.docx,.txt"
           onChange={(e) => console.log(e.target.files?.[0])}
-          className="h-10 sm:h-12 md:h-[44px] w-full pl-9 sm:pl-10 px-3 sm:px-4 pt-2 sm:pt-3 rounded-md border border-gray-300 text-gray-700 text-sm sm:text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition file:hidden"
+          className="h-[44px] w-full pl-10 px-4 pt-3 rounded-md border border-gray-300 text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition file:hidden"
         />
       </div>
 
     </div>
         </div>
 
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-center pt-2" id="upload-submit-section">
           <button
             type="submit"
+            id="upload-submit-btn"
             disabled={uploading}
-            className="px-6 sm:px-8 py-2 rounded-full text-white text-sm sm:text-base font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60"
+            className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60"
           >
             {uploading ? 'Uploading...' : 'Submit'}
           </button>
         </div>
 
-        {message && <p className="text-center text-xs sm:text-sm text-gray-600">{message}</p>}
+        {message && <p className="text-center text-sm text-gray-600">{message}</p>}
       </form>
 
-      <div className="mt-6 sm:mt-8 md:mt-10">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-3 sm:mb-4">Uploaded Documents</h3>
+      <div className="mt-10" id="uploaded-docs-section">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4" id="docs-table-header">Uploaded Documents</h3>
 
         {loadingDocs ? (
-          <p className="text-xs sm:text-sm text-gray-500">Loading documents...</p>
+          <p className="text-sm text-gray-500">Loading documents...</p>
         ) : documentLists.length > 0 ? (
-          <div className="overflow-x-auto -mx-3 sm:mx-0">
-            <table className="min-w-full text-xs sm:text-sm text-left border border-gray-200 shadow-md rounded-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm text-left border border-gray-200 shadow-md rounded-md overflow-hidden">
               <thead className="bg-[#D1E7FF] text-black">
                 <tr>
-                  <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-b">Document Type</th>
-                  <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-b">Title</th>
-                  <th className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-b">Filename</th>
+                  <th className="px-6 py-3 border-b">Document Type</th>
+                  <th className="px-6 py-3 border-b">Title</th>
+                  <th className="px-6 py-3 border-b">Filename</th>
                 </tr>
               </thead>
               <tbody className="bg-white">
                 {documentLists.map((doc: any, index: any) => (
                   <tr key={index} className="hover:bg-gray-50 transition">
-                    <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b">{doc.document_type}</td>
-                    <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b">{doc.document_title}</td>
-                    <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b">
+                    <td className="px-6 py-4 border-b">{doc.document_type}</td>
+                    <td className="px-6 py-4 border-b">{doc.document_title}</td>
+                    <td className="px-6 py-4 border-b">
                       <a
                         href={`https://s3-triz.fra1.digitaloceanspaces.com/public/hp_staff_document/${doc.file_name}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline break-all"
+                        className="text-blue-600 hover:underline"
                       >
                         {doc.document_title}
                       </a>
@@ -240,7 +242,7 @@ const UploadDocumentPage: React.FC<UploadDocProps> = ({ uploadDoc, sessionData, 
             </table>
           </div>
         ) : (
-          <p className="text-xs sm:text-sm text-gray-500">No documents uploaded yet.</p>
+          <p className="text-sm text-gray-500">No documents uploaded yet.</p>
         )}
       </div>
     </div>

@@ -30,6 +30,12 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
+// Import CandidatePortal tour steps
+import CandidatePortalTourSteps, {
+  shouldTriggerCandidatePortalTour,
+  setTourOpenApplyDialog
+} from "./CandidatePortalTourSteps";
+
 interface JobPosting {
   id: number;
   title: string;
@@ -175,6 +181,25 @@ const CandidatePortal = () => {
         console.error("Failed to parse userData from localStorage:", err);
       }
     }
+  }, []);
+
+  // Check for tour trigger and start tour
+  useEffect(() => {
+    const checkAndStartTour = async () => {
+      // Wait a bit for the page to fully render
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Check if tour should be triggered
+      if (shouldTriggerCandidatePortalTour()) {
+        console.log('CandidatePortal tour triggered from sidebar');
+        // Start the tour
+        CandidatePortalTourSteps.startTour();
+      } else {
+        console.log('CandidatePortal tour NOT triggered - normal page load');
+      }
+    };
+
+    checkAndStartTour();
   }, []);
 
   // Combined data fetching - departments and jobs in sequence
@@ -497,6 +522,21 @@ const CandidatePortal = () => {
     }));
     setUploadedResumePath("");
   };
+
+  // Function to open apply dialog during tour
+  const openApplyDialogForTour = () => {
+    if (jobListings.length > 0 && !isDialogOpen) {
+      const firstJob = jobListings[0];
+      setSelectedJob(firstJob);
+      setIsDialogOpen(true);
+      console.log('Tour opened Apply dialog for job:', firstJob.title);
+    }
+  };
+
+  // Set up callback for tour to open dialog
+  useEffect(() => {
+    setTourOpenApplyDialog(openApplyDialogForTour);
+  }, [jobListings, isDialogOpen]);
 
   // Utility function to display file links in S3 format
   const renderFileLink = (filePath: string, fileName: string) => {
@@ -877,7 +917,7 @@ ${formData.current_role || "Not provided"}
   return (
     <div className="min-h-screen bg-background rounded-xl">
       <main className="p-6">
-        <div className="mb-8">
+        <div className="mb-8" id="tour-candidate-header">
           <h1 className="text-3xl font-bold text-foreground mb-4">Find Your Next Opportunity</h1>
           <p className="text-muted-foreground mb-6">
             Discover exciting career opportunities and join our growing team
@@ -892,7 +932,7 @@ ${formData.current_role || "Not provided"}
 
           <TabsContent value="jobs" className="space-y-6">
             {/* Search Bar */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6" id="tour-search-container">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
@@ -900,15 +940,16 @@ ${formData.current_role || "Not provided"}
                   className="pl-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  id="tour-search-input"
                 />
               </div>
-              <Button className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors">
+              <Button className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors" id="tour-search-button">
                 Search Jobs
               </Button>
             </div>
 
             {/* Job Count */}
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground" id="tour-job-count">
               Showing {filteredJobListings.length} active job{filteredJobListings.length !== 1 ? 's' : ''}
             </div>
 
@@ -923,19 +964,19 @@ ${formData.current_role || "Not provided"}
                   </CardContent>
                 </Card>
               ) : (
-                filteredJobListings.map((job) => (
-                  <Card key={job.id} className="hover:shadow-lg transition-shadow">
+                  filteredJobListings.map((job, index) => (
+                    <Card key={job.id} className="hover:shadow-lg transition-shadow" id={index === 0 ? 'tour-job-card-first' : undefined}>
                     <CardHeader>
                       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                         <div className="flex-1">
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                            <CardTitle className="text-xl">{job.title}</CardTitle>
-                            <div className="flex flex-wrap gap-2">
+                              <CardTitle className="text-xl" id={index === 0 ? 'tour-job-title' : undefined}>{job.title}</CardTitle>
+                              <div className="flex flex-wrap gap-2" id={index === 0 ? 'tour-job-badges' : undefined}>
                               {getJobTypeBadge(job.employment_type)}
                               {getStatusBadge(job.status)}
                             </div>
                           </div>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-muted-foreground" id={index === 0 ? 'tour-company-location' : undefined}>
                             <div className="flex items-center gap-1">
                               <Building className="w-4 h-4" />
                               <span>{job.company}</span>
@@ -944,13 +985,13 @@ ${formData.current_role || "Not provided"}
                               <MapPin className="w-4 h-4" />
                               <span>{job.location}</span>
                             </div>
-                            <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1" id={index === 0 ? 'tour-salary' : undefined}>
                               <IndianRupee className="w-4 h-4" />
                               <span>{job.salary_range}</span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2" id={index === 0 ? 'tour-action-buttons' : undefined}>
                           <Button variant="outline" size="sm">
                             <Heart className="w-4 h-4" />
                           </Button>
@@ -962,12 +1003,12 @@ ${formData.current_role || "Not provided"}
                     </CardHeader>
 
                     <CardContent>
-                      <p className="text-muted-foreground mb-4">{job.description}</p>
+                        <p className="text-muted-foreground mb-4" id={index === 0 ? 'tour-description' : undefined}>{job.description}</p>
 
                       {/* Updated Grid Layout with Separate Sections */}
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                         {/* Skills Section */}
-                        <div>
+                          <div id={index === 0 ? 'tour-skills' : undefined}>
                           <h4 className="font-semibold text-sm mb-2">Skills Required</h4>
                           <ul className="text-sm text-muted-foreground space-y-1">
                             {job.skills ? (
@@ -981,7 +1022,7 @@ ${formData.current_role || "Not provided"}
                         </div>
 
                         {/* Experience Section */}
-                        <div>
+                          <div id={index === 0 ? 'tour-experience' : undefined}>
                           <h4 className="font-semibold text-sm mb-2">Experience</h4>
                           <div className="text-sm text-muted-foreground">
                             {job.experience ? `• ${job.experience}` : "• Not specified"}
@@ -989,7 +1030,7 @@ ${formData.current_role || "Not provided"}
                         </div>
 
                         {/* Education Section */}
-                        <div>
+                          <div id={index === 0 ? 'tour-education' : undefined}>
                           <h4 className="font-semibold text-sm mb-2">Education</h4>
                           <div className="text-sm text-muted-foreground">
                             {job.education ? `• ${job.education}` : "• Not specified"}
@@ -997,7 +1038,7 @@ ${formData.current_role || "Not provided"}
                         </div>
 
                         {/* Job Info Section */}
-                        <div>
+                          <div id={index === 0 ? 'tour-job-info' : undefined}>
                           <h4 className="font-semibold text-sm mb-2">Job Info</h4>
                           <div className="text-sm text-muted-foreground space-y-1">
                             <div className="flex items-center gap-1">
@@ -1020,23 +1061,23 @@ ${formData.current_role || "Not provided"}
 
                       {/* Benefits Section */}
                       {job.benefits && job.benefits !== "Not specified" && (
-                        <div className="mb-4">
+                          <div className="mb-4" id={index === 0 ? 'tour-benefits' : undefined}>
                           <h4 className="font-semibold text-sm mb-2">Benefits & Perks</h4>
                           <p className="text-sm text-muted-foreground">{job.benefits}</p>
                         </div>
                       )}
 
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <Badge variant="outline">{job.department}</Badge>
+                          <Badge variant="outline" id={index === 0 ? 'tour-department-badge' : undefined}>{job.department}</Badge>
 
                         <div className="flex gap-2">
-                          <Button variant="outline">Learn More</Button>
+                            <Button variant="outline" id={index === 0 ? 'tour-learn-more' : undefined}>Learn More</Button>
 
                           <Dialog open={isDialogOpen && selectedJob?.id === job.id} onOpenChange={setIsDialogOpen}>
                             <DialogTrigger asChild>
-                              <Button onClick={() => handleApplyClick(job)}>Apply Now</Button>
+                                <Button onClick={() => handleApplyClick(job)} id={index === 0 ? 'tour-apply-now' : undefined}>Apply Now</Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" id="tour-apply-dialog">
                               <DialogHeader>
                                 <DialogTitle>Apply for {selectedJob?.title}</DialogTitle>
                                 <DialogDescription>
@@ -1045,7 +1086,7 @@ ${formData.current_role || "Not provided"}
                               </DialogHeader>
 
                               <form onSubmit={handleSubmit} className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="tour-personal-info">
                                   <div className="space-y-2">
                                     <label htmlFor="first_name" className="text-sm font-medium">First Name *</label>
                                     <Input
@@ -1104,7 +1145,7 @@ ${formData.current_role || "Not provided"}
                                   </div>
                                 </div>
 
-                                <div className="space-y-2">
+                                  <div className="space-y-2" id="tour-location">
                                   <label htmlFor="current_location" className="text-sm font-medium">Preferred Location *</label>
                                   <Input
                                     id="current_location"
@@ -1116,7 +1157,7 @@ ${formData.current_role || "Not provided"}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-2">
+                                    <div className="space-y-2" id="tour-employment-type">
                                     <label htmlFor="employment_type" className="text-sm font-medium">Employment Type *</label>
                                     <select
                                       id="employment_type"
@@ -1133,7 +1174,7 @@ ${formData.current_role || "Not provided"}
                                     </select>
                                   </div>
 
-                                  <div className="space-y-2">
+                                    <div className="space-y-2" id="tour-experience-level">
                                     <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                       Experience {" "}
                                       <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
@@ -1155,7 +1196,7 @@ ${formData.current_role || "Not provided"}
                                   </div>
                                 </div>
 
-                                <div className="space-y-2">
+                                  <div className="space-y-2" id="tour-education-level">
                                   <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                     Education {" "}
                                     <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
@@ -1178,7 +1219,7 @@ ${formData.current_role || "Not provided"}
                                   )}
                                 </div>
 
-                                <div className="space-y-2">
+                                  <div className="space-y-2" id="tour-expected-salary">
                                   <label htmlFor="expected_salary" className="text-sm font-medium">Expected Salary *</label>
                                   <Input
                                     id="expected_salary"
@@ -1189,7 +1230,7 @@ ${formData.current_role || "Not provided"}
                                   />
                                 </div>
 
-                                <div className="space-y-2">
+                                  <div className="space-y-2" id="tour-skills-input">
                                   <label htmlFor="skills" className="text-sm font-medium">Skills *</label>
                                   <Input
                                     id="skills"
@@ -1201,7 +1242,7 @@ ${formData.current_role || "Not provided"}
                                   <p className="text-xs text-muted-foreground">List your key skills separated by commas</p>
                                 </div>
 
-                                <div className="space-y-2">
+                                  <div className="space-y-2" id="tour-certifications">
                                   <label htmlFor="certifications" className="text-sm font-medium">Certifications</label>
                                   <Input
                                     id="certifications"
@@ -1212,7 +1253,7 @@ ${formData.current_role || "Not provided"}
                                   <p className="text-xs text-muted-foreground">List any relevant certifications</p>
                                 </div>
 
-                                <div className="space-y-2">
+                                  <div className="space-y-2" id="tour-resume-upload">
                                   <label htmlFor="resume" className="text-sm font-medium">Resume *</label>
                                   <div className="flex items-center gap-2">
                                     <Input
@@ -1232,7 +1273,7 @@ ${formData.current_role || "Not provided"}
                                   </p>
                                 </div>
 
-                                <div className="flex justify-center space-x-4 sm:flex-row sm:justify-center">
+                                  <div className="flex justify-center space-x-4 sm:flex-row sm:justify-center" id="tour-form-buttons">
                                   <Button
                                     type="button"
                                     variant="outline"
@@ -1279,3 +1320,109 @@ ${formData.current_role || "Not provided"}
 };
 
 export default CandidatePortal;
+
+// Tour-specific styles for CandidatePortal
+const tourStyles = `
+    .candidate-tour-theme {
+        --shepherd-theme-primary: #3080ff;
+        --shepherd-theme-secondary: #6c757d;
+    }
+
+    .candidate-tour-theme .shepherd-header {
+        background: linear-gradient(135deg, #007BE5 0%, #546ee5 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        padding: 12px 16px;
+    }
+
+    .candidate-tour-theme .shepherd-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        color: white;
+    }
+
+    .candidate-tour-theme .shepherd-text {
+        font-size: 14px;
+        line-height: 1.6;
+        color: #171717;
+        padding: 16px;
+        background: #ffffff;
+    }
+
+    .candidate-tour-theme .shepherd-button {
+        background: linear-gradient(135deg, #007BE5 0%, #546ee5 100%);
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-weight: 500;
+        color: white;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        margin-right: 8px;
+    }
+
+    .candidate-tour-theme .shepherd-button:hover {
+        background: linear-gradient(135deg, #0056b3 0%, #4055b3 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 123, 229, 0.3);
+    }
+
+    .candidate-tour-theme .shepherd-button-secondary {
+        background: #f5f5f5 !important;
+        color: #333 !important;
+        border: 1px solid #ddd !important;
+    }
+
+    .candidate-tour-theme .shepherd-button-secondary:hover {
+        background: #e5e5e5 !important;
+    }
+
+    .candidate-tour-theme .shepherd-cancel-icon {
+        color: white;
+        font-size: 20px;
+        opacity: 0.8;
+    }
+
+    .candidate-tour-theme .shepherd-cancel-icon:hover {
+        opacity: 1;
+    }
+
+    .candidate-tour-theme.shepherd-has-title .shepherd-content .shepherd-header {
+        background: linear-gradient(135deg, #007BE5 0%, #546ee5 100%);
+        padding: 12px 16px;
+    }
+
+    .candidate-tour-theme .shepherd-element {
+        box-shadow: 0 8px 32px rgba(0, 123, 229, 0.25);
+        border-radius: 12px;
+        background: #ffffff;
+        max-width: 400px;
+    }
+
+    .candidate-tour-theme .shepherd-arrow:before {
+        background: linear-gradient(135deg, #007BE5 0%, #546ee5 100%);
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+
+    .candidate-tour-theme .shepherd-element-highlight {
+        animation: pulse 2s infinite;
+        z-index: 9999;
+    }
+`;
+
+// Inject styles into document head
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = tourStyles;
+  styleSheet.id = 'candidate-tour-styles';
+  // Only add if not already added
+  if (!document.getElementById('candidate-tour-styles')) {
+    document.head.appendChild(styleSheet);
+  }
+}

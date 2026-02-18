@@ -11,6 +11,7 @@ import OfferDetailsDialog from "./OfferDetailsDialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { startOfferManagementTour, shouldTriggerOfferManagementTour } from "./OfferManagementTourSteps";
 import {
   FileText,
   Send,
@@ -71,6 +72,28 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   const [sessionData, setSessionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isCreatingOffer, setIsCreatingOffer] = useState(false);
+  const [tourInitialized, setTourInitialized] = useState(false);
+
+  // Handle tour trigger
+  useEffect(() => {
+    if (tourInitialized) return;
+
+    const shouldStartTour = shouldTriggerOfferManagementTour();
+    console.log('[OfferDashboard] Should trigger offer tour:', shouldStartTour);
+
+    if (shouldStartTour) {
+      // Clear the trigger flag
+      sessionStorage.removeItem('triggerPageTour');
+
+      // Start the tour after a delay
+      setTimeout(() => {
+        startOfferManagementTour();
+        setTourInitialized(true);
+      }, 500);
+    } else {
+      setTourInitialized(true);
+    }
+  }, [tourInitialized]);
 
   const [newOffer, setNewOffer] = useState({
     candidateId: '',
@@ -589,15 +612,29 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   return (
     <div className="space-y-3 bg-background rounded-xl p-4">
       {showHeader && (
-        <div className="flex justify-between items-center">
-          <div>
+        <div className="flex justify-between items-center" id="tour-offer-header">
+          <div id="tour-offer-title">
             <h1 className="text-3xl font-bold">Offer Management</h1>
             <p className="text-muted-foreground">Create, send, and track job offers</p>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create New Offer
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                console.log('[OfferDashboard] Manually starting offer tour...');
+                sessionStorage.removeItem('offerManagementTourCompleted');
+                sessionStorage.setItem('triggerPageTour', 'offer-management');
+                startOfferManagementTour();
+              }}
+            >
+              Start Tour
+            </Button>
+            <Button onClick={() => setIsCreateDialogOpen(true)} id="tour-create-offer-button">
+              <Plus className="w-4 h-4 mr-2" />
+              Create New Offer
+            </Button>
+          </div>
         </div>
       )}
 
@@ -694,26 +731,26 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
       </Dialog>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4" id="tour-offer-stats">
+        <Card id="tour-stats-total">
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">Total Offers</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card id="tour-stats-draft">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-gray-600">{stats.draft}</div>
             <p className="text-xs text-muted-foreground">Draft</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card id="tour-stats-accepted">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
             <p className="text-xs text-muted-foreground">Accepted</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card id="tour-stats-rejected">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
             <p className="text-xs text-muted-foreground">Rejected</p>
@@ -721,30 +758,30 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
         </Card>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-6">
-        <TabsList className="bg-muted/50 flex flex-wrap h-auto p-1 gap-1 w-full max-w-full overflow-x-auto">
-          <TabsTrigger value="all" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-background data-[state=active]:shadow-md">All Offers ({stats.total})</TabsTrigger>
-          <TabsTrigger value="sent" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-background data-[state=active]:shadow-md">Sent ({stats.sent})</TabsTrigger>
-          <TabsTrigger value="accepted" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-background data-[state=active]:shadow-md">Accepted ({stats.accepted})</TabsTrigger>
-          <TabsTrigger value="rejected" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-background data-[state=active]:shadow-md">Rejected ({stats.rejected})</TabsTrigger>
+      <Tabs defaultValue="all" className="space-y-6" id="tour-offer-tabs">
+        <TabsList id="tour-tabs-list">
+          <TabsTrigger value="all" id="tour-tab-all">All Offers ({stats.total})</TabsTrigger>
+          <TabsTrigger value="sent" id="tour-tab-sent">Sent ({stats.sent})</TabsTrigger>
+          <TabsTrigger value="accepted" id="tour-tab-accepted">Accepted ({stats.accepted})</TabsTrigger>
+          <TabsTrigger value="rejected" id="tour-tab-rejected">Rejected ({stats.rejected})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
-          {offers.map((offer) => (
-            <Card key={offer.id}>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                  <div className="flex items-center space-x-3 sm:space-x-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+          {offers.map((offer, index) => (
+            <Card key={offer.id} id={index === 0 ? 'tour-first-offer-card' : ''}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="text-base sm:text-lg font-semibold">{offer.candidateName}</h3>
+                      <h3 className="text-lg font-semibold">{offer.candidateName}</h3>
                       <p className="text-sm text-gray-600">{offer.position}</p>
                       <p className="text-xs text-gray-500">Created: {offer.createdAt}</p>
                     </div>
                   </div>
-                  <div className="sm:text-right ml-auto sm:ml-0">
+                  <div className="text-right">
                     {getStatusBadge(offer.status)}
                     <div className="mt-2">
                       <p className="text-sm font-medium">{offer.salary}</p>
@@ -759,21 +796,21 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
                   </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <div className="text-xs sm:text-sm text-gray-600 order-2 sm:order-1">
-                    <span>Expires: {offer.expiresAt}</span>
-                    {offer.sentAt && <span className="block sm:inline sm:ml-4 mt-1 sm:mt-0">Sent: {offer.sentAt}</span>}
-                    {offer.acceptedAt && <span className="block sm:inline sm:ml-4 mt-1 sm:mt-0 text-green-600">Accepted: {offer.acceptedAt}</span>}
-                    {offer.rejectedAt && <span className="block sm:inline sm:ml-4 mt-1 sm:mt-0 text-red-600">Rejected: {offer.rejectedAt}</span>}
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-600">
+                    Expires: {offer.expiresAt}
+                    {offer.sentAt && <span className="ml-4">Sent: {offer.sentAt}</span>}
+                    {offer.acceptedAt && <span className="ml-4 text-green-600">Accepted: {offer.acceptedAt}</span>}
+                    {offer.rejectedAt && <span className="ml-4 text-red-600">Rejected: {offer.rejectedAt}</span>}
                   </div>
-                  <div className="flex space-x-2 w-full sm:w-auto order-1 sm:order-2">
-                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => { setDialogType('details'); setSelectedOffer(offer); setIsViewDialogOpen(true); }}>
-                      <Eye className="w-4 h-4 mr-1 sm:mr-2" />
-                      <span className="sm:hidden">View</span>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => { setDialogType('details'); setSelectedOffer(offer); setIsViewDialogOpen(true); }}>
+                      <Eye className="w-4 h-4 mr-2" />
+                      View
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => downloadOfferLetter(offer)}>
-                      <Download className="w-4 h-4 mr-1 sm:mr-2" />
-                      <span className="sm:hidden">Download</span>
+                    <Button variant="outline" size="sm" onClick={() => downloadOfferLetter(offer)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
                     </Button>
                   </div>
                 </div>
@@ -788,61 +825,67 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           )}
         </TabsContent>
 
-        <TabsContent value="draft" className="space-y-4">
-          {offers.filter(o => o.status === 'draft').map((offer) => (
-            <Card key={offer.id}>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                  <div className="flex items-center space-x-3 sm:space-x-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+        <TabsContent value="draft" className="space-y-4" id="tour-tab-draft-content">
+          {offers.filter(o => o.status === 'draft').length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No draft offers found.</p>
+              <p className="text-sm text-gray-400 mt-2">Create a new offer to get started</p>
+            </div>
+          ) : (
+            offers.filter(o => o.status === 'draft').map((offer) => (
+              <Card key={offer.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-gray-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{offer.candidateName}</h3>
+                        <p className="text-sm text-gray-600">{offer.position}</p>
+                        <p className="text-xs text-gray-500">Created: {offer.createdAt}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-semibold">{offer.candidateName}</h3>
-                      <p className="text-sm text-gray-600">{offer.position}</p>
-                      <p className="text-xs text-gray-500">Created: {offer.createdAt}</p>
+                    <div className="text-right">
+                      {getStatusBadge(offer.status)}
+                      <div className="mt-2">
+                        <p className="text-sm font-medium">{offer.salary}</p>
+                        <p className="text-xs text-gray-500">Start: {offer.startDate}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="sm:text-right ml-auto sm:ml-0">
-                    {getStatusBadge(offer.status)}
-                    <div className="mt-2">
-                      <p className="text-sm font-medium">{offer.salary}</p>
-                      <p className="text-xs text-gray-500">Start: {offer.startDate}</p>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex flex-col sm:flex-row justify-end gap-2">
-                  <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => sendOffer(offer)}>
+                  <div className="flex justify-end space-x-2" id="tour-draft-actions">
+                    <Button variant="outline" size="sm" onClick={() => sendOffer(offer)} id="tour-send-offer">
                     <Send className="w-4 h-4 mr-2" />
                     Send
                   </Button>
-                  <Button variant="destructive" size="sm" className="w-full sm:w-auto" onClick={() => rejectOffer(offer)}>
+                  <Button variant="destructive" size="sm" onClick={() => rejectOffer(offer)}>
                     <X className="w-4 h-4 mr-2" />
                     Reject
                   </Button>
                 </div>
               </CardContent>
-            </Card>
-          ))}
+              </Card>
+          )))}
         </TabsContent>
 
         <TabsContent value="sent" className="space-y-4">
           {offers.filter(o => o.status === 'sent').map((offer) => (
             <Card key={offer.id}>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                  <div className="flex items-center space-x-3 sm:space-x-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                      <Send className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Send className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="text-base sm:text-lg font-semibold">{offer.candidateName}</h3>
+                      <h3 className="text-lg font-semibold">{offer.candidateName}</h3>
                       <p className="text-sm text-gray-600">{offer.position}</p>
                       <p className="text-xs text-gray-500">Sent: {offer.sentAt}</p>
                     </div>
                   </div>
-                  <div className="sm:text-right ml-auto sm:ml-0">
+                  <div className="text-right">
                     {getStatusBadge(offer.status)}
                     <div className="mt-2">
                       <p className="text-sm font-medium">{offer.salary}</p>
@@ -851,8 +894,12 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
                   </div>
                 </div>
 
-                <div className="flex justify-end">
-                  <Button variant="destructive" size="sm" className="w-full sm:w-auto" onClick={() => rejectOffer(offer)}>
+                <div className="flex justify-end space-x-2">
+                  {/* <Button variant="outline" size="sm" onClick={() => sendOffer(offer)}>
+                    <Send className="w-4 h-4 mr-2" />
+                    Resend
+                  </Button> */}
+                  <Button variant="destructive" size="sm" onClick={() => rejectOffer(offer)}>
                     <X className="w-4 h-4 mr-2" />
                     Reject
                   </Button>
@@ -862,7 +909,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           ))}
         </TabsContent>
 
-        <TabsContent value="accepted" className="space-y-4">
+        <TabsContent value="accepted" className="space-y-4" id="tour-tab-accepted-content">
           {offers.filter(o => o.status === 'accepted').map((offer) => (
             <Card key={offer.id}>
               <CardContent className="p-6">
@@ -894,6 +941,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
                    <Button
                      size="sm"
                      onClick={() => router.push(`/content/Telent-management/Onboarding-management?candidate=${offer.candidateName}&position=${offer.position}`)}
+                     id="tour-start-onboarding"
                    >
                      <CheckCircle className="w-4 h-4 mr-2" />
                      Start Onboarding
@@ -904,7 +952,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           ))}
         </TabsContent>
 
-        <TabsContent value="rejected" className="space-y-4">
+        <TabsContent value="rejected" className="space-y-4" id="tour-tab-rejected-content">
           {offers.filter(o => o.status === 'rejected').map((offer) => (
             <Card key={offer.id}>
               <CardContent className="p-6">

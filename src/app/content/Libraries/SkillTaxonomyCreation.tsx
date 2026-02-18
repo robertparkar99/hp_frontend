@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Loading from "@/components/utils/loading";
-import { checkPermission } from "@/utils/permissions";
 
 const AddCategory = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -78,12 +77,6 @@ const AddCategory = () => {
       return;
     }
 
-    const requiredPermission = isEdit ? "can_edit" : "can_add";
-    if (!(await checkPermission("Library & Taxonomy", requiredPermission))) {
-      alert(`you don't have rights to ${isEdit ? "edit" : "add"} category`);
-      return;
-    }
-
     try {
       const formData = new FormData();
       formData.append("type", "API");
@@ -138,11 +131,6 @@ const AddCategory = () => {
   const handleEditSubCategory = async () => {
     if (!newSubCategoryName.trim()) {
       alert("Please enter subcategory name");
-      return;
-    }
-
-    if (!(await checkPermission("Library & Taxonomy", "can_edit"))) {
-      alert("you don't have rights to edit subcategory");
       return;
     }
 

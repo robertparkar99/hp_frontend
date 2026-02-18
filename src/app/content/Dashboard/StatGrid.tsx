@@ -1,13 +1,16 @@
-//
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { MoreVertical, ChevronDown, MoreHorizontal, Building2Icon, UsersIcon, MapPinIcon, BriefcaseIcon, CreditCardIcon } from "lucide-react";
 import { createPortal } from "react-dom";
-import { toast } from "@/hooks/use-toast";
+import { Edit, Plus } from "lucide-react";
 import icon from '@/components/AppIcon';
+import { Atom } from "react-loading-indicators"
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
 import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
-import { UserCircle, Search, AlertCircle } from "lucide-react";
+import { UserCircle, Search } from "lucide-react";
+import Shepherd, { Tour } from "shepherd.js";
+import 'shepherd.js/dist/css/shepherd.css';
 
 import {
   Dialog,
@@ -16,7 +19,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Interfaces
 interface Employee {
@@ -126,90 +128,6 @@ interface SkillMatrixData {
   gap: "critical" | "high" | "medium" | "low";
 }
 
-// Interface for Course API Response
-interface SuggestedCourseResponse {
-  status: number;
-  message: string;
-  data: SuggestedCourse[];
-}
-
-interface SuggestedCourse {
-  id: number;
-  employee_id: number;
-  course_id: number;
-  course_name: string;
-  task_id: number;
-  task_title: string;
-  sub_institute_id: number;
-  created_at: string;
-  updated_at: string;
-  deleted_at: null;
-  create_by: null;
-  updated_by: null;
-  deleted_by: null;
-}
-
-// Task Progress Card API Response Interfaces
-interface TaskProgressResponse {
-  success: boolean;
-  data: {
-    daily: TaskPeriodData;
-    weekly: TaskPeriodData;
-    monthly: MonthlyTaskData;
-  };
-  message: string;
-}
-
-interface TaskPeriodData {
-  count: number;
-  tasks: TaskItem[];
-  date_range?: {
-    start: string;
-    end: string;
-  };
-  date_wise_counts: DateWiseCount[];
-}
-
-interface MonthlyTaskData {
-  count: number;
-  tasks: TaskItem[];
-  date_range?: {
-    start: string;
-    end: string;
-  };
-  month_wise_counts: MonthWiseCount[];
-}
-
-interface TaskItem {
-  id: number;
-  task_title: string;
-  status: string;
-  created_at: string;
-  updated_at: string | null;
-}
-
-interface DateWiseCount {
-  date: string;
-  Completed: number;
-  Pending: number;
-  "In Progress": number;
-  total: number;
-  PENDING: number;
-  COMPLETED?: number;
-  IN_PROGRESS?: number;
-}
-
-interface MonthWiseCount {
-  month: string;
-  Completed: number;
-  Pending: number;
-  "In Progress": number;
-  total: number;
-  COMPLETED?: number;
-  PENDING?: number;
-  IN_PROGRESS?: number;
-}
-
 export default function Dashboard() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [todayTasks, setTodayTasks] = useState<Task[]>([]);
@@ -228,6 +146,7 @@ export default function Dashboard() {
 
   const [orgData, setOrgData] = useState<any>(null);
   const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [openAssessmentModal, setOpenAssessmentModal] = useState(false);
 
@@ -246,8 +165,29 @@ export default function Dashboard() {
     emp.jobrole?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Add these state variables to your component
+  const [showActions, setShowActions] = useState<number | string | null>(null);
+  const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0 });
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
 
+  // Add these handler functions
+  const handleActionMenuClick = (e: React.MouseEvent, employee: Employee) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenuCoords({
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX,
+    });
+    setShowActions(employee.id);
+    setSelectedEmployee(employee);
+  };
+
+  const handleEditEmployeeMenu = (employee: Employee) => {
+    console.log("Edit employee:", employee);
+    setShowActions(null);
+    // Implement your edit employee logic here
+  };
   // Add this function at the top level of your component (with your other functions)
   const triggerMenuNavigation = (employeeId: number | string | null, menu: string) => {
     ;
@@ -261,6 +201,28 @@ export default function Dashboard() {
 
 
 
+  const handleAssignTaskMenu = (employee: Employee) => {
+    console.log("Assign task to:", employee);
+    setShowActions(null);
+    triggerMenuNavigation(employee.id, 'task/taskManagement.tsx');
+  };
+
+  // Add useEffect to close menu when clicking outside
+  // Add useEffect to close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showActions !== null) {
+        setShowActions(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showActions]);
+
+
 
   const [stats, setStats] = useState({
     totalEmployees: 0,
@@ -269,9 +231,6 @@ export default function Dashboard() {
     totalSkills: 0,
   });
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [dailyChartData, setDailyChartData] = useState<ChartData[]>([]);
-  const [weeklyChartData, setWeeklyChartData] = useState<ChartData[]>([]);
-  const [monthlyChartData, setMonthlyChartData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [sessionData, setSessionData] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -282,25 +241,9 @@ export default function Dashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentLevel, setCurrentLevel] = useState<number>(0);
   const [maxLevel, setMaxLevel] = useState<number>(0);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [assessments, setAssessments] = useState<any[]>([]);
-  
-  // Task Progress Card State
-  const [taskProgressData, setTaskProgressData] = useState<TaskProgressResponse | null>(null);
-  const [taskProgressLoading, setTaskProgressLoading] = useState<boolean>(true);
-  const [taskProgressError, setTaskProgressError] = useState<string | null>(null);
-  
-  // Tooltip state for chart hover
-  const [tooltipData, setTooltipData] = useState<{
-    visible: boolean;
-    x: number;
-    y: number;
-    date: string;
-    completed: number;
-    pending: number;
-    inProgress: number;
-    total: number;
-  } | null>(null);
+
+  // Tour instance ref
+  const tourRef = useRef<Tour | null>(null);
 
   const attrArray = [
     { title: "knowledge", icon: "mdi-book-open-page-variant" },
@@ -341,6 +284,305 @@ export default function Dashboard() {
     };
   }, []);
 
+  // Initialize Shepherd.js tour
+  useEffect(() => {
+    // Check if we should trigger the tour (from sidebar tour navigation)
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+
+    // Store whether tour should start
+    const shouldStartTour = triggerTour === 'dashboard';
+
+    // Clear the trigger flag
+    if (triggerTour) {
+      sessionStorage.removeItem('triggerPageTour');
+      console.log('Triggering dashboard tour from navigation...');
+    }
+
+    // Don't start tour if not triggered from sidebar
+    if (!shouldStartTour) {
+      console.log('Tour not triggered, skipping...');
+      return;
+    }
+
+    // Create the tour
+    const tour = new Shepherd.Tour({
+      defaultStepOptions: {
+        cancelIcon: {
+          enabled: true
+        },
+        classes: 'shepherd-theme-custom',
+        scrollTo: {
+          behavior: 'smooth',
+          block: 'center'
+        },
+        modalOverlayOpeningPadding: 10,
+        modalOverlayOpeningRadius: 8
+      },
+      useModalOverlay: true,
+      exitOnEsc: true,
+      keyboardNavigation: true
+    });
+
+    // Define tour steps with proper typing
+    const steps = [
+      {
+        id: 'welcome',
+        title: 'Welcome to Your Dashboard!',
+        text: 'Let\'s take a quick tour to help you navigate through all the amazing features available to you.',
+        attachTo: {
+          element: '#tour-header',
+          on: 'bottom' as const
+        },
+        buttons: [
+          {
+            text: 'Skip Tour',
+            action: () => {
+              localStorage.setItem('dashboardTourCompleted', 'true');
+              tour.cancel();
+            },
+            classes: 'shepherd-button-secondary'
+          },
+          {
+            text: 'Start Tour',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'stats',
+        title: 'Key Statistics',
+        text: 'Here you can see your key metrics at a glance: Total Employees, Mapped Jobroles, and Total Skills.',
+        attachTo: {
+          element: '#tour-stats',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'chart',
+        title: 'Weekly Task Progress',
+        text: 'This chart shows your weekly task progress. Completed tasks appear in dark blue, in-progress in medium blue, and pending in light blue.',
+        attachTo: {
+          element: '#tour-chart',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'skills-heatmap',
+        title: 'Enterprise Skills Heatmap',
+        text: 'View skills gaps across departments. Click on any cell to drill down into detailed gap analysis.',
+        attachTo: {
+          element: '#tour-skills-heatmap',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'attendance-matrix',
+        title: 'Employee Attendance Matrix',
+        text: 'Track and manage employee attendance efficiently. Click on data points to view skill details.',
+        attachTo: {
+          element: '#tour-attendance-matrix',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'skill-profile',
+        title: 'My Skill Profile',
+        text: 'View your skills endorsed by peers and managers. Click "View More" to see detailed skill information.',
+        attachTo: {
+          element: '#tour-skill-profile',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'growth-opportunities',
+        title: 'Growth Opportunities',
+        text: 'Track your current role proficiency and view growth opportunities based on your skills.',
+        attachTo: {
+          element: '#tour-growth-opportunities',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'employee-table',
+        title: 'Employee Directory',
+        text: 'This table displays all employees. You can search, filter, and view employee details here.',
+        attachTo: {
+          element: '#tour-employee-table',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'today-tasks',
+        title: 'Today\'s Tasks',
+        text: 'View and manage your tasks for today. Click the + button to create new tasks.',
+        attachTo: {
+          element: '#tour-today-tasks',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'weekly-tasks',
+        title: 'Weekly Tasks',
+        text: 'Switch to this tab to view your weekly task progress and upcoming tasks.',
+        attachTo: {
+          element: '#tour-weekly-tasks',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'course-list',
+        title: 'Course List',
+        text: 'Browse available courses. Click the + button to add new courses.',
+        attachTo: {
+          element: '#tour-course-list',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'assessment-list',
+        title: 'Assessment List',
+        text: 'View and manage assessments. Click the + button to create new assessments.',
+        attachTo: {
+          element: '#tour-assessment-list',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Finish',
+            action: () => {
+              localStorage.setItem('dashboardTourCompleted', 'true');
+              tour.complete();
+            }
+          }
+        ]
+      }
+    ];
+
+    // Add steps to tour
+    steps.forEach(step => tour.addStep(step));
+
+    // Store tour reference
+    tourRef.current = tour;
+
+    // Start tour after a short delay to ensure DOM is ready
+    const startTimer = setTimeout(() => {
+      console.log('Starting dashboard tour...');
+      tour.start();
+    }, 1000);
+
+    return () => {
+      clearTimeout(startTimer);
+      if (tourRef.current) {
+        tourRef.current.cancel();
+        tourRef.current = null;
+      }
+    };
+  }, []);
+
   // Load session data once
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -366,85 +608,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Show today's pending tasks toast when Dashboard page opens
-  useEffect(() => {
-    if (todayTasks.length > 0) {
-      const pendingCount = todayTasks.filter((task: Task) => task.status === "Pending" || task.status === "PENDING").length;
-      
-      if (pendingCount > 0) {
-        toast({
-          title: "Today's Pending Tasks",
-          description: `You have ${pendingCount} pending task${pendingCount > 1 ? 's' : ''} for today.`,
-          variant: "default",
-        });
-      }
-    }
-  }, [todayTasks]);
-
-  // Fetch Task Progress Card data
-  const fetchTaskProgress = async () => {
-    if (!sessionData) return;
-    try {
-      setTaskProgressLoading(true);
-      const apiUrl = `${sessionData.url}/api/tasks/counts?token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`;
-      
-      const response = await fetch(apiUrl);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data: TaskProgressResponse = await response.json();
-      setTaskProgressData(data);
-      
-      // Get today's date in consistent format (use local date to avoid UTC issues)
-      const today = new Date();
-      const todayStr = today.toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
-      
-      // Calculate today's pending tasks only
-      let todayPendingCount = 0;
-      
-      // Count from daily date_wise_counts for today
-      if (data.data?.daily?.date_wise_counts) {
-        const todayData = data.data.daily.date_wise_counts.find((d: any) => {
-          const countDate = new Date(d.date).toLocaleDateString('en-CA');
-          return countDate === todayStr;
-        });
-        if (todayData) {
-          todayPendingCount += todayData.Pending || 0;
-        }
-      }
-      
-      // Also check weekly date_wise_counts for today
-      if (data.data?.weekly?.date_wise_counts) {
-        const todayData = data.data.weekly.date_wise_counts.find((d: any) => {
-          const countDate = new Date(d.date).toLocaleDateString('en-CA');
-          return countDate === todayStr;
-        });
-        if (todayData) {
-          todayPendingCount += todayData.Pending || 0;
-        }
-      }
-      
-      localStorage.setItem('pendingTasksCount', todayPendingCount.toString());
-      console.log('StatGrid dispatching taskCountUpdated:', todayPendingCount);
-      
-      // Dispatch event to notify other components
-      window.dispatchEvent(new CustomEvent('taskCountUpdated', { detail: { count: todayPendingCount } }));
-      
-      setTaskProgressError(null);
-    } catch (err) {
-      console.error("Error fetching task progress data:", err);
-      setTaskProgressError(err instanceof Error ? err.message : "Failed to fetch task data");
-    } finally {
-      setTaskProgressLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTaskProgress();
-  }, [sessionData, todayTasks, weekTasks]);
-
   // Fetch dashboard data
   useEffect(() => {
     if (!sessionData) return;
@@ -460,61 +623,10 @@ export default function Dashboard() {
         console.log("Dashboard API Response:", data);
 
         setEmployees(data.employeeList ?? []);
-        const currentUser = data.employeeList?.find((emp: any) => emp.id == sessionData.userId);
-        const userJobrole = currentUser?.jobrole;
-
         setTodayTasks(data.today_task ?? []);
         setWeekTasks(data.week_task ?? []);
-
-        // Process daily chart data
-        const dailyData: ChartData[] = [];
-        const statusCounts = { COMPLETED: 0, IN_PROGRESS: 0, PENDING: 0 };
-        data.today_task.forEach((task: any) => {
-          if (task.status in statusCounts) {
-            statusCounts[task.status as keyof typeof statusCounts]++;
-          }
-        });
-        dailyData.push({ label: 'Completed', value: statusCounts.COMPLETED, status: 'COMPLETED' });
-        dailyData.push({ label: 'In Progress', value: statusCounts.IN_PROGRESS, status: 'IN_PROGRESS' });
-        dailyData.push({ label: 'Pending', value: statusCounts.PENDING, status: 'PENDING' });
-        setDailyChartData(dailyData);
         setWidgetOptions(data.widget ?? []);
-        
-        // Fetch saved skill ratings and filter mySkills to only show rated skills
-        const fetchRatedSkills = async () => {
-          try {
-            const currentJobroleId = currentUser?.jobrole_id || data.employeeList?.find((emp: any) => emp.id == sessionData.userId)?.jobrole_id;
-            
-            const ratingsRes = await fetch(
-              `${sessionData.url}/table_data/?table=user_rating_details&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[user_id]=${sessionData.userId}&filters[jobrole_id]=${currentJobroleId}`
-            );
-            
-            let ratedSkillIds: string[] = [];
-            if (ratingsRes.ok) {
-              const ratingsData = await ratingsRes.json();
-              if (ratingsData.length > 0 && ratingsData[0].skill_ids) {
-                const skillIdsObj = JSON.parse(ratingsData[0].skill_ids);
-                ratedSkillIds = Object.keys(skillIdsObj);
-              }
-            }
-            
-            // Filter mySkills to only include rated skills
-            const allSkills = data.mySKill ?? [];
-            const ratedSkills = ratedSkillIds.length > 0 
-              ? allSkills.filter((skill: any) => {
-                  const skillId = skill.skill_id?.toString() || skill.jobrole_skill_id?.toString();
-                  return ratedSkillIds.includes(skillId);
-                })
-              : allSkills;
-            
-            setMySkills(ratedSkills);
-          } catch (err) {
-            console.error("Error fetching rated skills:", err);
-            setMySkills(data.mySKill ?? []);
-          }
-        };
-        
-        fetchRatedSkills();
+        setMySkills(data.mySKill ?? []);
         setMyGrowth(data.myGrowth ?? []);
         setDepartments(data.departmentList || []);
         setSkillHeatmap(data.skillHeatmap || {});
@@ -545,74 +657,6 @@ export default function Dashboard() {
           totalJobRoles: data.totle_jobroles ?? 0,
           totalSkills: data.totle_skills ?? 0,
         });
-
-        // Fetch suggested courses from new API
-        try {
-          const courseApiUrl = `${sessionData.url}/getSuggestedCoursesByUser?user_id=${sessionData.userId}&sub_institute_id=${sessionData.subInstituteId}`;
-          
-          const courseRes = await fetch(courseApiUrl);
-          if (!courseRes.ok) throw new Error(`Course API error: ${courseRes.status}`);
-          
-          const courseData: SuggestedCourseResponse = await courseRes.json();
-          
-          // Map the new API response to the courses state
-          const mappedCourses: any[] = courseData.data?.map((item: SuggestedCourse) => ({
-            id: item.id,
-            title: item.course_name,
-            description: '',
-            thumbnail: placeholderImage,
-            jobrole: '',
-            category: 'Suggested Course',
-            enrollment_status: null,
-            course_id: item.course_id,
-            task_id: item.task_id,
-            task_title: item.task_title,
-            employee_id: item.employee_id,
-            sub_institute_id: item.sub_institute_id,
-            created_at: item.created_at,
-            updated_at: item.updated_at
-          })) || [];
-          
-          setCourses(mappedCourses);
-        } catch (err) {
-          console.error("Error fetching suggested courses:", err);
-          setCourses([]);
-        }
-
-        // Fetch assessments
-        try {
-          const assessmentUrl = sessionData.userProfileName === "Admin"
-            ? `${sessionData.url}/lms/assessment_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfileName}`
-            : `${sessionData.url}/lms/assessment_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfileName}&jobrole=${encodeURIComponent(userJobrole)}&department=${encodeURIComponent(currentUser?.department_name || '')}`;
-
-          const assessmentRes = await fetch(assessmentUrl);
-          if (!assessmentRes.ok) throw new Error(`Assessment API error: ${assessmentRes.status}`);
-          const assessmentData = await assessmentRes.json();
-          const mappedAssessments: any[] = [];
-          if (assessmentData?.data && Array.isArray(assessmentData.data)) {
-            assessmentData.data.forEach((item: any) => {
-              const assessment = {
-                id: item.id,
-                title: item.paper_name,
-                description: item.paper_desc,
-                thumbnail: placeholderImage, // No image in data
-                jobrole: item.jobrole || '', // Not in data, placeholder
-                category: item.grade_name || item.standard_name || 'General',
-                status: item.status || 'Active', // Add status if needed
-                openDate: item.open_date,
-                closeDate: item.close_date,
-                totalQuestions: item.total_ques,
-                totalMarks: item.total_marks,
-                duration: item.time_allowed,
-                examType: item.exam_type,
-              };
-              mappedAssessments.push(assessment);
-            });
-          }
-          setAssessments(mappedAssessments);
-        } catch (err) {
-          console.error("Error fetching assessments:", err);
-        }
 
         // Chart data processing...
         if (data.week_task && data.week_task.length > 0) {
@@ -671,8 +715,6 @@ export default function Dashboard() {
               };
             });
           setChartData(processedChartData);
-          setWeeklyChartData(processedChartData);
-          setMonthlyChartData(processedChartData);
         }
       } catch (err) {
         console.error("Error fetching dashboard:", err);
@@ -738,200 +780,18 @@ export default function Dashboard() {
       });
     }
   }, [orgData, sisterConcerns]);
-  // Chart bar color based on task status
-  // ✅ Completed → Green line
-  // 🔵 In Progress → Blue line
-  // 🟡 Pending → Yellow line
+  // Chart bar color
   const getStatusColor = (status: string) => {
-    const normalizedStatus = status?.toUpperCase();
-    switch (normalizedStatus) {
+    switch (status) {
       case "COMPLETED":
-      case "DONE":
-        return "bg-green-500 hover:bg-green-400";
+        return "bg-blue-800";
       case "IN_PROGRESS":
-      case "INPROGRESS":
-      case "PROGRESS":
-        return "bg-blue-500 hover:bg-blue-400";
+        return "bg-blue-500";
       case "PENDING":
-      case "WAITING":
-        return "bg-yellow-400 hover:bg-yellow-300";
+        return "bg-blue-300";
       default:
-        return "bg-gray-300 hover:bg-gray-200";
+        return "bg-gray-300";
     }
-  };
-
-  // Get bar color based on task counts (for bar chart visualization)
-  // Color priority: Completed > In Progress > Pending
-  const getBarColor = (completed: number, inProgress: number, pending: number) => {
-    if (completed > 0) return "bg-green-500 hover:bg-green-400";
-    if (inProgress > 0) return "bg-blue-500 hover:bg-blue-400";
-    if (pending > 0) return "bg-yellow-400 hover:bg-yellow-300";
-    return "bg-gray-300 hover:bg-gray-200";
-  };
-
-  // Get bar color based on task status - returns color based on highest priority status present
-  const getTaskBarColor = (Completed: number, InProgress: number, Pending: number) => {
-    if (Completed > 0) return "bg-green-500 hover:bg-green-400";
-    if (InProgress > 0) return "bg-blue-500 hover:bg-blue-400";
-    if (Pending > 0) return "bg-yellow-400 hover:bg-yellow-300";
-    return "bg-gray-300 hover:bg-gray-200";
-  };
-
-  // Render stacked task bar chart with combined colors in single bar
-  const renderTaskBarChart = (data: any[], isMonthly: boolean = false) => {
-    const maxValue = Math.max(...data.map(d => d.total), 1);
-    const chartHeight = 192; // h-48 = 192px
-
-    return (
-      <div className="relative">
-        {/* Y-axis labels */}
-        <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500 pr-2">
-          <span>{maxValue}</span>
-          <span>{Math.round(maxValue * 0.75)}</span>
-          <span>{Math.round(maxValue * 0.5)}</span>
-          <span>{Math.round(maxValue * 0.25)}</span>
-          <span>0</span>
-        </div>
-        
-        {/* Chart area */}
-        <div className="ml-10 h-48 flex items-end gap-3">
-          {data.map((item, i) => {
-            const completed = item.COMPLETED ?? item.Completed ?? 0;
-            const inProgress = item.IN_PROGRESS ?? item["In Progress"] ?? 0;
-            const pending = item.PENDING ?? item.Pending ?? 0;
-            const total = item.total;
-            
-            // Calculate heights for stacked bar
-            // Bar height represents the total count
-            const barHeight = total > 0 ? (total / maxValue) * chartHeight : 0;
-            // Segment heights are proportional to their counts relative to total
-            const completedHeight = total > 0 ? (completed / total) * barHeight : 0;
-            const inProgressHeight = total > 0 ? (inProgress / total) * barHeight : 0;
-            const pendingHeight = total > 0 ? (pending / total) * barHeight : 0;
-            
-            return (
-              <div 
-                key={i} 
-                className="flex flex-col items-center flex-1 cursor-pointer group"
-                onMouseEnter={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setTooltipData({
-                    visible: true,
-                    x: rect.left + rect.width / 2,
-                    y: rect.top,
-                    date: isMonthly ? item.month : item.date,
-                    completed,
-                    pending,
-                    inProgress,
-                    total: item.total
-                  });
-                }}
-                onMouseLeave={() => setTooltipData(null)}
-              >
-                {/* Stacked bar container */}
-                <div className="w-8 h-40 flex flex-col justify-end rounded-t overflow-hidden">
-                  {/* Pending bar (bottom) */}
-                  <div 
-                    className="w-full bg-yellow-400 transition-all duration-200 group-hover:bg-yellow-500"
-                    style={{ height: `${pendingHeight}px` }}
-                    title={`Pending: ${pending}`}
-                  />
-                  {/* In Progress bar (middle) */}
-                  <div 
-                    className="w-full bg-blue-500 transition-all duration-200 group-hover:bg-blue-600"
-                    style={{ height: `${inProgressHeight}px` }}
-                    title={`In Progress: ${inProgress}`}
-                  />
-                  {/* Completed bar (top) */}
-                  <div 
-                    className="w-full bg-green-500 transition-all duration-200 group-hover:bg-green-600"
-                    style={{ height: `${completedHeight}px` }}
-                    title={`Completed: ${completed}`}
-                  />
-                </div>
-                {/* Total value label */}
-                <span className="text-xs text-gray-700 font-medium mt-1">
-                  {total > 0 ? total : '-'}
-                </span>
-                <span className="text-xs text-gray-500 mt-1">
-                  {isMonthly ? item.month : item.date}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // Render proportional task bar with multiple colors (legacy - kept for compatibility)
-  const renderProportionalTaskBar = (Completed: number, InProgress: number, Pending: number, total: number) => {
-    if (total === 0) {
-      return <div className="w-full bg-gray-200 rounded" style={{ height: '4px' }} />;
-    }
-
-    const completedPercent = (Completed / total) * 100;
-    const inProgressPercent = (InProgress / total) * 100;
-    const pendingPercent = (Pending / total) * 100;
-
-    return (
-      <div className="w-full flex rounded overflow-hidden" style={{ height: '100%', minHeight: '4px' }}>
-        {completedPercent > 0 && (
-          <div 
-            className="bg-green-500 transition-colors" 
-            style={{ width: `${completedPercent}%` }}
-            title={`Completed: ${Completed}`}
-          />
-        )}
-        {inProgressPercent > 0 && (
-          <div 
-            className="bg-blue-500 transition-colors" 
-            style={{ width: `${inProgressPercent}%` }}
-            title={`In Progress: ${InProgress}`}
-          />
-        )}
-        {pendingPercent > 0 && (
-          <div 
-            className="bg-yellow-400 transition-colors" 
-            style={{ width: `${pendingPercent}%` }}
-            title={`Pending: ${Pending}`}
-          />
-        )}
-      </div>
-    );
-  };
-
-  const renderChart = (data: ChartData[]) => {
-    const maxValue = Math.max(...data.map((d) => d.value), 1);
-    return (
-      <div className="relative">
-        {/* Y-axis labels */}
-        <div className="absolute left-0 h-48 sm:h-56 md:h-64 flex flex-col justify-between text-xs text-gray-500">
-          <span>{maxValue}</span>
-          <span>{Math.round(maxValue * 0.8)}</span>
-          <span>{Math.round(maxValue * 0.6)}</span>
-          <span>{Math.round(maxValue * 0.4)}</span>
-          <span>{Math.round(maxValue * 0.2)}</span>
-          <span>0</span>
-        </div>
-
-        {/* Chart content */}
-        <div className="ml-6 h-48 sm:h-56 md:h-64 flex justify-between items-end gap-2">
-          {data.map((item, i) => (
-            <div key={i} className="flex flex-col items-center flex-1">
-              <div
-                className={`w-full rounded-t ${getStatusColor(item.status)}`}
-                style={{
-                  height: `${(item.value / maxValue) * 100}%`,
-                  minHeight: item.value > 0 ? '4px' : '0'
-                }}
-              />
-              <span className="text-xs text-gray-500 mt-2">{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
   };
 
   // Get color for matrix points based on gap level
@@ -1078,25 +938,32 @@ export default function Dashboard() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-600">
+        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+      </div>
+    );
+  }
   const currentPercent =
     maxLevel > 0 ? Math.min(100, Math.round((currentLevel / maxLevel) * 100)) : 0;
 
 
   return (
-    <div className={`min-h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-0 md:ml-60" : "ml-0 md:ml-10"}`}>
+    <div className={`h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-60" : "ml-10"}`}>
       {/* 🔹 Header: Welcome + Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl shadow p-4 mb-6 gap-4">
+      <div className="flex items-center justify-between bg-white rounded-xl shadow p-4 mb-6" id="tour-header">
 
         {/* Welcome with icon */}
         <div className="flex items-center gap-2">
-          <UserCircle className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
-          <h1 className="text-lg sm:text-xl font-bold text-gray-800">
+          <UserCircle className="w-7 h-7 text-blue-400" />
+          <h1 className="text-xl font-bold text-gray-800">
             Welcome, {sessionData?.userProfileName || "User"}
           </h1>
         </div>
 
         {/* Search bar */}
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-64" id="tour-search">
           <input
             type="text"
             placeholder="Search employees..."
@@ -1107,14 +974,14 @@ export default function Dashboard() {
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div className="grid grid-cols-12 gap-6 ">
         {/* Left Section - Adjust column span based on sidebar state */}
-        <div className="col-span-full md:col-span-9 space-y-6">
+        <div className={`${isSidebarOpen ? "col-span-9" : "col-span-9"} space-y-6`}>
           {/* Stats + Chart - Always visible */}
           <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex gap-6">
               {/* Stats Section */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 divide-x divide-y border rounded-lg overflow-hidden flex-1">
+              <div className="grid grid-cols-2 divide-x divide-y border rounded-lg overflow-hidden flex-1" id="tour-stats">
                 <div className="flex items-center gap-3 border-b border-r pb-4 pr-6">
                   <div className="flex items-center gap-3 p-4">
                     <div className="w-9 h-9 rounded bg-blue-300 mb-7" />
@@ -1153,174 +1020,42 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Chart */}
-              <div className="bg-white rounded-lg shadow p-4">
+              {/* Chart - Only show if no widget selected or Weekly Task Progress selected */}
+              <div className="bg-white rounded-lg shadow p-4" id="tour-chart">
                 <div className="flex-1">
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <h2 className="font-semibold text-center">Task Progress</h2>
-                    <button 
-                      onClick={() => {
-                        const userData = localStorage.getItem("userData");
-                        if (userData) {
-                          const { token, sub_institute_id, user_id } = JSON.parse(userData);
-                          fetch(`${sessionData.url}/api/tasks/counts?token=${token}&sub_institute_id=${sub_institute_id}&user_id=${user_id}`)
-                            .then(res => res.json())
-                            .then(data => {
-                              setTaskProgressData(data);
-                              setTaskProgressError(null);
-                            })
-                            .catch(err => {
-                              console.error("Error refreshing task data:", err);
-                              setTaskProgressError(err instanceof Error ? err.message : "Failed to refresh");
-                            });
-                        }
-                      }}
-                      className="p-1 rounded hover:bg-gray-100 transition-colors"
-                      title="Refresh task data"
-                    >
-                      {/* <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={taskProgressLoading ? "animate-spin" : ""}>
-                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                        <path d="M21 3v5h-5" />
-                      </svg> */}
-                    </button>
+                  <h2 className="font-semibold mb-4 text-center">Weekly Task Progress</h2>
+                  <div className="relative">
+                    {/* Y-axis labels */}
+                    <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
+                      <span>{maxValue}</span>
+                      <span>{Math.round(maxValue * 0.8)}</span>
+                      <span>{Math.round(maxValue * 0.6)}</span>
+                      <span>{Math.round(maxValue * 0.4)}</span>
+                      <span>{Math.round(maxValue * 0.2)}</span>
+                      <span>0</span>
+                    </div>
+
+                    {/* Chart content */}
+                    <div className="ml-6 h-48 flex justify-between items-end gap-2">
+                      {chartData.map((data, i) => (
+                        <div key={i} className="flex flex-col items-center flex-1">
+                          <div
+                            className={`w-full rounded-t ${getStatusColor(data.status)}`}
+                            style={{
+                              height: `${(data.value / maxValue) * 100}%`,
+                              minHeight: data.value > 0 ? '4px' : '0'
+                            }}
+                          />
+                          <span className="text-xs text-gray-500 mt-2">{data.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  
-                  {taskProgressLoading ? (
-                    <div className="flex items-center justify-center h-48">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    </div>
-                  ) : taskProgressError ? (
-                    <div className="flex items-center justify-center h-48 text-red-500">
-                      <AlertCircle className="h-5 w-5 mr-2" />
-                      <span>Error: {taskProgressError}</span>
-                    </div>
-                  ) : taskProgressData && taskProgressData.success ? (
-                    <Tabs defaultValue="weekly" className="w-full">
-                      <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="daily">Daily</TabsTrigger>
-                        <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                        <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                      </TabsList>
-                      
-                      {/* Daily */}
-                      <TabsContent value="daily">
-                        {taskProgressData.data.daily.date_wise_counts.length > 0 ? (
-                          <div className="relative">
-                            <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
-                              <span>{Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total))}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total)) * 0.8)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total)) * 0.6)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total)) * 0.4)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.daily.date_wise_counts.map(d => d.total)) * 0.2)}</span>
-                              <span>0</span>
-                            </div>
-                            <div className="ml-6 h-48 flex justify-between items-end gap-2">
-                              {taskProgressData.data.daily.date_wise_counts.map((item, i) => {
-                                return (
-                                  <div 
-                                    key={i} 
-                                    className="flex flex-col items-center flex-1 cursor-pointer"
-                                    onMouseEnter={(e) => {
-                                      const rect = e.currentTarget.getBoundingClientRect();
-                                      setTooltipData({
-                                        visible: true,
-                                        x: rect.left + rect.width / 2,
-                                        y: rect.top,
-                                        date: item.date,
-                                        completed: item.COMPLETED ?? item.Completed ?? 0,
-                                        pending: item.PENDING ?? item.Pending ?? 0,
-                                        inProgress: item.IN_PROGRESS ?? item["In Progress"] ?? 0,
-                                        total: item.total
-                                      });
-                                    }}
-                                    onMouseLeave={() => setTooltipData(null)}
-                                  >
-                                    {renderProportionalTaskBar(item.COMPLETED ?? item.Completed ?? 0, item.IN_PROGRESS ?? item["In Progress"] ?? 0, item.PENDING ?? item.Pending ?? 0, item.total)}
-                                    <span className="text-xs text-gray-500 mt-2">
-                                      {new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            
-                         {tooltipData && tooltipData.visible && (
-  <div
-   className="fixed z-50 w-52 rounded-lg bg-white text-gray-800 text-xs shadow-lg border border-gray-200 p-3 pointer-events-none transition-opacity duration-150"
-
-    style={{
-      left: tooltipData.x,
-      top: tooltipData.y - 10,
-      transform: "translateX(-50%) translateY(-100%)",
-    }}
-  >
-    {/* Date */}
-    <div className="text-sm font-semibold text-center mb-2 text-gray-700">
-      {tooltipData.date}
-    </div>
-
-    {/* Status rows */}
-    <div className="space-y-1">
-      <div className="flex justify-between">
-        <span className="text-green-500">Completed</span>
-        <span className="font-medium">{tooltipData.completed}</span>
-      </div>
-
-      <div className="flex justify-between">
-        <span className="text-blue-500">In Progress</span>
-        <span className="font-medium">{tooltipData.inProgress}</span>
-      </div>
-
-      <div className="flex justify-between">
-        <span className="text-yellow-400">Pending</span>
-        <span className="font-medium">{tooltipData.pending}</span>
-      </div>
-    </div>
-
-    {/* Total */}
-    <div className="mt-2 pt-2 border-t border-gray-200 flex justify-between font-semibold text-gray-700">
-      <span>Total</span>
-      <span>{tooltipData.total}</span>
-    </div>
-  </div>
-)}
-
-                          </div>
-                        ) : (
-                          <p className="text-center text-gray-500 py-8">No daily data</p>
-                        )}
-                      </TabsContent>
-                      
-                      {/* Weekly */}
-                      <TabsContent value="weekly">
-                        {taskProgressData.data.weekly.date_wise_counts.length > 0 ? (
-                          <div className="py-4">
-                            {renderTaskBarChart(taskProgressData.data.weekly.date_wise_counts, false)}
-                          </div>
-                        ) : (
-                          <p className="text-center text-gray-500 py-8">No weekly data</p>
-                        )}
-                      </TabsContent>
-                      
-                      {/* Monthly */}
-                      <TabsContent value="monthly">
-                        {taskProgressData.data.monthly.month_wise_counts.length > 0 ? (
-                          <div className="py-4">
-                            {renderTaskBarChart(taskProgressData.data.monthly.month_wise_counts, true)}
-                          </div>
-                        ) : (
-                          <p className="text-center text-gray-500 py-8">No monthly data</p>
-                        )}
-                      </TabsContent>
-                    </Tabs>
-                  ) : (
-                    <p className="text-center text-gray-500 py-8">No task data available</p>
-                  )}
 
                   {/* Chart Legend */}
                   <div className="flex justify-center mt-4 gap-4 text-xs">
                     <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 bg-green-500 rounded"></div>
+                      <div className="w-3 h-3 bg-blue-800 rounded"></div>
                       <span>Completed</span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -1328,7 +1063,7 @@ export default function Dashboard() {
                       <span>In Progress</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 bg-yellow-400 rounded"></div>
+                      <div className="w-3 h-3 bg-blue-300 rounded"></div>
                       <span>Pending</span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -1342,11 +1077,11 @@ export default function Dashboard() {
           </div>
           {/* Conditional rendering based on user role */}
           {sessionData?.userProfileName === "Admin" ? (
-            // Admin view - Skills Heatmap
-            <div className="grid grid-cols-1 gap-4">
+            // Admin view - Skills Heatmap and Matrix
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Left: Enterprise Skills Heatmap */}
-              <div className="bg-white rounded-xl shadow p-4">
-                <h2 className="font-semibold text-lg mb-2">Skills Heatmap</h2>
+              <div className="col-span-2 bg-white rounded-xl shadow p-4" id="tour-skills-heatmap">
+                <h2 className="font-semibold text-lg mb-2">Enterprise Skills Heatmap</h2>
 
                 {/* Legend */}
                 <div className="flex gap-4 text-sm mb-3">
@@ -1365,7 +1100,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Heatmap Table */}
-                <div className="h-64 sm:h-88 overflow-x-auto scrollbar-hide">
+                <div className="h-88 overflow-x-auto scrollbar-hide">
                   <table className="w-full border-separate border-spacing-1 text-sm">
                     <thead>
                       <tr className="text-left">
@@ -1544,13 +1279,76 @@ export default function Dashboard() {
                   </DialogContent>
                 </Dialog>
               </>
+              {/* Right: Risk & Opportunity Matrix */}
+              <div className="bg-white rounded-xl shadow p-4" id="tour-attendance-matrix">
+                <h2 className="font-semibold text-lg">Employee Attendance</h2>
+                <p className="text-xs text-gray-500 mb-3">
+                  Track and manage employee attendance efficiently
+                </p>
+
+                {/* Matrix Visualization */}
+                <div className="relative h-64 border-l-2 border-b-2 border-gray-400 mb-2">
+                  {/* Y-axis label */}
+                  <div className="absolute -left-10 ml-5 top-0 transform -rotate-90 origin-center text-xs font-medium">
+                    High
+                  </div>
+                  <div className="absolute -left-10 ml-5 bottom-0 transform -rotate-90 origin-center text-xs font-medium">
+                    Low
+                  </div>
+                  {/* Data points */}
+                  {skillsMatrixData.map((skill, index) => (
+                    <div
+                      key={index}
+                      className={`absolute w-3 h-3 rounded-full cursor-pointer ${getGapColor(skill.gap)}
+                        ${selectedSkill && selectedSkill.skill === skill.name ?
+                          'ring-2 ring-offset-1 ring-black' : ''}`}
+                      style={{
+                        left: `${skill.availability}%`,
+                        bottom: `${skill.impact}%`,
+                        transform: 'translate(-50%, 50%)'
+                      }}
+                      onClick={() => handleSkillSelect(skill.name)}
+                      title={`${skill.name}: Impact ${skill.impact}%, Availability ${skill.availability}%`}
+                    />
+                  ))}
+                </div>
+
+                {/* Legend */}
+                <div className="flex gap-4 mt-4 text-sm flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                    High Priority (High Impact, Scarce)
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                    Strategic Watch (High Impact, Available)
+                  </span>
+                </div>
+
+                {/* Selected skill details */}
+                {selectedSkill && (
+                  <div className="mt-3 p-2 bg-gray-100 rounded text-xs">
+                    <strong>Selected:{selectedSkill.skill}
+                    </strong>
+                    {skillsMatrixData.filter(skill => skill.name === selectedSkill.skill).map(skill => (
+                      <div key={skill.name}>
+                        Impact: {skill.impact}% | Availability: {skill.availability}% | Gap: {skill.gap}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 mt-2">
+                  Click on any point to view skill details
+                </p>
+              </div>
             </div>
           ) : (
 
             // Non-admin view - Skill Profile and Growth Opportunities
             <div className="space-y-6">
               {/* My Skill Profile */}
-              <div className="p-4 bg-white rounded-lg shadow min-h-[27.5rem] h-110 md:h-128 overflow-y-auto hide-scroll">
+                <div className="p-4 bg-white rounded-lg shadow h-110 overflow-y-auto hide-scroll" id="tour-skill-profile">
                 <h2 className="font-semibold text-lg flex items-center gap-2 mb-1">
                   <span>🧑‍💻</span> My Skill Profile
                 </h2>
@@ -1699,7 +1497,7 @@ export default function Dashboard() {
                 </DialogContent>
               </Dialog>
               {/* My Growth Opportunities */}
-              <div className="bg-white border rounded-xl p-5 w-full col-span-12 -mx-1 px-6">
+                <div className="bg-white border rounded-xl p-5 w-full col-span-12 -mx-1 px-6" id="tour-growth-opportunities">
                 <h2 className="font-semibold text-lg flex items-center gap-2 mb-2">
                   ⊚ My Growth Opportunities
                 </h2>
@@ -1756,11 +1554,11 @@ export default function Dashboard() {
             </div>
           )}
           {/* Employee Table - Full width row */}
-          <div className="col-span-full md:col-span-9 bg-white rounded-xl shadow min-h-[24rem] h-96 md:h-[28rem] overflow-x-auto md:overflow-x-visible overflow-y-auto hide-scroll mb-15 ">
+          <div className="col-span-9 bg-white rounded-xl shadow h-96 overflow-y-auto hide-scroll mb-15 " id="tour-employee-table">
               {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
 
               {/* Table Headers with Search Fields */}
-              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
                 {/* Employee Column with Search */}
                 <div className="flex flex-col">
                   <span className="flex items-center mb-1">Employee</span>
@@ -1815,13 +1613,39 @@ export default function Dashboard() {
                     onChange={(e) => handleColumnFilter("status", e.target.value)}
                   />
                 </div>
+
+                {/* Action Column with + Button */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="flex items-center mb-1">Action</span>
+                    {/* <button
+                      onClick={() => setIsAddUserModalOpen(true)}
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
+                    >
+                      +
+                    </button> */}
+                    {isAddUserModalOpen && (
+                      <AddUserModal
+                        isOpen={isAddUserModalOpen}
+                        setIsOpen={setIsAddUserModalOpen}
+                        sessionData={sessionData}
+                        userJobroleLists={[]}
+                        userDepartmentLists={[]}
+                        userLOR={[]}
+                        userProfiles={[]}
+                        userLists={[]}
+                      />
+
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Employee Rows */}
               {filteredEmployees.map((emp) => (
                 <div
                   key={emp.id}
-                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
+                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_80px] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <img
@@ -1855,6 +1679,42 @@ export default function Dashboard() {
                   >
                     {emp.status}
                   </span>
+
+                  <div className="flex relative">
+                    <MoreHorizontal
+                      className="w-4 h-4 text-gray-500 cursor-pointer flex-shrink-0"
+                      onClick={(e) => handleActionMenuClick(e, emp)}
+                    />
+
+                    {/* Action Menu */}
+                    {showActions === emp.id && (
+                      <div
+                        className="absolute w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                        style={{
+                          top: '100%',
+                          right: 0,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="py-2">
+                          <button
+                            onClick={() => handleEditEmployeeMenu(emp)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <Edit size={16} />
+                            <span>Edit Employee</span>
+                          </button>
+                          <button
+                            onClick={() => handleAssignTaskMenu(emp)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <Plus size={16} />
+                            <span>Assign Task</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1862,7 +1722,7 @@ export default function Dashboard() {
         </div>
 
         {/* Right Section - Adjust column span based on sidebar state */}
-        <div className="col-span-full md:col-span-3 space-y-6">
+        <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`} id="tour-tasks">
           <div className="bg-white rounded-lg shadow">
             {/* Tab Navigation */}
             <div className="flex border-b">
@@ -1884,7 +1744,7 @@ export default function Dashboard() {
             <div className="p-4">
               {/* Today's Tasks */}
               {(selectedWidget === "Today Task List" || !selectedWidget) && (
-                <div className="h-48 sm:h-56 md:h-64 overflow-y-auto hide-scroll">
+                <div className="h-61 overflow-y-auto hide-scroll" id="tour-today-tasks">
                   {/* Header with + button */}
                   <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white dark:bg-gray-900">
                     <h2 className="font-semibold">Today's Task Progress</h2>
@@ -1957,7 +1817,7 @@ export default function Dashboard() {
 
               {/* Weekly Tasks */}
               {selectedWidget === "Week Task List" && (
-                <div className="h-52 sm:h-60 md:h-72 overflow-y-auto hide-scroll">
+                <div className="h-66 overflow-y-auto hide-scroll" id="tour-weekly-tasks">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-semibold">Weekly Task Progress</h2>
 
@@ -2030,7 +1890,7 @@ export default function Dashboard() {
           </div>
           <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
             {/* Course List */}
-            <div className=" bg-white rounded-lg shadow h-80 sm:h-125 overflow-y-auto hide-scroll">
+            <div className=" bg-white rounded-lg shadow h-125 overflow-y-auto hide-scroll" id="tour-course-list">
               {/* Header with + button */}
               <div className="sticky top-0 z-10 flex items-center justify-between mb-4 px-4 pt-2 pb-1 bg-white shadow-sm">
                 <h2 className="font-semibold">Course List</h2>
@@ -2042,20 +1902,60 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {courses.length > 0 ? (
-                courses.slice(0, 5).map(course => (
-                  <div key={course.id} className="mb-4 border-l-2 pl-3 border-blue-300">
-                    <span className="text-xs font-semibold px-2 py-1 rounded text-blue-700 bg-blue-100 border-blue-400">
-                      {course.category}
-                    </span>
-                    <p className="mt-2 font-medium">{course.title}</p>
-                    {course.task_title && (
-                      <p className="text-xs text-gray-500 mt-1">Task: {course.task_title}</p>
-                    )}
-                  </div>
-                ))
+              {todayTasks.length > 0 ? (
+                todayTasks.map((task, index) => {
+                  // ✅ Define color mapping
+                  const badgeColors: Record<string, string> = {
+                    Hard: "text-red-700 bg-red-500 border-red-400",
+                    Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
+                    Low: "text-green-700 bg-green-500 border-green-400",
+                  };
+
+                  return (
+                    <div key={index} className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+                      }`}>
+                      {/* Badge */}
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+                        }`}>
+                        {task.task_type}
+                      </span>
+
+                      {/* Title */}
+                      <p className="mt-2">{task.task_title}</p>
+
+                      {/* Profile */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <img
+                          src={
+                            task.image && task.image !== ""
+                              ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                              : placeholderImage
+                          }
+                          alt={task.allocatedUser}
+                          className="w-8 h-8 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                          }}
+                        />
+                        <div>
+                          <p className="text-sm font-medium">{task.allocatedUser}</p>
+                          <p className="text-xs text-gray-400">
+                            {(() => {
+                              if (!task.task_date) return "";
+                              const d = new Date(task.task_date);
+                              const day = String(d.getDate()).padStart(2, "0");
+                              const month = String(d.getMonth() + 1).padStart(2, "0");
+                              const year = d.getFullYear();
+                              return `${day}-${month}-${year}`;
+                            })()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
               ) : (
-                <p className="text-gray-500 text-sm">No courses available</p>
+                <p className="text-gray-500 text-sm">No course</p>
               )}
             </div>
                <AddCourseDialog
@@ -2066,7 +1966,7 @@ export default function Dashboard() {
             />
 
             {/* Assessment List */}
-            <div className="bg-white rounded-lg shadow h-64 sm:h-95 overflow-y-auto hide-scroll">
+            <div className="bg-white rounded-lg shadow h-95 overflow-y-auto hide-scroll" id="tour-assessment-list">
               {/* Header with + button */}
               <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white px-2 pt-2 pb-1 shadow-sm">
                 <h2 className="font-semibold">Assessment List</h2>
@@ -2078,23 +1978,60 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {assessments.length > 0 ? (
-                assessments.slice(0, 5).map(assessment => (
-                  <div key={assessment.id} className="mb-4 border-l-2 pl-3 border-green-300">
-                    <span className="text-xs font-semibold px-2 py-1 rounded text-green-700 bg-green-100 border-green-400">
-                      {assessment.category.toLowerCase().includes('task') ? 'Task-Based' : 'Skill-Based'}: {assessment.category}
-                    </span>
-                    <p className="mt-2">{assessment.title}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div>
-                        <p className="text-sm font-medium">{assessment.jobrole}</p>
-                        <p className="text-xs text-gray-400">{assessment.description}</p>
+              {weekTasks.length > 0 ? (
+                weekTasks.map((task, index) => {
+                  // ✅ Define color mapping
+                  const badgeColors: Record<string, string> = {
+                    Hard: "text-red-700 bg-red-500 border-red-400",
+                    Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
+                    Low: "text-green-700 bg-green-500 border-green-400",
+                  };
+
+                  return (
+                    <div key={index} className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+                      }`}>
+                      {/* Badge */}
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+                        }`}>
+                        {task.task_type}
+                      </span>
+
+                      {/* Title */}
+                      <p className="mt-2">{task.task_title}</p>
+
+                      {/* Profile */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <img
+                          src={
+                            task.image && task.image !== ""
+                              ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                              : placeholderImage
+                          }
+                          alt={task.allocatedUser}
+                          className="w-8 h-8 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                          }}
+                        />
+                        <div>
+                          <p className="text-sm font-medium">{task.allocatedUser}</p>
+                          <p className="text-xs text-gray-400">
+                            {(() => {
+                              if (!task.task_date) return "";
+                              const d = new Date(task.task_date);
+                              const day = String(d.getDate()).padStart(2, "0");
+                              const month = String(d.getMonth() + 1).padStart(2, "0");
+                              const year = d.getFullYear();
+                              return `${day}-${month}-${year}`;
+                            })()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               ) : (
-                <p className="text-gray-500 text-sm">No assessments available</p>
+                <p className="text-gray-500 text-sm">No assessment</p>
               )}
             </div>
             <CreateAssessmentModal
@@ -2126,3 +2063,74 @@ function triggerMenuNavigation(id: string | number, arg1: string) {
   throw new Error("Function not implemented.");
 }
 
+// Custom CSS for Shepherd tour
+const tourStyles = `
+  .shepherd-theme-custom {
+    --shepherd-theme-primary: #3080ff;
+    --shepherd-theme-secondary: #6c757d;
+  }
+
+  .shepherd-theme-custom .shepherd-header {
+    background: #007BE5;
+    color: white;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .shepherd-theme-custom .shepherd-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: white;
+  }
+
+  .shepherd-theme-custom .shepherd-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #171717;
+    padding: 16px;
+  }
+
+  .shepherd-theme-custom .shepherd-button {
+    background: #007BE5;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .shepherd-theme-custom .shepherd-button:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+  }
+
+  .shepherd-theme-custom .shepherd-button-secondary {
+    background: #007BE5 !important;
+  }
+
+  .shepherd-theme-custom .shepherd-button-secondary:hover {
+    background: #0056b3 !important;
+  }
+
+  .shepherd-theme-custom .shepherd-cancel-icon {
+    color: white;
+    font-size: 20px;
+  }
+
+  .shepherd-has-title .shepherd-content .shepherd-header {
+    background: #546ee5;
+    padding: 1em;
+  }
+
+  .shepherd-theme-custom .shepherd-element {
+    box-shadow: 0 8px 32px rgba(0, 123, 229, 0.3);
+    border-radius: 12px;
+  }
+`;
+
+// Inject styles into document head
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = tourStyles;
+  document.head.appendChild(styleSheet);
+}

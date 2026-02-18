@@ -42,7 +42,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
         ? new Date(userDetails.birthdate).toISOString().split("T")[0]
         : "",
       mobile: userDetails?.mobile || "",
-      department: userDetails?.department_id || "",
+     department: userDetails?.department_id || "",
       jobrole: userDetails?.allocated_standards || "",
       responsibility_level: userDetails?.subject_ids || "",
       gender: userDetails?.gender || "M",
@@ -145,7 +145,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
   }, [formData.personal.department, fullJobroleData]);
 
 
-
+  
 
 
   const tabs = [
@@ -213,46 +213,46 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
     handleInputChange("attendance", "working_days", currentDays);
   };
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setLoading(true);
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("type", "API");
-      formDataToSend.append("_method", "PUT");
-      formDataToSend.append(
-        "sub_institute_id",
-        sessionData?.subInstituteId || ""
-      );
-      formDataToSend.append("user_id", sessionData?.userId || "");
-      formDataToSend.append("_token", sessionData?.token || "");
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  setLoading(true);
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append("type", "API");
+    formDataToSend.append("_method", "PUT");
+    formDataToSend.append(
+      "sub_institute_id",
+      sessionData?.subInstituteId || ""
+    );
+    formDataToSend.append("user_id", sessionData?.userId || "");
+    formDataToSend.append("_token", sessionData?.token || "");
 
-      // Personal data - ensure department_id is the ID, not name
-      formDataToSend.append("name_suffix", formData.personal.name_suffix);
-      formDataToSend.append("first_name", formData.personal.first_name);
-      formDataToSend.append("middle_name", formData.personal.middle_name);
-      formDataToSend.append("last_name", formData.personal.last_name);
-      formDataToSend.append("email", formData.personal.email);
-      formDataToSend.append("mobile", formData.personal.mobile);
-
-      // This is the critical fix - ensure department_id is the ID
-      formDataToSend.append("department_id", formData.personal.department);
-
-      formDataToSend.append("allocated_standards", formData.personal.jobrole);
-      formDataToSend.append(
-        "subject_ids",
-        formData.personal.responsibility_level
-      );
-      formDataToSend.append("gender", formData.personal.gender);
-      formDataToSend.append(
-        "user_profile_id",
-        formData.personal.user_profile_id
-      );
-      formDataToSend.append("join_year", formData.personal.join_year);
-      formDataToSend.append("status", formData.personal.status);
-      formDataToSend.append("password", formData.personal.plain_password);
-      formDataToSend.append("birthdate", formData.personal.birthdate);
+    // Personal data - ensure department_id is the ID, not name
+    formDataToSend.append("name_suffix", formData.personal.name_suffix);
+    formDataToSend.append("first_name", formData.personal.first_name);
+    formDataToSend.append("middle_name", formData.personal.middle_name);
+    formDataToSend.append("last_name", formData.personal.last_name);
+    formDataToSend.append("email", formData.personal.email);
+    formDataToSend.append("mobile", formData.personal.mobile);
+    
+    // This is the critical fix - ensure department_id is the ID
+    formDataToSend.append("department_id", formData.personal.department);
+    
+    formDataToSend.append("allocated_standards", formData.personal.jobrole);
+    formDataToSend.append(
+      "subject_ids",
+      formData.personal.responsibility_level
+    );
+    formDataToSend.append("gender", formData.personal.gender);
+    formDataToSend.append(
+      "user_profile_id",
+      formData.personal.user_profile_id
+    );
+    formDataToSend.append("join_year", formData.personal.join_year);
+    formDataToSend.append("status", formData.personal.status);
+    formDataToSend.append("password", formData.personal.plain_password);
+    formDataToSend.append("birthdate", formData.personal.birthdate);
 
       // Only append the image file if it exists (new upload)
       if (formData.personal.imageFile) {
@@ -346,39 +346,39 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
       // Additional fields from your example
       // formDataToSend.append("jobtitle_id", formData.personal.jobrole); // For jobrole ID
       formDataToSend.append("department_id", formData.personal.department);
+    
+    formDataToSend.append("load", "6");
+    formDataToSend.append("submit", "Update");
 
-      formDataToSend.append("load", "6");
-      formDataToSend.append("submit", "Update");
-
-      const response = await fetch(
-        `${sessionData?.url}/user/add_user/${userDetails?.id}`,
-        {
-          method: "POST",
-          body: formDataToSend,
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to update user");
+    const response = await fetch(
+      `${sessionData?.url}/user/add_user/${userDetails?.id}`,
+      {
+        method: "POST",
+        body: formDataToSend,
+        headers: {
+          Accept: "application/json",
+        },
       }
+    );
 
-      const result = await response.json();
-      setLoading(false);
-      alert(result.message);
-      if (onUpdate) {
-        onUpdate();
-      }
-      console.log("Update successful:", result);
-    } catch (error) {
-      console.error("Error updating user:", error);
-      setLoading(false);
-    } finally {
-      setIsSubmitting(false);
+    if (!response.ok) {
+      throw new Error("Failed to update user");
     }
-  };
+
+    const result = await response.json();
+    setLoading(false);
+    alert(result.message);
+    if (onUpdate) {
+      onUpdate();
+    }
+    console.log("Update successful:", result);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    setLoading(false);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   return (
     <>
       {isLoading ? (
@@ -386,15 +386,16 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
       ) : (
         <form onSubmit={handleSubmit}>
           {/* Header Section */}
-          <div className="header-ajit mb-8">
+            <div className="header-ajit mb-8" id="pd-header">
             <div className="header-section">
-              <div className="header-background-wrapper">
-                <div className="header-image-container">
+              <div className="h-full bg-[url('/Header.png')] bg-contain bg-no-repeat">
+                <div className="rounded-lg">
                   {formData.personal.image.startsWith("blob:") ? (
                     <img
                       src={formData.personal.image}
                       alt="User icon"
-                      className="header-profile-img"
+                      style={{ transform: "translate(28%,21%)" }}
+                      className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
                       onError={(e) => {
                         e.currentTarget.src =
                           "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
@@ -404,7 +405,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     <img
                       src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${userDetails?.image}`}
                       alt="User icon"
-                      className="header-profile-img"
+                      style={{ transform: "translate(28%,21%)" }}
+                      className="lg:w-[170px] lg:h-[170px] md:w-[120px] md:h-[120px] rounded-full relative object-cover border-[2px] shadow-lg border-white"
                       onError={(e) => {
                         e.currentTarget.src =
                           "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
@@ -413,15 +415,21 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                   )}
 
                 </div>
-                <div className="header-content header-name">
-                  <span className="header-name-text">
+                <div
+                  className="header-content"
+                  style={{ transform: "translate(12%,-175%)" }}
+                >
+                  <span className="text-2xl font-bold">
                     {formData.personal.first_name}{" "}
                     {formData.personal.middle_name}{" "}
                     {formData.personal.last_name}
                   </span>
                 </div>
-                <div className="header-content header-jobrole">
-                  <span className="header-jobrole-text">
+                <div
+                  className="header-content"
+                  style={{ transform: "translate(12%,95%)" }}
+                >
+                  <span className="text-[20px]">
                     {userDetails?.userJobrole}
                   </span>
                 </div>
@@ -430,17 +438,27 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
           </div>
 
           {/* Main Content */}
-          <div className="main-content-wrapper">
+          <div className="flex mt-14">
             {/* Sidebar Menu */}
-            <div className="sidebar-menu">
+              <div className="sidebar-menu" id="pd-sidebar">
               {tabs.map((item) => (
                 <div
                   key={item.id}
-                  className={`sidebar-menu-item ${activeSection === item.id ? "active" : ""}`}
+                  id={`pd-tab-${item.id}`}
+                  className={`cursor-pointer transition-colors duration-200 px-3 py-2 border-b-1 border-[1px solid rgba(71, 160, 255, 0.1)] ${activeSection === item.id
+                    ? "bg-[#47a0ff]"
+                    : "bg-white text-gray-600 hover:bg-blue-100"
+                    }`}
                   onClick={() => handleTabClick(item.id as TabId, item.href)}
                 >
-                  <i className={`${item.icon} sidebar-menu-icon`}></i>
-                  <span className="sidebar-menu-text">
+                  <i
+                    className={`${item.icon} ${activeSection === item.id ? "text-white" : "text-gray-600"
+                      } w-5 h-5 mr-2`}
+                  ></i>
+                  <span
+                    className={`${activeSection === item.id ? "text-white" : "text-gray-600"
+                      }`}
+                  >
                     {item.href ? (
                       <a href={item.href} onClick={(e) => e.preventDefault()}>
                         {item.text}
@@ -454,7 +472,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
             </div>
 
             {/* Content Sections */}
-            <div className="content-area">
+            <div className="content-area w-full ml-10 bg-white rounded-lg">
               {/* Form Content */}
               <div className="form-content">
                 <h2 className="section-title">
@@ -473,14 +491,15 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                 <div className="title-underline"></div>
 
                 {activeSection === "personal" && (
-                  <div className="form-grid">
+                    <div className="form-grid" id="pd-section-personal">
                     {/* Name Section */}
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-suffix">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Suffix
                         </label>
                         <select
+                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.personal.name_suffix}
                           onChange={(e) =>
                             handleInputChange(
@@ -498,8 +517,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           ))}
                         </select>
                       </div>
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-firstname">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           First Name
                         </label>
                         <input
@@ -518,8 +537,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     </div>
 
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-middlename">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Middle Name
                         </label>
                         <input
@@ -535,8 +554,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                       </div>
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-lastname">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Last Name
                         </label>
                         <input
@@ -556,8 +575,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     {/* Contact Section */}
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-email">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Email
                         </label>
                         <input
@@ -573,8 +592,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                       </div>
-                      <div className="input-field input-with-icon">
-                        <label>
+                        <div className="input-field relative" id="field-password">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Password
                         </label>
                         <input
@@ -590,15 +609,16 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                         <i
-                          className={`fa fa-eye${toggleState ? "-slash" : ""} password-toggle-icon`}
+                          className={`fa fa-eye${toggleState ? "-slash" : ""
+                            } absolute right-3 top-8 cursor-pointer text-gray-500 hover:text-gray-700`}
                           onClick={() => setToggleState(!toggleState)}
                         ></i>
                       </div>
                     </div>
 
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-birthdate">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Birthdate
                         </label>
                         <input
@@ -614,8 +634,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                       </div>
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-mobile">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Mobile
                         </label>
                         <input
@@ -636,75 +656,78 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     {/* Department Section */}
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
-                          Department
-                        </label>
-                        <select
-                          className={isReadOnly ? 'readonly-select' : ''}
-                          value={formData.personal.department}
-                          disabled={isReadOnly}
-                          onChange={(e) =>
-                            handleInputChange("personal", "department", Number(e.target.value))
-                          }
-                        >
-                          <option value="">Select Department</option>
-                          {fullJobroleData &&
-                            Object.keys(fullJobroleData).map((deptName) => {
-                              const first = fullJobroleData[deptName][0];
-                              return (
-                                <option
-                                  key={first.department_id}
-                                  value={first.department_id}
-                                >
-                                  {first.department_name}
-                                </option>
-                              );
-                            })}
-                        </select>
-                      </div>
-                      <div className="input-field">
-                        <label>
-                          Job Role
-                        </label>
-                        <select
-                          className={isReadOnly ? 'readonly-select' : ''}
-                          value={formData.personal.jobrole}
-                          disabled={isReadOnly}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "personal",
-                              "jobrole",
-                              e.target.value
-                            )
-                          }
-                        >
-                          <option value="">Select Jobrole</option>
-                          {filteredJobroles && filteredJobroles.length > 0 ? (
-                            filteredJobroles.map((jobrole: any) => (
-                              <option
-                                key={jobrole.id}
-                                value={jobrole.id}
-                              >
-                                {jobrole.jobrole}
-                              </option>
-                            ))
-                          ) : (
-                            <option value="" disabled>
-                              No job roles available
-                            </option>
-                          )}
-                        </select>
-                      </div>
+  
+<div className="input-field">
+  <label className="block mb-1 text-sm font-medium text-gray-700">
+    Department
+  </label>
+  <select
+    className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
+    value={formData.personal.department}
+    disabled={isReadOnly}
+    onChange={(e) =>
+      handleInputChange("personal", "department", Number(e.target.value))
+    }
+  >
+
+  <option value="">Select Department</option>
+
+  {/* Build department dropdown from fullJobroleData */}
+  {fullJobroleData &&
+    Object.keys(fullJobroleData).map((deptName) => {
+      const first = fullJobroleData[deptName][0]; // always contains department_id + name
+      return (
+        <option key={first.department_id} value={first.department_id}>
+          {first.department_name}
+        </option>
+      );
+    })}
+</select>
+
+</div>
+                     <div className="input-field">
+  <label className="block mb-1 text-sm font-medium text-gray-700">
+    Job Role
+  </label>
+  <select
+    className={`w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
+    value={formData.personal.jobrole}
+    disabled={isReadOnly}
+    onChange={(e) =>
+      handleInputChange(
+        "personal",
+        "jobrole",
+        e.target.value
+      )
+    }
+  >
+    <option value="">Select Jobrole</option>
+    {filteredJobroles && filteredJobroles.length > 0 ? (
+      filteredJobroles.map((jobrole: any) => (
+        <option
+          key={jobrole.id}
+          value={jobrole.id}
+        >
+          {jobrole.jobrole}
+        </option>
+      ))
+    ) : (
+      <option value="" disabled>
+        No job roles available
+      </option>
+    )}
+  </select>
+</div>
                     </div>
 
                     {/* Job Section */}
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-responsibility">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Responsibility Level
                         </label>
                         <select
+                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.personal.responsibility_level}
                           onChange={(e) =>
                             handleInputChange(
@@ -722,7 +745,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                                 value={level.id}
                                 selected={userDetails?.subject_ids == level.id}
                               >
-                                {level.level}
+                                {level.level}{" "}
+                                {/* Assuming the field is called 'level' */}
                               </option>
                             ))
                           ) : (
@@ -732,12 +756,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           )}
                         </select>
                       </div>
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-gender">
+                        <label className="block text-[#393939] text-[14px] font-normal font-inter mb-2">
                           Gender
                         </label>
                         <div className="flex gap-4">
-                          <label className="gender-radio-label">
+                          <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
                             <input
                               type="radio"
                               name="gender"
@@ -746,11 +770,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               onChange={() =>
                                 handleInputChange("personal", "gender", "M")
                               }
-                              className="gender-radio-input"
+                              className="accent-blue-500 no-shadow"
+
                             />
                             Male
                           </label>
-                          <label className="gender-radio-label">
+                          <label className="flex items-center gap-2 w-fit h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)] cursor-pointer">
                             <input
                               type="radio"
                               name="gender"
@@ -759,7 +784,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               onChange={() =>
                                 handleInputChange("personal", "gender", "F")
                               }
-                              className="gender-radio-input"
+                              className="accent-pink-500 no-shadow"
                             />
                             Female
                           </label>
@@ -768,14 +793,13 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     </div>
 
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-userprofile">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           User Profile
                         </label>
                         <select
-                          className={isReadOnly ? 'readonly-select' : ''}
+                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.personal.user_profile_id}
-                          disabled={isReadOnly}
                           onChange={(e) =>
                             handleInputChange(
                               "personal",
@@ -794,7 +818,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                                   userDetails?.user_profile_id == userProfile.id
                                 }
                               >
-                                {userProfile.name}
+                                {userProfile.name}{" "}
+                                {/* Assuming the field is called 'level' */}
                               </option>
                             ))
                           ) : (
@@ -804,8 +829,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           )}
                         </select>
                       </div>
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-joiningyear">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Joining Year
                         </label>
                         <input
@@ -825,14 +850,13 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                     {/* Status Section */}
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-status">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Inactive Status
                         </label>
                         <select
-                          className={isReadOnly ? 'readonly-select' : ''}
+                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.personal.status}
-                          disabled={isReadOnly}
                           onChange={(e) =>
                             handleInputChange(
                               "personal",
@@ -842,23 +866,27 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         >
                           <option value="">Status</option>
-                          <option value="1">
+                          <option
+                            value="1"
+                          >
                             Active
                           </option>
-                          <option value="0">
+                          <option
+                            value="0"
+                          >
                             In-Active
                           </option>
                         </select>
                       </div>
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field w-full" id="field-userimage">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           User Image
                         </label>
-                        <div className="file-input-wrapper">
+                        <div className="flex items-center gap-4">
                           <input
                             type="file"
                             accept="image/*"
-                            className="file-input"
+                            className="file-input px-4 py-1 rounded-full shadow-[inset_0px_2px_8px_rgba(0,0,0,0.15)] bg-[#f4faff] text-sm text-[#393939]"
                             onChange={(e) => {
                               if (e.target.files && e.target.files[0]) {
                                 const file = e.target.files[0];
@@ -879,18 +907,19 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
 
                           {/* Image Preview */}
                           {formData.personal.image && (
-                            <div className="image-preview-container">
+                            <div className="relative">
+                              {/* Check if image is a blob URL (new upload) or S3 URL */}
                               {formData.personal.image.startsWith("blob:") ? (
                                 <img
                                   src={formData.personal.image}
                                   alt="Preview"
-                                  className="image-preview"
+                                  className="h-12 w-12 object-cover rounded-full"
                                 />
                               ) : (
                                 <img
                                   src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${formData.personal.image}`}
                                   alt="Preview"
-                                  className="image-preview"
+                                  className="h-12 w-12 object-cover rounded-full"
                                   onError={(e) => {
                                     // If image fails to load (doesn't exist on S3), clear the preview
                                     handleInputChange("personal", "image", "");
@@ -901,7 +930,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               {/* Remove button */}
                               <button
                                 type="button"
-                                className="image-remove-btn"
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                                 onClick={() =>
                                   handleInputChange("personal", "image", "")
                                 }
@@ -928,10 +957,10 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                 )}
 
                 {activeSection === "address" && (
-                  <div className="form-grid">
+                    <div className="form-grid" id="pd-section-address">
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-address">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Address
                         </label>
                         <input
@@ -947,8 +976,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                       </div>
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-city">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           City
                         </label>
                         <input
@@ -967,8 +996,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     </div>
 
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-state">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           State
                         </label>
                         <input
@@ -984,8 +1013,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                       </div>
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-pincode">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Pincode
                         </label>
                         <input
@@ -1003,14 +1032,15 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                       </div>
                     </div>
 
-                    <div className="form-row single-column">
-                      <div className="input-field">
-                        <label>
+                    <div className="w-full">
+                      <div className="input-field w-full">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Temporary address
                         </label>
                         <textarea
                           name="address_2"
                           id="address_2"
+                          className="w-full"
                           value={formData.address.user_address2}
                           onChange={(e) =>
                             handleInputChange(
@@ -1026,13 +1056,14 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                 )}
 
                 {activeSection === "reporting" && (
-                  <div className="form-grid">
+                    <div className="form-grid" id="pd-section-reporting">
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-supervisor">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Supervisor / Subordinate
                         </label>
                         <select
+                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.reporting.subordinate}
                           onChange={(e) =>
                             handleInputChange(
@@ -1059,11 +1090,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           ))}
                         </select>
                       </div>
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-employeename">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Employee Name
                         </label>
                         <select
+                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.reporting.employee_name}
                           onChange={(e) =>
                             handleInputChange(
@@ -1097,11 +1129,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     </div>
 
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                        <div className="input-field" id="field-reportingmethod">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Reporting Method
                         </label>
                         <select
+                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.reporting.reporting_method}
                           onChange={(e) =>
                             handleInputChange(
@@ -1121,18 +1154,18 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                 )}
 
                 {activeSection === "attendance" && (
-                  <div className="form-grid">
+                    <div className="form-grid" id="pd-section-attendance">
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                      <div className="input-field w-full" id="field-workingdays">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Working Days
                         </label>
-                        <div className="working-days-container">
+                        <div className="flex items-center gap-8">
                           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
                             (day, index) => (
                               <label
                                 key={index}
-                                className="working-day-label"
+                                className="flex items-center gap-2 text-sm font-medium text-gray-700"
                               >
                                 <input
                                   type="checkbox"
@@ -1140,6 +1173,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                                     day
                                   )}
                                   onChange={() => handleCheckboxChange(day)}
+                                  className="no-shadow"
                                 />
                                 {day}
                               </label>
@@ -1183,12 +1217,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     ].map((item, index) => (
                       <div key={index} className="form-row">
                         <div className="input-field">
-                          <label>
+                          <label className="block mb-1 text-sm font-medium text-gray-700">
                             {item.day} In Time
                           </label>
                           <input
                             type="time"
-                            className="time-input"
+                            className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                             value={
                               formData.attendance[
                               item.inField as keyof typeof formData.attendance
@@ -1204,12 +1238,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           />
                         </div>
                         <div className="input-field">
-                          <label>
+                          <label className="block mb-1 text-sm font-medium text-gray-700">
                             {item.day} Out Time
                           </label>
                           <input
                             type="time"
-                            className="time-input"
+                            className="w-full h-[35px] px-3 rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                             value={
                               formData.attendance[
                               item.outField as keyof typeof formData.attendance
@@ -1230,15 +1264,16 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                 )}
 
                 {activeSection === "deposit" && (
-                  <div className="form-grid">
+                    <div className="form-grid" id="pd-section-deposit">
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                      <div className="input-field" id="field-bankname">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Bank Name
                         </label>
                         <input
                           type="text"
                           placeholder="Test Bank"
+                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                           value={formData.deposit.bank_name}
                           onChange={(e) =>
                             handleInputChange(
@@ -1249,13 +1284,14 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                       </div>
-                      <div className="input-field">
-                        <label>
+                      <div className="input-field" id="field branchname">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Branch Name
                         </label>
                         <input
                           type="text"
                           placeholder="Main Branch"
+                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                           value={formData.deposit.branch_name}
                           onChange={(e) =>
                             handleInputChange(
@@ -1269,13 +1305,14 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     </div>
 
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                      <div className="input-field" id="field-account">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Account
                         </label>
                         <input
                           type="text"
                           placeholder="1234567890"
+                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                           value={formData.deposit.account}
                           onChange={(e) =>
                             handleInputChange(
@@ -1286,13 +1323,14 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                       </div>
-                      <div className="input-field">
-                        <label>
+                      <div className="input-field" id="field-ifsc">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           IFSC
                         </label>
                         <input
                           type="text"
                           placeholder="TEST0001234"
+                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                           value={formData.deposit.ifsc}
                           onChange={(e) =>
                             handleInputChange("deposit", "ifsc", e.target.value)
@@ -1302,13 +1340,14 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                     </div>
 
                     <div className="form-row">
-                      <div className="input-field">
-                        <label>
+                      <div className="input-field" id="field-amount">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Amount
                         </label>
                         <input
                           type="text"
                           placeholder="50000.00"
+                          className="w-full h-[35px] px-[12px] rounded-[10px] bg-[#f9f9f9] border border-gray-300 shadow-sm"
                           value={formData.deposit.amount}
                           onChange={(e) =>
                             handleInputChange(
@@ -1319,11 +1358,12 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           }
                         />
                       </div>
-                      <div className="input-field">
-                        <label>
+                      <div className="input-field" id="field-transfertype">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
                           Transfer Type
                         </label>
                         <select
+                          className="w-full h-[35px] px-[14px] py-[6px] rounded-[18px] bg-[#eff7ff] text-[#393939] text-[14px] font-normal font-inter border-none outline-none shadow-[inset_0px_2px_8px_rgba(0,0,0,0.2)]"
                           value={formData.deposit.transfer_type}
                           onChange={(e) =>
                             handleInputChange(
@@ -1342,10 +1382,11 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                   </div>
                 )}
 
-                <div className="submit-button-container">
+                  <div className="flex justify-center mt-8" id="pd-submit-section">
                   <button
                     type="submit"
-                    className="submit-button"
+                      id="pd-submit-btn"
+                    className="px-8 py-2 rounded-full text-white font-medium transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-lg"
                   >
                     {isSubmitting ? "Updating..." : "Update"}
                   </button>

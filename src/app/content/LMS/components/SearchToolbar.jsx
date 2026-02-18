@@ -377,9 +377,10 @@ const SearchToolbar = ({
       {/* Search + Toolbar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
         {/* Search box */}
-        <div className="flex-1 lg:max-w-md">
+        <div id="lc-search-box" className="flex-1 lg:max-w-md">
           <div className="relative">
             <Input
+              id="lc-search-input"
               type="search"
               placeholder="Search courses by title, department, shortname, course type.."
               value={searchQuery || ''}
@@ -405,65 +406,65 @@ const SearchToolbar = ({
         </div>
 
         {/* Toolbar actions */}
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-1 relative bg-muted/30 rounded-lg p-1">
-            <div className="relative flex items-center gap-0.5">
-              <Button variant="ghost" size="icon" title="Settings / Manage Fields" className="h-8 w-8">
-                <Icon name="Settings" size={16} />
+        <div id="lc-toolbar-actions" className="flex items-center space-x-1">
+          <div className="flex items-center gap-1 relative">
+            <div className="relative" ref={advancedRef}>
+              <Button id="lc-settings-btn" variant="ghost" size="icon" title="Settings / Manage Fields">
+                <Icon name="Settings" size={18} />
               </Button>
 
-              <Button variant="ghost" size="icon" title="Refresh Catalog" className="h-8 w-8">
-                <Icon name="RotateCcw" size={16} />
+              <Button id="lc-refresh-btn" variant="ghost" size="icon" title="Refresh Catalog">
+                <Icon name="RotateCcw" size={18} />
               </Button>
 
-              <Button variant="ghost" size="icon" title="AI Insights / Reports" className="h-8 w-8">
-                <Icon name="BarChart3" size={16} />
+              <Button id="lc-ai-insights-btn" variant="ghost" size="icon" title="AI Insights / Reports">
+                <Icon name="BarChart3" size={18} />
               </Button>
 
-              <Button variant="ghost" size="icon" title="Share / Publish Module" className="h-8 w-8">
-                <Icon name="Share2" size={16} />
+              <Button id="lc-share-btn" variant="ghost" size="icon" title="Share / Publish Module">
+                <Icon name="Share2" size={18} />
               </Button>
 
-              <Button variant="ghost" size="icon" title="Help / Info" className="h-8 w-8">
-                <Icon name="CircleHelp" size={16} />
+              <Button id="lc-help-btn" variant="ghost" size="icon" title="Help / Info">
+                <Icon name="CircleHelp" size={18} />
               </Button>
-
-              <div className="w-px h-6 bg-border mx-1"></div>
 
               <Button
+                id="lc-advanced-filters-btn"
                 variant="outline"
                 size="sm"
                 onClick={() => {
                   setIsAdvancedOpen(!isAdvancedOpen);
                   setShowMoreFilters(false);
                 }}
-                className={`h-8 ${isAdvancedOpen ? 'bg-primary/10 text-primary' : ''}`}
+                className={isAdvancedOpen ? 'bg-primary/10 text-primary' : ''}
                 disabled={loading}
               >
-                <Icon name="Filter" size={14} className="mr-1.5" />
-                <span className="hidden sm:inline">Filters</span>
-                {loading && <span className="ml-1">...</span>}
+                <Icon name="Filter" size={14} className="mr-2" />
+                Filters
+                {loading && <span className="ml-2">...</span>}
               </Button>
-            </div>
 
-            {isAdvancedOpen && (
-              <div className="absolute mt-2 left-0 z-50 w-[360px] bg-background border border-border shadow-lg rounded-md p-4 flex flex-col gap-6 max-h-96 overflow-y-auto">
-                {filtersList.map((section) =>
-                  section.options.length > 0
-                    ? renderFilterGroup(section.title, section.key, section.options)
-                    : null
-                )}
-              </div>
-            )}
+              {isAdvancedOpen && (
+                <div className="absolute mt-2 left-0 z-50 w-[360px] bg-background border border-border shadow-lg rounded-md p-4 flex flex-col gap-6 max-h-96 overflow-y-auto">
+                  {filtersList.map((section) =>
+                    section.options.length > 0
+                      ? renderFilterGroup(section.title, section.key, section.options)
+                      : null
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* View toggle */}
-          <div className="flex items-center border border-border rounded-md overflow-hidden ml-1">
+          <div id="lc-view-toggle" className="flex items-center border border-border rounded-md">
             <Button
+              id="lc-grid-view-btn"
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('grid')}
-              className={`rounded-none border-r border-border h-9 px-3 ${
+              className={`rounded-r-none border-r border-border ${
                 viewMode === 'grid'
                   ? 'bg-blue-400 text-white hover:bg-blue-500'
                   : 'bg-transparent'
@@ -473,10 +474,11 @@ const SearchToolbar = ({
             </Button>
 
             <Button
+              id="lc-list-view-btn"
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onViewModeChange('list')}
-              className={`rounded-none h-9 px-3 ${
+              className={`rounded-l-none ${
                 viewMode === 'list'
                   ? 'bg-blue-400 text-white hover:bg-blue-500'
                   : 'bg-transparent'
@@ -489,9 +491,10 @@ const SearchToolbar = ({
       </div>
 
       {/* Level 1 Buttons */}
-      <div className="flex justify-center flex-wrap gap-4 mt-4">
+      <div id="lc-level1-buttons" className="flex justify-center flex-wrap gap-4 mt-4">
         {['All', 'Skill', 'Task'].map((level) => (
           <Button
+            id={`lc-${level.toLowerCase()}-btn`}
             key={level}
             variant={selectedLevel1 === level ? 'default' : 'outline'}
             onClick={() => handleLevel1Select(level)}
@@ -514,7 +517,7 @@ const SearchToolbar = ({
       {renderLevel2Buttons()}
 
       {/* Results count */}
-      <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+      <div id="lc-results-count" className="flex items-center justify-between mt-4 pt-4 border-t border-border">
         <div className="text-sm text-muted-foreground">
           {resultsCount > 0 ? (
             <>

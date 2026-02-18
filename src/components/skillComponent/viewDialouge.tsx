@@ -45,8 +45,6 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
     edit: false,
   });
 
-  const [isBuildingCourse, setIsBuildingCourse] = useState(false);
-
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = localStorage.getItem("userData");
@@ -275,19 +273,17 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
   }
 
   const handleCousreCreation = async () => {
-    setIsBuildingCourse(true);
+    alert('Course Creation in progress, Please Wait it will take sometime ! If failed then please try after some seconds');
     try {
       const res = await fetch(
-        `${sessionUrl}/AICourseGeneration?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&user_id=${sessionUserID}&user_profile_name=${sessionUserProfile}&syear=${sessionSyear}&subject_id=${skillId}&industry=${sessionOrgType}&department=${viewData?.department}&skill_category=${viewData?.category}&skill_sub_category=${viewData?.sub_category}&skill_micro_category=${viewData?.micro_category}&skill_name=${viewData?.title}&skill_description=${viewData?.description}`,
+        `${sessionUrl}/AICourseGeneration?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&user_id=${sessionUserID}&user_profile_name=${sessionUserProfile}&syear=${sessionSyear}&industry=${sessionOrgType}&department=${viewData?.department}&skill_category=${viewData?.category}&skill_sub_category=${viewData?.sub_category}&skill_micro_category=${viewData?.micro_category}&skill_name=${viewData?.title}&skill_description=${viewData?.description}`,
       );
 
       const data = await res.json();
-      setIsBuildingCourse(false);
       alert(data.message);
     } catch (error) {
-      console.error("Error creating course:", error);
-      setIsBuildingCourse(false);
-      alert("Error creating course");
+      console.error("Error deleting job role:", error);
+      alert("Error deleting job role");
     }
   }
 
@@ -490,20 +486,10 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
 
                 <button
                   onClick={() => handleCousreCreation()}
-                  disabled={isBuildingCourse}
-                  className={`flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm ${isBuildingCourse ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className="flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm"
                 >
-                  {isBuildingCourse ? (
-                    <>
-                      <span className="mdi mdi-loading mdi-spin text-xl"></span>
-                      <span>Building Course...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="mdi mdi-creation text-xl"></span>
-                      <span>Build Course</span>
-                    </>
-                  )}
+                  <span className="mdi mdi-creation text-xl"></span>
+                  <span>Build Course</span>
                 </button>
               </div>
             </div>

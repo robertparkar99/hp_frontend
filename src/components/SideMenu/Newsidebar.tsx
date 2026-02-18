@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { CornerDownRight, ChevronLeft, ChevronRight, Home } from "lucide-react"; // Added Home icon
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { CornerDownRight, ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserProfile } from "./UserProfile";
 import GlobalFooter from "./GlobalFooter"; // Import GlobalFooter
+import { SidebarTourGuide } from "./SidebarTour";
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -41,9 +42,9 @@ interface SectionItem {
     key: string;
     label: string;
     icon: React.ReactNode;
-    subItems: SubItem[];
     page_type?: string;
     access_link?: string;
+    subItems: SubItem[];
 }
 interface UserSessionDataProps {
     userSessionData: any;
@@ -96,7 +97,6 @@ const SubMenuItem = ({
     router,
     sectionKey,
     onSetActiveSection,
-    setSubOpen,
 }: {
     item: SubItem;
     isExpanded: boolean;
@@ -111,7 +111,6 @@ const SubMenuItem = ({
     router: any;
     sectionKey: string;
     onSetActiveSection: (key: string) => void;
-    setSubOpen: React.Dispatch<React.SetStateAction<SubOpenState>>;
 }) => {
     const handleClick = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -129,8 +128,6 @@ const SubMenuItem = ({
             localStorage.setItem("activeSection", sectionKey);
             localStorage.setItem("activeSubItem", item.key);
             localStorage.removeItem("activeSubSubItem");
-            // Open the sub dropdown
-            setSubOpen(s => ({ ...s, [item.key]: true }));
         } else if (item.page_type === "page" && item.access_link) {
             const normalizedLink = item.access_link.startsWith("/")
                 ? item.access_link
@@ -141,8 +138,6 @@ const SubMenuItem = ({
             localStorage.setItem("activeSection", sectionKey);
             localStorage.setItem("activeSubItem", item.key);
             localStorage.removeItem("activeSubSubItem");
-            // Open the sub dropdown
-            setSubOpen(s => ({ ...s, [item.key]: true }));
         } else if (hasSubItems) {
             onToggle();
             onSetActiveSection(sectionKey);
@@ -191,13 +186,14 @@ const SubMenuItem = ({
                 className="pl-1 rounded-[12px]"
                 style={{
                     background: "rgba(71, 160, 255, 0.35)",
-                    boxShadow: "0 0 6px 0 rgba(0,0,0,0.1)",
+                    boxShadow: "0 0 6px 0 rgba(0,0,0,0,0.1)",
 
                 }}
             >
                 <div className="bg-white rounded-[12px] overflow-hidden shadow-sm">
 
                     <button
+                        id={`tour-sub-${item.key}`}
                         onClick={handleClick}
                         className={`w-full h-[42px] flex items-center justify-between px-[18px] rounded-md transition-all  hover:bg-blue-200 
     ${isActive ? "bg-blue-200 font-semibold " : ""}
@@ -247,6 +243,7 @@ const SubMenuItem = ({
                                 >
                                     {item.subItems.map((subItem: any, subSubIndex: number) => (
                                         <button
+                                            id={`tour-subsub-${subItem.key}`}
                                             key={`subsub-${subSubIndex}-${subItem.key}`}
                                             className={`flex items-center gap-[22px] py-2 px-2 mb-1 rounded-md cursor-pointer w-full
     ${activeSubSubItem === subItem.key
@@ -288,8 +285,6 @@ const Section = ({
     onSetActiveSubSub,
     router,
     onSetActiveSection,
-    setOpen,
-    setSubOpen,
 }: {
     section: SectionItem;
     isActive: boolean;
@@ -305,37 +300,26 @@ const Section = ({
     onSetActiveSubSub: (key: string | undefined) => void;
     router: any;
     onSetActiveSection: (key: string) => void;
-    setOpen: React.Dispatch<React.SetStateAction<OpenState>>;
-    setSubOpen: React.Dispatch<React.SetStateAction<SubOpenState>>;
 }) => {
     const handleClick = () => {
         if (isCollapsed) {
             onExpandSidebar();
             return;
         }
-        if (section.page_type === "link" && section.access_link) {
-            window.open(section.access_link, "_blank");
+        // If section has an access_link with page_type, navigate to it or open in new tab
+        if (section.access_link) {
+            if (section.page_type === "link") {
+                window.open(section.access_link, "_blank");
+            } else if (section.page_type === "page") {
+                const normalizedLink = section.access_link.startsWith("/")
+                    ? section.access_link
+                    : `/${section.access_link}`;
+                router.push(normalizedLink);
+            }
             onSetActiveSection(section.key);
-            onSetActiveSub(undefined);
-            onSetActiveSubSub(undefined);
             localStorage.setItem("activeSection", section.key);
             localStorage.removeItem("activeSubItem");
             localStorage.removeItem("activeSubSubItem");
-            // Open the dropdown
-            setOpen(o => ({ ...o, [section.key]: true }));
-        } else if (section.page_type === "page" && section.access_link) {
-            const normalizedLink = section.access_link.startsWith("/")
-                ? section.access_link
-                : `/${section.access_link}`;
-            router.push(normalizedLink);
-            onSetActiveSection(section.key);
-            onSetActiveSub(undefined);
-            onSetActiveSubSub(undefined);
-            localStorage.setItem("activeSection", section.key);
-            localStorage.removeItem("activeSubItem");
-            localStorage.removeItem("activeSubSubItem");
-            // Open the dropdown
-            setOpen(o => ({ ...o, [section.key]: true }));
         } else {
             onToggle();
         }
@@ -351,6 +335,7 @@ const Section = ({
                     >
                         <button
                             type="button"
+                            id={`tour-section-${section.key}`}
                             onClick={handleClick}
                             className="w-full h-full flex items-center justify-between px-[11px] transition-colors rounded-md"
                             aria-expanded={open}
@@ -392,6 +377,7 @@ const Section = ({
                     <div className="w-full h-[60px] bg-white relative">
                         <button
                             type="button"
+                            id={`tour-section-${section.key}`}
                             onClick={handleClick}
                                 className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors rounded-md"
                             aria-expanded={open}
@@ -448,7 +434,6 @@ const Section = ({
                             router={router}
                             sectionKey={section.key}
                             onSetActiveSection={onSetActiveSection}
-                            setSubOpen={setSubOpen}
                         />
                     ))}
                 </div>
@@ -506,19 +491,18 @@ const useMenuData = (sessionData: any) => {
             const menuData = await fetchWithRetry(
                 `${sessionData.url}/user/ajax_groupwiserights?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&profile_id=${sessionData.userProfile}`
             );
-            console.log("Fetched menuData:", menuData);
 
             // Process data
             const sectionsData = menuData.level_1
-                .filter((l1: any) => l1.can_view === 1) // Temporarily allow all for debugging
+                .filter((l1: any) => l1.can_view === 1)
                 .map((l1: any) => {
                     const l2Group = menuData.level_2[l1.id] || {};
                     const subItems = Object.values(l2Group)
-                        .filter((l2: any) => l2.can_view === 1) // Allow all level 2
+                        .filter((l2: any) => l2.can_view === 1)
                         .map((l2: any) => {
                             const l3Group = menuData.level_3[l2.id] || {};
                             const subSubItems = Object.values(l3Group)
-                                .filter((l3: any) => l3.can_view === 1) // Allow all level 3
+                                .filter((l3: any) => l3.can_view === 1)
                                 .map((l3: any) => ({
                                     key: String(l3.id),
                                     label: l3.menu_name,
@@ -546,8 +530,6 @@ const useMenuData = (sessionData: any) => {
                     };
                 });
 
-            console.log("Processed sectionsData:", sectionsData);
-
             // Cache the result
             menuCache.set(cacheKey, sectionsData);
             setSections(sectionsData);
@@ -566,7 +548,9 @@ const useMenuData = (sessionData: any) => {
 
     return { sections, loading, error, fetchMenuData };
 };
+
 const DASHBOARD_KEY = "___dashboard___";
+
 // Dashboard Section Component
 const DashboardSection = ({
     isCollapsed,
@@ -610,6 +594,7 @@ const DashboardSection = ({
                     >
                         <button
                             type="button"
+                            id="tour-dashboard"
                             onClick={handleDashboardClick}
                             className="w-full h-full flex items-center justify-between px-[11px] transition-colors rounded-md"
                         >
@@ -635,8 +620,9 @@ const DashboardSection = ({
                     <div className="w-full h-[60px] bg-white relative">
                         <button
                             type="button"
+                            id="tour-dashboard"
                             onClick={handleDashboardClick}
-                                className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors rounded-md"
+                            className="w-full h-full flex items-center justify-between px-[25px] hover:bg-gray-50 transition-colors rounded-md"
                         >
                             <div className="flex items-center gap-[20px]">
                                 <Home className="w-[16px] h-[24px]" />
@@ -662,6 +648,7 @@ const DashboardSection = ({
 
 export default function Sidebar({ mobileOpen, onClose, userSessionData }: SidebarProps) {
     const router = useRouter();
+    const pathname = usePathname();  // Track pathname for route changes
     const [open, setOpen] = useState<OpenState>({});
     const [activeSection, setActiveSection] = useState<string>();
     const [activeSubItem, setActiveSubItem] = useState<string>();
@@ -681,6 +668,82 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const { sections, loading, error, fetchMenuData } = useMenuData(sessionData);
+
+    // Tour instance ref
+    const tourRef = useRef<SidebarTourGuide | null>(null);
+
+    // Initialize tour guide when sections are loaded
+    useEffect(() => {
+        if (sections.length > 0 && !tourRef.current) {
+            tourRef.current = new SidebarTourGuide(
+                sections,
+                () => setIsCollapsed(false),
+                (sectionKey: string) => setOpen(o => ({ ...o, [sectionKey]: true })),
+                (subKey: string) => setSubOpen(s => ({ ...s, [subKey]: true })),
+                (key: string) => setActiveSection(key),
+                () => !isCollapsed,
+                (url: string) => router.push(url)
+            );
+            console.log('SidebarTourGuide initialized');
+        }
+    }, [sections, isCollapsed, router]);
+
+    // Listen for page tour complete event and resume sidebar tour
+    useEffect(() => {
+        const handlePageTourComplete = () => {
+            console.log('[Sidebar] Page tour completed, checking if sidebar tour should resume...');
+
+            // Check if there's a paused tour to resume
+            const savedPausedStep = localStorage.getItem('sidebarTourPausedStep');
+            const returnToSidebarTour = localStorage.getItem('returnToSidebarTour');
+
+            if (savedPausedStep && returnToSidebarTour === 'true') {
+                console.log('Found paused tour state, resuming sidebar tour...');
+                // Clear the return flag
+                localStorage.removeItem('returnToSidebarTour');
+
+                // Resume the tour after a short delay to allow UI to settle
+                setTimeout(() => {
+                    if (tourRef.current) {
+                        tourRef.current.resumeTour();
+                    }
+                }, 500);
+            }
+        };
+
+        window.addEventListener('page-tour-complete', handlePageTourComplete);
+
+        return () => {
+            window.removeEventListener('page-tour-complete', handlePageTourComplete);
+        };
+    }, []);
+
+    // Listen for tour start event from WelcomeModal
+    useEffect(() => {
+        const handleStartTour = () => {
+            console.log('Start tour event received');
+            if (tourRef.current) {
+                // Ensure sidebar is expanded before starting tour
+                if (isCollapsed) {
+                    setIsCollapsed(false);
+                    setTimeout(() => {
+                        tourRef.current?.startTour();
+                    }, 300);
+                } else {
+                    tourRef.current.startTour();
+                }
+            }
+        };
+
+        window.addEventListener('start-sidebar-tour', handleStartTour);
+        return () => {
+            window.removeEventListener('start-sidebar-tour', handleStartTour);
+        };
+    }, [isCollapsed]);
+
+    const expandSidebar = () => setIsCollapsed(false);
+    const expandSection = (sectionKey: string) => setOpen(o => ({ ...o, [sectionKey]: true }));
+    const expandSub = (subKey: string) => setSubOpen(s => ({ ...s, [subKey]: true }));
 
     // Initialize collapse state and active states from localStorage
     useEffect(() => {
@@ -705,51 +768,42 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         if (storedActiveSubSubItem) {
             setActiveSubSubItem(storedActiveSubSubItem);
         }
-
-        const storedOpen = localStorage.getItem("sidebarOpenStates");
-        if (storedOpen) {
-            try {
-                setOpen(JSON.parse(storedOpen));
-            } catch (e) {
-                console.warn("Failed to parse sidebarOpenStates", e);
-            }
-        }
-
-        const storedSubOpen = localStorage.getItem("sidebarSubOpenStates");
-        if (storedSubOpen) {
-            try {
-                setSubOpen(JSON.parse(storedSubOpen));
-            } catch (e) {
-                console.warn("Failed to parse sidebarSubOpenStates", e);
-            }
-        }
     }, []);
-    const [initialized, setInitialized] = useState(false);
-
+    // Sync active menu with current pathname
     useEffect(() => {
-        if (initialized === true) return;
         if (!sections.length) return;
 
-        const currentPath = window.location.pathname;
+        const currentPath = pathname;
         const normalizePath = (path: string = "") =>
             "/" + path.replace(/^\/+/, "").replace(/\/+$/, "");
 
+        let found = false;
+
+        // Check if level 1 has a direct access_link match
         for (const section of sections) {
-            if (normalizePath(section.access_link) === currentPath) {
+            if (normalizePath(section.access_link || "") === currentPath) {
                 setActiveSection(section.key);
-                setInitialized(true);
-                return;
+                setActiveSubItem(undefined);
+                setActiveSubSubItem(undefined);
+                setOpen(o => ({ ...o, [section.key]: true }));
+                found = true;
+                break;
             }
+        }
 
+        if (found) return;
+
+        // Check level 2 and level 3
+        for (const section of sections) {
             for (const l2 of section.subItems) {
-
                 if (normalizePath(l2.access_link) === currentPath) {
                     setActiveSection(section.key);
                     setActiveSubItem(l2.key);
+                    setActiveSubSubItem(undefined);
                     setOpen(o => ({ ...o, [section.key]: true }));
                     setSubOpen(s => ({ ...s, [l2.key]: true }));
-                    setInitialized(true);
-                    return;
+                    found = true;
+                    break;
                 }
 
                 for (const l3 of (l2.subItems || [])) {
@@ -759,13 +813,15 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                         setActiveSubSubItem(l3.key);
                         setOpen(o => ({ ...o, [section.key]: true }));
                         setSubOpen(s => ({ ...s, [l2.key]: true }));
-                        setInitialized(true);
-                        return;
+                        found = true;
+                        break;
                     }
                 }
+                if (found) break;
             }
+            if (found) break;
         }
-    }, [sections]);
+    }, [sections, pathname]);
 
     // Persist sidebar state
     useEffect(() => {
@@ -777,24 +833,6 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         }
     }, [isCollapsed]);
 
-    // Persist open states
-    useEffect(() => {
-        try {
-            localStorage.setItem("sidebarOpenStates", JSON.stringify(open));
-        } catch (err) {
-            console.warn("Could not persist sidebar open states:", err);
-        }
-    }, [open]);
-
-    // Persist subOpen states
-    useEffect(() => {
-        try {
-            localStorage.setItem("sidebarSubOpenStates", JSON.stringify(subOpen));
-        } catch (err) {
-            console.warn("Could not persist sidebar subOpen states:", err);
-        }
-    }, [subOpen]);
-
     const handleExpandSidebar = () => setIsCollapsed(false);
 
     // Get session data
@@ -802,20 +840,18 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         const userData = localStorage.getItem("userData");
         if (userData) {
             try {
-                const { APP_URL, token, sub_institute_id, org_type, user_id, user_image, user_profile_id, first_name, last_name } = JSON.parse(userData);
-                const parsedData = {
+                const { APP_URL, token, sub_institute_id, org_type, user_id, userimage, user_profile_id, firstName, lastName } = JSON.parse(userData);
+                setSessionData({
                     url: APP_URL || "",
                     token: token || "",
                     subInstituteId: sub_institute_id || "",
                     orgType: org_type || "",
                     userId: user_id || "",
-                    userimage: user_image || "",
+                    userimage: userimage || "",
                     userProfile: user_profile_id || "",
-                    firstName: first_name || "",
-                    lastName: last_name || "",
-                };
-                setSessionData(parsedData);
-
+                    firstName: firstName || "",
+                    lastName: lastName || "",
+                });
             } catch (err) {
                 console.error("Error parsing user data:", err);
             }
@@ -850,8 +886,6 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
             localStorage.setItem("activeSection", section.key);
             localStorage.setItem("activeSubItem", subKey);
             localStorage.removeItem("activeSubSubItem");
-            // Ensure the section dropdown is open
-            setOpen(o => ({ ...o, [section.key]: true }));
         }
     };
 
@@ -867,9 +901,8 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
             />
 
             <aside
-                className={`fixed left-0 top-0 z-40 h-screen bg-[#FFFDFD] transition-all duration-300 ease-out flex flex-col ${
-                    isCollapsed ? "w-[80px]" : "w-[280px]"
-                } ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+                className={`fixed left-0 top-0 z-40 h-screen bg-[#FFFDFD] transition-all duration-300 ease-out flex flex-col ${isCollapsed ? "w-[80px]" : "w-[280px]"
+                    } ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
                 style={{
                     borderRadius: "0 15px 15px 0",
                     boxShadow: "2px 4px 15px 0 rgba(71, 160, 255, 0.25)",
@@ -879,7 +912,6 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                 <div className="h-[100px] flex items-center justify-between px-[20px]">
                     {!isCollapsed && (
                         <UserProfile userSessionData={sessionData} />
-
                     )}
                     <motion.button
                         whileTap={{ scale: 0.9 }}
@@ -959,8 +991,6 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                                 onSetActiveSubSub={setActiveSubSubItem}
                                 router={router}
                                 onSetActiveSection={setActiveSection}
-                                setOpen={setOpen}
-                                setSubOpen={setSubOpen}
                             />
                         ))
                     )}

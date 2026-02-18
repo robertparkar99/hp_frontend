@@ -194,11 +194,11 @@ const fetchFilters = async () => {
   }, [sessionData]);
 
   // 🔹 Filter section component
-  const FilterSection = ({ title, sectionId, items, filterKey }) => {
+  const FilterSection = ({ id, title, sectionId, items, filterKey }) => {
     const isExpanded = expandedSections.includes(sectionId);
 
     return (
-      <div className="border-b border-border pb-4 mb-4">
+      <div id={id} className="border-b border-border pb-4 mb-4">
         <Button
           variant="ghost"
           className="w-full justify-between p-0 h-auto font-medium text-foreground hover:bg-transparent"
@@ -243,12 +243,13 @@ const fetchFilters = async () => {
   }, 0);
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 h-fit sticky top-20">
+    <div id="lc-filter-sidebar-component" className="bg-card border border-border rounded-lg p-4 h-fit sticky top-20">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground">Filters</h3>
+      <div id="lc-filter-header" className="flex items-center justify-between mb-4">
+        <h3 id="lc-filter-title" className="font-semibold text-foreground">Filters</h3>
         {activeFilterCount > 0 && (
           <Button
+            id="lc-clear-filters-btn"
             variant="ghost"
             size="sm"
             onClick={onClearAll}
@@ -263,14 +264,16 @@ const fetchFilters = async () => {
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading filters...</p>
       ) : (
-        <div className="space-y-0">
+          <div id="lc-filter-sections" className="space-y-0">
           <FilterSection
+              id="lc-content-category-section"
             title="Content Category"
             sectionId="contentCategory"
             items={categories}
             filterKey="contentCategory"
           />
           <FilterSection
+              id="lc-subject-type-section"
             title="Subject Type"
             sectionId="subjectType"
             items={subjectTypes}
@@ -280,10 +283,11 @@ const fetchFilters = async () => {
       )}
 
       {/* Quick Actions */}
-      <div className="mt-6 pt-4 border-t border-border">
-        <h4 className="font-medium text-foreground mb-3">Quick Filters</h4>
-        <div className="space-y-2">
+      <div id="lc-quick-actions" className="mt-6 pt-4 border-t border-border">
+        <h4 id="lc-quick-actions-title" className="font-medium text-foreground mb-3">Quick Filters</h4>
+        <div id="lc-quick-actions-buttons" className="space-y-2">
           <Button
+            id="lc-technical-courses-btn"
             variant="outline"
             size="sm"
             className="w-full justify-start"
@@ -293,6 +297,7 @@ const fetchFilters = async () => {
             Technical Courses
           </Button>
           <Button
+            id="lc-subtype-btn"
             variant="outline"
             size="sm"
             className="w-full justify-start"

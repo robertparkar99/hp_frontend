@@ -19,6 +19,10 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 
+import { Atom } from "react-loading-indicators";
+import ShepherdTour from "../../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "../../../../lib/tourSteps";
+
 import {
   Eye,
   Lightbulb,
@@ -35,7 +39,6 @@ import {
   Sparkles,
   Settings
 } from "lucide-react";
-import Loader from "@/components/utils/loading";
 
 /* ---------------- TYPES ---------------- */
 
@@ -45,6 +48,10 @@ type InvisibleItem = {
   title: string;
   description: string;
 };
+
+interface InvisibleLibraryPageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
 
 /* ---------------- ANIMATION VARIANTS ---------------- */
 
@@ -85,7 +92,7 @@ const modalInnerVariants = {
 
 /* ---------------- COMPONENT ---------------- */
 
-export default function InvisibleLibraryPage() {
+export default function InvisibleLibraryPage({ showDetailTour }: InvisibleLibraryPageProps) {
   const [data, setData] = useState<InvisibleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +107,9 @@ export default function InvisibleLibraryPage() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InvisibleItem | null>(null);
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
 
   const safeArray = (d: any) =>
     Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
@@ -153,6 +163,13 @@ export default function InvisibleLibraryPage() {
     if (sessionData.url && sessionData.token) fetchData();
   }, [sessionData.url, sessionData.token, fetchData]);
 
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
+
   /* ---------------- GROUP BY TYPE ---------------- */
 
   const groupedData = useMemo(() => {
@@ -181,7 +198,7 @@ export default function InvisibleLibraryPage() {
   if (loading)
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loader/>
+        <Atom color="#525ceaff" size="medium" />
       </div>
     );
 
@@ -310,6 +327,19 @@ export default function InvisibleLibraryPage() {
           )}
         </AnimatePresence>
       </Dialog>
+
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps('Invisible')}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
+        />
+      )}
     </motion.div>
   );
 }

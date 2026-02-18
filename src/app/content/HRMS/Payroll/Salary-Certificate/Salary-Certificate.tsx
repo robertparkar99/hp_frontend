@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { se } from "date-fns/locale";
 import {
   Select,
   SelectContent,
@@ -11,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { salaryCertificateTour, salaryCertificateTourStyles } from "./SalaryCertificateTourSteps";
 
 interface Employee {
   id: number;
@@ -76,6 +76,28 @@ const SalaryCertificate: React.FC = () => {
         subInstituteId: sub_institute_id,
         userId: user_id,
       });
+    }
+  }, []);
+
+  // Check if tour should be started
+  useEffect(() => {
+    // Inject tour styles
+    if (typeof document !== 'undefined') {
+      const styleSheet = document.createElement('style');
+      styleSheet.textContent = salaryCertificateTourStyles;
+      if (!document.head.querySelector('#salary-certificate-tour-styles')) {
+        styleSheet.id = 'salary-certificate-tour-styles';
+        document.head.appendChild(styleSheet);
+      }
+    }
+
+    // Check if tour should start (only when triggered from sidebar, not on normal load)
+    if (salaryCertificateTour.shouldStartTour()) {
+      salaryCertificateTour.clearTourState();
+
+      setTimeout(() => {
+        salaryCertificateTour.startTour();
+      }, 1500);
     }
   }, []);
 
@@ -209,8 +231,8 @@ const SalaryCertificate: React.FC = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-white dark:bg-gray-900 rounded-xl shadow-lg w-full">
-      <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+    <div className="p-8 bg-white dark:bg-gray-900 rounded-xl shadow-lg max-w-6xl mx-auto my-10" id="tour-salary-certificate-container">
+      <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4 mb-6" id="tour-salary-certificate-header">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <FileText className="w-6 h-6 text-blue-600" />
           Salary Certificate
@@ -219,7 +241,7 @@ const SalaryCertificate: React.FC = () => {
 
       <div className="space-y-6">
         {/* Department */}
-        <div>
+        <div id="tour-department-select">
           <label className="block mb-2 font-semibold">Department *</label>
           <Select
             value={selectedDepartment}
@@ -243,7 +265,7 @@ const SalaryCertificate: React.FC = () => {
         </div>
 
         {/* Employee */}
-        <div>
+        <div id="tour-employee-select">
           <label className="block mb-2 font-semibold">Employee *</label>
           <Select
             value={selectedEmployee}
@@ -264,7 +286,7 @@ const SalaryCertificate: React.FC = () => {
         </div>
 
         {/* Month (Multi-select) */}
-        <div>
+        <div id="tour-months-select">
           <label className="block mb-2 font-semibold">Month(s) *</label>
           <select
             multiple
@@ -284,7 +306,7 @@ const SalaryCertificate: React.FC = () => {
         </div>
 
         {/* Year */}
-        <div>
+        <div id="tour-year-select">
           <label className="block mb-2 font-semibold">Year *</label>
           <select
             value={selectedYear}
@@ -300,9 +322,10 @@ const SalaryCertificate: React.FC = () => {
         </div>
 
         {/* Payroll Type */}
-        <div>
+        <div id="tour-payroll-type">
           <label className="block mb-2 font-semibold">Payroll Type *</label>
           <select
+            id="tour-payroll-type-select"
             value={selectedPayrollType}
             onChange={(e) => setSelectedPayrollType(e.target.value)}
             className="w-full p-3 border rounded-md"
@@ -317,9 +340,10 @@ const SalaryCertificate: React.FC = () => {
         </div>
 
         {/* Reason */}
-        <div>
+        <div id="tour-reason-div">
           <label className="block mb-2 font-semibold">Reason</label>
           <input
+            id="tour-reason-input"
             type="text"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
@@ -329,8 +353,9 @@ const SalaryCertificate: React.FC = () => {
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 mt-6">
+        <div className="flex gap-4 mt-6" id="tour-buttons-div">
           <Button
+            id="tour-generate-btn"
             onClick={handleGenerateCertificate}
             disabled={loadingGenerate}
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
@@ -338,6 +363,7 @@ const SalaryCertificate: React.FC = () => {
             {loadingGenerate ? "Generating..." : "Generate Certificate"}
           </Button>
           <Button
+            id="tour-download-btn"
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
           >
             <Download className="w-5 h-5 inline-block mr-1" />

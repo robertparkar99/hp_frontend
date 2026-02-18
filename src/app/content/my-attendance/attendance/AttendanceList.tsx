@@ -75,12 +75,12 @@ export function AttendanceList({ records }: AttendanceListProps) {
         records.map((record) => (
           <div
             key={record.id}
-            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-secondary/30 rounded-lg border border-border hover:bg-secondary/50 transition-colors duration-200 gap-4"
+            className="flex items-center justify-between p-4 bg-secondary/30 rounded-lg border border-border hover:bg-secondary/50 transition-colors duration-200"
           >
-            <div className="flex items-center gap-4 min-w-0">
+            <div className="flex items-center gap-4">
               {getStatusIcon(record.status)}
-              <div className="min-w-0">
-                <p className="font-semibold text-foreground truncate">
+              <div>
+                <p className="font-semibold text-foreground">
                   {formatDate(record.date)}
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -89,9 +89,9 @@ export function AttendanceList({ records }: AttendanceListProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 sm:flex sm:items-center gap-2 sm:gap-6 text-sm">
+            <div className="flex items-center gap-8 text-sm">
               <div className="text-center">
-                <p className="text-muted-foreground mb-1 text-xs sm:text-sm">Punch In</p>
+                <p className="text-muted-foreground mb-1">Punch In</p>
                 <p className="font-semibold text-success">
                   {record.punchIn && isValid(new Date(record.punchIn))
                     ? format(new Date(record.punchIn), 'hh:mm a')
@@ -100,7 +100,7 @@ export function AttendanceList({ records }: AttendanceListProps) {
               </div>
 
               <div className="text-center">
-                <p className="text-muted-foreground mb-1 text-xs sm:text-sm">Punch Out</p>
+                <p className="text-muted-foreground mb-1">Punch Out</p>
                 <p className="font-semibold text-warning">
                   {record.punchOut && isValid(new Date(record.punchOut))
                     ? format(new Date(record.punchOut), 'hh:mm a')
@@ -109,7 +109,7 @@ export function AttendanceList({ records }: AttendanceListProps) {
               </div>
 
               <div className="text-center">
-                <p className="text-muted-foreground mb-1 text-xs sm:text-sm">Total Hours</p>
+                <p className="text-muted-foreground mb-1">Total Hours</p>
                 <p className="font-bold text-primary">
                   {record.totalHours ? formatHours(record.totalHours) : '--'}
                 </p>

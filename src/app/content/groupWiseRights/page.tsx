@@ -1,38 +1,12 @@
-"use client";
-import Header from "@/components/Header/Header";
-import { useState, useEffect } from "react";
+'use client';
+
+import React from 'react';
 import { RightsManagement } from './create/RightsManagement';
 
 export default function GroupWiseRightsPage() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  // Sync with localStorage and handle sidebar state changes
-  useEffect(() => {
-    const checkSidebarState = () => {
-      const sidebarState = localStorage.getItem("sidebarOpen");
-      setIsSidebarOpen(sidebarState === "true");
-    };
-
-    checkSidebarState();
-    window.addEventListener("sidebarStateChange", checkSidebarState);
-
-    return () => {
-      window.removeEventListener("sidebarStateChange", checkSidebarState);
-    };
-  }, []);
-
-  const handleCloseMobileSidebar = () => {
-    setMobileOpen(false);
-  };
   return (
-    <div>
-      <div className="mb-5">
-        <Header />
-      </div>
-      {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar}  /> */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-[304px]" : "md:ml-24"} ml-0 p-2`}>
-        <RightsManagement />
-      </div>
-    </div>
+    <>
+      <RightsManagement/>
+    </>
   );
 }

@@ -9,7 +9,6 @@ import { useState, useEffect } from "react";
 // import Dashboard from "./Component/Dashboard";
 // import { Agent } from "http";
 import AgentDetail from "./Component/AgentDetail";
-import Loader from '@/components/utils/loading';
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -39,7 +38,7 @@ export default function HomePage() {
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
       <div className={`transition-all duration-300 bg-background rounded-2xl p-4 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
         {/* <Index/> */}
-        <Suspense fallback={<div> <Loader/></div>}> 
+        <Suspense fallback={<div>Loading...</div>}> 
         <AgentDetail/>
         </Suspense>
       </div>

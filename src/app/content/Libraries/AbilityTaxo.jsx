@@ -43,58 +43,42 @@ const AbilityTaxonomy = ({ onSave, loading = false }) => {
     }
   }, [sessionData.url, sessionData.token]);
 
-const fetchData = async () => {
-  try {
-    setIsLoading(true);
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
 
-    const res = await fetch(
-      `${sessionData.url}/table_data?table=s_user_ability&filters[sub_institute_id]=${sessionData.subInstituteId}`
-    );
+      const deptRes = await fetch(
+        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=ability&group_by=classification_category&order_by[direction]=desc`
+      );
+      const subDeptRes = await fetch(
+        `${sessionData.url}/table_data?table=s_skill_knowledge_ability&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[classification]=ability&group_by=classification_sub_category&order_by[direction]=desc`
+      );
 
-    if (!res.ok) throw new Error("Network error");
+      if (!deptRes.ok || !subDeptRes.ok) throw new Error('Network error');
 
-    const data = await res.json();
+      const deptData = await deptRes.json();
+      const subDeptData = await subDeptRes.json();
 
-    const grouped = {};
+      const merged = deptData.map((dept) => ({
+        id: dept.id || dept.classification_category,
+        name: dept.classification_category,
+        employees: dept.total_employees || 0,
+        subdepartments: subDeptData
+          .filter((sub) => sub.classification_category === dept.classification_category)
+          .map((sub) => ({
+            id: sub.id || sub.classification_sub_category,
+            name: sub.classification_sub_category,
+            employees: sub.total_employees || 0,
+          })),
+      }));
 
-    data.forEach((item) => {
-      const category = item.category?.trim();
-      const subCategory = item.sub_category?.trim();
-
-      if (!category) return;
-
-      if (!grouped[category]) {
-        grouped[category] = {
-          id: category,
-          name: category,
-          employees: 0,
-          subdepartments: [],
-        };
-      }
-
-      if (subCategory) {
-        const exists = grouped[category].subdepartments.some(
-          (sub) => sub.name === subCategory
-        );
-
-        if (!exists) {
-          grouped[category].subdepartments.push({
-            id: `${category}-${subCategory}`,
-            name: subCategory,
-            employees: 0,
-          });
-        }
-      }
-    });
-
-    setDepartments(Object.values(grouped));
-  } catch (error) {
-    console.error("Error fetching ability taxonomy:", error);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+      setDepartments(merged);
+    } catch (err) {
+      console.error('Error fetching department data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Add category
   const handleAddDepartment = async () => {
@@ -109,7 +93,7 @@ const fetchData = async () => {
       formData.append('user_id', sessionData.userId);
       formData.append('attribute', 'ability');
       formData.append('classification_category', newDepartment.name.trim());
-      formData.append('variableType', 'Ability');
+
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
         body: formData,
@@ -140,7 +124,7 @@ const fetchData = async () => {
       formData.append('attribute', 'ability');
       formData.append('old_classification_category', editDepartment.oldName.trim());
       formData.append('classification_category', editDepartment.name.trim());
-      formData.append('variableType', 'Ability');
+
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
         body: formData,
@@ -167,7 +151,7 @@ const fetchData = async () => {
       formData.append('attribute', 'ability');
       formData.append('classification_category', departmentName.trim());
       formData.append('classification_sub_category', subName.trim());
-      formData.append('variableType', 'Ability');
+
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
         body: formData,
@@ -196,8 +180,7 @@ const fetchData = async () => {
       formData.append('classification_category', editSubDepartment.departmentName.trim());
       formData.append('old_classification_sub_category', editSubDepartment.oldName.trim());
       formData.append('classification_sub_category', editSubDepartment.newName.trim());
-      formData.append('variableType', 'Ability');
-      
+
       const res = await fetch(`${sessionData.url}/skill_library/attributes_taxonomy`, {
         method: 'POST',
         body: formData,
@@ -327,7 +310,7 @@ const fetchData = async () => {
                     .map((sub) => (
                       <div key={sub.id} className="flex flex-col gap-2">
                         {editSubDepartment?.departmentName === department.name &&
-                          editSubDepartment?.oldName === sub.name ? (
+                        editSubDepartment?.oldName === sub.name ? (
                           <div className="p-2 bg-muted rounded border border-border">
                             <Input
                               value={editSubDepartment.newName}
