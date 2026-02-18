@@ -60,7 +60,7 @@ interface Department {
 // AI Models data
 const aiModels = [
   // 🔹 Tier 1: Best for structured instructional generation
-  { id: "deepseek/deepseek-chat-v3.1", name: "DeepSeek Chat v3.1", contextWindow: 32768, price: "FREE", type: "structured-output", notes: "Low hallucination. Great for JSON output." },
+  { id: "googleai/gemini-2.5-flash", name: "Gemini 2.5 Flash", contextWindow: 1000000, price: "FREE", type: "structured-output", notes: "Low hallucination. Great for JSON output." },
   { id: "mistralai/mistral-small-3.2-24b-instruct", name: "Mistral Small 3.2", contextWindow: 32000, price: "FREE", type: "high-accuracy", notes: "Stable format and fast response." },
   { id: "tngtech/deepseek-r1t2-chimera", name: "DeepSeek R1T2 Chimera", contextWindow: 32768, price: "FREE", type: "balanced", notes: "Capable of complex instructional tasks." },
   { id: "z-ai/glm-4.5-air", name: "GLM-4.5-Air", contextWindow: 128000, price: "FREE", type: "general", notes: "Multilingual support, structured friendly." },
@@ -139,7 +139,7 @@ const DEFAULT_CONFIG: Config = {
   skills: [],
   proficiencyTarget: 3,
   modality: { selfPaced: true, instructorLed: false },
-  aiModel: "deepseek/deepseek-chat-v3.1",
+  aiModel: "googleai/gemini-2.5-flash",
 };
 
 // Enhanced prompt builder that creates a structured JSON object
@@ -1012,103 +1012,103 @@ const AiCourseDialog = ({ open, onOpenChange, onGenerate }: AiCourseDialogProps)
   }, [cfg.jobRole, sessionData, activeTemplate]);
 
   // Fetch tasks when job role OR critical work function changes - UPDATED to store all CWF tasks
- // Add this useEffect to debug allCwfTasks state changes
-useEffect(() => {
-  console.log("🔄 allCwfTasks state changed:", allCwfTasks);
-}, [allCwfTasks]);
+  // Add this useEffect to debug allCwfTasks state changes
+  useEffect(() => {
+    console.log("🔄 allCwfTasks state changed:", allCwfTasks);
+  }, [allCwfTasks]);
 
-// Update the task fetching useEffect
-useEffect(() => {
-  const fetchTasks = async () => {
-    if (!cfg.jobRole || !cfg.criticalWorkFunction || !sessionData?.APP_URL) {
-      setAvailableTasks([]);
-      setAllCwfTasks([]);
-      console.log("❌ fetchTasks: Missing required fields");
-      return;
-    }
+  // Update the task fetching useEffect
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (!cfg.jobRole || !cfg.criticalWorkFunction || !sessionData?.APP_URL) {
+        setAvailableTasks([]);
+        setAllCwfTasks([]);
+        console.log("❌ fetchTasks: Missing required fields");
+        return;
+      }
 
-    setLoadingTasks(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        `${sessionData.APP_URL}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&filters[critical_work_function]=${encodeURIComponent(cfg.criticalWorkFunction)}&group_by=task&order_by[direction]=desc`,
-        {
-          headers: {
-            Authorization: `Bearer ${sessionData.token}`,
-            "Content-Type": "application/json",
-          },
+      setLoadingTasks(true);
+      setError(null);
+      try {
+        const response = await fetch(
+          `${sessionData.APP_URL}/table_data?table=s_user_jobrole_task&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[jobrole]=${encodeURIComponent(cfg.jobRole)}&filters[critical_work_function]=${encodeURIComponent(cfg.criticalWorkFunction)}&group_by=task&order_by[direction]=desc`,
+          {
+            headers: {
+              Authorization: `Bearer ${sessionData.token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch tasks');
         }
-      );
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch tasks');
+        const data = await response.json();
+        setAvailableTasks(data);
+
+        // ✅ Extract all task names and store in allCwfTasks
+        const taskNames = data.map((task: any) => task.task).filter((task: string) => task && task.trim() !== "");
+        console.log("✅ Fetched tasks for allCwfTasks:", taskNames);
+        setAllCwfTasks(taskNames);
+
+        // Auto-refresh preview when tasks are loaded
+        if (isTemplateSelected && activeTemplate === "t1" && taskNames.length > 0) {
+          console.log("🔄 Auto-refreshing preview with new tasks");
+          setTimeout(() => {
+            const p = buildDynamicPrompt(cfg, industry, activeTemplate, taskNames);
+            setPreview(p);
+            setManualPreview(p);
+          }, 100);
+        }
+
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError(String(err));
+        }
+        console.error('Error fetching tasks:', err);
+      } finally {
+        setLoadingTasks(false);
       }
+    };
 
-      const data = await response.json();
-      setAvailableTasks(data);
+    fetchTasks();
+  }, [cfg.jobRole, cfg.criticalWorkFunction, sessionData, activeTemplate]);
 
-      // ✅ Extract all task names and store in allCwfTasks
-      const taskNames = data.map((task: any) => task.task).filter((task: string) => task && task.trim() !== "");
-      console.log("✅ Fetched tasks for allCwfTasks:", taskNames);
-      setAllCwfTasks(taskNames);
+  // Update handleResync function
+  // function handleResync() {
+  //   if (!isTemplateSelected) return;
 
-      // Auto-refresh preview when tasks are loaded
-      if (isTemplateSelected && activeTemplate === "t1" && taskNames.length > 0) {
-        console.log("🔄 Auto-refreshing preview with new tasks");
-        setTimeout(() => {
-          const p = buildDynamicPrompt(cfg, industry, activeTemplate, taskNames);
-          setPreview(p);
-          setManualPreview(p);
-        }, 100);
-      }
+  //   console.log("🔄 handleResync - allCwfTasks:", allCwfTasks);
+  //   console.log("🔄 handleResync - activeTemplate:", activeTemplate);
 
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError(String(err));
-      }
-      console.error('Error fetching tasks:', err);
-    } finally {
-      setLoadingTasks(false);
+  //   // Small delay to ensure state is updated
+  //   setTimeout(() => {
+  //     const p = buildDynamicPrompt(cfg, industry, activeTemplate || undefined, allCwfTasks);
+  //     setPreview(p);
+  //     setManualPreview(p);
+  //     setDiverged(false);
+  //   }, 100);
+  // }
+
+  // Add this useEffect to auto-refresh preview when allCwfTasks changes
+  // Add this useEffect to auto-refresh preview when allCwfTasks changes
+  useEffect(() => {
+    if (isTemplateSelected && activeTemplate === "t1" && allCwfTasks.length > 0) {
+      console.log("🔄 Auto-refreshing preview with allCwfTasks:", allCwfTasks);
+      console.log("🔄 Auto-refreshing preview - allCwfTasks length:", allCwfTasks.length);
+
+      // Small delay to ensure state is properly updated
+      setTimeout(() => {
+        const p = buildDynamicPrompt(cfg, industry, activeTemplate, allCwfTasks);
+        console.log("🔄 Generated preview with tasks:", p.includes("Key Tasks:") ? "YES" : "NO");
+        setPreview(p);
+        setManualPreview(p);
+      }, 100);
     }
-  };
-
-  fetchTasks();
-}, [cfg.jobRole, cfg.criticalWorkFunction, sessionData, activeTemplate]);
-
-// Update handleResync function
-// function handleResync() {
-//   if (!isTemplateSelected) return;
-  
-//   console.log("🔄 handleResync - allCwfTasks:", allCwfTasks);
-//   console.log("🔄 handleResync - activeTemplate:", activeTemplate);
-  
-//   // Small delay to ensure state is updated
-//   setTimeout(() => {
-//     const p = buildDynamicPrompt(cfg, industry, activeTemplate || undefined, allCwfTasks);
-//     setPreview(p);
-//     setManualPreview(p);
-//     setDiverged(false);
-//   }, 100);
-// }
-
-// Add this useEffect to auto-refresh preview when allCwfTasks changes
-// Add this useEffect to auto-refresh preview when allCwfTasks changes
-useEffect(() => {
-  if (isTemplateSelected && activeTemplate === "t1" && allCwfTasks.length > 0) {
-    console.log("🔄 Auto-refreshing preview with allCwfTasks:", allCwfTasks);
-    console.log("🔄 Auto-refreshing preview - allCwfTasks length:", allCwfTasks.length);
-    
-    // Small delay to ensure state is properly updated
-    setTimeout(() => {
-      const p = buildDynamicPrompt(cfg, industry, activeTemplate, allCwfTasks);
-      console.log("🔄 Generated preview with tasks:", p.includes("Key Tasks:") ? "YES" : "NO");
-      setPreview(p);
-      setManualPreview(p);
-    }, 100);
-  }
-}, [allCwfTasks, isTemplateSelected, activeTemplate, cfg, industry]);
+  }, [allCwfTasks, isTemplateSelected, activeTemplate, cfg, industry]);
 
   useEffect(() => {
     const fetchSkills = async () => {
@@ -1170,7 +1170,7 @@ useEffect(() => {
       // ✅ FIX: Use all CWF tasks for template t1, selected task for other templates
       let tasksToUse: string[];
       if (activeTemplate === "t1") {
-        
+
         // For template t1, use all tasks from the selected CWF
         tasksToUse = allCwfTasks.length > 0 ? allCwfTasks : cfg.tasks;
         console.log("Using all CWF tasks for template t1:", tasksToUse);
@@ -1195,10 +1195,10 @@ useEffect(() => {
       const response = await fetch("/api/generate-outline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           cfg: cfgWithTasks,
-          industry, 
-          aiModel: cfg.aiModel 
+          industry,
+          aiModel: cfg.aiModel
         }),
       });
 
@@ -1676,8 +1676,8 @@ useEffect(() => {
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {allCwfTasks.map((task, index) => (
-                      <span 
-                        key={index} 
+                      <span
+                        key={index}
                         className="inline-block bg-white px-2 py-1 rounded text-xs text-blue-700 border border-blue-300"
                       >
                         {task}

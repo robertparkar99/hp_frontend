@@ -47,7 +47,7 @@ interface Department {
 // AI Models data
 const aiModels = [
   // 🔹 Tier 1: Best for structured instructional generation
-  { id: "deepseek/deepseek-chat-v3.1", name: "DeepSeek Chat v3.1", contextWindow: 32768, type: "structured-output", notes: "Low hallucination. Great for JSON output." },
+  { id: "googleai/gemini-2.5-flash", name: "Gemini 2.5 Flash", contextWindow: 1000000, type: "structured-output", notes: "Low hallucination. Great for JSON output." },
   { id: "mistralai/mistral-small-3.2-24b-instruct", name: "Mistral Small 3.2", contextWindow: 32000, type: "high-accuracy", notes: "Stable format and fast response." },
   { id: "tngtech/deepseek-r1t2-chimera", name: "DeepSeek R1T2 Chimera", contextWindow: 32768, type: "balanced", notes: "Capable of complex instructional tasks." },
   { id: "z-ai/glm-4.5-air", name: "GLM-4.5-Air", contextWindow: 128000, type: "general", notes: "Multilingual support, structured friendly." },
@@ -104,7 +104,7 @@ const DEFAULT_CONFIG: Config = {
   presentationStyle: "Modern",
   language: "English",
   // repetition: false,
-  aiModel: "deepseek/deepseek-chat-v3.1",
+  aiModel: "googleai/gemini-2.5-flash",
 };
 
 
@@ -713,8 +713,8 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         outlineJsonObject.critical_work_function = jsonObject.selected_skill;
       }
 
-      // Call the outline API
-      const outlineResponse = await fetch("/api/generate-outline-new", {
+      // Call the Genkit-based outline API (replaces OpenRouter)
+      const outlineResponse = await fetch("/api/generate-outline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -871,13 +871,15 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       console.error("Error generating course outline:", err);
 
       if (errorMessage.includes("API key not configured") || errorMessage.includes("401")) {
-        setError("❌ Invalid API key. Please check your OpenRouter API key configuration.");
+        setError("❌ Genkit server error. Please ensure the AI server is running.");
+      } else if (errorMessage.includes("503") || errorMessage.includes("unavailable")) {
+        setError("🔌 AI service unavailable. Please start the Genkit server (cd apps/ai && node src/index.js).");
       } else if (errorMessage.includes("429")) {
         setError("⏳ Too many requests. Please try again later.");
-      } else if (errorMessage.includes("402")) {
-        setError("💳 Out of credits. Please add credits to your OpenRouter account.");
+      } else if (errorMessage.includes("timeout") || errorMessage.includes("504")) {
+        setError("⏱️ Request timeout. The AI is taking too long. Please try again.");
       } else if (errorMessage.includes("No content generated")) {
-        setError("🤖 AI model didn't generate any content. Try again with a different model.");
+        setError("🤖 AI model didn't generate any content. Try again with different inputs.");
       } else {
         setError("❌ Failed to generate course outline. Please try again.");
       }

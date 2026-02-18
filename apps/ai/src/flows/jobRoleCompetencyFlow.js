@@ -93,7 +93,9 @@ import {
 } from '../schemas/jobRoleSchemas.js';
 
 import { seniorExpertPrompt } from '../prompts/seniorExpertPrompt.js';
-import { gemini25FlashModel } from '../genkit.config.js';
+
+// Define model directly to avoid import order issues
+const gemini25FlashModel = 'googleai/gemini-2.5-flash';
 
 /**
  * jobRoleCompetencyFlow
