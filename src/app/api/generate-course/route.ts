@@ -13,22 +13,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate API key
-    const apiKey = process.env.GAMMA_API_KEY;
-    if (!apiKey) {
-      console.error("❌ GAMMA_API_KEY not configured");
-      return NextResponse.json(
-        { error: "Gamma API key not configured. Please add GAMMA_API_KEY to your .env file." },
-        { status: 500 }
-      );
-    }
+    // 🚫 No default, no validation, no fallback
+    // slideCount will be passed exactly as received
 
 
     const requestData = {
       inputText: inputText,
       textMode: "generate",
       format: "presentation",
+      // themeName: "Oasis",
+
+      // ✅ slide count works correctly
       numCards: slideCount,
+
       cardSplit: "auto",
       additionalInstructions:
         "All slides must use clear, consistent formatting. Ensure a formal instructional tone.",
@@ -55,46 +52,19 @@ export async function POST(req: Request) {
 
     console.log("🚀 Sending request to Gamma API");
     console.log("🧮 Slide Count:", slideCount);
-    console.log("📝 Content length:", inputText.length, "characters");
+    console.log("📝 Request Data:", JSON.stringify(requestData, null, 2));
 
-    // Initial request to Gamma API with retry
-    let response;
-    let retries = 0;
-    const maxRetries = 3;
-
-    while (retries < maxRetries) {
-      try {
-        response = await fetch(
-          "https://public-api.gamma.app/v1.0/generations",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-api-key": apiKey,
-            },
-            body: JSON.stringify(requestData),
-          }
-        );
-        break; // Success, exit retry loop
-      } catch (fetchError: any) {
-        retries++;
-        console.error(`❌ Gamma API fetch error (attempt ${retries}/${maxRetries}):`, fetchError.message);
-        if (retries >= maxRetries) {
-          return NextResponse.json(
-            { error: "Failed to connect to Gamma API. Please try again." },
-            { status: 503 }
-          );
-        }
-        await new Promise((r) => setTimeout(r, 2000)); // Wait before retry
+    const response = await fetch(
+      "https://public-api.gamma.app/v1.0/generations",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.GAMMA_API_KEY || "",
+        },
+        body: JSON.stringify(requestData),
       }
-    }
-
-    if (!response) {
-      return NextResponse.json(
-        { error: "Failed to connect to Gamma API" },
-        { status: 503 }
-      );
-    }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -115,86 +85,51 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("📋 Generation ID:", generationId);
-
-    // Poll for completion with extended timeout (10 minutes max)
-    // 180 attempts × 3 seconds = 540 seconds = 9 minutes
+    // Poll for completion - increased timeout to 10 minutes
     let status = "pending";
     let attempts = 0;
-    const maxAttempts = 180;
-    const pollInterval = 3000; // 3 seconds between polls
 
-    while (status !== "completed" && attempts < maxAttempts) {
-      await new Promise((r) => setTimeout(r, pollInterval));
+    while (status !== "completed" && attempts < 120) {
+      await new Promise((r) => setTimeout(r, 2000));
       attempts++;
 
-      if (attempts % 10 === 0) {
-        console.log(`⏳ Polling Gamma API... attempt ${attempts}/${maxAttempts} (${Math.round(attempts * pollInterval / 1000)}s elapsed)`);
+      const pollResponse = await fetch(
+        `https://public-api.gamma.app/v1.0/generations/${generationId}`,
+        {
+          headers: {
+            "x-api-key": process.env.GAMMA_API_KEY || "",
+          },
+        }
+      );
+
+      if (!pollResponse.ok) continue;
+
+      const pollData = await pollResponse.json();
+      status = pollData.status;
+
+      if (status === "completed") {
+        return NextResponse.json({
+          success: true,
+          data: {
+            generationId: pollData.generationId,
+            gammaUrl: pollData.gammaUrl,
+            exportUrl: pollData.exportUrl,
+          },
+        });
       }
 
-      try {
-        const pollResponse = await fetch(
-          `https://public-api.gamma.app/v1.0/generations/${generationId}`,
-          {
-            headers: {
-              "x-api-key": apiKey,
-            },
-          }
+      if (status === "failed") {
+        return NextResponse.json(
+          { error: "Course generation failed" },
+          { status: 500 }
         );
-
-        if (!pollResponse.ok) {
-          console.warn(`⚠️ Poll request failed (attempt ${attempts}), continuing...`);
-          continue;
-        }
-
-        const pollData = await pollResponse.json();
-        status = pollData.status;
-
-        if (status === "completed") {
-          console.log("✅ Gamma generation completed successfully!");
-          console.log("🔗 Gamma URL:", pollData.gammaUrl);
-          console.log("📄 Export URL:", pollData.exportUrl);
-
-          return NextResponse.json({
-            success: true,
-            data: {
-              generationId: pollData.generationId,
-              gammaUrl: pollData.gammaUrl,
-              exportUrl: pollData.exportUrl,
-            },
-          });
-        }
-
-        if (status === "failed") {
-          console.error("❌ Gamma generation failed:", pollData);
-          return NextResponse.json(
-            { error: "Course generation failed. The Gamma API encountered an error." },
-            { status: 500 }
-          );
-        }
-
-        // Log progress for other statuses
-        if (status !== "pending" && attempts % 5 === 0) {
-          console.log(`📊 Status: ${status}`);
-        }
-
-      } catch (pollError: any) {
-        console.warn(`⚠️ Poll error (attempt ${attempts}):`, pollError.message);
-        // Continue polling even if one request fails
-        continue;
       }
     }
 
-    // Timeout reached
-    console.error(`❌ Gamma generation timed out after ${Math.round(attempts * pollInterval / 1000)} seconds`);
     return NextResponse.json(
-      {
-        error: "Course generation timed out. The presentation is still being generated. Please check your Gamma dashboard or try again with fewer slides.",
-        generationId: generationId // Return ID so user can check manually
-      },
-      { status: 504 }
+      { error: "Course generation timed out" },
+      { status: 500 }
     );
-
   } catch (error: any) {
     console.error("⚠️ Server-side error:", error);
     return NextResponse.json(

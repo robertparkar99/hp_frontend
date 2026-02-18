@@ -1,245 +1,119 @@
 import { NextResponse } from "next/server";
 
+// ✅ POST handler for generating course outlines securely on the server
 export async function POST(req: Request) {
     try {
-        // Parse input from frontend - support both formats
-        const body = await req.json();
+        // Parse input from frontend
+        const { cfg, industry, aiModel } = await req.json();
 
-        // Detect format: simple (cfg, industry) vs advanced (jsonObject)
-        const isAdvancedFormat = 'jsonObject' in body;
+        // Validate server-side API key (never exposed to client)
+        const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || " ";
 
-        let genkitInput: any;
 
-        if (isAdvancedFormat) {
-            // Advanced format from ConfigurationModal (jsonObject)
-            const { jsonObject, modality, aiModel, mappingType, mappingValue, mappingTypeName, mappingValueName, mappingReason, industry } = body;
+        // Dynamically build course prompt (mirroring your buildPrompt logic)
+        const modality = [
+            cfg?.modality?.selfPaced && "Self-paced",
+            cfg?.modality?.instructorLed && "Instructor-led",
+        ]
+            .filter(Boolean)
+            .join(", ");
 
-            // Extract skill if present
-            const selectedSkill = jsonObject?.selectedSkill || jsonObject?.selected_skill ||
-                (Array.isArray(jsonObject?.selectedSkills) ? jsonObject.selectedSkills[0] : null);
+        const keyTask = cfg?.tasks?.length > 0 ? cfg.tasks[0] : "-";
+        const criticalWorkFunction = cfg?.criticalWorkFunction || "-";
 
-            // Parse KAAB items
-            const parseKaab = (items: any[]) => {
-                if (!Array.isArray(items)) return [];
-                return items.filter(item => item != null).map(item => ({
-                    title: item.title || item.name || item.value || 'Untitled',
-                    category: item.category || item.type || '',
-                    subCategory: item.subCategory || item.subType || '',
-                }));
-            };
+        const coursePrompt = {
+            instruction:
+                "You are an expert instructional designer and L&D specialist. Create a structured 10-slide course based on the provided context.",
+            input_variables: {
+                industry: industry || "-",
+                department: cfg.department || "-",
+                job_role: cfg.jobRole || "-",
+                critical_work_function: criticalWorkFunction,
+                key_task: keyTask,
+                modality: modality || "-",
+            },
+            output_format: {
+                total_slides: 10,
+                bullet_points_per_slide: "3–5 (under 40 words each)",
+                style: "Formal, structured, competency-based",
+                tone: modality.includes("Self-paced")
+                    ? "Direct, learner-led tone"
+                    : "Facilitator-focused guidance",
+            },
+        };
 
-            genkitInput = {
-                industry: industry || jsonObject?.industry || '-',
-                department: jsonObject?.department || '-',
-                jobRole: jsonObject?.jobrole || jsonObject?.jobRole || '-',
-                modality: modality || {},
-                tasks: Array.isArray(jsonObject?.key_tasks) ? jsonObject.key_tasks :
-                    (jsonObject?.key_tasks ? [jsonObject.key_tasks] : []),
-                criticalWorkFunction: jsonObject?.critical_work_function || '-',
-                slideCount: jsonObject?.slideCount || 10,
-
-                // Skill-based fields
-                selectedSkill: selectedSkill ? {
-                    skillName: selectedSkill.skillName || selectedSkill.SkillName || selectedSkill.name || '',
-                    description: selectedSkill.description || selectedSkill.Description || '',
-                    proficiency_level: selectedSkill.proficiency_level || selectedSkill.proficiency || '',
-                    category: selectedSkill.category || '',
-                    sub_category: selectedSkill.sub_category || selectedSkill.subCategory || '',
-                } : undefined,
-
-                // KAAB competencies
-                knowledge: parseKaab(jsonObject?.knowledge),
-                ability: parseKaab(jsonObject?.ability),
-                attitude: parseKaab(jsonObject?.attitude),
-                behaviour: parseKaab(jsonObject?.behaviour),
-
-                // Mapping/Pedagogical approach
-                mappingType: mappingTypeName || mappingType || '',
-                mappingValue: mappingValueName || mappingValue || '',
-                mappingReason: mappingReason || '',
-            };
-
-            console.log("🚀 Calling Genkit buildWithAIFlow (advanced format):", {
-                industry: genkitInput.industry,
-                jobRole: genkitInput.jobRole,
-                slideCount: genkitInput.slideCount,
-                hasSkill: !!genkitInput.selectedSkill?.skillName,
-                kaabCounts: {
-                    knowledge: genkitInput.knowledge.length,
-                    ability: genkitInput.ability.length,
-                    attitude: genkitInput.attitude.length,
-                    behaviour: genkitInput.behaviour.length,
+        // Prepare request payload for OpenRouter API
+        const requestData = {
+            model: aiModel || "deepseek/deepseek-chat",
+            messages: [
+                {
+                    role: "system",
+                    content:
+                        "You are an expert instructional designer and L&D specialist. Return the course content strictly in text (no JSON formatting unless structured output requested).",
                 },
-                mappingValue: genkitInput.mappingValue,
-                timestamp: new Date().toISOString(),
-            });
-        } else {
-            // Simple format (cfg, industry, aiModel)
-            const { cfg, industry, aiModel } = body;
+                {
+                    role: "user",
+                    content: JSON.stringify(coursePrompt, null, 2),
+                },
+            ],
+            max_tokens: 4000,
+            temperature: 0.7,
+            top_p: 0.9,
+        };
 
-            // Validate required inputs
-            if (!cfg || !cfg.department || !cfg.jobRole) {
-                return NextResponse.json(
-                    { error: "Missing required fields: department and jobRole are required" },
-                    { status: 400 }
-                );
-            }
+        console.log("🚀 Sending request to OpenRouter with model:", aiModel);
 
-            genkitInput = {
-                industry: industry || '-',
-                department: cfg.department || '-',
-                jobRole: cfg.jobRole || '-',
-                modality: cfg.modality || {},
-                tasks: cfg.tasks || [],
-                criticalWorkFunction: cfg.criticalWorkFunction || '-',
-                slideCount: cfg.slideCount || 10,
-            };
+        // Call OpenRouter API
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+                "X-Title": "AI Course Generator",
+            },
+            body: JSON.stringify(requestData),
+        });
 
-            console.log("🚀 Calling Genkit buildWithAIFlow (simple format):", {
-                industry: genkitInput.industry,
-                department: genkitInput.department,
-                jobRole: genkitInput.jobRole,
-                timestamp: new Date().toISOString(),
-            });
+        // Handle errors from OpenRouter
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("❌ OpenRouter API Error:", errorText);
+            return NextResponse.json(
+                { error: `OpenRouter API call failed (${response.status})`, details: errorText },
+                { status: response.status }
+            );
         }
 
-        // Health check: Verify Genkit server is reachable
-        const healthCheckController = new AbortController();
-        const healthCheckTimeout = setTimeout(() => healthCheckController.abort(), 2000);
-
+        // Parse result
+        const text = await response.text();
+        let result: any;
         try {
-            const healthCheck = await fetch("http://localhost:3400/", {
-                signal: healthCheckController.signal,
-            });
-            clearTimeout(healthCheckTimeout);
-
-            // Genkit returns 404 for root path (Cannot GET /), which is fine - it means server is up
-            // We only care if the connection completely fails (caught by catch block)
-            if (!healthCheck.ok && healthCheck.status !== 404) {
-                console.error(`❌ Genkit server health check failed with status: ${healthCheck.status}`);
-                return NextResponse.json(
-                    {
-                        error: "AI service is currently unavailable. Please try again later.",
-                        details: `Genkit server responded with status ${healthCheck.status}`
-                    },
-                    { status: 503 }
-                );
-            }
-        } catch (healthError) {
-            clearTimeout(healthCheckTimeout);
-            console.error("❌ Genkit server is not reachable:", healthError);
-            return NextResponse.json(
-                {
-                    error: "AI service is currently unavailable. Please ensure the Genkit server is running on port 3400.",
-                    details: "Cannot connect to Genkit server"
-                },
-                { status: 503 }
-            );
+            result = JSON.parse(text);
+        } catch {
+            console.error("⚠️ Could not parse JSON, returning raw text.");
+            result = { rawText: text };
         }
 
-        // Call Genkit flow with timeout (60 seconds for complex prompts)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-        let genkitResponse;
-        try {
-            genkitResponse = await fetch("http://localhost:3400/buildWithAIFlow", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ data: genkitInput }),
-                signal: controller.signal,
-            });
-        } catch (fetchError: any) {
-            clearTimeout(timeoutId);
-
-            if (fetchError.name === 'AbortError') {
-                console.error("❌ Genkit flow timeout after 60 seconds");
-                return NextResponse.json(
-                    {
-                        error: "Request timeout. The AI is taking too long to respond. Please try again.",
-                        details: "Flow execution exceeded 60 seconds"
-                    },
-                    { status: 504 }
-                );
-            }
-
-            console.error("❌ Network error calling Genkit flow:", fetchError);
-            return NextResponse.json(
-                {
-                    error: "Network error communicating with AI service. Please try again.",
-                    details: fetchError.message
-                },
-                { status: 503 }
-            );
-        }
-
-        clearTimeout(timeoutId);
-
-        // Handle errors from Genkit flow
-        if (!genkitResponse.ok) {
-            const errorText = await genkitResponse.text();
-            console.error("❌ Genkit Flow Error:", {
-                status: genkitResponse.status,
-                error: errorText,
-                timestamp: new Date().toISOString(),
-            });
-
-            return NextResponse.json(
-                {
-                    error: "Failed to generate course outline. Please try again.",
-                    details: `Genkit flow returned status ${genkitResponse.status}`
-                },
-                { status: genkitResponse.status }
-            );
-        }
-
-        // Parse result from Genkit
-        const genkitResult = await genkitResponse.json();
-        const generatedContent = genkitResult.result?.content || genkitResult.content;
+        const generatedContent = result?.choices?.[0]?.message?.content || result?.rawText;
 
         if (!generatedContent) {
-            console.error("❌ Empty content from Genkit:", genkitResult);
             return NextResponse.json(
-                {
-                    error: "No content generated. Please try again with different inputs.",
-                    details: "Genkit flow returned empty content"
-                },
+                { error: "No content generated by the AI model.", raw: result },
                 { status: 500 }
             );
         }
 
-        // Validate content quality
-        if (generatedContent.length < 100) {
-            console.warn("⚠️ Generated content is suspiciously short:", generatedContent.length);
-        }
-
-        console.log("✅ Genkit flow completed successfully:", {
-            contentLength: generatedContent.length,
-            model: "googleai/gemini-2.5-flash",
-            slideCount: genkitInput.slideCount,
-            timestamp: new Date().toISOString(),
-        });
-
         return NextResponse.json({
             success: true,
-            model: "googleai/gemini-2.5-flash",
+            model: aiModel,
             content: generatedContent,
         });
 
     } catch (error: any) {
-        console.error("⚠️ Server-side course generation error:", {
-            error: error.message,
-            stack: error.stack,
-            timestamp: new Date().toISOString(),
-        });
-
+        console.error("⚠️ Server-side course generation error:", error);
         return NextResponse.json(
-            {
-                error: "An unexpected error occurred. Please try again.",
-                details: error.message || "Internal server error during course generation."
-            },
+            { error: error.message || "Internal server error during course generation." },
             { status: 500 }
         );
     }
