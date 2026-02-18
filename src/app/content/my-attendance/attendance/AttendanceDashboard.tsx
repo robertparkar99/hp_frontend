@@ -1,12 +1,13 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Clock, Calendar, User, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AttendanceList } from './AttendanceList';
 import { AttendanceStats } from './AttendanceStats';
+import { AttendanceDashboardTour, AttendanceDashboardTour as AttendanceTourClass } from './AttendanceDashboardTour';
 import { format } from 'date-fns';
 
 interface AttendanceRecord {
@@ -81,6 +82,7 @@ export function AttendanceDashboard() {
   const [punchInTime, setPunchInTime] = useState<Date | null>(null);
   const [apiData, setApiData] = useState<ApiResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isTourInitialized, setIsTourInitialized] = useState(false);
 
   const [sessionData, setSessionData] = useState({
     url: '',
@@ -148,6 +150,29 @@ export function AttendanceDashboard() {
   useEffect(() => {
     fetchAttendance();
   }, [sessionData]);
+
+  // ✅ Initialize tour when triggered from sidebar
+  useEffect(() => {
+    if (isTourInitialized) return;
+
+    const checkAndStartTour = async () => {
+      // Small delay to ensure DOM is ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      console.log('[AttendanceDashboard] Checking tour trigger...');
+
+      if (AttendanceTourClass.shouldStartTour()) {
+        console.log('[AttendanceDashboard] Tour trigger detected, starting tour...');
+
+        // Create and start the tour
+        const tour = new AttendanceDashboardTour();
+        tour.startTour();
+        setIsTourInitialized(true);
+      }
+    };
+
+    checkAndStartTour();
+  }, [isTourInitialized]);
 
   // ✅ Update punch state based on API data
   useEffect(() => {
@@ -267,17 +292,20 @@ export function AttendanceDashboard() {
     .join(' ');
 
   return (
-    <div className="min-h-screen  bg-background rounded-xl w-full">
+    <div className="min-h-screen bg-background rounded-xl w-full">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-xl bg-[#6fb2f2] text-primary-foreground">
+      <div
+        id="tour-attendance-header"
+        className="relative overflow-hidden rounded-xl bg-[#6fb2f2] text-primary-foreground"
+      >
         <div className="absolute inset-0 opacity-20" />
         <div className="relative container mx-auto px-6 py-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold mb-2">My Attendance</h1>
-              <p className="text-primary-foreground/90 text-base sm:text-lg">{currentDate}</p>
+              <h1 className="text-3xl font-bold mb-2">My Attendance</h1>
+              <p className="text-primary-foreground/90 text-lg">{currentDate}</p>
             </div>
-            <div className="text-left sm:text-right">
+            <div className="text-right">
               <div className="flex items-center gap-2 mb-2">
                 <User className="w-5 h-5" />
                 <span className="text-lg font-semibold">{fullName || 'Employee'}</span>
@@ -293,7 +321,7 @@ export function AttendanceDashboard() {
 
       <div className="container mx-auto px-6 py-8">
         {/* Punch Card */}
-        <Card className="attendance-card mb-8 hover-lift">
+        <Card id="tour-attendance-card" className="attendance-card mb-8 hover-lift">
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-2xl font-bold text-foreground mb-2">
               Time Tracking
@@ -319,11 +347,12 @@ export function AttendanceDashboard() {
               </div>
             )}
             <Button
+              id="tour-punch-button"
               onClick={handlePunch}
               size="lg"
               disabled={isProcessing}
               className={`
-                bg-[#F9F9F9] text-[#228822] hover:bg-gray-200 transition-colors text-base sm:text-xl px-6 sm:px-12 py-4 sm:py-6 rounded-xl font-bold transform transition-all duration-300
+                bg-[#F9F9F9] text-[#228822] hover:bg-gray-200 transition-colors text-xl px-12 py-6 rounded-xl font-bold transform transition-all duration-300
                 ${isPunchedIn ? 'btn-punch-out' : 'btn-punch-in'}
               `}
             >
@@ -335,13 +364,15 @@ export function AttendanceDashboard() {
 
         {/* Stats */}
         {apiData ? (
-          <AttendanceStats attendanceRecords={allRecords} apiData={apiData} />
+          <div id="tour-attendance-stats">
+            <AttendanceStats attendanceRecords={allRecords} apiData={apiData} />
+          </div>
         ) : (
           <p className="mb-8 text-muted-foreground">Loading stats...</p>
         )}
 
         {/* Attendance List */}
-        <Card className="attendance-card">
+        <Card id="tour-attendance-records" className="attendance-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl">
               <Calendar className="w-5 h-5" />

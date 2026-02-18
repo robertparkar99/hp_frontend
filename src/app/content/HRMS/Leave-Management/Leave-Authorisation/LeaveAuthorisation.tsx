@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { leaveAuthorisationTour, LeaveAuthorisationTour } from "./LeaveAuthorisationTourSteps";
 
 const LeaveAuthorization = () => {
   const { toast } = useToast();
@@ -45,6 +46,44 @@ const LeaveAuthorization = () => {
         userId: user_id,
       });
     }
+  }, []);
+
+  // 🔹 Handle tour trigger from sidebar navigation
+  useEffect(() => {
+    const checkTourTrigger = () => {
+      // Check if this tour was triggered from sidebar
+      const triggerValue = sessionStorage.getItem('triggerPageTour');
+
+      // Check if this is a fresh page load from sidebar navigation
+      const navigationType = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+      const isFreshNavigation = navigationType?.type === 'navigate' ||
+        navigationType?.type === 'reload' === false;
+
+      // Trigger tour only if:
+      // 1. triggerPageTour is set to 'true' or 'leave-authorisation' 
+      // 2. Tour hasn't been completed yet
+      // 3. This is not a page refresh (check using performance API)
+      const isPageRefresh = window.performance &&
+        window.performance.getEntriesByType('navigation').length > 0 &&
+        (window.performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming).type === 'reload';
+
+      if (!isPageRefresh && triggerValue === 'true' || triggerValue === 'leave-authorisation') {
+        // Clear the trigger immediately
+        sessionStorage.removeItem('triggerPageTour');
+
+        // Start the tour after a small delay to ensure DOM is ready
+        setTimeout(() => {
+          // Create new tour instance to ensure fresh start
+          const tour = new LeaveAuthorisationTour();
+          tour.startTour();
+        }, 300);
+      }
+    };
+
+    // Run check after a small delay to ensure DOM is ready
+    const timer = setTimeout(checkTourTrigger, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // 🔹 Leave Status Options
@@ -169,13 +208,13 @@ const LeaveAuthorization = () => {
   };
 
   return (
-    <div className="space-y-6 min-h-screen bg-background rounded-xl w-full overflow-x-hidden">
+    <div className="space-y-6 min-h-screen bg-background rounded-xl" id="tour-leave-auth-header">
       {/* 🔹 Filter Section */}
-      <Card className="card-simple">
+      <Card className="card-simple" id="tour-leave-auth-filter">
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
             {/* From Date */}
-            <div>
+            <div id="tour-leave-auth-from-date">
               <label className="block text-sm font-medium mb-1">From Date</label>
               <Input
                 type="date"
@@ -186,7 +225,7 @@ const LeaveAuthorization = () => {
             </div>
 
             {/* To Date */}
-            <div>
+            <div id="tour-leave-auth-to-date">
               <label className="block text-sm font-medium mb-1">To Date</label>
               <Input
                 type="date"
@@ -197,7 +236,7 @@ const LeaveAuthorization = () => {
             </div>
 
             {/* Leave Status Multi-select */}
-            <div>
+            <div id="tour-leave-auth-status">
               <label className="block text-sm font-medium mb-1">
                 Leave Status
               </label>
@@ -231,7 +270,7 @@ const LeaveAuthorization = () => {
             </div>
 
             {/* Search Button */}
-            <div className="flex ml-7 mt-7">
+            <div className="flex ml-7 mt-7" id="tour-leave-auth-search">
               <Button
                 onClick={() => {
                   if (leaveStatus.length === 0) {
@@ -243,7 +282,7 @@ const LeaveAuthorization = () => {
                 }}
                   className="px-6 py-2 rounded-lg  flex items-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
               >
-             
+
                    {loading ? "Searching..." : "Search"}
                 {/* <Search className="h-4 w-4" /> Search */}
               </Button>
@@ -255,7 +294,7 @@ const LeaveAuthorization = () => {
 
       {/* Leave Requests */}
       {!loading && hasSearched && leaveRequests.length > 0 && (
-        <Card className="card-elevated mt-6">
+        <Card className="card-elevated mt-6" id="tour-leave-auth-results">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -268,7 +307,7 @@ const LeaveAuthorization = () => {
                 <Card key={request.id} className="card-simple">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex-1">
+                      <div className="flex-1" id="tour-leave-auth-employee-info">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="font-semibold text-foreground">
                             {request.employeeName}
@@ -286,7 +325,7 @@ const LeaveAuthorization = () => {
                           </p>
 
                           {/* HOD Comment */}
-                          <div className="flex flex-col">
+                          <div className="flex flex-col" id="tour-leave-auth-hod-comment">
                             <label className="text-xs font-medium text-muted-foreground">
                               HOD's Comment
                             </label>
@@ -303,7 +342,7 @@ const LeaveAuthorization = () => {
                           </div>
 
                           {/* HR Remarks */}
-                          <div className="flex flex-col">
+                          <div className="flex flex-col" id="tour-leave-auth-hr-remarks">
                             <label className="text-xs font-medium text-muted-foreground">
                               HR Remarks
                             </label>
@@ -320,7 +359,7 @@ const LeaveAuthorization = () => {
                           </div>
 
                           {/* Status Dropdown */}
-                          <div className="flex flex-col">
+                          <div className="flex flex-col" id="tour-leave-auth-status-dropdown">
                             <label className="text-xs font-medium text-muted-foreground">
                               Status
                             </label>
@@ -360,7 +399,7 @@ const LeaveAuthorization = () => {
 
                       {/* 🔹 Approve button = Update trigger */}
                       <div className="flex items-center gap-2">
-                        <div className="mt-8">
+                        <div className="mt-8" id="tour-leave-auth-update-button">
                           <Button
                             size="sm"
                             variant="ghost"
@@ -373,7 +412,7 @@ const LeaveAuthorization = () => {
 
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" className="mt-8 h-8" size="sm">
+                            <Button variant="outline" className="mt-8 h-8" size="sm" id="tour-leave-auth-view-details">
                               View Details
                             </Button>
                           </DialogTrigger>

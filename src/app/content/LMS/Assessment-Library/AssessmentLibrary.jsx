@@ -11,6 +11,7 @@ import Icon from '../../../../components/AppIcon';
 import { Button } from '../../../../components/ui/button';
 import CreateAssessmentModal from './components/CreateAssessmentModal';
 import SkillAssessment from '@/components/skill-assessment';
+import { AssessmentLibraryTour } from './AssessmentLibraryTourSteps';
 
 // 🔄 Mapper function to normalize API → UI format
 const mapAssessment = (item) => {
@@ -27,11 +28,11 @@ const mapAssessment = (item) => {
 
   return {
     id: item.id,
-    title: item.paper_name || item.name || 'Untitled Assessment',              // ✅ used in cards
-    name: item.paper_name || item.name || 'Untitled Assessment',               // ✅ fallback for SkillAssessment
+    title: item.paper_name || item.name || 'Untitled Assessment',
+    name: item.paper_name || item.name || 'Untitled Assessment',
     description: item.paper_desc || item.description || '',
     type: item.exam_type || item.type || 'online',
-    difficulty: item.difficulty || 'medium',                // API doesn't give → default
+    difficulty: item.difficulty || 'medium',
     subject: item.subject_name || item.subject || 'General',
     questionCount: item.total_ques || item.questionCount || 0,
     duration: item.time_allowed || item.duration || 0,
@@ -41,9 +42,9 @@ const mapAssessment = (item) => {
     deadline: item.close_date || item.deadline,
     openDate: item.open_date,
     closeDate: item.close_date,
-    assignedTo: item.assignedTo || 0,                       // not provided → placeholder
-    completions: item.completions || 0,                      // not provided → placeholder
-    avgScore: item.avgScore || 0,                         // not provided → placeholder
+    assignedTo: item.assignedTo || 0,
+    completions: item.completions || 0,
+    avgScore: item.avgScore || 0,
     createdAt: item.created_at || item.createdAt,
     createdBy: item.created_by || item.createdBy,
   };
@@ -92,7 +93,6 @@ const AssessmentLibrary = () => {
         orgType: org_type,
         userId: user_id,
         user_profile_name,
-
       });
     }
   }, []);
@@ -144,36 +144,20 @@ const AssessmentLibrary = () => {
     };
 
     fetchAssessments();
-  }, [sessionData]); // Depend on sessionData
+  }, [sessionData]);
+
+  // Start tour when triggered from sidebar
+  useEffect(() => {
+    if (AssessmentLibraryTour.shouldStartTour()) {
+      // Add a small delay to ensure all elements are rendered
+      const timer = setTimeout(() => {
+        AssessmentLibraryTour.startTour();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // ✅ Filtering & sorting
-  // const filteredAssessments = useMemo(() => {
-  //   let filtered = assessments.filter((assessment) => {
-  //     const q = searchQuery.toLowerCase();
-  //     if (searchQuery && !assessment.title?.toLowerCase().includes(q)) return false;
-
-  //     if (filters.category !== 'all' && assessment.category?.toLowerCase() !== filters.category) return false;
-  //     if (filters.difficulty !== 'all' && assessment.difficulty?.toLowerCase() !== filters.difficulty) return false;
-  //     if (filters.status !== 'all' && assessment.status?.toLowerCase() !== filters.status) return false;
-  //     if (filters.showAvailableOnly && assessment.status !== 'Available') return false;
-
-  //     return true;
-  //   });
-
-  //   filtered.sort((a, b) => {
-  //     if (filters.sortBy === 'deadline') {
-  //       return new Date(a.deadline) - new Date(b.deadline);
-  //     }
-  //     if (filters.sortBy === 'difficulty') {
-  //       const order = { easy: 1, medium: 2, hard: 3 };
-  //       return order[a.difficulty?.toLowerCase() || 'medium'] -
-  //         order[b.difficulty?.toLowerCase() || 'medium'];
-  //     }
-  //     return 0;
-  //   });
-
-  //   return filtered;
-  // }, [assessments, searchQuery, filters]);
   const filteredAssessments = useMemo(() => {
     return assessments.filter((item) => {
       // Search query filter
@@ -200,6 +184,7 @@ const AssessmentLibrary = () => {
   }, [assessments, filters, searchQuery]);
 
   console.log('Filtered Assessments:', filteredAssessments);
+
   // ✅ Stats
   const stats = useMemo(() => {
     const today = new Date();
@@ -306,7 +291,7 @@ const AssessmentLibrary = () => {
     <div className="min-h-screen flex flex-col lg:flex-row bg-background rounded-xl relative">
       <div className="flex-1 flex flex-col">
         <main className="flex-1 min-h-screen pt-10 px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div id="assessment-library-title" className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold mb-2">Assessment Library</h1>
               <p className="text-muted-foreground text-sm sm:text-base">
@@ -349,6 +334,7 @@ const AssessmentLibrary = () => {
               </Button> */}
               <div className="flex items-center">
                 <Button
+                  id="tour-info-help"
                   variant="ghost"
                   size="icon"
                   className="text-muted-foreground hover:text-foreground"
@@ -359,6 +345,7 @@ const AssessmentLibrary = () => {
 
                 {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) && (
                   <Button
+                    id="tour-ai-assessment"
                     variant="ghost"
                     size="sm"
                     className="flex items-center gap-1 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 transition-colors"
@@ -370,11 +357,10 @@ const AssessmentLibrary = () => {
                 )}
               </div>
 
-
-
               {/* Create Assessment Button */}
               {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
                 <Button
+                  id="tour-create-assessment"
                   onClick={() => setShowCreateModal(true)}
                   className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
                 >
@@ -395,8 +381,9 @@ const AssessmentLibrary = () => {
 
               {/* Search & Filter */}
               <div className="flex flex-col sm:flex-row gap-1 sm:gap-1 my-4 w-full">
-                <div className="flex-1 w-full">
+                    <div id="tour-assessment-stats" className="flex-1 w-full">
                   <SearchBar
+                        id="tour-search-bar"
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
                     onToggleFilters={() => !isDesktop && setIsFilterPanelOpen(true)}
@@ -405,7 +392,7 @@ const AssessmentLibrary = () => {
                 </div>
 
                 {isDesktop && (
-                  <Popover className="relative flex-shrink-0">
+                      <Popover id="tour-filter-button" className="relative flex-shrink-0">
                     <Popover.Button className="inline-flex items-center gap-2 text-sm font-medium px-4 py-3 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                       <Icon name="Filter" size={16} />
                       Filter
@@ -432,10 +419,11 @@ const AssessmentLibrary = () => {
               </div>
 
               {filteredAssessments.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredAssessments.map((a) => (
+                    <div id="tour-assessment-cards" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {filteredAssessments.map((a, index) => (
                     <AssessmentCard
                       key={a.id}
+                      id={index < 3 ? `tour-assessment-card-${index}` : undefined}
                       assessment={a}
                       onStartAssessment={handleStartAssessment}
                       onViewDetails={handleViewDetails}
@@ -447,23 +435,7 @@ const AssessmentLibrary = () => {
                   <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <Icon name="Search" size={28} className="text-muted-foreground" />
                   </div>
-                  <h3 className="text-base sm:text-lg font-semibold mb-2">No assessments found</h3>
-                  {/* <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSearchQuery('');
-                          setFilters({
-                            category: 'all',
-                            difficulty: 'all',
-                            status: 'all',
-                            sortBy: 'deadline',
-                            showAvailableOnly: false,
-                          });
-                          }}
-                        >
-                          Clear All Filters
-                        </Button> */}
+                        <h3 className="text-base sm:text-lg font-semibold mb-2">No assessments found</h3>
                 </div>
               )}
             </>

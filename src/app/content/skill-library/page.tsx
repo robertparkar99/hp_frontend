@@ -5,7 +5,6 @@ import React, { useEffect, useState, useRef } from "react";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import AddDialog from "@/components/skillComponent/addDialouge";
-import { checkPermission } from "@/utils/permissions";
 import {
   Trash, Funnel, Hexagon, Table, Plus, Search, Settings,
   Download, Shield, BookOpen, Sparkles, Brain, Bot, Wand2,
@@ -25,8 +24,10 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-// import { Atom } from "react-loading-indicators";
+import { Atom } from "react-loading-indicators";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "../../../lib/tourSteps";
 
 type Skill = {
   id: number;
@@ -70,7 +71,11 @@ type Department = {
   department: string;
 };
 
-export default function Page() {
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+export default function Page({ showDetailTour = false }: PageProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [userSkills, setUserSkills] = useState<Skill[]>([]);
   const [jobRoleSkills, setJobRoleSkills] = useState<JobRoleSkill[]>([]);
@@ -98,7 +103,6 @@ export default function Page() {
     subInstituteId: "",
     orgType: "",
     userId: "",
-    userProfile: "",
   });
 
   const [dialogOpen, setDialogOpen] = useState({
@@ -151,6 +155,9 @@ export default function Page() {
   // Ref for content section
   const contentRef = useRef<HTMLElement>(null);
 
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
+
   // Toggle function for the actions menu
   const toggleActionsMenu = () => {
     setShowActionsMenu(!showActionsMenu);
@@ -175,14 +182,13 @@ export default function Page() {
     const userData = localStorage.getItem("userData");
     if (userData) {
       try {
-        const { APP_URL, token, sub_institute_id, org_type, user_id, user_profile_id } = JSON.parse(userData);
+        const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
         setSessionData({
           url: APP_URL || "",
           token: token || "",
           subInstituteId: sub_institute_id || "",
           orgType: org_type || "",
           userId: user_id || "",
-          userProfile: user_profile_id || "",
         });
       } catch (error) {
         console.error("Error parsing user data:", error);
@@ -419,43 +425,41 @@ export default function Page() {
     fetchData();
   }, [sessionData, refreshKey]);
 
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
+
   // Delete handler
   const handleDelete = async (skillId: number) => {
     if (!skillId) return;
-
-    if (await checkPermission("Library & Taxonomy", "can_delete")) {
-      if (window.confirm("Are you sure you want to delete this skill?")) {
-        try {
-          const res = await fetch(
-            `${sessionData.url}/skill_library/${skillId}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=user`,
-            {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${sessionData.token}` },
-            }
-          );
-          const data = await res.json();
-          alert(data.message);
-          setRefreshKey((prev) => prev + 1);
-          setSelectedSkillId(null);
-        } catch (error) {
-          console.error("Error deleting skill:", error);
-          alert("Error deleting skill");
-        }
+    if (window.confirm("Are you sure you want to delete this skill?")) {
+      try {
+        const res = await fetch(
+          `${sessionData.url}/skill_library/${skillId}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&user_id=${sessionData.userId}&formType=user`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${sessionData.token}` },
+          }
+        );
+        const data = await res.json();
+        alert(data.message);
+        setRefreshKey((prev) => prev + 1);
+        setSelectedSkillId(null);
+      } catch (error) {
+        console.error("Error deleting skill:", error);
+        alert("Error deleting skill");
       }
-    } else {
-      alert("you don't have rights to delete skill");
     }
   };
 
   // Edit handler
-  const handleEdit = async (skill: Skill) => {
-    if (await checkPermission("Library & Taxonomy", "can_edit")) {
-      setActiveSkill(skill);
-      setSelectedSkillId(skill.id);
-      setDialogOpen({ ...dialogOpen, edit: true });
-    } else {
-      alert("you don't have rights to edit skill");
-    }
+  const handleEdit = (skill: Skill) => {
+    setActiveSkill(skill);
+    setSelectedSkillId(skill.id);
+    setDialogOpen({ ...dialogOpen, edit: true });
   };
 
   // Multi-select handlers
@@ -567,28 +571,20 @@ export default function Page() {
         fontSize: "14px",
         backgroundColor: "#D1E7FF",
         color: "black",
+        whiteSpace: "nowrap",
         textAlign: "left",
-        padding: "12px 8px",
       },
     },
     cells: {
       style: {
         fontSize: "13px",
         textAlign: "left",
-        padding: "12px 8px",
-        minWidth: "120px",
       },
     },
     table: {
       style: {
         borderRadius: "20px",
         overflow: "hidden",
-        minWidth: "100%",
-      },
-    },
-    rows: {
-      style: {
-        minHeight: "48px",
       },
     },
   };
@@ -768,14 +764,15 @@ export default function Page() {
   return (
     <>
       {/* Top Bar with Search, Filters, and Action Icons */}
-      <div className={`flex flex-col gap-4 mb-6 transition-all duration-300 ${headerShrunk ? 'p-2' : 'p-4'} w-full`}>
+      <div className={`flex flex-col gap-4 mb-6 transition-all duration-300 ${headerShrunk ? 'p-2' : 'p-4'}`}>
         {/* First Row: Search and Main Actions */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
+        <div className="flex justify-between items-center">
           {/* Left: Search */}
-          <div className="flex-1 max-w-full sm:max-w-md w-full">
+          <div className="flex-1 max-w-md">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
+                id="search-skills-input"
                 type="text"
                 placeholder="Search skills..."
                 value={searchTerm}
@@ -786,13 +783,13 @@ export default function Page() {
           </div>
 
           {/* Right: Main Action Icons */}
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex gap-2 items-center">
 
 
             {/* Filter Button */}
             <Popover>
               <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-gray-100">
+                <button className="p-2 rounded-lg hover:bg-gray-100" title="Filter">
                   <Funnel className="w-5 h-5" />
                 </button>
               </PopoverTrigger>
@@ -1003,103 +1000,101 @@ export default function Page() {
                 <Table className="h-5 w-5" />
               </button>
             </div>
-            {/* Inline Action Icons when menu is open */}
-            {showActionsMenu && (
-              <>
-                {/* Add Skill */}
-                <button
-                  onClick={async () => {
-                    if (await checkPermission("Library & Taxonomy", "can_add")) {
-                      setDialogOpen({ ...dialogOpen, add: true });
-                    } else {
-                      alert("you don't have rights to add new skill");
-                    }
-                    setShowActionsMenu(false);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                  title="Add New Skill"
-                >
-                  <Plus className="w-5 h-5 text-gray-600" />
-                </button>
+            {/* Combined Actions Menu */}
+            <div className="relative">
+              <button
+                onClick={toggleActionsMenu}
+                className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                title="More Actions"
+              >
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
 
-                {/* Auto Match */}
-                <button
-                  onClick={handleAutoMatch}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                  title="Auto-Match"
-                >
-                  <Wand2 className="w-5 h-5 text-gray-600" />
-                </button>
+              {showActionsMenu && (
+                <div className="absolute right-0 top-12 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 actions-menu">
+                  {/* AI Tools Section */}
+                  <div className="p-3 border-b border-gray-100">
+                    {/* Add Options Section */}
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, add: true });
+                        setShowActionsMenu(false);
+                      }}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Add New Skill"
+                    >
+                      <Plus className="w-5 h-5 text-gray-600" />
 
-                {/* Framework */}
-                <button
-                  onClick={() => {
-                    /* Add from framework logic */
-                    setShowActionsMenu(false);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                  title="Add from Framework"
-                >
-                  <BookOpen className="w-5 h-5 text-gray-600" />
-                </button>
+                    </button>
 
-                {/* Import */}
-                <button
-                  onClick={() => {
-                    setDialogOpen({ ...dialogOpen, import: true });
-                    setShowActionsMenu(false);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                  title="Bulk Skill Import"
-                >
-                  <Upload className="w-5 h-5 text-gray-600" />
-                </button>
+                    <button
+                      onClick={handleAutoMatch}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Auto-Match"
+                    >
+                      <Wand2 className="w-5 h-5 text-gray-600" />
 
-                {/* Export */}
-                <button
-                  onClick={() => {
-                    setDialogOpen({ ...dialogOpen, bulkImport: true });
-                    setShowActionsMenu(false);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                  title="Bulk Skill Export"
-                >
-                  <Download className="w-5 h-5 text-gray-600" />
-                </button>
+                    </button>
 
-                {/* Settings */}
-                <button
-                  onClick={() => {
-                    setDialogOpen({ ...dialogOpen, settings: true });
-                    setShowActionsMenu(false);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                  title="Settings"
-                >
-                  <Settings className="w-5 h-5 text-gray-600" />
-                </button>
-              </>
-            )}
 
-            {/* More Actions Button */}
-            <button
-              onClick={toggleActionsMenu}
-              className="p-2 hover:bg-gray-100 rounded-lg actions-menu-trigger"
-              title="More Actions"
-            >
-              <MoreVertical className="w-5 h-5 text-gray-600" />
-            </button>
+                    <button
+                      onClick={() => {
+                        /* Add from framework logic */
+                        setShowActionsMenu(false);
+                      }}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="add from Framework"
+                    >
+                      <BookOpen className="w-5 h-5 text-gray-600" />
+
+                    </button>
+
+
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, import: true });
+                        setShowActionsMenu(false);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded transition-colors"
+                      title="Bulk skill Import"
+                    >
+                      <Upload className="h-5 w-5 text-gray-600" />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, bulkImport: true });
+                        setShowActionsMenu(false);
+                      }}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Bulk skill Export"
+                    >
+                      <Download className="w-5 h-5 text-gray-600" />
+
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, settings: true });
+                        setShowActionsMenu(false);
+                      }}
+                      className="p-2 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Settings"
+                    >
+                      <Settings className="w-5 h-5 text-gray-600" />
+
+                    </button>
+
+                  </div>
+                </div>
+
+              )}
+            </div>
           </div>
         </div>
 
         {/* Second Row: Batch Actions when skills are selected */}
         {selectedSkills.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-3 bg-blue-50 rounded-lg">
+          <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
             <CheckSquare className="w-4 h-4 text-blue-600" />
             <span className="text-sm font-medium">
               {selectedSkills.length} skill{selectedSkills.length > 1 ? 's' : ''} selected
             </span>
-            <div className="flex flex-wrap gap-2 ml-0 sm:ml-4">
+            <div className="flex gap-2 ml-4">
               <button
                 onClick={handleBulkDelete}
                 className="flex items-center gap-1 px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
@@ -1117,11 +1112,11 @@ export default function Page() {
       </div>
 
       {/* Content Section */}
-      <div className="flex gap-6 flex-col flex-1">
-        <section ref={contentRef} className="w-full overflow-y-auto scrollbar-hide">
+      <div className="flex gap-6 flex-col">
+        <section ref={contentRef} className="w-full h-screen overflow-y-auto scrollbar-hide">
           {loading || (selectedJobRole && loadingJobRoleSkills) ? (
             <div className="flex justify-center items-center h-screen">
-              {/* <Atom color="#525ceaff" size="medium" text="" textColor="" /> */}
+              <Atom color="#525ceaff" size="medium" text="" textColor="" />
             </div>
           ) : columnFilteredSkills.length === 0 ? (
             <div className="flex justify-center items-center h-full">
@@ -1205,7 +1200,7 @@ export default function Page() {
             </div>
           ) : (
             // 📋 DataTable View with column filters
-            <div className="w-full overflow-x-auto">
+            <div className="w-full">
               <DataTable
                 columns={columns}
                 data={columnFilteredSkills}
@@ -1215,14 +1210,13 @@ export default function Page() {
                 striped
                 responsive
                 persistTableHead
-                dense
               />
             </div>
           )}
         </section>
 
         {/* Floating Action Button for Additional Tools */}
-        {/* <div className="fixed bottom-6 right-6 flex flex-col gap-2">
+        <div className="fixed bottom-6 right-6 flex flex-col gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <button className="w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 flex items-center justify-center">
@@ -1243,13 +1237,13 @@ export default function Page() {
                   Refresh Data
                 </button>
                 <button className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 rounded">
-                  // <Heatmap className="w-4 h-4" />
+                  {/* <Heatmap className="w-4 h-4" /> */}
                   Gap Heatmap
                 </button>
               </div>
             </PopoverContent>
           </Popover>
-        </div> */}
+        </div>
 
         {/* Dialogs */}
         {dialogOpen.view && activeSkill && (
@@ -1284,6 +1278,19 @@ export default function Page() {
             onSuccess={() => {
               setDialogOpen({ ...dialogOpen, add: false });
               setRefreshKey((prev) => prev + 1);
+            }}
+          />
+        )}
+
+        {/* Detail Tour */}
+        {showTour && (
+          <ShepherdTour
+            steps={generateDetailTourSteps('Skill')}
+            onComplete={() => {
+              setShowTour(false);
+              if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+                showDetailTour.onComplete();
+              }
             }}
           />
         )}

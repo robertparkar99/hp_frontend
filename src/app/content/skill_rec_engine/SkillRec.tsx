@@ -157,12 +157,12 @@ export default function Home() {
   };
 
   return (
-    <div className='rounded-xl max-md:rounded-none' style={{
+    <div className='rounded-xl' style={{
       minHeight: '100vh',
       background: 'background',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }} className='max-md:p-4'>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
         <header style={{ marginBottom: '3rem' }}>
           <h1 style={{
             fontSize: '2.5rem',

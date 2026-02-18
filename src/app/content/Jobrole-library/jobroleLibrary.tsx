@@ -1,9 +1,8 @@
 //
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { checkPermission } from "@/utils/permissions";
 import {
   Select,
   SelectContent,
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/popover";
 import AddDialog from "@/components/jobroleComponent/addDialougeOld";
 import EditDialog from "@/components/jobroleComponent/editDialouge";
+import { Atom } from "react-loading-indicators";
 import {
   Funnel,
   Edit,
@@ -40,16 +40,15 @@ import {
   AlertCircle,
   Bot,
   Filter,
-  MoreVertical,
-  BookOpen,
-  ArrowUp,
-  ArrowDown
+  MoreVertical
 } from "lucide-react";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import JobDescriptionModal from "./JobDescriptionModal";
 import ConfigurationModal from "./ConfigurationModal";
 import GenerateAssessmentModal from "./GenerateAssessmentModal";
-import Loader from "@/components/utils/loading";
+
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "../../../lib/tourSteps";
 
 type JobRole = {
   id: number;
@@ -64,7 +63,12 @@ type JobRole = {
   related_jobrole: string;
 };
 
-export default function HomePage() {
+
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+export default function HomePage({ showDetailTour }: PageProps) {
   const [roles, setRoles] = useState<JobRole[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +76,9 @@ export default function HomePage() {
   const [selectedDept, setSelectedDept] = useState<string>("All Departments");
   const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
   const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
 
   // State for modals
   const [dialogOpen, setDialogOpen] = useState({
@@ -92,8 +99,6 @@ export default function HomePage() {
 
   // ✅ New state for dropdown menu
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   const [sessionData, setSessionData] = useState({
     url: "",
@@ -101,12 +106,6 @@ export default function HomePage() {
     subInstituteId: "",
     orgType: "",
     userId: "",
-  });
-
-  const [permissions, setPermissions] = useState({
-    canAdd: false,
-    canEdit: false,
-    canDelete: false,
   });
 
   // ✅ Load session data
@@ -125,29 +124,15 @@ export default function HomePage() {
     }
   }, []);
 
-  // ✅ Load permissions
-  useEffect(() => {
-    if (sessionData.userId) {
-      const fetchPermissions = async () => {
-        const canAdd = await checkPermission("Library & Taxonomy", "can_add");
-        const canEdit = await checkPermission("Library & Taxonomy", "can_edit");
-        const canDelete = await checkPermission("Library & Taxonomy", "can_delete");
-        setPermissions({ canAdd, canEdit, canDelete });
-      };
-      fetchPermissions();
-    }
-  }, [sessionData.userId]);
-
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isActionsMenuOpen) {
-        const target = event.target as Node;
-        if (buttonRef.current && buttonRef.current.contains(target)) return;
-        if (menuRef.current && menuRef.current.contains(target)) return;
         setIsActionsMenuOpen(false);
       }
     };
+
+
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
@@ -192,7 +177,7 @@ export default function HomePage() {
     const fetchDepartments = async () => {
       try {
         const res = await fetch(
-          `https://hp.triz.co.in/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
+          `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
         );
         const json = await res.json();
 
@@ -218,6 +203,13 @@ export default function HomePage() {
     fetchData();
   }, [sessionData]);
 
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
   // ✅ Delete role
   const handleDeleteClick = async (id: number) => {
     if (!id) return;
@@ -407,13 +399,7 @@ export default function HomePage() {
           </button>
           {/* Edit Button */}
           <button
-            onClick={() => {
-              if (!permissions.canEdit) {
-                alert("You don't have right to edit this.");
-                return;
-              }
-              handleEdit(row.id);
-            }}
+            onClick={() => handleEdit(row.id)}
             className="bg-blue-500 hover:bg-blue-700 text-white text-xs p-1.5 rounded transition-colors"
             title="Edit Job Role"
           >
@@ -431,13 +417,7 @@ export default function HomePage() {
 
           {/* Delete Button */}
           <button
-            onClick={() => {
-              if (!permissions.canDelete) {
-                alert("You don't have right to delete this.");
-                return;
-              }
-              handleDeleteClick(row.id);
-            }}
+            onClick={() => handleDeleteClick(row.id)}
             className="bg-red-500 hover:bg-red-700 text-white text-xs p-1.5 rounded transition-colors"
             title="Delete Job Role"
           >
@@ -497,7 +477,7 @@ export default function HomePage() {
         <div className="flex items-center flex-wrap gap-1">
           <Popover>
             <PopoverTrigger asChild>
-              <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
+              <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors" title="Filter">
                 <Funnel className="w-5 h-5" />
               </button>
             </PopoverTrigger>
@@ -557,98 +537,81 @@ export default function HomePage() {
               <Table className="h-4 w-4" />
             </button>
           </div>
-
-          {/* Inline Actions Menu */}
-          <AnimatePresence>
-            {isActionsMenuOpen && (
-              <motion.div
-                ref={menuRef}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
-                className="flex gap-1"
-              >
-                {/* Add New Jobrole */}
-                <button
-                  className="hover:bg-gray-100 px-2 py-2 flex items-center justify-center transition-colors rounded-md "
-                  onClick={() => {
-                    if (!permissions.canAdd) {
-                      alert("You don't have right to add this.");
-                      return;
-                    }
-                    setDialogOpen({ ...dialogOpen, add: true });
-                    setIsActionsMenuOpen(false);
-                  }}
-                  title="Add New Job Role"
-                >
-                  <Plus className="h-5 w-5 text-gray-600" />
-                </button>
-          
-                <button
-                  onClick={() => {
-                    alert("Generate AI Job Role");
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded transition-colors"
-                  title="Generate AI Job Role"
-                >
-                  <Sparkles className="h-5 w-5 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => {
-                    alert("JD Preview");
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded transition-colors"
-                  title="JD Preview"
-                >
-                  <BookOpen className="h-5 w-5 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => {
-                    alert("Sort Ascending");
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded transition-colors"
-                  title="Sort Ascending"
-                >
-                  <ArrowUp className="h-5 w-5 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => {
-                    alert("Sort Descending");
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded transition-colors"
-                  title="Sort Descending"
-                >
-                  <ArrowDown className="h-5 w-5 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => {
-                    setDialogOpen({ ...dialogOpen, settings: true });
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded transition-colors"
-                  title="Settings"
-                >
-                  <Settings className="h-5 w-5 text-gray-600" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* More Actions Button */}
+          {/* Global Actions - Horizontal dropdown */}
           <div className="relative">
             <button
-              ref={buttonRef}
               onClick={toggleActionsMenu}
               className="p-2 hover:bg-gray-100 rounded transition-colors"
               title="More Actions"
             >
               <MoreVertical className="h-5 w-5 text-gray-600" />
             </button>
+
+            {/* Horizontal Dropdown Menu */}
+            <AnimatePresence>
+              {isActionsMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex gap-1">
+                    {/* Add New Jobrole */}
+                    <button
+                      className="hover:bg-gray-100 px-2 py-2 flex items-center justify-center transition-colors rounded-md "
+                      onClick={() => setDialogOpen({ ...dialogOpen, add: true })}
+                      title="Add New Job Role"
+                    >
+                      <Plus className="h-5 w-5 text-gray-600" />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, import: true });
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded transition-colors"
+                      title="Import Job Roles "
+                    >
+                      <Upload className="h-5 w-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, export: true });
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded transition-colors"
+                      title="Export Job Roles"
+                    >
+                      <Download className="h-5 w-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDialogOpen({ ...dialogOpen, settings: true });
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded transition-colors"
+                      title="Settings"
+                    >
+                      <Settings className="h-5 w-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        /* Add custom fields functionality */
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded transition-colors"
+                      title="Configure Custom Fields"
+                    >
+                      <SlidersHorizontal className="h-5 w-5 text-gray-600" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -714,18 +677,19 @@ export default function HomePage() {
       {/* Loader / No Data */}
       {loading ? (
         <div className="flex justify-center items-center h-screen">
-          <Loader/>
+          <Atom color="#525ceaff" size="medium" text="" textColor="" />
         </div>
       ) : searchedRoles.length === 0 ? (
         <div className="text-center text-gray-600">No job roles found.</div>
       ) : viewMode === "myview" ? (
         // ✅ My View (cards)
         <div
-          className="
+              className="jobrolecard-wrapper
             grid gap-2.5 min-h-40 w-full
             sm:grid-cols-6 grid-cols-2 grid-flow-dense
             auto-rows-[110px]
           "
+
         >
           {searchedRoles.map((role) => {
             const isSelected = selected === role.id;
@@ -784,13 +748,7 @@ export default function HomePage() {
                       </button>
                       {/* Edit Button */}
                       <button
-                        onClick={() => {
-                          if (!permissions.canEdit) {
-                            alert("You don't have right to edit this.");
-                            return;
-                          }
-                          handleEdit(role.id);
-                        }}
+                        onClick={() => handleEdit(role.id)}
                         title="Edit Job Role"
                       >
                         <Edit className="text-white hover:text-gray-200" size={14} />
@@ -806,13 +764,7 @@ export default function HomePage() {
 
                       {/* Delete Button */}
                       <button
-                        onClick={() => {
-                          if (!permissions.canDelete) {
-                            alert("You don't have right to delete this.");
-                            return;
-                          }
-                          handleDeleteClick(role.id);
-                        }}
+                        onClick={() => handleDeleteClick(role.id)}
                         title="Delete Job Role"
                       >
                         <Trash className="text-white hover:text-gray-200" size={14} />
@@ -866,6 +818,20 @@ export default function HomePage() {
           />
         </div>
       )}
+
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps("Jobrole")}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
+        />
+      )}
+
     </div>
   );
 }

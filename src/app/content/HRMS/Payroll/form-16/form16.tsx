@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { form16Tour, Form16Tour } from './form16TourSteps';
 
 interface Employee {
   id: number;
@@ -238,13 +239,20 @@ const EmployeeDashboard: React.FC = () => {
     }
   };
 
-  // Initialize all data on component mount
+  // Check if tour should start (triggered from sidebar "New" button)
   useEffect(() => {
-    if (sessionData.token && sessionData.subInstituteId) {
-      fetchPayrollData();
-      fetchPayrollItems();
+    // Only start tour if triggered from sidebar tour flow
+    const triggerValue = sessionStorage.getItem('triggerPageTour');
+    if (triggerValue === 'form-16') {
+      // Start tour after a short delay to ensure elements are rendered
+      setTimeout(() => {
+        form16Tour.startTour();
+      }, 500);
     }
-  }, [sessionData]);
+
+    // Clear the trigger after checking
+    // Don't clear immediately - let the tour handle completion
+  }, []);
 
   // Filter employees when department changes
   useEffect(() => {
@@ -619,7 +627,7 @@ const EmployeeDashboard: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         
         {/* Header Section */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-6" id="form16-header">
           <h1 className="text-xl font-bold text-gray-800">Employee Allowance & Deduction</h1>
         </div>
 
@@ -629,7 +637,7 @@ const EmployeeDashboard: React.FC = () => {
           {/* Filters Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Department Selector */}
-            <div className="space-y-2">
+            <div className="space-y-2" id="tour-department-select">
               <label className="block text-sm font-medium text-gray-700 text-left">
                 Select Department
               </label>
@@ -657,7 +665,7 @@ const EmployeeDashboard: React.FC = () => {
             </div>
 
             {/* Employee Selector */}
-            <div className="space-y-2">
+            <div className="space-y-2" id="tour-employee-select">
               <label className="block text-sm font-medium text-gray-700 text-left">
                 Select Employee
               </label>
@@ -690,7 +698,7 @@ const EmployeeDashboard: React.FC = () => {
             </div>
 
             {/* Year Selector */}
-            <div className="space-y-2">
+            <div className="space-y-2" id="tour-year-select">
               <label className="block text-sm font-medium text-gray-700 text-left">
                 Select Year
               </label>
@@ -721,7 +729,7 @@ const EmployeeDashboard: React.FC = () => {
           {/* Allowance and Deduction Sections */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Allowance Section */}
-            <div className="border border-gray-300 rounded p-4">
+            <div className="border border-gray-300 rounded p-4" id="tour-allowance-section">
               <h3 className="font-semibold text-gray-800 mb-3 border-b pb-2">Allowance</h3>
               <div className="space-y-2">
                 {allowances.length > 0 ? (
@@ -738,7 +746,7 @@ const EmployeeDashboard: React.FC = () => {
             </div>
 
             {/* Deduction Section */}
-            <div className="border border-gray-300 rounded p-4">
+            <div className="border border-gray-300 rounded p-4" id="tour-deduction-section">
               <h3 className="font-semibold text-gray-800 mb-3 border-b pb-2">Deduction</h3>
               <div className="space-y-2">
                 {deductions.length > 0 ? (
@@ -756,7 +764,7 @@ const EmployeeDashboard: React.FC = () => {
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-center">
+          <div className="flex justify-center" id="tour-submit-button">
             <button 
               onClick={handleSubmit}
               disabled={!selectedDepartment || !selectedEmployee || !selectedYear || loading}

@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -16,14 +15,13 @@ export async function POST(req: Request) {
     // 🚫 No default, no validation, no fallback
     // slideCount will be passed exactly as received
 
-
     const requestData = {
       inputText: inputText,
       textMode: "generate",
       format: "presentation",
-      // themeName: "Oasis",
+      themeName: "Oasis",
 
-      // ✅ slide count works correctly
+      // 🔥 FIX: dynamic slide count from frontend
       numCards: slideCount,
 
       cardSplit: "auto",
@@ -52,10 +50,9 @@ export async function POST(req: Request) {
 
     console.log("🚀 Sending request to Gamma API");
     console.log("🧮 Slide Count:", slideCount);
-    console.log("📝 Request Data:", JSON.stringify(requestData, null, 2));
 
     const response = await fetch(
-      "https://public-api.gamma.app/v1.0/generations",
+      "https://public-api.gamma.app/v0.2/generations",
       {
         method: "POST",
         headers: {
@@ -85,7 +82,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Poll for completion - increased timeout to 10 minutes
+    // Poll for completion
     let status = "pending";
     let attempts = 0;
 
@@ -94,7 +91,7 @@ export async function POST(req: Request) {
       attempts++;
 
       const pollResponse = await fetch(
-        `https://public-api.gamma.app/v1.0/generations/${generationId}`,
+        `https://public-api.gamma.app/v0.2/generations/${generationId}`,
         {
           headers: {
             "x-api-key": process.env.GAMMA_API_KEY || "",

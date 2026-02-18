@@ -57,13 +57,14 @@ const JobRoleSkills: React.FC<UserJobroleSkillsProps> = ({ userJobroleSkills, sk
           activeSkillName={activeSkill} // Add this line
         />
       ) : skillArray.length > 0 ? (
-        <div className="honeycomb-container pb-8">
+          <div className="honeycomb-container pb-8" id="skills-honeycomb">
           {skillArray.map((skill, index) => (
-            <div className="hexagon-wrapper" key={index}>
+            <div className="hexagon-wrapper" key={index} id={`skill-hex-${index}`}>
               <div className="hexagon-inner">
                 <div className="hexagon-content">
                   <span
                     className="right mdi mdi-open-in-new hexagon-icon"
+                    id={`skill-icon-${index}`}
                     onClick={() => setActiveSkill(skill.skill)}
                   ></span>
                   <p className="hexagon-title">

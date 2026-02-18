@@ -775,7 +775,7 @@ const SystemConfiguration = () => {
 
         {/* Department */}
 
-        <div>
+        <div id="disciplinary-department">
           <label className="block text-sm font-medium text-gray-700 mb-1">Department{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <Select
@@ -802,7 +802,7 @@ const SystemConfiguration = () => {
         </div>
 
         {/* Employee */}
-        <div>
+        <div id="disciplinary-employee">
           <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <Select
@@ -827,7 +827,7 @@ const SystemConfiguration = () => {
         </div>
 
         {/* Incident Date-Time */}
-        <div>
+        <div id="disciplinary-datetime">
           <label className="block text-sm font-medium text-gray-700 mb-1">Incident Date-Time{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <input
@@ -840,7 +840,7 @@ const SystemConfiguration = () => {
         </div>
 
         {/* Location */}
-        <div>
+        <div id="disciplinary-location">
           <label className="block text-sm font-medium text-gray-700 mb-1">Location{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <input
@@ -853,7 +853,7 @@ const SystemConfiguration = () => {
         </div>
 
         {/* Misconduct Type */}
-        <div>
+        <div id="disciplinary-misconduct">
           <label className="block text-sm font-medium text-gray-700 mb-1">Type of Misconduct{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <Select
@@ -875,7 +875,7 @@ const SystemConfiguration = () => {
         </div>
 
         {/* Description */}
-        <div className="md:col-span-3">
+        <div className="md:col-span-3" id="disciplinary-description">
           <label className="block text-sm font-medium text-gray-700 mb-1">Description of Incident{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <textarea
@@ -889,7 +889,7 @@ const SystemConfiguration = () => {
         {/* Witnesses & Action Taken */}
         <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Witnesses */}
-          <div>
+          <div id="disciplinary-witness">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Witness
             </label>
@@ -915,7 +915,7 @@ const SystemConfiguration = () => {
 
 
           {/* Action Taken */}
-          <div>
+          <div id="disciplinary-action">
             <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken{" "}
               <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
             <Select
@@ -938,7 +938,7 @@ const SystemConfiguration = () => {
         </div>
 
         {/* Remarks */}
-        <div className="md:col-span-3">
+        <div className="md:col-span-3" id="disciplinary-remarks">
           <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
           <textarea
             value={formData.remarks}
@@ -948,7 +948,7 @@ const SystemConfiguration = () => {
         </div>
 
         {/* Submit */}
-        <div className="col-span-1 md:col-span-3 flex justify-center">
+        <div className="col-span-1 md:col-span-3 flex justify-center" id="disciplinary-submit-btn">
           <button type="submit" className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
             Submit
           </button>
@@ -956,16 +956,16 @@ const SystemConfiguration = () => {
       </form>
 
       {/* Data Table */}
-      <div className="mt-2 w-full overflow-hidden">
+      <div className="mt-2 w-full overflow-hidden" id="disciplinary-data-table">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 py-4 gap-4 w-full">
           <div className="flex items-center gap-4 w-full sm:w-auto">
             {/* Pagination controls if needed */}
           </div>
-          <div className="flex items-center gap-2 flex-nowrap flex-shrink-0">
+          <div className="flex items-center gap-2 flex-nowrap flex-shrink-0" id="disciplinary-export-buttons">
             <PrintButton
               data={formattedData}
               title="Incident Reports"
-              excludedFields={[]}
+              excludedFields={["id"]}
               buttonText={
                 <>
                   <span className="mdi mdi-printer-outline"></span>

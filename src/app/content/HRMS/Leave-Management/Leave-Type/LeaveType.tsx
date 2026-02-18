@@ -13,6 +13,7 @@ import { Plus, Edit, Trash2, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DataTable, { TableColumn, TableStyles } from 'react-data-table-component';
 import Icon from '@/components/AppIcon';
+import { startLeaveTypeTour } from './LeaveTypeTourSteps';
 
 
 interface LeaveType {
@@ -42,13 +43,13 @@ export default function LeaveType() {
   const [filterText, setFilterText] = useState('');
   const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
   // State for column-wise filters
-const [columnFilters, setColumnFilters] = useState({
-  srno: "",
-  leaveTypeId:"",
-  maxDays: "",
-  name: "",
-  status: "",
-});
+  const [columnFilters, setColumnFilters] = useState({
+    srno: "",
+    leaveTypeId: "",
+    maxDays: "",
+    name: "",
+    status: "",
+  });
 
 
   const [sessionData, setSessionData] = useState<SessionData>({
@@ -58,6 +59,21 @@ const [columnFilters, setColumnFilters] = useState({
     orgType: "",
     userId: "",
   });
+
+  // Check for tour trigger and start tour
+  useEffect(() => {
+    const triggerValue = sessionStorage.getItem('triggerPageTour');
+
+    // Only start tour if triggered from sidebar (triggerPageTour === 'leave-type' or 'true')
+    if (triggerValue === 'leave-type' || triggerValue === 'true') {
+      console.log('Leave Type tour triggered from sidebar');
+
+      // Start the tour after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        startLeaveTypeTour();
+      }, 1000);
+    }
+  }, []);
 
   // Load session data from localStorage
   useEffect(() => {
@@ -263,58 +279,36 @@ const [columnFilters, setColumnFilters] = useState({
   setResetPaginationToggle(!resetPaginationToggle);
 };
 
-// Clear all filters
-const clearFilter = () => {
-  setColumnFilters({
-    srno: "",
-    leaveTypeId:"",
-    maxDays: "",
-    name: "",
-    status: "",
-  });
-  setResetPaginationToggle(!resetPaginationToggle);
-};
+  // Clear all filters
+  const clearFilter = () => {
+    setColumnFilters({
+      srno: "",
+      leaveTypeId: "",
+      maxDays: "",
+      name: "",
+      status: "",
+    });
+    setResetPaginationToggle(!resetPaginationToggle);
+  };
 
   // Filter leave types based on search text
-  // const filteredItems = leaveTypes.filter(
-  //   item => 
-  //     item.leaveTypeId.toLowerCase().includes(filterText.toLowerCase()) ||
-  //     item.name.toLowerCase().includes(filterText.toLowerCase()) ||
-  //     item.maxDays.toString().includes(filterText) ||
-  //     item.status.toLowerCase().includes(filterText.toLowerCase())
-  // );
-const filteredItems = leaveTypes.filter((item, index) => {
-  return (
-    (columnFilters.srno === "" ||
-      (index + 1).toString().includes(columnFilters.srno)) &&
-    (columnFilters.leaveTypeId === "" ||
-      item.leaveTypeId.toLowerCase().includes(columnFilters.leaveTypeId.toLowerCase())) &&
-    (columnFilters.maxDays === "" ||
-      item.maxDays.toString().includes(columnFilters.maxDays)) &&
-    (columnFilters.name === "" ||
-      item.name.toLowerCase().includes(columnFilters.name.toLowerCase())) &&
-    (columnFilters.status === "" ||
-      item.status.toLowerCase().includes(columnFilters.status.toLowerCase()))
-  );
-});
-
-  // Handle column filtering
-  // const handleColumnFilter = (column: string, value: string) => {
-  //   // For simplicity, we're using a global filter
-  //   setFilterText(value);
-  //   setResetPaginationToggle(!resetPaginationToggle);
-  // };
-
-  // Clear filter
-  // const clearFilter = () => {
-  //   if (filterText) {
-  //     setResetPaginationToggle(!resetPaginationToggle);
-  //     setFilterText('');
-  //   }
-  // };
+  const filteredItems = leaveTypes.filter((item, index) => {
+    return (
+      (columnFilters.srno === "" ||
+        (index + 1).toString().includes(columnFilters.srno)) &&
+      (columnFilters.leaveTypeId === "" ||
+        item.leaveTypeId.toLowerCase().includes(columnFilters.leaveTypeId.toLowerCase())) &&
+      (columnFilters.maxDays === "" ||
+        item.maxDays.toString().includes(columnFilters.maxDays)) &&
+      (columnFilters.name === "" ||
+        item.name.toLowerCase().includes(columnFilters.name.toLowerCase())) &&
+      (columnFilters.status === "" ||
+        item.status.toLowerCase().includes(columnFilters.status.toLowerCase()))
+    );
+  });
 
   // Custom styles for DataTable
- const customStyles : TableStyles =  {
+  const customStyles: TableStyles = {
     headCells: {
       style: {
         fontSize: "14px",
@@ -335,7 +329,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
   const columns :TableColumn<LeaveType>[] = [
     {
       name: (
-        <div>
+        <div id="tour-leave-type-srno">
           <div>Sr No.</div>
           <input
             type="text"
@@ -351,14 +345,13 @@ const filteredItems = leaveTypes.filter((item, index) => {
           />
         </div>
       ),
-      // selector: (row: LeaveType, index: number) => index + 1,
       selector: (row: LeaveType, index?: number) => (index !== undefined ? index + 1 : 0),
       sortable: true,
       width: "120px"
     },
     {
       name: (
-        <div>
+        <div id="tour-leave-type-id-column">
           <div>Leave Type ID</div>
           <input
             type="text"
@@ -379,7 +372,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
     },
     {
       name: (
-        <div>
+        <div id="tour-leave-type-name-column">
           <div>Leave Type Name</div>
           <input
             type="text"
@@ -400,7 +393,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
     },
     {
       name: (
-        <div>
+        <div id="tour-leave-type-sort-column">
           <div>Sort Order</div>
           <input
             type="text"
@@ -421,7 +414,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
     },
     {
       name: (
-        <div>
+        <div id="tour-leave-type-status-column">
           <div>Status</div>
           <input
             type="text"
@@ -431,7 +424,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-             
+
               marginTop: "5px"
             }}
           />
@@ -446,7 +439,11 @@ const filteredItems = leaveTypes.filter((item, index) => {
       ),
     },
     {
-      name: "Actions",
+      name: (
+        <div id="tour-leave-type-actions">
+          Actions
+        </div>
+      ),
       cell: (row: LeaveType) => (
         <div className="flex gap-2">
           <Button
@@ -476,7 +473,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
   ];
 
   return (
-    <div className="space-y-8 bg-background rounded-xl min-h-screen">
+    <div className="space-y-8 bg-background rounded-xl min-h-screen" id="tour-header">
       {/* Leave Types Management */}
       <Card className="bg-gradient-card shadow-card">
         <CardHeader>
@@ -490,6 +487,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
             <Button
               onClick={() => setShowForm(true)}
               className="bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+              id="tour-add-leave-type"
             >
               <Plus className="w-4 h-4 mr-2 text-black" />
               Add Leave Type
@@ -498,7 +496,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
         </CardHeader>
         <CardContent>
           {showForm && (
-            <Card className="mb-6 bg-accent/20 border-primary/20">
+            <Card className="mb-6 bg-accent/20 border-primary/20" id="tour-leave-type-form">
               <CardHeader>
                 <CardTitle className="text-lg">
                   {editingId ? "Edit Leave Type" : "Create New Leave Type"}
@@ -507,7 +505,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
+                    <div id="tour-leave-type-id">
                       <Label htmlFor="leaveTypeId">Leave Type ID *</Label>
                       <Input
                         id="leaveTypeId"
@@ -518,7 +516,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
                         required
                       />
                     </div>
-                    <div>
+                    <div id="tour-leave-type-name">
                       <Label htmlFor="name">Leave Type Name *</Label>
                       <Input
                         id="name"
@@ -528,7 +526,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
                         required
                       />
                     </div>
-                    <div>
+                    <div id="tour-leave-type-sort-order">
                       <Label htmlFor="maxDays">Sort Order *</Label>
                       <Input
                         id="maxDays"
@@ -539,7 +537,7 @@ const filteredItems = leaveTypes.filter((item, index) => {
                         required
                       />
                     </div>
-                    <div>
+                    <div id="tour-leave-type-status">
                       <Label htmlFor="status">Status</Label>
                       <Select
                         value={formData.status}
@@ -559,11 +557,20 @@ const filteredItems = leaveTypes.filter((item, index) => {
                   </div>
 
                   <div className="flex gap-3 pt-4">
-                    <Button type="submit" className="px-8 py-2 rounded-full text-white font-sem ibold bg-gradient-to-r from-blue-500 to-blue-700">
+                    <Button
+                      type="submit"
+                      className="px-8 py-2 rounded-full text-white font-sem ibold bg-gradient-to-r from-blue-500 to-blue-700"
+                      id="tour-leave-type-submit"
+                    >
                       <Save className="w-4 h-4 mr-2" />
                       {editingId ? "Update" : "Submit"} 
                     </Button>
-                    <Button type="button" variant="outline" onClick={resetForm}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={resetForm}
+                      id="tour-leave-type-cancel"
+                    >
                       <X className="w-4 h-4 mr-2" />
                       Cancel
                     </Button>
@@ -574,12 +581,19 @@ const filteredItems = leaveTypes.filter((item, index) => {
           )}
 
           {/* DataTable */}
-          <div >
+          <div id="tour-leave-type-table">
             <DataTable
               columns={columns}
               data={filteredItems}
               customStyles={customStyles}
               pagination
+              paginationComponentOptions={{
+                rowsPerPageText: 'Rows per page:',
+                rangeSeparatorText: 'of',
+                noRowsPerPage: false,
+                selectAllRowsItem: false,
+                selectAllRowsItemText: 'All',
+              }}
               highlightOnHover
               responsive
               noDataComponent={<div className="p-4 text-center">No data available</div>}

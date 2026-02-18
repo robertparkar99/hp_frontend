@@ -1,13 +1,10 @@
-export type AgentStatus = 'active' | 'idle' | 'error' | 'training' | 'draft' | 'deployed';
-export type RunStatus = 'success' | 'completed' | 'failed' | 'running' | 'pending';
+export type AgentStatus = 'active' | 'idle' | 'error' | 'training';
+export type RunStatus = 'success' | 'failed' | 'running' | 'pending';
 
 export interface Agent {
   id: string;
   name: string;
   description: string;
-  module: string;
-  submodule: string;
-  role: string;
   status: AgentStatus;
   model: string;
   temperature: number;
@@ -56,9 +53,6 @@ export const mockAgents: Agent[] = [
     id: '1',
     name: 'Customer Support Agent',
     description: 'Handles customer inquiries and provides support',
-    module: 'support',
-    submodule: 'customer service',
-    role: 'support assistant',
     status: 'active',
     model: 'gpt-4',
     temperature: 0.7,
@@ -74,9 +68,6 @@ export const mockAgents: Agent[] = [
     id: '2',
     name: 'Data Analyst Agent',
     description: 'Analyzes data and generates insights',
-    module: 'analytics',
-    submodule: 'data analysis',
-    role: 'data analyst',
     status: 'idle',
     model: 'gpt-4',
     temperature: 0.3,
@@ -92,9 +83,6 @@ export const mockAgents: Agent[] = [
     id: '3',
     name: 'Content Writer Agent',
     description: 'Creates and optimizes content',
-    module: 'content',
-    submodule: 'writing',
-    role: 'content writer',
     status: 'active',
     model: 'gpt-3.5-turbo',
     temperature: 0.8,
@@ -110,9 +98,6 @@ export const mockAgents: Agent[] = [
     id: '4',
     name: 'Code Review Agent',
     description: 'Reviews code and suggests improvements',
-    module: 'development',
-    submodule: 'code review',
-    role: 'code reviewer',
     status: 'error',
     model: 'gpt-4',
     temperature: 0.2,
@@ -438,4 +423,3 @@ export const mockAgentPerformanceData = {
     { date: '2024-03-20', successRate: 89, avgDuration: 41, totalRuns: 19, totalCost: 0.31 },
   ],
 };
-

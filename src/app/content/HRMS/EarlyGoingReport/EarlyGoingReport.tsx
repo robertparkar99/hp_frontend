@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import DatePicker from "react-datepicker";
-import { Search, FileSpreadsheet,Table,Printer } from "lucide-react";
+import { Search, FileSpreadsheet, Table, Printer } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -11,6 +11,11 @@ import autoTable from "jspdf-autotable";
 import EmployeeSelector from "../../User-Attendance/components/EmployeeSelector";
 import { Employee } from "../../User-Attendance/types/attendance";
 import { Button } from "@/components/ui/button";
+import { 
+  startEarlyGoingReportTour, 
+  shouldStartEarlyGoingReportTour,
+  resetEarlyGoingReportTour 
+} from "./EarlyGoingReportTour";
 
 // Extend Employee with attendance row fields
 type AttendanceRow = {
@@ -58,6 +63,18 @@ export default function Home() {
     setSelectedEmployees([]);
   }, [selectedDepartments]);
 
+  // Check if tour should be started (only when triggered from sidebar)
+  useEffect(() => {
+    const triggerValue = sessionStorage.getItem('triggerPageTour');
+    
+    // Only start tour if triggered from sidebar with 'true' or 'early-going' value
+    // and not on normal page load/refresh
+    if (triggerValue && (triggerValue === 'true' || triggerValue.toLowerCase().includes('early'))) {
+      // Start the tour
+      startEarlyGoingReportTour();
+    }
+  }, []);
+
   const fetchData = async () => {
     setUserHasSearched(true);
     if (!sessionData.url || !sessionData.token || !sessionData.subInstituteId) {
@@ -82,8 +99,8 @@ export default function Home() {
         .map((emp, i) => `user_id[${i}]=${emp.id}`)
         .join("&");
 
-      const url = `${sessionData.url}/show-early-going-hrms-attendance-report?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&date=${formattedDate}${deptParams ? "&" + deptParams : ""
-        }${empParams ? "&" + empParams : ""}`;
+      const url = `${sessionData.url}/show-early-going-hrms-attendance-report?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&date=${formattedDate}${deptParams ? "&" + deptParams : ""}
+        ${empParams ? "&" + empParams : ""}`;
 
       console.log("📡 Fetching:", url);
 
@@ -208,7 +225,7 @@ export default function Home() {
 
   return (
     <div className="p-6 min-h-screen bg-background rounded-xl space-y-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6" id="earlygoing-header">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Earlygoing Report</h1>
               {/* <p className="text-sm text-muted-foreground mt-1">
@@ -218,9 +235,9 @@ export default function Home() {
           </div>
       {/* Filters */}
 
-      <div className="flex flex-col md:flex-row gap-6 ">
+      <div className="flex flex-col md:flex-row gap-6 " id="earlygoing-filters">
         {/* Department Selector */}
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1" id="earlygoing-department-selector">
           {/* <label className="block font-semibold mb-2">Department & Employee</label> */}
           <EmployeeSelector
             multiSelect
@@ -233,8 +250,13 @@ export default function Home() {
           />
         </div>
 
+        {/* Employee Selector (already included in EmployeeSelector but needs separate ID for tour) */}
+        <div className="flex flex-col" id="earlygoing-employee-selector" style={{ display: 'none' }}>
+          {/* Hidden element for tour targeting if needed */}
+        </div>
+
         {/* Date */}
-        <div className="flex flex-col ">
+        <div className="flex flex-col" id="earlygoing-date-picker">
           <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
           <DatePicker
             selected={date}
@@ -245,7 +267,7 @@ export default function Home() {
         </div>
 
         {/* Search Button */}
-        <div className="flex flex-col mt-7">
+        <div className="flex flex-col mt-7" id="earlygoing-search-button">
           <Button
             onClick={fetchData}
             disabled={loading}
@@ -260,15 +282,17 @@ export default function Home() {
 
       {/* Export Buttons */}
 
-     <div className="flex gap-3 flex-wrap justify-end">
+     <div className="flex gap-3 flex-wrap justify-end" id="earlygoing-export-buttons">
 
     <Button
+      id="earlygoing-print-button"
       onClick={() => window.print()}
       className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
     >
       <Printer className="w-5 h-5" />
     </Button>
     <Button
+      id="earlygoing-pdf-button"
       onClick={exportToPDF}
       className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
     >
@@ -276,6 +300,7 @@ export default function Home() {
     </Button>
 
     <Button
+      id="earlygoing-excel-button"
       onClick={exportToExcel}
       className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
     >
@@ -284,7 +309,7 @@ export default function Home() {
 
   </div>
       {/* Data Table */}
-      <div className="rounded-2xl overflow-hidden shadow">
+      <div className="rounded-2xl overflow-hidden shadow" id="earlygoing-data-table">
         <DataTable
           columns={columns}
           data={data}

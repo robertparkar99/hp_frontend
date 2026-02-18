@@ -1,9 +1,6 @@
-
-
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { AnimatePresence } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -13,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import "./triangle.css"; // custom CSS
+import { Atom } from "react-loading-indicators";
 import {
   Funnel,
   LayoutGrid,
@@ -36,7 +34,8 @@ import {
 import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/AbilityComponent/viewDialouge";
-import Loader from "@/components/utils/loading";
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "@/lib/tourSteps";
 
 type ApiItem = {
   id: number;
@@ -69,13 +68,18 @@ interface SessionData {
   org_type?: string;
 }
 
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+
 const safeArray = (data: any): ApiItem[] => {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
   return [];
 };
 
-export default function Page() {
+export default function Page({ showDetailTour }: PageProps) {
   const [items, setItems] = useState<ApiItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,6 +94,10 @@ export default function Page() {
 
   // Toggle view: triangle or table
   const [viewMode, setViewMode] = useState<"triangle" | "table">("triangle");
+
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
 
   // Column search state for DataTable
   const [columnFilters, setColumnFilters] = useState<{
@@ -107,13 +115,14 @@ export default function Page() {
   // Dialog state for viewing ability details
   const [selectedAbilityId, setSelectedAbilityId] = useState<number | null>(null);
 
-  // ✅ New state for expanded actions
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // Toggle expanded actions
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
+  // Detail tour handler
+  useEffect(() => {
+    (window as any).detailOnboardingHandler = (tab: string) => {
+      if (tab === 'Ability') {
+        setShowTour(true);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -199,6 +208,13 @@ export default function Page() {
     fetchItems();
   }, [selectedCategory, selectedSubCategory, sessionData.sub_institute_id,]);
 
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
+
   // Filter items for triangle view based on search
   const filteredTriangleItems = items.filter(item =>
     item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -220,7 +236,7 @@ export default function Page() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loader />
+        <Atom color="#525ceaff" size="medium" text="" textColor="" />
       </div>
     );
   }
@@ -360,7 +376,7 @@ export default function Page() {
   return (
     <div className="p-4">
       {/* Header with Title and Action Buttons */}
-    
+
 
       {/* Search Bar and Filters */}
       <div className="flex justify-between items-center mb-4">
@@ -368,6 +384,7 @@ export default function Page() {
         <div className="relative w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
+            id="search-abilities-input"
             type="text"
             placeholder="Search abilities, categories, sub categories, or importance levels..."
             value={searchTerm}
@@ -381,7 +398,7 @@ export default function Page() {
             {/* Funnel Filter Popover */}
             <Popover>
               <PopoverTrigger asChild>
-                <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md">
+                <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md" title="Filter">
                   <Funnel className="w-5 h-5 " />
 
                 </button>
@@ -400,12 +417,12 @@ export default function Page() {
             </Popover>
 
             {/* View Toggle */}
-            <div className="flex border rounded-md overflow-hidden">
+            <div id="ability-view-toggle" className="flex border rounded-md overflow-hidden">
               <button
                 onClick={() => setViewMode("triangle")}
                 className={`px-3 py-2 flex items-center justify-center ${viewMode === "triangle"
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 title="Triangle View"
               >
@@ -414,78 +431,74 @@ export default function Page() {
               <button
                 onClick={() => setViewMode("table")}
                 className={`px-3 py-2 flex items-center justify-center ${viewMode === "table"
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 title="Table View"
               >
                 <Table className="h-5 w-5" />
               </button>
             </div>
-
-            {/* Inline Actions Menu */}
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex gap-1"
-                >
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="More Actions">
+                  <MoreVertical className="w-5 h-5 text-gray-600" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-auto p-4 bg-white shadow-xl rounded-xl"
+              >
+                {/* Action Buttons - All in one line */}
+                <div className="flex items-center gap-3">
                   {/* Add New Ability */}
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Add New Ability">
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Add New Ability">
                     <Plus className="w-5 h-5 text-gray-600" />
+
                   </button>
 
                   {/* AI Suggestions */}
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="AI Suggestions">
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="AI Suggestions">
                     <Sparkles className="w-5 h-5 text-gray-600" />
-                  </button>
 
-                  {/* Export */}
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Export abilities">
-                    <Download className="w-5 h-5 text-gray-600" />
-                  </button>
-
-                  {/* Import */}
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Import abilities">
-                    <Upload className="w-5 h-5 text-gray-600" />
-                  </button>
-
-                  {/* Analytics */}
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Analytics">
-                    <BarChart3 className="w-5 h-5 text-gray-600" />
-                  </button>
-
-                  {/* Help */}
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Help">
-                    <HelpCircle className="w-5 h-5 text-gray-600" />
-                  </button>
-
-                  {/* Settings */}
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Settings">
-                    <Settings className="w-5 h-5 text-gray-600" />
                   </button>
 
                   {/* Bulk Actions */}
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Bulk Actions">
-                    <ListChecks className="w-5 h-5 text-gray-600" />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
-            {/* More Actions Button */}
-            <div className="relative">
-              <button
-                onClick={toggleExpanded}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                title="More Actions"
-              >
-                <MoreVertical className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
+                  {/* Export/Import */}
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Export abilities">
+                    <Download className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Import abilities">
+                    <Upload className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+
+                  {/* Analytics */}
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200  rounded-md text-sm" title="Analytics">
+                    <BarChart3 className="w-5 h-5 text-gray-600" />
+
+                  </button>
+                  <button className="p-2 hover:bg-gray-200 rounded-md" title="Help">
+                    <HelpCircle className="w-5 h-5 text-gray-600" />
+                  </button>
+                  {/* Settings */}
+                  <button className="p-2 hover:bg-gray-200 rounded-md" title="Settings">
+                    <Settings className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Bulk Actions">
+                    <ListChecks className="w-5 h-5 text-gray-600" />
+
+                  </button>
+
+                  {/* Help */}
+
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>
@@ -505,12 +518,25 @@ export default function Page() {
         />
       )}
 
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps('Ability')}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
+        />
+      )}
+
       {/* Ability View Dialog */}
       {selectedAbilityId && (
         <ViewKnowledge
           knowledgeId={selectedAbilityId}
           onClose={() => setSelectedAbilityId(null)}
-          onSuccess={() => {}}
+          onSuccess={() => { }}
           classification="ability"
           typeName="Ability"
         />

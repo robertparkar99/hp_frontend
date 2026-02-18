@@ -53,51 +53,27 @@ export function TaskCard({ task, sessionData, onStatusUpdate, onRefetch, employe
   // }, [isReplying]);
 
   console.log(task);
-  // Get the display status - prefer approve_status over task.status
-  // Ensure we check for null, undefined, or empty string
-  const displayStatus = (task.approve_status && task.approve_status.trim() !== '') 
-    ? task.approve_status 
-    : task.status;
-
-  // Helper function to capitalize status for display
-  const formatStatus = (status: string | null | undefined) => {
-    if (!status) return 'Unknown';
-    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-  };
-
-  const getStatusIcon = (status: string | null | undefined) => {
-    const upperStatus = status?.toUpperCase();
-    switch (upperStatus) {
+  const getStatusIcon = (status: string) => {
+    switch (status) {
       case 'COMPLETED':
-      case 'APPROVED':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'IN-PROGRESS':
         return <Clock className="w-4 h-4 text-blue-500" />;
-      case 'REJECTED':
-        return <AlertCircle className="w-4 h-4 text-red-500" />;
       default:
-        return <Circle className="w-4 h-4 text-gray-500" />;
+        return <Clock className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  const getStatusColor = (status: string | null | undefined) => {
-    const upperStatus = status?.toUpperCase();
-    switch (upperStatus) {
+  const getStatusColor = (status: string) => {
+    switch (task.status) {
       case 'COMPLETED':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'IN-PROGRESS':
         return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'PENDING':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'APPROVED':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'REJECTED':
-        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-red-100 text-red-800 border-red-200';
     }
   };
-
 
   // const getPriorityColor = (priority: Task['priority']) => {
   //   switch (priority) {
@@ -124,13 +100,13 @@ export function TaskCard({ task, sessionData, onStatusUpdate, onRefetch, employe
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              {getStatusIcon(displayStatus)}
+              {getStatusIcon(task.status)}
               <h3 className="font-semibold text-lg text-gray-900">{task.task_title}</h3>
             </div>
             <p className="text-gray-600 text-sm mb-3">{task.task_description}</p>
             <div className="flex flex-wrap gap-2 mb-3">
-              <Badge className={getStatusColor(displayStatus)}>
-                {formatStatus(displayStatus)}
+              <Badge className={getStatusColor(task.status)}>
+                {task.status}
               </Badge>
               <Badge variant="outline" className="text-xs">
                 {task.task_type}
@@ -175,7 +151,7 @@ export function TaskCard({ task, sessionData, onStatusUpdate, onRefetch, employe
                         {task.allocatedUser || 'Unknown'}
                       </span>
                       <Badge variant="outline" className="text-xs">
-                        current Status: {formatStatus(task.status)}
+                        Status: {task.status}
                       </Badge>
 
                     </div>
@@ -294,19 +270,19 @@ export function TaskCard({ task, sessionData, onStatusUpdate, onRefetch, employe
                   try {
                     // Map status to API format
                     const statusMap: { [key: string]: string } = {
-                      'pending': 'pending',
-                      'in-progress': 'in-progress',
-                      'completed': 'completed'
+                      'pending': 'PENDING',
+                      'in-progress': 'IN-PROGRES',
+                      'completed': 'COMPLETED'
                     };
-                    const apiStatus = statusMap[newStatus] || newStatus;
+                    const apiStatus = statusMap[newStatus] || newStatus.toUpperCase();
 
-                    // Prepare payload according to API specification
+                    // Prepare payload
                     const payload = {
                       token: sessionData.token,
                       row: {
                         data: {
                           status: apiStatus,
-                          taskcompletation_remarks: replyMessage
+                          task_description: replyMessage
                         }
                       }
                     };

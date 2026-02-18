@@ -111,16 +111,18 @@ const CourseGrid = ({
       {/* Course Grid/List */}
       <div className={viewMode === 'grid' ?'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' :'space-y-4'
       }>
-        {courses.map(course => (
-          <CourseCard
-            key={course.id}
-            course={course}
-            viewMode={viewMode}
-            onEnroll={onEnroll}
-            onViewDetails={onViewDetails}
-            onEditCourse={onEditCourse}
-            sessionInfo={sessionInfo}
-          />
+        {courses.map((course, index) => (
+          <div key={course.id} id={index < 3 ? `lc-course-card-${index}` : undefined}>
+            <CourseCard
+              course={course}
+              viewMode={viewMode}
+              onEnroll={onEnroll}
+              onViewDetails={onViewDetails}
+              onEditCourse={onEditCourse}
+              sessionInfo={sessionInfo}
+              cardIndex={index}
+            />
+          </div>
         ))}
       </div>
 

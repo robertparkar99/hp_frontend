@@ -5,6 +5,7 @@ import Icon from '../../../../../components/AppIcon';
 import { Button } from '../../../../../components/ui/button';
 
 const AssessmentCard = ({
+  id,
   assessment,
   onStartAssessment,
   onViewDetails,
@@ -47,7 +48,7 @@ const AssessmentCard = ({
     new Date(assessment.deadline) <= new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 shadow-soft hover:shadow-elevated transition-smooth relative">
+    <div id={id} className="bg-card border border-border rounded-lg p-6 shadow-soft hover:shadow-elevated transition-smooth relative">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">

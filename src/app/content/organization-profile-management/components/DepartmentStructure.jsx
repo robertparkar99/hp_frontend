@@ -334,12 +334,12 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
   if (isLoading) return <Loading />;
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 md:p-6">
+    <div className="bg-card border border-border rounded-lg p-4 md:p-6" id="department-structure-container">
       {/* Top Toolbar Area */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 w-full">
         <div className="flex items-center gap-4 w-full sm:w-auto">
           {/* Search */}
-          <div className="relative flex-1 sm:flex-none">
+          <div className="relative flex-1 sm:flex-none" id="department-search-input">
             <Icon name="Search" size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Search departments..."
@@ -349,7 +349,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-nowrap">
+        <div className="flex items-center gap-2 flex-nowrap" id="department-actions-toolbar">
           {/* Settings */}
           <Button variant="outline" size="sm" title='settings'>
             <Icon name="Settings" size={16} />
@@ -371,7 +371,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
           </Button>
 
           {/* Add Department */}
-          <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)} title='Add Department'>
+          <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)} title='Add Department' id="add-department-btn">
             <Icon name="Plus" size={16} />
           </Button>
         </div>
@@ -420,7 +420,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
       )} */}
 
       {/* Department List */}
-      <div className="space-y-4">
+      <div className="space-y-4" id="department-list-container">
         {filteredDepartments.map((department) => {
           const isEditing = editDepartment?.id === department.id;
 
@@ -451,7 +451,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
                 </div>
 
                 {/* ACTIONS */}
-                <div className="flex items-center space-x-1 flex-nowrap flex-shrink-0">
+                <div className="flex items-center space-x-1 flex-nowrap flex-shrink-0" id="department-card-actions">
                   {!isEditing && (
                     <Button
                       variant="ghost"
@@ -684,7 +684,7 @@ const DepartmentStructure = ({ onSave, loading = false }) => {
 
               {/* SUB-DEPARTMENTS LIST */}
               {!isEditing && department.subdepartments?.length > 0 && (
-                <div className="pl-6 border-l-2 border-border">
+                <div className="pl-6 border-l-2 border-border" id="sub-departments-list">
                   <h5 className="text-sm font-medium text-muted-foreground mb-2">
                     Sub-departments
                   </h5>

@@ -664,7 +664,7 @@ const ProgressDashboard = () => {
           <p className="text-muted-foreground text-sm">Track and monitor task assignment progress</p>
         </div> */}
 
-        <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto" id="task-filters">
           <Select
             options={departmentOptions}
             value={departmentFilter}
@@ -697,6 +697,7 @@ const ProgressDashboard = () => {
             variant="outline"
             size="sm"
             iconName="Download"
+            id="task-export"
             iconPosition="left"
             disabled={true}
             className="cursor-not-allowed w-full md:w-auto"
@@ -706,7 +707,7 @@ const ProgressDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6" id="task-dashboard-stats">
         {stats.map((stat, index) => (
           <div key={index} className="bg-card border border-border rounded-lg p-4 md:p-6">
             <div className="flex items-center justify-between">
@@ -724,7 +725,7 @@ const ProgressDashboard = () => {
         ))}
       </div>
 
-      <div className="bg-card ">
+      <div className="bg-card " id="task-data-table">
         <div className="p-3">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-foreground">Task Assignments</h3>
