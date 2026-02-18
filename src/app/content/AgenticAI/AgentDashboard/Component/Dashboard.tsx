@@ -1,14 +1,13 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 // import { useNavigate } from 'react-router-dom';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Agent, AgentStatus, mockPerformanceData } from '@/lib/mockData';
+import { mockAgents, mockPerformanceData } from '@/lib/mockData';
 import StatusBadge from '../Component/StatusBadge';
-import { Plus, Search, TrendingUp, Activity, Zap, Users, Edit } from 'lucide-react';
+import { Plus, Search, TrendingUp, Activity, Zap, Users } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Line, LineChart } from 'recharts';
 
 // Generate sparkline data
@@ -60,109 +59,16 @@ export default function Dashboard() {
   // const navigate = useNavigate();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [allAgents, setAllAgents] = useState<Agent[]>([]);
-  const [runs, setRuns] = useState<any[]>([]);
 
-  const fetchAgents = useCallback(async () => {
-    try {
-      // Fetch all agents
-      const allRes = await fetch("https://pariharajit6348-agenticai.hf.space/agents");
-      const allJson = await allRes.json();
-      console.log("All agents API response:", allJson);
-
-      const allFormatted = Array.isArray(allJson) ? allJson.map((agent: any) => ({
-        id: agent.id?.toString() || "",
-        name: agent.name || "",
-        description: agent.description || "",
-        module: agent.module || "",
-        submodule: agent.sub_module || "",
-        role: "agent",
-        status: agent.status as AgentStatus,
-        model: "gpt-4",
-        temperature: agent.temperature || 0.7,
-        maxTokens: agent.max_tokens || 1024,
-        systemPrompt: agent.system_prompt || "",
-        tools: [],
-        createdAt: agent.created_at || new Date().toISOString(),
-        lastRun: agent.created_at || new Date().toISOString(),
-        totalRuns: 0,
-        successRate: 100,
-      })) : [];
-
-      setAllAgents(allFormatted);
-    } catch (err) {
-      console.error("❌ Failed to fetch agents", err);
-      setAllAgents([]);
-    }
-  }, []);
-
-  const fetchRuns = useCallback(async () => {
-    try {
-      const res = await fetch("https://pariharajit6348-agenticai.hf.space/runs");
-      const json = await res.json();
-      console.log("Runs API response:", json);
-      setRuns(Array.isArray(json) ? json : []);
-    } catch (err) {
-      console.error("❌ Failed to fetch runs", err);
-      setRuns([]);
-    }
-  }, []);
-
-  const updateAgentStatus = async (agentId: string, newStatus: 'active' | 'idle') => {
-    try {
-      const apiStatus = newStatus === 'active' ? 'deployed' : 'draft';
-      const response = await fetch(`https://pariharajit6348-agenticai.hf.space/agents/${agentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: apiStatus }),
-      });
-      if (response.ok) {
-        // Refetch all agents to get updated status from API
-        await fetchAgents();
-      } else {
-        console.error('Failed to update status');
-      }
-    } catch (error) {
-      console.error('Error updating status:', error);
-    }
-  };
-
-
-  useEffect(() => {
-    fetchAgents();
-    fetchRuns();
-  }, []);
-
-  const getAgentRunsCount = (agentId: string) => {
-    return runs.filter(run => run.agent_id === agentId).length;
-  };
-
-  useEffect(() => {
-    if (statusFilter === 'all') {
-      setAgents(allAgents);
-    } else if (statusFilter === 'deployed') {
-      setAgents(allAgents.filter(agent => agent.status === 'deployed'));
-    } else if (statusFilter === 'draft') {
-      setAgents(allAgents.filter(agent => agent.status === 'draft'));
-    }
-  }, [statusFilter, allAgents]);
-
-  const filteredAgents = agents.filter((agent) =>
+  const filteredAgents = mockAgents.filter((agent) =>
     agent.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const stats = {
-    totalAgents: allAgents.length,
-    activeAgents: allAgents.filter((a) => a.status === 'deployed').length,
-    totalRuns: runs.length,
-    avgSuccessRate: allAgents.length > 0 ? (allAgents.reduce((sum, a) => sum + a.successRate, 0) / allAgents.length).toFixed(1) : "0",
-  };
-
-  const getAgentName = (agentId: string) => {
-    const agent = allAgents.find((a) => a.id === agentId);
-    return agent ? agent.name : 'Unknown Agent';
+    totalAgents: mockAgents.length,
+    activeAgents: mockAgents.filter((a) => a.status === 'active').length,
+    totalRuns: mockAgents.reduce((sum, a) => sum + a.totalRuns, 0),
+    avgSuccessRate: (mockAgents.reduce((sum, a) => sum + a.successRate, 0) / mockAgents.length).toFixed(1),
   };
 
   return (
@@ -253,16 +159,6 @@ export default function Dashboard() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
             />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="deployed">Deployed</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-3">
@@ -277,80 +173,29 @@ export default function Dashboard() {
                   <div className="flex items-center gap-3">
                     <h3 className="font-semibold text-foreground">{agent.name}</h3>
                     <StatusBadge status={agent.status} />
-                    {/* <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => updateAgentStatus(agent.id, agent.status === 'deployed' ? 'idle' : 'active')}
-                    >
-                      {agent.status === 'deployed' ? 'Undeploy' : 'Deploy'}
-                    </Button> */}
                   </div>
                   <p className="text-sm text-muted-foreground">{agent.description}</p>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span>Model: {agent.model}</span>
                     <span>•</span>
-                    <span>{getAgentRunsCount(agent.id)} runs</span>
+                    <span>{agent.totalRuns} runs</span>
                     <span>•</span>
                     <span>{agent.successRate}% success</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateAgentStatus(agent.id, agent.status === 'deployed' ? 'idle' : 'active');
-                    }}
-                    className="gap-2"
-                  >
-                    <Edit className="h-4 w-4" />
-                    {agent.status === 'deployed' ? 'Undeploy' : 'Deploy'}
-                  </Button>
-                  <div className="text-right text-sm text-muted-foreground">
-                    <p>Last run</p>
-                    <p className="font-medium text-foreground">
-                      {/* {new Date(agent.lastRun).toLocaleDateString()} */}
-                      {new Date(agent.lastRun).toLocaleDateString('en-US')}
+                <div className="text-right text-sm text-muted-foreground">
+                  <p>Last run</p>
+                  <p className="font-medium text-foreground">
+                    {/* {new Date(agent.lastRun).toLocaleDateString()} */}
+                    {new Date(agent.lastRun).toLocaleDateString('en-US')}
 
-                    </p>
-                  </div>
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
-
-      {/* <Card>
-        <CardHeader>
-          <CardTitle>Runs</CardTitle>
-          <CardDescription>View recent agent runs</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            {runs.length > 0 ? runs.map((run, index) => (
-              <div
-                key={run.id || index}
-                className="flex items-center justify-between rounded-lg border border-border p-4 transition-all hover:bg-accent hover:shadow-md"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-foreground">Run {run.id}</h3>
-                    <StatusBadge status={run.status || 'unknown'} />
-                  </div>
-                  <p className="text-sm text-muted-foreground">Agent: {getAgentName(run.agent_id)}</p>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>Created: {new Date(run.created_at).toLocaleDateString('en-US')}</span>
-                  </div>
-                </div>
-              </div>
-            )) : (
-              <p className="text-muted-foreground">No runs available</p>
-            )}
-          </div>
-        </CardContent>
-      </Card> */}
     </div>
   );
 }

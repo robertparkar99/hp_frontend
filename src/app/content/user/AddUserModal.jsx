@@ -353,10 +353,10 @@ export default function AddUserModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-4xl overflow-y-auto max-h-[95vh]">
+      <DialogContent id="add-user-modal-dialog" className="max-w-4xl overflow-y-auto max-h-[95vh]">
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Personal Information */}
-          <section>
+          <section id="personal-info-section">
             <h2 className="text-lg font-semibold mb-4 border-b pb-2">
               Personal Information
             </h2>
@@ -384,6 +384,7 @@ export default function AddUserModal({
               <div>
                 <Label>First Name <span className="text-red-500">*</span></Label>
                 <Input
+                  id="first-name-field"
                   placeholder="Enter First Name"
                   value={formData.personal.first_name}
                   onChange={(e) =>
@@ -419,6 +420,7 @@ export default function AddUserModal({
               <div>
                 <Label>Email <span className="text-red-500">*</span></Label>
                 <Input
+                  id="email-field"
                   type="email"
                   placeholder="example@domain.com"
                   value={formData.personal.email}
@@ -473,6 +475,7 @@ export default function AddUserModal({
               <div>
                 <Label>Department <span className="text-red-500">*</span></Label>
                 <Select
+                  id="department-field"
                   value={formData.personal.department}
                   onValueChange={(val) =>
                     handleInputChange("personal", "department", val)
@@ -495,6 +498,7 @@ export default function AddUserModal({
               <div>
                 <Label>Job Role<span className="text-red-500">*</span></Label>
                 <Select
+                  id="jobrole-field"
                   value={formData.personal.jobrole}
                   onValueChange={(val) =>
                     handleInputChange("personal", "jobrole", val)
@@ -559,6 +563,7 @@ export default function AddUserModal({
               <div>
                 <Label>User Profile <span className="text-red-500">*</span></Label>
                 <Select
+                  id="user-profile-field"
                   value={formData.personal.user_profile_id}
                   onValueChange={(val) =>
                     handleInputChange("personal", "user_profile_id", val)
@@ -628,7 +633,7 @@ export default function AddUserModal({
           </section>
 
           {/* Address Information */}
-          <section>
+          <section id="address-info-section">
             <h2 className="text-lg font-semibold mb-4 border-b pb-2">
               Address Information
             </h2>
@@ -691,7 +696,7 @@ export default function AddUserModal({
           </section>
 
           {/* Reporting Information */}
-          <section>
+          <section id="reporting-info-section">
             <h2 className="text-lg font-semibold mb-4 border-b pb-2">
               Reporting Information
             </h2>
@@ -756,7 +761,7 @@ export default function AddUserModal({
           </section>
 
           {/* Attendance Information */}
-          <section>
+          <section id="attendance-info-section">
             <h2 className="text-lg font-semibold mb-4 border-b pb-2">
               Attendance Information
             </h2>
@@ -811,7 +816,7 @@ export default function AddUserModal({
           </section>
 
           {/* Deposit Information */}
-          <section>
+          <section id="deposit-info-section">
             <h2 className="text-lg font-semibold mb-4 border-b pb-2">
               Deposit Information
             </h2>
@@ -896,7 +901,7 @@ export default function AddUserModal({
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button id="save-user-btn" type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save User"}
             </Button>
           </DialogFooter>

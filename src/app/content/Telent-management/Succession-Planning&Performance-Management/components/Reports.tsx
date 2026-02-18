@@ -71,7 +71,7 @@ export default function Reports() {
   }
 
   return (
-    <div className="flex flex-col bg-background">
+    <div className="flex h-screen bg-background">
      
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -79,13 +79,13 @@ export default function Reports() {
         
         <main className="flex-1 overflow-y-auto">
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-xl font-bold text-foreground">Reports & Analytics</h1>
                 <p className="text-muted-foreground text-sm">Generate insights from your talent management data</p>
               </div>
               
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-3">
                 <Button variant="outline">
                   <Filter className="h-4 w-4" />
                   Filter
@@ -94,7 +94,7 @@ export default function Reports() {
                   <Calendar className="h-4 w-4" />
                   Date Range
                 </Button>
-                <Button variant="default">
+                <Button variant="gradient">
                   <Download className="h-4 w-4" />
                   Export All
                 </Button>
@@ -102,7 +102,7 @@ export default function Reports() {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card className="shadow-card">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
@@ -260,7 +260,7 @@ export default function Reports() {
                     { action: "Succession Coverage report viewed", user: "Jennifer Lee", time: "6 hours ago", type: "viewed" },
                     { action: "Skills Gap Analysis scheduled", user: "David Park", time: "1 day ago", type: "scheduled" }
                   ].map((activity, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 max-md:flex-col max-md:items-start max-md:gap-2">
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                       <div className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full ${
                           activity.type === 'generated' ? 'bg-success' :

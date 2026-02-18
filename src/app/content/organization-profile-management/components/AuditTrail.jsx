@@ -101,10 +101,10 @@ const AuditTrail = () => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 md:p-6 w-full overflow-hidden">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 w-full">
+    <div className="bg-card border border-border rounded-lg p-6">
+      <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-foreground">Audit Trail</h3>
-        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap flex-shrink-0">
+        <div className="flex items-center space-x-3">
           <Select
             value={filter}
             onChange={setFilter}
@@ -123,11 +123,11 @@ const AuditTrail = () => {
         </div>
       </div>
 
-      <div className="space-y-4 w-full overflow-hidden">
+      <div className="space-y-4">
         {filteredLogs.map((log) => (
-          <div key={log.id} className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-micro w-full">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
-              <div className="flex items-start space-x-3 min-w-0 flex-1">
+          <div key={log.id} className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-micro">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0 mt-1">
                   <Icon 
                     name={getSeverityIcon(log.severity)} 

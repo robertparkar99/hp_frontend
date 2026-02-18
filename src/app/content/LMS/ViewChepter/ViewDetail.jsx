@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { Button } from "../../../../components/ui/button"
 import Icon from "@/components/AppIcon"
+import Shepherd from 'shepherd.js'
 
 import ChepterGrid from "./ChepterGrid"
 import AddChepterDialog from "./AddChepterDialog"
@@ -10,6 +11,11 @@ import AddContentDialog from "./AddContentDialoge"
 import CourseHero from "./CourseHero"
 import CourseTabNavigation from "./CourseTabNavigation"
 import QuestionBank from "../questionBank/index"
+import {
+    createViewDetailSteps,
+    viewDetailTourOptions,
+    injectViewDetailTourStyles
+} from './ViewDetailTourSteps'
 
 export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onClose}) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -46,6 +52,10 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
   })
   const [contentViewTrigger, setContentViewTrigger] = useState(0)
 
+    // Tour state
+    const tourInstanceRef = useRef < Shepherd.Tour | null > (null)
+    const [isTourActive, setIsTourActive] = useState(false)
+
   // Session data state
   const [sessionData, setSessionData] = useState({
     url: "",
@@ -79,6 +89,93 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
       })
     }
   }, [])
+
+    // ✅ Tour: Check for trigger and initialize tour
+    useEffect(() => {
+        // Inject tour styles
+        injectViewDetailTourStyles()
+
+        // Check if tour was triggered from parent
+        const triggerValue = sessionStorage.getItem('triggerViewDetailTour')
+        const tourCompleted = sessionStorage.getItem('viewDetailTourCompleted')
+
+        // Only start tour if triggered AND not completed
+        if (triggerValue === 'true' && !tourCompleted) {
+            console.log('🎯 Tour triggered for View Detail page')
+
+            // Initialize tour after a short delay to ensure DOM is ready
+            setTimeout(() => {
+                initializeTour()
+            }, 500)
+
+            // Clear trigger to prevent re-triggering
+            sessionStorage.removeItem('triggerViewDetailTour')
+        }
+
+        return () => {
+            // Cleanup tour instance on unmount
+            if (tourInstanceRef.current) {
+                tourInstanceRef.current.cancel()
+                tourInstanceRef.current = null
+            }
+        }
+    }, [])
+
+    // ✅ Initialize the View Detail tour
+    const initializeTour = useCallback(() => {
+        // Check if tour already exists
+        if (tourInstanceRef.current) {
+            console.log('Tour instance already exists')
+            return
+        }
+
+        // Check if tour was completed
+        if (sessionStorage.getItem('viewDetailTourCompleted') === 'true') {
+            console.log('Tour already completed, skipping')
+            return
+        }
+
+        console.log('🎯 Initializing View Detail tour')
+        setIsTourActive(true)
+
+        // Create new tour instance
+        const tour = new Shepherd.Tour({
+            ...viewDetailTourOptions,
+        })
+
+        // Create and add steps
+        const steps = createViewDetailSteps(tour, () => {
+            console.log('🎉 View Detail tour completed')
+            setIsTourActive(false)
+        })
+
+        steps.forEach(step => {
+            tour.addStep(step)
+        })
+
+        // Store tour instance
+        tourInstanceRef.current = tour
+
+        // Handle tour completion/cancel
+        tour.on('complete', () => {
+            console.log('Tour completed')
+            setIsTourActive(false)
+            tourInstanceRef.current = null
+        })
+
+        tour.on('cancel', () => {
+            console.log('Tour cancelled')
+            setIsTourActive(false)
+            tourInstanceRef.current = null
+        })
+
+        // Start the tour
+        setTimeout(() => {
+            if (tourInstanceRef.current) {
+                tour.start()
+            }
+        }, 100)
+    }, [])
 
   // Fetch chapters from API
   const fetchChapters = async () => {
@@ -215,11 +312,11 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
     setActiveTab("modules")
   }
   // Add this handler inside your component
-const handleCloseModule = () => {
-if (onClose) {
+    const handleCloseModule = () => {
+        if (onClose) {
       onClose();
       } // 👈 go back to course tab
-};
+ };
 
   // Check if all chapters are read (all content viewed)
   const checkAllChaptersRead = () => {
@@ -471,7 +568,7 @@ if (onClose) {
                           </ul>
                         </div>
                       ) : null
-                    )}
+                          )}
                   </div>
                 </div>
               ) : null
@@ -508,8 +605,8 @@ if (onClose) {
               onClick={handleCloseQuestionBank}
               className="flex items-center gap-2"
             >
-              <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }}  />
-             
+                        <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }} />
+
             </Button>
           </div>
           <QuestionBank
@@ -528,14 +625,16 @@ if (onClose) {
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
-       <Button
-  variant="ghost"
-  onClick={handleCloseModule}
-  className="flex items-center"
->
-  <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }} />
-</Button>
-        <div className="flex items-center justify-between mt-8 mb-6">
+              <div id="vd-back-button">
+                  <Button
+                      variant="ghost"
+                      onClick={handleCloseModule}
+                      className="flex items-center"
+                  >
+                      <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }} />
+                  </Button>
+              </div>
+              <div id="vd-course-header" className="flex items-center justify-between mt-8 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
               Module Catalog
@@ -576,16 +675,18 @@ if (onClose) {
 
         {/* Course Hero */}
         {courseDetails && (
-          <CourseHero
-            course={formatCourseForHero()}
-            sessionData={sessionData}
-            onStartCourse={() => console.log("Start course")}
-            onContinueCourse={() => console.log("Continue course")}
-          />
+                  <div id="vd-course-hero">
+                      <CourseHero
+                          course={formatCourseForHero()}
+                          sessionData={sessionData}
+                          onStartCourse={() => console.log("Start course")}
+                          onContinueCourse={() => console.log("Continue course")}
+                      />
+                  </div>
         )}
 
         {/* Tab Navigation */}
-        <div className="mt-4">
+              <div id="vd-tab-navigation" className="mt-4">
           <CourseTabNavigation
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -599,7 +700,7 @@ if (onClose) {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-card border border-border rounded-lg p-6 mt-8">
+              <div id="vd-module-grid" className="bg-card border border-border rounded-lg p-6 mt-8">
           {renderTabContent()}
         </div>
 
@@ -631,3 +732,4 @@ if (onClose) {
     </div>
   )
 }
+

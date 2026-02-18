@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Search } from "lucide-react";
 import EmployeeSelector from "./components/EmployeeSelector";
@@ -12,6 +12,11 @@ import {
   AttendanceFormData,
 } from "./types/attendance";
 import { parse, format } from "date-fns";
+import {
+  UserAttendanceTour,
+  shouldStartUserAttendanceTour,
+  triggerUserAttendanceTour
+} from "./UserAttendanceTour";
 
 function App() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -29,6 +34,9 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Tour initialization ref to prevent multiple initiations
+  const tourInitialized = useRef(false);
 
   // ✅ Session Data from localStorage
   const [sessionData, setSessionData] = useState({
@@ -88,6 +96,38 @@ function App() {
     };
 
     fetchEmployees();
+  }, [sessionData]);
+
+  // ✅ Initialize tour when triggered via sidebar navigation
+  useEffect(() => {
+    // Prevent multiple initiations
+    if (tourInitialized.current) {
+      return;
+    }
+
+    // Check if tour should start (only via sidebar tour flow)
+    const shouldStart = shouldStartUserAttendanceTour();
+
+    if (shouldStart) {
+      console.log('Triggering User Attendance tour via sidebar navigation');
+
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        const tour = UserAttendanceTour.getInstance();
+        tour.start();
+
+        // Clear the trigger flags
+        sessionStorage.removeItem('triggerUserAttendanceTour');
+        sessionStorage.removeItem('triggerPageTour');
+
+        // Mark tour as initialized
+        tourInitialized.current = true;
+      }, 500);
+    } else {
+      // Mark as initialized even if not starting tour
+      // to prevent attempts on subsequent renders
+      tourInitialized.current = true;
+    }
   }, [sessionData]);
 
   // ✅ Fetch Attendance Records
@@ -300,7 +340,7 @@ function App() {
   };
 
   return (
-    <div className="p-4 md:p-6 min-h-screen bg-background rounded-xl">
+    <div className="p-8 min-h-screen bg-background rounded-xl " id="tour-user-attendance-header">
       <div className="flex items-center  justify-between mb-6">
             <div >
               <h1 className="text-2xl font-bold text-foreground">User Attendance</h1>
@@ -312,7 +352,7 @@ function App() {
         <div className="flex flex-col gap-8">
           {/* Controls Row */}
           <div className="flex items-end gap-4 flex-wrap">
-            <div className="flex-1 min-w-[250px]">
+          <div className="flex-1 min-w-[250px]" id="tour-employee-selector">
               <EmployeeSelector
                 multiSelect
                 empMultiSelect={true}
@@ -324,7 +364,7 @@ function App() {
             </div>
 
             {/* From Date */}
-            <div className="mb-4">
+          <div className="mb-28" id="tour-date-filters">
               <label className="block text-sm font-medium text-gray-700">From Date</label>
               <input
                 type="date"
@@ -335,7 +375,7 @@ function App() {
             </div>
 
             {/* To Date */}
-            <div className="mb-4">
+            <div className="mb-28">
               <label className="block text-sm font-medium text-gray-700">To Date</label>
               <input
                 type="date"
@@ -350,7 +390,8 @@ function App() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSearch}
-              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white rounded-lg mb-4 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white rounded-lg  mb-28 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+            id="tour-search-button"
             >
               <Search className="w-4 h-4 text-black" />
               <span className="text-black">Search</span>
@@ -361,7 +402,8 @@ function App() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowForm(true)}
-              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium border border-transparent rounded-lg mb-4 rounded-lg bg-gray-100"
+              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium border border-transparent rounded-lg  mb-28 rounded-lg bg-gray-100 "
+            id="tour-add-button"
             >
               <Plus className="w-4 h-4 " />
               <span>Add</span>
@@ -369,7 +411,7 @@ function App() {
           </div>
 
           {/* Main content */}
-          <div className="flex-1 space-y-6">
+        <div className="flex-1 space-y-6" id="tour-stats-cards">
             <StatsCards
               employees={employees}
               records={attendanceRecords}
@@ -381,12 +423,14 @@ function App() {
                 <p className="mt-4 text-gray-500">Loading attendance records...</p>
               </div>
             ) : (
-              <AttendanceList
-                records={attendanceRecords}
-                employees={employees}
-                selectedEmployee={selectedEmployee}
-                onUpdateRecords={handleUpdateRecords}
-              />
+              <div id="tour-attendance-list">
+                <AttendanceList
+                  records={attendanceRecords}
+                  employees={employees}
+                  selectedEmployee={selectedEmployee}
+                  onUpdateRecords={handleUpdateRecords}
+                />
+              </div>
             )}
           </div>
         </div>

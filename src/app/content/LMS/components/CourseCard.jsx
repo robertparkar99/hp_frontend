@@ -573,15 +573,15 @@ const CourseCard = ({
             <div className="flex items-center justify-between p-3 rounded-lg">
               <div className="flex items-center space-x-6">
                 <div className="flex items-center text-sm">
-                  <Icon name="Clock" size={16} className="mr-1.5 text-muted-foreground" />
+                  <Icon name="Clock" size={14} className="mr-1 text-muted-foreground" />
                   <span className="font-medium">{formatTime(course.duration)}</span>
                 </div>
                 <div className="flex items-center text-sm">
-                  <Icon name="Star" size={16} className="mr-1.5 text-amber-500" />
+                  <Icon name="Star" size={14} className="mr-1 text-amber-500" />
                   <span className="font-medium">{course.rating || "4.3"}</span>
                 </div>
                 <div className="flex items-center text-sm">
-                  <Icon name="Users" size={16} className="mr-1.5 text-muted-foreground" />
+                  <Icon name="Users" size={14} className="mr-1 text-muted-foreground" />
                   <span className="font-medium">{course.userCount || "2.1K"}</span>
                 </div>
               </div>
@@ -710,18 +710,18 @@ const CourseCard = ({
           <span className="font-medium mr-1">Job Role:</span> {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
         </p>
 
-        <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
+        <div className="flex items-center justify-between mt-auto p-3 rounded-lg">
           <div className="flex justify-between items-center w-full text-xs">
             <div className="flex items-center">
-              <Icon name="Clock" size={14} className="mr-1.5 text-muted-foreground" />
+              <Icon name="Clock" size={12} className="mr-1 text-muted-foreground" />
               <span className="font-medium">{formatTime(course.duration)}</span>
             </div>
             <div className="flex items-center">
-              <Icon name="Star" size={14} className="mr-1.5 text-amber-500" />
+              <Icon name="Star" size={12} className="mr-1 text-amber-500" />
               <span className="font-medium">{course.rating || "4.3"}</span>
             </div>
             <div className="flex items-center">
-              <Icon name="Users" size={14} className="mr-1.5 text-muted-foreground" />
+              <Icon name="Users" size={12} className="mr-1 text-muted-foreground" />
               <span className="font-medium">{course.userCount || "2.1K"}</span>
             </div>
           </div>

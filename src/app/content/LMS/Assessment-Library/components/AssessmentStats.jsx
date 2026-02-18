@@ -48,9 +48,9 @@
     ];
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+      <div id="tour-assessment-stats" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {statItems.map((item, index) => (
-          <div key={index} className="bg-card border border-border rounded-lg p-4 shadow-soft">
+          <div key={index} className="bg-card border border-border rounded-lg p-4 shadow-soft" data-tour="stat-card">
             <div className="flex items-center space-x-3">
               <div className={`w-10 h-10 ${item.bgColor} rounded-lg flex items-center justify-center`}>
                 <Icon name={item.icon} size={20} className={item.color} />

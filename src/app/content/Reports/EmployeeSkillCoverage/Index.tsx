@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { KPICard } from "./components/KPICard";
 import { SkillCoverageMatrix } from "./components/SkillCoverageMatrix";
 import { SkillGapChart } from "./components/SkillGapChart";
@@ -6,103 +6,95 @@ import { TrendlineChart } from "./components/TrendlineChart";
 import { FilterPanel } from "./components/FilterPanel";
 import { InsightPanel } from "./components/InsightPanel";
 import { Button } from "@/components/ui/button";
-import {
-  Target,
-  TrendingDown,
-  AlertCircle,
+import { 
+  Target, 
+  TrendingDown, 
+  AlertCircle, 
   Activity,
   Download,
   Calendar,
   HelpCircle
 } from "lucide-react";
 
-interface Metrics {
-  overallSkillCoverage: number;
-  avgSkillGap: number;
-  criticalDeficiencies: number;
-  trainingUrgencyIndex: number;
-}
-
-interface SkillGapData {
-  skill: string;
-  gap: number;
-  expectedScore: number;
-  actualScore: number;
-}
-
 const Index = () => {
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedSkillCategory, setSelectedSkillCategory] = useState("all");
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [skillGapData, setSkillGapData] = useState<SkillGapData[]>([]);
-  const [sessionData, setSessionData] = useState({
-    url: "",
-    token: "",
-    subInstituteId: "",
-    orgType: "",
-    userId: "",
-  });
 
-  // ✅ Load session data
-  useEffect(() => {
-    const userData = localStorage.getItem("userData");
-    if (userData) {
-      const { APP_URL, token, sub_institute_id, org_type, user_id } =
-        JSON.parse(userData);
-      setSessionData({
-        url: APP_URL,
-        token,
-        subInstituteId: sub_institute_id,
-        orgType: org_type,
-        userId: user_id,
-      });
+  // Mock data for skill coverage matrix
+  const skillData = [
+    {
+      skill: "Data Analysis",
+      roles: { 
+        Analyst: { coverage: 85, expected: 4.5, actual: 4.2 },
+        Manager: { coverage: 72, expected: 4.2, actual: 3.9 },
+        Engineer: { coverage: 68, expected: 4.3, actual: 3.8 },
+        Specialist: { coverage: 55, expected: 4.0, actual: 3.2 },
+        Director: { coverage: 90, expected: 4.8, actual: 4.7 }
+      }
+    },
+    {
+      skill: "Project Leadership",
+      roles: { 
+        Analyst: { coverage: 45, expected: 3.5, actual: 2.8 },
+        Manager: { coverage: 78, expected: 4.5, actual: 4.1 },
+        Engineer: { coverage: 52, expected: 3.8, actual: 3.1 },
+        Specialist: { coverage: 60, expected: 4.0, actual: 3.5 },
+        Director: { coverage: 92, expected: 4.9, actual: 4.8 }
+      }
+    },
+    {
+      skill: "Technical Writing",
+      roles: { 
+        Analyst: { coverage: 70, expected: 4.0, actual: 3.7 },
+        Manager: { coverage: 65, expected: 3.8, actual: 3.4 },
+        Engineer: { coverage: 88, expected: 4.5, actual: 4.3 },
+        Specialist: { coverage: 75, expected: 4.2, actual: 3.9 },
+        Director: { coverage: 80, expected: 4.3, actual: 4.0 }
+      }
+    },
+    {
+      skill: "Communication",
+      roles: { 
+        Analyst: { coverage: 82, expected: 4.2, actual: 4.0 },
+        Manager: { coverage: 90, expected: 4.8, actual: 4.6 },
+        Engineer: { coverage: 70, expected: 4.0, actual: 3.6 },
+        Specialist: { coverage: 78, expected: 4.3, actual: 4.0 },
+        Director: { coverage: 95, expected: 4.9, actual: 4.8 }
+      }
+    },
+    {
+      skill: "Problem Solving",
+      roles: { 
+        Analyst: { coverage: 75, expected: 4.1, actual: 3.8 },
+        Manager: { coverage: 85, expected: 4.5, actual: 4.2 },
+        Engineer: { coverage: 92, expected: 4.7, actual: 4.6 },
+        Specialist: { coverage: 68, expected: 4.0, actual: 3.5 },
+        Director: { coverage: 88, expected: 4.6, actual: 4.4 }
+      }
+    },
+    {
+      skill: "Strategic Planning",
+      roles: { 
+        Analyst: { coverage: 40, expected: 3.2, actual: 2.4 },
+        Manager: { coverage: 70, expected: 4.3, actual: 3.7 },
+        Engineer: { coverage: 45, expected: 3.5, actual: 2.7 },
+        Specialist: { coverage: 55, expected: 3.8, actual: 3.1 },
+        Director: { coverage: 92, expected: 4.9, actual: 4.8 }
+      }
     }
-  }, []);
-  useEffect(() => {
-    if (!sessionData.url) return;
+  ];
 
-    const fetchMetrics = async () => {
-      try {
-        const response = await fetch(`${sessionData.url}/api/kpis?department=all&sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`);
-        const data = await response.json();
-        if (data.status) {
-          setMetrics(data.metrics);
-        }
-      } catch (error) {
-        console.error('Error fetching metrics:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const roles = ["Analyst", "Manager", "Engineer", "Specialist", "Director"];
 
-    fetchMetrics();
-  }, [sessionData]);
-
-  useEffect(() => {
-    if (!sessionData.url) return;
-
-    const fetchSkillGaps = async () => {
-      try {
-        const response = await fetch(`${sessionData.url}/api/skill-gaps?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&department=all&role=all&skillCategory=all&sort=gap&order=desc`);
-        const result = await response.json();
-        if (result.success) {
-          const mappedData = result.data.map((item: any) => ({
-            skill: item.skill,
-            gap: item.gap,
-            expectedScore: parseFloat(item.expectedScore),
-            actualScore: item.actualScore
-          }));
-          setSkillGapData(mappedData);
-        }
-      } catch (error) {
-        console.error('Error fetching skill gaps:', error);
-      }
-    };
-
-    fetchSkillGaps();
-  }, [sessionData]);
+  // Mock data for skill gap chart
+  const skillGapData = [
+    { skill: "Data Analysis", gap: 2.3, expectedScore: 4.5, actualScore: 2.2 },
+    { skill: "Project Leadership", gap: 2.1, expectedScore: 4.2, actualScore: 2.1 },
+    { skill: "Strategic Planning", gap: 1.9, expectedScore: 4.0, actualScore: 2.1 },
+    { skill: "Analytical Thinking", gap: 1.5, expectedScore: 4.3, actualScore: 2.8 },
+    { skill: "Change Management", gap: 1.2, expectedScore: 3.8, actualScore: 2.6 }
+  ];
 
   // Mock data for time-series trend analysis
   const trendData = [
@@ -149,49 +141,38 @@ const Index = () => {
 
       <main className="container mx-auto px-6 py-8">
         {/* KPI Summary */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="p-6 border rounded-lg">Loading...</div>
-            <div className="p-6 border rounded-lg">Loading...</div>
-            <div className="p-6 border rounded-lg">Loading...</div>
-            <div className="p-6 border rounded-lg">Loading...</div>
-          </div>
-        ) : metrics ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <KPICard
-                title="Overall Skill Coverage"
-                value={`${metrics.overallSkillCoverage}%`}
-                subtitle="of skills meeting proficiency"
-                icon={Target}
-                trend={{ value: 5, label: "vs last quarter" }}
-                status="warning"
-              />
-              <KPICard
-                title="Avg Skill Gap"
-                value={metrics.avgSkillGap.toString()}
-                subtitle="points below expected"
-                icon={TrendingDown}
-                trend={{ value: -3, label: "improvement" }}
-                status="good"
-              />
-              <KPICard
-                title="Critical Deficiencies"
-                value={metrics.criticalDeficiencies.toString()}
-                subtitle="high-priority skills"
-                icon={AlertCircle}
-                status="critical"
-              />
-              <KPICard
-                title="Training Urgency Index"
-                value={metrics.trainingUrgencyIndex.toString()}
-                subtitle="out of 100"
-                icon={Activity}
-                status="warning"
-              />
-            </div>
-        ) : (
-          <div className="mb-8">Error loading metrics</div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <KPICard
+            title="Overall Skill Coverage"
+            value="72%"
+            subtitle="of skills meeting proficiency"
+            icon={Target}
+            trend={{ value: 5, label: "vs last quarter" }}
+            status="warning"
+          />
+          <KPICard
+            title="Avg Skill Gap"
+            value="1.8"
+            subtitle="points below expected"
+            icon={TrendingDown}
+            trend={{ value: -3, label: "improvement" }}
+            status="good"
+          />
+          <KPICard
+            title="Critical Deficiencies"
+            value="12"
+            subtitle="high-priority skills"
+            icon={AlertCircle}
+            status="critical"
+          />
+          <KPICard
+            title="Training Urgency Index"
+            value="68"
+            subtitle="out of 100"
+            icon={Activity}
+            status="warning"
+          />
+        </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -210,7 +191,7 @@ const Index = () => {
 
           {/* Visualizations */}
           <div className="lg:col-span-3 space-y-6">
-            <SkillCoverageMatrix />
+            <SkillCoverageMatrix data={skillData} roles={roles} />
             <SkillGapChart data={skillGapData} />
             <TrendlineChart data={trendData} />
             <InsightPanel />

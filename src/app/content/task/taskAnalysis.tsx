@@ -5,9 +5,9 @@ declare global {
   }
 }
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 // import { useRouter } from "next/navigation";
-import { ArrowLeft, Calendar, Clock, Check, X, AlertCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { ReactNode } from "react";
 import DataTable from "react-data-table-component";
 import {
@@ -18,8 +18,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 // const DEFAULT_IMAGE =
 //   "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
@@ -49,22 +47,6 @@ interface TaskData {
   task_type: { type: string };
   reply: { type: string }[];
   task_attachment: { type: string }[];
-  observer_id?: string;
-  manageby?: { type: string }[];
-  extension_requests?: DeadlineExtensionRequest[];
-}
-
-interface DeadlineExtensionRequest {
-  id: string;
-  task_id: string;
-  user_id: string;
-  observer_id: string;
-  new_deadline: string;
-  reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-  remarks: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export default function TaskDashboard() {
@@ -92,18 +74,6 @@ export default function TaskDashboard() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskData | null>(null);
-  
-  // Deadline extension modal states
-  const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
-  const [extensionDeadline, setExtensionDeadline] = useState("");
-  const [extensionReason, setExtensionReason] = useState("");
-  const [isSubmittingExtension, setIsSubmittingExtension] = useState(false);
-  
-  // Approval modal states
-  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
-  const [approvalRemarks, setApprovalRemarks] = useState("");
-  const [isProcessingApproval, setIsProcessingApproval] = useState(false);
-  const [pendingExtensionRequest, setPendingExtensionRequest] = useState<DeadlineExtensionRequest | null>(null);
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -130,74 +100,72 @@ export default function TaskDashboard() {
     }
   }, []);
 
-  const fetchTasks = useCallback(async () => {
-    if (!sessionData.url || !sessionData.token) return;
-    try {
-      setLoading(true);
-      const res = await fetch(
-        `${sessionData.url}/task_analysis_report?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&syear=${sessionData.syear}`
-      );
-
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-      const data = await res.json();
-
-      // Group multiple employees under the same task
-      const groupedTasks: { [key: string]: any[] } = {};
-      data.taskData.forEach((item: any) => {
-        if (!groupedTasks[item.id]) groupedTasks[item.id] = [];
-        groupedTasks[item.id].push(item);
-      });
-
-      const mappedTasks: TaskData[] = Object.keys(groupedTasks).map(
-        (taskId) => {
-          const taskGroup = groupedTasks[taskId];
-          return {
-            id: String(taskId),
-            tasks: [{ type: taskGroup[0].task_title || "Task" }],
-            description: [
-              { description: taskGroup[0].task_description || "" },
-            ],
-            employees: taskGroup.map((emp) => ({
-              image: emp.employee_image || "",
-              allocated_to: emp.ALLOCATED_TO || "",
-              color: "#E5E7EB",
-            })),
-            deadline: taskGroup[0].task_date || "",
-            priority: "Medium",
-            statuses: [
-              taskGroup[0].status === "IN-PROGRESS"
-                ? "IN-PROGRESS"
-                : taskGroup[0].status || "PENDING",
-            ],
-            approve_status: taskGroup[0].approve_status
-              ? taskGroup[0].approve_status.toLowerCase()
-              : null,
-            approved_by: [{ type: taskGroup[0].approved_by || "" }],
-            ALLOCATOR: [{ type: taskGroup[0].ALLOCATOR || "" }],
-            kra: [{ type: taskGroup[0].kra || "" }],
-            kpa: [{ type: taskGroup[0].kpa || "" }],
-            task_type: { type: taskGroup[0].task_type || "" },
-            reply: [{ type: taskGroup[0].reply || "" }],
-            task_attachment: [{ type: taskGroup[0].task_attachment || "" }],
-            observer_id: taskGroup[0].manageby || null,
-            manageby: taskGroup[0].manageby ? [{ type: taskGroup[0].manageby }] : [],
-          };
-        }
-      );
-
-      setTasks(mappedTasks);
-    } catch (err) {
-      console.error("Failed to fetch tasks:", err);
-      setTasks([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [sessionData]);
-
   useEffect(() => {
+    async function fetchTasks() {
+      if (!sessionData.url || !sessionData.token) return;
+      try {
+        setLoading(true);
+        const res = await fetch(
+          `${sessionData.url}/task_analysis_report?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&syear=${sessionData.syear}`
+        );
+
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+        const data = await res.json();
+
+        // Group multiple employees under the same task
+        const groupedTasks: { [key: string]: any[] } = {};
+        data.taskData.forEach((item: any) => {
+          if (!groupedTasks[item.id]) groupedTasks[item.id] = [];
+          groupedTasks[item.id].push(item);
+        });
+
+        const mappedTasks: TaskData[] = Object.keys(groupedTasks).map(
+          (taskId) => {
+            const taskGroup = groupedTasks[taskId];
+            return {
+              id: String(taskId),
+              tasks: [{ type: taskGroup[0].task_title || "Task" }],
+              description: [
+                { description: taskGroup[0].task_description || "" },
+              ],
+              employees: taskGroup.map((emp) => ({
+                image: emp.employee_image || "",
+                allocated_to: emp.ALLOCATED_TO || "",
+                color: "#E5E7EB",
+              })),
+              deadline: taskGroup[0].task_date || "",
+              priority: "Medium",
+              statuses: [
+                taskGroup[0].status === "IN-PROGRESS"
+                  ? "IN-PROGRESS"
+                  : taskGroup[0].status || "PENDING",
+              ],
+              approve_status: taskGroup[0].approve_status
+                ? taskGroup[0].approve_status.toLowerCase()
+                : null,
+              approved_by: [{ type: taskGroup[0].approved_by || "" }],
+              ALLOCATOR: [{ type: taskGroup[0].ALLOCATOR || "" }],
+              kra: [{ type: taskGroup[0].kra || "" }],
+              kpa: [{ type: taskGroup[0].kpa || "" }],
+              task_type: { type: taskGroup[0].task_type || "" },
+              reply: [{ type: taskGroup[0].reply || "" }],
+              task_attachment: [{ type: taskGroup[0].task_attachment || "" }],
+            };
+          }
+        );
+
+        setTasks(mappedTasks);
+      } catch (err) {
+        console.error("Failed to fetch tasks:", err);
+        setTasks([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchTasks();
-  }, [fetchTasks]);
+  }, [sessionData]);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -421,175 +389,6 @@ export default function TaskDashboard() {
     );
   };
 
-  // Deadline Extension Request Functions
-  const handleRequestDeadlineExtension = async () => {
-    if (!selectedTask || !extensionDeadline || !extensionReason) {
-      alert("Please fill in all required fields for the extension request");
-      return;
-    }
-
-    setIsSubmittingExtension(true);
-
-    try {
-      const response = await fetch(
-        `${sessionData.url}/api/deadline-extension?type=API&token=${sessionData.token}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionData.token}`,
-          },
-          body: JSON.stringify({
-            task_id: selectedTask.id,
-            user_id: sessionData.userId,
-            observer_id: selectedTask.manageby?.[0]?.type || selectedTask.observer_id,
-            new_deadline: extensionDeadline,
-            reason: extensionReason,
-            request_type: "request",
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert("Deadline extension request submitted successfully!");
-        setIsExtensionModalOpen(false);
-        setExtensionDeadline("");
-        setExtensionReason("");
-        // Refresh tasks to show updated status
-        fetchTasks();
-      } else {
-        throw new Error(result.error || "Failed to submit extension request");
-      }
-    } catch (error) {
-      console.error("Error submitting extension request:", error);
-      alert("Failed to submit extension request. Please try again.");
-    } finally {
-      setIsSubmittingExtension(false);
-    }
-  };
-
-  const handleApproveExtension = async () => {
-    if (!pendingExtensionRequest) return;
-
-    setIsProcessingApproval(true);
-
-    try {
-      const response = await fetch(
-        `${sessionData.url}/api/deadline-extension?type=API&token=${sessionData.token}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionData.token}`,
-          },
-          body: JSON.stringify({
-            task_id: pendingExtensionRequest.task_id,
-            user_id: sessionData.userId,
-            observer_id: pendingExtensionRequest.observer_id,
-            new_deadline: pendingExtensionRequest.new_deadline,
-            reason: pendingExtensionRequest.reason,
-            request_type: "response",
-            status: "approved",
-            remarks: approvalRemarks,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert("Deadline extension request approved successfully!");
-        setIsApprovalModalOpen(false);
-        setApprovalRemarks("");
-        setPendingExtensionRequest(null);
-        // Refresh tasks to show updated status
-        fetchTasks();
-      } else {
-        throw new Error(result.error || "Failed to approve extension request");
-      }
-    } catch (error) {
-      console.error("Error approving extension request:", error);
-      alert("Failed to approve extension request. Please try again.");
-    } finally {
-      setIsProcessingApproval(false);
-    }
-  };
-
-  const handleRejectExtension = async () => {
-    if (!pendingExtensionRequest || !approvalRemarks) {
-      alert("Please provide remarks for rejection");
-      return;
-    }
-
-    setIsProcessingApproval(true);
-
-    try {
-      const response = await fetch(
-        `${sessionData.url}/api/deadline-extension?type=API&token=${sessionData.token}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionData.token}`,
-          },
-          body: JSON.stringify({
-            task_id: pendingExtensionRequest.task_id,
-            user_id: sessionData.userId,
-            observer_id: pendingExtensionRequest.observer_id,
-            new_deadline: pendingExtensionRequest.new_deadline,
-            reason: pendingExtensionRequest.reason,
-            request_type: "response",
-            status: "rejected",
-            remarks: approvalRemarks,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert("Deadline extension request rejected!");
-        setIsApprovalModalOpen(false);
-        setApprovalRemarks("");
-        setPendingExtensionRequest(null);
-        // Refresh tasks to show updated status
-        fetchTasks();
-      } else {
-        throw new Error(result.error || "Failed to reject extension request");
-      }
-    } catch (error) {
-      console.error("Error rejecting extension request:", error);
-      alert("Failed to reject extension request. Please try again.");
-    } finally {
-      setIsProcessingApproval(false);
-    }
-  };
-
-  const openExtensionModal = (task: TaskData) => {
-    setSelectedTask(task);
-    setIsExtensionModalOpen(true);
-  };
-
-  const openApprovalModal = (request: DeadlineExtensionRequest) => {
-    setPendingExtensionRequest(request);
-    setIsApprovalModalOpen(true);
-  };
-
-  // Check if current user is the observer for a task
-  const isUserObserver = (task: TaskData) => {
-    return task.manageby?.[0]?.type === sessionData.userProfile || 
-           task.observer_id === sessionData.userId;
-  };
-
-  // Check if current user is the executor for a task
-  const isUserExecutor = (task: TaskData) => {
-    return task.employees.some(
-      (emp) => emp.allocated_to === sessionData.userProfile
-    );
-  };
-
   return (
     <div className="w-full max-w-[1560px] mx-auto bg-white relative min-h-screen rounded-xl">
       {/* Header */}
@@ -781,20 +580,6 @@ export default function TaskDashboard() {
                             }
                           />
                         )}
-                        
-                        {/* Deadline Extension Request Button */}
-                        {isUserExecutor(selectedTask) && selectedTask.approve_status !== 'rejected' && (
-                          <div className="mt-4">
-                            <Button
-                              onClick={() => openExtensionModal(selectedTask)}
-                              variant="outline"
-                              className="w-full flex items-center justify-center gap-2 border-blue-300 text-blue-600 hover:bg-blue-50"
-                            >
-                              <Calendar className="w-4 h-4" />
-                              Request Deadline Extension
-                            </Button>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -803,139 +588,6 @@ export default function TaskDashboard() {
             </div>
           ) : (
             <p className="p-6 text-gray-400">No task selected</p>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Deadline Extension Request Modal */}
-      <Dialog open={isExtensionModalOpen} onOpenChange={setIsExtensionModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-500" />
-              Request Deadline Extension
-            </DialogTitle>
-          </DialogHeader>
-          {selectedTask && (
-            <div className="space-y-4">
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-sm font-medium text-blue-800">Task: {selectedTask.tasks[0]?.type}</p>
-                <p className="text-sm text-blue-600">Current Deadline: {selectedTask.deadline || "Not set"}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New Deadline <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="date"
-                  value={extensionDeadline}
-                  onChange={(e) => setExtensionDeadline(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Reason for Extension <span className="text-red-500">*</span>
-                </label>
-                <Textarea
-                  placeholder="Please provide a valid reason for the deadline extension..."
-                  value={extensionReason}
-                  onChange={(e) => setExtensionReason(e.target.value)}
-                  rows={4}
-                  className="w-full"
-                />
-              </div>
-              
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsExtensionModalOpen(false)}
-                  className="flex-1"
-                  disabled={isSubmittingExtension}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleRequestDeadlineExtension}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  disabled={isSubmittingExtension || !extensionDeadline || !extensionReason}
-                >
-                  {isSubmittingExtension ? "Submitting..." : "Submit Request"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Extension Approval Modal */}
-      <Dialog open={isApprovalModalOpen} onOpenChange={setIsApprovalModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-orange-500" />
-              Deadline Extension Request
-            </DialogTitle>
-          </DialogHeader>
-          {pendingExtensionRequest && (
-            <div className="space-y-4">
-              <div className="bg-orange-50 p-3 rounded-lg">
-                <p className="text-sm font-medium text-orange-800">
-                  Requested New Deadline: {pendingExtensionRequest.new_deadline}
-                </p>
-                <p className="text-sm text-orange-600 mt-1">
-                  Reason: {pendingExtensionRequest.reason}
-                </p>
-                <p className="text-xs text-orange-500 mt-1">
-                  Requested on: {new Date(pendingExtensionRequest.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Remarks <span className="text-red-500">*</span>
-                  {pendingExtensionRequest.status === 'rejected' && ' (Required for rejection)'}
-                </label>
-                <Textarea
-                  placeholder={pendingExtensionRequest.status === 'approved' 
-                    ? "Optional remarks for approval..." 
-                    : "Please provide remarks explaining your decision..."}
-                  value={approvalRemarks}
-                  onChange={(e) => setApprovalRemarks(e.target.value)}
-                  rows={3}
-                  className="w-full"
-                />
-              </div>
-              
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsApprovalModalOpen(false)}
-                  className="flex-1"
-                  disabled={isProcessingApproval}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleRejectExtension}
-                  className="flex-1"
-                  disabled={isProcessingApproval || !approvalRemarks}
-                >
-                  {isProcessingApproval ? "Processing..." : "Reject"}
-                </Button>
-                <Button
-                  onClick={handleApproveExtension}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  disabled={isProcessingApproval}
-                >
-                  {isProcessingApproval ? "Processing..." : "Approve"}
-                </Button>
-              </div>
-            </div>
           )}
         </DialogContent>
       </Dialog>

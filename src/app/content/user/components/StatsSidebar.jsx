@@ -26,7 +26,7 @@ const StatsSidebar = ({
   // const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id='stats-sidebar-overview'>
       {/* Add User Modal */}
       {/* {isAddUserModalOpen && (
         <AddUserModal
@@ -42,7 +42,7 @@ const StatsSidebar = ({
       )} */}
 
       {/* Overview */}
-      <div className="bg-card border border-border rounded-lg p-6">
+      <div id="stats-sidebar-overview" className="bg-card border border-border rounded-lg p-6">
         <h3 className="text-xl font-semibold text-foreground mb-4">Overview</h3>
         <div className="space-y-4">
           {/* <div className="flex justify-between">

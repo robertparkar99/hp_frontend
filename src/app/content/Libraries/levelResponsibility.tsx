@@ -1,6 +1,15 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import Shepherd, { Tour } from 'shepherd.js';
+import 'shepherd.js/dist/css/shepherd.css';
+import {
+  initializeLORTour,
+  isLORTourCompleted,
+  setLORTourCompleted,
+  resetLORTour
+} from './LevelResponsibilityTour';
+import LevelResponsibilityTour from '../Libraries/levelResponsibilyTourstart';
 
 const LevelResponsibility = () => {
   const [sessionData, setSessionData] = useState<any>({});
@@ -8,8 +17,32 @@ const LevelResponsibility = () => {
   const [attrData, setAttrData] = useState<{ [key: string]: any }>({});
   const [activeLevel, setActiveLevel] = useState('');
   const [activeSection, setActiveSection] = useState<'description' | 'responsibility' | 'business'>('description');
+  const tourRef = useRef<Tour | null>(null);
+  const tourStartedRef = useRef(false);
+  const [isTourActive, setIsTourActive] = useState(false);
+  const [showTour, setShowTour] = useState(false);
 
  const cleanText = (text?: string) => text?.replace(/in SFIA/g, "").trim() || "";
+  // Check if tour should start (only when navigated from sidebar tour)
+  useEffect(() => {
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+    console.log('[User] triggerPageTour value:', triggerTour);
+
+    if (triggerTour === 'earning-object-repository') {
+      console.log('[User] Starting page tour automatically');
+      setShowTour(true);
+      // Clean up the flag
+      sessionStorage.removeItem('triggerPageTour');
+    }
+  }, []);
+
+  // Check if first visit and show tour (disabled - now using sidebar trigger)
+  const handleTourComplete = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('levelOfResponsibilityTourSeen', 'true');
+    }
+    setShowTour(false);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -55,6 +88,75 @@ const LevelResponsibility = () => {
     return attrData && attrData[activeLevel] ? attrData[activeLevel] : null;
   }, [attrData, activeLevel]);
 
+  // Section switcher for tour
+  const switchSectionForTour = useCallback((section: 'description' | 'responsibility' | 'business') => {
+    setActiveSection(section);
+  }, []);
+
+  // Initialize tour only when triggered via sidebar tour flow
+  useEffect(() => {
+    // Check if tour was triggered via sidebar tour flow
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+
+    // Only start tour if triggered via sidebar AND not already started
+    const isFirstVisit = !isLORTourCompleted();
+
+    console.log('[LOR Tour] triggerTour:', triggerTour);
+    console.log('[LOR Tour] isFirstVisit:', isFirstVisit);
+    console.log('[LOR Tour] tourStartedRef:', tourStartedRef.current);
+    console.log('[LOR Tour] levelsData.length:', levelsData.length);
+
+    // Start tour only if triggered via sidebar AND tour hasn't been completed
+    if (triggerTour && isFirstVisit && !tourStartedRef.current && levelsData.length > 0) {
+      console.log('[LOR Tour] Starting tour (triggered via sidebar)...');
+
+      // Clear the trigger flag immediately to prevent re-triggering
+      sessionStorage.removeItem('triggerPageTour');
+
+      tourStartedRef.current = true;
+      tourRef.current = initializeLORTour(switchSectionForTour);
+      tourRef.current.start();
+      setIsTourActive(true);
+
+      // Handle tour completion
+      tourRef.current.on('complete', () => {
+        setLORTourCompleted();
+        setIsTourActive(false);
+        console.log('[LOR Tour] Tour completed');
+      });
+
+      // Handle tour cancel
+      tourRef.current.on('cancel', () => {
+        setIsTourActive(false);
+        console.log('[LOR Tour] Tour cancelled');
+      });
+    } else if (triggerTour && isFirstVisit && !tourStartedRef.current && levelsData.length === 0) {
+      // Wait for data to load then start tour
+      console.log('[LOR Tour] Waiting for data to load...');
+
+      const timer = setTimeout(() => {
+        // Check trigger again (it might still be set)
+        const triggerTour = sessionStorage.getItem('triggerPageTour');
+        if (triggerTour && levelsData.length > 0 && !tourStartedRef.current) {
+          console.log('[LOR Tour] Data loaded, starting tour...');
+          // Clear the trigger flag
+          sessionStorage.removeItem('triggerPageTour');
+
+          tourStartedRef.current = true;
+          tourRef.current = initializeLORTour(switchSectionForTour);
+          tourRef.current.start();
+          setIsTourActive(true);
+        } else if (!triggerTour) {
+          console.log('[LOR Tour] Trigger was cleared while waiting');
+        }
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    } else {
+      console.log('[LOR Tour] Tour not started - either not triggered or already completed');
+    }
+  }, [levelsData.length, switchSectionForTour]);
+
   const tabs = [
     {
       key: 'description',
@@ -76,7 +178,7 @@ const LevelResponsibility = () => {
   return (
     <div className="w-full flex flex-col bg-background rounded-xl items-center space-y-8 px-4 py-8">
       {/* LEVEL SELECTOR BUTTONS */}
-      <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 justify-center">
+      <div id="tour-level-selector" className="flex flex-wrap gap-3 mb-6 justify-center">
         {levelsData.map((level) => (
           <button
             key={level.level}
@@ -84,7 +186,7 @@ const LevelResponsibility = () => {
               setActiveLevel(level.level);
               setActiveSection('description');
             }}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold text-sm sm:text-base border shadow transition-all ${activeLevel === level.level
+            className={`px-4 py-2 rounded-full font-semibold border shadow transition-all ${activeLevel === level.level
               ? 'bg-blue-600 text-white shadow-md'
               : 'bg-white text-blue-800 border-blue-300 hover:bg-blue-100'
               }`}
@@ -95,25 +197,25 @@ const LevelResponsibility = () => {
       </div>
 
       {/* TOP TAB SWITCHER */}
-      <div className="w-full max-w-6xl mx-auto px-2">
+      <div id="tour-section-tabs" className="w-full max-w-6xl mx-auto">
         <div className="border-2 border-blue-400 bg-[#f6faff] rounded-2xl shadow-md overflow-hidden">
-          <div className="flex flex-col sm:flex-row justify-between items-stretch text-center">
+          <div className="flex flex-row justify-between items-stretch text-center">
             {tabs.map((tab, index) => (
               <React.Fragment key={tab.key}>
                 <div
                   onClick={() => setActiveSection(tab.key as any)}
-                  className={`flex-1 flex flex-row sm:flex-col items-center justify-center py-3 sm:py-4 cursor-pointer transition-all ${activeSection === tab.key
-                    ? 'bg-[#ACD4FF]'
+                  className={`flex-1 flex flex-col items-center justify-center py-4 cursor-pointer transition-all ${activeSection === tab.key
+                    ? 'bg-[#ACD4FF] shadow-inner'
                     : 'hover:bg-[#eef6ff]'
-                    }`}
+                    } ${isTourActive && activeSection === tab.key ? 'ring-4 ring-blue-300 ring-opacity-70 animate-pulse' : ''}`}
                 >
-                  <img src={tab.icon} alt={tab.label} className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 object-contain mb-1 sm:mb-2" />
-                  <h3 className="text-[#1f2e4c] font-semibold text-xs sm:text-sm md:text-base px-1">{tab.label}</h3>
+                  <img src={tab.icon} alt={tab.label} className="w-16 h-16 object-contain mb-2" />
+                  <h3 className="text-[#1f2e4c] font-semibold text-sm md:text-base">{tab.label}</h3>
                 </div>
 
-                {/* Divider line between tabs - only show on desktop */}
+                {/* Divider line between tabs */}
                 {index < tabs.length - 1 && (
-                  <div className="hidden sm:block w-[5px] bg-blue-300 h-auto" />
+                  <div className="w-[5px] bg-blue-300 h-auto" />
                 )}
               </React.Fragment>
             ))}
@@ -122,83 +224,83 @@ const LevelResponsibility = () => {
       </div>
 
       {/* LEVEL BADGE - Show for all sections, aligned to start (left) */}
-      <div className="w-full flex justify-start mt-4 sm:mt-6">
+      <div id="tour-level-badge" className="w-full flex justify-start mt-6">
         <div
-          className="px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-[#A4D0FF] shadow max-w-full sm:max-w-xl overflow-hidden"
+          className="px-6 py-3 rounded-2xl border-2 border-[#A4D0FF] shadow max-w-xl"
           style={{
             background: "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
           }}
         >
-          <div className="text-white font-bold text-base sm:text-xl md:text-2xl font-roboto truncate">
+          <div className="text-white font-bold text-xl lg:text-2xl font-roboto">
             Level {activeLevel}: {levelsData.find((item) => item.level === activeLevel)?.guiding_phrase || ""}
           </div>
         </div>
       </div>
 
-   
-  {/* DESCRIPTION SECTION */}
-{activeSection === 'description' && activeData && (
-  <div className="w-full max-w-6xl mx-auto mt-4 sm:mt-6 px-2 sm:px-4">
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-      
-      {/* Description Card */}
-      <div
-        className="relative w-full min-h-[200px] sm:min-h-[250px] md:min-h-[300px] rounded-xl sm:rounded-2xl border-2 border-[#94BEFF] shadow-sm
-                   transition-transform duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-200"
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
-        }}
-      >
-        <h3 className="mt-4 sm:mt-6 ml-4 sm:ml-5 text-[#0043CE] text-lg sm:text-xl md:text-[24px] font-bold opacity-80">
-          Description
-        </h3>
+      {/* DESCRIPTION SECTION */}
+      {activeSection === 'description' && activeData && (
+        <div id="tour-description-section" className="w-full max-w-6xl mx-auto mt-6 px-4">
+          <div className="grid grid-cols-2 gap-8">
 
-        <hr className="mx-4 sm:mx-5 my-2 sm:my-3 border border-gray-400" />
+            {/* Description Card */}
+            <div
+              id="tour-description-card"
+              className="relative w-full h-[300px] rounded-2xl border-2 border-[#94BEFF] shadow-sm
+                         transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+              }}
+            >
+              <h3 className="mt-6 ml-5 text-[#0043CE] text-[24px] font-bold opacity-80">
+                Description
+              </h3>
 
-        <div className="mx-4 sm:mx-5 h-[calc(100%-80px)] sm:h-[150px] overflow-y-auto pr-2 text-[13px] sm:text-[15px] whitespace-pre-line hide-scrollbar">
-          {cleanText(activeData.essence_level)}
+              <hr className="mx-5 my-3 border border-gray-400" />
+
+              <div className="mx-5 h-[150px] overflow-y-auto pr-2 text-[15px] whitespace-pre-line hide-scrollbar">
+                {cleanText(activeData.essence_level)}
+              </div>
+            </div>
+
+            {/* Guidance Notes Card */}
+            <div
+              id="tour-guidance-card"
+              className="relative w-full h-[300px] rounded-2xl border-2 border-[#94BEFF] shadow-sm
+                         transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-200"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
+              }}
+            >
+              <h3 className="mt-6 ml-5 text-[#0043CE] text-[24px] font-bold opacity-80">
+                Guidance Notes
+              </h3>
+
+              <hr className="mx-5 my-3 border border-gray-400" />
+
+              <div className="mx-5 h-[150px] overflow-y-auto pr-2 text-[15px] whitespace-pre-line hide-scrollbar">
+                {cleanText(activeData.attribute_guidance_notes)}
+              </div>
+            </div>
+
+          </div>
         </div>
-      </div>
-
-      {/* Guidance Notes Card */}
-      <div
-        className="relative w-full min-h-[200px] sm:min-h-[250px] md:min-h-[300px] rounded-xl sm:rounded-2xl border-2 border-[#94BEFF] shadow-sm
-                   transition-transform duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-200"
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
-        }}
-      >
-        <h3 className="mt-4 sm:mt-6 ml-4 sm:ml-5 text-[#0043CE] text-lg sm:text-xl md:text-[24px] font-bold opacity-80">
-          Guidance Notes
-        </h3>
-
-        <hr className="mx-4 sm:mx-5 my-2 sm:my-3 border border-gray-400" />
-
-        <div className="mx-4 sm:mx-5 h-[calc(100%-80px)] sm:h-[150px] overflow-y-auto pr-2 text-[13px] sm:text-[15px] whitespace-pre-line hide-scrollbar">
-          {cleanText(activeData.attribute_guidance_notes)}
-        </div>
-      </div>
-
-    </div>
-  </div>
- )}
-
+      )}
 
       {/* RESPONSIBILITY ATTRIBUTES SECTION */}
       {activeSection === 'responsibility' && levelAttributes?.Attributes && (
-        <div className="w-full max-w-6xl px-4 mt-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div id="tour-responsibility-section" className="w-full max-w-6xl px-4 mt-2">
+          <div id="tour-attribute-cards" className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {Object.entries(levelAttributes.Attributes).map(([key, attr]: [string, any]) => (
               <div
                 key={key}
-                className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-200"
+                className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
               >
-                <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2 text-sm sm:text-base">
+                <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
                   {key}
                 </h4>
-                <p className="text-sm sm:text-base text-black">{cleanText(attr.attribute_description)}</p>
+                <p className="text-sm text-black">{cleanText(attr.attribute_description)}</p>
               </div>
             ))}
           </div>
@@ -207,23 +309,29 @@ const LevelResponsibility = () => {
 
       {/* BUSINESS SKILLS SECTION */}
       {activeSection === 'business' && levelAttributes?.Business_skills && (
-        <div className="w-full max-w-6xl px-4 mt-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div id="tour-business-section" className="w-full max-w-6xl px-4 mt-2">
+          <div id="tour-business-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Object.entries(levelAttributes.Business_skills).map(([key, attr]: [string, any]) => (
               <div
                 key={key}
-                className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-200"
+                className="p-4 rounded-xl border border-3 border-blue-300 bg-white transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-200"
               >
-                <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2 text-sm sm:text-base">
+                <h4 className="inline-block bg-[#c9dcf8] px-3 py-1 rounded-md font-bold text-blue-800 mb-2">
                   {key}
                 </h4>
-                <p className="text-sm sm:text-base text-black">{cleanText(attr.attribute_description)}</p>
+                <p className="text-sm text-black">{cleanText(attr.attribute_description)}</p>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Tour Component */}
+      {showTour && <LevelResponsibilityTour onComplete={handleTourComplete} />}
     </div>
+
+
+
   );
 };
 

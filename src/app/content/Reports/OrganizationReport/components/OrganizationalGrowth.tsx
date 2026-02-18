@@ -1,7 +1,6 @@
 
 
 "use client";
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -15,6 +14,15 @@ const growthData = [
   { month: "Oct", Engineering: 320, Sales: 195, Marketing: 165, Operations: 210, HR: 62 },
 ];
 
+const hiringData = [
+  { month: "Apr", hires: 45, attrition: 38 },
+  { month: "May", hires: 58, attrition: 40 },
+  { month: "Jun", hires: 62, attrition: 39 },
+  { month: "Jul", hires: 75, attrition: 42 },
+  { month: "Aug", hires: 88, attrition: 44 },
+  { month: "Sep", hires: 102, attrition: 48 },
+  { month: "Oct", hires: 115, attrition: 46 },
+];
 
 // Custom Tooltip Component for Growth Chart
 const CustomGrowthTooltip = ({ active, payload, label }: any) => {
@@ -69,43 +77,6 @@ const CustomHiringTooltip = ({ active, payload, label }: any) => {
 };
 
 export const OrganizationalGrowth = () => {
-  const [hiringData, setHiringData] = useState([]);
-  const [sessionData, setSessionData] = useState({
-    url: "",
-    token: "",
-    subInstituteId: "",
-  });
-
-  useEffect(() => {
-    const userData = localStorage.getItem("userData");
-    if (userData) {
-      const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
-      setSessionData({
-        url: APP_URL,
-        token,
-        subInstituteId: sub_institute_id,
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!sessionData.url) return;
-
-    const fetchHiringData = async () => {
-      try {
-        const response = await fetch(`${sessionData.url}/api/reports/hiring-analytics?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`);
-        const result = await response.json();
-        if (result.status) {
-          setHiringData(result.data);
-        }
-      } catch (error) {
-        console.error('Error fetching hiring data:', error);
-      }
-    };
-
-    fetchHiringData();
-  }, [sessionData]);
-
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Organizational Growth</h2>
