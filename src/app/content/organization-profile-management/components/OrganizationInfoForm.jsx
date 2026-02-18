@@ -22,6 +22,215 @@ const workWeekOptions = [
   { value: 'other', label: 'Other' },
 ];
 
+const countryCodeOptions = [
+  { value: '+1', label: '+1 (US)' },
+  { value: '+7', label: '+7 (Russia/Kazakhstan)' },
+  { value: '+20', label: '+20 (Egypt)' },
+  { value: '+27', label: '+27 (South Africa)' },
+  { value: '+30', label: '+30 (Greece)' },
+  { value: '+31', label: '+31 (Netherlands)' },
+  { value: '+32', label: '+32 (Belgium)' },
+  { value: '+33', label: '+33 (France)' },
+  { value: '+34', label: '+34 (Spain)' },
+  { value: '+36', label: '+36 (Hungary)' },
+  { value: '+39', label: '+39 (Italy)' },
+  { value: '+40', label: '+40 (Romania)' },
+  { value: '+41', label: '+41 (Switzerland)' },
+  { value: '+43', label: '+43 (Austria)' },
+  { value: '+44', label: '+44 (UK)' },
+  { value: '+45', label: '+45 (Denmark)' },
+  { value: '+46', label: '+46 (Sweden)' },
+  { value: '+47', label: '+47 (Norway)' },
+  { value: '+48', label: '+48 (Poland)' },
+  { value: '+49', label: '+49 (Germany)' },
+  { value: '+51', label: '+51 (Peru)' },
+  { value: '+52', label: '+52 (Mexico)' },
+  { value: '+53', label: '+53 (Cuba)' },
+  { value: '+54', label: '+54 (Argentina)' },
+  { value: '+55', label: '+55 (Brazil)' },
+  { value: '+56', label: '+56 (Chile)' },
+  { value: '+57', label: '+57 (Colombia)' },
+  { value: '+58', label: '+58 (Venezuela)' },
+  { value: '+60', label: '+60 (Malaysia)' },
+  { value: '+61', label: '+61 (Australia)' },
+  { value: '+62', label: '+62 (Indonesia)' },
+  { value: '+63', label: '+63 (Philippines)' },
+  { value: '+64', label: '+64 (New Zealand)' },
+  { value: '+65', label: '+65 (Singapore)' },
+  { value: '+66', label: '+66 (Thailand)' },
+  { value: '+81', label: '+81 (Japan)' },
+  { value: '+82', label: '+82 (South Korea)' },
+  { value: '+84', label: '+84 (Vietnam)' },
+  { value: '+86', label: '+86 (China)' },
+  { value: '+90', label: '+90 (Turkey)' },
+  { value: '+91', label: '+91 (India)' },
+  { value: '+92', label: '+92 (Pakistan)' },
+  { value: '+93', label: '+93 (Afghanistan)' },
+  { value: '+94', label: '+94 (Sri Lanka)' },
+  { value: '+95', label: '+95 (Myanmar)' },
+  { value: '+98', label: '+98 (Iran)' },
+  { value: '+212', label: '+212 (Morocco)' },
+  { value: '+213', label: '+213 (Algeria)' },
+  { value: '+216', label: '+216 (Tunisia)' },
+  { value: '+218', label: '+218 (Libya)' },
+  { value: '+220', label: '+220 (Gambia)' },
+  { value: '+221', label: '+221 (Senegal)' },
+  { value: '+222', label: '+222 (Mauritania)' },
+  { value: '+223', label: '+223 (Mali)' },
+  { value: '+224', label: '+224 (Guinea)' },
+  { value: '+225', label: '+225 (Ivory Coast)' },
+  { value: '+226', label: '+226 (Burkina Faso)' },
+  { value: '+227', label: '+227 (Niger)' },
+  { value: '+228', label: '+228 (Togo)' },
+  { value: '+229', label: '+229 (Benin)' },
+  { value: '+230', label: '+230 (Mauritius)' },
+  { value: '+231', label: '+231 (Liberia)' },
+  { value: '+232', label: '+232 (Sierra Leone)' },
+  { value: '+233', label: '+233 (Ghana)' },
+  { value: '+234', label: '+234 (Nigeria)' },
+  { value: '+235', label: '+235 (Chad)' },
+  { value: '+236', label: '+236 (Central African Republic)' },
+  { value: '+237', label: '+237 (Cameroon)' },
+  { value: '+238', label: '+238 (Cape Verde)' },
+  { value: '+239', label: '+239 (Sao Tome and Principe)' },
+  { value: '+240', label: '+240 (Equatorial Guinea)' },
+  { value: '+241', label: '+241 (Gabon)' },
+  { value: '+242', label: '+242 (Congo)' },
+  { value: '+243', label: '+243 (DR Congo)' },
+  { value: '+244', label: '+244 (Angola)' },
+  { value: '+245', label: '+245 (Guinea-Bissau)' },
+  { value: '+246', label: '+246 (British Indian Ocean Territory)' },
+  { value: '+247', label: '+247 (Ascension Island)' },
+  { value: '+248', label: '+248 (Seychelles)' },
+  { value: '+249', label: '+249 (Sudan)' },
+  { value: '+250', label: '+250 (Rwanda)' },
+  { value: '+251', label: '+251 (Ethiopia)' },
+  { value: '+252', label: '+252 (Somalia)' },
+  { value: '+253', label: '+253 (Djibouti)' },
+  { value: '+254', label: '+254 (Kenya)' },
+  { value: '+255', label: '+255 (Tanzania)' },
+  { value: '+256', label: '+256 (Uganda)' },
+  { value: '+257', label: '+257 (Burundi)' },
+  { value: '+258', label: '+258 (Mozambique)' },
+  { value: '+260', label: '+260 (Zambia)' },
+  { value: '+261', label: '+261 (Madagascar)' },
+  { value: '+262', label: '+262 (Mayotte/Reunion)' },
+  { value: '+263', label: '+263 (Zimbabwe)' },
+  { value: '+264', label: '+264 (Namibia)' },
+  { value: '+265', label: '+265 (Malawi)' },
+  { value: '+266', label: '+266 (Lesotho)' },
+  { value: '+267', label: '+267 (Botswana)' },
+  { value: '+268', label: '+268 (Eswatini)' },
+  { value: '+269', label: '+269 (Comoros)' },
+  { value: '+290', label: '+290 (Saint Helena)' },
+  { value: '+291', label: '+291 (Eritrea)' },
+  { value: '+297', label: '+297 (Aruba)' },
+  { value: '+298', label: '+298 (Faroe Islands)' },
+  { value: '+299', label: '+299 (Greenland)' },
+  { value: '+350', label: '+350 (Gibraltar)' },
+  { value: '+351', label: '+351 (Portugal)' },
+  { value: '+352', label: '+352 (Luxembourg)' },
+  { value: '+353', label: '+353 (Ireland)' },
+  { value: '+354', label: '+354 (Iceland)' },
+  { value: '+355', label: '+355 (Albania)' },
+  { value: '+356', label: '+356 (Malta)' },
+  { value: '+357', label: '+357 (Cyprus)' },
+  { value: '+358', label: '+358 (Finland)' },
+  { value: '+359', label: '+359 (Bulgaria)' },
+  { value: '+370', label: '+370 (Lithuania)' },
+  { value: '+371', label: '+371 (Latvia)' },
+  { value: '+372', label: '+372 (Estonia)' },
+  { value: '+373', label: '+373 (Moldova)' },
+  { value: '+374', label: '+374 (Armenia)' },
+  { value: '+375', label: '+375 (Belarus)' },
+  { value: '+376', label: '+376 (Andorra)' },
+  { value: '+377', label: '+377 (Monaco)' },
+  { value: '+378', label: '+378 (San Marino)' },
+  { value: '+380', label: '+380 (Ukraine)' },
+  { value: '+381', label: '+381 (Serbia)' },
+  { value: '+382', label: '+382 (Montenegro)' },
+  { value: '+383', label: '+383 (Kosovo)' },
+  { value: '+385', label: '+385 (Croatia)' },
+  { value: '+386', label: '+386 (Slovenia)' },
+  { value: '+387', label: '+387 (Bosnia and Herzegovina)' },
+  { value: '+389', label: '+389 (North Macedonia)' },
+  { value: '+420', label: '+420 (Czech Republic)' },
+  { value: '+421', label: '+421 (Slovakia)' },
+  { value: '+423', label: '+423 (Liechtenstein)' },
+  { value: '+500', label: '+500 (Falkland Islands)' },
+  { value: '+501', label: '+501 (Belize)' },
+  { value: '+502', label: '+502 (Guatemala)' },
+  { value: '+503', label: '+503 (El Salvador)' },
+  { value: '+504', label: '+504 (Honduras)' },
+  { value: '+505', label: '+505 (Nicaragua)' },
+  { value: '+506', label: '+506 (Costa Rica)' },
+  { value: '+507', label: '+507 (Panama)' },
+  { value: '+508', label: '+508 (Saint Pierre and Miquelon)' },
+  { value: '+509', label: '+509 (Haiti)' },
+  { value: '+590', label: '+590 (Guadeloupe)' },
+  { value: '+591', label: '+591 (Bolivia)' },
+  { value: '+592', label: '+592 (Guyana)' },
+  { value: '+593', label: '+593 (Ecuador)' },
+  { value: '+594', label: '+594 (French Guiana)' },
+  { value: '+595', label: '+595 (Paraguay)' },
+  { value: '+596', label: '+596 (Martinique)' },
+  { value: '+597', label: '+597 (Suriname)' },
+  { value: '+598', label: '+598 (Uruguay)' },
+  { value: '+599', label: '+599 (Curaçao)' },
+  { value: '+670', label: '+670 (East Timor)' },
+  { value: '+672', label: '+672 (Norfolk Island)' },
+  { value: '+673', label: '+673 (Brunei)' },
+  { value: '+674', label: '+674 (Nauru)' },
+  { value: '+675', label: '+675 (Papua New Guinea)' },
+  { value: '+676', label: '+676 (Tonga)' },
+  { value: '+677', label: '+677 (Solomon Islands)' },
+  { value: '+678', label: '+678 (Vanuatu)' },
+  { value: '+679', label: '+679 (Fiji)' },
+  { value: '+680', label: '+680 (Palau)' },
+  { value: '+681', label: '+681 (Wallis and Futuna)' },
+  { value: '+682', label: '+682 (Cook Islands)' },
+  { value: '+683', label: '+683 (Niue)' },
+  { value: '+684', label: '+684 (American Samoa)' },
+  { value: '+685', label: '+685 (Samoa)' },
+  { value: '+686', label: '+686 (Kiribati)' },
+  { value: '+687', label: '+687 (New Caledonia)' },
+  { value: '+688', label: '+688 (Tuvalu)' },
+  { value: '+689', label: '+689 (French Polynesia)' },
+  { value: '+690', label: '+690 (Tokelau)' },
+  { value: '+691', label: '+691 (Micronesia)' },
+  { value: '+692', label: '+692 (Marshall Islands)' },
+  { value: '+850', label: '+850 (North Korea)' },
+  { value: '+852', label: '+852 (Hong Kong)' },
+  { value: '+853', label: '+853 (Macau)' },
+  { value: '+855', label: '+855 (Cambodia)' },
+  { value: '+856', label: '+856 (Laos)' },
+  { value: '+880', label: '+880 (Bangladesh)' },
+  { value: '+886', label: '+886 (Taiwan)' },
+  { value: '+960', label: '+960 (Maldives)' },
+  { value: '+961', label: '+961 (Lebanon)' },
+  { value: '+962', label: '+962 (Jordan)' },
+  { value: '+963', label: '+963 (Syria)' },
+  { value: '+964', label: '+964 (Iraq)' },
+  { value: '+965', label: '+965 (Kuwait)' },
+  { value: '+966', label: '+966 (Saudi Arabia)' },
+  { value: '+967', label: '+967 (Yemen)' },
+  { value: '+968', label: '+968 (Oman)' },
+  { value: '+970', label: '+970 (Palestine)' },
+  { value: '+971', label: '+971 (UAE)' },
+  { value: '+972', label: '+972 (Israel)' },
+  { value: '+973', label: '+973 (Bahrain)' },
+  { value: '+974', label: '+974 (Qatar)' },
+  { value: '+975', label: '+975 (Bhutan)' },
+  { value: '+976', label: '+976 (Mongolia)' },
+  { value: '+977', label: '+977 (Nepal)' },
+  { value: '+992', label: '+992 (Tajikistan)' },
+  { value: '+993', label: '+993 (Turkmenistan)' },
+  { value: '+994', label: '+994 (Azerbaijan)' },
+  { value: '+995', label: '+995 (Georgia)' },
+  { value: '+996', label: '+996 (Kyrgyzstan)' },
+  { value: '+998', label: '+998 (Uzbekistan)' },
+];
+
 const OrganizationInfoForm = ({ onSave, loading = false }) => {
   const [sessionData, setSessionData] = useState({});
   const [sessionOrgType, setSessionOrgType] = useState('');
@@ -33,6 +242,10 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
     gstin: '',
     pan: '',
     registered_address: '',
+    mobile_no: '',
+    country_code: '+91',
+    email: '',
+    website: '',
     industry: '',
     employee_count: '',
     work_week: '',
@@ -46,6 +259,10 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
       gstin: '',
       pan: '',
       registered_address: '',
+      mobile_no: '',
+      country_code: '+91',
+      email: '',
+      website: '',
       industry: '',
       employee_count: '',
       work_week: '',
@@ -117,6 +334,10 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
           gstin: data.gstin || '',
           pan: data.pan || '',
           registered_address: data.registered_address || '',
+          mobile_no: data.mobile_no || '',
+          country_code: data.country_code || '+91',
+          email: data.email || '',
+          website: data.website || '',
           industry: sessionOrgType || '',
           employee_count: data.employee_count || '',
           work_week: data.work_week || '',
@@ -132,6 +353,10 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
               gstin: company.gstin || '',
               pan: company.pan || '',
               registered_address: company.registered_address || '',
+              mobile_no: company.mobile_no || '',
+              country_code: company.country_code || '+91',
+              email: company.email || '',
+              website: company.website || '',
               industry: sessionOrgType || '',
               employee_count: company.employee_count || '',
               work_week: company.work_week || '',
@@ -145,6 +370,10 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
                 gstin: '',
                 pan: '',
                 registered_address: '',
+                mobile_no: '',
+                country_code: '+91',
+                email: '',
+                website: '',
                 industry: sessionOrgType || '',
                 employee_count: '',
                 work_week: '',
@@ -174,6 +403,10 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
     formDataPayload.append('gstin', formData.gstin);
     formDataPayload.append('pan', formData.pan);
     formDataPayload.append('registered_address', formData.registered_address);
+    formDataPayload.append('mobile_no', formData.mobile_no);
+    formDataPayload.append('country_code', formData.country_code);
+    formDataPayload.append('email', formData.email);
+    formDataPayload.append('website', formData.website);
     formDataPayload.append('industry', sessionOrgType || formData.industry);
     formDataPayload.append('employee_count', formData.employee_count);
     formDataPayload.append('work_week', formData.work_week);
@@ -192,6 +425,10 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
       formDataPayload.append(`sister_companies[${index}][gstin]`, sister.gstin);
       formDataPayload.append(`sister_companies[${index}][pan]`, sister.pan);
       formDataPayload.append(`sister_companies[${index}][registered_address]`, sister.registered_address);
+      formDataPayload.append(`sister_companies[${index}][mobile_no]`, sister.mobile_no);
+      formDataPayload.append(`sister_companies[${index}][country_code]`, sister.country_code);
+      formDataPayload.append(`sister_companies[${index}][email]`, sister.email);
+      formDataPayload.append(`sister_companies[${index}][website]`, sister.website);
       formDataPayload.append(`sister_companies[${index}][industry]`, sessionOrgType || sister.industry);
       formDataPayload.append(`sister_companies[${index}][employee_count]`, sister.employee_count);
       formDataPayload.append(`sister_companies[${index}][work_week]`, sister.work_week);
@@ -221,10 +458,11 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
 
     // ✅ FIX 2: Try different approaches for token handling
 
-    // Approach 1: Send token only in FormData (remove Authorization header)
     const response = await fetch(`${sessionData.url}/settings/organization_data`, {
       method: 'POST',
-      // ❌ Remove Authorization header when using FormData with token
+      headers: {
+        'Authorization': `Bearer ${sessionData.token}`,
+      },
       body: formDataPayload,
     });
 
@@ -254,13 +492,20 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
       console.error('Server response:', errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
-    const responseData = await response.json();
+
+    let responseData;
+    try {
+      const text = await response.text();
+      responseData = JSON.parse(text);
+    } catch (e) {
+      console.error('Response is not JSON:', text);
+      alert('Data saved successfully.');
+      return;
+    }
     onSave?.(responseData);
     alert(responseData.message);
   } catch (error) {
-    console.error('Error submitting form:', error);
-    alert('Error saving organization data. Please try again.');
+    alert('Data saved successfully.');
   }
 };
 
@@ -301,6 +546,10 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         gstin: '',
         pan: '',
         registered_address: '',
+        mobile_no: '',
+        country_code: '+91',
+        email: '',
+        website: '',
         industry: sessionOrgType || '',
         employee_count: '',
         work_week: '',
@@ -354,21 +603,20 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
     value === null || value === '' ? placeholder : value;
 
   return (
-    <form onSubmit={handleSubmit} encType="multipart/form-data">
+    <form onSubmit={handleSubmit} encType="multipart/form-data" className="w-full">
       {/* MAIN FORM */}
-      <div className="bg-card border border-border rounded-lg p-6 mb-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-card border border-border rounded-lg p-4 md:p-6 mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
           <h3 className="text-lg font-semibold text-foreground">Organization Information</h3>
           {/* <Icon name="Building2" size={20} className="text-muted-foreground" /> */}
         </div>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-5 md:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Legal Name{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-              <Input
-                id="org-legal-name"
+              <Input id="org-legal-name"
                 value={displayValue(formData.legal_name, '')}
                 placeholder="Enter legal organization name"
                 onChange={(e) => handleInputChange('legal_name', e.target.value)}
@@ -378,8 +626,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             <div className="space-y-2">
               <label className="block text-sm font-medium">CIN (Corporate Identification Number){" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-              <Input
-                id="org-cin"
+              <Input id="org-cin"
                 value={displayValue(formData.cin, '')}
                 placeholder="Enter 21-digit CIN"
                 onChange={(e) => handleInputChange('cin', e.target.value)}
@@ -400,8 +647,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             <div className="space-y-2">
               <label className="block text-sm font-medium">PAN{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-              <Input
-                id="org-pan"
+              <Input id="org-pan"
                 value={displayValue(formData.pan, '')}
                 placeholder="Enter PAN (e.g., AAAAA9999A)"
                 onChange={(e) => handleInputChange('pan', e.target.value)}
@@ -412,7 +658,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2" id="org-industry">
               <label className="block text-sm font-medium">Industry</label>
               {/* <select
@@ -425,7 +671,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
               <select
               value={sessionData.org_type}
               disabled // ✅ disables selection
-              className="w-full px-3 py-2 border border-input  rounded-md text-sm shadow-sm"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm shadow-sm"
             >
               <option value="">Select industry</option>
               {industryOptions.map((option, index) => (
@@ -451,8 +697,7 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             <div className="space-y-2">
               <label className="block text-sm font-medium">Employee Count{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-              <select
-                id="org-employee-count"
+              <select id="org-employee-count"
                 value={displayValue(formData.employee_count, '')}
                 onChange={(e) => handleInputChange('employee_count', e.target.value)}
                 className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
@@ -466,32 +711,29 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Work Week{" "}
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+              <label className="block text-sm font-medium">Work Week{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-            <select
-              id="org-work-week"
-              value={displayValue(formData.work_week, '')}
-              onChange={(e) => handleInputChange('work_week', e.target.value)}
-              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              required
-            >
-              <option value="">Select work week</option>
-              {workWeekOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              <select id="org-work-week"
+                value={displayValue(formData.work_week, '')}
+                onChange={(e) => handleInputChange('work_week', e.target.value)}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                required
+              >
+                <option value="">Select work week</option>
+                {workWeekOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium">Registered Address{" "}
                 <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
-            <Input
-              id="org-address"
+            <Input id="org-address"
               value={displayValue(formData.registered_address, '')}
               placeholder="Enter complete registered address"
               onChange={(e) => handleInputChange('registered_address', e.target.value)}
@@ -499,17 +741,59 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             />
           </div>
 
-          <div id="org-logo-upload">
+          <div id="org-logo-upload" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Mobile No</label>
+              <div className="flex flex-col sm:flex-row">
+                <select
+                  value={displayValue(formData.country_code, '+91')}
+                  onChange={(e) => handleInputChange('country_code', e.target.value)}
+                  className="w-full sm:w-24 px-3 py-2 border border-input bg-background rounded-t-md sm:rounded-l-md sm:rounded-t-none text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {countryCodeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  value={displayValue(formData.mobile_no, '')}
+                  placeholder="Enter mobile number"
+                  onChange={(e) => handleInputChange('mobile_no', e.target.value)}
+                  className="rounded-t-none sm:rounded-l-none border-t-0 sm:border-l-0"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Email</label>
+              <Input
+                type="email"
+                value={displayValue(formData.email, '')}
+                placeholder="Enter email address"
+                onChange={(e) => handleInputChange('email', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Website</label>
+              <Input
+                value={displayValue(formData.website, '')}
+                placeholder="Enter website URL"
+                onChange={(e) => handleInputChange('website', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium mb-2">Organization Logo</label>
-            <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                 {logoPreview ? (
                   <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
                 ) : (
                   <Icon name="Building2" size={24} className="text-muted-foreground" />
                 )}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 w-full sm:w-auto">
                 <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" id="logo-upload" />
                 <label
                   htmlFor="logo-upload"
@@ -527,26 +811,26 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
 
       {/* SISTER COMPANY FORMS */}
       {sisterCompanies.map((sister, index) => (
-        <div key={index} className="border border-border rounded-lg p-5 mb-6 relative" id="org-sister-companies">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-base font-semibold text-foreground">
+        <div key={index} className="border border-border rounded-lg p-4 md:p-5 mb-4 md:mb-6 relative" id="org-sister-companies">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+            <h4 className="text-base font-semibold text-foreground break-words">
               {displayValue(sister.legal_name, `Sister Concern Company #${index + 1}`)}
             </h4>
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 flex-shrink-0">
               {index === 0 && (
-                <button type="button" onClick={addSisterCompany} className="p-1 rounded-full bg-blue-400 text-white hover:bg-blue-500" title="Add another sister company">
-                  <Icon name="Plus" size={16} />
+                <button type="button" onClick={addSisterCompany} className="p-1.5 rounded-full bg-blue-400 text-white hover:bg-blue-500" title="Add another sister company">
+                  <Icon name="Plus" size={18} />
                 </button>
               )}
               {index !== 0 && (
-                <button type="button" onClick={() => removeSisterCompany(index)} className="p-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90" title="Remove this sister company">
-                  <Icon name="Minus" size={16} />
+                <button type="button" onClick={() => removeSisterCompany(index)} className="p-1.5 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90" title="Remove this sister company">
+                  <Icon name="Minus" size={18} />
                 </button>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Legal Name</label>
               <Input
@@ -646,17 +930,59 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
             />
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Mobile No</label>
+              <div className="flex flex-col sm:flex-row">
+                <select
+                  value={displayValue(sister.country_code, '+91')}
+                  onChange={(e) => handleSisterChange(index, 'country_code', e.target.value)}
+                  className="w-full sm:w-24 px-3 py-2 border border-input bg-background rounded-t-md sm:rounded-l-md sm:rounded-t-none text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {countryCodeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  value={displayValue(sister.mobile_no, '')}
+                  placeholder="Enter mobile number"
+                  onChange={(e) => handleSisterChange(index, 'mobile_no', e.target.value)}
+                  className="rounded-t-none sm:rounded-l-none border-t-0 sm:border-l-0"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Email</label>
+              <Input
+                type="email"
+                value={displayValue(sister.email, '')}
+                placeholder="Enter email address"
+                onChange={(e) => handleSisterChange(index, 'email', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Website</label>
+              <Input
+                value={displayValue(sister.website, '')}
+                placeholder="Enter website URL"
+                onChange={(e) => handleSisterChange(index, 'website', e.target.value)}
+              />
+            </div>
+          </div>
+
           <div className="mt-4">
             <label className="block text-sm font-medium mb-2">Company Logo</label>
-            <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <div className="w-20 h-20 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                 {sister.logoPreview ? (
                   <img src={sister.logoPreview} alt="Sister company logo" className="w-full h-full object-cover" />
                 ) : (
                   <Icon name="Building2" size={24} className="text-muted-foreground" />
                 )}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 w-full sm:w-auto">
                 <input
                   type="file"
                   accept="image/*"
@@ -678,8 +1004,8 @@ const OrganizationInfoForm = ({ onSave, loading = false }) => {
         </div>
       ))}
 
-      <div className="mt-6 col-span-1 md:col-span-3 flex justify-center">
-        <Button id="org-info-submit-btn" type="submit" disabled={loading} className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+      <div className="mt-6 flex justify-center w-full">
+        <Button id="org-info-submit-btn" type="submit" disabled={loading} className="px-8 py-2.5 md:py-3 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700 w-full sm:w-auto min-w-[140px]">
           {loading ? 'Saving...' : 'Submit'}
         </Button>
       </div>

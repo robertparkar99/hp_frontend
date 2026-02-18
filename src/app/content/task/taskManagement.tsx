@@ -49,7 +49,9 @@ interface JobRole {
 }
 
 interface Skill {
-  title: string;
+  skill_id: number;
+  jobrole: string;
+  skill: string;
 }
 
 interface Task {
@@ -310,16 +312,45 @@ const TaskManagement = () => {
       setPreviouslyAllocatedTasks([]);
     } else {
       try {
-        const response = await fetch(
+        // Fetch skills from the new user-skills API
+        const skillResponse = await fetch(
+          `${sessionData.url}/api/user-skills/${userId}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`
+        );
+        const skillData = await skillResponse.json();
+        
+        // Transform skills to match Skill interface
+        const transformedSkills: Skill[] = [];
+        
+        if (skillData.data && Array.isArray(skillData.data)) {
+          skillData.data.forEach((item: any) => {
+            transformedSkills.push({
+              skill_id: item.skill_id || item.id || 0,
+              jobrole: item.jobrole || item.job_role || '',
+              skill: item.skill || item.skill_name || item.name || ''
+            });
+          });
+        } else if (Array.isArray(skillData)) {
+          skillData.forEach((item: any) => {
+            transformedSkills.push({
+              skill_id: item.skill_id || item.id || 0,
+              jobrole: item.jobrole || item.job_role || '',
+              skill: item.skill || item.skill_name || item.name || ''
+            });
+          });
+        }
+        
+        setSkillList(transformedSkills);
+        
+        // Fetch tasks from the original employee details API
+        const taskResponse = await fetch(
           `${sessionData.url}/user/add_user/${userId}/edit?type=API&token=${sessionData.token}` +
           `&sub_institute_id=${sessionData.subInstituteId}` +
           `&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
         );
-
-        const data = await response.json();
-        setSkillList(data.jobroleSkills || []);
-        setTaskList(data.jobroleTasks || []);
-        setTaskListArr(data.jobroleTasks || []);
+        
+        const taskData = await taskResponse.json();
+        setTaskList(taskData.jobroleTasks || []);
+        setTaskListArr(taskData.jobroleTasks || []);
         
         // Fetch previously allocated tasks for this employee
         await fetchPreviouslyAllocatedTasks(userId);
@@ -485,7 +516,12 @@ const TaskManagement = () => {
       console.log("TASK_ALLOCATED_TO:", finalAllocatedTo);
       formData.append("task_title", selTask);
       formData.append("task_description", taskDescription);
-      formData.append("skills", selSkill.join(","));
+      const selectedSkills = selSkill.map(id => {
+        const skill = skillList.find(s => s.skill_id.toString() === id);
+        return skill ? skill.skill : '';
+      }).filter(name => name);
+      formData.append("skill_id", selSkill.join(","));
+      formData.append("skills", selectedSkills.join(","));
       formData.append("manageby", selObserver);
       formData.append("observation_point", observationPoint);
       formData.append("KRA", kras);
@@ -501,6 +537,8 @@ const TaskManagement = () => {
       console.log("Submitting form data:", {
         task_title: selTask,
         task_description: taskDescription,
+        skill_id: selSkill,
+        skills: selectedSkills,
         repeat_days: repeatDays,
         repeat_until: formattedRepeatUntil,
         task_type: taskType,
@@ -524,6 +562,10 @@ const TaskManagement = () => {
 
       if (response.ok) {
         alert("Task created successfully for all selected employees!");
+        
+        // Send notification to all assigned users (this also updates the count)
+        await sendTaskNotification(selEmployee, selTask);
+        
         resetForm();
       } else {
         throw new Error(result.message || "Failed to create task");
@@ -536,6 +578,68 @@ const TaskManagement = () => {
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Function to send notification to assigned users
+  const sendTaskNotification = async (userIds: string[], taskTitle: string) => {
+    try {
+      for (const userId of userIds) {
+        // Create notification object
+        const notification = {
+          id: Date.now().toString() + '_' + userId,
+          user_id: userId,
+          title: "New Task Assigned",
+          message: `You have been assigned a new task: ${taskTitle}`,
+          type: "task_assignment",
+          sender_id: sessionData.userId,
+          read: false,
+          created_at: new Date().toISOString(),
+        };
+
+        // Store notification in localStorage for the specific user
+        // This ensures only the assigned user can see their notifications
+        const storageKey = `notifications_${userId}`;
+        const existingNotifications = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        existingNotifications.push(notification);
+        localStorage.setItem(storageKey, JSON.stringify(existingNotifications));
+
+        // Also update the pendingTasksCount in localStorage
+        const currentCount = parseInt(localStorage.getItem('pendingTasksCount') || '0', 10);
+        localStorage.setItem('pendingTasksCount', (currentCount + 1).toString());
+
+        // Also try to send to backend API if available
+        try {
+          const notificationRes = await fetch(
+            `${sessionData.url}/api/send-notification`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${sessionData.token}`,
+              },
+              body: JSON.stringify({
+                user_id: userId,
+                title: "New Task Assigned",
+                message: `You have been assigned a new task: ${taskTitle}`,
+                type: "task_assignment",
+                sender_id: sessionData.userId,
+              }),
+            }
+          );
+
+          if (!notificationRes.ok) {
+            console.error(`Failed to send notification to user ${userId} via API`);
+          }
+        } catch (apiError) {
+          console.warn('Backend notification API not available, using localStorage only');
+        }
+      }
+
+      // Dispatch event to update notification count in header
+      window.dispatchEvent(new CustomEvent('notificationUpdated'));
+    } catch (error) {
+      console.error("Error sending notifications:", error);
     }
   };
 
@@ -571,7 +675,7 @@ const TaskManagement = () => {
       }
       setMessage(1);
 
-      const skillsData = '[' + skillList.map(skill => skill.title).join(',') + ']';
+      const skillsData = '[' + skillList.map(skill => skill.skill).join(',') + ']';
       const response = await fetch(`${sessionData.url}/gemini_chat`, {
         method: 'POST',
         headers: {
@@ -605,7 +709,11 @@ const TaskManagement = () => {
         setObservationPoint(geminiData.observation_point);
         setKras(geminiData.kras);
         setKpis(geminiData.kpis);
-        setSelSkill(geminiData.skill_required);
+        const selectedSkillIds = geminiData.skill_required.map((skillName: string) => {
+          const skillObj = skillList.find(s => s.skill === skillName);
+          return skillObj ? skillObj.skill_id.toString() : '';
+        }).filter(id => id);
+        setSelSkill(selectedSkillIds);
         setTaskType(geminiData.task_type || "Medium");
       } else {
         setMessage(3);
@@ -665,20 +773,12 @@ const TaskManagement = () => {
                         fetchDepartmentWiseEmployees(value);
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
                         <SelectValue placeholder="Select Department" />
                       </SelectTrigger>
 
-                      <SelectContent
-                        side="bottom"
-                        align="start"
-                        sideOffset={6}
-                        avoidCollisions={false}
-                        className="max-w-[350px] overflow-y-auto"
-                        onWheel={(e) => e.stopPropagation()}
-                      >
-
-                        {departmentList.map((dept, index) => (
+                      <SelectContent className="max-h-60 max-w-65">
+                        {departmentList.filter(dept => dept.department_name).map((dept, index) => (
                           <SelectItem key={index} value={dept.department_name}>
                             {dept.department_name}
                           </SelectItem>
@@ -702,12 +802,12 @@ const TaskManagement = () => {
                         getEmployeeList(value);
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
                         <SelectValue placeholder="Select Job Role" />
                       </SelectTrigger>
 
-                      <SelectContent className="max-h-[260px] overflow-y-auto">
-                        {jobroleList.map((jobrole, index) => (
+                      <SelectContent className="max-h-60 max-w-65">
+                        {jobroleList.filter(jobrole => jobrole.allocated_standards).map((jobrole, index) => (
                           <SelectItem
                             key={index}
                             value={jobrole.allocated_standards}
@@ -731,7 +831,7 @@ const TaskManagement = () => {
                     </label>
                     <select
                       id="assignTo"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none resize"
+                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
                       value={selEmployee}
                       onChange={(e) => {
                         const selectedOptions = Array.from(
@@ -875,20 +975,22 @@ const TaskManagement = () => {
                       Repeat Once in every{" "}
                       <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                     </label>
-                    <select
-                      id="days"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                    <Select
                       value={repeatDays}
-                      onChange={(e) => setRepeatDays(e.target.value)}
+                      onValueChange={(value) => setRepeatDays(value)}
                       required
                     >
-                      <option value="">Select Days</option>
-                      {Array.from({ length: 14 }, (_, i) => i + 1).map((day) => (
-                        <option key={day} value={day}>
-                          {day} {day === 1 ? "day" : "days"}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
+                        <SelectValue placeholder="Select Days" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {Array.from({ length: 14 }, (_, i) => i + 1).map((day) => (
+                          <SelectItem key={day} value={day.toString()}>
+                            {day} {day === 1 ? "day" : "days"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Repeat Until - FIXED */}
@@ -935,7 +1037,7 @@ const TaskManagement = () => {
                     </label>
                     <select
                       id="skillsRequired"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none resize"
+                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
                       multiple
                       value={selSkill}
                       onChange={(e) => {
@@ -951,8 +1053,8 @@ const TaskManagement = () => {
                     >
                       <option value="">Select Required Skills</option>
                       {skillList.map((skill, index) => (
-                        <option key={index} value={skill.title}>
-                          {skill.title}
+                        <option key={index} value={skill.skill_id.toString()}>
+                          {skill.skill}
                         </option>
                       ))}
                     </select>
@@ -967,21 +1069,25 @@ const TaskManagement = () => {
                       Observer{" "}
                       <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                     </label>
-                    <select
-                      id="observer"
-                      className="w-full border border-gray-300 rounded-md p-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none"
+                    <Select
                       value={selObserver}
-                      onChange={(e) => setSelObserver(e.target.value)}
+                      onValueChange={(value) => setSelObserver(value)}
                       required
                     >
-                      <option value="">Select Observer</option>
-                      {ObserverList.map((observer, index) => (
-                        <option key={index} value={observer.id}>
-                          {observer.first_name} {observer.middle_name}{" "}
-                          {observer.last_name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
+                        <SelectValue placeholder="Select Observer" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {ObserverList.filter(observer => observer.id && String(observer.id).trim() !== '')
+                          .filter((observer, index, arr) => arr.findIndex(o => o.id === observer.id) === index)
+                          .map((observer) => (
+                          <SelectItem key={observer.id} value={String(observer.id)}>
+                            {observer.first_name} {observer.middle_name}{" "}
+                            {observer.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* KRAs */}

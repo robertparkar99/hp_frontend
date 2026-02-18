@@ -1,4 +1,3 @@
- // Dashboard.tsx - Updated code
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -10,7 +9,7 @@ import { OrganizationTree } from "./OrganizationTree";
 import { RecentActivity } from "./RecentActivity";
 import OrganizationInfoForm from "@/app/content/organization-profile-management/components/OrganizationInfoForm";
 import UserManagement from "@/app/content/user";
-import DepartmentStructure from "@/app/content/organization-profile-management/components/DepartmentStructure"; // Import Department Structure component
+import DepartmentStructure from "@/app/content/organization-profile-management/components/DepartmentStructure";
 import {
   Users,
   Building2,
@@ -59,7 +58,7 @@ type DashboardData = {
   departments: Record<string, unknown>;
   complainceData: any[];
   discliplinaryManagement: DisciplinaryItem[];
-  org_data?: Array<{ // Add this optional property
+  org_data?: Array<{
     id: number;
     legal_name: string;
     cin: string;
@@ -77,7 +76,6 @@ type DashboardData = {
     updated_at: string;
   }>;
 };
-
 
 export function Dashboard() {
   // 🔹 Inject tour styles
@@ -746,10 +744,25 @@ export function Dashboard() {
     }
   };
 
+  // 🔹 Responsive layout states
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // 🔹 switch view rendering
   if (activeView === "organizationInfo") {
     return (
-      <div className="min-h-screen bg-background p-6 rounded-xl">
+      <div className="min-h-screen bg-background p-4 md:p-6 rounded-xl">
         <div className="flex items-center mb-6">
           <Button
             variant="outline"
@@ -758,7 +771,7 @@ export function Dashboard() {
           >
             <Icon name="ArrowLeft" size={16} />
           </Button>
-          <h1 className="text-2xl font-bold">Organization Information</h1>
+          <h1 className="text-xl md:text-2xl font-bold">Organization Information</h1>
         </div>
         <OrganizationInfoForm
           onSave={() => {
@@ -772,7 +785,7 @@ export function Dashboard() {
   // 🔹 Render User Management view
   if (activeView === "userManagement") {
     return (
-      <div className="min-h-screen bg-background p-6 rounded-xl">
+      <div className="min-h-screen bg-background p-4 md:p-6 rounded-xl">
         <div className="flex items-center mb-6">
           <Button
             variant="outline"
@@ -781,17 +794,16 @@ export function Dashboard() {
           >
             <Icon name="ArrowLeft" size={16} />
           </Button>
-          <h1 className="text-2xl font-bold">User Management</h1>
+          <h1 className="text-xl md:text-2xl font-bold">User Management</h1>
         </div>
         <UserManagement />
       </div>
     );
   }
 
-  // 🔹 Render Department Structure view
   if (activeView === "departmentStructure") {
     return (
-      <div className="min-h-screen bg-background p-6 rounded-xl">
+      <div className="min-h-screen bg-background p-4 md:p-6 rounded-xl">
         <div className="flex items-center mb-6">
           <Button
             variant="outline"
@@ -800,7 +812,7 @@ export function Dashboard() {
           >
             <Icon name="ArrowLeft" size={16} />
           </Button>
-          <h1 className="text-2xl font-bold">Department Structure</h1>
+          <h1 className="text-xl md:text-2xl font-bold">Department Structure</h1>
         </div>
         <DepartmentStructure onSave="" />
       </div>
@@ -808,46 +820,45 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background rounded-xl ">
+    <div className="min-h-screen bg-background rounded-xl">
       <div className="flex">
-        <main className="flex-1 p-6 rounded-xl space-y-6 overflow-x-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between" id="tour-header">
-            <h1 className="text-3xl font-bold text-foreground">
+        <main className="flex-1 p-4 md:p-6 rounded-xl space-y-4 md:space-y-6 overflow-x-hidden max-w-full">
+          {/* Header - Fixed alignment */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0"  id="tour-header">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">
               Organization Dashboard
             </h1>
-            {/* 🔹 Organization Name on the Right */}
-            <div className="flex items-center gap-2" id="tour-header-org">
-              <span className="text-lg font-semibold text-primary">
+            
+            {/* Organization Name - Responsive positioning */}
+            <div className="flex items-center gap-2 self-end sm:self-center" id="tour-header-org">
+              <span className="text-sm sm:text-lg font-semibold text-primary truncate max-w-[180px] sm:max-w-none" >
                 {loading ? "Loading..." : getOrganizationName()}
               </span>
 
               {/* Edit Button */}
               <button
                 onClick={() => setActiveView("organizationInfo")}
-                className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
-                id="tour-edit-org-btn"
+                className="bg-blue-500 hover:bg-blue-700 text-white text-xs p-1.5 sm:py-1 sm:px-2 rounded flex-shrink-0" id="tour-edit-org-btn"
               >
-                <span className="mdi mdi-pencil"></span>
+                <span className="mdi mdi-pencil text-sm"></span>
               </button>
             </div>
           </div>
 
-          {/* Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="relative" id="tour-metric-employees">
+          {/* Metrics Grid - Responsive and equal heights */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 items-stretch">
+            <div className="relative" id="tour-metric-employees" >
               <MetricCard
                 title="Total Employees"
                 value={loading ? "..." : data?.total_employees?.toString() || "0"}
                 // change={{ value: "+12 this month", type: "positive" }}
+                  description="Active users in the organization"
                 icon={Users}
-                description="Active users in the organization"
               />
-
-              {/* Eye Icon in top-right */}
               <button
                 onClick={() => setActiveView("userManagement")}
                 className="absolute top-3 right-3 text-gray-500 hover:text-blue-600"
+                aria-label="View user management"
               >
                 <Icon name="Eye" size={20} />
               </button>
@@ -857,152 +868,141 @@ export function Dashboard() {
               <MetricCard
                 title="Departments"
                 value={loading ? "..." : data?.total_departments?.toString() || "0"}
-                // change={{ value: "+1 this month", type: "positive" }}
                 icon={Building2}
                 description="Active departments and teams"
               />
               <button
                 onClick={() => setActiveView("departmentStructure")}
                 className="absolute top-3 right-3 text-gray-500 hover:text-blue-600"
+                aria-label="View department structure"
               >
                 <Icon name="Eye" size={20} />
               </button>
             </div>
-
-            <div id="tour-metric-compliance">
-              <MetricCard
-                title="Compliance"
-                value={loading ? "..." : data?.total_complainces?.toString() || "0"}
-                // change={{ value: "-3 from last week", type: "negative" }}
-                icon={ShieldCheck}
-                description="Awaiting management approval"
-              />
+ <div id="tour-metric-compliance">
+            <MetricCard
+            
+              title="Compliance"
+              value={loading ? "..." : data?.total_complainces?.toString() || "0"}
+              icon={ShieldCheck}
+               description="Awaiting management approval"
+            />
             </div>
-
-            <div id="tour-metric-disciplinary">
-              <MetricCard
-                title="Disciplinary"
-                value={loading ? "..." : data?.total_disciplinary?.toString() || "0"}
-                // change={{ value: "+2 vs last quarter", type: "positive" }}
-                icon={AudioLines}
-                description="Active disciplinary actions"
-              />
+    <div id="tour-metric-disciplinary">
+            <MetricCard 
+              title="Disciplinary"
+              value={loading ? "..." : data?.total_disciplinary?.toString() || "0"}
+              icon={AudioLines}
+              description="Active disciplinary actions"
+              
+            />
             </div>
           </div>
 
-          {/* Organization + Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2" id="tour-org-tree">
+          {/* Organization + Activity - Responsive grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="lg:col-span-2 w-full overflow-hidden" id="tour-org-tree">
               <OrganizationTree departments={data?.departments || {}} />
             </div>
-            <div className="lg:col-span-1 " id="tour-recent-activity">
+            <div className="lg:col-span-1 w-full" id="tour-recent-activity">
               <RecentActivity activities={data?.complainceData || []} />
             </div>
           </div>
 
-          {/* Quick Actions & Department Performance */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card id="tour-quick-actions">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="text-blue-400" />
+          {/* Quick Actions & Department Performance - Responsive */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            {/* Quick Actions Card */}
+            <Card className="w-full overflow-hidden" id="tour-quick-actions">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                  <Activity className="text-blue-400 h-5 w-5" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4">
+              <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   variant="outline"
-                  className="h-20 flex-col gap-2"
+                  className="h-16 sm:h-20 flex-col gap-1 sm:gap-2 px-2"
+                   id="tour-btn-manage-org"
                   onClick={() => setActiveView("organizationInfo")}
-                  id="tour-btn-manage-org"
                 >
-                  <Users className="h-6 w-6 text-blue-400" />
-                  <span className="text-sm">Manage Organization</span>
+                  <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
+                  <span className="text-xs sm:text-sm">Manage Organization</span>
                 </Button>
 
                 <Button
                   variant="outline"
-                  className="h-20 flex-col gap-2"
+                  className="h-16 sm:h-20 flex-col gap-1 sm:gap-2 px-2"
                   onClick={() => setActiveView("departmentStructure")}
                   id="tour-btn-manage-dept"
                 >
-                  <Building2 className="h-6 w-6 text-blue-400" />
-                  <span className="text-sm">Manage Departments</span>
+                  <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
+                  <span className="text-xs sm:text-sm">Manage Departments</span>
                 </Button>
 
                 <Button
                   variant="outline"
-                  className="h-20 flex-col gap-2"
+                  className="h-16 sm:h-20 flex-col gap-1 sm:gap-2 px-2"
+                   id="tour-btn-manage-users"
                   onClick={() => setActiveView("userManagement")}
-                  id="tour-btn-manage-users"
                 >
-                  <UserCheck className="h-6 w-6 text-blue-400" />
-                  <span className="text-sm">Manage Users</span>
+                  <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
+                  <span className="text-xs sm:text-sm">Manage Users</span>
                 </Button>
 
-                <Button
-                  variant="outline"
-                  className="h-20 flex-col gap-2"
-                  id="tour-btn-view-analytics"
+                <Button 
+                  variant="outline" 
+                  className="h-16 sm:h-20 flex-col gap-1 sm:gap-2 px-2"
+                   id="tour-btn-view-analytics"
                 >
-                  <TrendingUp className="h-6 w-6 text-blue-400" />
-                  <span className="text-sm">View Analytics</span>
+                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
+                  <span className="text-xs sm:text-sm">View Analytics</span>
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="h-70 overflow-hidden" id="tour-disciplinary-section">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AudioLines className="text-blue-400" />
+            {/* Disciplinary Card */}
+            <Card className="w-full h-auto sm:h-70 overflow-hidden" id="tour-disciplinary-section">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                  <AudioLines className="text-blue-400 h-5 w-5" />
                   Disciplinary
                 </CardTitle>
               </CardHeader>
-              <div className="space-y-4 overflow-y-auto h-[280px] pr-2 scrollbar-hide p-4" id="tour-disciplinary-items">
-                {departmentOverview.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
+              <div className="space-y-3 sm:space-y-4 overflow-y-auto max-h-[300px] sm:max-h-[280px] pr-2 scrollbar-hide p-4" id="tour-disciplinary-items">
+                {departmentOverview.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
                     No recent disciplinary data
                   </p>
-                )}
-                {departmentOverview.map((dept, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium">{dept.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {dept.employees}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className={`text-sm font-medium ${dept.positive ? "text-success" : "text-muted-foreground"
+                ) : (
+                  departmentOverview.map((dept, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg min-h-[70px]"
+                    >
+                      <div className="flex-1 min-w-0 pr-2">
+                        <p className="font-medium text-sm sm:text-base truncate">{dept.name}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                          {dept.employees}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p
+                          className={`text-xs sm:text-sm font-medium ${
+                            dept.positive ? "text-green-600" : "text-muted-foreground"
                           }`}
-                      >
-                        {dept.change}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {dept.status}
-                      </p>
+                        >
+                          {dept.change}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate max-w-[100px]">
+                          {dept.status}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </Card>
-          </div>
-
-          {/* Tour Restart Button */}
-          <div className="fixed bottom-4 right-4 z-50">
-            {/* <Button
-              variant="outline"
-              onClick={restartTour}
-              className="flex items-center gap-2 shadow-lg"
-              id="tour-restart-btn"
-            >
-              <Icon name="RefreshCw" size={16} />
-              Restart Tour
-            </Button> */}
           </div>
         </main>
       </div>

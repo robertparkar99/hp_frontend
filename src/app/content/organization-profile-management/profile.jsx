@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import Button from '@/components/ui/button';
 import OrganizationInfoForm from './components/OrganizationInfoForm';
 import DepartmentStructure from './components/DepartmentStructure';
 import SystemConfiguration from './components/SystemConfiguration';
 import AuditTrail from './components/AuditTrail';
 import DisciplinaryManagement from './components/DisciplinaryManagement';
 import OrganizationProfileTour from './components/OrganizationProfileTour';
-
+//add comment
 const OrganizationProfileManagement = () => {
   const [activeTab, setActiveTab] = useState('info');
   const [loading, setLoading] = useState(false);
@@ -86,18 +87,17 @@ const OrganizationProfileManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background rounded-xl">
-      <div>
-        <main className="p-6">
+    <div className="min-h-screen bg-background rounded-xl w-full h-full">
+      <div className="w-full">
+        <main className="p-4 md:p-6">
           {/* Header Section */}
-          <div className="flex items-center justify-between mb-4" id="org-profile-header">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3" id="org-profile-header">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Organization Profile Management</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-foreground">Organization Profile Management</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Manage your organization's information, Department structure.
               </p>
             </div>
-            {/* No manual Take Tour button - tour only starts via sidebar navigation */}
           </div>
 
           {/* Tab Navigation */}
@@ -127,13 +127,12 @@ const OrganizationProfileManagement = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="space-y-6">
+          <div className="space-y-6 w-full overflow-hidden">
             {renderTabContent()}
           </div>
         </main>
       </div>
-
-      {/* Tour Component */}
+         {/* Tour Component */}
       {showTour && (
         <OrganizationProfileTour
           onComplete={handleTourComplete}
