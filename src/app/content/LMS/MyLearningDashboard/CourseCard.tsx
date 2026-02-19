@@ -5,7 +5,7 @@ import Image from '@/components/AppImage';
 import { Progress } from "@/components/ui/progress";
 
 const DEFAULT_IMAGE =
-  "https://erp.triz.co.in/storage/SubStdMapping/SubStdMap_2020-12-29_05-56-03.svg";
+ "https://erp.triz.co.in/storage/SubStdMapping/SubStdMap_2020-12-29_05-56-03.svg";
 
 // Type definitions
 interface Course {
@@ -48,7 +48,6 @@ interface CourseCardProps {
   viewMode?: 'grid' | 'list';
   onEditCourse?: (course: Course) => void;
   onDelete?: (courseId: number) => void;
-  cardIndex?: number;
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({
@@ -61,7 +60,6 @@ const CourseCard: React.FC<CourseCardProps> = ({
   viewMode = 'grid',
   onEditCourse,
   onDelete,
-  cardIndex = 0,
 }) => {
   interface SessionData {
     url: string;
@@ -646,7 +644,6 @@ const CourseCard: React.FC<CourseCardProps> = ({
 
         <div className="flex justify-center mt-4">
           <Button
-            id={cardIndex < 3 ? `lc-enroll-btn-${cardIndex}` : undefined}
             size="sm"
             onClick={handleEnroll}
             disabled={isEnrolling || isEnrolled || completed}

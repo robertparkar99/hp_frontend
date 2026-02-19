@@ -1,5 +1,4 @@
 "use client";
-
 import Header from "@/components/Header/Header";
 import Sidebar from "@/components/SideMenu/Newsidebar";
 import LearningDashboard from "@/app/content/LMS/MyLearningDashboard/learningDashboard";
@@ -341,7 +340,6 @@ export default function HomePage() {
   const handleCloseMobileSidebar = () => {
     setMobileOpen(false);
   };
-
   return (
     <>
       <style>{`
@@ -403,7 +401,7 @@ export default function HomePage() {
         <Header />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-[304px]" : "md:ml-24"} ml-0 p-4 md:p-6`}>
         <LearningDashboard />
       </div>
     </>

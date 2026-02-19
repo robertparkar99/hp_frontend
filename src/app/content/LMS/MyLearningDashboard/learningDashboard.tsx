@@ -355,26 +355,28 @@ const MyLearningDashboard: React.FC = () => {
           {/* <Header /> */}
 
           <main className="pt-16 pb-20 md:pb-8">
-            <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8" id="tour-page-header">
               {/* <Breadcrumb /> */}
 
               {/* Page Header */}
-              <div id="tour-page-header" className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground mb-2">My Learning Dashboard</h1>
-                  <p className="text-muted-foreground">
+              <div id="tour-page-header" className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 gap-4">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-1 sm:mb-2 truncate">My Learning Dashboard</h1>
+                  <p className="text-muted-foreground text-sm truncate">
                     Track your progress and continue your learning journey
                   </p>
                 </div>
-                <div className="mt-4 md:mt-0">
-                  <Button id="tour-browse-courses" variant="default">
-                    <Plus className="mr-2 h-4 w-4" /> Browse Courses
+                <div className="flex-shrink-0">
+                  <Button variant="default" className="w-full sm:w-auto" id="tour-browse-courses">
+                    <Plus className="mr-2 h-4 w-4" /> 
+                    <span className="hidden sm:inline">Browse Courses</span>
+                    <span className="sm:hidden">Browse</span>
                   </Button>
                 </div>
               </div>
 
               {/* Progress Overview Cards */}
-              <div id="tour-progress-overview" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div id="tour-progress-overview"  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {overviewStats.map((stat, index) => (
                   <ProgressOverviewCard
                     key={index}
@@ -383,25 +385,26 @@ const MyLearningDashboard: React.FC = () => {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
                 {/* Main Content Area */}
-                <div id="tour-my-courses" className="lg:col-span-2 space-y-8">
+                <div  id="tour-my-courses"className="lg:col-span-2 order-2 lg:order-1 space-y-6 lg:space-y-8">
                   {/* Course Tabs */}
-                  <div className="bg-card border border-border rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-xl font-semibold text-foreground">My Courses</h2>
-                      <div className="flex items-center space-x-1 bg-muted p-1 rounded-xl">
+                  <div className="bg-card border border-border rounded-2xl p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
+                      <h2 className="text-lg sm:text-xl font-semibold text-foreground">My Courses</h2>
+                      <div className="flex items-center space-x-1 bg-muted p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
                         {tabs.map((tab) => (
                           <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
+                            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-1 sm:flex-none ${activeTab === tab.id
                               ? 'bg-card text-foreground shadow-sm'
                               : 'text-muted-foreground hover:text-foreground'
                               }`}
                           >
-                            {tab.label}
-                            <span className="ml-2 px-2 py-0.5 bg-muted-foreground/20 rounded-full text-xs">
+                            <span className="hidden sm:inline">{tab.label}</span>
+                            <span className="sm:hidden">{tab.id === 'progress' ? 'In Prog' : 'Done'}</span>
+                            <span className="ml-1.5 sm:ml-2 px-1.5 py-0.5 sm:px-2 bg-muted-foreground/20 rounded-full text-xs">
                               {tab.count}
                             </span>
                           </button>
@@ -419,9 +422,8 @@ const MyLearningDashboard: React.FC = () => {
 
                     {/* Course Grid */}
                     {!coursesLoading && (
-                      <div
-                        id="tour-course-grid"
-                        className="grid grid-cols-1 xl:grid-cols-2 gap-6 overflow-y-auto hide-scrollbar"
+                      <div id="tour-course-grid"
+                        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6 overflow-y-auto hide-scrollbar"
                         style={{
                           maxHeight: "500px",
                           paddingRight: "6px",
@@ -460,23 +462,23 @@ const MyLearningDashboard: React.FC = () => {
                   </div>
 
                   {/* Quick Actions */}
-                  <div id="tour-quick-actions">
-                    <QuickActions />
-                  </div>
+                  <QuickActions />
                 </div>
 
                 {/* Left Sidebar */}
-                <div className="lg:col-span-1 space-y-6">
+                <div className="lg:col-span-1 space-y-6 order-3 lg:order-2">
                   <div id="tour-skill-progress">
-                    <SkillProgressTracker />
+                    
+                  <SkillProgressTracker />
                   </div>
-                  <div id="tour-learning-calendar">
-                    <LearningCalendar />
-                  </div>
+ <div id="tour-learning-calendar">
+                  <LearningCalendar />
+                  
+</div>
                 </div>
 
                 {/* Right Sidebar */}
-                <div id="tour-learning-stats" className="lg:col-span-1">
+                <div id="tour-learning-stats"  className="lg:col-span-1 order-4 lg:order-3">
                   <LearningStats />
                 </div>
               </div>

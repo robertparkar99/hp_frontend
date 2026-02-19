@@ -51,14 +51,13 @@ export default function HomePage() {
   const handleCloseMobileSidebar = () => {
     setMobileOpen(false);
   };
-
   return (
     <>
       <div className="mb-5">
       <Header  />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? 'lg:ml-76' : 'lg:ml-24'} p-4 md:p-6 ml-0`}>
       <AssessmentLibrary />
       </div>
     </>
