@@ -1,6 +1,9 @@
+
+
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -10,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import "./triangle.css"; // custom CSS
-import { Atom } from "react-loading-indicators";
 import {
   Funnel,
   LayoutGrid,
@@ -33,6 +35,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import Loader from "@/components/utils/loading";
 import ViewKnowledge from "@/components/AbilityComponent/viewDialouge";
 import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
 import { generateDetailTourSteps } from "@/lib/tourSteps";
@@ -114,6 +117,13 @@ export default function Page({ showDetailTour }: PageProps) {
 
   // Dialog state for viewing ability details
   const [selectedAbilityId, setSelectedAbilityId] = useState<number | null>(null);
+    // ✅ New state for expanded actions
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Toggle expanded actions
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   // Detail tour handler
   useEffect(() => {
@@ -236,7 +246,7 @@ export default function Page({ showDetailTour }: PageProps) {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+        <Loader />
       </div>
     );
   }
@@ -376,7 +386,7 @@ export default function Page({ showDetailTour }: PageProps) {
   return (
     <div className="p-4">
       {/* Header with Title and Action Buttons */}
-
+    
 
       {/* Search Bar and Filters */}
       <div className="flex justify-between items-center mb-4">
@@ -421,8 +431,8 @@ export default function Page({ showDetailTour }: PageProps) {
               <button
                 onClick={() => setViewMode("triangle")}
                 className={`px-3 py-2 flex items-center justify-center ${viewMode === "triangle"
-                  ? "bg-blue-100 text-blue-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 title="Triangle View"
               >
@@ -431,74 +441,78 @@ export default function Page({ showDetailTour }: PageProps) {
               <button
                 onClick={() => setViewMode("table")}
                 className={`px-3 py-2 flex items-center justify-center ${viewMode === "table"
-                  ? "bg-blue-100 text-blue-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 title="Table View"
               >
                 <Table className="h-5 w-5" />
               </button>
             </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="More Actions">
-                  <MoreVertical className="w-5 h-5 text-gray-600" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                className="w-auto p-4 bg-white shadow-xl rounded-xl"
-              >
-                {/* Action Buttons - All in one line */}
-                <div className="flex items-center gap-3">
-                  {/* Add New Ability */}
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Add New Ability">
-                    <Plus className="w-5 h-5 text-gray-600" />
 
+            {/* Inline Actions Menu */}
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex gap-1"
+                >
+                  {/* Add New Ability */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Add New Ability">
+                    <Plus className="w-5 h-5 text-gray-600" />
                   </button>
 
                   {/* AI Suggestions */}
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="AI Suggestions">
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="AI Suggestions">
                     <Sparkles className="w-5 h-5 text-gray-600" />
-
                   </button>
 
-                  {/* Bulk Actions */}
-
-                  {/* Export/Import */}
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Export abilities">
+                  {/* Export */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Export abilities">
                     <Download className="w-5 h-5 text-gray-600" />
-
                   </button>
 
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Import abilities">
+                  {/* Import */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Import abilities">
                     <Upload className="w-5 h-5 text-gray-600" />
-
                   </button>
-
 
                   {/* Analytics */}
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200  rounded-md text-sm" title="Analytics">
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Analytics">
                     <BarChart3 className="w-5 h-5 text-gray-600" />
-
-                  </button>
-                  <button className="p-2 hover:bg-gray-200 rounded-md" title="Help">
-                    <HelpCircle className="w-5 h-5 text-gray-600" />
-                  </button>
-                  {/* Settings */}
-                  <button className="p-2 hover:bg-gray-200 rounded-md" title="Settings">
-                    <Settings className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <button className="flex items-center px-2 py-2 hover:bg-gray-200 rounded-md text-sm" title="Bulk Actions">
-                    <ListChecks className="w-5 h-5 text-gray-600" />
-
                   </button>
 
                   {/* Help */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Help">
+                    <HelpCircle className="w-5 h-5 text-gray-600" />
+                  </button>
 
-                </div>
-              </PopoverContent>
-            </Popover>
+                  {/* Settings */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Settings">
+                    <Settings className="w-5 h-5 text-gray-600" />
+                  </button>
+
+                  {/* Bulk Actions */}
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Bulk Actions">
+                    <ListChecks className="w-5 h-5 text-gray-600" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* More Actions Button */}
+            <div className="relative">
+              <button
+                onClick={toggleExpanded}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                title="More Actions"
+              >
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

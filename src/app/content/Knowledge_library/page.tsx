@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import ViewKnowledge from "@/components/KnowledgeComponent/viewDialouge";
 import {
   Funnel,
@@ -45,9 +46,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Atom } from "react-loading-indicators";
 import { Button } from "@/components/ui/button";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
+import Loader from "@/components/utils/loading";
 import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
 import { generateDetailTourSteps } from "@/lib/tourSteps";
 interface KnowledgeItem {
@@ -111,6 +112,14 @@ const Honeycomb: React.FC<PageProps> = ({ showDetailTour }) => {
 
   // 🔑 View toggle state
   const [viewMode, setViewMode] = useState<"circle" | "table">("circle");
+
+  // ✅ New state for expanded actions
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Toggle expanded actions
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   // Dialog states
   const [activeKnowledge, setActiveKnowledge] = useState<KnowledgeItem | null>(null);
@@ -530,32 +539,55 @@ const Honeycomb: React.FC<PageProps> = ({ showDetailTour }) => {
               </button>
             </div>
 
-             <Popover>
-             <PopoverTrigger asChild>
-               <button title="More Actions" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                 <MoreVertical className="w-5 h-5 text-gray-600" />
-               </button>
-             </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-auto p-2 bg-white shadow-xl rounded-xl"
-            >
-              <div className="flex items-center gap-2">
-                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Add Knowledge">
-                  <Plus className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="flex items-center  px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Import Knowledge">
-                  <Upload className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Export Knowledge">
-                  <Download className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="flex items-center px-2 py-2 hover:bg-gray-100 rounded-md text-sm transition-colors" title="Knowledge Analytics">
-                  <Sparkles className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+            {/* Inline Actions Menu */}
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex gap-1"
+                  title="More Actions" 
+                >
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Add Knowledge"
+                  >
+                    <Plus className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Import Knowledge"
+                  >
+                    <Upload className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Export Knowledge"
+                  >
+                    <Download className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Knowledge Analytics"
+                  >
+                    <Sparkles className="w-5 h-5 text-gray-600" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* More Actions Button */}
+            <div className="relative">
+              <button
+                onClick={toggleExpanded}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                title="More Actions"
+              >
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -564,7 +596,7 @@ const Honeycomb: React.FC<PageProps> = ({ showDetailTour }) => {
       <div className="w-full flex justify-center">
         {isLoading ? (
           <div className="flex justify-center items-center h-80">
-            <Atom color="#525ceaff" size="medium" text="" textColor="" />
+            <Loader/>
           </div>
         ) : columnFilteredData.length === 0 ? (
           <div className="text-center py-12">

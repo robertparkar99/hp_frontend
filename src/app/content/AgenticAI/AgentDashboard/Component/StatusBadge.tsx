@@ -11,12 +11,15 @@ export default function StatusBadge({ status, className }: StatusBadgeProps) {
   const getStatusStyles = () => {
     switch (status) {
       case 'active':
+      case 'deployed':
       case 'success':
+      case 'completed':
         return 'bg-success/10 text-success border-success/20';
       case 'error':
       case 'failed':
         return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'idle':
+      case 'draft':
       case 'pending':
         return 'bg-muted text-muted-foreground border-border';
       case 'training':

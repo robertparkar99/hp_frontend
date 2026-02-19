@@ -28,29 +28,33 @@ const TabsMenu: React.FC<TabsMenuProps> = ({
   return (
     <>
       {/* Top Tabs */}
-      <div className="flex items-center justify-between border-b border-gray-300 pb-2 mb-4">
-        <div className="flex space-x-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              id={`tab-${tab.replace(/\s+/g, '-').toLowerCase()}`}
-              onClick={() => {
-                onTabChange(tab);
-                onOpenPage(null); // tab બદલતાં dropdown page હાઇડ
-              }}
-              className={`pb-2 text-sm font-medium ${
-                activeTab === tab && !openPage
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-600 hover:text-blue-500"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-300 pb-2 mb-4 gap-2">
+        {/* Tabs container with horizontal scroll on small screens */}
+        <div className="w-full sm:w-auto overflow-x-auto sm:overflow-visible">
+          <div className="flex space-x-6 sm:whitespace-nowrap">
+            {tabs.map((tab) => (
+              <button
+              
+                key={tab}
+                id={`tab-${tab.replace(/\s+/g, '-').toLowerCase()}`}
+                onClick={() => {
+                  onTabChange(tab);
+                  onOpenPage(null); // tab change 時 dropdown page 隱藏
+                }}
+                className={`pb-2 text-sm font-medium whitespace-nowrap ${
+                  activeTab === tab && !openPage
+                    ? "border-b-2 border-blue-500 text-blue-600"
+                    : "text-gray-600 hover:text-blue-500"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* 3-dot dropdown */}
-        <div className="relative">
+        <div className="relative self-end sm:self-auto">
           <button
             onClick={() => setIsDropdownOpen((s) => !s)}
             className="p-2 rounded-full hover:bg-gray-100"

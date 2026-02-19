@@ -6,8 +6,6 @@ import JobroleLibrary from "./jobroleLibrary";
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-    const [showTour, setShowTour] = useState(false);
   // Sync with localStorage and handle sidebar state changes
   useEffect(() => {
     const checkSidebarState = () => {
@@ -23,18 +21,6 @@ export default function HomePage() {
     };
   }, []);
 
-    const handleStartTour = () => {
-    console.log("Starting tour...");
-    setShowWelcomeModal(false);
-    setShowTour(true);
-  };
-
-  const handleTourComplete = () => {
-    setShowTour(false);
-    localStorage.setItem("competencyManagementOnboardingCompleted", "true");
-  };
-
-
   const handleCloseMobileSidebar = () => {
     setMobileOpen(false);
   };
@@ -44,8 +30,8 @@ export default function HomePage() {
       <Header  />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar}  /> */}
-        <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
-      <JobroleLibrary showDetailTour={{ show: showTour, onComplete: handleTourComplete }} />
+        <div className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-[304px]" : "md:ml-24"} ml-0 p-4 md:p-6`}>
+      <JobroleLibrary />
       </div>
     </div>
   );

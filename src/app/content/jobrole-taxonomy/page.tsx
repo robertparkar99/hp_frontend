@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { checkPermission } from "@/utils/permissions";
 
 type Department = {
   id: number;
@@ -36,6 +37,11 @@ export default function JobroleTaxonomy() {
     userId: "",
   });
 
+  const [permissions, setPermissions] = useState({
+    canAdd: false,
+    canEdit: false,
+  });
+
   // Load session data from localStorage
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -51,6 +57,18 @@ export default function JobroleTaxonomy() {
       });
     }
   }, []);
+
+  // Load permissions
+  useEffect(() => {
+    if (sessionData.userId) {
+      const fetchPermissions = async () => {
+        const canAdd = await checkPermission("Library & Taxonomy", "can_add");
+        const canEdit = await checkPermission("Library & Taxonomy", "can_edit");
+        setPermissions({ canAdd, canEdit });
+      };
+      fetchPermissions();
+    }
+  }, [sessionData.userId]);
 
   // Fetch job roles from API
   const fetchDepartments = async () => {
@@ -147,7 +165,13 @@ export default function JobroleTaxonomy() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">Jobrole Taxonomy</h2>
-        <Button variant="outline" onClick={() => setShowForm(true)}>
+        <Button variant="outline" onClick={() => {
+          if (!permissions.canAdd) {
+            alert("You don't have right to add this.");
+            return;
+          }
+          setShowForm(true);
+        }}>
           Add Jobrole category
         </Button>
       </div>
@@ -218,6 +242,10 @@ export default function JobroleTaxonomy() {
                       size="icon"
                       className="text-gray-500 hover:text-black"
                       onClick={() => {
+                        if (!permissions.canEdit) {
+                          alert("You don't have right to edit this.");
+                          return;
+                        }
                         setEditingId(dept.id);
                         setEditDeptName(dept.name);
                       }}
