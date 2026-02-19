@@ -991,7 +991,7 @@ ${formData.current_role || "Not provided"}
                             </div>
                           </div>
                         </div>
-                          <div className="flex items-center gap-2" id={index === 0 ? 'tour-action-buttons' : undefined}>
+                        <div className="flex items-center gap-2">
                           <Button variant="outline" size="sm">
                             <Heart className="w-4 h-4" />
                           </Button>
@@ -1075,7 +1075,7 @@ ${formData.current_role || "Not provided"}
 
                           <Dialog open={isDialogOpen && selectedJob?.id === job.id} onOpenChange={setIsDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button onClick={() => handleApplyClick(job)} id={index === 0 ? 'tour-apply-now' : undefined}>Apply Now</Button>
+                              <Button onClick={() => handleApplyClick(job)}>Apply Now</Button>
                             </DialogTrigger>
                               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" id="tour-apply-dialog">
                               <DialogHeader>

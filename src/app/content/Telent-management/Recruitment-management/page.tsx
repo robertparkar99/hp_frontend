@@ -1,6 +1,6 @@
 "use client";
 import EmployeeDirectory from "@/app/content/user/index";
-import Header from "@/components/Header/Header";
+import  Header  from "@/components/Header/Header";
 import Sidebar from "@/components/SideMenu/Newsidebar";
 import { useState, useEffect, Suspense } from "react";
 import HRDashboard from "./HRDashboard";
@@ -20,7 +20,6 @@ const getUrlParam = (param: string): string | null => {
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   // Sync with localStorage and handle sidebar state changes
   useEffect(() => {
     const checkSidebarState = () => {
@@ -80,10 +79,10 @@ export default function HomePage() {
   return (
     <div>
       <div className="mb-5">
-        <Header />
+      <Header  />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar}  /> */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
+        <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:ml-76" : "lg:ml-24"} p-2 ml-0`}>
         <Suspense fallback={<div>Loading...</div>}>
           <HRDashboard />
         </Suspense>

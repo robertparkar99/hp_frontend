@@ -673,7 +673,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       {/* Stats Overview */}
       <div className="mb-6" id="tour-screening-stats">
         <h2 className="text-xl font-semibold mb-4">Candidate Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -751,14 +751,14 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       {/* Search and Filters */}
       <Card id="tour-screening-search">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <CardTitle>Candidate Screening Results</CardTitle>
-            <div className="flex space-x-2">
-              <div className="relative">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <CardTitle className="text-lg">Candidate Screening Results</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder="Search candidates..."
-                  className="pl-10 w-48 sm:w-64"
+                  className="pl-10 w-full sm:w-48 md:w-64"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -796,12 +796,12 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
         </CardHeader>
         <CardContent>
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsList className="flex-wrap" id="tour-screening-tabs">
-              <TabsTrigger id="tour-all-tab" value="all">All ({stats.total})</TabsTrigger>
-              <TabsTrigger id="tour-shortlisted-tab" value="shortlisted">Shortlisted ({stats.shortlisted})</TabsTrigger>
-              <TabsTrigger id="tour-pending-tab" value="pending">Pending ({stats.pending})</TabsTrigger>
-              <TabsTrigger id="tour-rejected-tab" value="rejected">Rejected ({stats.rejected})</TabsTrigger>
-              <TabsTrigger id="tour-hired-tab" value="hired">Hired ({stats.hired})</TabsTrigger>
+            <TabsList className="flex flex-wrap justify-start h-auto py-2 gap-1" id="tour-screening-tabs">
+              <TabsTrigger id="tour-all-tab" value="all" className="text-xs sm:text-sm">All ({stats.total})</TabsTrigger>
+              <TabsTrigger id="tour-shortlisted-tab" value="shortlisted" className="text-xs sm:text-sm">Shortlisted ({stats.shortlisted})</TabsTrigger>
+              <TabsTrigger id="tour-pending-tab"  value="pending" className="text-xs sm:text-sm">Pending ({stats.pending})</TabsTrigger>
+              <TabsTrigger id="tour-rejected-tab"  value="rejected" className="text-xs sm:text-sm">Rejected ({stats.rejected})</TabsTrigger>
+              <TabsTrigger id="tour-hired-tab"  value="hired" className="text-xs sm:text-sm">Hired ({stats.hired})</TabsTrigger>
             </TabsList>
 
             <TabsContent value={selectedTab} className="mt-6">
@@ -817,22 +817,16 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                 </div>
               ) : (
                   <div className="space-y-4" id="tour-candidate-list">
-                    {filteredCandidates.map((candidate, index) => (
+                    {filteredCandidates.map((candidate , index) => (
                       <div key={candidate.id} className="border border-border rounded-lg p-6">
-                        <div
-                          className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4"
-                          id={index === 0 ? 'tour-candidate-score' : undefined}
-                        >
+                      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4"   id={index === 0 ? 'tour-candidate-score' : undefined}>
                         <div className="flex items-start space-x-4 flex-1">
                           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
                             <User className="w-6 h-6 text-blue-400" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
-                                <h3
-                                  className="text-lg font-semibold truncate"
-                                  id={index === 0 ? 'tour-candidate-status-badge' : undefined}
-                                >{candidate.name}</h3>
+                              <h3 className="text-lg font-semibold truncate" id={index === 0 ? 'tour-candidate-status-badge' : undefined}>{candidate.name}</h3>
                               {getStatusBadge(candidate.status)}
                             </div>
                             <p className="text-sm text-muted-foreground mb-2 truncate">
@@ -854,8 +848,8 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="flex items-center space-x-2 mb-2 justify-end">
+                        <div className="text-left lg:text-right lg:min-w-[150px]">
+                          <div className="flex items-center gap-2 mb-2 lg:justify-end">
                             <Star className="w-5 h-5 text-primary" />
                               <span className="text-2xl font-bold text-primary" title={candidate.isScreened && candidate.score !== null ? `AI Screening Score: ${candidate.score}%` : 'Screening in progress'}>
                                 {candidate.isScreened && candidate.score !== null ? `${candidate.score}%` : 'Pending'}
@@ -879,7 +873,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
 
                       {/* Match Details */}
                         {candidate.isScreened ? (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                             <div className="text-center">
                               <div className="text-lg font-semibold">{candidate.matchDetails.skillsMatch || 0}%</div>
                               <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
@@ -919,7 +913,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                       {candidate.isScreened && (
                         <div className="mb-4 space-y-3">
                             {(candidate.predictedSuccess || candidate.rankingScore !== undefined) && (
-                              <div className="flex items-center gap-4">
+                              <div className="flex flex-wrap items-center gap-4">
                                 {candidate.predictedSuccess && (
                                   <div className="flex flex-col gap-1">
                                     <Badge
@@ -1021,8 +1015,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleViewApplication(candidate)}
-                              data-tour-action="view-profile"
+                            onClick={() => handleViewApplication(candidate)} data-tour-action="view-profile"
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             View Profile

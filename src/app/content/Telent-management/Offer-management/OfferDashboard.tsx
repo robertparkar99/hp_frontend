@@ -759,29 +759,29 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
       </div>
 
       <Tabs defaultValue="all" className="space-y-6" id="tour-offer-tabs">
-        <TabsList id="tour-tabs-list">
-          <TabsTrigger value="all" id="tour-tab-all">All Offers ({stats.total})</TabsTrigger>
-          <TabsTrigger value="sent" id="tour-tab-sent">Sent ({stats.sent})</TabsTrigger>
-          <TabsTrigger value="accepted" id="tour-tab-accepted">Accepted ({stats.accepted})</TabsTrigger>
-          <TabsTrigger value="rejected" id="tour-tab-rejected">Rejected ({stats.rejected})</TabsTrigger>
+        <TabsList id="tour-tabs-list" className="bg-muted/50 flex flex-wrap h-auto p-1 gap-1 w-full max-w-full overflow-x-auto">
+          <TabsTrigger value="all" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-background data-[state=active]:shadow-md" id="tour-tab-all">All Offers ({stats.total})</TabsTrigger>
+          <TabsTrigger value="sent" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-background data-[state=active]:shadow-md" id="tour-tab-sent">Sent ({stats.sent})</TabsTrigger>
+          <TabsTrigger value="accepted" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-background data-[state=active]:shadow-md" id="tour-tab-accepted">Accepted ({stats.accepted})</TabsTrigger>
+          <TabsTrigger value="rejected" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-background data-[state=active]:shadow-md" id="tour-tab-rejected">Rejected ({stats.rejected})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
           {offers.map((offer, index) => (
             <Card key={offer.id} id={index === 0 ? 'tour-first-offer-card' : ''}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-blue-600" />
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                      <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold">{offer.candidateName}</h3>
+                      <h3 className="text-base sm:text-lg font-semibold">{offer.candidateName}</h3>
                       <p className="text-sm text-gray-600">{offer.position}</p>
                       <p className="text-xs text-gray-500">Created: {offer.createdAt}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="sm:text-right ml-auto sm:ml-0">
                     {getStatusBadge(offer.status)}
                     <div className="mt-2">
                       <p className="text-sm font-medium">{offer.salary}</p>
@@ -796,21 +796,21 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
                   </div>
                 )}
 
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-gray-600">
-                    Expires: {offer.expiresAt}
-                    {offer.sentAt && <span className="ml-4">Sent: {offer.sentAt}</span>}
-                    {offer.acceptedAt && <span className="ml-4 text-green-600">Accepted: {offer.acceptedAt}</span>}
-                    {offer.rejectedAt && <span className="ml-4 text-red-600">Rejected: {offer.rejectedAt}</span>}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div className="text-xs sm:text-sm text-gray-600 order-2 sm:order-1">
+                    <span>Expires: {offer.expiresAt}</span>
+                    {offer.sentAt && <span className="block sm:inline sm:ml-4 mt-1 sm:mt-0">Sent: {offer.sentAt}</span>}
+                    {offer.acceptedAt && <span className="block sm:inline sm:ml-4 mt-1 sm:mt-0 text-green-600">Accepted: {offer.acceptedAt}</span>}
+                    {offer.rejectedAt && <span className="block sm:inline sm:ml-4 mt-1 sm:mt-0 text-red-600">Rejected: {offer.rejectedAt}</span>}
                   </div>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => { setDialogType('details'); setSelectedOffer(offer); setIsViewDialogOpen(true); }}>
-                      <Eye className="w-4 h-4 mr-2" />
-                      View
+                  <div className="flex space-x-2 w-full sm:w-auto order-1 sm:order-2">
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => { setDialogType('details'); setSelectedOffer(offer); setIsViewDialogOpen(true); }}>
+                      <Eye className="w-4 h-4 mr-1 sm:mr-2" />
+                      <span className="sm:hidden">View</span>
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => downloadOfferLetter(offer)}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => downloadOfferLetter(offer)}>
+                      <Download className="w-4 h-4 mr-1 sm:mr-2" />
+                      <span className="sm:hidden">Download</span>
                     </Button>
                   </div>
                 </div>
@@ -826,66 +826,60 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
         </TabsContent>
 
         <TabsContent value="draft" className="space-y-4" id="tour-tab-draft-content">
-          {offers.filter(o => o.status === 'draft').length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No draft offers found.</p>
-              <p className="text-sm text-gray-400 mt-2">Create a new offer to get started</p>
-            </div>
-          ) : (
-            offers.filter(o => o.status === 'draft').map((offer) => (
-              <Card key={offer.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                        <FileText className="w-6 h-6 text-gray-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold">{offer.candidateName}</h3>
-                        <p className="text-sm text-gray-600">{offer.position}</p>
-                        <p className="text-xs text-gray-500">Created: {offer.createdAt}</p>
-                      </div>
+          {offers.filter(o => o.status === 'draft').map((offer) => (
+            <Card key={offer.id}>
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
+                      <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
                     </div>
-                    <div className="text-right">
-                      {getStatusBadge(offer.status)}
-                      <div className="mt-2">
-                        <p className="text-sm font-medium">{offer.salary}</p>
-                        <p className="text-xs text-gray-500">Start: {offer.startDate}</p>
-                      </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-semibold">{offer.candidateName}</h3>
+                      <p className="text-sm text-gray-600">{offer.position}</p>
+                      <p className="text-xs text-gray-500">Created: {offer.createdAt}</p>
                     </div>
                   </div>
+                  <div className="sm:text-right ml-auto sm:ml-0">
+                    {getStatusBadge(offer.status)}
+                    <div className="mt-2">
+                      <p className="text-sm font-medium">{offer.salary}</p>
+                      <p className="text-xs text-gray-500">Start: {offer.startDate}</p>
+                    </div>
+                  </div>
+                </div>
 
-                  <div className="flex justify-end space-x-2" id="tour-draft-actions">
-                    <Button variant="outline" size="sm" onClick={() => sendOffer(offer)} id="tour-send-offer">
+                <div className="flex flex-col sm:flex-row justify-end gap-2" id="tour-draft-actions">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => sendOffer(offer)}  id="tour-send-offer">
                     <Send className="w-4 h-4 mr-2" />
                     Send
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={() => rejectOffer(offer)}>
+                  <Button variant="destructive" size="sm" className="w-full sm:w-auto" onClick={() => rejectOffer(offer)}>
                     <X className="w-4 h-4 mr-2" />
                     Reject
                   </Button>
                 </div>
               </CardContent>
-              </Card>
-          )))}
+            </Card>
+          ))}
         </TabsContent>
 
         <TabsContent value="sent" className="space-y-4">
           {offers.filter(o => o.status === 'sent').map((offer) => (
             <Card key={offer.id}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Send className="w-6 h-6 text-blue-600" />
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                      <Send className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold">{offer.candidateName}</h3>
+                      <h3 className="text-base sm:text-lg font-semibold">{offer.candidateName}</h3>
                       <p className="text-sm text-gray-600">{offer.position}</p>
                       <p className="text-xs text-gray-500">Sent: {offer.sentAt}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="sm:text-right ml-auto sm:ml-0">
                     {getStatusBadge(offer.status)}
                     <div className="mt-2">
                       <p className="text-sm font-medium">{offer.salary}</p>
@@ -894,12 +888,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-2">
-                  {/* <Button variant="outline" size="sm" onClick={() => sendOffer(offer)}>
-                    <Send className="w-4 h-4 mr-2" />
-                    Resend
-                  </Button> */}
-                  <Button variant="destructive" size="sm" onClick={() => rejectOffer(offer)}>
+                <div className="flex justify-end">
+                  <Button variant="destructive" size="sm" className="w-full sm:w-auto" onClick={() => rejectOffer(offer)}>
                     <X className="w-4 h-4 mr-2" />
                     Reject
                   </Button>

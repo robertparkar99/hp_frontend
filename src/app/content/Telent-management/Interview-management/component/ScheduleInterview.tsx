@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect , useRef} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -359,9 +359,7 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                 </div>
               </div>
 
-              {/* Date, Time, Duration Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="tour-date-time-duration-row">
-                {/* Date */}
                 <div className="space-y-2" id="tour-date-picker">
                   <Label htmlFor="date">Date</Label>
                   <div className="relative">
@@ -489,15 +487,15 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                       )}
                      <Badge
                         variant={panel.status === "available" ? "default" : "secondary"}
-                          className={cn(
-                            "text-xs",
-                            panel.status === "available"
-                              ? "bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800"
-                              : "bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800"
-                          )}
-                        >
-                          {panel.status === "available" ? "Available" : "Unavailable"}
-                        </Badge>
+  className={cn(
+    "text-xs",
+    panel.status === "available"
+      ? "bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800"
+      : "bg-gray-100 text-gray-800 hover:bg-gray-100 hover:text-gray-800"
+  )}
+>
+                        {panel.status === "available" ? "Available" : "Unavailable"}
+</Badge>
 
                     </div>
                   </div>
