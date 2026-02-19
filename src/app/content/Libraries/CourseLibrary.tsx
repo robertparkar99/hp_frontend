@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "../../../components/ui/button";
 import Image from "../../../components/AppImage";
-import { Atom } from "react-loading-indicators";
+import Loader from "@/components/utils/loading";
 
 type Course = {
   id: number;
@@ -421,7 +421,7 @@ const CourseLibrary: React.FC<{ onViewDetails?: (subject_id: number, standard_id
   if (loading) {
     return (
       <div className="flex justify-center items-center h-80">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+        <Loader/>
       </div>
     );
   }

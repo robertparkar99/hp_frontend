@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,47 +6,62 @@ import { Download, TrendingUp } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from "@/lib/utils";
 
-// Competency Radar Component
-const competencyData = [
-  {
-    area: 'Task Mapping',
-    current: 85,
-    target: 95,
-    fullMark: 100,
-  },
-  {
-    area: 'Skill Coverage',
-    current: 72,
-    target: 90,
-    fullMark: 100,
-  },
-  {
-    area: 'Behavior Mapping',
-    current: 68,
-    target: 85,
-    fullMark: 100,
-  },
-  {
-    area: 'External Alignment',
-    current: 91,
-    target: 95,
-    fullMark: 100,
-  },
-  {
-    area: 'Risk Assessment',
-    current: 79,
-    target: 88,
-    fullMark: 100,
-  },
-  {
-    area: 'Future Readiness',
-    current: 64,
-    target: 80,
-    fullMark: 100,
-  },
-];
+
+
 
 export function CompetencyRadar() {
+  const [apiData, setApiData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [sessionData, setSessionData] = useState({
+    url: '',
+    token: '',
+    subInstituteId: '',
+    orgType: '',
+    userId: '',
+  });
+
+  useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+        orgType: org_type,
+        userId: user_id,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sessionData.url && sessionData.token) {
+      setLoading(true);
+      fetch(`${sessionData.url}/api/competency/health-radar?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`)
+        .then(res => res.json())
+        .then(data => {
+          setApiData(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Error fetching API data:', err);
+          setLoading(false);
+        });
+    }
+  }, [sessionData]);
+
+  const competencyData = apiData?.data || [];
+
+  if (loading || competencyData.length === 0) {
+    return (
+      <Card className="shadow-card">
+        <CardContent className="p-8 text-center">
+          <div className="text-muted-foreground">Loading competency data...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="shadow-card" id="tour-competency-radar">
       <CardHeader>
@@ -55,7 +70,17 @@ export function CompetencyRadar() {
           <span className="text-xs font-normal text-muted-foreground">
             Current vs target coverage
           </span>
+          {apiData && (
+            <Badge variant="secondary" className="ml-auto">
+              Health Score: {apiData.summary.health_score}%
+            </Badge>
+          )}
         </CardTitle>
+        {apiData && (
+          <p className="text-sm text-muted-foreground">
+            Avg Current: {apiData.summary.average_current}%, Avg Target: {apiData.summary.average_target}%
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         <div className="h-80">
@@ -98,35 +123,33 @@ export function CompetencyRadar() {
           </ResponsiveContainer>
         </div>
         
-        <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border">
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Coverage Gaps</h4>
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Future Readiness</span>
-                <span className="text-warning font-medium">-16%</span>
+        {apiData && (
+          <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border">
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Coverage Gaps</h4>
+              <div className="space-y-1">
+                {apiData.gaps.map((gap: any, i: number) => (
+                  <div key={i} className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">{gap.area}</span>
+                    <span className="text-warning font-medium">{gap.current}% (Target: {gap.target}%)</span>
+                  </div>
+                ))}
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Skill Coverage</span>
-                <span className="text-warning font-medium">-18%</span>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Strengths</h4>
+              <div className="space-y-1">
+                {apiData.strengths.map((strength: any, i: number) => (
+                  <div key={i} className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">{strength.area}</span>
+                    <span className="text-success font-medium">{strength.current}% (Target: {strength.target}%)</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-          
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Strengths</h4>
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">External Alignment</span>
-                <span className="text-success font-medium">91%</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Task Mapping</span>
-                <span className="text-success font-medium">85%</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -143,7 +166,7 @@ export interface StageData {
   tooltip: string;
 }
 
-const funnelData: StageData[] = [
+const staticFunnelData: StageData[] = [
   {
     id: "identified",
     name: "Identified Orphans",
@@ -158,7 +181,7 @@ const funnelData: StageData[] = [
     name: "In Review",
     count: 7000,
     color: "stage-review",
-    bgColor: "stage-review-bg", 
+    bgColor: "stage-review-bg",
     description: "Entities currently under review by SME",
     tooltip: "Skills and entities currently being reviewed by Subject Matter Experts"
   },
@@ -319,10 +342,60 @@ const StageTooltip = ({ stage }: StageTooltipProps) => {
 export const FunnelDashboard = () => {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const [hoveredStage, setHoveredStage] = useState<string | null>(null);
+  const [apiData, setApiData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [sessionData, setSessionData] = useState({
+    url: '',
+    token: '',
+    subInstituteId: '',
+    orgType: '',
+    userId: '',
+  });
 
-  const totalIdentified = funnelData[0].count;
-  const totalApproved = funnelData[funnelData.length - 1].count;
-  const completionRate = Math.round((totalApproved / totalIdentified) * 100);
+  useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        url: APP_URL,
+        token,
+        subInstituteId: sub_institute_id,
+        orgType: org_type,
+        userId: user_id,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sessionData.url && sessionData.token) {
+      setLoading(true);
+      fetch(`${sessionData.url}/api/competency/skills-management-funnel?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`)
+        .then(res => res.json())
+        .then(data => {
+          setApiData(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Error fetching funnel API data:', err);
+          setLoading(false);
+        });
+    }
+  }, [sessionData]);
+
+  const funnelData: StageData[] = apiData ? apiData.data.map((item: any, index: number) => ({
+    id: item.stage.toLowerCase().replace(/\s+/g, '-'),
+    name: item.stage,
+    count: item.count,
+    color: staticFunnelData[index]?.color || "stage-identified",
+    bgColor: staticFunnelData[index]?.bgColor || "stage-identified-bg",
+    description: staticFunnelData[index]?.description || "Description not available",
+    tooltip: staticFunnelData[index]?.tooltip || "Tooltip not available"
+  })) : [];
+
+  const totalIdentified = funnelData[0]?.count || 0;
+  const totalApproved = funnelData[funnelData.length - 1]?.count || 0;
+  const completionRate = apiData ? parseInt(apiData.completionRate) : Math.round((totalApproved / totalIdentified) * 100);
+  const title = apiData ? apiData.title : "Skills Management Funnel";
 
   const handleStageClick = (stageId: string) => {
     setSelectedStage(selectedStage === stageId ? null : stageId);
@@ -333,12 +406,22 @@ export const FunnelDashboard = () => {
     console.log("Exporting funnel data...");
   };
 
+  if (loading || funnelData.length === 0) {
+    return (
+      <div className="w-full max-w-6xl mx-auto p-6 space-y-6">
+        <Card className="p-8 text-center">
+          <div className="text-muted-foreground">Loading funnel data...</div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-6xl mx-auto p-6 space-y-6" id="tour-skills-funnel">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Skills Management Funnel</h1>
+          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
           <p className="text-muted-foreground mt-1">
             Track orphan skills through the review and integration process
           </p>
@@ -370,7 +453,7 @@ export const FunnelDashboard = () => {
         <div className="relative">
           {/* Funnel Container */}
           <div className="flex flex-col items-center space-y-4">
-            {funnelData.map((stage, index) => {
+            {funnelData.map((stage: StageData, index: number) => {
               const widthPercentage = 100 - (index * 15); // Progressive narrowing
               const dropoffCount = index > 0 ? funnelData[index - 1].count - stage.count : 0;
               const dropoffPercentage = index > 0 ? Math.round((dropoffCount / funnelData[index - 1].count) * 100) : 0;
@@ -414,7 +497,7 @@ export const FunnelDashboard = () => {
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Stage Definitions</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {funnelData.map((stage) => (
+          {funnelData.map((stage: StageData) => (
             <div key={stage.id} className="flex items-start gap-3">
               <div 
                 className={`w-4 h-4 rounded-full bg-${stage.color} flex-shrink-0 mt-1`}
@@ -434,7 +517,7 @@ export const FunnelDashboard = () => {
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-lg font-semibold">
-                {funnelData.find(s => s.id === selectedStage)?.name} Details
+                {funnelData.find((s: StageData) => s.id === selectedStage)?.name} Details
               </h3>
               <p className="text-muted-foreground mt-1">
                 Drill-down view for detailed analysis

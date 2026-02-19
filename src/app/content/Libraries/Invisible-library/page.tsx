@@ -17,9 +17,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription
+  
 } from "@/components/ui/dialog";
 
-import { Atom } from "react-loading-indicators";
 import ShepherdTour from "../../Onboarding/Competency-Management/ShepherdTour";
 import { generateDetailTourSteps } from "../../../../lib/tourSteps";
 
@@ -39,6 +39,7 @@ import {
   Sparkles,
   Settings
 } from "lucide-react";
+import Loader from "@/components/utils/loading";
 
 /* ---------------- TYPES ---------------- */
 
@@ -198,7 +199,7 @@ export default function InvisibleLibraryPage({ showDetailTour }: InvisibleLibrar
   if (loading)
     return (
       <div className="flex justify-center items-center h-screen">
-        <Atom color="#525ceaff" size="medium" />
+        <Loader/>
       </div>
     );
 
