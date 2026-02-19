@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import React, { useState, useEffect, useMemo,useRef, useCallback } from "react"
 import { Button } from "../../../../components/ui/button"
 import Icon from "@/components/AppIcon"
 import Shepherd from 'shepherd.js'
@@ -312,11 +312,11 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
     setActiveTab("modules")
   }
   // Add this handler inside your component
-    const handleCloseModule = () => {
-        if (onClose) {
+const handleCloseModule = () => {
+if (onClose) {
       onClose();
       } // 👈 go back to course tab
- };
+};
 
   // Check if all chapters are read (all content viewed)
   const checkAllChaptersRead = () => {
@@ -568,7 +568,7 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
                           </ul>
                         </div>
                       ) : null
-                          )}
+                    )}
                   </div>
                 </div>
               ) : null
@@ -605,8 +605,8 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
               onClick={handleCloseQuestionBank}
               className="flex items-center gap-2"
             >
-                        <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }} />
-
+              <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }}  />
+             
             </Button>
           </div>
           <QuestionBank
@@ -625,16 +625,16 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
-              <div id="vd-back-button">
-                  <Button
-                      variant="ghost"
-                      onClick={handleCloseModule}
-                      className="flex items-center"
-                  >
-                      <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }} />
-                  </Button>
-              </div>
-              <div id="vd-course-header" className="flex items-center justify-between mt-8 mb-6">
+             <div id="vd-back-button">
+       <Button
+  variant="ghost"
+  onClick={handleCloseModule}
+  className="flex items-center"
+>
+  <Icon name="ArrowLeft" style={{ width: '24px', height: '24px' }} />
+</Button>
+</div>
+        <div id="vd-course-header" className="flex items-center justify-between mt-8 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
               Module Catalog
@@ -675,18 +675,18 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
 
         {/* Course Hero */}
         {courseDetails && (
-                  <div id="vd-course-hero">
-                      <CourseHero
-                          course={formatCourseForHero()}
-                          sessionData={sessionData}
-                          onStartCourse={() => console.log("Start course")}
-                          onContinueCourse={() => console.log("Continue course")}
-                      />
-                  </div>
+          <div id="vd-course-hero">
+          <CourseHero
+            course={formatCourseForHero()}
+            sessionData={sessionData}
+            onStartCourse={() => console.log("Start course")}
+            onContinueCourse={() => console.log("Continue course")}
+          />
+          </div>
         )}
 
         {/* Tab Navigation */}
-              <div id="vd-tab-navigation" className="mt-4">
+        <div id="vd-tab-navigation"  className="mt-4">
           <CourseTabNavigation
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -700,7 +700,7 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
         </div>
 
         {/* Tab Content */}
-              <div id="vd-module-grid" className="bg-card border border-border rounded-lg p-6 mt-8">
+        <div id="vd-module-grid" className="bg-card border border-border rounded-lg p-6 mt-8">
           {renderTabContent()}
         </div>
 
@@ -732,4 +732,3 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
     </div>
   )
 }
-
