@@ -1,7 +1,7 @@
 
 
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef  } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -734,20 +734,40 @@ const HRDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 lg:space-y-6">
-          {/* Mobile Tabs Dropdown */}
-          <div className="lg:hidden">
-            <select
-              className="w-full p-3 border border-gray-300 rounded-lg bg-white text-sm"
-              onChange={(e) => {
-                const tabValue = e.target.value;
-                (document.querySelector(`[data-value="${tabValue}"]`) as HTMLElement | null)?.click();
-              }}
-            >
-              <option value="jobs">Job Postings</option>
-              <option value="screening">Resume Screening</option>
-              <option value="applications">Applications</option>
-              {/* <option value="analytics">Analytics</option> */}
-            </select>
+          {/* Mobile Tabs - Horizontal Scrollable Buttons */}
+          <div className="lg:hidden overflow-x-auto -mx-2 px-2">
+            <div className="flex gap-2 min-w-max">
+              <button
+                onClick={() => setActiveTab('jobs')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === 'jobs'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Job Postings
+              </button>
+              <button
+                onClick={() => setActiveTab('screening')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === 'screening'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Resume Screening
+              </button>
+              <button
+                onClick={() => setActiveTab('applications')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === 'applications'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Applications
+              </button>
+            </div>
           </div>
 
           {/* Desktop Tabs */}
@@ -796,7 +816,7 @@ const HRDashboard = () => {
                       <div key={job.id} className="p-3 lg:p-4 border border-gray-200 rounded-lg bg-white">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                           <div className="flex-1">
-                            <div className="flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-4">
+                            <div className="flex flex-col xs:flex-row xs:items-start gap-2 xs:gap-4">
                               <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold text-gray-900 text-sm lg:text-base truncate">
                                   {job.title}
@@ -804,11 +824,12 @@ const HRDashboard = () => {
                                 <p className="text-xs lg:text-sm text-gray-600 truncate">
                                   {job.employment_type} • {job.location}
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Experience: {job.experience} • Education: {job.education}
+                                <p className="text-xs text-gray-500 mt-1 flex flex-wrap gap-x-2">
+                                  <span>Experience: {job.experience}</span>
+                                  <span>Education: {job.education}</span>
                                 </p>
                               </div>
-                              <div id="tour-job-status" className="flex flex-wrap gap-2">
+                              <div id="tour-job-status"  className="flex flex-wrap gap-2 self-start xs:self-center">
                                 {getStatusBadge(job.status)}
                                 <span className={`text-xs font-medium ${getUrgencyColor(job.priority_level)}`}>
                                   {job.priority_level}
@@ -816,16 +837,16 @@ const HRDashboard = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between lg:justify-end lg:space-x-6">
-                            <div className="flex items-center space-x-4 lg:space-x-6">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 sm:gap-4 lg:gap-6 mt-2 sm:mt-0">
+                            <div className="flex items-center gap-3 sm:gap-4 lg:gap-6">
                               <div className="text-center">
-                                <div className="text-lg lg:text-xl font-bold text-blue-400">
+                                <div className="text-sm sm:text-lg lg:text-xl font-bold text-blue-400">
                                   {job.positions}
                                 </div>
                                 <div className="text-xs text-gray-500">Openings</div>
                               </div>
                               <div className="text-center">
-                                <div className="text-lg lg:text-xl font-bold text-blue-400">
+                                <div className="text-sm sm:text-lg lg:text-xl font-bold text-blue-400">
                                   {applicationsLoading ? (
                                     <div className="animate-pulse">...</div>
                                   ) : (
@@ -931,9 +952,9 @@ const HRDashboard = () => {
                       return (
                         <div key={application.id} className="p-3 lg:p-4 border border-gray-200 rounded-lg bg-white">
                           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                            <div className="flex items-center space-x-3">
+                            <div className="flex items-center gap-3">
                               <div className="w-8 h-8 lg:w-10 lg:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <Users className="w-4 h-4 lg:w-5 lg-h-5 text-blue-400" />
+                                <Users className="w-4 h-4 lg:w-5 lg:h-5 text-blue-400" />
                               </div>
                               <div className="min-w-0 flex-1">
                                 <h3 className="font-semibold text-gray-900 text-sm lg:text-base truncate">
@@ -949,24 +970,24 @@ const HRDashboard = () => {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center justify-between lg:justify-end lg:space-x-6">
-                              <div className="flex items-center space-x-4 lg:space-x-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 sm:gap-4 mt-2 sm:mt-0">
+                              <div className="flex items-center gap-3 sm:gap-4 lg:gap-6">
                                 <div className="text-center">
-                                  <div id="tour-candidate-score" className={`text-lg font-bold ${score !== null ? (score >= 85 ? 'text-green-600' :
+                                  <div id="tour-candidate-score" className={`text-sm sm:text-lg font-bold ${score !== null ? (score >= 85 ? 'text-green-600' :
                                     score >= 70 ? 'text-blue-600' : 'text-orange-600') : 'text-gray-500'}`}>
                                     {score !== null ? `${score}%` : 'Pending'}
                                   </div>
                                   <div className="text-xs text-gray-500">Score</div>
                                 </div>
                                 <div className="text-center">
-                                  <div className="text-sm font-medium text-gray-900">
+                                  <div className="text-xs sm:text-sm font-medium text-gray-900">
                                     {application.experience || 'N/A'}
                                   </div>
                                   <div className="text-xs text-gray-500">Experience</div>
                                 </div>
 
                               </div>
-                              <div id="tour-applications-actions" className="flex items-center space-x-2">
+                              <div id="tour-applications-actions"  className="flex items-center gap-2">
                                 {application.status === 'active' ? (
                                   <Badge className="bg-green-100 text-green-800 text-xs">Active</Badge>
                                 ) : application.status === 'rejected' ? (

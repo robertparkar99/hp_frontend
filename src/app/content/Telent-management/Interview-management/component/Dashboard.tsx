@@ -411,6 +411,7 @@ function DashboardContent() {
   const candidate = searchParams.get('candidate');
   const job = searchParams.get('job');
 
+
   return (
     <div className="space-y-6 p-6 bg-background rounded-xl">
       {/* Header */}
@@ -422,8 +423,8 @@ function DashboardContent() {
       </div>
 
       {/* Navigation Menu Toggle */}
-      <div className="flex items-center justify-between border-b border-gray-300 pb-2 mb-4">
-        <div className="flex space-x-6">
+      <div className="border-b border-gray-300 pb-2 mb-4">
+        <div className="flex overflow-x-auto scrollbar-hide -mx-2 px-2">
           {tabs.map((tab) => {
             const IconComponent = tab.icon;
             const isActive = activeTab === tab.key && !openPage;
@@ -433,7 +434,7 @@ function DashboardContent() {
                 key={tab.key}
                 id={tab.tourId}
                 onClick={() => handleTabChange(tab.key)}
-                className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 pb-2 px-2 text-sm font-medium whitespace-nowrap transition-colors ${
                   isActive
                     ? "border-b-2 border-blue-500 text-blue-600"
                     : "text-gray-600 hover:text-blue-500"
@@ -448,39 +449,47 @@ function DashboardContent() {
       </div>
 
       {/* Main Content */}
-      {activeTab === "dashboard" && (
-        <>
-          {/* Stats Cards */}
-          <div id="tour-stats-cards">
-            <DashboardStats />
-          </div>
+      <Suspense fallback={<Loader />}>
+        {activeTab === "dashboard" && (
+          <>
+            {/* Stats Cards */}
+            <div id="tour-stats-cards">
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div id="tour-upcoming-interviews">
-              <UpcomingInterviews onReschedule={(interview) => { setSelectedInterview(interview); handleTabChange("schedule"); }} />
+            <DashboardStats />
             </div>
-            <div id="tour-candidate-pipeline">
+
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div id="tour-upcoming-interviews">
+                <UpcomingInterviews onReschedule={(interview) => { setSelectedInterview(interview); setActiveTab("schedule"); }} />
+              </div>
+              <div id="tour-candidate-pipeline">
+
               <CandidatePipeline />
+              </div>
+
             </div>
-          </div>
-        </>
-      )}
-      {activeTab === "schedule" && (
-        <div id="tour-schedule-form">
+          </>
+        )}
+
+        {activeTab === "schedule" && (
+          <div id="tour-schedule-form">
           <DynamicScheduleInterview interview={selectedInterview} candidateId={candidate || undefined} positionId={job || undefined} />
-        </div>
-      )}
-      {activeTab === "candidates" && (
-        <div id="tour-candidates-list">
+          </div>)}
+
+        {activeTab === "candidates" && (
+          <div id="tour-candidates-list">
           <DynamicCandidates />
-        </div>
-      )}
-      {activeTab === "interview-panel" && (
-        <div id="tour-panel-members">
+
+          </div>
+        )}
+        {activeTab === "interview-panel" && (
+          <div id="tour-panel-members">
           <DynamicInterviewPanels />
-        </div>
-      )}
+          </div>
+        )}
+        {/* {activeTab === "feedback" && <DynamicFeedback />} */}
+      </Suspense>
     </div>
   );
 }
