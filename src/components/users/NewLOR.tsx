@@ -62,32 +62,31 @@ export default function Index({ SelLOR }: SelLORProps) {
   ].filter((card) => card.text && card.text.trim() !== ""); // ✅ filter out empty
 
   return (
-    <div className="w-full flex flex-col items-center space-y-8 px-4 py-8">
+    <div className="w-full flex flex-col items-center space-y-4 sm:space-y-6 md:space-y-8 px-2 sm:px-4 py-4 sm:py-6 md:py-8">
       {/* TOP SELECTION TABS */}
       <div className="w-full max-w-6xl mx-auto">
-        <div
-          id="lor-tabs-container"
-          className="rounded-2xl border-2 border-blue-500/80 bg-[#f6faff] shadow-lg backdrop-blur-lg"
+        <div  id="lor-tabs-container"
+          className="rounded-xl sm:rounded-2xl border-2 border-blue-500/80 bg-[#f6faff] shadow-lg backdrop-blur-lg"
           style={{
             boxShadow: "2px 3px 8px 6px rgba(193, 193, 193, 0.25)",
           }}
         >
-          <div className="flex flex-col md:flex-row justify-between items-center text-center px-6 md:px-8 py-5 space-y-10 md:space-y-0">
+          <div className="flex flex-col md:flex-row justify-between items-center text-center px-3 sm:px-6 md:px-8 py-4 sm:py-5 space-y-6 sm:space-y-8 md:space-y-0">
             {sections.map((section, i) => (
               <React.Fragment key={i}>
                 <div
-                  id={`lor-tab-${section.key}`}
+                 id={`lor-tab-${section.key}`}
                   onClick={() => setActiveSection(section.key)}
-                  className={`flex flex-col items-center space-y-3 px-4 cursor-pointer transition-transform hover:scale-105 ${
+                  className={`flex flex-col items-center space-y-2 sm:space-y-3 px-2 sm:px-4 cursor-pointer transition-transform hover:scale-105 ${
                     activeSection === section.key ? "scale-105" : ""
                   }`}
                 >
                   <img
                     src={section.imgSrc}
                     alt={section.alt}
-                    className="w-20 h-20 object-contain"
+                    className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain"
                   />
-                  <h3 className="text-[#1f2e4c] font-semibold text-base md:text-lg">
+                  <h3 className="text-[#1f2e4c] font-semibold text-sm sm:text-base md:text-lg text-center">
                     {section.title}
                   </h3>
                 </div>
@@ -104,15 +103,15 @@ export default function Index({ SelLOR }: SelLORProps) {
           activeSection
         ) && (
           <div
-            id="lor-level-badge"
-            className="rounded-2xl border-2 border-[#A4D0FF] flex items-center justify-start px-4 py-2 mt-6 shadow-sm"
+          id="lor-level-badge"
+            className="rounded-xl sm:rounded-2xl border-2 border-[#A4D0FF] flex items-center justify-start px-3 sm:px-4 py-2 mt-4 sm:mt-6 shadow-sm"
             style={{
               background:
                 "linear-gradient(90deg, #0575E6 0%, #56AAFF 50%, #0575E6 100%)",
-                width: "fit-content",
+              width: "fit-content",
             }}
           >
-            <span className="text-white font-bold text-3xl font-roboto">
+            <span className="text-white font-bold text-lg sm:text-xl md:text-2xl lg:text-3xl font-roboto">
               Level {dataLor?.level}: {cleanText(dataLor?.guiding_phrase)}
             </span>
           </div>
@@ -122,17 +121,16 @@ export default function Index({ SelLOR }: SelLORProps) {
       {/* DESCRIPTION SECTION */}
       {/* DESCRIPTION SECTION */}
 {activeSection === "description" && (
-  <div id="lor-description-section" className="w-full max-w-6xl mx-auto mt-6 px-4">
-    <div className="grid grid-cols-2 gap-6">
+  <div id="lor-description-section" className="w-full max-w-6xl mx-auto mt-4 sm:mt-6 px-2 sm:px-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
       {descriptionCards.map((card, index) => (
-        <div
-          id={`lor-description-card-${index}`}
+        <div id={`lor-description-card-${index}`}
           key={index}
-          className="relative w-full h-[300px] rounded-[18px] overflow-hidden text-justify"
+          className="relative w-full min-h-[250px] sm:min-h-[280px] md:h-[300px] rounded-xl sm:rounded-[18px] overflow-hidden text-justify"
         >
           {/* Background */}
           <div
-            className="absolute inset-0 rounded-[16px] border-2 border-[#94BEFF]"
+            className="absolute inset-0 rounded-lg sm:rounded-[16px] border-2 border-[#94BEFF]"
             style={{
               background:
                 "linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(71,160,255,0.35) 100%)",
@@ -141,13 +139,13 @@ export default function Index({ SelLOR }: SelLORProps) {
           />
 
           {/* Title */}
-          <h3 className="relative mt-7 ml-5 text-[24px] font-bold text-[#0043CE] opacity-80">
+          <h3 className="relative mt-4 sm:mt-5 md:mt-7 ml-4 sm:ml-5 text-lg sm:text-xl md:text-[24px] font-bold text-[#0043CE] opacity-80">
             {card.title}
           </h3>
 
           {/* Divider */}
           <svg
-            className="relative mt-2 ml-5 w-[90%] h-[12px]"
+            className="relative mt-2 ml-4 sm:ml-5 w-[90%] h-[12px]"
             viewBox="0 0 550 12"
           >
             <path
@@ -157,7 +155,7 @@ export default function Index({ SelLOR }: SelLORProps) {
           </svg>
 
           {/* Content */}
-          <div className="relative m-5 h-[150px] text-[15px] text-black whitespace-pre-line overflow-y-auto pr-2 hide-scrollbar">
+          <div className="relative m-3 sm:m-4 md:m-5 h-auto sm:h-[140px] md:h-[150px] text-sm sm:text-[15px] text-black whitespace-pre-line overflow-y-auto pr-2 hide-scrollbar">
             {card.text}
           </div>
         </div>
@@ -169,21 +167,20 @@ export default function Index({ SelLOR }: SelLORProps) {
 
       {/* RESPONSIBILITY SECTION */}
       {activeSection === "responsibility" && (
-        <div id="lor-responsibility-section" className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl px-4 mt-4">
+        <div id="lor-responsibility-section"  className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-6xl px-2 sm:px-4 mt-4 w-full">
           {dataLor?.Attributes &&
             Object.entries(dataLor.Attributes)
               .filter(([_, item]) => cleanText(item?.attribute_overall_description)?.trim())
               .map(([key, item]: [string, AttributeItem]) => (
-                <div
-                  id={`lor-attribute-${key}`}
+                <div  id={`lor-attribute-${key}`}
                   key={key}
-                  className="bg-white border-2 border-blue-200 p-6 rounded-xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 duration-300"
+                  className="bg-white border-2 border-blue-200 p-4 sm:p-6 rounded-xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 duration-300"
                   style={{ height: "fit-content" }} // 👈 fit content
                 >
-                  <h3 className="inline-block bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-md mb-3 text-base">
+                  <h3 className="inline-block bg-blue-100 text-blue-800 font-bold px-2 sm:px-3 py-1 rounded-md mb-2 sm:mb-3 text-sm sm:text-base">
                     {item.attribute_name || key}
                   </h3>
-                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                  <p className="text-gray-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
                     {cleanText(item.attribute_overall_description)}
                   </p>
                 </div>
@@ -193,21 +190,20 @@ export default function Index({ SelLOR }: SelLORProps) {
 
       {/* BUSINESS SKILLS SECTION */}
       {activeSection === "business" && (
-        <div id="lor-business-section" className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl px-4 mt-4">
+        <div id="lor-business-section" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-6xl px-2 sm:px-4 mt-4 w-full">
           {dataLor?.Business_skills &&
             Object.entries(dataLor.Business_skills)
               .filter(([_, item]) => cleanText(item?.attribute_overall_description)?.trim())
               .map(([key, item]: [string, AttributeItem]) => (
-                <div
-                  id={`lor-business-skill-${key}`}
+                <div id={`lor-business-skill-${key}`}
                   key={key}
-                  className="bg-white border-2 border-blue-200 p-6 rounded-xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 duration-300"
+                  className="bg-white border-2 border-blue-200 p-4 sm:p-6 rounded-xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 duration-300"
                   style={{ height: "fit-content" }} // 👈 fit content
                 >
-                  <h3 className="inline-block bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-md mb-3 text-base">
+                  <h3 className="inline-block bg-blue-100 text-blue-800 font-bold px-2 sm:px-3 py-1 rounded-md mb-2 sm:mb-3 text-sm sm:text-base">
                     {item.attribute_name || key}
                   </h3>
-                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                  <p className="text-gray-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
                     {cleanText(item.attribute_overall_description)}
                   </p>
                 </div>

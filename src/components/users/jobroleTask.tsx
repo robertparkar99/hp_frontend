@@ -221,35 +221,28 @@ const CriticalWorkFunctionCard: React.FC<CriticalWorkFunctionCardProps & { id?: 
   const { bubbleSizes, positions, containerSize } = packBubblesCircular(bubbles);
 
   return (
-    <div id={id} className="bg-white rounded-xl shadow-lg p-4 w-full flex flex-col items-stretch justify-between min-h-[400px]">
-      <div
-        id={`${id}-bubbles`}
-        className="bubbles-container relative mx-auto mb-4 flex-shrink-0"
+    <div id={id} className="bg-white rounded-xl shadow-lg p-3 sm:p-4 w-full flex flex-col items-stretch justify-between min-h-[300px] sm:min-h-[350px] md:min-h-[400px]">
+      <div id={`${id}-bubbles`}
+        className="bubbles-container relative mx-auto mb-3 sm:mb-4 flex-shrink-0"
         style={{
-          height: `${containerSize}px`,
-          width: `${containerSize}px`,
-          minHeight: "320px",
+          height: `${Math.min(containerSize, 280)}px`,
+          width: `${Math.min(containerSize, 280)}px`,
+          minHeight: "260px",
         }}
       >
         {bubbleSizes.map((bubble, index) => (
-          <BubbleItem
-            key={bubble.id}
-            id={`${id}-bubble-${index}`}
-            bubble={bubble}
-            position={positions[index]}
-            index={index}
-          />
+          <BubbleItem key={bubble.id}  id={`${id}-bubble-${index}`} bubble={bubble} position={positions[index]} index={index} />
         ))}
       </div>
 
       <hr className="mt-auto border-gray-300" />
-      <div id={`${id}-header`} className="cardTitle flex items-start gap-3 mt-4">
+      <div id={`${id}-header`}  className="cardTitle flex items-start gap-2 sm:gap-3 mt-3 sm:mt-4">
         <div className="flex-shrink-0">
-          <img src={iconUrl} alt={title} className="w-8 h-8" />
+          <img src={iconUrl} alt={title} className="w-6 h-6 sm:w-8 sm:h-8" />
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-[16px] font-bold text-[#23395B] mb-1">Critical Work Function</h2>
-          <p className="text-[14px] text-gray-600 truncate" title={title}>{title}</p>
+          <h2 className="text-[14px] sm:text-[16px] font-bold text-[#23395B] mb-1">Critical Work Function</h2>
+          <p className="text-[12px] sm:text-[14px] text-gray-600 truncate" title={title}>{title}</p>
         </div>
       </div>
     </div>
@@ -290,17 +283,16 @@ const CriticalWorkFunction: React.FC<UserJobroleTaskProps> = ({ userJobroleTask 
   const needs2Cols = cards.some(card => (card.bubbles?.length || 0) > 5);
 
   return (
-    <div className="min-h-auto py-8">
-      <div className="max-w-7xl mx-auto px-4">
-        <div
-          id="tasks-bubbles-grid"
-          className={`grid grid-cols-1 md:grid-cols-2 ${needs2Cols ? "lg:grid-cols-2" : "lg:grid-cols-3"
-            } gap-6`}
+    <div className="min-h-auto py-4 sm:py-6 md:py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4">
+        <div  id="tasks-bubbles-grid"
+          className={`grid grid-cols-1 sm:grid-cols-2 ${needs2Cols ? "lg:grid-cols-2" : "lg:grid-cols-3"
+            } gap-4 sm:gap-5 md:gap-6`}
         >
           {cards.map((card, index) => (
             <CriticalWorkFunctionCard
               key={index}
-              id={`task-card-${index}`}
+               id={`task-card-${index}`}
               title={card.title}
               description={card.description}
               bubbles={card.bubbles}

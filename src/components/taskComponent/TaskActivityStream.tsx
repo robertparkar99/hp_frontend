@@ -253,16 +253,13 @@ export function TaskActivityStream() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
-        <div id="task-activity-header" className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
-              <p className="text-gray-600">Manage and track task progress across your team</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={startTour}>
+        <div className="mb-8" id="task-activity-header">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
+          
+          <p className="text-gray-600">Manage and track task progress across your team</p>
+          <Button variant="outline" size="sm" onClick={startTour}>
               Start Tour
             </Button>
-          </div>
         </div>
 
         {/* Stats Cards */}

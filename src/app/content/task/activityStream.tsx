@@ -291,7 +291,7 @@ const ActivityStream = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className=" bg-white flex items-center justify-center h-full">
         <div className="text-center">
           <p>Loading tasks...</p>
         </div>
@@ -299,11 +299,10 @@ const ActivityStream = () => {
     );
   }
 
-  
   return (
     <>
     <style>{tourStyles}</style>
-    <div className="min-h-screen bg-white rounded-xl">
+    <div className="h-full bg-white rounded-xl">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-4" id="tour-header">
@@ -485,7 +484,6 @@ const ActivityStream = () => {
           </div>
         </div>
       </div>
-      
     </div>
     </>
   );
