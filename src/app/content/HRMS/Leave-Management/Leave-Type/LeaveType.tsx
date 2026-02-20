@@ -43,13 +43,13 @@ export default function LeaveType() {
   const [filterText, setFilterText] = useState('');
   const [resetPaginationToggle, setResetPaginationToggle] = useState(false);
   // State for column-wise filters
-  const [columnFilters, setColumnFilters] = useState({
-    srno: "",
-    leaveTypeId: "",
-    maxDays: "",
-    name: "",
-    status: "",
-  });
+const [columnFilters, setColumnFilters] = useState({
+  srno: "",
+  leaveTypeId:"",
+  maxDays: "",
+  name: "",
+  status: "",
+});
 
 
   const [sessionData, setSessionData] = useState<SessionData>({
@@ -279,36 +279,58 @@ export default function LeaveType() {
   setResetPaginationToggle(!resetPaginationToggle);
 };
 
-  // Clear all filters
-  const clearFilter = () => {
-    setColumnFilters({
-      srno: "",
-      leaveTypeId: "",
-      maxDays: "",
-      name: "",
-      status: "",
-    });
-    setResetPaginationToggle(!resetPaginationToggle);
-  };
+// Clear all filters
+const clearFilter = () => {
+  setColumnFilters({
+    srno: "",
+    leaveTypeId:"",
+    maxDays: "",
+    name: "",
+    status: "",
+  });
+  setResetPaginationToggle(!resetPaginationToggle);
+};
 
   // Filter leave types based on search text
-  const filteredItems = leaveTypes.filter((item, index) => {
-    return (
-      (columnFilters.srno === "" ||
-        (index + 1).toString().includes(columnFilters.srno)) &&
-      (columnFilters.leaveTypeId === "" ||
-        item.leaveTypeId.toLowerCase().includes(columnFilters.leaveTypeId.toLowerCase())) &&
-      (columnFilters.maxDays === "" ||
-        item.maxDays.toString().includes(columnFilters.maxDays)) &&
-      (columnFilters.name === "" ||
-        item.name.toLowerCase().includes(columnFilters.name.toLowerCase())) &&
-      (columnFilters.status === "" ||
-        item.status.toLowerCase().includes(columnFilters.status.toLowerCase()))
-    );
-  });
+  // const filteredItems = leaveTypes.filter(
+  //   item => 
+  //     item.leaveTypeId.toLowerCase().includes(filterText.toLowerCase()) ||
+  //     item.name.toLowerCase().includes(filterText.toLowerCase()) ||
+  //     item.maxDays.toString().includes(filterText) ||
+  //     item.status.toLowerCase().includes(filterText.toLowerCase())
+  // );
+const filteredItems = leaveTypes.filter((item, index) => {
+  return (
+    (columnFilters.srno === "" ||
+      (index + 1).toString().includes(columnFilters.srno)) &&
+    (columnFilters.leaveTypeId === "" ||
+      item.leaveTypeId.toLowerCase().includes(columnFilters.leaveTypeId.toLowerCase())) &&
+    (columnFilters.maxDays === "" ||
+      item.maxDays.toString().includes(columnFilters.maxDays)) &&
+    (columnFilters.name === "" ||
+      item.name.toLowerCase().includes(columnFilters.name.toLowerCase())) &&
+    (columnFilters.status === "" ||
+      item.status.toLowerCase().includes(columnFilters.status.toLowerCase()))
+  );
+});
+
+  // Handle column filtering
+  // const handleColumnFilter = (column: string, value: string) => {
+  //   // For simplicity, we're using a global filter
+  //   setFilterText(value);
+  //   setResetPaginationToggle(!resetPaginationToggle);
+  // };
+
+  // Clear filter
+  // const clearFilter = () => {
+  //   if (filterText) {
+  //     setResetPaginationToggle(!resetPaginationToggle);
+  //     setFilterText('');
+  //   }
+  // };
 
   // Custom styles for DataTable
-  const customStyles: TableStyles = {
+ const customStyles : TableStyles =  {
     headCells: {
       style: {
         fontSize: "14px",
@@ -345,6 +367,7 @@ export default function LeaveType() {
           />
         </div>
       ),
+      // selector: (row: LeaveType, index: number) => index + 1,
       selector: (row: LeaveType, index?: number) => (index !== undefined ? index + 1 : 0),
       sortable: true,
       width: "120px"
@@ -424,7 +447,7 @@ export default function LeaveType() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+             
               marginTop: "5px"
             }}
           />
@@ -557,20 +580,11 @@ export default function LeaveType() {
                   </div>
 
                   <div className="flex gap-3 pt-4">
-                    <Button
-                      type="submit"
-                      className="px-8 py-2 rounded-full text-white font-sem ibold bg-gradient-to-r from-blue-500 to-blue-700"
-                      id="tour-leave-type-submit"
-                    >
+                    <Button type="submit" className="px-8 py-2 rounded-full text-white font-sem ibold bg-gradient-to-r from-blue-500 to-blue-700"  id="tour-leave-type-submit">
                       <Save className="w-4 h-4 mr-2" />
                       {editingId ? "Update" : "Submit"} 
                     </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={resetForm}
-                      id="tour-leave-type-cancel"
-                    >
+                    <Button type="button" variant="outline" onClick={resetForm} id="tour-leave-type-cancel">
                       <X className="w-4 h-4 mr-2" />
                       Cancel
                     </Button>
@@ -587,13 +601,6 @@ export default function LeaveType() {
               data={filteredItems}
               customStyles={customStyles}
               pagination
-              paginationComponentOptions={{
-                rowsPerPageText: 'Rows per page:',
-                rangeSeparatorText: 'of',
-                noRowsPerPage: false,
-                selectAllRowsItem: false,
-                selectAllRowsItemText: 'All',
-              }}
               highlightOnHover
               responsive
               noDataComponent={<div className="p-4 text-center">No data available</div>}

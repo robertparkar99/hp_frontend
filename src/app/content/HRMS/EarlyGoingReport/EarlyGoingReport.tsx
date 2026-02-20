@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import DatePicker from "react-datepicker";
-import { Search, FileSpreadsheet, Table, Printer } from "lucide-react";
+import { Search, FileSpreadsheet,Table,Printer } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -99,8 +99,8 @@ export default function Home() {
         .map((emp, i) => `user_id[${i}]=${emp.id}`)
         .join("&");
 
-      const url = `${sessionData.url}/show-early-going-hrms-attendance-report?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&date=${formattedDate}${deptParams ? "&" + deptParams : ""}
-        ${empParams ? "&" + empParams : ""}`;
+      const url = `${sessionData.url}/show-early-going-hrms-attendance-report?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}&date=${formattedDate}${deptParams ? "&" + deptParams : ""
+        }${empParams ? "&" + empParams : ""}`;
 
       console.log("📡 Fetching:", url);
 
