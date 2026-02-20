@@ -292,20 +292,17 @@ export function AttendanceDashboard() {
     .join(' ');
 
   return (
-    <div className="min-h-screen bg-background rounded-xl w-full">
+    <div className="min-h-screen  bg-background rounded-xl w-full">
       {/* Header */}
-      <div
-        id="tour-attendance-header"
-        className="relative overflow-hidden rounded-xl bg-[#6fb2f2] text-primary-foreground"
-      >
+      <div id="tour-attendance-header" className="relative overflow-hidden rounded-xl bg-[#6fb2f2] text-primary-foreground">
         <div className="absolute inset-0 opacity-20" />
         <div className="relative container mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">My Attendance</h1>
-              <p className="text-primary-foreground/90 text-lg">{currentDate}</p>
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2">My Attendance</h1>
+              <p className="text-primary-foreground/90 text-base sm:text-lg">{currentDate}</p>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right">
               <div className="flex items-center gap-2 mb-2">
                 <User className="w-5 h-5" />
                 <span className="text-lg font-semibold">{fullName || 'Employee'}</span>
@@ -321,7 +318,7 @@ export function AttendanceDashboard() {
 
       <div className="container mx-auto px-6 py-8">
         {/* Punch Card */}
-        <Card id="tour-attendance-card" className="attendance-card mb-8 hover-lift">
+        <Card id="tour-attendance-card"  className="attendance-card mb-8 hover-lift">
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-2xl font-bold text-foreground mb-2">
               Time Tracking
@@ -347,12 +344,12 @@ export function AttendanceDashboard() {
               </div>
             )}
             <Button
-              id="tour-punch-button"
+             id="tour-punch-button"
               onClick={handlePunch}
               size="lg"
               disabled={isProcessing}
               className={`
-                bg-[#F9F9F9] text-[#228822] hover:bg-gray-200 transition-colors text-xl px-12 py-6 rounded-xl font-bold transform transition-all duration-300
+                bg-[#F9F9F9] text-[#228822] hover:bg-gray-200 transition-colors text-base sm:text-xl px-6 sm:px-12 py-4 sm:py-6 rounded-xl font-bold transform transition-all duration-300
                 ${isPunchedIn ? 'btn-punch-out' : 'btn-punch-in'}
               `}
             >
@@ -364,9 +361,10 @@ export function AttendanceDashboard() {
 
         {/* Stats */}
         {apiData ? (
-          <div id="tour-attendance-stats">
-            <AttendanceStats attendanceRecords={allRecords} apiData={apiData} />
-          </div>
+
+  <div id="tour-attendance-stats">
+    <AttendanceStats attendanceRecords={allRecords} apiData={apiData} />
+     </div>
         ) : (
           <p className="mb-8 text-muted-foreground">Loading stats...</p>
         )}

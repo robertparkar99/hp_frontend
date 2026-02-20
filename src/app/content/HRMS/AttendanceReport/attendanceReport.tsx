@@ -296,7 +296,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+               
               marginTop: "5px"
             }}
           />
@@ -318,7 +318,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+             
               marginTop: "5px"
             }}
           />
@@ -339,7 +339,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+             
               marginTop: "5px"
             }}
           />
@@ -360,7 +360,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+             
               marginTop: "5px"
             }}
           />
@@ -381,7 +381,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+              
               marginTop: "5px"
             }}
           />
@@ -402,7 +402,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+              
               marginTop: "5px"
             }}
           />
@@ -423,7 +423,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+             
               marginTop: "5px"
             }}
           />
@@ -444,7 +444,7 @@ export default function DemoMulti() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+            
               marginTop: "5px"
             }}
           />
@@ -475,19 +475,16 @@ export default function DemoMulti() {
   const customRowStyles: any[] = [];
 
   return (
-    <div className="p-6 min-h-screen space-y-6 bg-background rounded-xl">
-
-      <div className="flex items-center justify-between mb-6" id="tour-attendance-report-header">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Attendence Report</h1>
-              {/* <p className="text-sm text-muted-foreground mt-1">
-                Manage your organization's information, Department structure.
-              </p> */}
-            </div>
-          </div>
+    <div className="p-6 bg-background rounded-xl">
+      {/* Title Section */}
+      <div className="flex items-center justify-between mb-8" id="tour-attendance-report-header">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Attendence Report</h1>
+        </div>
+      </div>
 
       {/* Filters Section */}
-      <div className="flex items-end gap-4 flex-wrap" id="tour-filters-section">
+      <div className="flex items-end gap-6 flex-wrap mb-8" id="tour-filters-section">
         <div className="flex-1 min-w-[250px]" id="tour-employee-selector">
           <EmployeeSelector
             multiSelect
@@ -499,7 +496,7 @@ export default function DemoMulti() {
           />
         </div>
 
-        <div className="mb-28" id="tour-from-date">
+        <div className="mb-1" id="tour-from-date">
           <label className="block text-sm font-medium text-gray-700">
             From Date
           </label>
@@ -511,7 +508,7 @@ export default function DemoMulti() {
           />
         </div>
 
-        <div className="mb-28" id="tour-to-date">
+        <div className="mb-1" id="tour-to-date">
           <label className="block text-sm font-medium text-gray-700">
             To Date
           </label>
@@ -524,18 +521,17 @@ export default function DemoMulti() {
         </div>
 
         <div
-          id="tour-search-button"
+        id="tour-search-button"
           onClick={handleSearch}
-          className="flex items-center mb-28 justify-center space-x-2 px-4 py-3 text-sm font-medium  rounded-lg cursor-pointer mb-28 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+          className="flex items-center mb-1 justify-center space-x-2 px-6 py-3 text-sm font-medium rounded-lg cursor-pointer bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
         >
-          {/* <Search className="w-4 h-4 text-black" /> */}
           <span className="text-black">Search</span>
         </div>
       </div>
 
       {/* Legend Section */}
-      <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-gray-700" id="tour-legend">
-        <span className="mr-2">Colours Description </span>
+      <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-gray-700 mb-8" id="tour-legend">
+        <span className="mr-2">Colours Description {'=>'} </span>
         {legendItems.map((item, index) => (
           <div key={index} className="flex items-center gap-2">
             <span className={`w-4 h-4 rounded-full ${item.color}`} />
@@ -544,11 +540,9 @@ export default function DemoMulti() {
         ))}
       </div>
 
-      
-
       {/* DataTable */}
       {tableData.length > 0 && (
-        <div id="tour-attendance-table">
+        <div className="mt-8" id="tour-attendance-table">
           <DataTable
             columns={columns}
             data={filteredItems}
