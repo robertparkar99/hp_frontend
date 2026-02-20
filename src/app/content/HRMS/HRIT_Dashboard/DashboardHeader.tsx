@@ -32,7 +32,7 @@ export const DashboardHeader = () => {
 
         <div className="flex gap-4 mt-6">
           <Select defaultValue="all">
-            <SelectTrigger id="department-select" className="w-[200px]">
+            <SelectTrigger id="department-select"  className="w-[200px]">
               <Building2 className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Select department" />
             </SelectTrigger>
@@ -47,7 +47,7 @@ export const DashboardHeader = () => {
           </Select>
 
           <Select defaultValue="30days">
-            <SelectTrigger id="period-select" className="w-[200px]">
+            <SelectTrigger id="period-select"  className="w-[200px]">
               <Calendar className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Select period" />
             </SelectTrigger>

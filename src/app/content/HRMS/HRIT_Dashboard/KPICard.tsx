@@ -10,7 +10,7 @@ interface KPICardProps {
   icon: LucideIcon;
   trend?: "up" | "down" | "neutral";
   className?: string;
-  iconColor?: string;
+   iconColor?: string;  
 }
 
 export const KPICard = ({ 
@@ -21,7 +21,7 @@ export const KPICard = ({
   icon: Icon, 
   trend = "neutral", 
   className, 
-  iconColor = "text-primary"
+  iconColor = "text-primary" // default fallback
 }: KPICardProps) => {
   const getTrendColor = () => {
     if (trend === "up") return "text-success";
@@ -36,7 +36,7 @@ export const KPICard = ({
   };
 
   return (
-    <Card id={id} className={cn("transition-all duration-300 hover:shadow-lg", className)}>
+    <Card id={id}  className={cn("transition-all duration-300 hover:shadow-lg", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <Icon className={cn("h-5 w-5", iconColor)} />
