@@ -1,17 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 import { Calendar, Building2, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useShepherdTour, HRITDashboardTourSteps } from "./HRITdashboardtour step";
 
 export const DashboardHeader = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  
-
   const { showTour, startTour, cancelTour, completeTour } = useShepherdTour(
     "dashboardHeader",
     HRITDashboardTourSteps,
