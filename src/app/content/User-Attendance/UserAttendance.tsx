@@ -340,7 +340,7 @@ function App() {
   };
 
   return (
-    <div className="p-8 min-h-screen bg-background rounded-xl " id="tour-user-attendance-header">
+    <div className="p-4 md:p-6 min-h-screen bg-background rounded-xl" id="tour-user-attendance-header">
       <div className="flex items-center  justify-between mb-6">
             <div >
               <h1 className="text-2xl font-bold text-foreground">User Attendance</h1>
@@ -352,7 +352,7 @@ function App() {
         <div className="flex flex-col gap-8">
           {/* Controls Row */}
           <div className="flex items-end gap-4 flex-wrap">
-          <div className="flex-1 min-w-[250px]" id="tour-employee-selector">
+            <div className="flex-1 min-w-[250px]" id="tour-employee-selector">
               <EmployeeSelector
                 multiSelect
                 empMultiSelect={true}
@@ -364,7 +364,7 @@ function App() {
             </div>
 
             {/* From Date */}
-          <div className="mb-28" id="tour-date-filters">
+            <div className="mb-4" id="tour-date-filters">
               <label className="block text-sm font-medium text-gray-700">From Date</label>
               <input
                 type="date"
@@ -375,7 +375,7 @@ function App() {
             </div>
 
             {/* To Date */}
-            <div className="mb-28">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">To Date</label>
               <input
                 type="date"
@@ -390,8 +390,8 @@ function App() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSearch}
-              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white rounded-lg  mb-28 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
-            id="tour-search-button"
+              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-white rounded-lg mb-4 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+               id="tour-search-button"
             >
               <Search className="w-4 h-4 text-black" />
               <span className="text-black">Search</span>
@@ -402,8 +402,8 @@ function App() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowForm(true)}
-              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium border border-transparent rounded-lg  mb-28 rounded-lg bg-gray-100 "
-            id="tour-add-button"
+              className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium border border-transparent rounded-lg mb-4 rounded-lg bg-gray-100"
+              id="tour-add-button"
             >
               <Plus className="w-4 h-4 " />
               <span>Add</span>
@@ -411,7 +411,7 @@ function App() {
           </div>
 
           {/* Main content */}
-        <div className="flex-1 space-y-6" id="tour-stats-cards">
+          <div className="flex-1 space-y-6" id="tour-stats-cards">
             <StatsCards
               employees={employees}
               records={attendanceRecords}
@@ -422,14 +422,15 @@ function App() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
                 <p className="mt-4 text-gray-500">Loading attendance records...</p>
               </div>
+              
             ) : (
-              <div id="tour-attendance-list">
-                <AttendanceList
-                  records={attendanceRecords}
-                  employees={employees}
-                  selectedEmployee={selectedEmployee}
-                  onUpdateRecords={handleUpdateRecords}
-                />
+<div id="tour-attendance-list">
+              <AttendanceList
+                records={attendanceRecords}
+                employees={employees}
+                selectedEmployee={selectedEmployee}
+                onUpdateRecords={handleUpdateRecords}
+              />
               </div>
             )}
           </div>

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
-// import DataTable from "react-data-table-component";
+
 import { Clock, Calendar, AlertCircle, User, ChevronUp, ChevronDown, Search } from "lucide-react";
 import { AttendanceRecord, Employee } from "../types/attendance";
 import { format, parseISO } from "date-fns";
@@ -55,7 +55,7 @@ const handleColumnFilter = (columnKey: string, value: string) => {
   //   return employees.find((emp) => emp.id === employeeId);
   // };
    const getEmployee = (employeeId: string): Employee | undefined => {
-     return employees.find((emp) => emp.id.toString() === employeeId);
+     return employees.find((emp) => emp.id === employeeId);
    };
 
   const getStatusColor = (status: string) => {
@@ -383,9 +383,9 @@ const handleColumnFilter = (columnKey: string, value: string) => {
         />
       </div>
     ),
-      selector: (row: AttendanceRecord, index?: number) => (index ?? 0) + 1,
+    selector: (row: AttendanceRecord, index: number) => index + 1,
     width: "120px",
-      cell: (row: AttendanceRecord, index?: number) => {
+    cell: (row: AttendanceRecord, index: number) => {
       const isSelected = selectedRows.some(r => r.id === row.id);
       return (
         <div className="flex items-center">
@@ -395,7 +395,7 @@ const handleColumnFilter = (columnKey: string, value: string) => {
             onChange={() => handleCheckboxChange(row)}
             className="mr-2"
           />
-          {(index ?? 0) + 1}
+          {index + 1}
         </div>
       );
     },
