@@ -203,6 +203,7 @@ export default function PayrollTypes() {
 
 
 
+
   // ✅ Columns
   const columns: TableColumn<PayrollType>[] = [
     {
@@ -217,7 +218,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+              
               marginTop: "5px"
             }}
           />
@@ -239,7 +240,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+              
               marginTop: "5px"
             }}
           />
@@ -270,7 +271,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+              
               marginTop: "5px"
             }}
           />
@@ -291,7 +292,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+              
               marginTop: "5px"
             }}
           />
@@ -312,7 +313,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+            
               marginTop: "5px"
             }}
           />
@@ -349,7 +350,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+          
               marginTop: "5px"
             }}
           />
@@ -378,7 +379,7 @@ export default function PayrollTypes() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-
+             
               marginTop: "5px"
             }}
           // style={{ width: "100%", padding: "4px", fontSize: "12px", marginTop: "4px" }}
@@ -399,20 +400,20 @@ export default function PayrollTypes() {
       ),
     },
     {
-      name: (
+       name: (
         <div id="actions-column">
           Actions
         </div>
       ),
       id: "actions-column",
       cell: (row) => (
-        <div className="flex space-x-2" id={`actions-cell-${row.id}`}>
+        <div className="flex space-x-2"  id={`actions-cell-${row.id}`}>
           {/* <Button variant="ghost" size="sm" onClick={() => handleViewClick(row.id)}>
             <Eye className="w-4 h-4" />
           </Button> */}
           {/* <Button variant="ghost" size="sm" onClick={() => handleEditClick(row.id)}
             className="bg-blue-500 hover:bg-blue-700 text-white text-xs rounded">
-           
+          
             <span className="mdi mdi-pencil"></span>
           </Button> */}
           <Button
@@ -420,7 +421,7 @@ export default function PayrollTypes() {
             onClick={() => handleEditClick(row.id)}
             className="bg-blue-500 hover:bg-blue-700 hover:text-white text-white text-[10px] px-1.5 py-0.5 rounded-sm h-6 min-w-6"
           >
-
+           
             <Icon name="Edit" size={14} />
           </Button>
           <Button
@@ -467,7 +468,6 @@ export default function PayrollTypes() {
       },
     },
   };
-
   return (
     <div className="space-y-6 p-6 bg-background rounded-xl" id="payroll-types-page">
       {/* Header */}
@@ -536,23 +536,6 @@ export default function PayrollTypes() {
         </Card>
       </div>
 
-      {/* Search Filter */}
-      <div id="search-filter" className="mb-4">
-        <input
-          type="text"
-          placeholder="Search payroll types..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px",
-            fontSize: "14px",
-            border: "1px solid #ddd",
-            borderRadius: "6px"
-          }}
-        />
-      </div>
-
       {/* DataTable */}
       <Card id="payroll-types-table">
         <CardHeader>
@@ -561,19 +544,19 @@ export default function PayrollTypes() {
         <CardContent>
           <div id="column-filters">
             <div id="pagination">
-              <DataTable
-                columns={columns}
-                data={filteredData}
-                customStyles={customStyles}
-                pagination
-                highlightOnHover
-                responsive
-                noDataComponent={
-                  <div className="p-4 text-center">No payroll types found</div>
-                }
-                persistTableHead
-              />
-            </div>
+          <DataTable
+            columns={columns}
+            data={filteredData}
+            customStyles={customStyles}
+            pagination
+            highlightOnHover
+            responsive
+            noDataComponent={
+              <div className="p-4 text-center">No payroll types found</div>
+            }
+            persistTableHead
+          />
+          </div>
           </div>
         </CardContent>
       </Card>

@@ -1,8 +1,29 @@
-import Shepherd, { StepOptions, Tour } from 'shepherd.js';
+import Shepherd, { Tour } from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 
+// Custom interface for tour steps (extends Shepherd options with id)
+export interface LeaveAllocationTourStep {
+  id: string;
+  title?: string;
+  text: string;
+  attachTo: {
+    element: string;
+    on: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end' | 'left-start' | 'left-end' | 'right-start' | 'right-end';
+  };
+  buttons?: Array<{
+    text: string;
+    action: any;
+    classes?: string;
+  }>;
+  beforeShowPromise?: () => Promise<void>;
+  when?: {
+    show?: () => void;
+    hide?: () => void;
+  };
+}
+
 // Tour step configuration for Leave Allocation page
-export const leaveAllocationTourSteps: StepOptions[] = [
+export const leaveAllocationTourSteps: LeaveAllocationTourStep[] = [
   {
     id: 'leave-allocation-welcome',
     title: 'Welcome to Leave Allocation Management!',

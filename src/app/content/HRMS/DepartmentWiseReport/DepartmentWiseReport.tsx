@@ -259,12 +259,25 @@ export default function Home() {
         backgroundColor: "#e3f1ff",
         color: "#374151",
         fontWeight: "600",
-        fontSize: "14px",
+        fontSize: "12px",
+        padding: "8px 4px",
+        whiteSpace: "nowrap",
       },
     },
     headRow: {
       style: {
         backgroundColor: "#e3f1ff",
+      },
+    },
+    cells: {
+      style: {
+        fontSize: "12px",
+        padding: "8px 4px",
+      },
+    },
+    rows: {
+      style: {
+        minHeight: "48px",
       },
     },
   };
@@ -287,7 +300,7 @@ export default function Home() {
           <DatePicker
             selected={fromDate}
             onChange={(d) => setFromDate(d)}
-            className="border p-2 rounded w-full"
+            className="border p-2 rounded w-full text-sm"
             dateFormat="dd-MM-yyyy"
           />
         </div>
@@ -296,11 +309,11 @@ export default function Home() {
           <DatePicker
             selected={toDate}
             onChange={(d) => setToDate(d)}
-            className="border p-2 rounded w-full"
+            className="border p-2 rounded w-full text-sm"
             dateFormat="dd-MM-yyyy"
           />
         </div>
-        <div className="col-span-2 flex flex-col gap-4" id="tour-employee-selector">
+        <div className="w-full" id="tour-employee-selector">
           <EmployeeSelector
             multiSelect
             empMultiSelect={true}
@@ -311,13 +324,12 @@ export default function Home() {
             className="w-full"
           />
         </div>
-        <div className="flex justify-center w-full col-span-4" id="tour-search-button">
+        <div className="flex justify-center w-full sm:col-span-2 lg:col-span-4"  id="tour-search-button">
           <Button
             onClick={handleSearch}
             disabled={loading || !sessionData.token}
-            className="px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 h-9 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+            className="px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 h-9 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-auto"
           >
-            {/* <Search className="w-4 h-4 text-black" /> */}
             {loading ? "Loading..." : "Search"}
           </Button>
         </div>
@@ -325,40 +337,46 @@ export default function Home() {
 
       {/* Export Buttons */}
       {data.length > 0 && (
-        <div className="flex gap-3 flex-wrap justify-end" id="tour-export-buttons">
-
+        <div className="flex gap-2 flex-wrap justify-end" id="tour-export-buttons">
           <Button
             onClick={() => window.print()}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+            className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition-colors text-sm"
           >
-            <Printer className="w-5 h-5" />
+            <Printer className="w-4 h-4" />
           </Button>
           <Button
             onClick={exportToPDF}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
+            className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition-colors text-sm"
           >
-            <span className="mdi mdi-file-pdf-box text-xl"></span>
+            <span className="mdi mdi-file-pdf-box text-lg"></span>
           </Button>
-
           <Button
             onClick={exportToExcel}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors px-3"
+            className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition-colors text-sm"
           >
-            <span className="mdi mdi-file-excel-outline text-xl"></span>
+            <span className="mdi mdi-file-excel-outline text-lg"></span>
           </Button>
-
         </div>
       )}
 
       {/* Data Table */}
-      <div className="rounded-2xl overflow-hidden shadow" id="tour-data-table">
+      <div className="rounded-2xl shadow overflow-x-auto" id="tour-data-table">
         <DataTable
           columns={columns}
           data={data}
           pagination
           highlightOnHover
+          responsive={true}
           noDataComponent={loading ? "Loading..." : "No data available"}
           customStyles={customStyles}
+          paginationRowsPerPageOptions={[10, 25, 50, 100]}
+          paginationComponentOptions={{
+            rowsPerPageText: 'Rows per page:',
+            rangeSeparatorText: 'of',
+            noRowsPerPage: false,
+            selectAllRowsItem: false,
+            selectAllRowsItemText: 'All',
+          }}
         />
       </div>
     </div >

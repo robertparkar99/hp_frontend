@@ -239,8 +239,15 @@ const EmployeeDashboard: React.FC = () => {
     }
   };
 
-  // Check if tour should start (triggered from sidebar "New" button)
+  // Initialize all data on component mount
   useEffect(() => {
+    if (sessionData.token && sessionData.subInstituteId) {
+      fetchPayrollData();
+      fetchPayrollItems();
+    }
+  }, [sessionData]);
+
+    useEffect(() => {
     // Only start tour if triggered from sidebar tour flow
     const triggerValue = sessionStorage.getItem('triggerPageTour');
     if (triggerValue === 'form-16') {
@@ -253,6 +260,7 @@ const EmployeeDashboard: React.FC = () => {
     // Clear the trigger after checking
     // Don't clear immediately - let the tour handle completion
   }, []);
+
 
   // Filter employees when department changes
   useEffect(() => {

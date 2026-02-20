@@ -611,7 +611,11 @@ export default function LeaveAllocation() {
         keyboardNavigation: true
       });
 
-      tour.addSteps(tourSteps);
+      // Add each step individually using addStep()
+      tourSteps.forEach((step) => {
+        tour.addStep(step);
+      });
+
       tourRef.current = tour;
 
       tour.on('complete', () => {
@@ -650,7 +654,7 @@ export default function LeaveAllocation() {
       (columnFilters.status === "" || item.status.toLowerCase().includes(columnFilters.status.toLowerCase()))
     );
   });
-
+  // Filter employee allocations based on search text
   const filteredEmpAllocations = employeeAllocations.filter((item, index) => {
     return (
       (columnFilters.srno === "" || (index + 1).toString().includes(columnFilters.srno)) &&
@@ -769,50 +773,157 @@ export default function LeaveAllocation() {
         borderRadius: "20px", overflow: "hidden" },
     },
   };
-
+  // Define columns for Department DataTable
   const deptColumns: TableColumn<DepartmentAllocation>[] = [
     {
-      name: <div id="tour-srno-column"><div>Sr No.</div></div>,
+      name: (
+        <div id="tour-srno-column">
+          <div>Sr No.</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("srno", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
       selector: (row: DepartmentAllocation, index?: number) => (index !== undefined ? index + 1 : 0),
       sortable: true,
       width: "120px"
     },
     {
-      name: <div id="tour-department-column"><div>Department</div></div>,
+      name: (
+        <div id="tour-department-column">
+          <div>Department</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("department", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
       selector: (row: DepartmentAllocation) => row.department,
       sortable: true,
     },
     {
-      name: <div id="tour-leavetype-column"><div>Leave Type</div></div>,
+      name: (
+        <div>
+          <div>Leave Type</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("leaveType", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
       selector: (row: DepartmentAllocation) => row.leaveType,
       sortable: true,
     },
     {
-      name: <div id="tour-year-column"><div>Year</div></div>,
+      name: (
+        <div id="tour-year-column">
+          <div>Year</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("year", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
       selector: (row: DepartmentAllocation) => row.year,
       sortable: true,
     },
     {
-      name: <div id="tour-days-column"><div>Days Allocated</div></div>,
-      selector: (row: DepartmentAllocation) => `${row.days} days`,
-      sortable: true,
-    },
-    {
-      name: <div id="tour-status-column"><div>Status</div></div>,
-      cell: (row: DepartmentAllocation) => (
-        <Badge variant={row.status === "active" ? "default" : "secondary"}>{row.status}</Badge>
+      name: (
+        <div id="tour-days-column">
+          <div>Days Allocated</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("days", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
       ),
+      selector: (row: DepartmentAllocation) => row.days,
       sortable: true,
+      cell: (row: DepartmentAllocation) => `${row.days} days`,
     },
     {
+      name: (
+        <div id="tour-status-column">
+          <div>Status</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("status", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row: DepartmentAllocation) => row.status,
+      sortable: true,
+      cell: (row: DepartmentAllocation) => (
+        <Badge variant={row.status === "active" ? "default" : "secondary"}>
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+
       name: "Actions",
       id: "tour-actions-column",
       cell: (row: DepartmentAllocation) => (
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" className="bg-blue-500 hover:bg-blue-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white">
+
             <Icon name="Edit" size={14} />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => handleDeleteDept(row.id)} className="bg-red-500 hover:bg-red-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => handleDeleteDept(row.id)}
+            className="bg-red-500 hover:bg-red-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white"
+          >
             <Icon name="Trash2" size={14} />
           </Button>
         </div>
@@ -824,44 +935,161 @@ export default function LeaveAllocation() {
     },
   ];
 
+  // Define columns for Employee DataTable
   const empColumns: TableColumn<EmployeeAllocation>[] = [
     {
-      name: <div id="tour-srno-column"><div>Sr No.</div></div>,
+      name: (
+        <div id="tour-srno-column">
+          <div>Sr No.</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("srno", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
       selector: (row: EmployeeAllocation, index?: number) => (index !== undefined ? index + 1 : 0),
       sortable: true,
       width: "120px"
     },
     {
-      name: <div id="tour-employee-column"><div>Employee</div></div>,
+      name: (
+        <div id="tour-employee-column">
+          <div>Employee</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("employee", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
       selector: (row: EmployeeAllocation) => row.employee,
       sortable: true,
     },
     {
-      name: <div id="tour-department-column"><div>Department</div></div>,
+      name: (
+        <div id="tour-department-column">
+          <div>Department</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("department", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
       selector: (row: EmployeeAllocation) => row.department,
       sortable: true,
     },
     {
-      name: <div id="tour-leavetype-column"><div>Leave Type</div></div>,
+      name: (
+        <div id="tour-leavetype-column">
+          <div>Leave Type</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("leaveType", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
       selector: (row: EmployeeAllocation) => row.leaveType,
       sortable: true,
     },
     {
-      name: <div id="tour-year-column"><div>Year</div></div>,
+      name: (
+        <div id="tour-year-column">
+          <div>Year</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("year", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
       selector: (row: EmployeeAllocation) => row.year,
       sortable: true,
     },
     {
-      name: <div id="tour-days-column"><div>Days Allocated</div></div>,
-      selector: (row: EmployeeAllocation) => `${row.days} days`,
+      name: (
+        <div id="tour-days-column">
+          <div>Days Allocated</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("days", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: (row: EmployeeAllocation) => row.days,
       sortable: true,
+      cell: (row: EmployeeAllocation) => `${row.days} days`,
     },
     {
-      name: <div id="tour-status-column"><div>Status</div></div>,
-      cell: (row: EmployeeAllocation) => (
-        <Badge variant={row.status === "active" ? "default" : "secondary"}>{row.status}</Badge>
+      name: (
+        <div id="tour-status-column">
+          <div>Status</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("status", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
       ),
+      selector: (row: EmployeeAllocation) => row.status,
       sortable: true,
+      cell: (row: EmployeeAllocation) => (
+        <Badge variant={row.status === "active" ? "default" : "secondary"}>
+          {row.status}
+        </Badge>
+      ),
     },
     {
       name: "Actions",
@@ -871,7 +1099,12 @@ export default function LeaveAllocation() {
           <Button size="sm" variant="ghost" className="bg-blue-500 hover:bg-blue-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white">
             <Icon name="Edit" size={14} />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => handleDeleteEmp(row.id)} className="bg-red-500 hover:bg-red-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => handleDeleteEmp(row.id)}
+            className="bg-red-500 hover:bg-red-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white"
+          >
             <Icon name="Trash2" size={14} />
           </Button>
         </div>
@@ -885,149 +1118,270 @@ export default function LeaveAllocation() {
 
   return (
     <div className="space-y-8 bg-background rounded-xl" id="tour-header">
+      {/* Toggle Between Department and Employee */}
       <Card className="bg-gradient-card shadow-card" id="tour-allocation-type-toggle">
         <CardHeader>
           <CardTitle className="text-xl font-semibold">Allocation Type</CardTitle>
-          <CardDescription>Choose between department-wise or employee-wise leave allocation</CardDescription>
+          <CardDescription>
+            Choose between department-wise or employee-wise leave allocation
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
             <div className="flex items-center space-x-3" id="tour-department-wise">
-              <Switch id="department-wise" checked={isDepartmentWise} onCheckedChange={setIsDepartmentWise} />
+              <Switch
+                id="department-wise"
+                checked={isDepartmentWise}
+                onCheckedChange={setIsDepartmentWise}
+              />
               <Label htmlFor="department-wise" className="flex items-center gap-2 text-base font-medium">
-                <Building className="w-4 h-4" />Department-Wise Leave
+                <Building className="w-4 h-4" />
+                Department-Wise Leave
               </Label>
             </div>
             <div className="flex items-center space-x-3" id="tour-employee-wise">
-              <Switch id="employee-wise" checked={!isDepartmentWise} onCheckedChange={(checked) => setIsDepartmentWise(!checked)} />
+              <Switch
+                id="employee-wise"
+                checked={!isDepartmentWise}
+                onCheckedChange={(checked) => setIsDepartmentWise(!checked)}
+              />
               <Label htmlFor="employee-wise" className="flex items-center gap-2 text-base font-medium">
-                <User className="w-4 h-4" />Employee-Wise Leave
+                <User className="w-4 h-4" />
+                Employee-Wise Leave
               </Label>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {isDepartmentWise ? (
+      {/* Department-Wise Allocation */}
+      {isDepartmentWise && (
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                  <Building className="w-5 h-5" />Department-Wise Leave Allocation
+                  <Building className="w-5 h-5" />
+                  Department-Wise Leave Allocation
                 </CardTitle>
-                <CardDescription>Allocate leave days to entire departments</CardDescription>
+                <CardDescription>
+                  Allocate leave days to entire departments
+                </CardDescription>
               </div>
-              <Button onClick={handleAddButtonClick} className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-add-leave-allocation">
-                <Plus className="w-4 h-4 mr-2" />Add Department Leave
+              <Button
+                onClick={() => setShowDeptForm(true)}
+                className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-add-leave-allocation"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Department Leave
               </Button>
             </div>
           </CardHeader>
           <CardContent id="tour-leave-allocation-form">
             {showDeptForm && (
               <Card className="mb-6 bg-accent/20 border-primary/20">
-                <CardHeader><CardTitle className="text-lg">Add Department Leave Allocation</CardTitle></CardHeader>
+                <CardHeader>
+                  <CardTitle className="text-lg">Add Department Leave Allocation</CardTitle>
+                </CardHeader>
                 <CardContent>
                   <form onSubmit={handleDeptSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div id="tour-dept-department">
                         <Label htmlFor="dept-department">Select Department *</Label>
                         <Select value={deptFormData.department} onValueChange={(value) => setDeptFormData(prev => ({ ...prev, department: value }))}>
-                          <SelectTrigger><SelectValue placeholder="Choose department" /></SelectTrigger>
-                          <SelectContent>{departments.map(dept => (<SelectItem key={dept} value={dept}>{dept}</SelectItem>))}</SelectContent>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments.map(dept => (
+                              <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
                       </div>
                       <div id="tour-leave-type-select">
                         <Label htmlFor="dept-leave-type">Select Leave Type *</Label>
                         <Select value={deptFormData.leaveType} onValueChange={(value) => setDeptFormData(prev => ({ ...prev, leaveType: value }))}>
-                          <SelectTrigger><SelectValue placeholder="Choose leave type" /></SelectTrigger>
-                          <SelectContent>{leaveTypes.map(type => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose leave type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {leaveTypes.map(type => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
                       </div>
                       <div id="tour-year-input">
                         <Label htmlFor="dept-year">Select Year *</Label>
-                        <Input id="dept-year" type="number" value={deptFormData.year} onChange={(e) => setDeptFormData(prev => ({ ...prev, year: e.target.value }))} />
+                        <Input
+                          id="dept-year"
+                          type="number"
+                          value={deptFormData.year}
+                          onChange={(e) => setDeptFormData(prev => ({ ...prev, year: e.target.value }))}
+                        />
                       </div>
                       <div id="tour-days-input">
                         <Label htmlFor="dept-days">Number of Days *</Label>
-                        <Input id="dept-days" type="number" value={deptFormData.days} onChange={(e) => setDeptFormData(prev => ({ ...prev, days: e.target.value }))} placeholder="e.g., 25" />
+                        <Input
+                          id="dept-days"
+                          type="number"
+                          value={deptFormData.days}
+                          onChange={(e) => setDeptFormData(prev => ({ ...prev, days: e.target.value }))}
+                          placeholder="e.g., 25"
+                        />
                       </div>
                     </div>
-                    <div className="flex gap-3 pt-4">
-                      <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-save-allocation"><Save className="w-4 h-4 mr-2" />Save Allocation</Button>
-                      <Button type="button" variant="outline" onClick={() => setShowDeptForm(false)} id="tour-cancel-allocation"><X className="w-4 h-4 mr-2" />Cancel</Button>
+
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                      <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-save-allocation">
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Allocation
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => setShowDeptForm(false)} id="tour-cancel-allocation">
+                        <X className="w-4 h-4 mr-2" />
+                        Cancel
+                      </Button>
                     </div>
                   </form>
                 </CardContent>
               </Card>
             )}
-            <div id="tour-allocations-table" suppressHydrationWarning>
-              <DataTable columns={deptColumns} data={filteredDeptAllocations} customStyles={customStyles} pagination highlightOnHover responsive noDataComponent={<div className="p-4 text-center">No department allocations available</div>} persistTableHead />
+
+            <div id="tour-allocations-table">
+              <DataTable
+                columns={deptColumns}
+                data={filteredDeptAllocations}
+                customStyles={customStyles}
+                pagination
+                highlightOnHover
+                responsive
+                noDataComponent={<div className="p-4 text-center">No department allocations available</div>}
+                persistTableHead
+              />
             </div>
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {/* Employee-Wise Allocation */}
+      {!isDepartmentWise && (
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                    <User className="w-5 h-5" />Employee-Wise Leave Allocation
+                  <User className="w-5 h-5" />
+                  Employee-Wise Leave Allocation
                 </CardTitle>
-                  <CardDescription>Allocate leave days to individual employees</CardDescription>
+                <CardDescription>
+                  Allocate leave days to individual employees
+                </CardDescription>
               </div>
-                <Button onClick={handleAddButtonClick} className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-add-leave-allocation">
-                  <Plus className="w-4 h-4 mr-2" />Add Employee Leave
+              <Button
+                onClick={() => setShowEmpForm(true)}
+                className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-add-leave-allocation"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Employee Leave
               </Button>
             </div>
           </CardHeader>
-            <CardContent id="tour-leave-allocation-form">
+          <CardContent id="tour-leave-allocation-form">
             {showEmpForm && (
               <Card className="mb-6 bg-accent/20 border-primary/20">
-                  <CardHeader><CardTitle className="text-lg">Add Employee Leave Allocation</CardTitle></CardHeader>
+                <CardHeader>
+                  <CardTitle className="text-lg">Add Employee Leave Allocation</CardTitle>
+                </CardHeader>
                 <CardContent>
                   <form onSubmit={handleEmpSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div id="tour-dept-department">
                         <Label htmlFor="emp-department">Select Department *</Label>
                         <Select value={empFormData.department} onValueChange={(value) => setEmpFormData(prev => ({ ...prev, department: value }))}>
-                            <SelectTrigger><SelectValue placeholder="Choose department" /></SelectTrigger>
-                            <SelectContent>{departments.map(dept => (<SelectItem key={dept} value={dept}>{dept}</SelectItem>))}</SelectContent>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments.map(dept => (
+                              <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
                       </div>
                         <div id="tour-emp-employee">
                         <Label htmlFor="emp-employee">Select Employee *</Label>
                         <Select value={empFormData.employee} onValueChange={(value) => setEmpFormData(prev => ({ ...prev, employee: value }))}>
-                            <SelectTrigger><SelectValue placeholder="Choose employee" /></SelectTrigger>
-                            <SelectContent>{employees.map(emp => (<SelectItem key={emp} value={emp}>{emp}</SelectItem>))}</SelectContent>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose employee" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {employees.map(emp => (
+                              <SelectItem key={emp} value={emp}>{emp}</SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
                       </div>
                         <div id="tour-leave-type-select">
                         <Label htmlFor="emp-leave-type">Select Leave Type *</Label>
                         <Select value={empFormData.leaveType} onValueChange={(value) => setEmpFormData(prev => ({ ...prev, leaveType: value }))}>
-                            <SelectTrigger><SelectValue placeholder="Choose leave type" /></SelectTrigger>
-                            <SelectContent>{leaveTypes.map(type => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose leave type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {leaveTypes.map(type => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
                       </div>
                         <div id="tour-year-input">
                         <Label htmlFor="emp-year">Select Year *</Label>
-                          <Input id="emp-year" type="number" value={empFormData.year} onChange={(e) => setEmpFormData(prev => ({ ...prev, year: e.target.value }))} />
+                        <Input
+                          id="emp-year"
+                          type="number"
+                          value={empFormData.year}
+                          onChange={(e) => setEmpFormData(prev => ({ ...prev, year: e.target.value }))}
+                        />
                       </div>
-                        <div className="md:col-span-2" id="tour-days-input">
+                      <div className="md:col-span-2">
                         <Label htmlFor="emp-days">Number of Days *</Label>
-                          <Input id="emp-days" type="number" value={empFormData.days} onChange={(e) => setEmpFormData(prev => ({ ...prev, days: e.target.value }))} placeholder="e.g., 25" />
+                        <Input
+                          id="emp-days"
+                          type="number"
+                          value={empFormData.days}
+                          onChange={(e) => setEmpFormData(prev => ({ ...prev, days: e.target.value }))}
+                          placeholder="e.g., 25"
+                        />
                       </div>
-                      </div>
-                    <div className="flex gap-3 pt-4">
-                        <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-save-allocation"><Save className="w-4 h-4 mr-2" />Save Allocation</Button>
-                        <Button type="button" variant="outline" onClick={() => setShowEmpForm(false)} id="tour-cancel-allocation"><X className="w-4 h-4 mr-2" />Cancel</Button>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                      <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-save-allocation">
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Allocation
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => setShowEmpForm(false)} id="tour-cancel-allocation">
+                        <X className="w-4 h-4 mr-2" />
+                        Cancel
+                      </Button>
                     </div>
                   </form>
                 </CardContent>
               </Card>
             )}
-              <div id="tour-allocations-table" suppressHydrationWarning>
-                <DataTable columns={empColumns} data={filteredEmpAllocations} customStyles={customStyles} pagination highlightOnHover responsive noDataComponent={<div className="p-4 text-center">No employee allocations available</div>} persistTableHead />
+
+            <div id="tour-allocations-table">
+              <DataTable
+                columns={empColumns}
+                data={filteredEmpAllocations}
+                customStyles={customStyles}
+                pagination
+                highlightOnHover
+                responsive
+                noDataComponent={<div className="p-4 text-center">No employee allocations available</div>}
+                persistTableHead
+              />
             </div>
           </CardContent>
         </Card>

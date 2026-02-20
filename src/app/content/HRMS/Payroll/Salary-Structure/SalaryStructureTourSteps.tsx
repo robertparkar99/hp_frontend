@@ -1,9 +1,30 @@
-import Shepherd, { Tour, Step } from 'shepherd.js';
-import type { StepOptions } from 'shepherd.js';
+import Shepherd, { Tour } from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 
+// Custom interface for tour steps (since StepOptions in shepherd.js v15 may not include id)
+export interface SalaryStructureTourStep {
+  id: string;
+  title?: string;
+  text: string;
+  attachTo: {
+    element: string;
+    on: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end' | 'left-start' | 'left-end' | 'right-start' | 'right-end';
+  };
+  buttons?: Array<{
+    text: string;
+    // Using function type that accepts any this context for shepherd.js compatibility
+    action: (this: any, ...args: any[]) => void;
+    classes?: string;
+  }>;
+  advanceOn?: {
+    selector: string;
+    event: string;
+  };
+  beforeShowPromise?: () => Promise<void>;
+}
+
 // Tour step configuration for Salary Structure page
-export const salaryStructureTourSteps: StepOptions[] = [
+export const salaryStructureTourSteps: SalaryStructureTourStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to Salary Structure Management',
@@ -322,8 +343,8 @@ export const createSalaryStructureTour = (): Tour => {
   });
 
   // Add steps to the tour
-  salaryStructureTourSteps.forEach((step: StepOptions) => {
-    tour.addStep(step);
+  salaryStructureTourSteps.forEach((step: SalaryStructureTourStep) => {
+    tour.addStep(step as any);
   });
 
   return tour;

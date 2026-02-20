@@ -232,7 +232,7 @@ const MyLeave = () => {
   );
 
   return (
-    <div className="space-y-6 min-h-screen bg-background rounded-xl" id="tour-header">
+    <div className="space-y-6 p-6" id="tour-header">
       {/* Leave Balance Cards */}
       {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {Object.keys(leaveBalance).map((type) => (
@@ -301,13 +301,13 @@ const MyLeave = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
             {!loading && leaves.length === 0 && (
               <p className="text-muted-foreground text-sm">
                 No leave records found.
               </p>
             )}
-            {leaves.map((leave, index) => (
+            {leaves.map((leave ,index) => (
               <Card key={leave.id} className="card-simple" id={index === 0 ? 'tour-leave-card' : undefined}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">

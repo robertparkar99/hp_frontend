@@ -208,7 +208,7 @@ const LeaveAuthorization = () => {
   };
 
   return (
-    <div className="space-y-6 min-h-screen bg-background rounded-xl" id="tour-leave-auth-header">
+    <div className="space-y-6 min-h-screen bg-background rounded-xl w-full overflow-x-hidden" id="tour-leave-auth-header">
       {/* 🔹 Filter Section */}
       <Card className="card-simple" id="tour-leave-auth-filter">
         <CardContent className="p-4">
@@ -282,7 +282,7 @@ const LeaveAuthorization = () => {
                 }}
                   className="px-6 py-2 rounded-lg  flex items-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
               >
-
+             
                    {loading ? "Searching..." : "Search"}
                 {/* <Search className="h-4 w-4" /> Search */}
               </Button>

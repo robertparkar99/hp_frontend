@@ -331,7 +331,7 @@ const filteredData = useMemo(() => {
     ),
   },
 ], [departments, leaveTypes]);
-
+ 
   const customStyles : TableStyles  = {
     headCells: {
       style: {
@@ -368,6 +368,35 @@ const filteredData = useMemo(() => {
   }, []);
 
   // Fetch Leave Types
+  // useEffect(() => {
+  //   if (!sessionData.url || !sessionData.subInstituteId || !sessionData.token) return;
+
+  //   const fetchLeaveTypes = async () => {
+  //     setLoadingLeaveTypes(true);
+  //     try {
+  //       const res = await fetch(
+  //         `${sessionData.url}/leave-type?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}`
+  //       );
+  //       if (!res.ok) throw new Error(`Leave types fetch failed: ${res.status}`);
+  //       const json = await res.json();
+  //       setLeaveTypes(json.LeaveTypeLists || []);
+  //     } catch (err) {
+  //       console.error("Failed to fetch leave types:", err);
+  //       toast({
+  //         title: "Error",
+  //         description: "Could not load leave types.",
+  //         variant: "destructive",
+  //       });
+  //       setLeaveTypes([]);
+  //     } finally {
+  //       setLoadingLeaveTypes(false);
+  //     }
+  //   };
+
+  //   fetchLeaveTypes();
+  // }, [sessionData]);
+
+  //   // ✅ Fetch Leave Types
   useEffect(() => {
     if (!sessionData.url || !sessionData.subInstituteId || !sessionData.token) return;
 
@@ -655,10 +684,10 @@ const filteredData = useMemo(() => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full overflow-x-hidden">
       <Card className="card-elevated">
         <CardHeader>
-          <CardTitle id="tour-leave-title" className="flex items-center gap-2">
+          <CardTitle id="tour-leave-title"  className="flex items-center gap-2">
             <Calendar className="h-5 w-5" /> Leave Application
           </CardTitle>
         </CardHeader>
@@ -853,18 +882,18 @@ const filteredData = useMemo(() => {
           <CardTitle>Submitted Leave Applications</CardTitle>
         </CardHeader>
         <CardContent>
-          <div id="tour-submitted-table">
-            <DataTable
-              columns={columns}
-              data={submittedData}
-              customStyles={customStyles}
-              pagination
-              highlightOnHover
-              responsive
-              progressPending={pending}
-              noDataComponent={<div className="p-4 text-center">No data available</div>}
-              persistTableHead
-            />
+           <div id="tour-submitted-table">
+          <DataTable
+            columns={columns}
+            data={submittedData}
+            customStyles={customStyles}
+            pagination
+            highlightOnHover
+            responsive
+            progressPending={pending}
+            noDataComponent={<div className="p-4 text-center">No data available</div>}
+            persistTableHead
+          />
           </div>
         </CardContent>
       </Card>

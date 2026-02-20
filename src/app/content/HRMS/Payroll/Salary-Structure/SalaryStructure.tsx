@@ -1434,7 +1434,7 @@ const SalaryStructure: React.FC = () => {
   const baseColumns: TableColumn<SalaryData>[] = [
     {
       name: (
-        <div id="column-srno">
+        <div>
           <div>Sr No.</div>
           <input
             type="text"
@@ -1541,12 +1541,12 @@ const SalaryStructure: React.FC = () => {
         </div>
       ),
       cell: (row, rowIndex) => (
-        <div id={`column-payroll-cell-${pt.id}`}>
-          <EditableInput
-            value={row.payrollValues[pt.id] || 0}
-            onChange={(value) => handlePayrollChange(rowIndex, pt.id, value)}
-          />
-        </div>
+          <div id={`column-payroll-cell-${pt.id}`}>
+        <EditableInput
+          value={row.payrollValues[pt.id] || 0}
+          onChange={(value) => handlePayrollChange(rowIndex, pt.id, value)}
+        />
+</div>
       ),
       sortable: true,
       width: "130px",
@@ -1591,16 +1591,17 @@ const SalaryStructure: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-background rounded-xl">
-      {/* Header with ID for tour */}
-      <div id="salary-structure-header" className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Salary Structure Management</h1>
+    <div className="p-4 sm:p-6 space-y-6 bg-background rounded-xl">
+      {/* Header */}
+      {/* Header */}
+      <div id="salary-structure-header"  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Salary Structure Management</h1>
         {date && date.getFullYear() !== 2026 && (
           <div className="flex items-center gap-3">
             <Button
               id="rollover-button"
               onClick={handleRollover}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2 w-full sm:w-auto"
             >
               Roll Over Salary
             </Button>
@@ -1625,11 +1626,11 @@ const SalaryStructure: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row gap-4 items-start w-full lg:w-auto">
           <div className="flex flex-col w-full sm:w-48 mt-8">
-            <label id="employee-status-label" className="block text-sm font-medium text-gray-700 mb-2">
+            <label id="employee-status-label"  className="block text-sm font-medium text-gray-700 mb-2">
               Employee Status
             </label>
             <select
-              id="employee-status"
+             id="employee-status"
               value={employeeStatus}
               onChange={(e) => setEmployeeStatus(e.target.value)}
               className="border p-2 rounded w-full"
@@ -1652,7 +1653,7 @@ const SalaryStructure: React.FC = () => {
         </div>
       </div>
 
-      {/* Export buttons with ID for tour */}
+      {/* Export buttons */}
       <div id="export-buttons" className="flex gap-3 flex-wrap justify-end">
         <Button
           onClick={() => window.print()}
@@ -1680,10 +1681,9 @@ const SalaryStructure: React.FC = () => {
         </Button>
       </div>
 
-      {/* Table with ID for tour */}
+      {/* Table */}
       <div id="salary-data-table">
-        {/* Payroll columns info for tour */}
-        <div id="payroll-columns-info" className="hidden"></div>
+          <div id="payroll-columns-info" className="hidden"></div>
         <div className="px-6 py-4">
           <h2 className="text-lg font-semibold">Employee Salary Structure</h2>
           <p className="text-sm text-gray-600">
