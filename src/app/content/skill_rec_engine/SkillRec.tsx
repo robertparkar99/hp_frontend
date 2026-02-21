@@ -177,7 +177,7 @@ export default function Home() {
             color: '#64748b',
             fontWeight: '400'
           }}>
-            Comprehensive career development and skill gap analysis for corporate teams
+            Comprehensive career development and skill gap analysis for corporate teams.
           </p>
         </header>
 
