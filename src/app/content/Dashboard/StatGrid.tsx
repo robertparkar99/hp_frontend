@@ -1703,7 +1703,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 gap-4">
               {/* Left: Enterprise Skills Heatmap */}
               <div className="bg-white rounded-xl shadow p-4" id="tour-skills-heatmap">
-                <h2 className="font-semibold text-lg mb-2">Skills Heatmap</h2>
+                <h2 className="font-semibold text-lg mb-2">Department Skills Heatmap</h2>
 
                 {/* Legend */}
                 <div className="flex gap-4 text-sm mb-3">
