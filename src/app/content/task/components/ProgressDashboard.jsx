@@ -360,11 +360,29 @@ const ProgressDashboard = () => {
         throw new Error(errorData.message || 'Failed to update task');
       }
 
-
+      // Trigger webhook after successful update
+      try {
+        await fetch('https://n8n.triz.co.in/webhook/449cab91-32ac-4c27-ab77-b6a9389185c4', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            taskId: currentTask.id,
+            updatedData: currentTask,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+      } catch (webhookError) {
+        console.error('Webhook trigger failed:', webhookError);
+      }
 
       const result = await response.json();
       alert(result.message || 'Task updated successfully');
+
+
       fetchAllData();
+      setIsEditModalOpen(false);
     } catch (error) {
       console.error('Error updating task:', error);
       alert(error.message || 'Failed to update task');
