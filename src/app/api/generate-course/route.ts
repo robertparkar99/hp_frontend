@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     console.log("🧮 Slide Count:", slideCount);
 
     const response = await fetch(
-      "https://public-api.gamma.app/v0.2/generations",
+      "https://public-api.gamma.app/v1.0/generations",
       {
         method: "POST",
         headers: {
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       attempts++;
 
       const pollResponse = await fetch(
-        `https://public-api.gamma.app/v0.2/generations/${generationId}`,
+        `https://public-api.gamma.app/v1.0/generations/${generationId}`,
         {
           headers: {
             "x-api-key": process.env.GAMMA_API_KEY || "",
