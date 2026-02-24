@@ -19,7 +19,6 @@ export async function POST(req: Request) {
       inputText: inputText,
       textMode: "generate",
       format: "presentation",
-      themeName: "Oasis",
 
       // 🔥 FIX: dynamic slide count from frontend
       numCards: slideCount,
