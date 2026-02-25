@@ -4,6 +4,47 @@ import { Send, Bot, User, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSqu
 import { submitFeedback } from "@/lib1/feedback-service";
 import { v4 as uuidv4 } from 'uuid';
 
+// Question suggestions for different LMS modules (based on URL path)
+const moduleSuggestions: Record<string, string[]> = {
+  'course': [
+    "How do I create a new course?",
+    "What are the best practices for course design?",
+    "How can I track Employee progress?",
+    "How do I add assessments to a course?"
+  ],
+  'assessment': [
+    "How do I create an assessment?",
+    "What question types are available?",
+    "How do I set assessment deadlines?",
+    "How can I view assessment results?"
+  ],
+  'learning': [
+    "How do I enroll in a course?",
+    "What courses are available for me?",
+    "How do I track my learning progress?",
+    "How do I complete a course?"
+  ],
+  'question-bank': [
+    "How do I add questions to the bank?",
+    "How do I organize questions by category?",
+    "Can I import questions from other sources?",
+    "How do I edit existing questions?"
+  ]
+};
+
+// Get module key from current URL path
+const getModuleFromURL = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const path = window.location.pathname.toLowerCase();
+  
+  if (path.includes('/lms') || path.includes('/course') || path.includes('courses')) return 'course';
+  if (path.includes('/assessment') || path.includes('/quiz')) return 'assessment';
+  if (path.includes('/my-learning') || path.includes('/mylearning')) return 'learning';
+  if (path.includes('/question')) return 'question-bank';
+  
+  return null;
+};
+
 
 interface Message {
   id: string;
@@ -55,6 +96,89 @@ export default function ChatbotCopilot({
   const [conversationId, setConversationId] = useState<string>();
   const [showEscalationModal, setShowEscalationModal] = useState(false);
   const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 1 | -1 } | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [showNewConversationModal, setShowNewConversationModal] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const originalInputRef = useRef<string>(''); // specific for keeping track of text before voice started
+
+  // State for contextual suggestions (LMS)
+  const [contextualSuggestions, setContextualSuggestions] = useState<string[]>([]);
+  const [currentModule, setCurrentModule] = useState<string | null>(null);
+
+  // Voice to text logic
+  const toggleListening = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      return;
+    }
+
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Your browser does not support speech recognition. Please try Chrome.');
+      return;
+    }
+
+    // @ts-ignore - SpeechRecognition is not standard in all browsers yet
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+
+    // "More accurate and perfect" settings
+    recognition.continuous = true; // Keep listening even if user pauses
+    recognition.interimResults = true; // Show results in real-time
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      originalInputRef.current = input; // Store current text so we append to it
+    };
+
+    recognition.onresult = (event: any) => {
+      let currentTranscript = '';
+
+      // Combine all results (both final and interim)
+      for (let i = 0; i < event.results.length; ++i) {
+        currentTranscript += event.results[i][0].transcript;
+      }
+
+      // Update state with: what we had before + what we just heard
+      // We use the Ref to ensure smooth appending without duplication
+      const prefix = originalInputRef.current;
+      const spacing = prefix && !prefix.endsWith(' ') ? ' ' : '';
+      setInput(prefix + spacing + currentTranscript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      if (event.error === 'not-allowed') {
+        alert('Microphone access denied.');
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      // NOTE: If you want it to restart automatically (always listening), put recognition.start() here.
+      // But for a chatbot input, "click to speak" is usually better UX than "always on".
+    };
+
+    recognition.start();
+  };
+
+  // Phase 3: Genkit Form State
+  const [formData, setFormData] = useState<{
+    industry: string;
+    department: string;
+    jobRole: string;
+    description: string;
+  }>({
+    industry: '',
+    department: '',
+    jobRole: '',
+    description: ''
+  });
+  const [pendingFormMessageId, setPendingFormMessageId] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -84,6 +208,18 @@ export default function ChatbotCopilot({
     }
   }, [input]);
 
+  // Detect module and set contextual suggestions when chatbot opens
+  useEffect(() => {
+    const moduleKey = getModuleFromURL();
+    if (moduleKey && moduleSuggestions[moduleKey]) {
+      setCurrentModule(moduleKey);
+      setContextualSuggestions(moduleSuggestions[moduleKey]);
+    } else {
+      setCurrentModule(null);
+      setContextualSuggestions([]);
+    }
+  }, []);
+
   const positionClasses = {
     'bottom-right': 'bottom-6 right-6',
     'bottom-left': 'bottom-6 left-6',
@@ -104,8 +240,141 @@ export default function ChatbotCopilot({
     }
   };
 
+  // Phase 3: Form handling functions
+  const handleFormChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFormSubmit = async (messageId: string) => {
+    setIsLoading(true);
+    setPendingFormMessageId(messageId);
+    console.log('Form Data:', formData);
+
+    // Get user session data from localStorage
+    let userId: string | null = null;
+    let subInstituteId: string | null = null;
+    
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionData = localStorage.getItem('userData');
+        console.log('[ChatbotCopilot] handleFormSubmit - sessionData from localStorage:', sessionData);
+        if (sessionData) {
+          const parsed = JSON.parse(sessionData);
+          console.log('[ChatbotCopilot] handleFormSubmit - parsed session data:', parsed);
+          userId = parsed.user_id || null;
+          subInstituteId = parsed.sub_institute_id || null;
+          console.log('[ChatbotCopilot] handleFormSubmit - userId:', userId, 'subInstituteId:', subInstituteId);
+        }
+      } catch (e) {
+        console.error('[ChatbotCopilot] handleFormSubmit - Error reading session data from localStorage:', e);
+      }
+    }
+
+    try {
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `Generate competency profile for ${formData.jobRole} in ${formData.department} department of ${formData.industry} industry with skills, knowledge, and abilities.`,
+          sessionId,
+          conversationHistory: messages.slice(-6).map(m => ({
+            role: m.type === 'user' ? 'user' : 'assistant',
+            content: m.content
+          })),
+          formData, // Pass form data to backend
+          userId,
+          subInstituteId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
+
+      const data = await response.json();
+
+      const botMessage: Message = {
+        id: data.id || uuidv4(),
+        type: 'bot',
+        content: data.answer || 'I couldn\'t process that request.',
+        timestamp: new Date(),
+        conversationId: data.conversationId,
+        metadata: {
+          sql: data.sql,
+          tablesUsed: data.tables_used,
+          insights: data.insights,
+          canEscalate: data.canEscalate,
+          action: data.action,
+          missingFields: data.missingFields,
+          entities: data.entities
+        }
+      };
+
+      setConversationId(data.conversationId);
+      setMessages(prev => [...prev, botMessage]);
+      console.log('formData', formData);
+      if (formData.jobRole !== '') {
+        // Reset form
+        setFormData({
+          industry: '',
+          department: '',
+          jobRole: '',
+          description: ''
+        });
+      }
+      setPendingFormMessageId(null);
+
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: 'Sorry, I encountered an error while processing your request.',
+        timestamp: new Date(),
+        metadata: {
+          canEscalate: true
+        }
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      setPendingFormMessageId(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFormSkip = () => {
+    setFormData({
+      industry: '',
+      department: '',
+      jobRole: '',
+      description: ''
+    });
+    setPendingFormMessageId(null);
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
+
+    // Get user session data from localStorage
+    let userId: string | null = null;
+    let subInstituteId: string | null = null;
+    
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionData = localStorage.getItem('userData');
+        console.log('[ChatbotCopilot] handleSend - sessionData from localStorage:', sessionData);
+        if (sessionData) {
+          const parsed = JSON.parse(sessionData);
+          console.log('[ChatbotCopilot] handleSend - parsed session data:', parsed);
+          userId = parsed.user_id || null;
+          subInstituteId = parsed.sub_institute_id || null;
+          console.log('[ChatbotCopilot] handleSend - userId:', userId, 'subInstituteId:', subInstituteId);
+        }
+      } catch (e) {
+        console.error('[ChatbotCopilot] handleSend - Error reading session data from localStorage:', e);
+      }
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -119,6 +388,7 @@ export default function ChatbotCopilot({
     setIsLoading(true);
 
     try {
+      console.log('[ChatbotCopilot] Sending request with userId:', userId, 'subInstituteId:', subInstituteId);
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -130,7 +400,9 @@ export default function ChatbotCopilot({
           conversationHistory: messages.slice(-6).map(m => ({
             role: m.type === 'user' ? 'user' : 'assistant',
             content: m.content
-          }))
+          })),
+          userId,
+          subInstituteId
         })
       });
 
@@ -225,19 +497,73 @@ export default function ChatbotCopilot({
         onClick={() => setIsOpen(false)}
       />
 
-      {/* Right Wall Panel */}
-      <div
-        className="fixed right-0 z-50 flex flex-col bg-white shadow-2xl border-l border-gray-200
-             top-[64px] h-[calc(100vh-64px)]
-             transition-all duration-300 ease-in-out w-[400px]"
+          {/* Right Wall Panel */}
+          <motion.div
+            initial="closed"
+            animate="open"
+            exit="closed"
+            variants={{
+              closed: {
+                opacity: 0,
+                scaleX: 0,
+                scaleY: 0,
+                y: 0,
+                zIndex: 30, // Below button
+                borderRadius: "50%",
+                transition: {
+                  type: "spring", damping: 25, stiffness: 140, mass: 1,
+                  staggerChildren: 0.05, staggerDirection: -1
+                }
+              },
+              open: {
+                opacity: 1,
+                scaleX: 1,
+                scaleY: 1,
+                y: 0,
+                zIndex: 50, // Above everything
+                borderRadius: "24px",
+                transition: {
+                  type: "spring", damping: 25, stiffness: 140, mass: 1,
+                  staggerChildren: 0.1, delayChildren: 0.1
+                }
+              }
+            }}
 
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
-          <div className="flex items-center gap-2">
-            <Bot className="w-5 h-5 text-purple-600" />
-            <h3 className="font-semibold text-gray-700">Data Copilot</h3>
-          </div>
+            style={{
+              transformOrigin: `${origin.x}px ${origin.y}px`,
+              willChange: "transform, border-radius",
+              overflow: "hidden"
+            }}
+            transition={{
+              type: "spring",
+              damping: 28, // Adjusted for smoother motion
+              stiffness: 260, // Slower than 400, snappier than 140
+              mass: 1,
+              staggerChildren: 0.1,
+              delayChildren: 0.2
+            }}
+            className="fixed right-0 flex flex-col bg-white shadow-2xl border-l border-gray-200
+                 top-[64px] h-[calc(100vh-64px)] w-[400px] overflow-hidden"
+          >
+            {/* Header - Wrap in motion for stagger */}
+            <motion.div
+              variants={{
+                closed: { opacity: 0, y: 10 },
+                open: { opacity: 1, y: 0 }
+              }}
+              transition={{ duration: 0.3 }}
+              className="flex-shrink-0" // Ensure header doesn't shrink
+            >
+              <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white rounded-t-3xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                    <Bot className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight">Conversational AI</h3>
+                    {/* <p className="text-xs text-white/90">Hello! I am Conversational AI, your assistant to help you with...</p> */}
+                  </div>
+                </div>
 
           <div className="flex items-center gap-1">
             {/* <button
@@ -261,45 +587,85 @@ export default function ChatbotCopilot({
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-white">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-3 ${message.type === "user" ? "flex-row-reverse" : "flex-row"
-                }`}
+            {/* Messages */}
+            <motion.div
+              className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50/50 flex flex-col"
+              variants={{
+                closed: { opacity: 0 },
+                open: { opacity: 1, transition: { staggerChildren: 0.05 } }
+              }}
+              style={{ flexDirection: 'column' }}
             >
-              {/* Avatar */}
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.type === "user"
-                  ? "bg-gray-200"
-                  : "bg-blue-100"
-                  }`}
-              >
-                {message.type === "user" ? (
-                  <User className="w-4 h-4 text-gray-600" />
-                ) : (
-                  <Bot className="w-4 h-4 text-blue-600" />
-                )}
+              {/* Logo/Branding Section - Welcome Message */}
+              <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg flex items-center justify-center">
+                  <Bot className="w-12 h-12 text-white" />
+                </div>
+                <div className="text-center">
+                  <h4 className="font-semibold text-gray-800">Conversational AI</h4>
+                  {/* <p className="text-sm text-gray-500 mt-1 max-w-[280px]">
+                    Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?
+                  </p> */}
+                </div>
               </div>
 
-              {/* Message Content */}
-              <div
-                className={`flex flex-col gap-2 max-w-[85%] ${message.type === "user"
-                  ? "items-end"
-                  : "items-start"
-                  }`}
-              >
+              {/* Contextual Question Suggestions - Below Welcome Message */}
+              {contextualSuggestions.length > 0 && messages.length <= 1 && (
+                <div className="flex flex-col items-center justify-center py-4 space-y-3 px-4">
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                    Suggested questions for {currentModule}
+                  </p>
+                  <div className="flex flex-col gap-2 w-full max-w-[320px]">
+                    {contextualSuggestions.map((question, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setInput(question)}
+                        className="px-4 py-3 text-sm text-left bg-white border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 hover:shadow-md transition-all duration-200 text-gray-700"
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {messages.map((message) => (
                 <div
-                  className={`rounded-2xl px-4 py-2 text-sm ${message.type === "user"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-800"
+                  key={message.id}
+                  className={`flex gap-3 ${message.type === "user" ? "flex-row-reverse" : "flex-row"
                     }`}
                 >
-                  {message.content}
-                </div>
+                  {/* Avatar */}
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.type === "user"
+                      ? "bg-gray-200"
+                      : "bg-blue-100"
+                      }`}
+                  >
+                    {message.type === "user" ? (
+                      <User className="w-4 h-4 text-gray-600" />
+                    ) : (
+                      <Bot className="w-4 h-4 text-blue-600" />
+                    )}
+                  </div>
 
-                {/* Metadata */}
+                  {/* Message Content */}
+                  <div
+                    className={`flex flex-col gap-1 max-w-[85%] ${message.type === "user"
+                      ? "items-end"
+                      : "items-start"
+                      }`}
+                  >
+                    <div
+                      className={`px-4 py-3 text-sm shadow-sm whitespace-pre-wrap ${message.type === "user"
+                        ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
+                        : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm"
+                        }`}
+                    >
+                      {message.content}
+                    </div>
+
+                    {/* Metadata */}
                 {message.metadata?.tablesUsed && message.metadata.tablesUsed.length > 0 && (
                   <div className="flex gap-2 flex-wrap">
                     {message.metadata.tablesUsed.map((table, idx) => (
