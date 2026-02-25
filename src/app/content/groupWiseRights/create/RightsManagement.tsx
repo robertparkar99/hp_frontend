@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Loader2, Shield, Users } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { RoleSelector } from "./RoleSelector";
 import { HierarchicalPermissionsTable } from "./HierarchicalPermissionsTable";
 
@@ -62,7 +61,6 @@ export function RightsManagement() {
   const [hasChanges, setHasChanges] = useState(false);
   const [originalPermissions, setOriginalPermissions] = useState<Record<string, MenuPermission[]>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const currentPermissions = permissions[selectedRole] || [];
@@ -252,7 +250,6 @@ export function RightsManagement() {
   };
 
   const handleSaveChanges = async () => {
-    setIsSaving(true);
     try {
       const formData = new FormData();
 
@@ -289,8 +286,6 @@ export function RightsManagement() {
         description: "Failed to save permissions.",
         variant: "destructive",
       });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -354,114 +349,56 @@ export function RightsManagement() {
   }, [permissions, originalPermissions, selectedRole]);
 
   return (
-    <div className="mt-5 scrollbar-hide">
-      <Card className="shadow-lg border-0 bg-gradient-to-br from-background to-muted/20">
-        <CardHeader className="pb-6">
-          <CardTitle className="flex items-center gap-3 text-3xl font-bold text-foreground">
-            <Shield className="h-8 w-8 text-primary" />
-            Rights Management
-          </CardTitle>
-          <CardDescription className="text-lg text-muted-foreground">
-            Manage user permissions and access rights for different roles. Configure what each role can view, add, edit, delete, and access on the dashboard.
-          </CardDescription>
-        </CardHeader>
+    <div className="bg-background mt-5 scrollbar-hide">
+      <div className="text-2xl font-bold">Rights Management</div>
+      <p className="text-muted-foreground">
+        Manage user permissions and access rights for different roles.
+      </p>
 
-        <CardContent className="space-y-8">
-          {!sessionData && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              Loading session...
-            </div>
-          )}
-          {sessionData && roles.length === 0 && !isLoading && (
-            <div className="text-center py-12 text-muted-foreground">
-              No roles found. Please check your configuration.
-            </div>
-          )}
-          {isLoading && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              Loading...
-            </div>
-          )}
+      <div className="space-y-6">
+        {!sessionData && <div>Loading session...</div>}
+        {sessionData && roles.length === 0 && !isLoading && <div>No roles found.</div>}
+        {isLoading && <div>Loading...</div>}
 
-          {roles.length > 0 && (
-            <>
-              <div className="bg-gradient-to-r from-muted/30 to-muted/20 rounded-lg p-4 border border-border/50">
-                <div className="flex items-center gap-2 mb-3">
-                  <Users className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Select Role</span>
-                  {selectedRole && (
-                    <span className="ml-auto px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full border border-primary/20">
-                      {selectedRole}
-                    </span>
-                  )}
-                </div>
-                <RoleSelector
-                  roles={roles.map((r) => r.name)}
-                  selectedRole={selectedRole}
-                  onRoleChange={handleRoleChange}
+        {roles.length > 0 && (
+          <>
+            <RoleSelector
+              roles={roles.map((r) => r.name)}
+              selectedRole={selectedRole}
+              onRoleChange={handleRoleChange}
+            />
+
+            {currentPermissions.length > 0 ? (
+              <>
+                <HierarchicalPermissionsTable
+                  permissions={currentPermissions}
+                  onPermissionChange={handlePermissionChange}
                 />
-              </div>
 
-              {currentPermissions.length > 0 ? (
-                <>
-                  <div className="space-y-4">
-                    <HierarchicalPermissionsTable
-                      permissions={currentPermissions}
-                      onPermissionChange={handlePermissionChange}
-                    />
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="flex gap-4">
+                    <Button
+                      onClick={handleSaveChanges}
+                      disabled={!hasChanges || isLoading}
+                      className="min-w-[140px]"
+                    >
+                      {hasChanges ? "Save Changes" : <><CheckCircle className="mr-2 h-4 w-4" />All Saved</>}
+                    </Button>
+
+                    <Button variant="outline" onClick={handleResetToDefaults} disabled={!hasChanges || isLoading}>
+                      Reset to Defaults
+                    </Button>
                   </div>
 
-                  <div className="flex items-center justify-between pt-6 border-t border-border/50 bg-muted/10 rounded-lg p-4">
-                    <div className="flex gap-4">
-                      <Button
-                        onClick={handleSaveChanges}
-                        disabled={!hasChanges || isLoading || isSaving}
-                        className="min-w-[140px] bg-primary hover:bg-primary/90 transition-colors"
-                      >
-                        {isSaving ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Saving...
-                          </>
-                        ) : hasChanges ? (
-                          "Save Changes"
-                        ) : (
-                          <>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            All Saved
-                          </>
-                        )}
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        onClick={handleResetToDefaults}
-                        disabled={!hasChanges || isLoading || isSaving}
-                        className="hover:bg-muted transition-colors"
-                      >
-                        Reset to Defaults
-                      </Button>
-                    </div>
-
-                    {hasChanges && (
-                      <div className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-                        ⚠️ You have unsaved changes
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                  Loading permissions...
+                  {hasChanges && <div className="text-sm text-muted-foreground">You have unsaved changes</div>}
                 </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+              </>
+            ) : (
+              <div>Loading permissions...</div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

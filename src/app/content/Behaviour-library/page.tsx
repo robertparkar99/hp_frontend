@@ -36,6 +36,8 @@ import {
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/BehaviourComponent/viewDialouge";
 import Loader from "@/components/utils/loading";
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "@/lib/tourSteps";
 
 interface BehaviourItem {
   id: number;
@@ -67,8 +69,11 @@ interface SessionData {
   sub_institute_id?: string;
   org_type?: string;
 }
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
 
-const BehaviourGrid = () => {
+const BehaviourGrid = ({ showDetailTour }: PageProps) => {
   const [skills, setSkills] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [subCategories, setSubCategories] = useState<string[]>([]);
@@ -91,6 +96,25 @@ const BehaviourGrid = () => {
 
   // Dialog state for viewing behaviour details
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
+
+  // Detail tour handler
+  useEffect(() => {
+    (window as any).detailOnboardingHandler = (tab: string) => {
+      if (tab === 'Behaviour') {
+        setShowTour(true);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
 
   const handleClick = (id: number) => {
@@ -426,6 +450,7 @@ const BehaviourGrid = () => {
           <div className="relative w-full max-w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
+              id="search-behaviour-input"
               type="text"
               placeholder="Search behaviour, categories, or proficiency levels..."
               value={searchTerm}
@@ -482,7 +507,7 @@ const BehaviourGrid = () => {
           {/* Filter Button */}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Filter">
                 <Funnel className="w-5 h-5 text-gray-600" />
               </button>
             </PopoverTrigger>
@@ -506,7 +531,7 @@ const BehaviourGrid = () => {
           </Popover>
 
           {/* View Mode Toggle */}
-          <div className="flex border rounded-md overflow-hidden">
+          <div id="behaviour-view-toggle" className="flex border rounded-md overflow-hidden">
             <button
               onClick={() => setViewMode("cards")}
               className={`px-3 py-2 flex items-center justify-center ${viewMode === "cards"
@@ -535,7 +560,7 @@ const BehaviourGrid = () => {
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.2 }}
                 className="flex flex-wrap items-center gap-1"
-              >
+                title="More Actions">
                 <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Add New Behavior">
                   <Plus className="w-5 h-5 text-gray-600" />
                 </button>
@@ -576,7 +601,7 @@ const BehaviourGrid = () => {
       {viewMode === "cards" ? (
         loadingCards ? (
           <div className="flex justify-center items-center h-full min-h-[400px]">
-            <Loader/>
+            <Loader />
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">
@@ -645,17 +670,17 @@ const BehaviourGrid = () => {
           </div>
         )
       ) : (
-        <div className="w-full overflow-x-auto">
-          <DataTable
-            columns={columns}
-            data={filteredData}
-            customStyles={customStyles}
-            progressPending={loadingCards}
-            highlightOnHover
-            pagination
-            dense
-          />
-        </div>
+          <div className="w-full overflow-x-auto">
+            <DataTable
+              columns={columns}
+              data={filteredData}
+              customStyles={customStyles}
+              progressPending={loadingCards}
+              highlightOnHover
+              pagination
+              dense
+            />
+          </div>
       )}
 
       {/* Behaviour View Dialog */}
@@ -663,11 +688,23 @@ const BehaviourGrid = () => {
         <ViewKnowledge
           knowledgeId={selectedCardId}
           onClose={() => setSelectedCardId(null)}
-          onSuccess={() => {}}
+          onSuccess={() => { }}
           classification="behaviour"
           typeName="Behaviour"
         />
       )}
+      {/* Detail Tour */}
+{showTour && (
+  <ShepherdTour
+    steps={generateDetailTourSteps('Behaviour')}
+    onComplete={() => {
+      setShowTour(false);
+      if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+        showDetailTour.onComplete();
+      }
+    }}
+  />
+  )}
     </>
   );
 };

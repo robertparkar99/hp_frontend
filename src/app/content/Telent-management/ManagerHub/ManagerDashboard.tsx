@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import ViewFullProfileDialog from "./ViewFullProfileDialog";
 import OfferDashboard from "../Offer-management/OfferDashboard";
+import { switchManagerHubTab } from "./ManagerHubTourSteps";
 import {
   CheckCircle,
   Clock,
@@ -89,6 +90,23 @@ const ManagerDashboard = () => {
   const [selectedCandidate, setSelectedCandidate] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("");
   const [selectedCandidateId, setSelectedCandidateId] = useState(0);
+
+  // Listen for tab switch events from tour
+  useEffect(() => {
+    const handleTabSwitch = (event: Event) => {
+      const customEvent = event as CustomEvent<{ tab: string }>;
+      if (customEvent.detail && customEvent.detail.tab) {
+        console.log('[ManagerDashboard] Received tab switch event:', customEvent.detail.tab);
+        setActiveTab(customEvent.detail.tab);
+      }
+    };
+
+    window.addEventListener('managerhub-tab-switch', handleTabSwitch);
+
+    return () => {
+      window.removeEventListener('managerhub-tab-switch', handleTabSwitch);
+    };
+  }, []);
 
   const handleHired = async (interview: InterviewFeedback) => {
     try {
@@ -240,14 +258,14 @@ const ManagerDashboard = () => {
 
       {/* <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"> */}
       <main className="p-4 md:p-6">
-        <div className="mb-6 md:mb-8">
+        <div className="mb-6 md:mb-8" id="tour-managerhub-title">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Manager Dashboard</h1>
           <p className="text-sm md:text-base text-muted-foreground">Review requisitions and provide interview feedback</p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-          <Card>
+          <Card id="tour-pending-approvals">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
               <Clock className="h-5 w-5 text-warning" />
@@ -258,7 +276,7 @@ const ManagerDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card id="tour-interview-feedback-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Interview Feedback</CardTitle>
               <MessageSquare className="h-5 w-5 text-blue-400" />
@@ -280,7 +298,7 @@ const ManagerDashboard = () => {
             </CardContent>
           </Card> */}
 
-          <Card>
+          <Card id="tour-this-month-hires-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">This Month Hires</CardTitle>
               <CheckCircle className="h-5 w-5 text-success" />
@@ -292,12 +310,12 @@ const ManagerDashboard = () => {
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6" id="tour-managerhub-tabs">
           <TabsList className="bg-[#EFF4FF] flex flex-wrap h-auto p-1 gap-1 w-full max-w-full overflow-x-auto">
             {/* <TabsTrigger value="requisitions">Pending Requisitions</TabsTrigger> */}
-            <TabsTrigger value="interviews" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-white data-[state=active]:shadow-md">Interview Feedback</TabsTrigger>
-            <TabsTrigger value="offers" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-white data-[state=active]:shadow-md">Offer Management</TabsTrigger>
-            <TabsTrigger value="team" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-white data-[state=active]:shadow-md">Team Overview</TabsTrigger>
+            <TabsTrigger value="interviews" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-white data-[state=active]:shadow-md" id="tour-interview-tab">Interview Feedback</TabsTrigger>
+            <TabsTrigger value="offers" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-white data-[state=active]:shadow-md" id="tour-offers-tab">Offer Management</TabsTrigger>
+            <TabsTrigger value="team" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 whitespace-normal data-[state=active]:bg-white data-[state=active]:shadow-md" id="tour-team-tab" >Team Overview</TabsTrigger>
           </TabsList>
 
           {/* <TabsContent value="requisitions" className="space-y-6">
@@ -352,7 +370,7 @@ const ManagerDashboard = () => {
             </Card>
           </TabsContent> */}
 
-          <TabsContent value="interviews" className="space-y-6">
+          <TabsContent value="interviews" className="space-y-6" id="tour-interviews-tab-content">
             <Card>
               <CardHeader>
                 <CardTitle>Interview Feedback Required</CardTitle>
@@ -362,8 +380,8 @@ const ManagerDashboard = () => {
                   <Loader />
                 ) : (
                   <div className="space-y-6">
-                    {interviewFeedback.map((interview) => (
-                      <div key={interview.id} className="border border-border rounded-lg p-4 md:p-6">
+                    {interviewFeedback.map((interview , index) => (
+                      <div key={interview.id} className="border border-border rounded-lg p-4 md:p-6" id={index === 0 ? 'tour-first-candidate-card' : 'tour-candidate-card'}>
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                           <div className="flex items-center space-x-4">
                             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
@@ -416,7 +434,7 @@ const ManagerDashboard = () => {
                           </div>
                         )}
 
-                        <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <div className="flex flex-col sm:flex-row justify-between items-center gap-3" id="tour-hiring-decision">
                           <Button variant="outline" onClick={() => { setSelectedInterview(interview); setDialogOpen(true); }} className="w-full sm:w-auto">
                             <Eye className="w-4 h-4 mr-2" />
                             View Full Profile
@@ -449,13 +467,13 @@ const ManagerDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="offers" className="space-y-6">
+          <TabsContent value="offers" className="space-y-6" id="tour-offers-tab-content">
             <OfferDashboard showHeader={false} candidate={selectedCandidate} position={selectedPosition} candidateId={selectedCandidateId} />
           </TabsContent>
 
-          <TabsContent value="team" className="space-y-6">
+          <TabsContent value="team" className="space-y-6" id="tour-team-tab-content">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <Card>
+              <Card id="tour-department-status">
                 <CardHeader>
                   <CardTitle className="text-lg md:text-xl">Department Hiring Status</CardTitle>
                 </CardHeader>
@@ -479,7 +497,7 @@ const ManagerDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card id="tour-team-updates">
                 <CardHeader>
                   <CardTitle className="text-lg md:text-xl">Recent Team Updates</CardTitle>
                 </CardHeader>

@@ -1,7 +1,7 @@
 
 
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef  } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -715,12 +715,13 @@ const HRDashboard = () => {
       {/* <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 lg:py-6"> */}
       <main className="p-6">
         {/* Desktop Header */}
-        <div className="hidden lg:flex justify-between items-center mb-6">
+        <div id="tour-recruitment-header" className="hidden lg:flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">HR Dashboard</h1>
             <p className="text-gray-600 text-sm lg:text-base">Manage job postings and track candidates</p>
           </div>
           <Button
+            id="tour-create-job-button"
             onClick={() => {
               setEditingJob(null);
               setIsJobFormOpen(true);
@@ -770,10 +771,10 @@ const HRDashboard = () => {
           </div>
 
           {/* Desktop Tabs */}
-          <TabsList className="hidden lg:flex bg-blue-50 p-1">
-            <TabsTrigger value="jobs" className="flex-1 data-[state=active]:bg-white">Job Postings</TabsTrigger>
-            <TabsTrigger value="screening" className="flex-1 data-[state=active]:bg-white">Resume Screening</TabsTrigger>
-            <TabsTrigger value="applications" className="flex-1 data-[state=active]:bg-white">Applications</TabsTrigger>
+          <TabsList id="tour-recruitment-tabs" className="hidden lg:flex bg-blue-50 p-1">
+            <TabsTrigger id="tour-job-postings-tab" value="jobs" className="flex-1 data-[state=active]:bg-white">Job Postings</TabsTrigger>
+            <TabsTrigger id="tour-screening-tab" value="screening" className="flex-1 data-[state=active]:bg-white">Resume Screening</TabsTrigger>
+            <TabsTrigger id="tour-applications-tab" value="applications" className="flex-1 data-[state=active]:bg-white">Applications</TabsTrigger>
             {/* <TabsTrigger value="analytics" className="flex-1 data-[state=active]:bg-white">Analytics</TabsTrigger> */}
           </TabsList>
 
@@ -784,7 +785,7 @@ const HRDashboard = () => {
                   <CardTitle className="text-lg lg:text-xl">
                     Active Job Postings {jobPostings.length > 0 && `(${jobPostings.length})`}
                   </CardTitle>
-                  <div className="flex space-x-2">
+                  <div id="tour-search-filter" className="flex space-x-2">
                     <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-sm">
                       <Search className="w-4 h-4 mr-2" />
                       <span className="hidden xs:inline">Search</span>
@@ -796,7 +797,7 @@ const HRDashboard = () => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent id="tour-job-postings-list" className="pt-0">
                 {jobPostings.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="text-gray-400 mb-4">
@@ -828,7 +829,7 @@ const HRDashboard = () => {
                                   <span>Education: {job.education}</span>
                                 </p>
                               </div>
-                              <div className="flex flex-wrap gap-2 self-start xs:self-center">
+                              <div id="tour-job-status"  className="flex flex-wrap gap-2 self-start xs:self-center">
                                 {getStatusBadge(job.status)}
                                 <span className={`text-xs font-medium ${getUrgencyColor(job.priority_level)}`}>
                                   {job.priority_level}
@@ -859,7 +860,7 @@ const HRDashboard = () => {
                                 <div className="text-xs text-gray-500">Posted</div>
                               </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div id="tour-job-actions" className="flex space-x-2">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -899,7 +900,7 @@ const HRDashboard = () => {
             <CandidateScreening 
             />
           </TabsContent> */}
-          <TabsContent value="screening">
+          <TabsContent id="tour-screening-features" value="screening">
             <CandidateScreening
               jobPostings={jobPostings}
               onRefresh={fetchJobApplications}
@@ -907,13 +908,13 @@ const HRDashboard = () => {
           </TabsContent>
 
           <TabsContent value="applications" className="space-y-4 lg:space-y-6">
-            <Card className="border border-gray-200 shadow-sm">
+            <Card id="tour-applications-overview" className="border border-gray-200 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-lg lg:text-xl">
                   Recent Applications {jobApplications.length > 0 && `(${jobApplications.length})`}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent id="tour-applications-cards">
                 {applicationsLoading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -928,7 +929,7 @@ const HRDashboard = () => {
                     <p className="text-gray-600">No job applications have been submitted yet.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                      <div id="tour-applications-progress" className="space-y-3">
                     {jobApplications.map((application) => {
                       const score = applicationScores[application.id];
 
@@ -972,7 +973,7 @@ const HRDashboard = () => {
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 sm:gap-4 mt-2 sm:mt-0">
                               <div className="flex items-center gap-3 sm:gap-4 lg:gap-6">
                                 <div className="text-center">
-                                  <div className={`text-sm sm:text-lg font-bold ${score !== null ? (score >= 85 ? 'text-green-600' :
+                                  <div id="tour-candidate-score" className={`text-sm sm:text-lg font-bold ${score !== null ? (score >= 85 ? 'text-green-600' :
                                     score >= 70 ? 'text-blue-600' : 'text-orange-600') : 'text-gray-500'}`}>
                                     {score !== null ? `${score}%` : 'Pending'}
                                   </div>
@@ -986,7 +987,7 @@ const HRDashboard = () => {
                                 </div>
 
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div id="tour-applications-actions"  className="flex items-center gap-2">
                                 {application.status === 'active' ? (
                                   <Badge className="bg-green-100 text-green-800 text-xs">Active</Badge>
                                 ) : application.status === 'rejected' ? (

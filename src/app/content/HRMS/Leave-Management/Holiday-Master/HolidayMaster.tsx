@@ -1,6 +1,14 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, Calendar, Filter, Clock, MapPin, Star, Sparkles } from "lucide-react";
+import Shepherd, { Tour } from "shepherd.js";
+import "shepherd.js/dist/css/shepherd.css";
+import {
+  holidayMasterTourSteps,
+  createHolidayMasterTour,
+  shouldStartHolidayTour,
+  completeHolidayMasterTour
+} from "./HolidayMasterTourSteps";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +77,7 @@ const HolidayMaster = () => {
   });
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [savingDayOffs, setSavingDayOffs] = useState(false);
+  const tourRef = useRef<Tour | null>(null);
 
   // Load session data
   useEffect(() => {
@@ -83,6 +92,48 @@ const HolidayMaster = () => {
         userId: user_id,
       });
     }
+  }, []);
+
+  // Initialize and start tour when triggered from sidebar
+  useEffect(() => {
+    // Check if tour should start (only when triggered from sidebar)
+    if (shouldStartHolidayTour()) {
+      console.log('Holiday Master tour triggered from sidebar');
+
+      // Wait a bit for the page to fully render
+      setTimeout(() => {
+        const tour = createHolidayMasterTour();
+        tourRef.current = tour;
+
+        // Add steps to tour
+        holidayMasterTourSteps.forEach(step => {
+          tour.addStep(step);
+        });
+
+        // Handle tour completion
+        tour.on('complete', () => {
+          completeHolidayMasterTour();
+          console.log('Holiday Master tour completed');
+        });
+
+        // Handle tour cancellation
+        tour.on('cancel', () => {
+          completeHolidayMasterTour();
+          console.log('Holiday Master tour cancelled');
+        });
+
+        // Start the tour
+        tour.start();
+      }, 500); // Small delay to ensure DOM is ready
+    }
+
+    // Cleanup tour on unmount
+    return () => {
+      if (tourRef.current) {
+        tourRef.current.cancel();
+        tourRef.current = null;
+      }
+    };
   }, []);
 
   const [dayOffSelections, setDayOffSelections] = useState<Record<string, string>>({
@@ -507,7 +558,7 @@ const HolidayMaster = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background rounded-xl">
+    <div className="min-h-screen bg-background rounded-xl" id="holiday-header">
       {/* Modern Gradient Header */}
       <div className="bg-[#6fb2f2] text-primary-foreground rounded-xl ">
         <div className="px-4 sm:px-6 py-6 sm:py-8">
@@ -563,7 +614,7 @@ const HolidayMaster = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="px-4 sm:px-6 -mt-4 pb-6">
+      <div className="px-4 sm:px-6 -mt-4 pb-6" id="holiday-stats">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="bg-gradient-to-br from-card to-card/80 border-border/30 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-4">
@@ -636,7 +687,7 @@ const HolidayMaster = () => {
         {/* Main Content Card */}
         <Card className="bg-gradient-to-br from-card via-card to-card/50 border-border/30 shadow-lg overflow-hidden">
           <CardHeader className="pb-3 bg-gradient-to-r from-muted/20 to-transparent">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs value={activeTab} onValueChange={setActiveTab} id="holiday-tabs">
               <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted/30 p-0.5 h-10 bg-[#EFF4FF]">
                 <TabsTrigger
                   value="holidays"
@@ -647,6 +698,7 @@ const HolidayMaster = () => {
                 </TabsTrigger>
                 <TabsTrigger
                   value="dayoffs"
+                  id="dayoffs-tab"
                   className="data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium text-sm h-8"
                 >
                   <Clock className="h-4 w-4 mr-2" />
@@ -658,7 +710,7 @@ const HolidayMaster = () => {
 
           <CardContent className="p-4 pt-2">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsContent value="holidays" className="mt-0 space-y-4">
+              <TabsContent value="holidays" className="mt-0 space-y-4" id="holiday-list-container">
                 {holidays.length > 0 ? (
                   renderList(holidays)
                 ) : (
@@ -673,8 +725,8 @@ const HolidayMaster = () => {
               </TabsContent>
 
               {/* Day Offs UI */}
-              <TabsContent value="dayoffs" className="mt-0 space-y-4">
-                <div className="space-y-6">
+              <TabsContent value="dayoffs" className="mt-0 space-y-4" id="dayoffs-container">
+                <div className="space-y-6" id="dayoffs-selections">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                       "Monday",
@@ -708,7 +760,7 @@ const HolidayMaster = () => {
 
                   <div className="flex justify-center pt-4">
                     <Button
-                    id="submit"
+                      id="dayoffs-submit"
                       onClick={saveDayOffs}
                       className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
                       disabled={savingDayOffs}

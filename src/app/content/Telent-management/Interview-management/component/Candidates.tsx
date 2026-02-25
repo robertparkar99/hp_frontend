@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef  } from "react";
 import { useRouter } from "next/navigation";
 import DataTable,{TableStyles,TableColumn} from "react-data-table-component";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Eye, Calendar, MessageSquare, Download, Star } from "lucide-react";
+import { Search, Filter, Eye, Calendar, MessageSquare, Download, Star,MoreHorizontal, Printer, FileSpreadsheet, FileText} from "lucide-react";
 import dynamic from 'next/dynamic';
 import Feedback from './Feedback';
 
@@ -444,7 +444,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="tour-candidates-list">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-xl font-bold text-foreground">Candidates</h1>
@@ -497,7 +497,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">
+            <Button variant="outline" id="tour-candidates-filters">
               <Filter className="mr-2 h-4 w-4" />
               Advanced Filters
             </Button>
@@ -506,7 +506,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
       </Card>
 
       {/* DataTable */}
-      <Card className="widget-card">
+      <Card className="widget-card" id="tour-candidates-table">
         <CardHeader >
           <CardTitle className="text-xl">All Candidates ({filteredData.length})</CardTitle>
         </CardHeader>
@@ -520,6 +520,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
             <DataTable
               columns={columns}
               data={filteredData}
+              className="react-data-table"
               customStyles={customStyles}
               pagination
               highlightOnHover

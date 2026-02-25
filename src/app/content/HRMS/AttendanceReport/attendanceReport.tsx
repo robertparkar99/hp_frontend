@@ -4,6 +4,7 @@ import EmployeeSelector from "@/app/content/User-Attendance/components/EmployeeS
 import { Employee } from "@/app/content/User-Attendance/types/attendance";
 import { Search } from "lucide-react";
 import DataTable, { TableColumn,TableStyles } from "react-data-table-component";
+import { AttendanceReportTour, shouldStartAttendanceReportTour } from "./AttendanceReportTour";
 
 type AttendanceRow = {
   id: number;
@@ -54,6 +55,18 @@ export default function DemoMulti() {
         userId: user_id,
         user_profile_name: user_profile_name,
       });
+    }
+  }, []);
+
+  // 🔹 Check if tour should be triggered from sidebar navigation
+  useEffect(() => {
+    if (shouldStartAttendanceReportTour()) {
+      console.log('[AttendanceReport] Triggering tour from sidebar navigation');
+      // Wait a bit for DOM to be ready
+      setTimeout(() => {
+        const tour = AttendanceReportTour.getInstance();
+        tour.start();
+      }, 500);
     }
   }, []);
 
@@ -464,15 +477,15 @@ export default function DemoMulti() {
   return (
     <div className="p-6 bg-background rounded-xl">
       {/* Title Section */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8" id="tour-attendance-report-header">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Attendence Report</h1>
         </div>
       </div>
 
       {/* Filters Section */}
-      <div className="flex items-end gap-6 flex-wrap mb-8">
-        <div className="flex-1 min-w-[250px]">
+      <div className="flex items-end gap-6 flex-wrap mb-8" id="tour-filters-section">
+        <div className="flex-1 min-w-[250px]" id="tour-employee-selector">
           <EmployeeSelector
             multiSelect
             empMultiSelect={true}
@@ -483,7 +496,7 @@ export default function DemoMulti() {
           />
         </div>
 
-        <div className="mb-1">
+        <div className="mb-1" id="tour-from-date">
           <label className="block text-sm font-medium text-gray-700">
             From Date
           </label>
@@ -495,7 +508,7 @@ export default function DemoMulti() {
           />
         </div>
 
-        <div className="mb-1">
+        <div className="mb-1" id="tour-to-date">
           <label className="block text-sm font-medium text-gray-700">
             To Date
           </label>
@@ -508,6 +521,7 @@ export default function DemoMulti() {
         </div>
 
         <div
+        id="tour-search-button"
           onClick={handleSearch}
           className="flex items-center mb-1 justify-center space-x-2 px-6 py-3 text-sm font-medium rounded-lg cursor-pointer bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
         >
@@ -516,7 +530,7 @@ export default function DemoMulti() {
       </div>
 
       {/* Legend Section */}
-      <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-gray-700 mb-8">
+      <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-gray-700 mb-8" id="tour-legend">
         <span className="mr-2">Colours Description {'=>'} </span>
         {legendItems.map((item, index) => (
           <div key={index} className="flex items-center gap-2">
@@ -528,7 +542,7 @@ export default function DemoMulti() {
 
       {/* DataTable */}
       {tableData.length > 0 && (
-        <div className="mt-8">
+        <div className="mt-8" id="tour-attendance-table">
           <DataTable
             columns={columns}
             data={filteredItems}

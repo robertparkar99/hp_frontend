@@ -169,7 +169,7 @@ export const AlignmentWidget = () => {
   };
 
   return (
-    <Card className="w-full max-w-2xl bg-gradient-to-br from-card to-card/50 border-border shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <Card className="w-full max-w-2xl bg-gradient-to-br from-card to-card/50 border-border shadow-lg hover:shadow-xl transition-shadow duration-300" id="tour-benchmark-gauge">
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-border">
         <div>
@@ -191,7 +191,7 @@ export const AlignmentWidget = () => {
       </div>
 
       {/* Gauge Section */}
-      <div className="p-8">
+      <div className="p-8" id="tour-alignment-stats">
         <div className="flex flex-col items-center justify-center space-y-4">
           <BenchmarkGauge
             percentage={currentData.percentage}

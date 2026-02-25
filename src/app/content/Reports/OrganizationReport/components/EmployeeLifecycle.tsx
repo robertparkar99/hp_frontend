@@ -1,51 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface FunnelItem {
-  stage: string;
-  value: number;
-  color: string;
-}
+const funnelData = [
+  { stage: "Applicants", value: 5420, color: "#0da2e7" },
+  { stage: "Shortlisted", value: 2850, color: "#10b77f" },
+  { stage: "Hired", value: 1620, color: "#fb923c" },
+  { stage: "Active", value: 1024, color: "#7c3bed" },
+  { stage: "Resigned", value: 156, color: "#e92063" },
+];
 
 export const EmployeeLifecycle = () => {
-  const [funnelData, setFunnelData] = useState<FunnelItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sessionData, setSessionData] = useState({
-    url: "",
-    token: "",
-    subInstituteId: "",
-  });
-
-  useEffect(() => {
-    const userData = localStorage.getItem("userData");
-    if (userData) {
-      const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
-      setSessionData({
-        url: APP_URL,
-        token,
-        subInstituteId: sub_institute_id,
-      });
-    }
-    
-  }, []);
-
-  useEffect(() => {
-    if (!sessionData.url) return;
-
-    fetch(`${sessionData.url}/api/reports/employees/lifecycle?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setFunnelData(data.data);
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching employee lifecycle data:', err);
-        setLoading(false);
-      });
-  }, [sessionData]);
   const calculatePercentage = (currentValue: number, previousValue?: number) => {
     if (!previousValue) return 100;
     return (currentValue / previousValue) * 100;
@@ -59,12 +23,8 @@ export const EmployeeLifecycle = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
-        {loading ? (
-          <div className="text-center py-8">Loading employee lifecycle data...</div>
-        ) : (
-          <>
-              {/* Desktop Funnel with Percentages */}
-              <div className="hidden md:block relative min-h-80">
+        {/* Desktop Funnel with Percentages */}
+        <div className="hidden md:block relative min-h-80">
           {funnelData.map((item, index) => {
             const widthPercent = ((item.value / funnelData[0].value) * 100);
             // const leftOffset = (100 - widthPercent) / 2;
@@ -152,8 +112,8 @@ export const EmployeeLifecycle = () => {
             );
           })}
         </div>
-          </>
-        )}
+
+    
       </CardContent>
     </Card>
   );

@@ -8,6 +8,7 @@ import { Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PayrollTypeDialog from "../PayrollTypeDialog";
+import { startPayrollTypesTour, shouldStartPayrollTypesTour } from './PayrollTypesTourSteps';
 
 // ✅ Row Type
 interface PayrollType {
@@ -29,6 +30,18 @@ export default function PayrollTypes() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPayroll, setEditingPayroll] = useState<PayrollType | null>(null);
   const [sessionData, setSessionData] = useState<any>(null);
+
+  // ✅ Check if tour should be started when page loads
+  useEffect(() => {
+    // Check if tour should be triggered via sidebar navigation
+    const shouldStart = shouldStartPayrollTypesTour();
+    if (shouldStart) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        startPayrollTypesTour();
+      }, 500);
+    }
+  }, []);
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -195,7 +208,7 @@ export default function PayrollTypes() {
   const columns: TableColumn<PayrollType>[] = [
     {
       name: (
-        <div>
+        <div id="srno-column">
           <div>Sr.No</div>
           <input
             type="text"
@@ -217,7 +230,7 @@ export default function PayrollTypes() {
     },
     {
       name: (
-        <div>
+        <div id="type-column">
           <div>Type</div>
           <input
             type="text"
@@ -248,7 +261,7 @@ export default function PayrollTypes() {
     },
     {
       name: (
-        <div>
+        <div id="name-column">
           <div>Payroll Name</div>
           <input
             type="text"
@@ -269,7 +282,7 @@ export default function PayrollTypes() {
     },
     {
       name: (
-        <div>
+        <div id="amount-type-column">
           <div>Amount Type</div>
           <input
             type="text"
@@ -290,7 +303,7 @@ export default function PayrollTypes() {
     },
     {
       name: (
-        <div>
+        <div id="amount-percentage-column">
           <div>Amount / Percentage</div>
           <input
             type="text"
@@ -327,7 +340,7 @@ export default function PayrollTypes() {
     },
     {
       name: (
-        <div>
+        <div id="day-count-column">
           <div>Day Wise Count</div>
           <input
             type="text"
@@ -356,7 +369,7 @@ export default function PayrollTypes() {
     },
     {
       name: (
-        <div>
+        <div id="status-column">
           <div>Status</div>
           <input
             type="text"
@@ -387,9 +400,14 @@ export default function PayrollTypes() {
       ),
     },
     {
-      name: "Actions",
+       name: (
+        <div id="actions-column">
+          Actions
+        </div>
+      ),
+      id: "actions-column",
       cell: (row) => (
-        <div className="flex space-x-2">
+        <div className="flex space-x-2"  id={`actions-cell-${row.id}`}>
           {/* <Button variant="ghost" size="sm" onClick={() => handleViewClick(row.id)}>
             <Eye className="w-4 h-4" />
           </Button> */}
@@ -451,9 +469,9 @@ export default function PayrollTypes() {
     },
   };
   return (
-    <div className="space-y-6 p-6 bg-background rounded-xl">
+    <div className="space-y-6 p-6 bg-background rounded-xl" id="payroll-types-page">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" id="payroll-types-header">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold">HRMS Payroll Type</h1>
           <p className="text-muted-foreground mt-1">
@@ -461,6 +479,7 @@ export default function PayrollTypes() {
           </p>
         </div>
         <Button
+          id="add-payroll-type-btn"
           className="bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
           onClick={handleAddClick}
         >
@@ -470,7 +489,7 @@ export default function PayrollTypes() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="summary-cards">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -518,11 +537,13 @@ export default function PayrollTypes() {
       </div>
 
       {/* DataTable */}
-      <Card>
+      <Card id="payroll-types-table">
         <CardHeader>
-          <CardTitle>Payroll Types ({filteredData.length})</CardTitle>
+          <CardTitle id="table-title">Payroll Types ({filteredData.length})</CardTitle>
         </CardHeader>
         <CardContent>
+          <div id="column-filters">
+            <div id="pagination">
           <DataTable
             columns={columns}
             data={filteredData}
@@ -535,8 +556,15 @@ export default function PayrollTypes() {
             }
             persistTableHead
           />
+          </div>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Column Filters Info */}
+      <div id="column-filters-tip" className="text-sm text-muted-foreground">
+        💡 Tip: Use the search inputs in each column header to filter specific fields
+      </div>
 
       {/* Add/Edit Dialog */}
       <PayrollTypeDialog

@@ -1015,7 +1015,7 @@ export default function Index({
             ) : (
               <div className="flex flex-col lg:flex-row xl:flex-row gap-4 sm:gap-6 xl:gap-8">
                 {/* Left Panel */}
-                <div className="w-full lg:w-[240px] xl:w-[280px] min-h-[300px] sm:min-h-[400px] md:min-h-[472px] bg-white rounded-xl sm:rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-2">
+                <div id="skill-rating-left-panel"  className="w-full lg:w-[240px] xl:w-[280px] min-h-[300px] sm:min-h-[400px] md:min-h-[472px] bg-white rounded-xl sm:rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-2">
                   <h2 className="text-[#23395B] font-bold text-sm sm:text-md mb-2 sm:mb-3" style={{ fontFamily: "Inter, sans-serif" }}>
                     📈 Competency Overview
                   </h2>
@@ -1030,7 +1030,7 @@ export default function Index({
                       const hasKAAB = ratedSkill && hasKAABData(ratedSkill);
 
                       return (
-                        <div
+                        <div id={`skill-rating-item-${index}`}
                           key={index}
                           className="relative group cursor-pointer"
                           onClick={() => {
@@ -1068,7 +1068,7 @@ export default function Index({
 
                 {/* Center Panel */}
                 <div className="w-full flex-1 flex flex-col gap-4 sm:gap-6 ">
-                  <div className="w-full bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border-2 border-[#D4EBFF]">
+                  <div id="skill-rating-question"  className="w-full bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border-2 border-[#D4EBFF]">
                     <div className="w-full flex justify-between items-center mb-3 sm:mb-4">
                       <h1 className="text-[#393939] font-bold text-xs sm:text-sm md:text-xl" style={{ fontFamily: "Inter, sans-serif" }}>
                         Are you proficient in {selectedSkill?.skill || "this skill"}?
@@ -1120,6 +1120,7 @@ export default function Index({
                           }
                           return (
                             <button
+                              id={`skill-level-${key}`}
                               key={key}
                               onClick={() => handleLevelSelect(key, val)}
                               className={`px-4 py-2 shadow-lg border-2 ${borderLeft} ${borderRight} cursor-pointer flex items-center justify-center min-w-[80px] font-medium transition-all duration-200
@@ -1168,7 +1169,7 @@ export default function Index({
                   </div>
 
                   {/* Detailed Rating Section - FIXED: Button styling */}
-                  <div className="text-left bg-white rounded-2xl p-4 shadow-sm border-2 border-[#D4EBFF]">
+                  <div id="skill-rating-details" className="text-left bg-white rounded-2xl p-4 shadow-sm border-2 border-[#D4EBFF]">
                     <div className="flex items-center mb-4">
                       <span className="mr-2 text-gray-700 font-medium">Want to rate your skill in detail?</span>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -1208,7 +1209,7 @@ export default function Index({
                     {showDetails && selectedLevelIndex !== null && (
                       <div className="mt-4">
                         {/* Tabs */}
-                        <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-full shadow-sm w-fit mb-4">
+                        <div id="skill-rating-tabs"  className="flex items-center gap-2 bg-gray-50 p-2 rounded-full shadow-sm w-fit mb-4">
                           {attrArray.map((attr) => (
                             <button
                               key={attr.title}
@@ -1382,7 +1383,7 @@ export default function Index({
 
       {/* Bottom-right fixed actions: Clear, Save All, etc. - Only show in default view */}
       {viewPart !== "jobrole-skillrating" && viewPart !== "rated skill" && (
-        <div className="fixed bottom-6 right-6 flex gap-3 z-50">
+        <div id="skill-rating-actions" className="fixed bottom-6 right-6 flex gap-3 z-50">
           <button
             onClick={clearRatedSkills}
             className="px-4 py-2 rounded-full bg-red-500 text-white shadow hover:bg-red-600"

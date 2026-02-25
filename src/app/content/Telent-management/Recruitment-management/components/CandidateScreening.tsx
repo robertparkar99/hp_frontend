@@ -669,9 +669,9 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="tour-candidate-overview">
       {/* Stats Overview */}
-      <div className="mb-6">
+      <div className="mb-6" id="tour-screening-stats">
         <h2 className="text-xl font-semibold mb-4">Candidate Overview</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
           <Card>
@@ -749,7 +749,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       </div>
 
       {/* Search and Filters */}
-      <Card>
+      <Card id="tour-screening-search">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <CardTitle className="text-lg">Candidate Screening Results</CardTitle>
@@ -796,12 +796,12 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
         </CardHeader>
         <CardContent>
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsList className="flex flex-wrap justify-start h-auto py-2 gap-1">
-              <TabsTrigger value="all" className="text-xs sm:text-sm">All ({stats.total})</TabsTrigger>
-              <TabsTrigger value="shortlisted" className="text-xs sm:text-sm">Shortlisted ({stats.shortlisted})</TabsTrigger>
-              <TabsTrigger value="pending" className="text-xs sm:text-sm">Pending ({stats.pending})</TabsTrigger>
-              <TabsTrigger value="rejected" className="text-xs sm:text-sm">Rejected ({stats.rejected})</TabsTrigger>
-              <TabsTrigger value="hired" className="text-xs sm:text-sm">Hired ({stats.hired})</TabsTrigger>
+            <TabsList className="flex flex-wrap justify-start h-auto py-2 gap-1" id="tour-screening-tabs">
+              <TabsTrigger id="tour-all-tab" value="all" className="text-xs sm:text-sm">All ({stats.total})</TabsTrigger>
+              <TabsTrigger id="tour-shortlisted-tab" value="shortlisted" className="text-xs sm:text-sm">Shortlisted ({stats.shortlisted})</TabsTrigger>
+              <TabsTrigger id="tour-pending-tab"  value="pending" className="text-xs sm:text-sm">Pending ({stats.pending})</TabsTrigger>
+              <TabsTrigger id="tour-rejected-tab"  value="rejected" className="text-xs sm:text-sm">Rejected ({stats.rejected})</TabsTrigger>
+              <TabsTrigger id="tour-hired-tab"  value="hired" className="text-xs sm:text-sm">Hired ({stats.hired})</TabsTrigger>
             </TabsList>
 
             <TabsContent value={selectedTab} className="mt-6">
@@ -816,17 +816,17 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                   </p>
                 </div>
               ) : (
-                  <div className="space-y-4">
-                    {filteredCandidates.map((candidate) => (
+                  <div className="space-y-4" id="tour-candidate-list">
+                    {filteredCandidates.map((candidate , index) => (
                       <div key={candidate.id} className="border border-border rounded-lg p-6">
-                      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
+                      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4"   id={index === 0 ? 'tour-candidate-score' : undefined}>
                         <div className="flex items-start space-x-4 flex-1">
                           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
                             <User className="w-6 h-6 text-blue-400" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
-                              <h3 className="text-lg font-semibold truncate">{candidate.name}</h3>
+                              <h3 className="text-lg font-semibold truncate" id={index === 0 ? 'tour-candidate-status-badge' : undefined}>{candidate.name}</h3>
                               {getStatusBadge(candidate.status)}
                             </div>
                             <p className="text-sm text-muted-foreground mb-2 truncate">
@@ -1015,7 +1015,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleViewApplication(candidate)}
+                            onClick={() => handleViewApplication(candidate)} data-tour-action="view-profile"
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             View Profile

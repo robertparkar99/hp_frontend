@@ -46,6 +46,8 @@ import DataTable, {
 } from "react-data-table-component";
 import ConfigurationModal from "../../Jobrole-library/ConfigurationModal";
 import Loader from "@/components/utils/loading";
+import ShepherdTour from "../../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "@/lib/tourSteps";
 
 type JobRoleTask = {
   id: number;
@@ -57,8 +59,18 @@ type JobRoleTask = {
   task_type: string;
   sub_institute_id: number;
 };
+interface CriticalWorkFunctionGridProps {
+  showDetailTour?: {
+    show: boolean;
+    onComplete: () => void;
+  };
+}
 
-const CriticalWorkFunctionGrid = () => {
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ showDetailTour }: PageProps) => {
   const [data, setData] = useState<JobRoleTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [editData, setEditData] = useState<any>({});
@@ -96,7 +108,8 @@ const CriticalWorkFunctionGrid = () => {
 
   // Content section ref
   const contentRef = useRef<HTMLElement>(null);
-
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
   // ✅ View toggle state
   const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
 
@@ -186,6 +199,14 @@ const CriticalWorkFunctionGrid = () => {
     if (!sessionData.url || !sessionData.subInstituteId) return;
     fetchData();
   }, [sessionData]);
+
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -726,7 +747,7 @@ const CriticalWorkFunctionGrid = () => {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -10 }}
                       transition={{ duration: 0.2 }}
-                      className="flex gap-1"
+                      className="flex gap-1" 
                     >
                       {/* Generate with AI */}
                       <button
@@ -968,6 +989,19 @@ const CriticalWorkFunctionGrid = () => {
           isOpen={isConfigModalOpen}
           onClose={() => setIsConfigModalOpen(false)}
           jsonObject={configJsonObject}
+        />
+      )}
+
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps('Jobrole Task')}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
         />
       )}
     </>

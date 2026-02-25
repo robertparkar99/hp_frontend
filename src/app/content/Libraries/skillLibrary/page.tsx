@@ -6,6 +6,8 @@ import { useState, useEffect } from "react";
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("Skill Library");
+
   // Sync with localStorage and handle sidebar state changes
   useEffect(() => {
     const checkSidebarState = () => {

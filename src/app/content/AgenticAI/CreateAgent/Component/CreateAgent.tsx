@@ -57,6 +57,7 @@ const availableTools = [
   { id: "sql_query", label: "SQL Query" },
   { id: "data_viz", label: "Data Visualization" },
   { id: "file_operations", label: "File Operations" },
+  { id: "n8n", label: "n8n" },
 ];
 
 const steps = [

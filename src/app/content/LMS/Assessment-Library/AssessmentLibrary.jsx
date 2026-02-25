@@ -11,6 +11,7 @@ import Icon from '../../../../components/AppIcon';
 import { Button } from '../../../../components/ui/button';
 import CreateAssessmentModal from './components/CreateAssessmentModal';
 import SkillAssessment from '@/components/skill-assessment';
+import { AssessmentLibraryTour } from './AssessmentLibraryTourSteps';
 
 // 🔄 Mapper function to normalize API → UI format
 const mapAssessment = (item) => {
@@ -145,6 +146,17 @@ const AssessmentLibrary = () => {
 
     fetchAssessments();
   }, [sessionData]); // Depend on sessionData
+   // Start tour when triggered from sidebar
+  useEffect(() => {
+    if (AssessmentLibraryTour.shouldStartTour()) {
+      // Add a small delay to ensure all elements are rendered
+      const timer = setTimeout(() => {
+        AssessmentLibraryTour.startTour();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
 
   // ✅ Filtering & sorting
   // const filteredAssessments = useMemo(() => {
@@ -306,7 +318,7 @@ const AssessmentLibrary = () => {
     <div className="min-h-screen flex flex-col lg:flex-row bg-background rounded-xl relative">
       <div className="flex-1 flex flex-col">
         <main className="flex-1 min-h-screen pt-10 px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div id="assessment-library-title"  className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold mb-2">Assessment Library</h1>
               <p className="text-muted-foreground text-sm sm:text-base">
@@ -358,7 +370,9 @@ const AssessmentLibrary = () => {
                 </Button>
 
                 {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) && (
+                  
                   <Button
+                  id="tour-ai-assessment"
                     variant="ghost"
                     size="sm"
                     className="flex items-center gap-1 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 transition-colors"
@@ -375,6 +389,7 @@ const AssessmentLibrary = () => {
               {/* Create Assessment Button */}
               {["ADMIN", "HR"].includes(sessionData.user_profile_name?.toUpperCase()) ? (
                 <Button
+                  id="tour-create-assessment"
                   onClick={() => setShowCreateModal(true)}
                   className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
                 >
@@ -395,8 +410,9 @@ const AssessmentLibrary = () => {
 
               {/* Search & Filter */}
               <div className="flex flex-col sm:flex-row gap-1 sm:gap-1 my-4 w-full">
-                <div className="flex-1 w-full">
+                    <div id="tour-assessment-stats" className="flex-1 w-full">
                   <SearchBar
+                        id="tour-search-bar"
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
                     onToggleFilters={() => !isDesktop && setIsFilterPanelOpen(true)}
@@ -405,7 +421,7 @@ const AssessmentLibrary = () => {
                 </div>
 
                 {isDesktop && (
-                  <Popover className="relative flex-shrink-0">
+                      <Popover id="tour-filter-button" className="relative flex-shrink-0">
                     <Popover.Button className="inline-flex items-center gap-2 text-sm font-medium px-4 py-3 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                       <Icon name="Filter" size={16} />
                       Filter
@@ -432,10 +448,11 @@ const AssessmentLibrary = () => {
               </div>
 
               {filteredAssessments.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredAssessments.map((a) => (
+                <div id="tour-assessment-cards"  className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredAssessments.map((a,index) => (
                     <AssessmentCard
                       key={a.id}
+                      id={index < 3 ? `tour-assessment-card-${index}` : undefined}
                       assessment={a}
                       onStartAssessment={handleStartAssessment}
                       onViewDetails={handleViewDetails}

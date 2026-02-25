@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import TaskListModel from "../task/components/taskListModel";
+import TaskManagementTour from "../task/components/TaskManagementTour";
 
 interface SessionData {
   url: string;
@@ -105,6 +106,7 @@ const TaskManagement = () => {
   const [isjobroleList, setIsJobroleList] = useState(false);
   const [isjobroleModel, setIsJobroleModel] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showTour, setShowTour] = useState(false);
 
   // Add state for form fields to better manage them
   const [taskDescription, setTaskDescription] = useState<string>("");
@@ -147,6 +149,23 @@ const TaskManagement = () => {
       fetchObserver();
     }
   }, [sessionData.url, sessionData.token]);
+
+  // Check if tour should start (when navigated from employee directory tour)
+  useEffect(() => {
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+    console.log('[Task Assignment] triggerPageTour value:', triggerTour);
+
+    if (triggerTour === 'task-assignment') {
+      console.log('[Task Assignment] Starting page tour automatically');
+      setShowTour(true);
+      // Clean up the flag
+      sessionStorage.removeItem('triggerPageTour');
+    }
+  }, []);
+
+  const handleTourComplete = () => {
+    setShowTour(false);
+  };
 
   // Cleanup object URLs when component unmounts
   useEffect(() => {
@@ -713,7 +732,7 @@ const TaskManagement = () => {
             <div className="px-1 mb-2">
               <div className="w-full flex justify-between">
                 <div>
-                  <h2 className="text-2xl mt-2 text-left font-semibold text-foreground">
+                  <h2 className="text-2xl mt-2 text-left font-semibold text-foreground" id="new-assignment-header">
                     New Assignment
                   </h2>
                   <p className="text-muted-foreground">
@@ -736,10 +755,10 @@ const TaskManagement = () => {
                 </div>
               </div>
 
-              <form className="space-y-6 mt-6" onSubmit={handleSubmit} ref={formRef}>
+              <form className="space-y-6 mt-6" onSubmit={handleSubmit} ref={formRef} id="assignment-form">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {/* Department */}
-                  <div>
+                  <div id="assignment-department">
                     <label className="block mb-1 text-sm text-gray-900">
                       Department<span className="text-red-500">*</span>
                     </label>
@@ -769,7 +788,7 @@ const TaskManagement = () => {
 
                   </div>
                   {/* Job Role */}
-                  <div>
+                  <div id="assignment-jobrole">
                     <label className="block mb-1 text-sm text-gray-900">
                       Job Role <span className="text-red-500">*</span>
                     </label>
@@ -802,7 +821,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* Assign To */}
-                  <div>
+                  <div id="assignment-employees">
                     <label
                       htmlFor="assignTo"
                       className="block mb-1 text-sm text-gray-900"
@@ -849,7 +868,7 @@ const TaskManagement = () => {
                       Task Title{" "}
                       <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                     </label>
-                    <div className="flex">
+                    <div className="flex" id="assignment-task-title">
                       <input
                         id="taskTitle"
                         list="taskList"
@@ -859,7 +878,7 @@ const TaskManagement = () => {
                         placeholder="Type or select a task"
                         required
                       />
-                      <span className="mdi mdi-creation text-[20px] text-yellow-400" onClick={() => geminiChat(selTask)} title="Generate Task with the help of AI"></span>
+                      <span className="mdi mdi-creation text-[20px] text-yellow-400" id="assignment-ai-gen" onClick={() => geminiChat(selTask)} title="Generate Task with the help of AI"></span>
                     </div>
                     {message === 1 && (
                       <div className="flex items-center text-yellow-400">
@@ -929,7 +948,7 @@ const TaskManagement = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Task Description */}
-                  <div>
+                  <div id="assignment-description">
                     <label
                       htmlFor="task_description"
                       className="block mb-1 text-sm text-gray-900"
@@ -948,7 +967,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* Repeat Days */}
-                  <div>
+                  <div id="assignment-repeat">
                     <label
                       htmlFor="days"
                       className="block mb-1 text-sm text-gray-900"
@@ -1009,7 +1028,7 @@ const TaskManagement = () => {
                 {/* Make sure to update all other form fields to use controlled components */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Skills Required */}
-                  <div>
+                  <div id="assignment-skills">
                     <label
                       htmlFor="skillsRequired"
                       className="block mb-1 text-sm text-gray-900"
@@ -1042,7 +1061,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* Observer */}
-                  <div>
+                  <div id="assignment-observer">
                     <label
                       htmlFor="observer"
                       className="block mb-1 text-sm text-gray-900"
@@ -1072,7 +1091,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* KRAs */}
-                  <div>
+                  <div id="assignment-kras">
                     <label
                       htmlFor="kras"
                       className="block mb-1 text-sm text-gray-900"
@@ -1092,7 +1111,7 @@ const TaskManagement = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* KPIs */}
-                  <div>
+                  <div id="assignment-kpis">
                     <label
                       htmlFor="kpis"
                       className="block mb-1 text-sm text-gray-900"
@@ -1110,7 +1129,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* Monitoring Points */}
-                  <div>
+                  <div id="assignment-monitoring">
                     <label
                       htmlFor="observation_point"
                       className="block mb-1 text-sm text-gray-900"
@@ -1128,7 +1147,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* File Upload with Preview */}
-                  <div className="space-y-2">
+                  <div className="space-y-2" id="assignment-attachment">
                     <label className="block text-sm text-gray-900">
                       Attachment
                     </label>
@@ -1187,7 +1206,7 @@ const TaskManagement = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Task Type Buttons */}
-                  <div>
+                  <div id="assignment-priority">
                     <label
                       htmlFor="task_type"
                       className="block mb-1 text-sm text-gray-900"
@@ -1234,7 +1253,7 @@ const TaskManagement = () => {
                 </div>
 
                 {/* Submit Button */}
-                <div className="flex justify-center mt-8">
+                <div className="flex justify-center mt-8" id="assignment-submit">
                   <button
                     type="submit"
                     className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60"
@@ -1296,6 +1315,9 @@ const TaskManagement = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Tour Component */}
+      {showTour && <TaskManagementTour onComplete={handleTourComplete} onSwitchView={() => { }} />}
     </>
   );
 };

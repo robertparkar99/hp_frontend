@@ -16,8 +16,12 @@ import {
   CheckCircle,
   TrendingUp,
   Users,
-  Activity
+  Activity,
+  HelpCircle
 } from 'lucide-react';
+import Shepherd from 'shepherd.js';
+import 'shepherd.js/dist/css/shepherd.css';
+import { activityStreamTourSteps, tourStyles } from '@/lib/activityStreamTourSteps';
 import {
   isToday,
   isThisWeek,
@@ -61,6 +65,78 @@ const ActivityStream = () => {
     syear: '',
   });
   const [loading, setLoading] = useState(true);
+  const [showTour, setShowTour] = useState(false);
+
+  // Check if tour should start (only when navigated from sidebar tour)
+  useEffect(() => {
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+    console.log('[ActivityStream] triggerPageTour value:', triggerTour);
+
+    if (triggerTour === 'activity-stream') {
+      console.log('[ActivityStream] Starting page tour automatically');
+      setShowTour(true);
+      // Clean up the flag
+      sessionStorage.removeItem('triggerPageTour');
+    }
+  }, []);
+
+  // Initialize Shepherd tour
+  useEffect(() => {
+    if (showTour) {
+      const tour = new Shepherd.Tour({
+        useModalOverlay: true,
+        defaultStepOptions: {
+          classes: 'shepherd-theme-custom',
+          scrollTo: { behavior: 'smooth', block: 'center' },
+          cancelIcon: {
+            enabled: true
+          }
+        }
+      });
+
+      // Add all steps from the tour steps file
+      activityStreamTourSteps.forEach((step) => {
+        const buttons = step.buttons.map((btn: any) => ({
+          text: btn.text,
+          action: btn.action === 'finish' ? () => {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('activityStreamTourSeen', 'true');
+              localStorage.setItem('activityStreamTourCompleted', 'true');
+            }
+            setShowTour(false);
+            tour.complete();
+          } : btn.action === 'back' ? tour.back : tour.next
+        }));
+
+        tour.addStep({
+          id: step.id,
+          title: step.title,
+          text: step.text,
+          attachTo: step.attachTo,
+          buttons
+        });
+      });
+
+      // Start tour after a small delay to ensure UI is ready
+      setTimeout(() => {
+        tour.start();
+      }, 500);
+
+      return () => {
+        if (tour) {
+          tour.complete();
+        }
+      };
+    }
+  }, [showTour]);
+
+  // Start tour manually
+  const startTour = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('activityStreamTourSeen');
+    }
+    setShowTour(true);
+  };
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -215,6 +291,7 @@ const ActivityStream = () => {
 
   if (loading) {
     return (
+      <div className=" bg-white flex items-center justify-center h-full">
       <div className="h-full bg-white flex items-center justify-center">
         <div className="text-center">
           <p>Loading tasks...</p>
@@ -227,14 +304,14 @@ const ActivityStream = () => {
     <div className="bg-white rounded-xl h-full">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-4">
+        <div className="mb-4" id="tour-header">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
           <p className="text-gray-600 text-sm">Track task progress across your team</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="shafow-lg shadow-blue-200">
+          <Card className="shafow-lg shadow-blue-200" id="tour-stats-total">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -245,7 +322,7 @@ const ActivityStream = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="shafow-lg shadow-blue-200">
+          <Card className="shafow-lg shadow-blue-200" id="tour-stats-pending">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -256,7 +333,7 @@ const ActivityStream = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="shafow-lg shadow-blue-200">
+          <Card className="shafow-lg shadow-blue-200" id="tour-stats-completed">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -267,7 +344,7 @@ const ActivityStream = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="shafow-lg shadow-blue-200">
+          <Card className="shafow-lg shadow-blue-200" id="tour-stats-inprogress">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -284,7 +361,7 @@ const ActivityStream = () => {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Filters */}
-            <Card className="mb-6 shafow-lg shadow-blue-200">
+            <Card className="mb-6 shafow-lg shadow-blue-200" id="tour-filters">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Filter className="w-5 h-5" />
@@ -293,7 +370,7 @@ const ActivityStream = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-2 md:grid-cols-3 gap-4">
-                  <div>
+                  <div id="tour-filter-search">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -305,7 +382,7 @@ const ActivityStream = () => {
                       />
                     </div>
                   </div>
-                  <div>
+                  <div id="tour-filter-status">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
                       <SelectTrigger>
@@ -324,17 +401,17 @@ const ActivityStream = () => {
             </Card>
 
             {/* Task Tabs */}
-            <Tabs defaultValue="today" className="w-full ">
-              <TabsList className="grid w-full grid-cols-3 bg-[#EFF4FF]">
-                <TabsTrigger value="today" className="flex items-center gap-2">
+            <Tabs defaultValue="today" className="w-full " id="tour-tabs">
+              <TabsList className="grid w-full grid-cols-3 bg-[#EFF4FF]" id="tour-tabs-list">
+                <TabsTrigger value="today" className="flex items-center gap-2" id="tour-tab-today">
                   <Calendar className="w-4 h-4" />
                   Today ({filteredTodayTasks.length})
                 </TabsTrigger>
-                <TabsTrigger value="upcoming" className="flex items-center gap-2">
+                <TabsTrigger value="upcoming" className="flex items-center gap-2" id="tour-tab-upcoming">
                   <Clock className="w-4 h-4" />
                   Upcoming ({filteredUpcomingTasks.length})
                 </TabsTrigger>
-                <TabsTrigger value="recent" className="flex items-center gap-2">
+                <TabsTrigger value="recent" className="flex items-center gap-2" id="tour-tab-recent">
                   <CheckCircle className="w-4 h-4" />
                   Recent ({filteredRecentTasks.length})
                 </TabsTrigger>
@@ -407,6 +484,7 @@ const ActivityStream = () => {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

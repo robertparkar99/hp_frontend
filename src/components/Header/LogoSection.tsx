@@ -4,12 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Bot } from 'lucide-react';
+import WelcomeModal from '@/app/content/Onboarding/Competency-Management/WelcomeModal';
 
 export const LogoSection: React.FC = () => {
   const router = useRouter();
   const [userData, setUserData] = useState<any | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
   const [pendingTasksCount, setPendingTasksCount] = useState<number>(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notificationTasks, setNotificationTasks] = useState<any[]>([]);
@@ -264,6 +266,18 @@ export const LogoSection: React.FC = () => {
     // Navigate directly using router instead of events for global functionality
     const routePath = `/content/${path.replace('/page.tsx', '')}`;
     router.push(routePath);
+    (window as any).__currentMenuItem = path;
+    window.dispatchEvent(
+      new CustomEvent("menuSelected", {
+        detail: { menu: path, pageType: "page", access: path },
+      })
+    );
+  };
+
+  const handleStartTour = () => {
+    setIsWelcomeModalOpen(false);
+    // Dispatch event to start the onboarding tour in NewSidebar
+    window.dispatchEvent(new CustomEvent("startOnboardingTour"));
   };
 
   const menuItems = userData?.user_profile_name === "Admin" ? [{ label: "Rights Management", path: "groupWiseRights/page.tsx" }] : [];
@@ -338,6 +352,12 @@ export const LogoSection: React.FC = () => {
               className="bg-white shadow-lg rounded-md border border-gray-200 w-48"
             >
               <ul className="py-0">
+                   <li
+                  onClick={() => setIsWelcomeModalOpen(true)}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700"
+                >
+                  Start Tour
+                </li>
                 {menuItems.map((item, idx) => (
                   <li
                     key={idx}
@@ -476,6 +496,11 @@ export const LogoSection: React.FC = () => {
           <p className="text-sm font-medium">{userData?.user_name}</p>
         )}
       </div>
+       <WelcomeModal
+        isOpen={isWelcomeModalOpen}
+        onClose={() => setIsWelcomeModalOpen(false)}
+        onStartTour={handleStartTour}
+      />
     </div>
   );
 };

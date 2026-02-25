@@ -355,11 +355,11 @@ const MyLearningDashboard: React.FC = () => {
           {/* <Header /> */}
 
           <main className="pt-16 pb-20 md:pb-8">
-            <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+            <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8" id="tour-page-header">
               {/* <Breadcrumb /> */}
 
               {/* Page Header */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 gap-4">
+              <div id="tour-page-header" className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 gap-4">
                 <div className="flex-1 min-w-0">
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-1 sm:mb-2 truncate">My Learning Dashboard</h1>
                   <p className="text-muted-foreground text-sm truncate">
@@ -367,7 +367,7 @@ const MyLearningDashboard: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex-shrink-0">
-                  <Button variant="default" className="w-full sm:w-auto">
+                  <Button variant="default" className="w-full sm:w-auto" id="tour-browse-courses">
                     <Plus className="mr-2 h-4 w-4" /> 
                     <span className="hidden sm:inline">Browse Courses</span>
                     <span className="sm:hidden">Browse</span>
@@ -376,7 +376,7 @@ const MyLearningDashboard: React.FC = () => {
               </div>
 
               {/* Progress Overview Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div id="tour-progress-overview"  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {overviewStats.map((stat, index) => (
                   <ProgressOverviewCard
                     key={index}
@@ -387,7 +387,7 @@ const MyLearningDashboard: React.FC = () => {
 
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
                 {/* Main Content Area */}
-                <div className="lg:col-span-2 order-2 lg:order-1 space-y-6 lg:space-y-8">
+                <div  id="tour-my-courses"className="lg:col-span-2 order-2 lg:order-1 space-y-6 lg:space-y-8">
                   {/* Course Tabs */}
                   <div className="bg-card border border-border rounded-2xl p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
@@ -422,7 +422,7 @@ const MyLearningDashboard: React.FC = () => {
 
                     {/* Course Grid */}
                     {!coursesLoading && (
-                      <div
+                      <div id="tour-course-grid"
                         className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6 overflow-y-auto hide-scrollbar"
                         style={{
                           maxHeight: "500px",
@@ -467,12 +467,18 @@ const MyLearningDashboard: React.FC = () => {
 
                 {/* Left Sidebar */}
                 <div className="lg:col-span-1 space-y-6 order-3 lg:order-2">
+                  <div id="tour-skill-progress">
+                    
                   <SkillProgressTracker />
+                  </div>
+ <div id="tour-learning-calendar">
                   <LearningCalendar />
+                  
+</div>
                 </div>
 
                 {/* Right Sidebar */}
-                <div className="lg:col-span-1 order-4 lg:order-3">
+                <div id="tour-learning-stats"  className="lg:col-span-1 order-4 lg:order-3">
                   <LearningStats />
                 </div>
               </div>

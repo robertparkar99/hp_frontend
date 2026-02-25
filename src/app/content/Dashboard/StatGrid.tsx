@@ -1,13 +1,18 @@
 //
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { MoreVertical, ChevronDown, MoreHorizontal, Building2Icon, UsersIcon, MapPinIcon, BriefcaseIcon, CreditCardIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import { toast } from "@/hooks/use-toast";
+import { Edit, Plus } from "lucide-react";
 import icon from '@/components/AppIcon';
+import { Atom } from "react-loading-indicators"
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
 import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
-import { UserCircle, Search, AlertCircle } from "lucide-react";
+import { UserCircle, Search ,AlertCircle} from "lucide-react";
+import Shepherd, { Tour } from "shepherd.js";
+import 'shepherd.js/dist/css/shepherd.css';
 
 import {
   Dialog,
@@ -228,6 +233,7 @@ export default function Dashboard() {
 
   const [orgData, setOrgData] = useState<any>(null);
   const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [openAssessmentModal, setOpenAssessmentModal] = useState(false);
 
@@ -246,8 +252,29 @@ export default function Dashboard() {
     emp.jobrole?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Add these state variables to your component
+  const [showActions, setShowActions] = useState<number | string | null>(null);
+  const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0 });
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
 
+  // Add these handler functions
+  const handleActionMenuClick = (e: React.MouseEvent, employee: Employee) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenuCoords({
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX,
+    });
+    setShowActions(employee.id);
+    setSelectedEmployee(employee);
+  };
+
+  const handleEditEmployeeMenu = (employee: Employee) => {
+    console.log("Edit employee:", employee);
+    setShowActions(null);
+    // Implement your edit employee logic here
+  };
   // Add this function at the top level of your component (with your other functions)
   const triggerMenuNavigation = (employeeId: number | string | null, menu: string) => {
     ;
@@ -259,6 +286,28 @@ export default function Dashboard() {
     );
   };
 
+
+
+  const handleAssignTaskMenu = (employee: Employee) => {
+    console.log("Assign task to:", employee);
+    setShowActions(null);
+    triggerMenuNavigation(employee.id, 'task/taskManagement.tsx');
+  };
+
+  // Add useEffect to close menu when clicking outside
+  // Add useEffect to close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showActions !== null) {
+        setShowActions(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showActions]);
 
 
 
@@ -301,6 +350,8 @@ export default function Dashboard() {
     inProgress: number;
     total: number;
   } | null>(null);
+// Tour instance ref
+  const tourRef = useRef<Tour | null>(null);
 
   const attrArray = [
     { title: "knowledge", icon: "mdi-book-open-page-variant" },
@@ -338,6 +389,305 @@ export default function Dashboard() {
 
     return () => {
       window.removeEventListener("sidebarStateChange", checkSidebarState);
+    };
+  }, []);
+
+  // Initialize Shepherd.js tour
+  useEffect(() => {
+    // Check if we should trigger the tour (from sidebar tour navigation)
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+
+    // Store whether tour should start
+    const shouldStartTour = triggerTour === 'dashboard';
+
+    // Clear the trigger flag
+    if (triggerTour) {
+      sessionStorage.removeItem('triggerPageTour');
+      console.log('Triggering dashboard tour from navigation...');
+    }
+
+    // Don't start tour if not triggered from sidebar
+    if (!shouldStartTour) {
+      console.log('Tour not triggered, skipping...');
+      return;
+    }
+
+    // Create the tour
+    const tour = new Shepherd.Tour({
+      defaultStepOptions: {
+        cancelIcon: {
+          enabled: true
+        },
+        classes: 'shepherd-theme-custom',
+        scrollTo: {
+          behavior: 'smooth',
+          block: 'center'
+        },
+        modalOverlayOpeningPadding: 10,
+        modalOverlayOpeningRadius: 8
+      },
+      useModalOverlay: true,
+      exitOnEsc: true,
+      keyboardNavigation: true
+    });
+
+    // Define tour steps with proper typing
+    const steps = [
+      {
+        id: 'welcome',
+        title: 'Welcome to Your Dashboard!',
+        text: 'Let\'s take a quick tour to help you navigate through all the amazing features available to you.',
+        attachTo: {
+          element: '#tour-header',
+          on: 'bottom' as const
+        },
+        buttons: [
+          {
+            text: 'Skip Tour',
+            action: () => {
+              localStorage.setItem('dashboardTourCompleted', 'true');
+              tour.cancel();
+            },
+            classes: 'shepherd-button-secondary'
+          },
+          {
+            text: 'Start Tour',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'stats',
+        title: 'Key Statistics',
+        text: 'Here you can see your key metrics at a glance: Total Employees, Mapped Jobroles, and Total Skills.',
+        attachTo: {
+          element: '#tour-stats',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'chart',
+        title: 'Weekly Task Progress',
+        text: 'This chart shows your weekly task progress. Completed tasks appear in dark blue, in-progress in medium blue, and pending in light blue.',
+        attachTo: {
+          element: '#tour-chart',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'skills-heatmap',
+        title: 'Enterprise Skills Heatmap',
+        text: 'View skills gaps across departments. Click on any cell to drill down into detailed gap analysis.',
+        attachTo: {
+          element: '#tour-skills-heatmap',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'attendance-matrix',
+        title: 'Employee Attendance Matrix',
+        text: 'Track and manage employee attendance efficiently. Click on data points to view skill details.',
+        attachTo: {
+          element: '#tour-attendance-matrix',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'skill-profile',
+        title: 'My Skill Profile',
+        text: 'View your skills endorsed by peers and managers. Click "View More" to see detailed skill information.',
+        attachTo: {
+          element: '#tour-skill-profile',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'growth-opportunities',
+        title: 'Growth Opportunities',
+        text: 'Track your current role proficiency and view growth opportunities based on your skills.',
+        attachTo: {
+          element: '#tour-growth-opportunities',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'employee-table',
+        title: 'Employee Directory',
+        text: 'This table displays all employees. You can search, filter, and view employee details here.',
+        attachTo: {
+          element: '#tour-employee-table',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'today-tasks',
+        title: 'Today\'s Tasks',
+        text: 'View and manage your tasks for today. Click the + button to create new tasks.',
+        attachTo: {
+          element: '#tour-today-tasks',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'weekly-tasks',
+        title: 'Weekly Tasks',
+        text: 'Switch to this tab to view your weekly task progress and upcoming tasks.',
+        attachTo: {
+          element: '#tour-weekly-tasks',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'course-list',
+        title: 'Course List',
+        text: 'Browse available courses. Click the + button to add new courses.',
+        attachTo: {
+          element: '#tour-course-list',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Next',
+            action: () => tour.next()
+          }
+        ]
+      },
+      {
+        id: 'assessment-list',
+        title: 'Assessment List',
+        text: 'View and manage assessments. Click the + button to create new assessments.',
+        attachTo: {
+          element: '#tour-assessment-list',
+          on: 'top' as const
+        },
+        buttons: [
+          {
+            text: 'Back',
+            action: () => tour.back()
+          },
+          {
+            text: 'Finish',
+            action: () => {
+              localStorage.setItem('dashboardTourCompleted', 'true');
+              tour.complete();
+            }
+          }
+        ]
+      }
+    ];
+
+    // Add steps to tour
+    steps.forEach(step => tour.addStep(step));
+
+    // Store tour reference
+    tourRef.current = tour;
+
+    // Start tour after a short delay to ensure DOM is ready
+    const startTimer = setTimeout(() => {
+      console.log('Starting dashboard tour...');
+      tour.start();
+    }, 1000);
+
+    return () => {
+      clearTimeout(startTimer);
+      if (tourRef.current) {
+        tourRef.current.cancel();
+        tourRef.current = null;
+      }
     };
   }, []);
 
@@ -1078,6 +1428,13 @@ export default function Dashboard() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-600">
+        <Atom color="#525ceaff" size="medium" text="" textColor="" />
+      </div>
+    );
+  }
   const currentPercent =
     maxLevel > 0 ? Math.min(100, Math.round((currentLevel / maxLevel) * 100)) : 0;
 
@@ -1085,7 +1442,7 @@ export default function Dashboard() {
   return (
     <div className={`min-h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-0 md:ml-60" : "ml-0 md:ml-10"}`}>
       {/* 🔹 Header: Welcome + Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl shadow p-4 mb-6 gap-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl shadow p-4 mb-6 gap-4 " id="tour-header">
 
         {/* Welcome with icon */}
         <div className="flex items-center gap-2">
@@ -1096,7 +1453,7 @@ export default function Dashboard() {
         </div>
 
         {/* Search bar */}
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-full sm:w-64" id="tour-search">
           <input
             type="text"
             placeholder="Search employees..."
@@ -1114,7 +1471,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow p-6">
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Stats Section */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 divide-x divide-y border rounded-lg overflow-hidden flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 divide-x divide-y border rounded-lg overflow-hidden flex-1" id="tour-stats">
                 <div className="flex items-center gap-3 border-b border-r pb-4 pr-6">
                   <div className="flex items-center gap-3 p-4">
                     <div className="w-9 h-9 rounded bg-blue-300 mb-7" />
@@ -1154,7 +1511,7 @@ export default function Dashboard() {
               </div>
 
               {/* Chart */}
-              <div className="bg-white rounded-lg shadow p-4">
+              <div className="bg-white rounded-lg shadow p-4" id="tour-chart">
                 <div className="flex-1">
                   <div className="flex items-center justify-center gap-2 mb-4">
                     <h2 className="font-semibold text-center">Task Progress</h2>
@@ -1345,8 +1702,8 @@ export default function Dashboard() {
             // Admin view - Skills Heatmap
             <div className="grid grid-cols-1 gap-4">
               {/* Left: Enterprise Skills Heatmap */}
-              <div className="bg-white rounded-xl shadow p-4">
-                <h2 className="font-semibold text-lg mb-2">Skills Heatmap</h2>
+              <div className="bg-white rounded-xl shadow p-4" id="tour-skills-heatmap">
+                <h2 className="font-semibold text-lg mb-2">Department Skills Heatmap</h2>
 
                 {/* Legend */}
                 <div className="flex gap-4 text-sm mb-3">
@@ -1550,7 +1907,7 @@ export default function Dashboard() {
             // Non-admin view - Skill Profile and Growth Opportunities
             <div className="space-y-6">
               {/* My Skill Profile */}
-              <div className="p-4 bg-white rounded-lg shadow min-h-[27.5rem] h-110 md:h-128 overflow-y-auto hide-scroll">
+              <div className="p-4 bg-white rounded-lg shadow min-h-[27.5rem] h-110 md:h-128 overflow-y-auto hide-scroll" id="tour-skill-profile">
                 <h2 className="font-semibold text-lg flex items-center gap-2 mb-1">
                   <span>🧑‍💻</span> My Skill Profile
                 </h2>
@@ -1699,7 +2056,7 @@ export default function Dashboard() {
                 </DialogContent>
               </Dialog>
               {/* My Growth Opportunities */}
-              <div className="bg-white border rounded-xl p-5 w-full col-span-12 -mx-1 px-6">
+              <div className="bg-white border rounded-xl p-5 w-full col-span-12 -mx-1 px-6" id="tour-growth-opportunities">
                 <h2 className="font-semibold text-lg flex items-center gap-2 mb-2">
                   ⊚ My Growth Opportunities
                 </h2>
@@ -1756,7 +2113,7 @@ export default function Dashboard() {
             </div>
           )}
           {/* Employee Table - Full width row */}
-          <div className="col-span-full md:col-span-9 bg-white rounded-xl shadow min-h-[24rem] h-96 md:h-[28rem] overflow-x-auto md:overflow-x-visible overflow-y-auto hide-scroll mb-15 ">
+          <div className="col-span-full md:col-span-9 bg-white rounded-xl shadow min-h-[24rem] h-96 md:h-[28rem] overflow-x-auto md:overflow-x-visible overflow-y-auto hide-scroll mb-15 " id="tour-employee-table">
               {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
 
               {/* Table Headers with Search Fields */}
@@ -1862,7 +2219,7 @@ export default function Dashboard() {
         </div>
 
         {/* Right Section - Adjust column span based on sidebar state */}
-        <div className="col-span-full md:col-span-3 space-y-6">
+        <div className="col-span-full md:col-span-3 space-y-6" id="tour-tasks">
           <div className="bg-white rounded-lg shadow">
             {/* Tab Navigation */}
             <div className="flex border-b">
@@ -1884,7 +2241,7 @@ export default function Dashboard() {
             <div className="p-4">
               {/* Today's Tasks */}
               {(selectedWidget === "Today Task List" || !selectedWidget) && (
-                <div className="h-48 sm:h-56 md:h-64 overflow-y-auto hide-scroll">
+                <div className="h-48 sm:h-56 md:h-64 overflow-y-auto hide-scroll" id="tour-today-tasks">
                   {/* Header with + button */}
                   <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white dark:bg-gray-900">
                     <h2 className="font-semibold">Today's Task Progress</h2>
@@ -1957,7 +2314,7 @@ export default function Dashboard() {
 
               {/* Weekly Tasks */}
               {selectedWidget === "Week Task List" && (
-                <div className="h-52 sm:h-60 md:h-72 overflow-y-auto hide-scroll">
+                <div className="h-52 sm:h-60 md:h-72 overflow-y-auto hide-scroll" id="tour-weekly-tasks">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-semibold">Weekly Task Progress</h2>
 
@@ -2030,7 +2387,7 @@ export default function Dashboard() {
           </div>
           <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
             {/* Course List */}
-            <div className=" bg-white rounded-lg shadow h-80 sm:h-125 overflow-y-auto hide-scroll">
+            <div className=" bg-white rounded-lg shadow h-80 sm:h-125 overflow-y-auto hide-scroll" id="tour-course-list">
               {/* Header with + button */}
               <div className="sticky top-0 z-10 flex items-center justify-between mb-4 px-4 pt-2 pb-1 bg-white shadow-sm">
                 <h2 className="font-semibold">Course List</h2>
@@ -2066,7 +2423,7 @@ export default function Dashboard() {
             />
 
             {/* Assessment List */}
-            <div className="bg-white rounded-lg shadow h-64 sm:h-95 overflow-y-auto hide-scroll">
+            <div className="bg-white rounded-lg shadow h-64 sm:h-95 overflow-y-auto hide-scroll" id="tour-assessment-list">
               {/* Header with + button */}
               <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white px-2 pt-2 pb-1 shadow-sm">
                 <h2 className="font-semibold">Assessment List</h2>
@@ -2078,21 +2435,58 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {assessments.length > 0 ? (
-                assessments.slice(0, 5).map(assessment => (
-                  <div key={assessment.id} className="mb-4 border-l-2 pl-3 border-green-300">
-                    <span className="text-xs font-semibold px-2 py-1 rounded text-green-700 bg-green-100 border-green-400">
-                      {assessment.category.toLowerCase().includes('task') ? 'Task-Based' : 'Skill-Based'}: {assessment.category}
-                    </span>
-                    <p className="mt-2">{assessment.title}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div>
-                        <p className="text-sm font-medium">{assessment.jobrole}</p>
-                        <p className="text-xs text-gray-400">{assessment.description}</p>
+              {weekTasks.length > 0 ? (
+                weekTasks.map((task, index) => {
+                  // ✅ Define color mapping
+                  const badgeColors: Record<string, string> = {
+                    Hard: "text-red-700 bg-red-500 border-red-400",
+                    Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
+                    Low: "text-green-700 bg-green-500 border-green-400",
+                  };
+
+                  return (
+                    <div key={index} className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+                      }`}>
+                      {/* Badge */}
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+                        }`}>
+                        {task.task_type}
+                      </span>
+
+                      {/* Title */}
+                      <p className="mt-2">{task.task_title}</p>
+
+                      {/* Profile */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <img
+                          src={
+                            task.image && task.image !== ""
+                              ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                              : placeholderImage
+                          }
+                          alt={task.allocatedUser}
+                          className="w-8 h-8 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                          }}
+                        />
+                        <div>
+                          <p className="text-sm font-medium">{task.allocatedUser}</p>
+                          <p className="text-xs text-gray-400">
+                            {(() => {
+                              if (!task.task_date) return "";
+                              const d = new Date(task.task_date);
+                              const day = String(d.getDate()).padStart(2, "0");
+                              const month = String(d.getMonth() + 1).padStart(2, "0");
+                              const year = d.getFullYear();
+                              return `${day}-${month}-${year}`;
+                            })()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               ) : (
                 <p className="text-gray-500 text-sm">No assessments available</p>
               )}
@@ -2126,3 +2520,74 @@ function triggerMenuNavigation(id: string | number, arg1: string) {
   throw new Error("Function not implemented.");
 }
 
+// Custom CSS for Shepherd tour
+const tourStyles = `
+  .shepherd-theme-custom {
+    --shepherd-theme-primary: #3080ff;
+    --shepherd-theme-secondary: #6c757d;
+  }
+
+  .shepherd-theme-custom .shepherd-header {
+    background: #007BE5;
+    color: white;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .shepherd-theme-custom .shepherd-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: white;
+  }
+
+  .shepherd-theme-custom .shepherd-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #171717;
+    padding: 16px;
+  }
+
+  .shepherd-theme-custom .shepherd-button {
+    background: #007BE5;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .shepherd-theme-custom .shepherd-button:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+  }
+
+  .shepherd-theme-custom .shepherd-button-secondary {
+    background: #007BE5 !important;
+  }
+
+  .shepherd-theme-custom .shepherd-button-secondary:hover {
+    background: #0056b3 !important;
+  }
+
+  .shepherd-theme-custom .shepherd-cancel-icon {
+    color: white;
+    font-size: 20px;
+  }
+
+  .shepherd-has-title .shepherd-content .shepherd-header {
+    background: #546ee5;
+    padding: 1em;
+  }
+
+  .shepherd-theme-custom .shepherd-element {
+    box-shadow: 0 8px 32px rgba(0, 123, 229, 0.3);
+    border-radius: 12px;
+  }
+`;
+
+// Inject styles into document head
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = tourStyles;
+  document.head.appendChild(styleSheet);
+}

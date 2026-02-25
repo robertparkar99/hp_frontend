@@ -289,10 +289,11 @@ const SearchAndFilters = ({
   );
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+    <div id="search-filters-container"  className="bg-card border border-border rounded-lg p-6 space-y-4">
       {/* Search Bar and Buttons */}
       <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0">
         <Input
+          id="search-input"
           type="search"
           placeholder="Search employees by Name, Department, Job Role, Email, Skills..."
           value={searchTerm}
@@ -303,11 +304,14 @@ const SearchAndFilters = ({
           <Button
             variant="outline"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            iconName="Filter"
+            iconPosition="left"
           >
             <Icon name="Filter" size={16} />
             Filters {getActiveFiltersCount() > 0 && `(${getActiveFiltersCount()})`}
           </Button>
           <Button
+            id="export-button"
             variant="outline"
             onClick={onExport}
             disabled={true}

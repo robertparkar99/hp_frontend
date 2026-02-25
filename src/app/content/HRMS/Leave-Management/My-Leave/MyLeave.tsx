@@ -18,6 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { startMyLeaveTour } from "./MyLeaveTourSteps";
 
 type AcademicYear = {
   id: number;
@@ -130,6 +131,24 @@ const MyLeave = () => {
     fetchLeaves();
   }, [selectedYear, sessionData.url, sessionData.subInstituteId, sessionData.userId]);
 
+  // 🔹 Tour trigger effect - starts tour only when triggered via sidebar
+  useEffect(() => {
+    // Check if this page tour was triggered
+    const triggerValue = sessionStorage.getItem('triggerPageTour');
+
+    // Only start tour if triggered via sidebar navigation (not on page refresh)
+    if (triggerValue === 'true' || triggerValue === 'my-leave') {
+      console.log('My Leave tour triggered via sidebar');
+      // Clear the trigger flag to prevent re-triggering
+      sessionStorage.removeItem('triggerPageTour');
+
+      // Start the tour after a short delay to ensure DOM is fully rendered
+      setTimeout(() => {
+        startMyLeaveTour();
+      }, 1000);
+    }
+  }, []);
+
   const getStatusColor = (status: string | null) => {
     switch (status?.toLowerCase()) {
       case "approved":
@@ -213,7 +232,7 @@ const MyLeave = () => {
   );
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6" id="tour-header">
       {/* Leave Balance Cards */}
       {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {Object.keys(leaveBalance).map((type) => (
@@ -257,7 +276,7 @@ const MyLeave = () => {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-55">
+                <SelectTrigger className="w-55" id="tour-year-filter">
                   <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
                 <SelectContent>
@@ -274,7 +293,7 @@ const MyLeave = () => {
       </Card>
 
       {/* Leave History */}
-      <Card className="card-elevated">
+      <Card className="card-elevated " id="tour-leave-history">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -288,8 +307,8 @@ const MyLeave = () => {
                 No leave records found.
               </p>
             )}
-            {leaves.map((leave) => (
-              <Card key={leave.id} className="card-simple">
+            {leaves.map((leave ,index) => (
+              <Card key={leave.id} className="card-simple" id={index === 0 ? 'tour-leave-card' : undefined}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -297,7 +316,7 @@ const MyLeave = () => {
                         <h3 className="font-semibold text-foreground">
                           {leave.leave_type_name}
                         </h3>
-                        <Badge className={getStatusColor(leave.status)}>
+                        <Badge className={getStatusColor(leave.status)} id={index === 0 ? 'tour-leave-status' : undefined}>
                           {leave.status ?? "N/A"}
                         </Badge>
                       </div>
@@ -325,7 +344,7 @@ const MyLeave = () => {
                     </div>
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" id={index === 0 ? 'tour-view-details' : undefined}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </Button>

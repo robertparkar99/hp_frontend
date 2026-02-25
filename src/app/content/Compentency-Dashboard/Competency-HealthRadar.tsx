@@ -63,7 +63,7 @@ export function CompetencyRadar() {
   }
 
   return (
-    <Card className="shadow-card">
+    <Card className="shadow-card" id="tour-competency-radar">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           Competency Health Radar
@@ -417,7 +417,7 @@ export const FunnelDashboard = () => {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6 space-y-6">
+    <div className="w-full max-w-6xl mx-auto p-6 space-y-6" id="tour-skills-funnel">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>

@@ -777,7 +777,12 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Tour } from 'shepherd.js';
+import {
+  salaryStructureTourSteps,
+  createSalaryStructureTour
+} from './SalaryStructureTourSteps';
 import EmployeeSelector from "../../../User-Attendance/components/EmployeeSelector";
 import "react-datepicker/dist/react-datepicker.css";
 import { Search, Printer } from "lucide-react";
@@ -889,6 +894,12 @@ const SalaryStructure: React.FC = () => {
     userId: "",
   });
 
+  // Tour instance ref
+  const tourInstanceRef = useRef<Tour | null>(null);
+
+  // Check if tour should be triggered
+  const shouldStartTour = useRef<boolean>(false);
+
   // Load session data
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -903,6 +914,74 @@ const SalaryStructure: React.FC = () => {
         userId: user_id,
       });
     }
+  }, []);
+
+  // Tour trigger logic - only start when triggered by sidebar tour
+  useEffect(() => {
+    // Check if tour was completed
+    const tourCompleted = sessionStorage.getItem('salaryStructureTourCompleted');
+
+    // Check URL params for startTour
+    const urlParams = new URLSearchParams(window.location.search);
+    const startTourParam = urlParams.get('startTour');
+
+    // Check sessionStorage trigger from sidebar
+    const triggerPageTour = sessionStorage.getItem('triggerPageTour');
+
+    console.log('[SalaryStructure Tour] Checking tour trigger:', {
+      tourCompleted,
+      startTourParam,
+      triggerPageTour
+    });
+
+    // Only start tour if:
+    // 1. URL has startTour=true (triggered from sidebar)
+    // 2. triggerPageTour is 'salary-structure' or 'true'
+    // 3. Tour hasn't been completed yet
+    if (
+      (startTourParam === 'true' || triggerPageTour === 'salary-structure' || triggerPageTour === 'true')
+      && !tourCompleted
+    ) {
+      shouldStartTour.current = true;
+      console.log('[SalaryStructure Tour] Tour will be started');
+    } else {
+      console.log('[SalaryStructure Tour] Tour will NOT start:', {
+        reason: tourCompleted ? 'Tour already completed' : 'Not triggered'
+      });
+    }
+  }, []);
+
+  // Initialize and start tour after component mounts
+  useEffect(() => {
+    // Delay to ensure DOM is rendered
+    const timer = setTimeout(() => {
+      if (shouldStartTour.current && !sessionStorage.getItem('salaryStructureTourCompleted')) {
+        console.log('[SalaryStructure Tour] Starting tour...');
+
+        // Create tour instance
+        tourInstanceRef.current = createSalaryStructureTour();
+
+        // Start tour from first step
+        tourInstanceRef.current.start();
+
+        // Clear the trigger flags
+        sessionStorage.removeItem('triggerPageTour');
+
+        // Clear URL param without reload
+        window.history.replaceState({}, '', window.location.pathname);
+
+        console.log('[SalaryStructure Tour] Tour started successfully');
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      // Cancel tour on cleanup
+      if (tourInstanceRef.current) {
+        tourInstanceRef.current.cancel();
+        tourInstanceRef.current = null;
+      }
+    };
   }, []);
 
   // Reset employees when departments change
@@ -1371,7 +1450,7 @@ const SalaryStructure: React.FC = () => {
     },
     {
       name: (
-        <div>
+        <div id="column-empno">
           <div>Emp No</div>
           <input
             type="text"
@@ -1387,7 +1466,7 @@ const SalaryStructure: React.FC = () => {
     },
     {
       name: (
-        <div>
+        <div id="column-empname">
           <div>Employee Name</div>
           <input
             type="text"
@@ -1403,7 +1482,7 @@ const SalaryStructure: React.FC = () => {
     },
     {
       name: (
-        <div>
+        <div id="column-department">
           <div>Department</div>
           <input
             type="text"
@@ -1419,7 +1498,7 @@ const SalaryStructure: React.FC = () => {
     },
     {
       name: (
-        <div>
+        <div id="column-gender">
           <div>Gender</div>
           <input
             type="text"
@@ -1435,7 +1514,7 @@ const SalaryStructure: React.FC = () => {
     },
     {
       name: (
-        <div>
+        <div id="column-status">
           <div>Status</div>
           <input
             type="text"
@@ -1451,21 +1530,23 @@ const SalaryStructure: React.FC = () => {
     },
   ];
 
-  const payrollColumns: TableColumn<SalaryData>[] = payrollTypes.map((pt) => {
+  const payrollColumns: TableColumn<SalaryData>[] = payrollTypes.map((pt, index) => {
     const indicator = pt.payroll_type === 1 ? "+1" : pt.payroll_type === 2 ? "-1" : "";
 
     return {
       name: (
-        <div className="text-center">
+        <div id={`column-payroll-${pt.id}`} className="text-center">
           <div>{pt.payroll_name}</div>
           <div className="text-xs text-gray-500">{indicator}</div>
         </div>
       ),
       cell: (row, rowIndex) => (
+          <div id={`column-payroll-cell-${pt.id}`}>
         <EditableInput
           value={row.payrollValues[pt.id] || 0}
           onChange={(value) => handlePayrollChange(rowIndex, pt.id, value)}
         />
+</div>
       ),
       sortable: true,
       width: "130px",
@@ -1474,7 +1555,11 @@ const SalaryStructure: React.FC = () => {
   });
 
   const grossColumn: TableColumn<SalaryData> = {
-    name: "Gross Total",
+    name: (
+      <div id="column-gross-total">
+        Gross Total
+      </div>
+    ),
     selector: (row) => row.grossTotal,
     sortable: true,
     width: "150px",
@@ -1509,11 +1594,12 @@ const SalaryStructure: React.FC = () => {
     <div className="p-4 sm:p-6 space-y-6 bg-background rounded-xl">
       {/* Header */}
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+      <div id="salary-structure-header"  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground">Salary Structure Management</h1>
         {date && date.getFullYear() !== 2026 && (
           <div className="flex items-center gap-3">
             <Button
+              id="rollover-button"
               onClick={handleRollover}
               className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2 w-full sm:w-auto"
             >
@@ -1525,7 +1611,7 @@ const SalaryStructure: React.FC = () => {
 
       {/* Filters */}
       <div className="flex flex-col lg:flex-row gap-6 w-full">
-        <div className="flex-1">
+        <div id="department-selector" className="flex-1">
           <label className="block font-semibold mb-2">Select Department</label>
           <EmployeeSelector
             multiSelect
@@ -1540,10 +1626,11 @@ const SalaryStructure: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row gap-4 items-start w-full lg:w-auto">
           <div className="flex flex-col w-full sm:w-48 mt-8">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label id="employee-status-label"  className="block text-sm font-medium text-gray-700 mb-2">
               Employee Status
             </label>
             <select
+             id="employee-status"
               value={employeeStatus}
               onChange={(e) => setEmployeeStatus(e.target.value)}
               className="border p-2 rounded w-full"
@@ -1555,6 +1642,7 @@ const SalaryStructure: React.FC = () => {
           </div>
 
           <Button
+            id="search-button"
             onClick={fetchData}
             disabled={loading}
             className="px-6 py-2 rounded-lg flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-14"
@@ -1566,7 +1654,7 @@ const SalaryStructure: React.FC = () => {
       </div>
 
       {/* Export buttons */}
-      <div className="flex gap-3 flex-wrap justify-end">
+      <div id="export-buttons" className="flex gap-3 flex-wrap justify-end">
         <Button
           onClick={() => window.print()}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
@@ -1594,7 +1682,8 @@ const SalaryStructure: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div>
+      <div id="salary-data-table">
+          <div id="payroll-columns-info" className="hidden"></div>
         <div className="px-6 py-4">
           <h2 className="text-lg font-semibold">Employee Salary Structure</h2>
           <p className="text-sm text-gray-600">
@@ -1621,6 +1710,7 @@ const SalaryStructure: React.FC = () => {
         {data.length > 0 && (
           <div className="flex justify-end mt-4">
             <Button
+              id="submit-button"
               onClick={handleSubmitSalaryStructure}
               disabled={submitting}
               className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition-colors"

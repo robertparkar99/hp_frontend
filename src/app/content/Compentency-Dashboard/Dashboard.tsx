@@ -8,6 +8,7 @@ import AlignmentWidget from "./Alignment-Standardization";
 import CombinedDashboard from "./Competency-HealthRadar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, Users, Calendar, Target, ChevronDown, TrendingDown, Minus, Filter, Briefcase } from "lucide-react";
+import { initializeTour, isTourCompleted, resetTour } from "./CompetencyDashboardTour";
 
 // UI Components (simplified versions for single file)
 const Badge = ({ className, variant, children, ...props }: any) => (
@@ -679,6 +680,26 @@ export default function MainDashboard() {
     setActiveTab("balance-equity");
   }, []);
 
+  // Initialize tour only when triggered via sidebar tour flow
+  useEffect(() => {
+    // Check if tour was triggered via sidebar tour flow
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+
+    if (triggerTour && !isTourCompleted()) {
+      // Clear the trigger flag immediately to prevent re-triggering
+      sessionStorage.removeItem('triggerPageTour');
+
+      const timer = setTimeout(() => {
+        // Pass setActiveTab as tab switcher callback
+        const tour = initializeTour((tabId: string) => {
+          setActiveTab(tabId);
+        });
+        tour.start();
+      }, 1000); // Delay to allow elements to render
+      return () => clearTimeout(timer);
+    }
+  }, [setActiveTab]);
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "balance-equity":
@@ -695,9 +716,24 @@ export default function MainDashboard() {
   };
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
+    <div className="p-6 bg-slate-50 min-h-screen" id="tour-dashboard-container">
       {/* Top KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+      {/* Tour Controls */}
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => {
+            resetTour();
+            const tour = initializeTour((tabId: string) => {
+              setActiveTab(tabId);
+            });
+            tour.start();
+          }}
+          className="text-xs text-blue-500 hover:text-blue-700 underline"
+        >
+          Restart Tour
+        </button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6" id="tour-kpi-cards">
         {KPIS.map((kpi, i) => (
           <Card key={i} className="shadow-sm border rounded-xl bg-white/90">
             <CardContent className="p-4 flex flex-col justify-between">
@@ -711,11 +747,12 @@ export default function MainDashboard() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="mb-6">
+      <div className="mb-6" id="tour-navigation-tabs">
         <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg">
           {NAVIGATION_TABS.map((tab) => (
             <button
               key={tab.id}
+              id={`tour-tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 py-2 px-3 text-xs font-medium rounded-md transition-all duration-200 ${
                 activeTab === tab.id
@@ -930,7 +967,7 @@ function BalanceEquityView() {
       {/* First Row: Side by Side Layout (60-40 ratio) */}
       <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
         {/* Workload Heatmap */}
-        <Card className="shadow-sm border rounded-xl">
+        <Card className="shadow-sm border rounded-xl" id="tour-workload-heatmap">
           <CardContent className="p-5">
             <h3 className="text-lg font-semibold mb-1">Workload Equity Heatmap</h3>
             <p className="text-xs text-slate-400 mb-4">Task volume vs skill requirement</p>
@@ -969,7 +1006,7 @@ function BalanceEquityView() {
         </Card>
 
         {/* Coverage Scorecards */}
-        <Card className="shadow-sm border rounded-xl">
+        <Card className="shadow-sm border rounded-xl" id="tour-task-risk-analysis">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -1007,7 +1044,7 @@ function BalanceEquityView() {
       </div>
 
       {/* Second Row: Role Similarity Network (Full Width) */}
-      <Card className="shadow-sm border rounded-xl">
+      <Card className="shadow-sm border rounded-xl" id="tour-role-similarity-network">
         <CardContent className="p-5">
           <div className="flex justify-between items-start mb-4">
             <div>

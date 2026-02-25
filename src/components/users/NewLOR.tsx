@@ -65,7 +65,7 @@ export default function Index({ SelLOR }: SelLORProps) {
     <div className="w-full flex flex-col items-center space-y-4 sm:space-y-6 md:space-y-8 px-2 sm:px-4 py-4 sm:py-6 md:py-8">
       {/* TOP SELECTION TABS */}
       <div className="w-full max-w-6xl mx-auto">
-        <div
+        <div  id="lor-tabs-container"
           className="rounded-xl sm:rounded-2xl border-2 border-blue-500/80 bg-[#f6faff] shadow-lg backdrop-blur-lg"
           style={{
             boxShadow: "2px 3px 8px 6px rgba(193, 193, 193, 0.25)",
@@ -75,6 +75,7 @@ export default function Index({ SelLOR }: SelLORProps) {
             {sections.map((section, i) => (
               <React.Fragment key={i}>
                 <div
+                 id={`lor-tab-${section.key}`}
                   onClick={() => setActiveSection(section.key)}
                   className={`flex flex-col items-center space-y-2 sm:space-y-3 px-2 sm:px-4 cursor-pointer transition-transform hover:scale-105 ${
                     activeSection === section.key ? "scale-105" : ""
@@ -102,6 +103,7 @@ export default function Index({ SelLOR }: SelLORProps) {
           activeSection
         ) && (
           <div
+          id="lor-level-badge"
             className="rounded-xl sm:rounded-2xl border-2 border-[#A4D0FF] flex items-center justify-start px-3 sm:px-4 py-2 mt-4 sm:mt-6 shadow-sm"
             style={{
               background:
@@ -119,10 +121,10 @@ export default function Index({ SelLOR }: SelLORProps) {
       {/* DESCRIPTION SECTION */}
       {/* DESCRIPTION SECTION */}
 {activeSection === "description" && (
-  <div className="w-full max-w-6xl mx-auto mt-4 sm:mt-6 px-2 sm:px-4">
+  <div id="lor-description-section" className="w-full max-w-6xl mx-auto mt-4 sm:mt-6 px-2 sm:px-4">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
       {descriptionCards.map((card, index) => (
-        <div
+        <div id={`lor-description-card-${index}`}
           key={index}
           className="relative w-full min-h-[250px] sm:min-h-[280px] md:h-[300px] rounded-xl sm:rounded-[18px] overflow-hidden text-justify"
         >
@@ -165,12 +167,12 @@ export default function Index({ SelLOR }: SelLORProps) {
 
       {/* RESPONSIBILITY SECTION */}
       {activeSection === "responsibility" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-6xl px-2 sm:px-4 mt-4 w-full">
+        <div id="lor-responsibility-section"  className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-6xl px-2 sm:px-4 mt-4 w-full">
           {dataLor?.Attributes &&
             Object.entries(dataLor.Attributes)
               .filter(([_, item]) => cleanText(item?.attribute_overall_description)?.trim())
               .map(([key, item]: [string, AttributeItem]) => (
-                <div
+                <div  id={`lor-attribute-${key}`}
                   key={key}
                   className="bg-white border-2 border-blue-200 p-4 sm:p-6 rounded-xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 duration-300"
                   style={{ height: "fit-content" }} // 👈 fit content
@@ -188,12 +190,12 @@ export default function Index({ SelLOR }: SelLORProps) {
 
       {/* BUSINESS SKILLS SECTION */}
       {activeSection === "business" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-6xl px-2 sm:px-4 mt-4 w-full">
+        <div id="lor-business-section" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-6xl px-2 sm:px-4 mt-4 w-full">
           {dataLor?.Business_skills &&
             Object.entries(dataLor.Business_skills)
               .filter(([_, item]) => cleanText(item?.attribute_overall_description)?.trim())
               .map(([key, item]: [string, AttributeItem]) => (
-                <div
+                <div id={`lor-business-skill-${key}`}
                   key={key}
                   className="bg-white border-2 border-blue-200 p-4 sm:p-6 rounded-xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 duration-300"
                   style={{ height: "fit-content" }} // 👈 fit content

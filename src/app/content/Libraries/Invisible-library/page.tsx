@@ -17,7 +17,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription
+  
 } from "@/components/ui/dialog";
+
+import ShepherdTour from "../../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "../../../../lib/tourSteps";
 
 import {
   Eye,
@@ -45,6 +49,10 @@ type InvisibleItem = {
   title: string;
   description: string;
 };
+
+interface InvisibleLibraryPageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
 
 /* ---------------- ANIMATION VARIANTS ---------------- */
 
@@ -85,7 +93,7 @@ const modalInnerVariants = {
 
 /* ---------------- COMPONENT ---------------- */
 
-export default function InvisibleLibraryPage() {
+export default function InvisibleLibraryPage({ showDetailTour }: InvisibleLibraryPageProps) {
   const [data, setData] = useState<InvisibleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +108,9 @@ export default function InvisibleLibraryPage() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InvisibleItem | null>(null);
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
 
   const safeArray = (d: any) =>
     Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
@@ -152,6 +163,13 @@ export default function InvisibleLibraryPage() {
   useEffect(() => {
     if (sessionData.url && sessionData.token) fetchData();
   }, [sessionData.url, sessionData.token, fetchData]);
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
   /* ---------------- GROUP BY TYPE ---------------- */
 
@@ -310,6 +328,19 @@ export default function InvisibleLibraryPage() {
           )}
         </AnimatePresence>
       </Dialog>
+
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps('Invisible')}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
+        />
+      )}
     </motion.div>
   );
 }

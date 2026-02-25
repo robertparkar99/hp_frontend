@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+
+import { useState, useEffect, useMemo, useRef } from "react";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import EmployeeSelector from "../../../User-Attendance/components/EmployeeSelector";
 import { Employee } from "../../../User-Attendance/types/attendance";
@@ -16,6 +17,13 @@ import { Search, Printer, Eye, Save, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import Shepherd from "shepherd.js";
+import 'shepherd.js/dist/css/shepherd.css';
+import { createMonthlyPayrollTour, monthlyPayrollTourStyles } from "./MonthlyPayrollTourSteps";
+
+// Define Shepherd Tour type
+type ShepherdTour = InstanceType<typeof Shepherd.Tour>;
+
 // Employee Data Type
 type EmployeeData = {
   id: number;
@@ -75,6 +83,12 @@ export default function MonthlyPayrollPage() {
     orgType: "",
     userId: "",
   });
+
+  // Tour state
+  const tourRef = useRef<ShepherdTour | null>(null);
+  const [isTourActive, setIsTourActive] = useState(false);
+  const tourContainerRef = useRef<HTMLDivElement>(null);
+
   // Load session data
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -90,6 +104,156 @@ export default function MonthlyPayrollPage() {
       });
     }
   }, []);
+
+  // Tour initialization - only starts when triggered from sidebar
+  useEffect(() => {
+    // Check if tour should be triggered
+    const triggerValue = sessionStorage.getItem('triggerPageTour');
+
+    // Only start tour if triggered for monthly-payroll
+    if (triggerValue === 'monthly-payroll') {
+      // Clear the trigger so tour doesn't restart on refresh
+      sessionStorage.removeItem('triggerPageTour');
+
+      // Check if tour was already completed in this session
+      const tourCompleted = sessionStorage.getItem('monthlyPayrollTourCompleted');
+
+      if (!tourCompleted) {
+        // Initialize and start the tour after a short delay
+        // Wait for DOM to be ready
+        const timer = setTimeout(() => {
+          // Double check trigger is cleared and tour not completed
+          if (!sessionStorage.getItem('monthlyPayrollTourCompleted')) {
+            startTour();
+          }
+        }, 1000);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
+  // Add a manual Start Tour button
+  const handleStartTourManually = () => {
+    // Clear any previous tour completion to allow re-running
+    sessionStorage.removeItem('monthlyPayrollTourCompleted');
+    startTour();
+  };
+
+  const startTour = () => {
+    if (isTourActive) {
+      console.log('Tour is already active, skipping...');
+      return;
+    }
+
+    console.log('Starting tour initialization...');
+    setIsTourActive(true);
+
+    // Elements required for tour (basic UI elements that are always present)
+    const requiredSelectors = [
+      '#monthly-payroll-title',
+      '#employee-selector-container',
+      '#month-select',
+      '#year-select',
+      '#search-button',
+      '#submit-payroll-button'
+    ];
+
+    // Function to check if elements exist and create tour
+    const initTour = () => {
+      // Check if all required basic elements exist
+      const allReady = requiredSelectors.every(sel => {
+        const el = document.querySelector(sel);
+        if (!el) {
+          console.log(`Element ${sel} not found`);
+        }
+        return el;
+      });
+
+      if (!allReady) {
+        console.log('Not all required elements are present, retrying in 200ms...');
+        return false;
+      }
+
+      console.log('All required elements found, creating tour...');
+
+      // Only add table selector if it exists (after search)
+      const tableEl = document.querySelector('#payroll-data-table-container');
+      if (!tableEl) {
+        console.log('Table container not found, tour will show basic UI only');
+      }
+
+      const tour = createMonthlyPayrollTour();
+      tourRef.current = tour;
+
+      tour.on('complete', () => {
+        console.log('Tour completed');
+        setIsTourActive(false);
+        sessionStorage.setItem('monthlyPayrollTourCompleted', 'true');
+      });
+
+      tour.on('cancel', () => {
+        console.log('Tour cancelled');
+        setIsTourActive(false);
+        sessionStorage.setItem('monthlyPayrollTourCompleted', 'true');
+      });
+
+      // Add error handler
+      tour.on('show', (e) => {
+        console.log('Tour step shown:', e.step?.id);
+      });
+
+      try {
+        tour.start();
+        console.log('Tour started successfully');
+      } catch (error) {
+        console.error('Error starting tour:', error);
+        setIsTourActive(false);
+      }
+
+      return true;
+    };
+
+    // Try to initialize immediately, then poll if needed
+    if (!initTour()) {
+      let attempts = 0;
+      const maxAttempts = 20; // Try for up to 4 seconds
+
+      const waitForDOM = setInterval(() => {
+        attempts++;
+        if (initTour()) {
+          clearInterval(waitForDOM);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(waitForDOM);
+          console.log('Timeout waiting for DOM elements, starting tour with available elements...');
+          // Try to start anyway with basic elements
+          initTour();
+        }
+      }, 200);
+    }
+  };
+
+
+  // Inject tour styles
+  useEffect(() => {
+    const existingStyle = document.getElementById('monthly-payroll-tour-styles');
+    if (!existingStyle && monthlyPayrollTourStyles) {
+      const styleSheet = document.createElement('style');
+      styleSheet.id = 'monthly-payroll-tour-styles';
+      styleSheet.textContent = monthlyPayrollTourStyles;
+      document.head.appendChild(styleSheet);
+    }
+  }, []);
+
+  // Clean up tour on unmount
+  useEffect(() => {
+    return () => {
+      if (tourRef.current) {
+        tourRef.current.cancel();
+      }
+    };
+  }, []);
+
   // Generate financial years
   const years = Array.from({ length: (currentYear + 5) - 2000 }, (_, i) => `${2000 + i}-${2001 + i}`);
   // Calculate totals based on other fields
@@ -815,6 +979,7 @@ export default function MonthlyPayrollPage() {
       cell: (row) => (
         <div className="flex flex-col items-center">
           <input
+            id="total-days-input"
             type="number"
             value={row.totalDays}
             max={31}
@@ -916,7 +1081,7 @@ export default function MonthlyPayrollPage() {
         } else if (hkey === 'received_by') {
           cell = (row) => (
             <div className="flex flex-col items-center">
-              <select
+              <select id="received-by-select"
                 value={row.receivedBy}
                 onChange={(e) => handleReceivedByChange(row.id, e.target.value)}
                 className="border rounded p-1 w-32 text-center"
@@ -1026,13 +1191,13 @@ export default function MonthlyPayrollPage() {
     <div className="p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row items-start sm:justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Monthly Payroll Management</h1>
+          <h1 id="monthly-payroll-title" className="text-xl sm:text-2xl font-bold text-foreground">Monthly Payroll Management</h1>
           <p className="text-sm text-gray-500">Dynamic columns based on API header data</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-4 w-full">
+      <div id="employee-selector-container" className="flex flex-col lg:flex-row gap-4 w-full">
         <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
           <div className="flex-1 min-w-[200px]">
             <EmployeeSelector
@@ -1046,7 +1211,7 @@ export default function MonthlyPayrollPage() {
             />
           </div>
 
-          <div className="w-full sm:w-35 mt-1">
+          <div id="month-select" className="w-full sm:w-35 mt-1">
             <Label className="mb-2">Select Month</Label>
             <Select value={month} onValueChange={setMonth}>
               <SelectTrigger className="w-full">
@@ -1062,7 +1227,7 @@ export default function MonthlyPayrollPage() {
         </div>
 
         <div className="flex items-start gap-3 mt-1">
-          <div className="w-full sm:w-35">
+          <div id="year-select" className="w-full sm:w-35">
             <Label className="mb-2">Select Year</Label>
             <Select value={year} onValueChange={setYear}>
               <SelectTrigger className="w-full">
@@ -1077,6 +1242,7 @@ export default function MonthlyPayrollPage() {
           </div>
 
           <Button
+            id="search-button"
             onClick={handleSearch}
             disabled={loading}
             className="px-6 py-2 rounded-lg flex items-center justify-center bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors w-full sm:w-32 h-[42px] mt-5"
@@ -1114,7 +1280,7 @@ export default function MonthlyPayrollPage() {
 
       {/* Export Buttons and Filter Controls */}
       {searched && tableData.length > 0 && (
-        <div className="flex gap-3 flex-wrap justify-end mt-4">
+        <div id="export-buttons" className="flex gap-3 flex-wrap justify-end mt-4">
           <Button
             onClick={() => window.print()}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
@@ -1147,14 +1313,16 @@ export default function MonthlyPayrollPage() {
               </span>
             )}
           </h1>
+          <div id="payroll-data-table-container">
+            <div id="payroll-data-table">
 
-          {tableData.length === 0 ? (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-gray-500">No employee data found for the selected criteria.</p>
-              <p className="text-sm text-gray-400 mt-2">Try selecting different employees, departments, or date range.</p>
-            </div>
-          ) : (
-            <>
+              {tableData.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                  <p className="text-gray-500">No employee data found for the selected criteria.</p>
+                  <p className="text-sm text-gray-400 mt-2">Try selecting different employees, departments, or date range.</p>
+                </div>
+              ) : (
+                <>
               <DataTable
                 columns={columns}
                 data={filteredData}
@@ -1165,20 +1333,26 @@ export default function MonthlyPayrollPage() {
                 persistTableHead
               />
 
-              {/* Submit Button */}
-              <div className="flex justify-end mt-6">
-                <Button
-                  onClick={handleSubmit}
-                  disabled={submitting || tableData.length === 0}
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                  size="lg"
-                >
-                  <Save className="w-5 h-5" />
-                  {submitting ? "Submitting..." : "Submit Payroll"}
-                </Button>
-              </div>
-            </>
-          )}
+
+
+                  {/* Submit Button */}
+                  <div className="flex justify-end mt-6">
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={submitting || tableData.length === 0}
+                      className="bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                      size="lg"
+                    >
+                      <Save className="w-5 h-5" />
+                      {submitting ? "Submitting..." : "Submit Payroll"}
+                    </Button>
+
+                  </div>
+                </>
+
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

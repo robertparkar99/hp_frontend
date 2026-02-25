@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,9 @@ import { Plus, Edit, Trash2, Save, X, Building, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DataTable, { TableColumn, TableStyles } from 'react-data-table-component';
 import Icon from '@/components/AppIcon';
-
-
+import Shepherd from 'shepherd.js';
+import { Tour } from 'shepherd.js';
+import 'shepherd.js/dist/css/shepherd.css';
 
 interface DepartmentAllocation {
   id: number;
@@ -94,6 +95,9 @@ export default function LeaveAllocation() {
   const [showEmpForm, setShowEmpForm] = useState(false);
   const { toast } = useToast();
   const [filterText, setFilterText] = useState('');
+  const [isTourActive, setIsTourActive] = useState(false);
+  const tourRef = useRef<Tour | null>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   const [deptFormData, setDeptFormData] = useState({
     department: "",
@@ -127,6 +131,518 @@ export default function LeaveAllocation() {
       [column]: value,
     }));
   };
+
+  // Auto-open add form when tour reaches that step
+  const handleAddButtonClick = () => {
+    if (isTourActive) {
+      // Auto-open the appropriate form during tour
+      if (isDepartmentWise) {
+        setShowDeptForm(true);
+      } else {
+        setShowEmpForm(true);
+      }
+    } else {
+      // Normal behavior
+      if (isDepartmentWise) {
+        setShowDeptForm(true);
+      } else {
+        setShowEmpForm(true);
+      }
+    }
+  };
+
+  // Define tour steps
+  const tourSteps = [
+    {
+      id: 'welcome',
+      title: 'Welcome to Leave Allocation!',
+      text: 'This page allows you to manage leave allocations for departments and employees. Let\'s explore all features.',
+      attachTo: { element: '#tour-header', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Skip Tour',
+          action: function (this: Tour) {
+            setIsTourActive(false);
+            this.cancel();
+          },
+          classes: 'shepherd-button-secondary'
+        },
+        {
+          text: 'Start Tour',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'toggle-section',
+      title: '🔄 Allocation Type Toggle',
+      text: 'Switch between Department-Wise and Employee-Wise allocation. Department-Wise allocates to entire departments. Employee-Wise allocates to individual employees.',
+      attachTo: { element: '#tour-allocation-type-toggle', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'employee-wise-toggle',
+      title: '👤 Employee-Wise Allocation',
+      text: 'Click this toggle to switch to Employee-Wise allocation mode. This shows employee column in the table.',
+      attachTo: { element: '#tour-employee-wise', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next & Switch',
+          action: function (this: Tour) {
+            setIsDepartmentWise(false);
+            this.next();
+          }
+        }
+      ]
+    },
+    {
+      id: 'add-employee-allocation',
+      title: '➕ Add Employee Leave',
+      text: 'Click this button to open the employee leave allocation form.',
+      attachTo: { element: '#tour-add-leave-allocation', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next & Open Form',
+          action: function (this: Tour) {
+            setShowEmpForm(true);
+            this.next();
+          }
+        }
+      ]
+    },
+    {
+      id: 'employee-form',
+      title: '📝 Employee Leave Form',
+      text: 'This form allows you to allocate leave to individual employees. Fill in all required fields.',
+      attachTo: { element: '#tour-leave-allocation-form', on: 'top' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) {
+            setShowEmpForm(false);
+            this.back();
+          }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'employee-select',
+      title: '👤 Select Employee',
+      text: 'Choose the employee who will receive the leave allocation.',
+      attachTo: { element: '#tour-emp-employee', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'department-select',
+      title: '🏢 Select Department',
+      text: 'Choose the department for this employee.',
+      attachTo: { element: '#tour-dept-department', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'leave-type-select',
+      title: '📋 Select Leave Type',
+      text: 'Choose the type of leave (Annual, Sick, Emergency, Maternity, etc.).',
+      attachTo: { element: '#tour-leave-type-select', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'year-input',
+      title: '📅 Year',
+      text: 'Enter the year for this allocation (default is current year).',
+      attachTo: { element: '#tour-year-input', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'days-input',
+      title: '🔢 Number of Days',
+      text: 'Enter the number of leave days to allocate.',
+      attachTo: { element: '#tour-days-input', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'save-button',
+      title: '💾 Save Allocation',
+      text: 'Click Save to create the leave allocation.',
+      attachTo: { element: '#tour-save-allocation', on: 'top' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'cancel-button',
+      title: '❌ Cancel',
+      text: 'Click Cancel to close the form without saving.',
+      attachTo: { element: '#tour-cancel-allocation', on: 'top' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) {
+            setShowEmpForm(false);
+            this.next();
+          }
+        }
+      ]
+    },
+    {
+      id: 'table-employee-column',
+      title: '👤 Employee Column',
+      text: 'This column shows the employee name for each allocation.',
+      attachTo: { element: '#tour-employee-column', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'table-department-column',
+      title: '🏢 Department Column',
+      text: 'This column shows the department for each allocation.',
+      attachTo: { element: '#tour-department-column', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'table-leave-type-column',
+      title: '📋 Leave Type Column',
+      text: 'This column shows the type of leave allocated.',
+      attachTo: { element: '#tour-leavetype-column', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'table-days-column',
+      title: '🔢 Days Column',
+      text: 'This column shows the number of days allocated.',
+      attachTo: { element: '#tour-days-column', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'table-status-column',
+      title: '🔘 Status Column',
+      text: 'This column shows the status (Active/Inactive) of each allocation.',
+      attachTo: { element: '#tour-status-column', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'table-actions-column',
+      title: '⚡ Actions Column',
+      text: 'Use Edit and Delete buttons to manage allocations.',
+      attachTo: { element: '#tour-actions-column', on: 'left' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'switch-department-wise',
+      title: '🔄 Switch to Department Mode',
+      text: 'Click this toggle to switch back to Department-Wise allocation.',
+      attachTo: { element: '#tour-department-wise', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next & Switch',
+          action: function (this: Tour) {
+            setIsDepartmentWise(true);
+            this.next();
+          }
+        }
+      ]
+    },
+    {
+      id: 'add-department-allocation',
+      title: '➕ Add Department Leave',
+      text: 'Click this button to open the department leave allocation form.',
+      attachTo: { element: '#tour-add-leave-allocation', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next & Open Form',
+          action: function (this: Tour) {
+            setShowDeptForm(true);
+            this.next();
+          }
+        }
+      ]
+    },
+    {
+      id: 'dept-form',
+      title: '📝 Department Leave Form',
+      text: 'This form allows you to allocate leave to entire departments.',
+      attachTo: { element: '#tour-leave-allocation-form', on: 'top' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) {
+            setShowDeptForm(false);
+            this.back();
+          }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'dept-department-select',
+      title: '🏢 Select Department',
+      text: 'Choose the department to allocate leave to.',
+      attachTo: { element: '#tour-dept-department', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'dept-leave-type',
+      title: '📋 Leave Type',
+      text: 'Choose the type of leave to allocate.',
+      attachTo: { element: '#tour-leave-type-select', on: 'bottom' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'dept-save',
+      title: '💾 Save',
+      text: 'Click Save to create the department allocation.',
+      attachTo: { element: '#tour-save-allocation', on: 'top' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Next',
+          action: function (this: Tour) { this.next(); }
+        }
+      ]
+    },
+    {
+      id: 'dept-cancel',
+      title: '❌ Cancel',
+      text: 'Click Cancel to close the form.',
+      attachTo: { element: '#tour-cancel-allocation', on: 'top' as const },
+      buttons: [
+        {
+          text: 'Previous',
+          action: function (this: Tour) { this.back(); }
+        },
+        {
+          text: 'Finish',
+          action: function (this: Tour) {
+            setShowDeptForm(false);
+            setIsTourActive(false);
+            sessionStorage.setItem('leaveAllocationTourCompleted', 'true');
+            sessionStorage.removeItem('triggerPageTour');
+            this.complete();
+          }
+        }
+      ]
+    }
+  ];
+
+  // Initialize tour
+  useEffect(() => {
+    const triggerValue = sessionStorage.getItem('triggerPageTour');
+    const isTriggered = triggerValue === 'leave-allocation' || triggerValue === 'true';
+    const isCompleted = sessionStorage.getItem('leaveAllocationTourCompleted') === 'true';
+
+    if (isTriggered && !isCompleted) {
+      setIsTourActive(true);
+
+      // Auto-switch to Employee-Wise mode for tour
+      setIsDepartmentWise(false);
+
+      const tour = new Shepherd.Tour({
+        defaultStepOptions: {
+          cancelIcon: { enabled: true },
+          classes: 'shepherd-theme-custom',
+          scrollTo: { behavior: 'smooth' as const, block: 'center' as const },
+          modalOverlayOpeningPadding: 10,
+          modalOverlayOpeningRadius: 8
+        },
+        useModalOverlay: true,
+        exitOnEsc: true,
+        keyboardNavigation: true
+      });
+
+      // Add each step individually using addStep()
+      tourSteps.forEach((step) => {
+        tour.addStep(step);
+      });
+
+      tourRef.current = tour;
+
+      tour.on('complete', () => {
+        setIsTourActive(false);
+        sessionStorage.setItem('leaveAllocationTourCompleted', 'true');
+        sessionStorage.removeItem('triggerPageTour');
+      });
+
+      tour.on('cancel', () => {
+        setIsTourActive(false);
+        sessionStorage.setItem('leaveAllocationTourCompleted', 'true');
+        sessionStorage.removeItem('triggerPageTour');
+      });
+
+      // Start tour after a delay
+      setTimeout(() => {
+        tour.start();
+      }, 1000);
+    }
+
+    return () => {
+      if (tourRef.current) {
+        tourRef.current.cancel();
+        tourRef.current = null;
+      }
+    };
+  }, []);
 
   const filteredDeptAllocations = departmentAllocations.filter((item, index) => {
     return (
@@ -261,7 +777,7 @@ export default function LeaveAllocation() {
   const deptColumns: TableColumn<DepartmentAllocation>[] = [
     {
       name: (
-        <div>
+        <div id="tour-srno-column">
           <div>Sr No.</div>
           <input
             type="text"
@@ -271,7 +787,7 @@ export default function LeaveAllocation() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              
+
               marginTop: "5px"
             }}
           />
@@ -283,7 +799,7 @@ export default function LeaveAllocation() {
     },
     {
       name: (
-        <div>
+        <div id="tour-department-column">
           <div>Department</div>
           <input
             type="text"
@@ -293,7 +809,7 @@ export default function LeaveAllocation() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              
+
               marginTop: "5px"
             }}
           />
@@ -314,7 +830,7 @@ export default function LeaveAllocation() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              
+
               marginTop: "5px"
             }}
           />
@@ -325,7 +841,7 @@ export default function LeaveAllocation() {
     },
     {
       name: (
-        <div>
+        <div id="tour-year-column">
           <div>Year</div>
           <input
             type="text"
@@ -335,7 +851,7 @@ export default function LeaveAllocation() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              
+
               marginTop: "5px"
             }}
           />
@@ -346,7 +862,7 @@ export default function LeaveAllocation() {
     },
     {
       name: (
-        <div>
+        <div id="tour-days-column">
           <div>Days Allocated</div>
           <input
             type="text"
@@ -356,7 +872,7 @@ export default function LeaveAllocation() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-            
+
               marginTop: "5px"
             }}
           />
@@ -368,7 +884,7 @@ export default function LeaveAllocation() {
     },
     {
       name: (
-        <div>
+        <div id="tour-status-column">
           <div>Status</div>
           <input
             type="text"
@@ -378,7 +894,7 @@ export default function LeaveAllocation() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-           
+
               marginTop: "5px"
             }}
           />
@@ -393,11 +909,13 @@ export default function LeaveAllocation() {
       ),
     },
     {
+
       name: "Actions",
+      id: "tour-actions-column",
       cell: (row: DepartmentAllocation) => (
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" className="bg-blue-500 hover:bg-blue-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white">
-           
+
             <Icon name="Edit" size={14} />
           </Button>
           <Button
@@ -421,7 +939,7 @@ export default function LeaveAllocation() {
   const empColumns: TableColumn<EmployeeAllocation>[] = [
     {
       name: (
-        <div>
+        <div id="tour-srno-column">
           <div>Sr No.</div>
           <input
             type="text"
@@ -443,7 +961,7 @@ export default function LeaveAllocation() {
     },
     {
       name: (
-        <div>
+        <div id="tour-employee-column">
           <div>Employee</div>
           <input
             type="text"
@@ -464,7 +982,7 @@ export default function LeaveAllocation() {
     },
     {
       name: (
-        <div>
+        <div id="tour-department-column">
           <div>Department</div>
           <input
             type="text"
@@ -485,7 +1003,7 @@ export default function LeaveAllocation() {
     },
     {
       name: (
-        <div>
+        <div id="tour-leavetype-column">
           <div>Leave Type</div>
           <input
             type="text"
@@ -506,7 +1024,7 @@ export default function LeaveAllocation() {
     },
     {
       name: (
-        <div>
+        <div id="tour-year-column">
           <div>Year</div>
           <input
             type="text"
@@ -527,7 +1045,7 @@ export default function LeaveAllocation() {
     },
     {
       name: (
-        <div>
+        <div id="tour-days-column">
           <div>Days Allocated</div>
           <input
             type="text"
@@ -549,7 +1067,7 @@ export default function LeaveAllocation() {
     },
     {
       name: (
-        <div>
+        <div id="tour-status-column">
           <div>Status</div>
           <input
             type="text"
@@ -559,7 +1077,7 @@ export default function LeaveAllocation() {
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              
+
               marginTop: "5px"
             }}
           />
@@ -575,6 +1093,7 @@ export default function LeaveAllocation() {
     },
     {
       name: "Actions",
+      id: "tour-actions-column",
       cell: (row: EmployeeAllocation) => (
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" className="bg-blue-500 hover:bg-blue-700 text-white text-xs h-7 py-1 px-2 rounded hover:text-white">
@@ -598,9 +1117,9 @@ export default function LeaveAllocation() {
   ];
 
   return (
-    <div className="space-y-8 bg-background rounded-xl">
+    <div className="space-y-8 bg-background rounded-xl" id="tour-header">
       {/* Toggle Between Department and Employee */}
-      <Card className="bg-gradient-card shadow-card">
+      <Card className="bg-gradient-card shadow-card" id="tour-allocation-type-toggle">
         <CardHeader>
           <CardTitle className="text-xl font-semibold">Allocation Type</CardTitle>
           <CardDescription>
@@ -609,7 +1128,7 @@ export default function LeaveAllocation() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3" id="tour-department-wise">
               <Switch
                 id="department-wise"
                 checked={isDepartmentWise}
@@ -620,7 +1139,7 @@ export default function LeaveAllocation() {
                 Department-Wise Leave
               </Label>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3" id="tour-employee-wise">
               <Switch
                 id="employee-wise"
                 checked={!isDepartmentWise}
@@ -651,14 +1170,14 @@ export default function LeaveAllocation() {
               </div>
               <Button
                 onClick={() => setShowDeptForm(true)}
-                className="bg-gradient-primary hover:shadow-glow transition-all"
+                className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-add-leave-allocation"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Department Leave
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent id="tour-leave-allocation-form">
             {showDeptForm && (
               <Card className="mb-6 bg-accent/20 border-primary/20">
                 <CardHeader>
@@ -667,7 +1186,7 @@ export default function LeaveAllocation() {
                 <CardContent>
                   <form onSubmit={handleDeptSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
+                      <div id="tour-dept-department">
                         <Label htmlFor="dept-department">Select Department *</Label>
                         <Select value={deptFormData.department} onValueChange={(value) => setDeptFormData(prev => ({ ...prev, department: value }))}>
                           <SelectTrigger>
@@ -680,7 +1199,7 @@ export default function LeaveAllocation() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
+                      <div id="tour-leave-type-select">
                         <Label htmlFor="dept-leave-type">Select Leave Type *</Label>
                         <Select value={deptFormData.leaveType} onValueChange={(value) => setDeptFormData(prev => ({ ...prev, leaveType: value }))}>
                           <SelectTrigger>
@@ -693,7 +1212,7 @@ export default function LeaveAllocation() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
+                      <div id="tour-year-input">
                         <Label htmlFor="dept-year">Select Year *</Label>
                         <Input
                           id="dept-year"
@@ -702,7 +1221,7 @@ export default function LeaveAllocation() {
                           onChange={(e) => setDeptFormData(prev => ({ ...prev, year: e.target.value }))}
                         />
                       </div>
-                      <div>
+                      <div id="tour-days-input">
                         <Label htmlFor="dept-days">Number of Days *</Label>
                         <Input
                           id="dept-days"
@@ -715,11 +1234,11 @@ export default function LeaveAllocation() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                      <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-all">
+                      <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-save-allocation">
                         <Save className="w-4 h-4 mr-2" />
                         Save Allocation
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => setShowDeptForm(false)}>
+                      <Button type="button" variant="outline" onClick={() => setShowDeptForm(false)} id="tour-cancel-allocation">
                         <X className="w-4 h-4 mr-2" />
                         Cancel
                       </Button>
@@ -729,7 +1248,7 @@ export default function LeaveAllocation() {
               </Card>
             )}
 
-            <div>
+            <div id="tour-allocations-table">
               <DataTable
                 columns={deptColumns}
                 data={filteredDeptAllocations}
@@ -761,14 +1280,14 @@ export default function LeaveAllocation() {
               </div>
               <Button
                 onClick={() => setShowEmpForm(true)}
-                className="bg-gradient-primary hover:shadow-glow transition-all"
+                className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-add-leave-allocation"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Employee Leave
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent id="tour-leave-allocation-form">
             {showEmpForm && (
               <Card className="mb-6 bg-accent/20 border-primary/20">
                 <CardHeader>
@@ -777,7 +1296,7 @@ export default function LeaveAllocation() {
                 <CardContent>
                   <form onSubmit={handleEmpSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
+                        <div id="tour-dept-department">
                         <Label htmlFor="emp-department">Select Department *</Label>
                         <Select value={empFormData.department} onValueChange={(value) => setEmpFormData(prev => ({ ...prev, department: value }))}>
                           <SelectTrigger>
@@ -790,7 +1309,7 @@ export default function LeaveAllocation() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
+                        <div id="tour-emp-employee">
                         <Label htmlFor="emp-employee">Select Employee *</Label>
                         <Select value={empFormData.employee} onValueChange={(value) => setEmpFormData(prev => ({ ...prev, employee: value }))}>
                           <SelectTrigger>
@@ -803,7 +1322,7 @@ export default function LeaveAllocation() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
+                        <div id="tour-leave-type-select">
                         <Label htmlFor="emp-leave-type">Select Leave Type *</Label>
                         <Select value={empFormData.leaveType} onValueChange={(value) => setEmpFormData(prev => ({ ...prev, leaveType: value }))}>
                           <SelectTrigger>
@@ -816,7 +1335,7 @@ export default function LeaveAllocation() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
+                        <div id="tour-year-input">
                         <Label htmlFor="emp-year">Select Year *</Label>
                         <Input
                           id="emp-year"
@@ -838,11 +1357,11 @@ export default function LeaveAllocation() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                      <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-all">
+                      <Button type="submit" className="bg-gradient-primary hover:shadow-glow transition-all" id="tour-save-allocation">
                         <Save className="w-4 h-4 mr-2" />
                         Save Allocation
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => setShowEmpForm(false)}>
+                      <Button type="button" variant="outline" onClick={() => setShowEmpForm(false)} id="tour-cancel-allocation">
                         <X className="w-4 h-4 mr-2" />
                         Cancel
                       </Button>
@@ -852,7 +1371,7 @@ export default function LeaveAllocation() {
               </Card>
             )}
 
-            <div>
+            <div id="tour-allocations-table">
               <DataTable
                 columns={empColumns}
                 data={filteredEmpAllocations}

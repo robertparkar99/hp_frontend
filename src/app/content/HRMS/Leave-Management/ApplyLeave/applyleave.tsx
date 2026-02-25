@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Calendar, User, Building2, Send, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import DataTable, { TableColumn, TableStyles  } from "react-data-table-component";
+import { ApplyLeaveTour, ApplyLeaveFormControls } from "./ApplyLeaveTour";
 
 const ApplyLeave = () => {
   const { toast } = useToast();
+  const [isTourActive, setIsTourActive] = useState(false);
+
+  // Refs for tour-controlled interactions
+  const typeOfLeaveTriggerRef = useRef<HTMLButtonElement>(null);
+  const dayTypeTriggerRef = useRef<HTMLButtonElement>(null);
 
   const [formData, setFormData] = useState({
     typeOfLeave: "",
@@ -518,6 +524,51 @@ const filteredData = useMemo(() => {
     fetchApplications();
   }, [sessionData]);
 
+  // Initialize tour if triggered from sidebar
+  useEffect(() => {
+    const tour = new ApplyLeaveTour();
+
+    // Set up form controls for the tour
+    const formControls: ApplyLeaveFormControls = {
+      setTypeOfLeave: (value: string) => {
+        setFormData(prev => ({ ...prev, typeOfLeave: value }));
+      },
+      setDayType: (value: string) => {
+        setFormData(prev => ({ ...prev, dayType: value }));
+      },
+      openTypeOfLeaveDropdown: () => {
+        // Programmatically click the select trigger to open dropdown
+        if (typeOfLeaveTriggerRef.current) {
+          typeOfLeaveTriggerRef.current.click();
+        }
+      },
+      openDayTypeDropdown: () => {
+        // Programmatically click the select trigger to open dropdown
+        if (dayTypeTriggerRef.current) {
+          dayTypeTriggerRef.current.click();
+        }
+      }
+    };
+
+    tour.setFormControls(formControls);
+
+    // Check if tour should start (only when triggered from sidebar)
+    if (tour.shouldStartTour()) {
+      console.log('ApplyLeave tour triggered, starting tour...');
+      setIsTourActive(true);
+
+      // Start tour after component is mounted
+      setTimeout(() => {
+        tour.startTour();
+      }, 500);
+    }
+
+    // Clean up tour state when leaving page
+    return () => {
+      sessionStorage.removeItem('triggerPageTour');
+    };
+  }, []);
+
   // Handle form input changes
   const handleInputChange = (field: string, value: string) => {
     if (field === "department_id") {
@@ -636,7 +687,7 @@ const filteredData = useMemo(() => {
     <div className="space-y-6 w-full overflow-x-hidden">
       <Card className="card-elevated">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle id="tour-leave-title"  className="flex items-center gap-2">
             <Calendar className="h-5 w-5" /> Leave Application
           </CardTitle>
         </CardHeader>
@@ -644,13 +695,13 @@ const filteredData = useMemo(() => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Main row */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
+              <div id="tour-type-of-leave">
                 <Label>Type of Leave *</Label>
                 <Select
                   value={formData.typeOfLeave || undefined}
                   onValueChange={(value) => handleInputChange("typeOfLeave", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger ref={typeOfLeaveTriggerRef}>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -660,7 +711,7 @@ const filteredData = useMemo(() => {
                 </Select>
               </div>
 
-              <div>
+              <div id="tour-leave-type">
                 <Label>Leave Type *</Label>
                 <Select
                   value={formData.leaveType || undefined}
@@ -682,13 +733,13 @@ const filteredData = useMemo(() => {
                 </Select>
               </div>
 
-              <div>
+              <div id="tour-day-type">
                 <Label>Day Type *</Label>
                 <Select
                   value={formData.dayType || undefined}
                   onValueChange={(value) => handleInputChange("dayType", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger ref={dayTypeTriggerRef}>
                     <SelectValue placeholder="Select day type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -698,7 +749,7 @@ const filteredData = useMemo(() => {
                 </Select>
               </div>
 
-              <div>
+              <div id="tour-comment">
                 <Label>Comment</Label>
                 <Textarea
                   value={formData.comment}
@@ -712,7 +763,7 @@ const filteredData = useMemo(() => {
             {/* Department + Employee (when employee type selected) */}
             {formData.typeOfLeave === "employee" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div id="tour-department">
                   <Label className="flex items-center gap-2">
                     <Building2 className="h-4 w-4" /> Department
                   </Label>
@@ -736,7 +787,7 @@ const filteredData = useMemo(() => {
                   </Select>
                 </div>
 
-                <div>
+                <div id="tour-employee">
                   <Label className="flex items-center gap-2">
                     <User className="h-4 w-4" /> Employee
                   </Label>
@@ -765,7 +816,7 @@ const filteredData = useMemo(() => {
             {/* Dates for full/half */}
             {formData.dayType === "full" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div id="tour-from-date">
                   <Label>From Date *</Label>
                   <Input
                     type="date"
@@ -773,7 +824,7 @@ const filteredData = useMemo(() => {
                     onChange={(e) => handleInputChange("fromDate", e.target.value)}
                   />
                 </div>
-                <div>
+                <div id="tour-to-date">
                   <Label>To Date *</Label>
                   <Input
                     type="date"
@@ -786,7 +837,7 @@ const filteredData = useMemo(() => {
 
             {formData.dayType === "half" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div id="tour-date-half">
                   <Label>Date *</Label>
                   <Input
                     type="date"
@@ -794,7 +845,7 @@ const filteredData = useMemo(() => {
                     onChange={(e) => handleInputChange("date", e.target.value)}
                   />
                 </div>
-                <div>
+                <div id="tour-slot">
                   <Label>Slot *</Label>
                   <Select
                     value={formData.slot || undefined}
@@ -814,10 +865,10 @@ const filteredData = useMemo(() => {
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
-              <Button type="submit" className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
+              <Button id="tour-submit-btn" type="submit" className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700">
                 <Send className="h-4 w-4 mr-2" /> Submit
               </Button>
-              <Button type="button" variant="outline" onClick={handleReset}>
+              <Button id="tour-reset-btn" type="button" variant="outline" onClick={handleReset}>
                 <RotateCcw className="h-4 w-4 mr-2" /> Reset
               </Button>
             </div>
@@ -831,6 +882,7 @@ const filteredData = useMemo(() => {
           <CardTitle>Submitted Leave Applications</CardTitle>
         </CardHeader>
         <CardContent>
+           <div id="tour-submitted-table">
           <DataTable
             columns={columns}
             data={submittedData}
@@ -842,6 +894,7 @@ const filteredData = useMemo(() => {
             noDataComponent={<div className="p-4 text-center">No data available</div>}
             persistTableHead
           />
+          </div>
         </CardContent>
       </Card>
     </div>
