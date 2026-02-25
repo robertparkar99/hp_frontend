@@ -14,10 +14,17 @@ import {
 import { createEscalation } from "@/lib1/escalation-service";
 import { v4 as uuidv4 } from 'uuid';
 
+// Import course recommendation flow
+// @ts-ignore - Flow is a JavaScript module
+// Import course recommendation flow
+// @ts-ignore - Flow is a JavaScript module
+import { courseRecommendationFlow } from "@/ai/flows/courseRecommendationFlow";
+
 interface ChatRequest {
   query: string;
   sessionId: string;
   userId?: string;
+  subInstituteId?: string;
   role?: string;
   conversationHistory?: Array<{ role: string; content: string }>;
   debugMode?: boolean;
@@ -49,6 +56,11 @@ interface ChatResponse {
   suggestion?: string;
   canEscalate?: boolean;
   id?: string;
+}
+
+interface SuggestionRequest {
+  module: string; // 'course', 'assessment', 'learning', 'question-bank'
+  context?: string; // Additional context about the current page
 }
 
 interface JobDescription {
@@ -920,6 +932,17 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
       );
     }
 
+    // === Course_Recommendation Routing ===
+    if (intent.intent === 'Course_Recommendation') {
+      console.log('Course_Recommendation intent detected');
+      return handleCourseRecommendationRequest(
+        request,
+        { userId: anonymousId },
+        conversationId,
+        intent
+      );
+    }
+
     // === CREATE_JOB_DESCRIPTION Routing ===
 
     if (intent.intent === 'CREATE_JOB_DESCRIPTION') {
@@ -1115,17 +1138,25 @@ async function ensureConversation(request: ChatRequest): Promise<string> {
     return existingConv.id;
   }
 
-  const newConv = await createConversation(
-    request.sessionId,
-    request.userId || uuidv4(),
-    request.role || 'user'
-  );
+  try {
+    const newConv = await createConversation(
+      request.sessionId,
+      request.userId || uuidv4(),
+      request.role || 'user'
+    );
 
-  if (!newConv?.id) {
-    throw new Error('Failed to create or retrieve a conversation.');
+    if (!newConv?.id) {
+      console.error('[getOrCreateConversation] Failed to create conversation, returning fallback sessionId');
+      // Return a session ID based on the request sessionId so the flow can continue
+      return request.sessionId;
+    }
+
+    return newConv.id;
+  } catch (error) {
+    console.error('[getOrCreateConversation] Error creating conversation:', error);
+    // Return sessionId as fallback so the flow can continue
+    return request.sessionId;
   }
-
-  return newConv.id;
 }
 
 const getIndustryFromSession = (): string => {
@@ -1267,6 +1298,108 @@ async function handleJobRoleCompetencyRequest(
 }
 
 /**
+ * handleCourseRecommendationRequest
+ * Handles Course_Recommendation intent by calling the course recommendation flow
+ * 
+ * @param request - The chat request
+ * @param userContext - User context with userId
+ * @param conversationId - Conversation ID
+ * @param intent - Intent classification result
+ * @returns ChatResponse with course recommendations
+ */
+async function handleCourseRecommendationRequest(
+  request: ChatRequest,
+  userContext: { userId: string },
+  conversationId: string,
+  intent: IntentClassificationResult
+): Promise<ChatResponse> {
+    console.log('[handleCourseRecommendationRequest] Processing course recommendation request');
+
+  try {
+    console.log("Darshana");
+    console.log(request);
+    // Get user session data from request (passed from client via cookies)
+    console.log(request.userId);
+    const userId = request.userId || '54';
+    const subInstituteId = request.subInstituteId || '3';
+    
+    console.log('[handleCourseRecommendationRequest] Calling flow with userId:', userId, 'subInstituteId:', subInstituteId);
+    
+    // Call the flow directly with userId and subInstituteId
+    const recommendations = await courseRecommendationFlow({ userId, subInstituteId });
+    
+    // console.log('[handleCourseRecommendationRequest] Got recommendations:', recommendations.length);
+    
+    // // Format the response in bullet point format
+    let answer = '';
+    if (recommendations.length > 0) {
+      answer = 'Courses:\n';
+      recommendations.forEach((course: any, index: number) => {
+        // Course name with bullet point
+        answer += `• ${course.courseName}\n`;
+        
+        // Extract created by info and similar users info
+        if (course.reasonForRecommendation) {
+          // Extract created user name
+          const createdByMatch = course.reasonForRecommendation.match(/Created by: ([^\n]+)/);
+          if (createdByMatch) {
+            answer += `Created by: ${createdByMatch[1]}\n`;
+          }
+          
+          // Extract similar users name
+          const similarMatch = course.reasonForRecommendation.match(/User with Similar Role: ([^\n]+)/);
+          if (similarMatch) {
+            answer += `Similar Users: ${similarMatch[1]}\n`;
+          }
+        }
+        
+        // Add blank line between courses (except for last one)
+        if (index < recommendations.length - 1) {
+          answer += `\n`;
+        }
+      });
+    } else {
+      answer = 'No course recommendations found at this time.';
+    }
+    // let answer = 'Function called successfully';
+    // await saveMessage(conversationId, 'bot', answer, 'Course_Recommendation');
+    // // const recommendations = await courseRecommendationFlow({ userId, subInstituteId });
+    return {
+      answer,
+      conversationId,
+      intent: 'Course_Recommendation',
+      confidence: intent.confidence,
+    };
+    
+  } catch (error) {
+    const errorMessage = `Failed to get course recommendations: ${(error as Error).message}`;
+    console.error('[handleCourseRecommendationRequest] Error:', error);
+    
+    await saveMessage(
+      conversationId,
+      'bot',
+      errorMessage,
+      'Course_Recommendation',
+      undefined,
+      undefined,
+      true,
+      (error as Error).message
+    );
+
+    return {
+      answer: errorMessage,
+      conversationId,
+      intent: 'Course_Recommendation',
+      confidence: intent.confidence,
+      error: 'COURSE_RECOMMENDATION_FAILED',
+      recoverable: false,
+      suggestion: 'Would you like me to try again or escalate to a human agent?',
+      canEscalate: true,
+    };
+  }
+}
+
+/**
  * callGenkitCompetencyAPI
  * -----------------------
  * Calls the Genkit Job Role Competency Flow API
@@ -1314,7 +1447,14 @@ async function callGenkitCompetencyAPI(payload: JobRoleCompetencyPayload): Promi
   const startTime = Date.now();
 
   try {
-    const response = await fetch('https://competency.scholarclone.com/api/genkit-job-role', {
+    // Determine base URL for server-side or client-side
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const apiUrl = `/api/genkit-job-role`;
+    
+    // Use absolute URL for server-side, relative for client-side
+    const url = apiUrl.startsWith('http') ? apiUrl : `${baseUrl}${apiUrl}`;
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1877,5 +2017,92 @@ export async function handleEscalation(
       message: 'An error occurred during escalation. Please try again.'
     };
   }
+}
+
+// ================= CONTEXTUAL SUGGESTIONS HANDLER =================
+
+/**
+ * handleContextualSuggestions
+ * ----------------------------
+ * Generates contextual suggestions for the chatbot based on the current LMS module.
+ * Uses Genkit flow server to dynamically generate relevant questions.
+ */
+export async function handleContextualSuggestions(
+  request: SuggestionRequest
+): Promise<{ suggestions: string[]; module: string; error?: string }> {
+  const { module, context } = request;
+
+  try {
+    // Call Genkit flow server to generate suggestions
+    const genkitUrl = process.env.GENKIT_SERVER_URL || 'http://localhost:3400';
+    
+    const response = await fetch(`${genkitUrl}/flow/suggestionFlow`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        module,
+        context: context || ''
+      })
+    });
+
+    if (!response.ok) {
+      console.warn('Genkit flow not available, using fallback suggestions');
+      return getFallbackSuggestions(module);
+    }
+
+    const data = await response.json();
+    
+    if (data.result?.suggestions && Array.isArray(data.result.suggestions)) {
+      return {
+        suggestions: data.result.suggestions.slice(0, 4),
+        module
+      };
+    }
+
+    // If response format is unexpected, use fallback
+    return getFallbackSuggestions(module);
+
+  } catch (error) {
+    console.error('Error generating contextual suggestions via Genkit:', error);
+    // Fall back to default suggestions if Genkit fails
+    return getFallbackSuggestions(module);
+  }
+}
+
+// Fallback suggestions when Genkit is not available
+function getFallbackSuggestions(module: string): { suggestions: string[]; module: string } {
+  const fallbackSuggestions: Record<string, string[]> = {
+    'course': [
+      "How do I create a new course?",
+      "What are the best practices for course design?",
+      "How can I track employee progress?",
+      "How do I add assessments to a course?"
+    ],
+    'assessment': [
+      "How do I create an assessment?",
+      "What question types are available?",
+      "How do I set assessment deadlines?",
+      "How can I view assessment results?"
+    ],
+    'learning': [
+      "How do I enroll in a course?",
+      "What courses are available for me?",
+      "How do I track my learning progress?",
+      "How do I complete a course?"
+    ],
+    'question-bank': [
+      "How do I add questions to the bank?",
+      "How do I organize questions by category?",
+      "Can I import questions from other sources?",
+      "How do I edit existing questions?"
+    ]
+  };
+
+  return {
+    suggestions: fallbackSuggestions[module] || [],
+    module
+  };
 }
 

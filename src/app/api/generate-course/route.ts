@@ -5,7 +5,7 @@ export async function POST(req: Request) {
   try {
     // ✅ Parse input from frontend
     const { inputText, slideCount } = await req.json();
-
+    console.log("Darshana did the blunder");
     if (!inputText) {
       return NextResponse.json(
         { error: "inputText is required" },

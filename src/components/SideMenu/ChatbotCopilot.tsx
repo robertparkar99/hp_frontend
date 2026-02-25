@@ -5,6 +5,47 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { submitFeedback } from "@/lib1/feedback-service";
 import { v4 as uuidv4 } from 'uuid';
 
+// Question suggestions for different LMS modules (based on URL path)
+const moduleSuggestions: Record<string, string[]> = {
+  'course': [
+    "How do I create a new course?",
+    "What are the best practices for course design?",
+    "How can I track Employee progress?",
+    "How do I add assessments to a course?"
+  ],
+  'assessment': [
+    "How do I create an assessment?",
+    "What question types are available?",
+    "How do I set assessment deadlines?",
+    "How can I view assessment results?"
+  ],
+  'learning': [
+    "How do I enroll in a course?",
+    "What courses are available for me?",
+    "How do I track my learning progress?",
+    "How do I complete a course?"
+  ],
+  'question-bank': [
+    "How do I add questions to the bank?",
+    "How do I organize questions by category?",
+    "Can I import questions from other sources?",
+    "How do I edit existing questions?"
+  ]
+};
+
+// Get module key from current URL path
+const getModuleFromURL = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const path = window.location.pathname.toLowerCase();
+  
+  if (path.includes('/lms') || path.includes('/course') || path.includes('courses')) return 'course';
+  if (path.includes('/assessment') || path.includes('/quiz')) return 'assessment';
+  if (path.includes('/my-learning') || path.includes('/mylearning')) return 'learning';
+  if (path.includes('/question')) return 'question-bank';
+  
+  return null;
+};
+
 
 interface Message {
   id: string;
@@ -67,6 +108,10 @@ export default function ChatbotCopilot({
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
   const recognitionRef = useRef<any>(null);
   const originalInputRef = useRef<string>(''); // specific for keeping track of text before voice started
+
+  // State for contextual suggestions (LMS)
+  const [contextualSuggestions, setContextualSuggestions] = useState<string[]>([]);
+  const [currentModule, setCurrentModule] = useState<string | null>(null);
 
   // Voice to text logic
   const toggleListening = () => {
@@ -186,6 +231,18 @@ export default function ChatbotCopilot({
     }
   }, [input]);
 
+  // Detect module and set contextual suggestions when chatbot opens
+  useEffect(() => {
+    const moduleKey = getModuleFromURL();
+    if (moduleKey && moduleSuggestions[moduleKey]) {
+      setCurrentModule(moduleKey);
+      setContextualSuggestions(moduleSuggestions[moduleKey]);
+    } else {
+      setCurrentModule(null);
+      setContextualSuggestions([]);
+    }
+  }, []);
+
   const positionClasses = {
     'bottom-right': 'bottom-6 right-6',
     'bottom-left': 'bottom-6 left-6',
@@ -215,6 +272,27 @@ export default function ChatbotCopilot({
     setIsLoading(true);
     setPendingFormMessageId(messageId);
     console.log('Form Data:', formData);
+
+    // Get user session data from localStorage
+    let userId: string | null = null;
+    let subInstituteId: string | null = null;
+    
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionData = localStorage.getItem('userData');
+        console.log('[ChatbotCopilot] handleFormSubmit - sessionData from localStorage:', sessionData);
+        if (sessionData) {
+          const parsed = JSON.parse(sessionData);
+          console.log('[ChatbotCopilot] handleFormSubmit - parsed session data:', parsed);
+          userId = parsed.user_id || null;
+          subInstituteId = parsed.sub_institute_id || null;
+          console.log('[ChatbotCopilot] handleFormSubmit - userId:', userId, 'subInstituteId:', subInstituteId);
+        }
+      } catch (e) {
+        console.error('[ChatbotCopilot] handleFormSubmit - Error reading session data from localStorage:', e);
+      }
+    }
+
     try {
       const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -228,7 +306,9 @@ export default function ChatbotCopilot({
             role: m.type === 'user' ? 'user' : 'assistant',
             content: m.content
           })),
-          formData // Pass form data to backend
+          formData, // Pass form data to backend
+          userId,
+          subInstituteId
         })
       });
 
@@ -299,6 +379,26 @@ export default function ChatbotCopilot({
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    // Get user session data from localStorage
+    let userId: string | null = null;
+    let subInstituteId: string | null = null;
+    
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionData = localStorage.getItem('userData');
+        console.log('[ChatbotCopilot] handleSend - sessionData from localStorage:', sessionData);
+        if (sessionData) {
+          const parsed = JSON.parse(sessionData);
+          console.log('[ChatbotCopilot] handleSend - parsed session data:', parsed);
+          userId = parsed.user_id || null;
+          subInstituteId = parsed.sub_institute_id || null;
+          console.log('[ChatbotCopilot] handleSend - userId:', userId, 'subInstituteId:', subInstituteId);
+        }
+      } catch (e) {
+        console.error('[ChatbotCopilot] handleSend - Error reading session data from localStorage:', e);
+      }
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -311,6 +411,7 @@ export default function ChatbotCopilot({
     setIsLoading(true);
 
     try {
+      console.log('[ChatbotCopilot] Sending request with userId:', userId, 'subInstituteId:', subInstituteId);
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -322,7 +423,9 @@ export default function ChatbotCopilot({
           conversationHistory: messages.slice(-6).map(m => ({
             role: m.type === 'user' ? 'user' : 'assistant',
             content: m.content
-          }))
+          })),
+          userId,
+          subInstituteId
         })
       });
 
@@ -578,7 +681,7 @@ export default function ChatbotCopilot({
                   </div>
                   <div>
                     <h3 className="font-bold text-lg leading-tight">Conversational AI</h3>
-                    <p className="text-xs text-white/90">Hello! I am Conversational AI, your assistant to help you with...</p>
+                    {/* <p className="text-xs text-white/90">Hello! I am Conversational AI, your assistant to help you with...</p> */}
                   </div>
                 </div>
 
@@ -603,24 +706,45 @@ export default function ChatbotCopilot({
 
             {/* Messages */}
             <motion.div
-              className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50/50"
+              className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50/50 flex flex-col"
               variants={{
                 closed: { opacity: 0 },
                 open: { opacity: 1, transition: { staggerChildren: 0.05 } }
               }}
+              style={{ flexDirection: 'column' }}
             >
-              {/* Logo/Branding Section */}
+              {/* Logo/Branding Section - Welcome Message */}
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg flex items-center justify-center">
                   <Bot className="w-12 h-12 text-white" />
                 </div>
                 <div className="text-center">
                   <h4 className="font-semibold text-gray-800">Conversational AI</h4>
-                  <p className="text-sm text-gray-500 mt-1 max-w-[280px]">
+                  {/* <p className="text-sm text-gray-500 mt-1 max-w-[280px]">
                     Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?
-                  </p>
+                  </p> */}
                 </div>
               </div>
+
+              {/* Contextual Question Suggestions - Below Welcome Message */}
+              {contextualSuggestions.length > 0 && messages.length <= 1 && (
+                <div className="flex flex-col items-center justify-center py-4 space-y-3 px-4">
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                    Suggested questions for {currentModule}
+                  </p>
+                  <div className="flex flex-col gap-2 w-full max-w-[320px]">
+                    {contextualSuggestions.map((question, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setInput(question)}
+                        className="px-4 py-3 text-sm text-left bg-white border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 hover:shadow-md transition-all duration-200 text-gray-700"
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {messages.map((message) => (
                 <div
@@ -650,7 +774,7 @@ export default function ChatbotCopilot({
                       }`}
                   >
                     <div
-                      className={`px-4 py-3 text-sm shadow-sm ${message.type === "user"
+                      className={`px-4 py-3 text-sm shadow-sm whitespace-pre-wrap ${message.type === "user"
                         ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
                         : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm"
                         }`}

@@ -6,6 +6,7 @@ export type QueryIntent =
   | 'support'
   | 'CREATE_JOB_DESCRIPTION'
   | 'JOB_ROLE_COMPETENCY'
+  | 'Course_Recommendation'
   | 'unclear';
 
   export interface ExtractedEntities {
@@ -62,6 +63,18 @@ const intentPatterns: Record<QueryIntent, string[]> = {
     'compare this with',
     'similar roles',
     'advanced role'
+  ],
+
+  Course_Recommendation: [
+    'recommend course',
+    'course recommendation',
+    'suggest course',
+    'course suggestion',
+    'course suggest',  // Added: "course suggest" pattern
+    'recommend learning path',
+    'learning path recommendation',
+    'suggest learning path',
+    'learning path suggestion'
   ],
 
   data_retrieval: [
@@ -186,13 +199,33 @@ export function classifyIntent(
     };
   }
 
+  // Check for Course_Recommendation patterns
+  const coursePatterns = intentPatterns.Course_Recommendation.map(p => p.toLowerCase());
+  const courseMatches = coursePatterns.filter(pattern =>
+    lowerQuery.includes(pattern)
+  ).length;
+
+  if (courseMatches > 0) {
+    const entities = extractEntities(query);
+
+    let confidence = 0.5 + courseMatches * 0.15;
+    confidence = Math.min(confidence, 0.98);
+
+    return {
+      intent: 'Course_Recommendation',
+      confidence,
+      reasoning: `Detected ${courseMatches} course recommendation pattern(s)`,
+      entities
+    };
+  }
+
   // Original pattern matching for other intents
   const intents = Object.entries(intentPatterns) as [QueryIntent, string[]][];
   let maxMatches = 0;
   let detectedIntent: QueryIntent = 'unclear';
 
   for (const [intent, patterns] of intents) {
-    if (intent === 'JOB_ROLE_COMPETENCY') continue; // Skip already handled
+    if (intent === 'JOB_ROLE_COMPETENCY' || intent === 'Course_Recommendation') continue; // Skip already handled
 
     const matches = patterns.filter(pattern =>
       lowerQuery.includes(pattern.toLowerCase())

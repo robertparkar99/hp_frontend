@@ -215,7 +215,7 @@ const ActivityStream = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="h-full bg-white flex items-center justify-center">
         <div className="text-center">
           <p>Loading tasks...</p>
         </div>
@@ -224,7 +224,7 @@ const ActivityStream = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white rounded-xl">
+    <div className="bg-white rounded-xl h-full">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-4">
