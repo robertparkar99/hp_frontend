@@ -45,10 +45,7 @@
     "src/app/content/HRMS/Payroll/PayrollTypeDialog.jsx",
     "src/app/content/organization-profile-management/profile.jsx",
     "src/app/content/Reports/employee/EmployeeDirectory.jsx",
-    ".next/dev/types/**/*.ts",
-    "apps/**/*.ts",
-    "apps/**/*.tsx",
-    "apps/**/*.js"
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { genkit } from "genkit";
 import { googleAI } from "@genkit-ai/google-genai";
 // @ts-ignore - Flow is a JavaScript module
-import { courseRecommendationFlow } from "../../../apps/ai/src/flows/courseRecommendationFlow";
+import { courseRecommendationFlow } from "../../../../apps/ai/src/flows/courseRecommendationFlow";
 
 // Initialize Genkit with Google AI plugin (singleton pattern for serverless)
 let gkInstance: ReturnType<typeof genkit> | null = null;

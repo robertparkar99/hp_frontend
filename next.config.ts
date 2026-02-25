@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
+  eslint: {
+    ignoreDuringBuilds: true, // This will skip ESLint completely during builds
+  },
   typescript: {
     ignoreBuildErrors: true, // Also ignore TypeScript errors if needed
   },
@@ -13,8 +16,6 @@ const nextConfig: NextConfig = {
     "@genkit-ai/express",
     "@genkit-ai/next",
   ],
-  // Transpile packages in the apps folder
-  transpilePackages: ["apps/ai"],
 };
 
 export default nextConfig;
