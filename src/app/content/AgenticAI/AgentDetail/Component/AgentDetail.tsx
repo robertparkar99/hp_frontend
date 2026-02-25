@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StatusBadge from '../../AgentDashboard/Component/StatusBadge';
 import { ArrowLeft, Settings, Play, Pause, Zap } from 'lucide-react';
-import { KnowledgeToolForm, EmailToolForm, VisualizationToolForm, WebSearchToolForm, SQLExecutionToolForm, FileToolForm, N8nToolForm } from './ToolForms';
+import { KnowledgeToolForm, EmailToolForm, VisualizationToolForm, WebSearchToolForm, SQLExecutionToolForm, FileToolForm } from './ToolForms';
 // Agent Detail Component
 export default function AgentDetail() {
   const searchParams = useSearchParams();
@@ -327,7 +327,6 @@ export default function AgentDetail() {
                   {selectedTool === 'web_search' && <WebSearchToolForm agentId={agent.id}  />}
                   {selectedTool === 'sql_query' && <SQLExecutionToolForm agentId={agent.id} />}
                   {selectedTool === 'file' && <FileToolForm agentId={agent.id} />}
-                  {selectedTool === 'n8n' && <N8nToolForm agentId={agent.id} />}
                 </div>
               )}
             </CardContent>
