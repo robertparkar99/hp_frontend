@@ -291,7 +291,6 @@ const ActivityStream = () => {
 
   if (loading) {
     return (
-      <div className=" bg-white flex items-center justify-center h-full">
       <div className="h-full bg-white flex items-center justify-center">
         <div className="text-center">
           <p>Loading tasks...</p>
@@ -484,7 +483,6 @@ const ActivityStream = () => {
         </div>
       </div>
     </div>
-    </>
   );
 }
 
