@@ -1,12 +1,12 @@
 "use client";
-import ActivityStream from "@/app/content/task/activityStream";
+import ActivityStream from "../activityStream";
 import Header from "@/components/Header/Header";
 import Sidebar from "@/components/SideMenu/Newsidebar";
 import { useState, useEffect } from "react";
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  //const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
   // Track window width for responsive behavior
   useEffect(() => {
@@ -18,8 +18,6 @@ export default function HomePage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Check if we're on mobile/tablet
-  const isMobile = windowWidth < 1024;
 
 
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
@@ -54,13 +52,6 @@ export default function HomePage() {
   }, []);
 
   // Calculate margin based on sidebar state - use responsive values
-  const getMarginLeft = () => {
-    if (isMobile) {
-      return '12px'; // Mobile - small margin for clean look
-    }
-    return isSidebarOpen ? '304px' : '96px'; // 24 = 6rem = 96px
-  };
-    // Calculate margin based on sidebar state - use responsive values
   const getMarginLeft = () => {
     if (isMobile) {
       return '12px'; // Mobile - small margin for clean look
