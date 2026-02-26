@@ -259,7 +259,7 @@ const CourseCard = ({
   }, [contentData]);
 
   const handleViewDetails = () => {
-    onViewDetails(correctSubjectId || course.subject_id, course.standard_id);
+    onViewDetails(course.subject_id || correctSubjectId, course.standard_id);
   };
 
   const handleEnroll = async () => {
