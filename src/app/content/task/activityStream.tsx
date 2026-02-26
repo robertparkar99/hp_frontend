@@ -297,8 +297,7 @@ const ActivityStream = () => {
           <p>Loading tasks...</p>
         </div>
       </div>
-    );
-  }
+      );
 
   return (
     <div className="bg-white rounded-xl h-full">
@@ -484,8 +483,9 @@ const ActivityStream = () => {
         </div>
       </div>
     </div>
-    </>
+    </div>
   );
+}
 }
 
 export default ActivityStream;
