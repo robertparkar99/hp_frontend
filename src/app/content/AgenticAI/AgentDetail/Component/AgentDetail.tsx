@@ -7,7 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StatusBadge from '../../AgentDashboard/Component/StatusBadge';
 import { ArrowLeft, Settings, Play, Pause, Zap } from 'lucide-react';
-import { KnowledgeToolForm, EmailToolForm, VisualizationToolForm, WebSearchToolForm, SQLExecutionToolForm, FileToolForm } from './ToolForms';
+import dynamic from 'next/dynamic';
+
+const KnowledgeToolForm = dynamic(() => import('./ToolForms').then(mod => mod.KnowledgeToolForm));
+const EmailToolForm = dynamic(() => import('./ToolForms').then(mod => mod.EmailToolForm));
+const VisualizationToolForm = dynamic(() => import('./ToolForms').then(mod => mod.VisualizationToolForm));
+const WebSearchToolForm = dynamic(() => import('./ToolForms').then(mod => mod.WebSearchToolForm));
+const SQLExecutionToolForm = dynamic(() => import('./ToolForms').then(mod => mod.SQLExecutionToolForm));
+const FileToolForm = dynamic(() => import('./ToolForms').then(mod => mod.FileToolForm));
+const N8nToolForm = dynamic(() => import('./ToolForms').then(mod => mod.N8nToolForm));
 // Agent Detail Component
 export default function AgentDetail() {
   const searchParams = useSearchParams();
