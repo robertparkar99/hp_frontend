@@ -42,6 +42,33 @@ interface Skill {
   title: string;
 }
 
+// KAAB Item interface for separate KAAB categories
+interface KAABItem {
+  id: number;
+  knowledge_id?: number;
+  ability_id?: number;
+  attitude_id?: number;
+  behaviour_id?: number;
+  title: string;
+  knowledge?: string;
+  ability?: string;
+  attitude?: string;
+  behaviour?: string;
+  description?: string;
+  proficiency_level?: string | number;
+}
+
+// Rated KAAB interface
+interface RatedKAAB {
+  id: string;
+  category: 'knowledge' | 'ability' | 'attitude' | 'behaviour';
+  title: string;
+  self_rating: number;
+  expected: number;
+  ratings: Record<string, string>;
+  created_at?: string;
+}
+
 interface RatedSkill {
   id: number;
   skill_level: string;
@@ -349,7 +376,19 @@ export default function Page({
   SkillLevels = [],
 }: JobroleSkilladd1Props) {
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [kaabData, setKaabData] = useState<{
+    knowledge: KAABItem[];
+    ability: KAABItem[];
+    attitude: KAABItem[];
+    behaviour: KAABItem[];
+  }>({
+    knowledge: [],
+    ability: [],
+    attitude: [],
+    behaviour: []
+  });
   const [userRatedSkills, setUserRatedSkills] = useState<RatedSkill[]>([]);
+  const [userRatedKAAB, setUserRatedKAAB] = useState<RatedKAAB[]>([]);
   const [userRatingData, setUserRatingData] = useState<UserRatingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
@@ -359,6 +398,7 @@ export default function Page({
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showEmptyState, setShowEmptyState] = useState(false);
   const [showFullscreenChart, setShowFullscreenChart] = useState(false);
+  const [activeTab, setActiveTab] = useState<"skills" | "kaab">("skills");
 
   const [sessionData, setSessionData] = useState({
     APP_URL: "",
@@ -401,8 +441,12 @@ export default function Page({
 
   // Fetch all skills from first API
   const fetchAllSkills = async () => {
+    if (!sessionData.APP_URL) {
+      console.warn("Session URL not available");
+      return [];
+    }
     try {
-      const base = sessionData.APP_URL || "https://hp.triz.co.in";
+      const base = sessionData.APP_URL;
       const response = await fetch(
         `${base}/get-kaba?sub_institute_id=${sessionData.sub_institute_id}&type=${type}&type_id=${type_id}&title=${encodeURIComponent(title)}`
       );
@@ -429,6 +473,51 @@ export default function Page({
         })) || [];
         // console.log('kya hume transfomed skills mil rahe hai??',data.skill);
         setSkills(transformedSkills);
+        
+        // Also store KAAB data from the API response
+        const knowledgeItems: KAABItem[] = (data.knowledge || []).map((item: any) => ({
+          id: item.id || item.knowledge_id || 0,
+          knowledge_id: item.knowledge_id || item.id,
+          title: item.knowledge || item.title || "",
+          knowledge: item.knowledge || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        const abilityItems: KAABItem[] = (data.ability || []).map((item: any) => ({
+          id: item.id || item.ability_id || 0,
+          ability_id: item.ability_id || item.id,
+          title: item.ability || item.title || "",
+          ability: item.ability || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        const attitudeItems: KAABItem[] = (data.attitude || []).map((item: any) => ({
+          id: item.id || item.attitude_id || 0,
+          attitude_id: item.attitude_id || item.id,
+          title: item.attitude || item.title || "",
+          attitude: item.attitude || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        const behaviourItems: KAABItem[] = (data.behaviour || data.behavior || []).map((item: any) => ({
+          id: item.id || item.behaviour_id || item.behavior_id || 0,
+          behaviour_id: item.behaviour_id || item.behavior_id || item.id,
+          title: item.behaviour || item.behavior || item.title || "",
+          behaviour: item.behaviour || item.behavior || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        setKaabData({
+          knowledge: knowledgeItems,
+          ability: abilityItems,
+          attitude: attitudeItems,
+          behaviour: behaviourItems
+        });
+        
         return transformedSkills;
       }
     } catch (error) {
@@ -439,8 +528,12 @@ export default function Page({
 
   // Fetch user rating data from second API
   const fetchUserRatingData = async () => {
+    if (!sessionData.APP_URL) {
+      console.warn("Session URL not available");
+      return null;
+    }
     try {
-      const base = sessionData.APP_URL || "https://hp.triz.co.in";
+      const base = sessionData.APP_URL;
       const response = await fetch(
         `${base}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${sessionData.user_id}&filters[jobrole_id]=${jobrole_id}`
       );
@@ -557,9 +650,101 @@ export default function Page({
     setUserRatedSkills(ratedSkillsArray);
   };
 
+  // Process KAAB ratings into separate rated items
+  const processKAABData = (ratingData: UserRatingData | null) => {
+    if (!ratingData) {
+      setUserRatedKAAB([]);
+      return;
+    }
+
+    const ratedKAABArray: RatedKAAB[] = [];
+    
+    // Parse the JSON strings from the API response
+    const knowledgeRatings = ratingData.knowledge_ids ? JSON.parse(ratingData.knowledge_ids) : {};
+    const abilityRatings = ratingData.ability_ids ? JSON.parse(ratingData.ability_ids) : {};
+    const attitudeRatings = ratingData.attitude_ids ? JSON.parse(ratingData.attitude_ids) : {};
+    const behaviorRatings = ratingData.behavior_ids ? JSON.parse(ratingData.behavior_ids) : {};
+
+    // Process Knowledge items
+    kaabData.knowledge.forEach((item) => {
+      const itemId = item.knowledge_id?.toString() || item.id.toString();
+      if (knowledgeRatings[itemId]) {
+        const rating = parseInt(knowledgeRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `knowledge-${itemId}`,
+          category: 'knowledge',
+          title: item.knowledge || item.title || "Unknown Knowledge",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.knowledge || item.title || ""]: knowledgeRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    // Process Ability items
+    kaabData.ability.forEach((item) => {
+      const itemId = item.ability_id?.toString() || item.id.toString();
+      if (abilityRatings[itemId]) {
+        const rating = parseInt(abilityRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `ability-${itemId}`,
+          category: 'ability',
+          title: item.ability || item.title || "Unknown Ability",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.ability || item.title || ""]: abilityRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    // Process Attitude items
+    kaabData.attitude.forEach((item) => {
+      const itemId = item.attitude_id?.toString() || item.id.toString();
+      if (attitudeRatings[itemId]) {
+        const rating = parseInt(attitudeRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `attitude-${itemId}`,
+          category: 'attitude',
+          title: item.attitude || item.title || "Unknown Attitude",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.attitude || item.title || ""]: attitudeRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    // Process Behaviour items
+    kaabData.behaviour.forEach((item) => {
+      const itemId = item.behaviour_id?.toString() || item.id.toString();
+      if (behaviorRatings[itemId]) {
+        const rating = parseInt(behaviorRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `behaviour-${itemId}`,
+          category: 'behaviour',
+          title: item.behaviour || item.title || "Unknown Behaviour",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.behaviour || item.title || ""]: behaviorRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    console.log("Processed rated KAAB:", ratedKAABArray);
+    setUserRatedKAAB(ratedKAABArray);
+  };
+
   // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
+      // Wait for session data to be loaded
+      if (!sessionData.APP_URL || !sessionData.user_id) {
+        return;
+      }
+      
       setLoading(true);
       try {
         // Fetch both APIs in parallel
@@ -573,7 +758,13 @@ export default function Page({
 
         // Check if we should show empty state
         const hasRatedSkills = ratingData && ratingData.skill_ids && ratingData.skill_ids !== "{}";
-        setShowEmptyState(!hasRatedSkills);
+        const hasRatedKAAB = ratingData && (
+          (ratingData.knowledge_ids && ratingData.knowledge_ids !== "{}") ||
+          (ratingData.ability_ids && ratingData.ability_ids !== "{}") ||
+          (ratingData.attitude_ids && ratingData.attitude_ids !== "{}") ||
+          (ratingData.behavior_ids && ratingData.behavior_ids !== "{}")
+        );
+        setShowEmptyState(!hasRatedSkills && !hasRatedKAAB);
       } catch (error) {
         console.error("Error fetching data:", error);
         setShowEmptyState(true);
@@ -583,12 +774,60 @@ export default function Page({
     };
 
     fetchData();
-  }, [sub_institute_id, type_id, user_id, jobrole_id]);
+  }, [sub_institute_id, type_id, user_id, jobrole_id, sessionData]);
+
+  // Process KAAB data when kaabData or userRatingData changes
+  useEffect(() => {
+    if ((kaabData.knowledge.length > 0 || kaabData.ability.length > 0 || 
+        kaabData.attitude.length > 0 || kaabData.behaviour.length > 0) && userRatingData) {
+      processKAABData(userRatingData);
+    }
+  }, [kaabData, userRatingData]);
 
   // Compute un-rated skills
   const unRatedSkills = skills.filter(
     skill => !userRatedSkills.some(rated => rated.skill_id === skill.skill_id)
   );
+
+  // Compute un-rated KAAB items
+  const unRatedKAAB = React.useMemo(() => {
+    const ratedKAABIds = new Set(userRatedKAAB.map(r => r.id));
+    const unrated: KAABItem[] = [];
+    
+    // Filter unrated knowledge items
+    kaabData.knowledge.forEach(item => {
+      const id = `knowledge-${item.knowledge_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    // Filter unrated ability items
+    kaabData.ability.forEach(item => {
+      const id = `ability-${item.ability_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    // Filter unrated attitude items
+    kaabData.attitude.forEach(item => {
+      const id = `attitude-${item.attitude_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    // Filter unrated behaviour items
+    kaabData.behaviour.forEach(item => {
+      const id = `behaviour-${item.behaviour_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    return unrated;
+  }, [kaabData, userRatedKAAB]);
 
   const calculateOverallSkillIndex = () => {
     if (!userRatedSkills || userRatedSkills.length === 0) return "0.0";
@@ -880,10 +1119,10 @@ export default function Page({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 h-auto">
           {/* Skill List */}
           <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200 h-auto max-h-[500px] sm:max-h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">🚨 Un-Rated Skills</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">🚨 Un-Rated Skills & KAAB</h2>
 
             <div className="space-y-3 sm:space-y-4 h-auto overflow-y-auto hide-scroll">
-              {unRatedSkills.length === 0 ? (
+              {unRatedSkills.length === 0 && unRatedKAAB.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full py-8 sm:py-12">
                   <div className="mb-4 sm:mb-6">
                     <img
@@ -892,32 +1131,97 @@ export default function Page({
                       className="w-full max-w-[280px] sm:max-w-[400px] h-auto mx-auto object-cover shadow-lg border-2 sm:border-4 "
                     />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-green-700 mb-2">All Skills Rated!</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-green-700 mb-2">All Skills & KAAB Rated!</h3>
                   <p className="text-gray-600 text-center text-sm sm:text-base max-w-md px-4">
-                    Great job! You've successfully rated all your skills.
+                    Great job! You've successfully rated all your skills and KAAB items.
                     Your development plan will now be more personalized and effective.
                   </p>
                 </div>
               ) : (
-                unRatedSkills.map(skill => (
-                  <div
-                    key={skill.jobrole_skill_id}
-                    className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-white shadow-sm"
-                  >
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                      <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{skill.title || skill.skill}</h3>
-                      <span className="text-xs sm:text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
-                        {skill.proficiency_level}
-                      </span>
-                    </div>
-                    <p className="text-gray-700 text-xs sm:text-sm mt-1">{skill.description}</p>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
-                      <span className="px-1.5 sm:px-2 py-1 bg-blue-100 text-blue-800 text-[10px] sm:text-xs rounded border border-blue-200">{skill.category}</span>
-                      <span className="px-1.5 sm:px-2 py-1 bg-green-100 text-green-800 text-[10px] sm:text-xs rounded border border-green-200">{skill.sub_category}</span>
-                    </div>
-                    <p className="text-[10px] sm:text-xs text-gray-600 mt-2">Job Role: {skill.jobrole}</p>
-                  </div>
-                ))
+                <>
+                  {/* Un-Rated Skills */}
+                  {unRatedSkills.length > 0 && (
+                    <>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Skills</h3>
+                      {unRatedSkills.map(skill => (
+                        <div
+                          key={skill.jobrole_skill_id}
+                          className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-white shadow-sm"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{skill.title || skill.skill}</h3>
+                            <span className="text-xs sm:text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
+                              {skill.proficiency_level}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 text-xs sm:text-sm mt-1">{skill.description}</p>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
+                            <span className="px-1.5 sm:px-2 py-1 bg-blue-100 text-blue-800 text-[10px] sm:text-xs rounded border border-blue-200">{skill.category}</span>
+                            <span className="px-1.5 sm:px-2 py-1 bg-green-100 text-green-800 text-[10px] sm:text-xs rounded border border-green-200">{skill.sub_category}</span>
+                          </div>
+                          <p className="text-[10px] sm:text-xs text-gray-600 mt-2">Job Role: {skill.jobrole}</p>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Un-Rated KAAB */}
+                  {unRatedKAAB.length > 0 && (
+                    <>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2 mt-4">KAAB</h3>
+                      {unRatedKAAB.map((item, index) => {
+                        // Determine category
+                        let category = 'knowledge';
+                        let categoryColor = 'blue';
+                        let categoryBg = 'bg-blue-100';
+                        let categoryText = 'text-blue-800';
+                        let categoryBorder = 'border-blue-200';
+                        
+                        if (item.ability_id) {
+                          category = 'ability';
+                          categoryColor = 'green';
+                          categoryBg = 'bg-green-100';
+                          categoryText = 'text-green-800';
+                          categoryBorder = 'border-green-200';
+                        } else if (item.attitude_id) {
+                          category = 'attitude';
+                          categoryColor = 'orange';
+                          categoryBg = 'bg-orange-100';
+                          categoryText = 'text-orange-800';
+                          categoryBorder = 'border-orange-200';
+                        } else if (item.behaviour_id) {
+                          category = 'behaviour';
+                          categoryColor = 'purple';
+                          categoryBg = 'bg-purple-100';
+                          categoryText = 'text-purple-800';
+                          categoryBorder = 'border-purple-200';
+                        }
+                        
+                        return (
+                          <div
+                            key={`${category}-${item.id}-${index}`}
+                            className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-white shadow-sm"
+                          >
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${categoryBg} ${categoryText} border ${categoryBorder}`}>
+                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </span>
+                                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                                  {item.knowledge || item.ability || item.attitude || item.behaviour || item.title || 'Unknown'}
+                                </h3>
+                              </div>
+                              <span className="text-xs sm:text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                {item.proficiency_level || 'Level 5'}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 text-xs sm:text-sm mt-1">{item.description}</p>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -925,7 +1229,32 @@ export default function Page({
           {/* User Rated Skills */}
           <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200 h-auto max-h-[500px] sm:max-h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-800">📅 Rated Skills</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800">📅 Rated Skills</h2>
+                {/* Tabs */}
+                <div className="flex border-b border-gray-200">
+                  <button
+                    onClick={() => setActiveTab("skills")}
+                    className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition-colors ${
+                      activeTab === "skills"
+                        ? "border-b-2 border-blue-500 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    Skill Ratings
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("kaab")}
+                    className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition-colors ${
+                      activeTab === "kaab"
+                        ? "border-b-2 border-blue-500 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    KAAB Ratings
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={() => setShowRecommendations(true)}
                 className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-xs sm:text-sm"
@@ -936,179 +1265,223 @@ export default function Page({
 
             <div className="space-y-3 sm:space-y-5 h-auto overflow-y-auto hide-scroll">
               {userRatedSkills && userRatedSkills.length > 0 ? (
-                userRatedSkills.map((ratedSkill: RatedSkill) => {
-                  const totalLevels = ratedSkill.proficiency_level || 5;
-                  const currentLevel = ratedSkill.skill_level
-                    ? parseInt(ratedSkill.skill_level.replace("Level ", ""))
-                    : 1;
-                  const completionPercentage = Math.round((currentLevel / Number(totalLevels)) * 100);
-                  const status =
-                    completionPercentage >= 80
-                      ? "On Track"
-                      : completionPercentage >= 60
-                        ? "Medium Risk"
-                        : "At Risk";
-                  const statusColor =
-                    completionPercentage >= 80
-                      ? "text-green-700"
-                      : completionPercentage >= 60
-                        ? "text-yellow-700"
-                        : "text-red-700";
-                  const created_at = ratedSkill.created_at
-                    ? new Date(ratedSkill.created_at).toLocaleDateString()
-                    : "N/A";
+                activeTab === "skills" ? (
+                  userRatedSkills.map((ratedSkill: RatedSkill) => {
+                    const totalLevels = ratedSkill.proficiency_level || 5;
+                    const currentLevel = ratedSkill.skill_level
+                      ? parseInt(ratedSkill.skill_level.replace("Level ", ""))
+                      : 1;
+                    const completionPercentage = Math.round((currentLevel / Number(totalLevels)) * 100);
+                    const status =
+                      completionPercentage >= 80
+                        ? "On Track"
+                        : completionPercentage >= 60
+                          ? "Medium Risk"
+                          : "At Risk";
+                    const statusColor =
+                      completionPercentage >= 80
+                        ? "text-green-700"
+                        : completionPercentage >= 60
+                          ? "text-yellow-700"
+                          : "text-red-700";
+                    const created_at = ratedSkill.created_at
+                      ? new Date(ratedSkill.created_at).toLocaleDateString()
+                      : "N/A";
 
-                  const selfRating = ratedSkill.skill_level !== undefined ?
-                    parseFloat(ratedSkill.skill_level.replace("Level ", "")) || 0 : 0;
-      const expected = parseExpectedLevel(ratedSkill.proficiency_level);
+                    const selfRating = ratedSkill.skill_level !== undefined ?
+                      parseFloat(ratedSkill.skill_level.replace("Level ", "")) || 0 : 0;
+                    const expected = parseExpectedLevel(ratedSkill.proficiency_level);
 
-                  return (
-                    <div
-                      key={ratedSkill.id}
-                      className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-gray-50 shadow-sm"
-                    >
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
-                          {ratedSkill.title || ratedSkill.skill || "Untitled Skill"}
-                        </h3>
-                        <span className="font-medium text-gray-500 flex items-center space-x-1 text-[10px] sm:text-xs">
-                          Gap:{(() => {
-                            const gap = selfRating - expected;
-                            if (gap > 0) {
-                              return (
+                    return (
+                      <div
+                        key={ratedSkill.id}
+                        className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-gray-50 shadow-sm"
+                      >
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                            {ratedSkill.title || ratedSkill.skill || "Untitled Skill"}
+                          </h3>
+                          <span className="font-medium text-gray-500 flex items-center space-x-1 text-[10px] sm:text-xs">
+                            Gap:{(() => {
+                              const gap = selfRating - expected;
+                              if (gap > 0) {
+                                return (
+                                  <div className="flex items-center space-x-1 text-green-600 font-medium text-[10px] sm:text-xs">
+                                    <span className="mdi mdi-trending-up text-xs sm:text-sm"></span>
+                                    <span>+{gap.toFixed(1)}</span>
+                                  </div>
+                                );
+                              } else if (gap < 0) {
+                                return (
+                                  <div className="flex items-center space-x-1 text-red-600 font-medium text-[10px] sm:text-xs">
+                                    <span className="mdi mdi-alert-circle text-xs sm:text-sm"></span>
+                                    <span>{gap.toFixed(1)}</span>
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
+                                    <span className="mdi mdi-check-circle text-sm"></span>
+                                    <span>0.0</span>
+                                  </div>
+                                );
+                              }
+                            })()}
+                          </span>
+                          <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            {created_at}
+                          </span>
+                        </div>
+
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          {ratedSkill.category || "General"} •{" "}
+                          {ratedSkill.sub_category || "Uncategorized"}
+                        </p>
+
+                        <div className="w-full bg-gray-300 rounded h-2 mt-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded"
+                            style={{ width: `${completionPercentage}%` }}
+                          ></div>
+                        </div>
+
+                        <div className="grid grid-cols-2 text-xs sm:text-sm font-semibold text-gray-700 border-b pb-1 mt-3 sm:mt-4">
+                          <p>Self Rating</p>
+                          <p>Expected</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-xs items-center">
+                          {/* Self Rating */}
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            {renderCircles(selfRating, Number(totalLevels))}
+                            <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}/{totalLevels}</span>
+                          </div>
+
+                          {/* Expected Rating */}
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              {renderCircles(expected, Number(totalLevels))}
+                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}/{totalLevels}</span>
+                            </div>
+
+                            <span
+                              className={`inline-flex items-center rounded-full border px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold transition-colors
+                                focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
+                                hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
+                            >
+                              {status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Add detailed ratings expandable here */}
+                        {renderDetailedRatings(ratedSkill)}
+                      </div>
+                    );
+                  })
+                ) : (
+                  // KAAB Tab Content - Show rated KAAB items
+                  userRatedKAAB && userRatedKAAB.length > 0 ? (
+                    userRatedKAAB.map((ratedKAAB: RatedKAAB) => {
+                      const selfRating = ratedKAAB.self_rating || 0;
+                      const expected = ratedKAAB.expected || 5;
+                      const gap = selfRating - expected;
+                      const completionPercentage = Math.round((selfRating / 5) * 100);
+                      const status = completionPercentage >= 80 ? "On Track" : completionPercentage >= 60 ? "Medium Risk" : "At Risk";
+                      const statusColor = completionPercentage >= 80 ? "text-green-700" : completionPercentage >= 60 ? "text-yellow-700" : "text-red-700";
+                      const created_at = ratedKAAB.created_at ? new Date(ratedKAAB.created_at).toLocaleDateString() : "N/A";
+                      
+                      const categoryColors: Record<string, { bg: string; border: string; text: string }> = {
+                        knowledge: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700" },
+                        ability: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
+                        attitude: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700" },
+                        behaviour: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700" }
+                      };
+                      
+                      const colors = categoryColors[ratedKAAB.category] || categoryColors.knowledge;
+                      
+                      return (
+                        <div
+                          key={ratedKAAB.id}
+                          className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-gray-50 shadow-sm"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text} border ${colors.border}`}>
+                                {ratedKAAB.category.charAt(0).toUpperCase() + ratedKAAB.category.slice(1)}
+                              </span>
+                              <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                                {ratedKAAB.title}
+                              </h3>
+                            </div>
+                            <span className="font-medium text-gray-500 flex items-center space-x-1 text-[10px] sm:text-xs">
+                              Gap:{" "}
+                              {gap > 0 ? (
                                 <div className="flex items-center space-x-1 text-green-600 font-medium text-[10px] sm:text-xs">
                                   <span className="mdi mdi-trending-up text-xs sm:text-sm"></span>
                                   <span>+{gap.toFixed(1)}</span>
                                 </div>
-                              );
-                            } else if (gap < 0) {
-                              return (
+                              ) : gap < 0 ? (
                                 <div className="flex items-center space-x-1 text-red-600 font-medium text-[10px] sm:text-xs">
                                   <span className="mdi mdi-alert-circle text-xs sm:text-sm"></span>
                                   <span>{gap.toFixed(1)}</span>
                                 </div>
-                              );
-                            } else {
-                              return (
+                              ) : (
                                 <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
                                   <span className="mdi mdi-check-circle text-sm"></span>
                                   <span>0.0</span>
                                 </div>
-                              );
-                            }
-                          })()}
-                        </span>
-                        <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                          {created_at}
-                        </span>
-                      </div>
-
-                      <p className="text-xs sm:text-sm text-gray-600">
-                        {ratedSkill.category || "General"} •{" "}
-                        {ratedSkill.sub_category || "Uncategorized"}
-                      </p>
-
-                      <div className="w-full bg-gray-300 rounded h-2 mt-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded"
-                          style={{ width: `${completionPercentage}%` }}
-                        ></div>
-                      </div>
-
-                      <div className="grid grid-cols-2 text-xs sm:text-sm font-semibold text-gray-700 border-b pb-1 mt-3 sm:mt-4">
-                        <p>Self Rating</p>
-                        <p>Expected</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-xs items-center">
-                        {/* Self Rating */}
-                        <div className="flex items-center space-x-1 sm:space-x-2">
-                          {renderCircles(selfRating, totalLevels)}
-                          <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}/{totalLevels}</span>
-                        </div>
-
-                        {/* Expected Rating */}
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center space-x-1 sm:space-x-2">
-                            {renderCircles(expected, totalLevels)}
-                            <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}/{totalLevels}</span>
+                              )}
+                            </span>
+                            <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                              {created_at}
+                            </span>
                           </div>
 
-                          <span
-                            className={`inline-flex items-center rounded-full border px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold transition-colors
-                              focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
-                              hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
-                          >
-                            {status}
-                          </span>
+                          <div className="w-full bg-gray-300 rounded h-2 mt-2">
+                            <div
+                              className={`h-2 rounded ${colors.bg.split('-')[1] === 'blue' ? 'bg-blue-600' : colors.bg.split('-')[1] === 'green' ? 'bg-green-600' : colors.bg.split('-')[1] === 'orange' ? 'bg-orange-500' : 'bg-purple-500'}`}
+                              style={{ width: `${completionPercentage}%` }}
+                            ></div>
+                          </div>
+
+                          <div className="grid grid-cols-2 text-xs sm:text-sm font-semibold text-gray-700 border-b pb-1 mt-3 sm:mt-4">
+                            <p>Self Rating</p>
+                            <p>Expected</p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-xs items-center">
+                            {/* Self Rating */}
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              {renderCircles(selfRating, 5)}
+                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}/5</span>
+                            </div>
+
+                            {/* Expected Rating */}
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center space-x-1 sm:space-x-2">
+                                {renderCircles(expected, 5)}
+                                <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}/5</span>
+                              </div>
+
+                              <span
+                                className={`inline-flex items-center rounded-full border px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold transition-colors
+                                  bg-red-50 text-red-700 border-red-200 ${statusColor}`}
+                              >
+                                {status}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* KAAB Ratings Summary - Always Visible */}
-                      <div className="mt-3 sm:mt-4 border-t pt-2 sm:pt-3">
-                        <h4 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3 flex items-center">
-                          <span className="mdi mdi-chart-bar mr-1"></span>
-                          KAAB Ratings:
-                        </h4>
-                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                          {(() => {
-                            const detailedRatings = ratedSkill.detailed_ratings || {
-                              knowledge: ratedSkill.knowledge_ratings || {},
-                              ability: ratedSkill.ability_ratings || {},
-                              behaviour: ratedSkill.behaviour_ratings || {},
-                              attitude: ratedSkill.attitude_ratings || {}
-                            };
-
-                            const attrArray = [
-                              { title: "knowledge", icon: "mdi-book-open-page-variant", color: "blue" },
-                              { title: "ability", icon: "mdi-lightbulb-on", color: "green" },
-                              { title: "behaviour", icon: "mdi-account-group", color: "purple" },
-                              { title: "attitude", icon: "mdi-emoticon-happy-outline", color: "orange" },
-                            ];
-
-                            const getScore = (ratings: Record<string, string>) => {
-                              const yesCount = Object.values(ratings).filter(val => {
-                                const v = String(val).toLowerCase();
-                                return v === "yes" || v === "true" || v === "1";
-                              }).length;
-                              const totalCount = Object.keys(ratings).length;
-                              return { yesCount, totalCount, percentage: totalCount > 0 ? Math.round((yesCount / totalCount) * 100) : 0 };
-                            };
-
-                            return attrArray.map((attr) => {
-                              const ratings = detailedRatings[attr.title as keyof typeof detailedRatings] || {};
-                              const { yesCount, totalCount, percentage } = getScore(ratings);
-
-                              return (
-                                <div key={attr.title} className={`bg-${attr.color}-50 border border-${attr.color}-200 rounded-lg p-1.5 sm:p-2`}>
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-[10px] sm:text-xs font-medium capitalize flex items-center">
-                                      <span className={`mdi ${attr.icon} mr-1 text-${attr.color}-600`}></span>
-                                      {attr.title}:
-                                    </span>
-                                    <span className={`text-[10px] sm:text-xs font-bold text-${attr.color}-700`}>
-                                      {yesCount}/{totalCount}
-                                    </span>
-                                  </div>
-                                  <div className="w-full bg-gray-200 rounded-full h-1 sm:h-1.5">
-                                    <div
-                                      className={`bg-${attr.color}-500 h-1 sm:h-1.5 rounded-full`}
-                                      style={{ width: `${percentage}%` }}
-                                    ></div>
-                                  </div>
-                                  <div className="text-[10px] sm:text-xs text-gray-500 mt-1 text-right">{percentage}%</div>
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      </div>
-
-                      {/* Add detailed ratings expandable here */}
-                      {renderDetailedRatings(ratedSkill)}
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600 text-sm">No KAAB ratings found</p>
+                      <p className="text-gray-400 text-xs mt-1">Rate KAAB items to see them here</p>
                     </div>
-                  );
-                })
+                  )
+                )
               ) : (
                 <div className="text-center py-4">
                   <p className="text-gray-600 text-sm">No user rated skills found</p>
