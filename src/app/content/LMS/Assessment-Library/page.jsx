@@ -20,6 +20,13 @@ export default function HomePage() {
     checkSidebarState();
     window.addEventListener("sidebarStateChange", checkSidebarState);
 
+    // Set localStorage for chatbot to detect LMS Assessment module
+    localStorage.setItem('activeSection', 'LMS');
+    localStorage.setItem('activeSubItem', 'Assessment');
+    
+    // Dispatch event to notify chatbot of module change
+    window.dispatchEvent(new Event('activeItemChange'));
+
     return () => {
       window.removeEventListener("sidebarStateChange", checkSidebarState);
     };

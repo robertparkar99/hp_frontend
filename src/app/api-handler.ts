@@ -1,5 +1,5 @@
 
-import { classifyIntent, shouldRouteToAction, shouldUseFallback } from "@/lib1/intent-classifier";
+import { classifyIntent, shouldRouteToAction, shouldUseFallback,extractEntities } from "@/lib1/intent-classifier";
 import { sanitizeQuery, validateQuerySafety } from "@/lib1/sanitizer";
 import { parseError, formatErrorResponse, shouldRetry } from "@/lib1/error-handler";
 import { getRoleContext, canAccessData, getDataAccessFilter } from "@/lib1/role-context";
@@ -14,19 +14,40 @@ import {
 import { createEscalation } from "@/lib1/escalation-service";
 import { v4 as uuidv4 } from 'uuid';
 
+// Import course recommendation flow
+// @ts-ignore - Flow is a JavaScript module
+// Import course recommendation flow
+// @ts-ignore - Flow is a JavaScript module
+import { courseRecommendationFlow } from "@/ai/flows/courseRecommendationFlow";
+
 interface ChatRequest {
   query: string;
   sessionId: string;
   userId?: string;
+  subInstituteId?: string;
   role?: string;
   conversationHistory?: Array<{ role: string; content: string }>;
   debugMode?: boolean;
+  formData?: {
+    industry?: string;
+    department?: string;
+    jobRole?: string;
+    description?: string;
+  };
 }
 
 interface ChatResponse {
   answer: string;
   conversationId?: string;
   intent?: string;
+  confidence?: number;
+  entities?: {
+    industry?: string;
+    jobRole?: string;
+    department?: string;
+  };
+  action?: string;
+  missingFields?: string[];
   sql?: string;
   tables_used?: string[];
   insights?: string;
@@ -35,6 +56,11 @@ interface ChatResponse {
   suggestion?: string;
   canEscalate?: boolean;
   id?: string;
+}
+
+interface SuggestionRequest {
+  module: string; // 'course', 'assessment', 'learning', 'question-bank'
+  context?: string; // Additional context about the current page
 }
 
 interface JobDescription {
@@ -49,11 +75,49 @@ interface JobDescription {
   location: string;
 }
 
+interface JobRoleOutput {
+  CWFKT: {
+    critical_work_function: string;
+    key_tasks: string[];
+  }[];
+  skills: {
+    title: string;
+    description: string;
+    category: string;
+    sub_category: string;
+    proficiency_level: number;
+  }[];
+  knowledge: {
+    title: string;
+    category: string;
+    sub_category: string;
+    level: number;
+  }[];
+  ability: {
+    title: string;
+    category: string;
+    sub_category: string;
+    level: number;
+  }[];
+  attitude: {
+    title: string;
+    category: string;
+    sub_category: string;
+    level: number;
+  }[];
+  behavior: {
+    title: string;
+    category: string;
+    sub_category: string;
+    level: number;
+  }[];
+}
+
 interface ActionResponse {
   type: 'ACTION_RESPONSE';
   module: string;
   action: string;
-  data: JobDescription;
+  data: JobRoleOutput;
 }
 
 interface CreateJobDescriptionAction {
@@ -64,6 +128,59 @@ interface CreateJobDescriptionAction {
     department: string;
     description: string;
   };
+}
+// ================= JOB ROLE COMPETENCY TYPES =================
+
+interface JobRoleCompetencyPayload {
+  industry: string;
+  department: string;
+  jobRole: string;
+  description: string;
+  subInstituteId?: string;
+}
+
+interface IntentClassificationResult {
+  intent: string;
+  confidence: number;
+  reasoning: string;
+}
+
+interface GenkitCompetencyResponse {
+  CWFKT: Array<{
+    critical_work_function: string;
+    key_tasks: string[];
+  }>;
+  skills: Array<{
+    title: string;
+    description: string;
+    category: string;
+    sub_category: string;
+    proficiency_level: number;
+  }>;
+  knowledge: Array<{
+    title: string;
+    category: string;
+    sub_category: string;
+    level: number;
+  }>;
+  ability: Array<{
+    title: string;
+    category: string;
+    sub_category: string;
+    level: number;
+  }>;
+  attitude: Array<{
+    title: string;
+    category: string;
+    sub_category: string;
+    level: number;
+  }>;
+  behavior: Array<{
+    title: string;
+    category: string;
+    sub_category: string;
+    level: number;
+  }>;
 }
 
 let debugModeEnabled = false;
@@ -78,14 +195,14 @@ async function generateSQL(query: string, context: Array<{ role: string; content
     : '';
 
   const prompt = `${contextPrompt}Convert the following natural language query to MySQL SQL:
-Query: "${query}"
+  Query: "${query}"
 
-Database Schema (example - replace with your actual schema):
-- users (id, name, email, created_at)
-- projects (id, user_id, title, status, updated_at)
-- tasks (id, project_id, title, completed, due_date)
+  Database Schema (example - replace with your actual schema):
+  - users (id, name, email, created_at)
+  - projects (id, user_id, title, status, updated_at)
+  - tasks (id, project_id, title, completed, due_date)
 
-Return only the SQL query without explanations.`;
+  Return only the SQL query without explanations.`;
 
   const startTime = Date.now();
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -761,7 +878,8 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
   }
 
   const conversationId = await ensureConversation(request);
-  const intent = classifyIntent(request.query);
+  const intent = classifyIntent(request.query, request.conversationHistory);
+  const entities = extractEntities(request.query);
   let attempt = 0;
   const maxAttempts = 2;
 
@@ -802,6 +920,30 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
       await saveMessage(conversationId, 'bot', accessError.answer, intent.intent, undefined, undefined, true, 'Access denied');
       return accessError;
     }
+
+    // === JOB_ROLE_COMPETENCY Routing (Phase 1) ===
+    if (intent.intent === 'JOB_ROLE_COMPETENCY') {
+      return handleJobRoleCompetencyRequest(
+        request,
+        { userId: anonymousId, role: request.role },
+        conversationId,
+        intent,
+        entities
+      );
+    }
+
+    // === Course_Recommendation Routing ===
+    if (intent.intent === 'Course_Recommendation') {
+      console.log('Course_Recommendation intent detected');
+      return handleCourseRecommendationRequest(
+        request,
+        { userId: anonymousId },
+        conversationId,
+        intent
+      );
+    }
+
+    // === CREATE_JOB_DESCRIPTION Routing ===
 
     if (intent.intent === 'CREATE_JOB_DESCRIPTION') {
       return handleCreateJobDescriptionAction(request, { userId: anonymousId, role: request.role }, conversationId);
@@ -996,17 +1138,445 @@ async function ensureConversation(request: ChatRequest): Promise<string> {
     return existingConv.id;
   }
 
-  const newConv = await createConversation(
-    request.sessionId,
-    request.userId || uuidv4(),
-    request.role || 'user'
-  );
+  try {
+    const newConv = await createConversation(
+      request.sessionId,
+      request.userId || uuidv4(),
+      request.role || 'user'
+    );
 
-  if (!newConv?.id) {
-    throw new Error('Failed to create or retrieve a conversation.');
+    if (!newConv?.id) {
+      console.error('[getOrCreateConversation] Failed to create conversation, returning fallback sessionId');
+      // Return a session ID based on the request sessionId so the flow can continue
+      return request.sessionId;
+    }
+
+    return newConv.id;
+  } catch (error) {
+    console.error('[getOrCreateConversation] Error creating conversation:', error);
+    // Return sessionId as fallback so the flow can continue
+    return request.sessionId;
+  }
+}
+
+const getIndustryFromSession = (): string => {
+  if (typeof window === "undefined") return "";
+
+  const userData = localStorage.getItem("userData");
+  if (!userData) return "";
+
+  try {
+    const parsed = JSON.parse(userData);
+    return parsed.industry || "";
+  } catch {
+    return "";
+  }
+};
+
+// ================= JOB ROLE COMPETENCY HANDLER =================
+
+/**
+ * handleJobRoleCompetencyRequest
+ * --------------------------------
+ * Phase 2: Payload Validation
+ * Phase 4: Genkit API Invocation
+ * 
+ * Handles JOB_ROLE_COMPETENCY intent by:
+ * 1. Validating required payload fields
+ * 2. Asking conversational follow-ups for missing fields
+ * 3. Calling Genkit API when payload is complete
+ * 4. Returning normalized response with follow-up suggestions
+ */
+async function handleJobRoleCompetencyRequest(
+  request: ChatRequest,
+  userContext: { userId: string; role: string | undefined },
+  conversationId: string,
+  intent: IntentClassificationResult,
+  extractedEntities: { industry?: string; jobRole?: string; department?: string; }
+): Promise<ChatResponse> {
+  // Use formData if provided (from inline form submission)
+  const formData = request.formData;
+
+  // Merge extracted entities with formData (formData takes precedence)
+  const payload: JobRoleCompetencyPayload = {
+    industry: formData?.industry || extractedEntities.industry || getIndustryFromSession(),
+    department: formData?.department || extractedEntities.department || '',
+    jobRole: formData?.jobRole || extractedEntities.jobRole || '',
+    description: formData?.description || '',
+    subInstituteId: process.env.HP_SUB_INSTITUTE_ID
+  };
+
+  // Validate payload completeness
+  const missingFields: string[] = [];
+  if (!payload.industry) missingFields.push('Industry');
+  if (!payload.department) missingFields.push('Department');
+  if (!payload.jobRole) missingFields.push('Job Role');
+
+  // Phase 2: If missing fields, ask conversational follow-ups
+  if (missingFields.length > 0) {
+    const conversationalPrompts: Record<string, string> = {
+      'Industry': "I can generate a detailed competency map for this role. Just tell me the industry context (e.g., Healthcare, Technology, Finance).",
+      'Department': "Which department does this role belong to? (e.g., Nursing, IT, Operations)",
+      'Job Role': "What specific job role are you interested in? (e.g., Charge Nurse, Software Engineer)"
+    };
+
+    // Generate conversational follow-up based on first missing field
+    const firstMissing = missingFields[0];
+    const answer = conversationalPrompts[firstMissing] ||
+      `Please provide the following information: ${missingFields.join(', ')}.`;
+
+    await saveMessage(conversationId, 'bot', answer, 'JOB_ROLE_COMPETENCY');
+
+    return {
+      answer,
+      conversationId,
+      intent: 'JOB_ROLE_COMPETENCY',
+      confidence: intent.confidence,
+      entities: extractedEntities,
+      action: 'SHOW_GENKIT_FORM',
+      missingFields,
+      recoverable: true,
+      suggestion: 'Please provide the missing details to generate the competency profile.',
+    };
   }
 
-  return newConv.id;
+  // Phase 4: Call Genkit API with validated payload
+  try {
+    const competencyData = await callGenkitCompetencyAPI(payload);
+
+    // Generate human-readable response
+    const answer = formatCompetencyResponse(competencyData, payload.jobRole);
+
+    // Generate contextual follow-ups (Phase 6)
+    const followUps = generateContextualFollowUps(payload.jobRole);
+
+    await saveMessage(
+      conversationId,
+      'bot',
+      answer,
+      'JOB_ROLE_COMPETENCY'
+    );
+
+    return {
+      answer,
+      conversationId,
+      intent: 'JOB_ROLE_COMPETENCY',
+      confidence: intent.confidence,
+      entities: {
+        industry: payload.industry,
+        jobRole: payload.jobRole,
+        department: payload.department
+      },
+      action: 'SHOW_GENKIT_RESPONSE',
+      suggestion: followUps.join(' OR '),
+      canEscalate: true,
+    };
+  } catch (error) {
+    const errorMessage = `Failed to generate competency profile: ${(error as Error).message}`;
+    await saveMessage(
+      conversationId,
+      'bot',
+      errorMessage,
+      'JOB_ROLE_COMPETENCY',
+      undefined,
+      undefined,
+      true,
+      (error as Error).message
+    );
+
+    return {
+      answer: errorMessage,
+      conversationId,
+      intent: 'JOB_ROLE_COMPETENCY',
+      confidence: intent.confidence,
+      error: 'GENKIT_API_FAILED',
+      recoverable: false,
+      suggestion: 'Would you like me to try again or escalate to a human agent?',
+      canEscalate: true,
+    };
+  }
+}
+
+/**
+ * handleCourseRecommendationRequest
+ * Handles Course_Recommendation intent by calling the course recommendation flow
+ * 
+ * @param request - The chat request
+ * @param userContext - User context with userId
+ * @param conversationId - Conversation ID
+ * @param intent - Intent classification result
+ * @returns ChatResponse with course recommendations
+ */
+async function handleCourseRecommendationRequest(
+  request: ChatRequest,
+  userContext: { userId: string },
+  conversationId: string,
+  intent: IntentClassificationResult
+): Promise<ChatResponse> {
+    console.log('[handleCourseRecommendationRequest] Processing course recommendation request');
+
+  try {
+    console.log("Darshana");
+    console.log(request);
+    // Get user session data from request (passed from client via cookies)
+    console.log(request.userId);
+    const userId = request.userId || '54';
+    const subInstituteId = request.subInstituteId || '3';
+    
+    console.log('[handleCourseRecommendationRequest] Calling flow with userId:', userId, 'subInstituteId:', subInstituteId);
+    
+    // Call the flow directly with userId and subInstituteId
+    const recommendations = await courseRecommendationFlow({ userId, subInstituteId });
+    
+    // console.log('[handleCourseRecommendationRequest] Got recommendations:', recommendations.length);
+    
+    // // Format the response in bullet point format
+    let answer = '';
+    if (recommendations.length > 0) {
+      answer = 'Courses:\n';
+      recommendations.forEach((course: any, index: number) => {
+        // Course name with bullet point
+        answer += `• ${course.courseName}\n`;
+        
+        // Extract created by info and similar users info
+        if (course.reasonForRecommendation) {
+          // Extract created user name
+          const createdByMatch = course.reasonForRecommendation.match(/Created by: ([^\n]+)/);
+          if (createdByMatch) {
+            answer += `Created by: ${createdByMatch[1]}\n`;
+          }
+          
+          // Extract similar users name
+          const similarMatch = course.reasonForRecommendation.match(/User with Similar Role: ([^\n]+)/);
+          if (similarMatch) {
+            answer += `Similar Users: ${similarMatch[1]}\n`;
+          }
+        }
+        
+        // Add blank line between courses (except for last one)
+        if (index < recommendations.length - 1) {
+          answer += `\n`;
+        }
+      });
+    } else {
+      answer = 'No course recommendations found at this time.';
+    }
+    // let answer = 'Function called successfully';
+    // await saveMessage(conversationId, 'bot', answer, 'Course_Recommendation');
+    // // const recommendations = await courseRecommendationFlow({ userId, subInstituteId });
+    return {
+      answer,
+      conversationId,
+      intent: 'Course_Recommendation',
+      confidence: intent.confidence,
+    };
+    
+  } catch (error) {
+    const errorMessage = `Failed to get course recommendations: ${(error as Error).message}`;
+    console.error('[handleCourseRecommendationRequest] Error:', error);
+    
+    await saveMessage(
+      conversationId,
+      'bot',
+      errorMessage,
+      'Course_Recommendation',
+      undefined,
+      undefined,
+      true,
+      (error as Error).message
+    );
+
+    return {
+      answer: errorMessage,
+      conversationId,
+      intent: 'Course_Recommendation',
+      confidence: intent.confidence,
+      error: 'COURSE_RECOMMENDATION_FAILED',
+      recoverable: false,
+      suggestion: 'Would you like me to try again or escalate to a human agent?',
+      canEscalate: true,
+    };
+  }
+}
+
+/**
+ * callGenkitCompetencyAPI
+ * -----------------------
+ * Calls the Genkit Job Role Competency Flow API
+ */
+// async function callGenkitCompetencyAPI(payload: JobRoleCompetencyPayload): Promise<GenkitCompetencyResponse> {
+//   const genkitEndpoint = process.env.GENKIT_API_URL || 'no key';
+
+//   const startTime = Date.now();
+
+//   try {
+//     const response = await fetch('/api/genkit-job-role', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': `Bearer ${process.env.GENKIT_API_KEY || ''}`
+//       },
+//       body: JSON.stringify({
+//         industry: payload.industry,
+//         department: payload.department,
+//         jobRole: payload.jobRole,
+//         description: payload.description || `Generate comprehensive competency framework for ${payload.jobRole} in ${payload.department} department of ${payload.industry} industry.`,
+//         subInstituteId: payload.subInstituteId
+//       })
+//     });
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       throw new Error(`Genkit API failed: ${response.status} - ${errorText}`);
+//     }
+
+//     const data = await response.json();
+//     const responseTime = Date.now() - startTime;
+
+//     console.log(`Genkit API call completed in ${responseTime}ms`);
+
+//     return data;
+//   } catch (error) {
+//     console.error('Genkit API call failed:', error);
+//     throw error;
+//   }
+// }
+
+// added by darshana on 03-02-26
+async function callGenkitCompetencyAPI(payload: JobRoleCompetencyPayload): Promise<GenkitCompetencyResponse> {
+  const startTime = Date.now();
+
+  try {
+    // Determine base URL for server-side or client-side
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const apiUrl = `/api/genkit-job-role`;
+    
+    // Use absolute URL for server-side, relative for client-side
+    const url = apiUrl.startsWith('http') ? apiUrl : `${baseUrl}${apiUrl}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        industry: payload.industry,
+        department: payload.department,
+        jobRole: payload.jobRole,
+        description: payload.description || `Generate comprehensive competency framework for ${payload.jobRole} in ${payload.department} department of ${payload.industry} industry.`,
+        subInstituteId: payload.subInstituteId
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API failed with status ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    const responseTime = Date.now() - startTime;
+
+    console.log(`Genkit API call completed in ${responseTime}ms`);
+
+    return data;
+  } catch (error: any) {
+    console.error('Genkit API call failed:', error);
+    throw new Error(error.message || 'Something went wrong');
+  }
+}
+
+/**
+ * formatCompetencyResponse
+ * ------------------------
+ * Converts Genkit output into human-readable format
+ */
+function formatCompetencyResponse(data: GenkitCompetencyResponse, jobRole: string): string {
+  let response = `## Competency Framework for ${jobRole}\n\n`;
+
+  // Critical Work Functions and Key Tasks
+  if (data.CWFKT && data.CWFKT.length > 0) {
+    response += `### 🔑 Critical Work Functions & Key Tasks\n\n`;
+    data.CWFKT.forEach(cwfkt => {
+      response += `**${cwfkt.critical_work_function}**\n`;
+      cwfkt.key_tasks.forEach(task => {
+        response += `- ${task}\n`;
+      });
+      response += '\n';
+    });
+  }
+
+  // Skills
+  if (data.skills && data.skills.length > 0) {
+    response += `### 💡 Skills (Proficiency Levels 1-6)\n\n`;
+    data.skills.forEach(skill => {
+      response += `- **${skill.title}** (${skill.category} → ${skill.sub_category})\n`;
+      response += `  Level ${skill.proficiency_level}: ${skill.description}\n\n`;
+    });
+  }
+
+  // Knowledge
+  if (data.knowledge && data.knowledge.length > 0) {
+    response += `### 📚 Knowledge\n\n`;
+    data.knowledge.forEach(k => {
+      response += `- **${k.title}** (${k.category} → ${k.sub_category}) - Level ${k.level}\n`;
+    });
+    response += '\n';
+  }
+
+  // Abilities
+  if (data.ability && data.ability.length > 0) {
+    response += `### 🏋️ Abilities\n\n`;
+    data.ability.forEach(a => {
+      response += `- **${a.title}** (${a.category} → ${a.sub_category}) - Level ${a.level}\n`;
+    });
+    response += '\n';
+  }
+
+  // Attitudes
+  if (data.attitude && data.attitude.length > 0) {
+    response += `### 🎯 Attitudes\n\n`;
+    data.attitude.forEach(at => {
+      response += `- **${at.title}** (${at.category} → ${at.sub_category}) - Level ${at.level}\n`;
+    });
+    response += '\n';
+  }
+
+  // Behaviors
+  if (data.behavior && data.behavior.length > 0) {
+    response += `### 🤝 Behaviors\n\n`;
+    data.behavior.forEach(b => {
+      response += `- **${b.title}** (${b.category} → ${b.sub_category}) - Level ${b.level}\n`;
+    });
+  }
+
+  return response;
+}
+
+/**
+ * generateContextualFollowUps
+ * ---------------------------
+ * Phase 6: Contextual Follow-ups
+ * Generates intelligent follow-up questions based on the job role
+ */
+function generateContextualFollowUps(jobRole: string): string[] {
+  const baseFollowUps = [
+    `Compare ${jobRole} with similar roles`,
+    `What skills are most critical for ${jobRole}?`,
+    `Show proficiency levels for ${jobRole}`
+  ];
+
+  // Role-specific follow-ups
+  const seniorPattern = /senior|lead|manager|head/i;
+  if (!seniorPattern.test(jobRole)) {
+    baseFollowUps.push(`What about a senior version of ${jobRole}?`);
+  }
+
+  const juniorPattern = /junior|associate|assistant/i;
+  if (!juniorPattern.test(jobRole)) {
+    baseFollowUps.push(`Compare with entry-level ${jobRole}`);
+  }
+
+  return baseFollowUps;
 }
 
 async function handleCreateJobDescriptionAction(
@@ -1062,7 +1632,7 @@ async function handleCreateJobDescriptionAction(
       conversationId,
     });
 
-    const answer = `Job Description created:\n\n**${jdResponse.data.job_title}**\n\nDepartment: ${jdResponse.data.department}\nExperience: ${jdResponse.data.experience_level}\n\nResponsibilities:\n${jdResponse.data.key_responsibilities.map((r: string) => `- ${r}`).join('\n')}\n\nRequired Skills:\n${jdResponse.data.required_skills.map((s: string) => `- ${s}`).join('\n')}\n\nPreferred Skills:\n${jdResponse.data.preferred_skills.map((s: string) => `- ${s}`).join('\n')}\n\nEducation: ${jdResponse.data.education}\nEmployment Type: ${jdResponse.data.employment_type}\nLocation: ${jdResponse.data.location}`;
+    const answer = `Job Role Attributes generated:\n\n**Critical Work Functions and Key Tasks:**\n${jdResponse.data.CWFKT.map(c => `**${c.critical_work_function}**\n${c.key_tasks.map(t => `- ${t}`).join('\n')}`).join('\n\n')}\n\n**Skills:**\n${jdResponse.data.skills.map(s => `- ${s.title} (${s.category}, ${s.sub_category}, Level ${s.proficiency_level}): ${s.description}`).join('\n')}\n\n**Knowledge:**\n${jdResponse.data.knowledge.map(k => `- ${k.title} (${k.category}, ${k.sub_category}, Level ${k.level})`).join('\n')}\n\n**Abilities:**\n${jdResponse.data.ability.map(a => `- ${a.title} (${a.category}, ${a.sub_category}, Level ${a.level})`).join('\n')}\n\n**Attitudes:**\n${jdResponse.data.attitude.map(at => `- ${at.title} (${at.category}, ${at.sub_category}, Level ${at.level})`).join('\n')}\n\n**Behaviors:**\n${jdResponse.data.behavior.map(b => `- ${b.title} (${b.category}, ${b.sub_category}, Level ${b.level})`).join('\n')}`;
 
     await saveMessage(conversationId, 'bot', answer, 'CREATE_JOB_DESCRIPTION');
 
@@ -1086,6 +1656,237 @@ async function handleCreateJobDescriptionAction(
   }
 }
 
+const JDprompt = (
+  Department: string,
+  JobRole: string,
+  Description: string
+): string => {
+  const Industry = getIndustryFromSession();
+
+  return `
+You are a domain expert in job architecture, workforce design, and competency modeling.
+
+Given the following job context:
+- Industry: ${Industry}
+- Department: ${Department}
+- Job Role: ${JobRole}
+- Description: ${Description}
+
+Generate a JSON object that conforms strictly to this TypeScript structure:
+
+interface JobRoleOutput {
+  CWFKT: {
+    critical_work_function: string;
+    key_tasks: string[];
+  }[];
+  skills: {
+    title: string;
+    description: string;
+    category: SkillCategory;
+    sub_category: SkillSubCategory;
+    proficiency_level: ProficiencyLevel;
+  }[];
+  knowledge: {
+    title: string;
+    category: KnowledgeCategory;
+    sub_category: KnowledgeSubCategory;
+    level: KnowledgeLevel;
+  }[];
+  ability: {
+    title: string;
+    category: AbilityCategory;
+    sub_category: AbilitySubCategory;
+    level: AbilityLevel;
+  }[];
+  attitude: {
+    title: string;
+    category: AttitudeCategory;
+    sub_category: AttitudeSubCategory;
+    level: AttitudeLevel;
+  }[];
+  behavior: {
+    title: string;
+    category: BehaviorCategory;
+    sub_category: BehaviorSubCategory;
+    level: BehaviorLevel;
+  }[];
+}
+
+-------------------------------------
+
+✅ SKILLS VALIDATION
+
+SkillCategory must be one of:
+- Cognitive & Thinking Skills
+- Compliance & Regulatory Skills
+- Critical Core Skills
+- Digital & Data Skills
+- Functional Skills
+- Leadership & Management Skills
+- Soft Skills
+- Technical Skills
+
+SkillSubCategory must be one of:
+- Analytical reasoning
+- Critical thinking
+- Problem-solving
+- Industry Compliance Knowledge
+- Legal
+- Safety
+- Interacting with Others
+- Thinking Critically
+- Data Analytics
+- Digital Literacy
+- Job Role-Specific
+- Decision-Making
+- Strategic Thinking
+- Team Management
+- Communication skills
+- Interpersonal
+- Leadership
+- Domain-Specific
+- Industry-specific
+
+proficiency_level must be an integer from 1 to 6
+
+-------------------------------------
+
+
+✅ KNOWLEDGE VALIDATION
+
+KnowledgeCategory must be one of:
+- Conceptual Knowledge
+- Metacognitive Knowledge
+- Procedural Knowledge
+- Factual Knowledge
+
+KnowledgeSubCategory must be one of:
+- Knowledge of classifications and categories
+- Knowledge of principles and generalizations
+- Knowledge of theories, models, and structures
+- Knowledge about cognitive tasks, including appropriate contextual and conditional knowledge
+- Self-knowledge
+- Strategic knowledge
+- Knowledge of criteria for determining when to use appropriate procedures
+- Knowledge of subject-specific skills and algorithms
+- Knowledge of subject-specific techniques and methods
+- Knowledge of specific details and elements
+- Knowledge of terminology
+
+level must be an integer from 1 to 5
+
+-------------------------------------
+✅ ABILITY VALIDATION
+
+AbilityCategory must be one of:
+- Cognitive Abilities
+- Psychomotor Abilities
+- Physical Abilities
+- Sensory Abilities
+- Social/Interpersonal Abilities
+
+AbilitySubCategory must be one of:
+- Visualization
+- Verbal comprehension
+- Mathematical reasoning
+- Deductive reasoning
+- Memory (short-term, long-term)
+- Information ordering
+- Inductive reasoning
+- Response orientation
+- Multilimb coordination
+- Precision control
+- Reaction time
+- Coordination and dexterity
+- Flexibility and stamina
+- Manual and finger dexterity
+- Strength (static, explosive, dynamic)
+- Hearing sensitivity
+- Speech clarity
+- Team coordination
+- Persuasion
+
+level must be an integer from 1 to 5
+
+-------------------------------------
+✅ ATTITUDE VALIDATION
+
+AttitudeCategory must be one of:
+- Adaptability/Flexibility
+- Accountability/Responsibility
+- Openness to Feedback
+- Commitment to Quality/Quality Focus
+- Integrity/Honesty/Ethics
+- Growth Mindset/Growth Orientation
+- Initiative/Proactiveness/Proactivity
+
+AttitudeSubCategory must be one of:
+- Flexibility
+- Change Readiness
+- Answerability
+- Ownership
+- Transparency
+- Coachability
+- Precision
+- Diligence
+- Excellence
+- Integrity
+- Psychological Safety
+- Learning Hunger
+- Curiosity
+- Initiative
+
+level must be an integer from 1 to 5
+
+-------------------------------------
+✅ BEHAVIOR VALIDATION
+
+BehaviorCategory must be one of:
+- Stakeholder Focus
+- Commitment to Quality/Quality Focus
+- Communication
+- Safety-Consciousness/Process Adherence
+- Cognitive Agility
+- Accountability in Execution
+- Problem-Solving in Action
+- Collaboration/Teamwork
+- Efficiency Drive
+- Risk Vigilance
+- Digital Fluency
+
+BehaviorSubCategory must be one of:
+- Customer Empathy
+- Precision
+- Active Listening
+- Clarity
+- Diplomacy
+- Compliance
+- Following Procedures
+- Standardization
+- Cognitive Agility
+- Task Accountability
+- Error Prevention
+- Critical Analysis
+- Decisiveness
+- Cross-Functional Synergy
+- Teamwork
+- Resource Optimization
+- Safety Focus
+- Technology Adoption & Integration
+
+level must be an integer from 1 to 5
+
+-------------------------------------
+🔒 OUTPUT RULES
+
+- All fields must be filled with role-relevant, realistic content.
+- Only use values from the taxonomies above.
+- Return ONLY a properly structured JSON object with no comments, no text, no explanation.
+- Do not include placeholders or speculative fields.
+- Ensure full compliance with the described structure.
+`;
+};
+
 export async function handleCreateJobDescription({ industry,
   department,
   jobRole,
@@ -1101,8 +1902,8 @@ export async function handleCreateJobDescription({ industry,
   conversationId: string;
 }): Promise<ActionResponse> {
   // Save user message for auditability
-  const query = `Create a job description for ${jobRole} in ${department} of ${industry} with the following description: ${description}`;
-  await saveMessage(conversationId, 'user', query, 'job_description_generation');
+  const query = `Generate job role attributes for ${jobRole} in ${department} of ${industry} with the following description: ${description}`;
+  await saveMessage(conversationId, 'user', query, 'job_role_attributes_generation');
 
   // Permission check (mandatory)
   if (!canAccessData(userContext, 'TALENT_DEVELOPMENT')) {
@@ -1110,32 +1911,7 @@ export async function handleCreateJobDescription({ industry,
   }
 
   // Build JD prompt
-  const prompt = `
-
-You are an HR and Talent Development expert.
-
-Create a professional Job Description.
-
-Industry: ${industry}
-Department: ${department}
-Job Role: ${jobRole}
-Context: ${description}
-
-the output should be in JSON format only, without any additional text.
-Return output in JSON with the following structure:
-
-{
-  "job_title": "",
-  "department": "",
-  "experience_level": "",
-  "key_responsibilities": [],
-  "required_skills": [],
-  "preferred_skills": [],
-  "education": "",
-  "employment_type": "",
-  "location": ""
-}
-`;
+  const prompt = JDprompt(department, jobRole, description);
 
   const startTime = Date.now();
 
@@ -1150,7 +1926,7 @@ Return output in JSON with the following structure:
       body: JSON.stringify({
         model: 'deepseek/deepseek-chat',
         messages: [
-          { role: 'system', content: 'You are an expert HR assistant. Generate structured job descriptions in JSON format only.' },
+          { role: 'system', content: 'You are a domain expert in job architecture, workforce design, and competency modeling. Generate structured job role attributes in JSON format only.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.3
@@ -1172,22 +1948,22 @@ Return output in JSON with the following structure:
     // Parse the LLM response as JSON
     const rawContent = data.choices[0].message.content.trim();
     const cleanedContent = rawContent.replace(/```json\n?|\n?```/g, '').trim();
-    const jdOutput: JobDescription = JSON.parse(cleanedContent);
+    const jdOutput: JobRoleOutput = JSON.parse(cleanedContent);
 
     // Validate the structure (basic check)
-    if (!jdOutput.job_title || !Array.isArray(jdOutput.key_responsibilities) || !Array.isArray(jdOutput.required_skills)) {
-      throw new Error('Invalid job description structure returned by LLM');
+    if (!jdOutput.CWFKT || !Array.isArray(jdOutput.skills) || !Array.isArray(jdOutput.knowledge) || !Array.isArray(jdOutput.ability) || !Array.isArray(jdOutput.attitude) || !Array.isArray(jdOutput.behavior)) {
+      throw new Error('Invalid job role attributes structure returned by LLM');
     }
 
-    // Save the JD result for auditability and conversation history
-    await saveMessage(conversationId, 'bot', rawContent, 'job_description_generation');
+    // Save the job role attributes result for auditability and conversation history
+    await saveMessage(conversationId, 'bot', rawContent, 'job_role_attributes_generation');
 
-    // Log for analytics: who is generating JDs, which roles are common
+    // Log for analytics: who is generating job role attributes, which roles are common
     await logEvent({
       conversationId,
       logLevel: 'info',
-      logType: 'JD_CREATED_FROM_CHAT',
-      message: 'Job description created from chat',
+      logType: 'JOB_ROLE_ATTRIBUTES_CREATED_FROM_CHAT',
+      message: 'Job role attributes created from chat',
       metadata: { userId: userContext?.userId, conversationId }
     });
 
@@ -1242,3 +2018,91 @@ export async function handleEscalation(
     };
   }
 }
+
+// ================= CONTEXTUAL SUGGESTIONS HANDLER =================
+
+/**
+ * handleContextualSuggestions
+ * ----------------------------
+ * Generates contextual suggestions for the chatbot based on the current LMS module.
+ * Uses Genkit flow server to dynamically generate relevant questions.
+ */
+export async function handleContextualSuggestions(
+  request: SuggestionRequest
+): Promise<{ suggestions: string[]; module: string; error?: string }> {
+  const { module, context } = request;
+
+  try {
+    // Call Genkit flow server to generate suggestions
+    const genkitUrl = process.env.GENKIT_SERVER_URL || 'http://localhost:3400';
+    
+    const response = await fetch(`${genkitUrl}/flow/suggestionFlow`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        module,
+        context: context || ''
+      })
+    });
+
+    if (!response.ok) {
+      console.warn('Genkit flow not available, using fallback suggestions');
+      return getFallbackSuggestions(module);
+    }
+
+    const data = await response.json();
+    
+    if (data.result?.suggestions && Array.isArray(data.result.suggestions)) {
+      return {
+        suggestions: data.result.suggestions.slice(0, 4),
+        module
+      };
+    }
+
+    // If response format is unexpected, use fallback
+    return getFallbackSuggestions(module);
+
+  } catch (error) {
+    console.error('Error generating contextual suggestions via Genkit:', error);
+    // Fall back to default suggestions if Genkit fails
+    return getFallbackSuggestions(module);
+  }
+}
+
+// Fallback suggestions when Genkit is not available
+function getFallbackSuggestions(module: string): { suggestions: string[]; module: string } {
+  const fallbackSuggestions: Record<string, string[]> = {
+    'course': [
+      "How do I create a new course?",
+      "What are the best practices for course design?",
+      "How can I track employee progress?",
+      "How do I add assessments to a course?"
+    ],
+    'assessment': [
+      "How do I create an assessment?",
+      "What question types are available?",
+      "How do I set assessment deadlines?",
+      "How can I view assessment results?"
+    ],
+    'learning': [
+      "How do I enroll in a course?",
+      "What courses are available for me?",
+      "How do I track my learning progress?",
+      "How do I complete a course?"
+    ],
+    'question-bank': [
+      "How do I add questions to the bank?",
+      "How do I organize questions by category?",
+      "Can I import questions from other sources?",
+      "How do I edit existing questions?"
+    ]
+  };
+
+  return {
+    suggestions: fallbackSuggestions[module] || [],
+    module
+  };
+}
+

@@ -22,6 +22,29 @@ export async function OPTIONS() {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
+        
+        // Get user session data from request body first (sent by client from localStorage)
+        // Fall back to cookies if not provided in body
+        let userId = body.userId || null;
+        let subInstituteId = body.subInstituteId || null;
+        
+        // If not in body, try to get from cookies as fallback
+        const cookieHeader = request.headers.get('cookie') || '';
+        
+        // Parse userData from cookie
+        const userDataMatch = cookieHeader.match(/userData=([^;]+)/);
+        if (userDataMatch) {
+            try {
+                const userData = JSON.parse(decodeURIComponent(userDataMatch[1]));
+                // Only use cookie values if body values are null
+                userId = userId || userData.user_id || null;
+                subInstituteId = subInstituteId || userData.sub_institute_id || null;
+            } catch (e) {
+                console.error('[chat] Error parsing userData cookie:', e);
+            }
+        }
+        
+        console.log('[chat] Received userId:', userId, 'subInstituteId:', subInstituteId);
 
         let result: any = null;
 
@@ -29,7 +52,9 @@ export async function POST(request: Request) {
             result = await handleChatRequest({
                 query: body.query,
                 sessionId: body.sessionId,
-                conversationHistory: body.conversationHistory
+                conversationHistory: body.conversationHistory,
+                userId: userId,
+                subInstituteId: subInstituteId
             });
 
         } catch (innerError) {
