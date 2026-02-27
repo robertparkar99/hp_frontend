@@ -335,7 +335,6 @@ export default function AgentDetail() {
                   {selectedTool === 'web_search' && <WebSearchToolForm agentId={agent.id}  />}
                   {selectedTool === 'sql_query' && <SQLExecutionToolForm agentId={agent.id} />}
                   {selectedTool === 'file' && <FileToolForm agentId={agent.id} />}
-                  {selectedTool === 'n8n' && <N8nToolForm agentId={agent.id} />}
                 </div>
               )}
             </CardContent>

@@ -470,7 +470,7 @@ const TaskManagement = () => {
       alert("Please select either employees or a department");
       return;
     }
-    
+
     if (!selTask || !taskType) {
       alert("Please fill all required fields");
       return;
@@ -494,21 +494,19 @@ const TaskManagement = () => {
       const formData = new FormData();
 
       // Add all form fields to formData
-      // Include department_id for each employee in TASK_ALLOCATED_TO
-      // Use the selected department ID if available, otherwise fall back to employee's department_id
       const employeesWithDept = selEmployee.map(empId => {
         const employee = employeeList.find(e => e.id === empId);
         const deptId = selDepartmentId || employee?.department_id || '';
         return employee ? `${empId}:${deptId}` : empId;
       });
-      
+
       // If no employees are selected but a department is selected, use the department ID
       if (selDepartmentId && selEmployee.length === 0) {
         formData.append("TASK_ALLOCATED_TO", selDepartmentId);
       } else if (employeesWithDept.length > 0) {
         formData.append("TASK_ALLOCATED_TO", employeesWithDept.join(","));
       }
-      
+
       // Also log the formatted data for debugging
       const finalAllocatedTo = selDepartmentId && selEmployee.length === 0
         ? selDepartmentId
@@ -528,7 +526,7 @@ const TaskManagement = () => {
       formData.append("KPA", kpis);
       formData.append("selType", taskType);
       formData.append("repeat_days", repeatDays);
-      formData.append("repeat_until", formattedRepeatUntil); // Use formatted date
+      formData.append("repeat_until", formattedRepeatUntil);
 
       if (file) {
         formData.append("TASK_ATTACHMENT", file);
@@ -560,12 +558,91 @@ const TaskManagement = () => {
 
       const result = await response.json();
 
+      console.log('[DEBUG] Full API response:', result);
+      console.log('[DEBUG] Response status:', response.ok);
+
       if (response.ok) {
+        // Extract task_id from the response using multiple fallbacks
+        const extractTaskId = (payload: any): string | undefined => {
+          if (!payload) return undefined;
+
+          const candidates = [
+            payload.task_id,
+            payload.taskId,
+            payload.id,
+            payload.insertId,
+            payload.lastInsertId,
+            payload?.data?.task_id,
+            payload?.data?.taskId,
+            payload?.data?.id,
+            payload?.data?.insertId,
+            payload?.data?.lastInsertId,
+            payload?.data?.task?.task_id,
+            payload?.data?.task?.id,
+            payload?.data?.new_task?.task_id,
+            payload?.data?.new_task?.id,
+          ];
+
+          const hit = candidates.find(
+            (val) => val !== undefined && val !== null && val !== ""
+          );
+
+          return hit !== undefined ? String(hit) : undefined;
+        };
+
+        let taskId = extractTaskId(result);
+
+        // Fallback: fetch the most recent matching task if API didn't return the id
+        if (!taskId) {
+          try {
+            // Fetch the single most recently created task (avoid title clashes)
+            const lookupUrl = `${sessionData.url}/table_data?table=task` +
+              `&filters[sub_institute_id]=${sessionData.subInstituteId}` +
+              `&order_by[column]=id&order_by[direction]=desc&limit=1`;
+
+            const lookupRes = await fetch(lookupUrl, {
+              headers: { Authorization: `Bearer ${sessionData.token}` },
+            });
+
+            const lookupData = await lookupRes.json();
+
+            const latestTask =
+              (Array.isArray(lookupData) && lookupData[0]) ||
+              lookupData?.data?.[0] ||
+              lookupData?.tasks?.[0] ||
+              lookupData?.[0];
+
+            const fallbackId =
+              latestTask?.task_id ||
+              latestTask?.id ||
+              latestTask?.taskId;
+
+            if (fallbackId) {
+              taskId = String(fallbackId);
+              console.log('[DEBUG] Fallback task_id from lookup:', taskId);
+            } else {
+              console.warn('[DEBUG] Fallback lookup did not return a task id');
+            }
+          } catch (lookupError) {
+            console.error('[DEBUG] Error fetching fallback task id:', lookupError);
+          }
+        }
+
+        console.log('[DEBUG] Extracted task_id:', taskId);
+        console.log('[DEBUG] Result keys:', Object.keys(result));
+
+        if (!taskId) {
+          console.warn('[DEBUG] WARNING: No task_id found in response! Webhook will be sent without id.');
+        }
+
         alert("Task created successfully for all selected employees!");
-        
-        // Send notification to all assigned users (this also updates the count)
+
+        // Send notification to all assigned users
         await sendTaskNotification(selEmployee, selTask);
-        
+
+        // Call webhook to notify external system with task ID
+        await callTaskAssignedWebhook(selEmployee, selTask, taskDescription, taskId);
+
         resetForm();
       } else {
         throw new Error(result.message || "Failed to create task");
@@ -640,6 +717,60 @@ const TaskManagement = () => {
       window.dispatchEvent(new CustomEvent('notificationUpdated'));
     } catch (error) {
       console.error("Error sending notifications:", error);
+    }
+  };
+
+  // Function to call the n8n webhook for task assignment notification
+  // Function to call the n8n webhook for task assignment notification
+  const callTaskAssignedWebhook = async (userIds: string[], taskTitle: string, taskDescription: string, taskId?: string) => {
+    try {
+      const webhookUrl = "https://n8n.triz.co.in/webhook-test/task-assigned";
+
+      console.log('[DEBUG WEBHOOK] Received taskId:', taskId);
+      console.log('[DEBUG WEBHOOK] Received taskTitle:', taskTitle);
+      console.log('[DEBUG WEBHOOK] All params:', { userIds, taskTitle, taskDescription, taskId });
+
+      // Prepare the payload with relevant task information including task ID
+      const webhookPayload = {
+        task_id: taskId, // Include the task ID
+        task_title: taskTitle,
+        task_description: taskDescription,
+        assigned_users: userIds,
+        assigned_by: sessionData.userId,
+        department: selDepartment,
+        job_role: selJobroleText,
+        observer: selObserver,
+        repeat_days: repeatDays,
+        repeat_until: repeatUntil,
+        skills: selSkill,
+        priority: taskType,
+        kras: kras,
+        kpis: kpis,
+        observation_point: observationPoint,
+        created_at: new Date().toISOString(),
+      };
+
+      console.log('[Webhook] Calling task-assigned webhook with task ID:', taskId);
+      console.log('[Webhook] Payload:', webhookPayload);
+
+      // Make the webhook call (fire and forget - don't block UI)
+      const webhookResponse = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload),
+      });
+
+      if (webhookResponse.ok) {
+        const responseData = await webhookResponse.json();
+        console.log('[Webhook] Task-assigned webhook successful:', responseData);
+      } else {
+        console.warn('[Webhook] Task-assigned webhook returned non-OK status:', webhookResponse.status);
+      }
+    } catch (error) {
+      // Log error but don't fail the main task creation flow
+      console.error('[Webhook] Error calling task-assigned webhook:', error);
     }
   };
 
@@ -1278,7 +1409,7 @@ const TaskManagement = () => {
                           <path
                             className="opacity-75"
                             fill="currentColor"
-                            d="M4 12a8 8 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
                         Submitting...

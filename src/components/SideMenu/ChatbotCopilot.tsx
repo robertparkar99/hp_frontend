@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Bot, User, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { submitFeedback } from "@/lib1/feedback-service";
 import { v4 as uuidv4 } from 'uuid';
@@ -70,6 +72,13 @@ interface Message {
       jobRole?: string;
       department?: string;
     };
+    action?: string;
+    missingFields?: string[];
+    entities?: {
+      industry?: string;
+      jobRole?: string;
+      department?: string;
+    };
   };
 }
 
@@ -89,6 +98,7 @@ export default function ChatbotCopilot({
     {
       id: '1',
       type: 'bot',
+      content: 'Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?',
       content: 'Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?',
       timestamp: new Date()
     }
@@ -197,6 +207,8 @@ export default function ChatbotCopilot({
   }, [messages]);
 
   // Auto-resize textarea
+  const [origin, setOrigin] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
   const [origin, setOrigin] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -459,6 +471,10 @@ export default function ChatbotCopilot({
           action: data.action,
           missingFields: data.missingFields,
           entities: data.entities
+          canEscalate: data.canEscalate,
+          action: data.action,
+          missingFields: data.missingFields,
+          entities: data.entities
         }
       };
 
@@ -494,6 +510,7 @@ export default function ChatbotCopilot({
       {
         id: '1',
         type: 'bot',
+        content: 'Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?',
         content: 'Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?',
         timestamp: new Date(),
         metadata: {
@@ -602,6 +619,97 @@ export default function ChatbotCopilot({
       </div>
     );
   };
+  // Phase 3: Genkit Form Component
+  const GenkitForm = ({ messageId }: { messageId: string }) => {
+    const missingFields = messages.find(m => m.id === messageId)?.metadata?.missingFields || [];
+
+    return (
+      <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm">
+        <h4 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+          <Bot className="w-4 h-4 text-blue-600" />
+          Complete Competency Profile
+        </h4>
+
+        <div className="space-y-3">
+          {missingFields.includes('Industry') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Industry</label>
+              <input
+                type="text"
+                value={formData.industry}
+                onChange={(e) => handleFormChange('industry', e.target.value)}
+                placeholder="e.g., Healthcare, Technology"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
+          )}
+
+          {missingFields.includes('Department') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Department</label>
+              <input
+                type="text"
+                value={formData.department}
+                onChange={(e) => handleFormChange('department', e.target.value)}
+                placeholder="e.g., Nursing, IT, Operations"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
+          )}
+
+          {missingFields.includes('Job Role') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Job Role</label>
+              <input
+                type="text"
+                value={formData.jobRole}
+                onChange={(e) => handleFormChange('jobRole', e.target.value)}
+                placeholder="e.g., Charge Nurse, Software Engineer"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
+          )}
+
+          {missingFields.includes('Description') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => handleFormChange('description', e.target.value)}
+                placeholder="Brief description of the role..."
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => handleFormSubmit(messageId)}
+            disabled={isLoading || pendingFormMessageId !== null}
+            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading && pendingFormMessageId === messageId ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating...
+              </span>
+            ) : (
+              'Generate Profile'
+            )}
+          </button>
+          <button
+            onClick={handleFormSkip}
+            disabled={isLoading}
+            className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   //   if (!isOpen) {
   //   return (
@@ -613,6 +721,7 @@ export default function ChatbotCopilot({
   //     </button>
   //   );
   // }
+
 
   return (
     <AnimatePresence>
@@ -715,6 +824,24 @@ export default function ChatbotCopilot({
                 </div>
               </div>
             </motion.div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setShowNewConversationModal(true)}
+                    className="p-2 hover:bg-white/20 rounded-full text-white/90 transition-colors"
+                    title="New Conversation"
+                  >
+                    <MessageSquare className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="p-2 hover:bg-white/20 rounded-full text-white/90 transition-colors"
+                    title="Minimize"
+                  >
+                    <Minimize2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
 
             {/* Messages */}
             <motion.div
@@ -734,7 +861,7 @@ export default function ChatbotCopilot({
                   <h4 className="font-semibold text-gray-800">Conversational AI</h4>
                   {/* <p className="text-sm text-gray-500 mt-1 max-w-[200px] sm:max-w-[240px] md:max-w-[260px]">
                     Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?
-                  </p> */}
+                  </p>
                 </div>
               </div>
 
@@ -808,7 +935,34 @@ export default function ChatbotCopilot({
                         ))}
                       </div>
                     )}
+                    {message.metadata?.tablesUsed && message.metadata.tablesUsed.length > 0 && (
+                      <div className="flex gap-2 flex-wrap">
+                        {message.metadata.tablesUsed.map((table, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium shadow-sm"
+                          >
+                            <Database className="w-3 h-3" />
+                            <span>{table}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
+                    {message.metadata?.sql && (
+                      <details className="w-full text-sm cursor-pointer group">
+                        <summary className="hover:text-blue-600 font-medium text-gray-600 list-none flex items-center gap-2 transition-colors">
+                          <Database className="w-4 h-4" />
+                          View SQL Query
+                          <span className="text-xs text-gray-400 group-hover:text-blue-400">▾</span>
+                        </summary>
+                        <div className="mt-3 p-4 bg-gray-900 text-green-400 rounded-xl overflow-x-auto border border-gray-700 shadow-lg">
+                          <pre className="text-xs font-mono leading-relaxed">
+                            {formatSQL(message.metadata.sql)}
+                          </pre>
+                        </div>
+                      </details>
+                    )}
                     {message.metadata?.sql && (
                       <details className="w-full text-sm cursor-pointer group">
                         <summary className="hover:text-blue-600 font-medium text-gray-600 list-none flex items-center gap-2 transition-colors">
@@ -825,6 +979,32 @@ export default function ChatbotCopilot({
                     )}
 
 
+                    {message.type === 'bot' && message.metadata?.canEscalate && (
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => handleFeedback(message.id, 1)}
+                          className="p-1.5 rounded-full hover:bg-green-100 transition-colors"
+                          title="Helpful"
+                        >
+                          <ThumbsUp className={`w-4 h-4 ${feedbackMessage === message.id && feedbackState?.rating === 1 ? 'text-green-600' : 'text-gray-400'}`} />
+                        </button>
+                        <button
+                          onClick={() => handleFeedback(message.id, -1)}
+                          className="p-1.5 rounded-full hover:bg-red-100 transition-colors"
+                          title="Not helpful"
+                        >
+                          <ThumbsDown className={`w-4 h-4 ${feedbackMessage === message.id && feedbackState?.rating === -1 ? 'text-red-600' : 'text-gray-400'}`} />
+                        </button>
+                        {!conversationId && userId && (
+                          <button
+                            onClick={() => setShowEscalationModal(true)}
+                            className="ml-auto px-2 py-1 rounded-full text-xs bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors"
+                          >
+                            Escalate
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {message.type === 'bot' && message.metadata?.canEscalate && (
                       <div className="flex gap-2 pt-1">
                         <button
@@ -894,6 +1074,48 @@ export default function ChatbotCopilot({
                   </div>
                 </div>
               ))}
+                    {/* Timestamp */}
+                    <span className="text-xs text-gray-400 px-1">
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                    {/* Phase 3: Genkit Form */}
+                    {message.type === 'bot' && message.metadata?.action === 'SHOW_GENKIT_FORM' && (
+                      <GenkitForm messageId={message.id} />
+                    )}
+
+                    {/* Phase 6: Contextual Follow-ups */}
+                    {message.type === 'bot' && message.metadata?.intent === 'JOB_ROLE_COMPETENCY' && message.metadata?.action === 'SHOW_GENKIT_RESPONSE' && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {message.metadata?.entities?.jobRole && (
+                          <>
+                            <button
+                              onClick={() => setInput(`Compare ${message.metadata?.entities?.jobRole} with similar roles`)}
+                              className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-full border border-blue-200 hover:bg-blue-100 transition-colors"
+                            >
+                              Compare with similar roles
+                            </button>
+                            <button
+                              onClick={() => setInput(`What are the critical skills for ${message.metadata?.entities?.jobRole}?`)}
+                              className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-full border border-blue-200 hover:bg-blue-100 transition-colors"
+                            >
+                              Show critical skills
+                            </button>
+                            <button
+                              onClick={() => setInput(`What about a senior version of ${message.metadata?.entities?.jobRole}?`)}
+                              className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-full border border-blue-200 hover:bg-blue-100 transition-colors"
+                            >
+                              Senior version
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
 
               {/* Loading Indicator */}
               {isLoading && (
@@ -911,7 +1133,52 @@ export default function ChatbotCopilot({
                   </div>
                 </div>
               )}
+              {/* Loading Indicator */}
+              {isLoading && (
+                <div className="message-enter flex gap-4">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-600 text-white shadow-sm">
+                    <Bot className="w-5 h-5" />
+                  </div>
+                  <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-200/80 flex items-center gap-3">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                    <span className="text-sm text-gray-600 font-medium">Analyzing your data...</span>
+                  </div>
+                </div>
+              )}
 
+              <div ref={messagesEndRef} />
+
+              {/* New Conversation Modal */}
+              <AnimatePresence>
+                {showNewConversationModal && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/50 to-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4"
+                    onClick={() => setShowNewConversationModal(false)}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0, y: 20 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      exit={{ scale: 0.8, opacity: 0, y: 20 }}
+                      transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-sm w-full border border-gray-100"
+                    >
+                      {/* Header with gradient */}
+                      <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                            <MessageSquare className="w-6 h-6 text-white" />
+                          </div>
+                          <h3 className="text-xl font-bold text-white">Create New Conversation</h3>
+                        </div>
+                      </div>
               <div ref={messagesEndRef} />
 
               {/* New Conversation Modal */}
@@ -984,6 +1251,48 @@ export default function ChatbotCopilot({
             >
               {/* Save JD Button */}
               {/* <div className="flex justify-end mb-2">
+                      {/* Content */}
+                      <div className="px-6 py-6">
+                        <p className="text-sm text-gray-600 leading-relaxed mb-6">
+                          Are you sure you want to start a new conversation? This will clear the current chat history.
+                        </p>
+
+                        <div className="flex flex-col gap-3">
+                          <button
+                            onClick={() => {
+                              clearChat();
+                              setShowNewConversationModal(false);
+                            }}
+                            className="w-full px-5 py-3.5 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                          >
+                            <MessageSquare className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                            New conversation
+                          </button>
+                          <button
+                            onClick={() => setShowNewConversationModal(false)}
+                            className="w-full px-5 py-3.5 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                          >
+                            <X className="w-5 h-5" />
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Input - Wrap in motion */}
+            <motion.div
+              variants={{
+                closed: { opacity: 0, y: 20 },
+                open: { opacity: 1, y: 0 }
+              }}
+              className="p-4 bg-white border-t border-gray-100"
+            >
+              {/* Save JD Button */}
+              {/* <div className="flex justify-end mb-2">
             <button
               onClick={() => {
                 console.log("Save JD clicked");
@@ -998,6 +1307,7 @@ export default function ChatbotCopilot({
 >
               Save JD
             </button>
+          </div> */}
           </div> */}
 
               <div className="relative flex flex-col gap-2 bg-gray-50 border border-gray-200 rounded-2xl p-2 sm:p-3 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all shadow-sm">
@@ -1031,7 +1341,53 @@ export default function ChatbotCopilot({
                         <Mic className="w-5 h-5" />
                       )}
                     </button>
+                <div className="flex justify-between items-center px-1">
+                  <div className="flex items-center gap-1">
+                    {/* Placeholder for future attachments or other icons */}
+                  </div>
 
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={toggleListening}
+                      className={`p-2 rounded-full transition-all duration-150
+                    ${isListening
+                          ? 'bg-red-50 text-red-600 animate-pulse border border-red-200 ring-2 ring-red-100'
+                          : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                        }`}
+                      title="Voice Input"
+                    >
+                      {isListening ? (
+                        <MicOff className="w-5 h-5" />
+                      ) : (
+                        <Mic className="w-5 h-5" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={handleSend}
+                      disabled={!input.trim() || isLoading}
+                      className="p-2 rounded-lg
+                          text-blue-600
+                          hover:bg-blue-50
+                          disabled:text-gray-300
+                          transition-all duration-150"
+                      title="Send Message"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Send className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        </>
+      )
+      }
+    </AnimatePresence >
                     <button
                       onClick={handleSend}
                       disabled={!input.trim() || isLoading}

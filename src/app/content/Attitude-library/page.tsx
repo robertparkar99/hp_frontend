@@ -362,15 +362,12 @@ export default function Index({ showDetailTour }: PageProps) {
   // ✅ Table filtering
   const filteredData = cards.filter(
     (row) =>
-      row.classification_item
-        .toLowerCase()
-        .includes(columnFilters.classification_item.toLowerCase()) &&
-      row.classification_category
-        .toLowerCase()
-        .includes(columnFilters.classification_category.toLowerCase()) &&
-      row.classification_sub_category
-        .toLowerCase()
-        .includes(columnFilters.classification_sub_category.toLowerCase())
+      (row.classification_item?.toLowerCase() || '')
+        .includes((columnFilters.classification_item || '').toLowerCase()) &&
+      (row.classification_category?.toLowerCase() || '')
+        .includes((columnFilters.classification_category || '').toLowerCase()) &&
+      (row.classification_sub_category?.toLowerCase() || '')
+        .includes((columnFilters.classification_sub_category || '').toLowerCase())
   );
 
   return (

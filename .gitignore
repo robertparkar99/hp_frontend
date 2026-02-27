@@ -3,8 +3,9 @@
 # dependencies
 /node_modules
 /apps/ai/node_modules
-/apps/ai/genkit/traces
-/apps/ai/genkit/traces_idx
+/apps/ai/.genkit/traces
+/apps/ai/.genkit/traces_idx
+/apps/ai/.genkit/runtime
 /.pnp
 .pnp.*
 .yarn/*
