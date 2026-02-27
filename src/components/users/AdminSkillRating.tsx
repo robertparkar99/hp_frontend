@@ -36,38 +36,10 @@ interface Skill {
   behaviour: any[];
   attitude: any[];
   proficiency_level: string | number;
-  proficiency_level: string | number;
   skill: string;
   skill_id: number;
   sub_category: string;
   title: string;
-}
-
-// KAAB Item interface for separate KAAB categories
-interface KAABItem {
-  id: number;
-  knowledge_id?: number;
-  ability_id?: number;
-  attitude_id?: number;
-  behaviour_id?: number;
-  title: string;
-  knowledge?: string;
-  ability?: string;
-  attitude?: string;
-  behaviour?: string;
-  description?: string;
-  proficiency_level?: string | number;
-}
-
-// Rated KAAB interface
-interface RatedKAAB {
-  id: string;
-  category: 'knowledge' | 'ability' | 'attitude' | 'behaviour';
-  title: string;
-  self_rating: number;
-  expected: number;
-  ratings: Record<string, string>;
-  created_at?: string;
 }
 
 interface RatedSkill {
@@ -75,14 +47,12 @@ interface RatedSkill {
   skill_level: string;
   title?: string;
   skill?: string;
-  skill?: string;
   category?: string;
   sub_category?: string;
   created_at?: string;
   proficiency_level?: string;
   self_rating?: number;
   SkillLevels?: string[];
-  skill_id?: number;
   skill_id?: number;
   // Add detailed ratings fields
   detailed_ratings?: {
@@ -113,29 +83,7 @@ interface UserRatingData {
   updated_at: string;
 }
 
-interface UserRatingData {
-  id: number;
-  user_id: number;
-  jobrole_id: number;
-  skill_ids: string;
-  knowledge_ids: string;
-  ability_ids: string | null;
-  attitude_ids: string | null;
-  behavior_ids: string | null;
-  sub_institute_id: number;
-  created_by: number;
-  updated_by: number;
-  created_at: string;
-  updated_at: string;
-}
-
 interface JobroleSkilladd1Props {
-  sub_institute_id: number;
-  type: string;
-  type_id: number;
-  title: string;
-  user_id: number;
-  jobrole_id: number;
   sub_institute_id: number;
   type: string;
   type_id: number;
@@ -153,7 +101,6 @@ const CustomTooltip = ({ active, payload }: any) => {
       <div className="bg-white border border-gray-300 p-3 rounded shadow-md">
         <p className="font-semibold text-gray-800">{data.skill}</p>
         <p className="text-sm text-gray-600">
-          Rating: {data.rating}/{data.proficiency_level}
           Rating: {data.rating}/{data.proficiency_level}
         </p>
         <p className="text-sm text-gray-600">
@@ -215,7 +162,6 @@ const renderCircles = (value: number, max: number) => {
 };
 
 // Detailed Ratings Component - Expandable Individual Details
-// Detailed Ratings Component - Expandable Individual Details
 const renderDetailedRatings = (ratedSkill: RatedSkill) => {
   const detailedRatings = ratedSkill.detailed_ratings || {
     knowledge: ratedSkill.knowledge_ratings || {},
@@ -236,23 +182,9 @@ const renderDetailedRatings = (ratedSkill: RatedSkill) => {
       const v = String(val).toLowerCase();
       return v === "yes" || v === "true" || v === "1";
     }).length;
-    const yesCount = Object.values(ratings).filter(val => {
-      const v = String(val).toLowerCase();
-      return v === "yes" || v === "true" || v === "1";
-    }).length;
     const totalCount = Object.keys(ratings).length;
     return { yesCount, totalCount, percentage: totalCount > 0 ? Math.round((yesCount / totalCount) * 100) : 0 };
   };
-
-  // Check if there are any ratings to show
-  const hasAnyRatings = attrArray.some(attr => {
-    const ratings = detailedRatings[attr.title as keyof typeof detailedRatings] || {};
-    return Object.keys(ratings).length > 0;
-  });
-
-  if (!hasAnyRatings) {
-    return null; // Don't show if no ratings
-  }
 
   // Check if there are any ratings to show
   const hasAnyRatings = attrArray.some(attr => {
@@ -279,8 +211,6 @@ const renderDetailedRatings = (ratedSkill: RatedSkill) => {
 
             if (totalCount === 0) return null; // Skip if no attributes
 
-            if (totalCount === 0) return null; // Skip if no attributes
-
             return (
               <div key={attr.title} className="border rounded-lg p-3 bg-white">
                 <div className="flex items-center justify-between mb-2">
@@ -299,32 +229,13 @@ const renderDetailedRatings = (ratedSkill: RatedSkill) => {
                         <span className="text-gray-600 flex-1 truncate mr-2">{attribute}</span>
                         {isYes ? (
                           <span className="flex items-center text-green-600">
-                  {Object.entries(ratings).map(([attribute, value]) => {
-                    const v = String(value).toLowerCase();
-                    const isYes = v === "yes" || v === "true" || v === "1";
-                    const isNo = v === "no" || v === "false" || v === "0";
-                    return (
-                      <div key={attribute} className="flex items-center justify-between text-sm py-1 border-b border-gray-100 last:border-b-0">
-                        <span className="text-gray-600 flex-1 truncate mr-2">{attribute}</span>
-                        {isYes ? (
-                          <span className="flex items-center text-green-600">
                             <CheckCircle className="h-4 w-4 mr-1" />
                             <span className="text-xs font-medium">Yes</span>
                           </span>
                         ) : isNo ? (
                           <span className="flex items-center text-red-600">
-                          </span>
-                        ) : isNo ? (
-                          <span className="flex items-center text-red-600">
                             <XCircle className="h-4 w-4 mr-1" />
                             <span className="text-xs font-medium">No</span>
-                          </span>
-                        ) : (
-                          <span className="text-gray-700 text-xs font-medium">{String(value)}</span>
-                        )}
-                      </div>
-                    );
-                  })}
                           </span>
                         ) : (
                           <span className="text-gray-700 text-xs font-medium">{String(value)}</span>
@@ -404,56 +315,10 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
   />
 </BarChart>
 
-         <BarChart
-  data={chartData}
-  margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
->
-  <CartesianGrid strokeDasharray="3 3" />
-
-  <XAxis
-    dataKey="skill"
-    angle={-45}
-    textAnchor="end"
-    height={80}
-    interval={0}
-  />
-
-  <YAxis allowDecimals={false} domain={[0, SkillLevels.length || 5]} />
-
-  <Tooltip />
-
-  {/* Rated */}
-  <Bar
-    dataKey="rated"
-    name="Rated"
-    fill="#3B82F6"
-    radius={[4, 4, 0, 0]}
-  />
-
-  {/* Expected */}
-  <Bar
-    dataKey="expected"
-    name="Expected"
-    fill="#22C55E"
-    radius={[4, 4, 0, 0]}
-  />
-</BarChart>
-
         </ResponsiveContainer>
       </div>
 
       {/* Legend */}
-      <div className="flex gap-6 justify-center mt-4">
-  <div className="flex items-center gap-2">
-    <div className="w-4 h-4 bg-blue-500 rounded"></div>
-    <span className="text-sm">Rated</span>
-  </div>
-  <div className="flex items-center gap-2">
-    <div className="w-4 h-4 bg-green-500 rounded"></div>
-    <span className="text-sm">Expected</span>
-  </div>
-</div>
-
       <div className="flex gap-6 justify-center mt-4">
   <div className="flex items-center gap-2">
     <div className="w-4 h-4 bg-blue-500 rounded"></div>
@@ -475,13 +340,6 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
 };
 
 export default function Page({
-  sub_institute_id = 3,
-  type = "jobrole",
-  type_id = 3154,
-  title = "Nurse Manager",
-  user_id = 6,
-  jobrole_id = 3154,
-  SkillLevels = [],
   sub_institute_id = 3,
   type = "jobrole",
   type_id = 3154,
@@ -736,7 +594,6 @@ export default function Page({
     if (!userRatedSkills || userRatedSkills.length === 0) return "0.0";
     const totalRating = userRatedSkills.reduce((sum: number, skill: RatedSkill) => {
       const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
-      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
       return sum + rating;
     }, 0);
     return (totalRating / userRatedSkills.length).toFixed(1);
@@ -744,9 +601,7 @@ export default function Page({
 
   const overallSkillIndex = calculateOverallSkillIndex();
   const percentage = Math.round((parseFloat(overallSkillIndex) / (SkillLevels.length || 5)) * 100);
-  const percentage = Math.round((parseFloat(overallSkillIndex) / (SkillLevels.length || 5)) * 100);
 
-  const totalLevels = SkillLevels.length || 5;
   const totalLevels = SkillLevels.length || 5;
 
   const overallStatus =
@@ -781,16 +636,6 @@ export default function Page({
  const fullChartData = userRatedSkills.map((s: RatedSkill) => {
   const rated = parseInt(s.skill_level?.replace("Level ", "") || "0");
   const expected = parseExpectedLevel(s.proficiency_level);
- const fullChartData = userRatedSkills.map((s: RatedSkill) => {
-  const rated = parseInt(s.skill_level?.replace("Level ", "") || "0");
-  const expected = parseExpectedLevel(s.proficiency_level);
-
-  return {
-    skill: s.title || s.skill || "Unknown",
-    rated,
-    expected,
-  };
-});
 
   return {
     skill: s.title || s.skill || "Unknown",
@@ -814,17 +659,6 @@ export default function Page({
     );
   }
 
-  if (loading) {
-    return (
-      <main className="p-6 flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading skills data...</p>
-        </div>
-      </main>
-    );
-  }
-
   if (showEmptyState) {
     return (
       <main className="p-6">
@@ -834,7 +668,6 @@ export default function Page({
   }
 
   return (
-    <main className="p-2 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
     <main className="p-2 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       {/* Fullscreen Chart Modal */}
       {showFullscreenChart && (
@@ -847,16 +680,12 @@ export default function Page({
 
       {/* 🔥 Chart Section */}
       <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200">
-      <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200">
         <div className={showEmptyState ? "filter blur-sm pointer-events-none" : ""}>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center">
               <span className="mdi mdi-chart-line text-green-600 mr-2"></span>
               Skill Ratings
               {fullChartData.length > 6 && (
-                <span className="text-xs sm:text-sm text-gray-500 ml-2">
                 <span className="text-xs sm:text-sm text-gray-500 ml-2">
                   (Showing {Math.min(6, fullChartData.length)} of {fullChartData.length})
                 </span>
@@ -866,7 +695,6 @@ export default function Page({
             {fullChartData.length > 6 && (
               <button
                 onClick={() => setShowFullscreenChart(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-2 text-xs sm:text-sm"
                 className="bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-2 text-xs sm:text-sm"
               >
                 <span className="mdi mdi-fullscreen"></span>
@@ -878,35 +706,8 @@ export default function Page({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Chart */}
             <div className="lg:col-span-2 h-56 sm:h-64 md:h-72">
-            <div className="lg:col-span-2 h-56 sm:h-64 md:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-  data={limitedChartData}
-  margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
->
-  <CartesianGrid strokeDasharray="3 3" />
-
-  <XAxis dataKey="skill" tick={{ fontSize: 10 }} />
-  <YAxis allowDecimals={false} domain={[0, totalLevels]} tick={{ fontSize: 10 }} />
-
-  <Tooltip />
-
-  {/* Rated */}
-  <Bar
-    dataKey="rated"
-    name="Rated"
-    fill="#3B82F6"
-    radius={[4, 4, 0, 0]}
-  />
-
-  {/* Expected */}
-  <Bar
-    dataKey="expected"
-    name="Expected"
-    fill="#22C55E"
-    radius={[4, 4, 0, 0]}
-  />
-</BarChart>
   data={limitedChartData}
   margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
 >
@@ -947,23 +748,10 @@ export default function Page({
   </div>
 </div>
 
-              <div className="flex gap-4 sm:gap-6 justify-center mt-3 sm:mt-4">
-  <div className="flex items-center gap-1.5 sm:gap-2">
-    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded"></div>
-    <span className="text-xs sm:text-sm">Rated</span>
-  </div>
-  <div className="flex items-center gap-1.5 sm:gap-2">
-    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded"></div>
-    <span className="text-xs sm:text-sm">Expected</span>
-  </div>
-</div>
-
             </div>
 
             {/* Overall Skill Index */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 text-center">
-                <h3 className="text-sm sm:text-md font-semibold text-gray-700 mb-3 sm:mb-4">
               <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 text-center">
                 <h3 className="text-sm sm:text-md font-semibold text-gray-700 mb-3 sm:mb-4">
                   Overall Skill Index
@@ -972,12 +760,10 @@ export default function Page({
                 {(() => {
                   const totalRating = userRatedSkills.reduce((sum: number, skill: RatedSkill) => {
                     const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
-                    const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                     return sum + rating;
                   }, 0);
 
                   const averageRating = userRatedSkills.length > 0 ? totalRating / userRatedSkills.length : 0;
-                  const maxRating = totalLevels;
                   const maxRating = totalLevels;
                   const percentage = Math.round((averageRating / maxRating) * 100);
 
@@ -989,16 +775,13 @@ export default function Page({
                   const proficiencyCounts = {
                     advanced: userRatedSkills.filter(skill => {
                       const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
-                      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                       return rating >= 5;
                     }).length,
                     intermediate: userRatedSkills.filter(skill => {
                       const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
-                      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                       return rating >= 3 && rating < 5;
                     }).length,
                     beginner: userRatedSkills.filter(skill => {
-                      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                       const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                       return rating < 3;
                     }).length
@@ -1065,13 +848,11 @@ export default function Page({
 
                       <div className="mb-2">
                         <span className={`inline-block px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded border ${overallStatusColor}`}>
-                        <span className={`inline-block px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded border ${overallStatusColor}`}>
                           {overallStatus}
                         </span>
                       </div>
 
                       <div className="mb-2">
-                        <div className="text-[10px] sm:text-xs text-gray-600 mb-1">
                         <div className="text-[10px] sm:text-xs text-gray-600 mb-1">
                           Skill Gap: {skillGap.toFixed(1)} points ({gapPercentage}% below target)
                         </div>
@@ -1082,7 +863,6 @@ export default function Page({
                           ></div>
                         </div>
                       </div>
-                      <div className="text-[10px] sm:text-xs text-gray-500">
                       <div className="text-[10px] sm:text-xs text-gray-500">
                         Based on {userRatedSkills.length} skills
                       </div>
@@ -1098,8 +878,6 @@ export default function Page({
       {/* Main Content */}
       <div className="flex flex-col h-auto min-h-[calc(100vh-8rem)]">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 h-auto">
-      <div className="flex flex-col h-auto min-h-[calc(100vh-8rem)]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 h-auto">
           {/* Skill List */}
           <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200 h-auto max-h-[500px] sm:max-h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">🚨 Un-Rated Skills</h2>
@@ -1111,7 +889,6 @@ export default function Page({
                     <img
                       src="/assets/image/rated.jpeg"
                       alt="All Skills Rated"
-                      className="w-full max-w-[280px] sm:max-w-[400px] h-auto mx-auto object-cover shadow-lg border-2 sm:border-4 "
                       className="w-full max-w-[280px] sm:max-w-[400px] h-auto mx-auto object-cover shadow-lg border-2 sm:border-4 "
                     />
                   </div>
@@ -1152,13 +929,11 @@ export default function Page({
               <button
                 onClick={() => setShowRecommendations(true)}
                 className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-xs sm:text-sm"
-                className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-xs sm:text-sm"
               >
                 View Actions
               </button>
             </div>
 
-            <div className="space-y-3 sm:space-y-5 h-auto overflow-y-auto hide-scroll">
             <div className="space-y-3 sm:space-y-5 h-auto overflow-y-auto hide-scroll">
               {userRatedSkills && userRatedSkills.length > 0 ? (
                 userRatedSkills.map((ratedSkill: RatedSkill) => {
@@ -1233,12 +1008,12 @@ export default function Page({
                         {ratedSkill.sub_category || "Uncategorized"}
                       </p>
 
-                        <div className="w-full bg-gray-300 rounded h-2 mt-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded"
-                            style={{ width: `${completionPercentage}%` }}
-                          ></div>
-                        </div>
+                      <div className="w-full bg-gray-300 rounded h-2 mt-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded"
+                          style={{ width: `${completionPercentage}%` }}
+                        ></div>
+                      </div>
 
                       <div className="grid grid-cols-2 text-xs sm:text-sm font-semibold text-gray-700 border-b pb-1 mt-3 sm:mt-4">
                         <p>Self Rating</p>
@@ -1337,7 +1112,6 @@ export default function Page({
               ) : (
                 <div className="text-center py-4">
                   <p className="text-gray-600 text-sm">No user rated skills found</p>
-                  <p className="text-gray-600 text-sm">No user rated skills found</p>
                 </div>
               )}
             </div>
@@ -1348,17 +1122,13 @@ export default function Page({
         {showRecommendations && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto p-2 sm:p-4">
             <div className="bg-white rounded-lg w-full max-w-3xl p-4 sm:p-6 relative my-4 sm:my-0">
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto p-2 sm:p-4">
-            <div className="bg-white rounded-lg w-full max-w-3xl p-4 sm:p-6 relative my-4 sm:my-0">
               <button
                 onClick={() => setShowRecommendations(false)}
-                className="absolute top-2 sm:top-3 right-2 sm:right-3 text-gray-500 hover:text-gray-700 text-lg sm:text-xl font-bold"
                 className="absolute top-2 sm:top-3 right-2 sm:right-3 text-gray-500 hover:text-gray-700 text-lg sm:text-xl font-bold"
               >
                 &times;
               </button>
 
-              <h2 className="text-lg sm:text-xl font-semibold text-blue-600 mb-3 sm:mb-4 flex items-center">
               <h2 className="text-lg sm:text-xl font-semibold text-blue-600 mb-3 sm:mb-4 flex items-center">
                 <span className="mdi mdi-lightbulb-on-outline mr-2 text-blue-500"></span>
                 Development Recommendations
@@ -1367,42 +1137,31 @@ export default function Page({
               <div className="flex flex-col gap-4 sm:gap-6">
                 <div className="p-3 sm:p-4 rounded-lg border transition-all duration-300 transform cursor-pointer animate-slide-up border-error/30 bg-error-bg/50 hover:shadow-md hover:scale-[1.01]">
                   <h3 className="font-semibold text-blue-700 flex items-center text-sm sm:text-base">
-              <div className="flex flex-col gap-4 sm:gap-6">
-                <div className="p-3 sm:p-4 rounded-lg border transition-all duration-300 transform cursor-pointer animate-slide-up border-error/30 bg-error-bg/50 hover:shadow-md hover:scale-[1.01]">
-                  <h3 className="font-semibold text-blue-700 flex items-center text-sm sm:text-base">
                     <span className="mdi mdi-book-open-page-variant mr-2"></span>
                     Excel Advanced Training
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Improve reporting efficiency and data analysis capabilities
                   </p>
                   <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-red-100 text-red-700">
-                  <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-red-100 text-red-700">
                     High
                   </span>
-                  <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-xs sm:text-sm hover:bg-blue-700 transition-colors">
                   <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-xs sm:text-sm hover:bg-blue-700 transition-colors">
                     <span className="mdi mdi-open-in-new mr-1"></span> Learn More
                   </button>
                 </div>
 
-                <div className="p-3 sm:p-4 rounded-lg border border-yellow-200 bg-yellow-50 shadow hover:shadow-lg transition-all duration-300">
-                  <h3 className="font-semibold text-yellow-700 flex items-center text-sm sm:text-base">
                 <div className="p-3 sm:p-4 rounded-lg border border-yellow-200 bg-yellow-50 shadow hover:shadow-lg transition-all duration-300">
                   <h3 className="font-semibold text-yellow-700 flex items-center text-sm sm:text-base">
                     <span className="mdi mdi-account-group mr-2"></span>
                     Leadership Workshop
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Build project management and team leadership skills
                   </p>
                   <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
-                  <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
                     Medium
                   </span>
-                  <button className="mt-3 w-full px-3 py-2 rounded bg-yellow-600 text-white text-xs sm:text-sm hover:bg-yellow-700 transition-colors">
                   <button className="mt-3 w-full px-3 py-2 rounded bg-yellow-600 text-white text-xs sm:text-sm hover:bg-yellow-700 transition-colors">
                     <span className="mdi mdi-open-in-new mr-1"></span> Learn More
                   </button>
@@ -1410,20 +1169,15 @@ export default function Page({
 
                 <div className="p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50 shadow hover:shadow-lg transition-all duration-300">
                   <h3 className="font-semibold text-blue-700 flex items-center text-sm sm:text-base">
-                <div className="p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50 shadow hover:shadow-lg transition-all duration-300">
-                  <h3 className="font-semibold text-blue-700 flex items-center text-sm sm:text-base">
                     <span className="mdi mdi-presentation mr-2"></span>
                     Public Speaking Seminar
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Strengthen presentation impact and confidence
                   </p>
                   <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                  <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-blue-100 text-blue-700">
                     Low
                   </span>
-                  <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-xs sm:text-sm hover:bg-blue-700 transition-colors">
                   <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-xs sm:text-sm hover:bg-blue-700 transition-colors">
                     <span className="mdi mdi-open-in-new mr-1"></span> Learn More
                   </button>
@@ -1436,4 +1190,3 @@ export default function Page({
     </main>
   );
 }
-
