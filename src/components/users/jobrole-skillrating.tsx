@@ -391,17 +391,22 @@ export default function JobroleSkillRatingDesign({
       // Generate levels array
       const generatedLevels: ProficiencyLevel[] = [];
       for (let i = 1; i <= maxLevel; i++) {
+        // The API returns 'level' field but code also checks 'proficiency_level'
         const apiLevel = apiData.find(level => {
-          const levelNumber = level?.proficiency_level?.match(/\d+/)?.[0];
+          const levelValue = level?.level ?? level?.proficiency_level;
+          const levelNumber = typeof levelValue === 'string' ? levelValue.match(/\d+/)?.[0] : String(levelValue);
           return levelNumber && parseInt(levelNumber, 10) === i;
         });
 
         generatedLevels.push(
           apiLevel ? {
             id: apiLevel.id || `level_${i}`,
-            proficiency_level: apiLevel.proficiency_level || `Level ${i}`,
-            description: apiLevel.description || `Proficiency Level ${i}`,
-            type_description: apiLevel.type_description,
+            // Handle both 'level' and 'proficiency_level' from API
+            proficiency_level: apiLevel.level || apiLevel.proficiency_level || `Level ${i}`,
+            // Use 'description' if available, otherwise use 'level' as description
+            description: apiLevel.description || apiLevel.level || `Proficiency Level ${i}`,
+            // Use 'level' as type_description if type_description is not available
+            type_description: apiLevel.type_description || apiLevel.level,
             descriptor: apiLevel.descriptor,
             indicators: apiLevel.indicators
           } : {
@@ -962,11 +967,11 @@ export default function JobroleSkillRatingDesign({
           <span className="text-blue-600 text-lg sm:text-xl cursor-pointer">ℹ️</span>
         </div>
 
-        {currentItem && (
+        {/* {currentItem && (
           <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
             {currentItem.description || ""}
           </p>
-        )}
+        )} */}
 
         <hr className="mb-4 sm:mb-6" />
 
@@ -1197,3 +1202,4 @@ export default function JobroleSkillRatingDesign({
     </div>
   );
 }
+
