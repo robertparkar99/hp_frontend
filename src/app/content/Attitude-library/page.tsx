@@ -19,12 +19,12 @@ import {
   Funnel, LayoutGrid, Table, Plus, Download, Upload,
   Sparkles, Settings, Eye, Pencil, Trash2, Copy, Search, MoreVertical
 } from "lucide-react";
-import { Atom } from "react-loading-indicators";
 import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/AttitudeComponent/viewDialouge";
 import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
 import { generateDetailTourSteps } from "@/lib/tourSteps";
+import Loader from '@/components/utils/loading';
 
 // ---------- Types ----------
 type CardData = {
@@ -633,9 +633,7 @@ function CardGrid({
 }) {
   if (loadingCards) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
-      </div>
+      <Loader />
     );
   }
 

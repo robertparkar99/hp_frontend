@@ -6,13 +6,13 @@ import { createPortal } from "react-dom";
 import { toast } from "@/hooks/use-toast";
 import { Edit, Plus } from "lucide-react";
 import icon from '@/components/AppIcon';
-import { Atom } from "react-loading-indicators"
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
 import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
 import { UserCircle, Search ,AlertCircle} from "lucide-react";
 import Shepherd, { Tour } from "shepherd.js";
 import 'shepherd.js/dist/css/shepherd.css';
+import Loader from '../../../components/utils/loading'
 
 import {
   Dialog,
@@ -1430,9 +1430,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-600">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
-      </div>
+        <Loader />
     );
   }
   const currentPercent =

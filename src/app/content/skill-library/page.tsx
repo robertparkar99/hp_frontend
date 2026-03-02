@@ -25,10 +25,10 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-// import { Atom } from "react-loading-indicators";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
 import { generateDetailTourSteps } from "../../../lib/tourSteps";
+import Loader from "@/components/utils/loading";
 
 type Skill = {
   id: number;
@@ -1137,9 +1137,7 @@ export default function Page({ showDetailTour = false }: PageProps) {
       <div className="flex gap-6 flex-col flex-1">
         <section ref={contentRef} className="w-full overflow-y-auto scrollbar-hide">
           {loading || (selectedJobRole && loadingJobRoleSkills) ? (
-            <div className="flex justify-center items-center h-screen">
-              {/* <Atom color="#525ceaff" size="medium" text="" textColor="" /> */}
-            </div>
+            <Loader />
           ) : columnFilteredSkills.length === 0 ? (
             <div className="flex justify-center items-center h-full">
               <p className="text-gray-500 text-lg font-medium">
