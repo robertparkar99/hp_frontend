@@ -29,6 +29,7 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
   const [chapters, setChapters] = useState([])
   const [courseDetails, setCourseDetails] = useState(null)
   const [contentData, setContentData] = useState({})
+  const [contentCategory, setContentCategory] = useState({})
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("modules")
   // const [courseActiveTab, setCourseActiveTab] = useState("course")
@@ -203,6 +204,10 @@ export default function ViewDetailPage({ subject_id, standard_id, grade = 2 ,onC
 
       if (data.content_data) {
         setContentData(data.content_data)
+      }
+
+      if (data.content_category) {
+        setContentCategory(data.content_category)
       }
 
       if (data.standard_details) {
@@ -491,6 +496,7 @@ if (onClose) {
             courseDisplayName={courseDetails?.display_name || "Untitled Course"}
             standardName={standardDetails?.name || "Standard"}
             onContentViewed={() => setContentViewTrigger(prev => prev + 1)}
+            contentCategory={contentCategory}
           />
         ) : (
           <div className="text-center text-muted-foreground py-10">
@@ -525,7 +531,9 @@ if (onClose) {
                           key={category}
                           className="border-2 border-blue-100 bg-blue-50/10 p-5 rounded-lg shadow-sm"
                         >
-                          <h4 className="text-sm font-semibold text-blue-700 mb-3">{category}</h4>
+                          <h4 className="text-sm font-semibold text-blue-700 mb-3">
+                            {contentCategory?.[category] || category}
+                          </h4>
                           <ul className="space-y-3">
                             {items.map((res) => (
                               <li
