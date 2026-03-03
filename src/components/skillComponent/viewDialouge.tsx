@@ -45,6 +45,8 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
     edit: false,
   });
 
+  const [isCourseBuilding, setIsCourseBuilding] = useState(false);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = localStorage.getItem("userData");
@@ -273,17 +275,29 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
   }
 
   const handleCousreCreation = async () => {
+    const slideCount = prompt('Please enter the slide count:');
+    if (!slideCount || isNaN(Number(slideCount))) {
+      alert('Please enter a valid slide count to proceed.');
+      return;
+    }
+
     alert('Course Creation in progress, Please Wait it will take sometime ! If failed then please try after some seconds');
+    setIsCourseBuilding(true);
     try {
+      // Get jobrole from jobroleData if available
+      const jobrole = jobroleData && jobroleData.length > 0 ? jobroleData[0].jobrole : '';
+      
       const res = await fetch(
-        `${sessionUrl}/AICourseGeneration?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&user_id=${sessionUserID}&user_profile_name=${sessionUserProfile}&syear=${sessionSyear}&industry=${sessionOrgType}&department=${viewData?.department}&skill_category=${viewData?.category}&skill_sub_category=${viewData?.sub_category}&skill_micro_category=${viewData?.micro_category}&skill_name=${viewData?.title}&skill_description=${viewData?.description}`,
+        `${sessionUrl}/gammaContent?sub_institute_id=${sessionSubInstituteId}&token=${sessionToken}&user_id=${sessionUserID}&user_profile_name=${sessionUserProfile}&syear=${sessionSyear}&industry=${sessionOrgType}&department=${viewData?.department}&skill=${viewData?.title}&jobrole=${jobrole}&content_title=${viewData?.title}&slide_count=${slideCount}`,
       );
 
       const data = await res.json();
       alert(data.message);
     } catch (error) {
-      console.error("Error deleting job role:", error);
-      alert("Error deleting job role");
+      console.error("Error creating course:", error);
+      alert("Error creating course");
+    } finally {
+      setIsCourseBuilding(false);
     }
   }
 
@@ -486,10 +500,23 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
 
                 <button
                   onClick={() => handleCousreCreation()}
-                  className="flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm"
+                  disabled={isCourseBuilding}
+                  className={`flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold transition duration-200 shadow-sm ${isCourseBuilding ? 'cursor-not-allowed opacity-70' : 'text-yellow-600 hover:bg-yellow-50'}`}
                 >
-                  <span className="mdi mdi-creation text-xl"></span>
-                  <span>Build Course</span>
+                  {isCourseBuilding ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Building...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="mdi mdi-creation text-xl"></span>
+                      <span>Build Course</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
