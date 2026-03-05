@@ -3,9 +3,8 @@
  * Uses Shepherd.js for guided onboarding
  */
 
-import { StepOptionsAttachTo } from 'shepherd.js';
-
-interface TourStepAttachTo extends StepOptionsAttachTo {
+interface TourStepAttachTo {
+  element: string;
   on: 'top' | 'bottom' | 'left' | 'right';
 }
 
