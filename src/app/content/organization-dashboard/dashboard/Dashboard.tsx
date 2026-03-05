@@ -950,14 +950,14 @@ export function Dashboard() {
                   <span className="text-xs sm:text-sm">Manage Users</span>
                 </Button>
 
-                <Button 
-                  variant="outline" 
+                {/* <Button
+                  variant="outline"
                   className="h-16 sm:h-20 flex-col gap-1 sm:gap-2 px-2"
                    id="tour-btn-view-analytics"
                 >
                   <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
                   <span className="text-xs sm:text-sm">View Analytics</span>
-                </Button>
+                </Button> */}
               </CardContent>
             </Card>
 
