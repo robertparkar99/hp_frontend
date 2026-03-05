@@ -412,6 +412,18 @@ const BehaviourGrid = ({ showDetailTour }: PageProps) => {
     },
   };
 
+  // Filter cardData by searchTerm for cards view
+  const filteredCardData = cardData.filter((item) => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      item.title?.toLowerCase().includes(search) ||
+      item.category?.toLowerCase().includes(search) ||
+      item.sub_category?.toLowerCase().includes(search) ||
+      item.proficiency_level?.toLowerCase().includes(search)
+    );
+  });
+
   const filteredData = cardData.filter(
     (row) =>
       row.title
@@ -605,12 +617,12 @@ const BehaviourGrid = ({ showDetailTour }: PageProps) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">
-            {cardData.length === 0 ? (
+              {filteredCardData.length === 0 ? (
               <p className="text-gray-500 col-span-full text-center">
                 No data found for this filter
               </p>
             ) : (
-              cardData.map((card) => (
+                  filteredCardData.map((card) => (
                 <motion.div
                   key={card.id}
                   className="group bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm min-h-[180px] relative cursor-pointer"

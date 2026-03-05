@@ -262,11 +262,11 @@ const CustomTooltip = ({ active, payload }: any) => {
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <p className="text-xs text-muted-foreground">Current Avg</p>
-            <p className="font-semibold text-secondary">{data.avg}%</p>
+            <p className="font-semibold text-slate-700">{data.avg}%</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Required</p>
-            <p className="font-semibold text-accent">{data.required}%</p>
+            <p className="font-semibold text-slate-700">{data.required}%</p>
           </div>
         </div>
 
@@ -1258,9 +1258,9 @@ const HeatmapGrid = ({ data, roles, skills, onCellClick }: any) => {
   };
 
   return (
-    <div className="overflow-auto rounded-lg border border-border bg-card">
+    <div className="overflow-auto overflow-visible rounded-lg border border-border bg-card">
       <div className="inline-block min-w-full">
-        <div className="grid" style={{ gridTemplateColumns: `150px repeat(${skills.length}, 100px)` }}>
+        <div className="grid" style={{ gridTemplateColumns: `150px repeat(${skills.length}, 120px)` }}>
           {/* Header Row */}
           <div className="sticky top-0 left-0 z-20 bg-card border-b border-r border-border p-3 font-semibold">
             Role / Skill
@@ -1268,12 +1268,17 @@ const HeatmapGrid = ({ data, roles, skills, onCellClick }: any) => {
           {skills.map((skill: string) => (
             <div
               key={skill}
-              className="sticky top-0 z-10 bg-card border-b border-border p-3 text-xs font-medium text-center"
+              className="sticky top-0 z-10 bg-card border-b border-border 
+               h-20 flex items-end justify-center"
             >
-              <div className="transform -rotate-45 origin-left whitespace-nowrap">{skill}</div>
+              <div
+                className="transform -rotate-45 origin-bottom-left 
+                 text-xs font-medium whitespace-nowrap"
+              >
+                {skill}
+              </div>
             </div>
           ))}
-
           {/* Data Rows */}
           {roles.map((role: string) => (
             <React.Fragment key={role}>
@@ -1290,7 +1295,7 @@ const HeatmapGrid = ({ data, roles, skills, onCellClick }: any) => {
                 return (
                   <div
                     key={cellKey}
-                    className={`relative border-b border-r border-border p-3 cursor-pointer transition-all duration-200 ${getIntensityClass(gap)} ${hoveredCell === cellKey ? "ring-2 ring-primary ring-inset scale-105" : ""}`}
+                    className={`relative border-b border-r border-border p-3 cursor-pointer transition-all duration-200 overflow-visible ${getIntensityClass(gap)} ${hoveredCell === cellKey ? "ring-2 ring-primary ring-inset scale-105 z-20" : ""}`}
                     onMouseEnter={() => setHoveredCell(cellKey)}
                     onMouseLeave={() => setHoveredCell(null)}
                     onClick={() => onCellClick?.({ 
@@ -1305,7 +1310,7 @@ const HeatmapGrid = ({ data, roles, skills, onCellClick }: any) => {
                       {gap > 0 ? `${gap}%` : ""}
                     </div>
                     {hoveredCell === cellKey && (
-                      <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2 z-30 bg-popover text-popover-foreground px-3 py-2 rounded-md shadow-lg text-xs whitespace-nowrap border border-border">
+                      <div className="z-50 absolute left-1/2 bottom-full mb-2 -translate-x-1/2 bg-popover text-popover-foreground px-3 py-2 rounded-md shadow-lg text-xs whitespace-nowrap border border-border pointer-events-none">
                         <div className="font-semibold">{role}</div>
                         <div className="text-muted-foreground">{skill}</div>
                         <div className="text-primary font-semibold mt-1">{gap}% gap</div>
@@ -1318,6 +1323,8 @@ const HeatmapGrid = ({ data, roles, skills, onCellClick }: any) => {
                         }`}>
                           {getGapSeverity(gap)} Priority
                         </div>
+                        {/* Arrow pointer */}
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full border-8 border-transparent border-t-popover"></div>
                       </div>
                     )}
                   </div>

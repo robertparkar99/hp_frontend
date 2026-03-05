@@ -422,10 +422,22 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
 
   // Filtered grid data
   const filteredData = data.filter((item) => {
+    // Filter by dropdown selections
     if (selectedDept && item.track !== selectedDept) return false;
     if (selectedJobrole && item.jobrole !== selectedJobrole) return false;
     if (selectedFunction && item.critical_work_function !== selectedFunction)
       return false;
+    // Filter by search term
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch =
+        (item.task?.toLowerCase().includes(searchLower)) ||
+        (item.jobrole?.toLowerCase().includes(searchLower)) ||
+        (item.track?.toLowerCase().includes(searchLower)) ||
+        (item.critical_work_function?.toLowerCase().includes(searchLower)) ||
+        (item.task_type?.toLowerCase().includes(searchLower));
+      if (!matchesSearch) return false;
+    }
     return true;
   });
 
@@ -580,16 +592,31 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
     },
   };
 
-  // ✅ Apply column filters
-  const filteredTableData = filteredData.filter((row) =>
-    Object.entries(columnFilters).every(([key, val]) =>
+  // ✅ Apply column filters and search term
+  const filteredTableData = filteredData.filter((row) => {
+    // Apply column filters
+    const columnMatch = Object.entries(columnFilters).every(([key, val]) =>
       val
         ? String(row[key as keyof JobRoleTask] || "")
             .toLowerCase()
             .includes(val.toLowerCase())
         : true
-    )
-  );
+    );
+    if (!columnMatch) return false;
+
+    // Apply search term filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch =
+        (row.task?.toLowerCase().includes(searchLower)) ||
+        (row.jobrole?.toLowerCase().includes(searchLower)) ||
+        (row.track?.toLowerCase().includes(searchLower)) ||
+        (row.critical_work_function?.toLowerCase().includes(searchLower)) ||
+        (row.task_type?.toLowerCase().includes(searchLower));
+      if (!matchesSearch) return false;
+    }
+    return true;
+  });
 
   return (
     <>

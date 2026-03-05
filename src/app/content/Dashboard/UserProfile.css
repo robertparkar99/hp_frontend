@@ -658,7 +658,11 @@
     .input-field input {
         font-size: 18px;
         height: 45px;
+     
     }
+    .no-shadow{
+box-shadow : none !important;
+}
 
     .input-field input::placeholder {
         font-size: 18px;
@@ -1376,7 +1380,7 @@
 }
 
 .gender-radio-label {
-    display: flex;
+    display: flex !important;
     align-items: center;
     gap: 0.5rem;
     height: 35px;
@@ -1390,7 +1394,7 @@
 }
 
 .gender-radio-input {
-    accent-color: #47a0ff;
+    /* accent-color: #47a0ff; */
     width: 16px;
     height: 16px;
     cursor: pointer;

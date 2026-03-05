@@ -58,7 +58,7 @@ export const employeeDirectoryTourSteps = [
     },
     buttons: [],
     highlightClass: 'highlight',
-    scrollTo: true,
+    scrollTo: false,
     cancelIcon: { enabled: true },
     title: 'Advanced Filters',
     text: ['Click here to expand advanced filtering options. You can filter employees by department, role, status, and more.']
@@ -88,7 +88,7 @@ export const employeeDirectoryTourSteps = [
     },
     buttons: [],
     highlightClass: 'highlight',
-    scrollTo: true,
+    scrollTo: false,
     cancelIcon: { enabled: true },
     title: 'View Mode Toggle',
     text: ['Switch between Table View (detailed spreadsheet-like display) and Card View (visual tile-based display) using these buttons.']
@@ -103,7 +103,7 @@ export const employeeDirectoryTourSteps = [
     },
     buttons: [],
     highlightClass: 'highlight',
-    scrollTo: true,
+    scrollTo: false,
     cancelIcon: { enabled: true },
     title: 'Employee Table',
     text: ['View all employees in a tabular format. Each row shows employee details including name, mobile, department, role, and status. Click column headers to sort and use input fields to filter by column.']
@@ -124,7 +124,7 @@ export const employeeDirectoryTourSteps = [
     },
     buttons: [],
     highlightClass: 'highlight',
-    scrollTo: true,
+    scrollTo: false,
     cancelIcon: { enabled: true },
     title: 'Employee Actions',
     text: ['Click on "Edit Employee" or "Assign Task" buttons in the dropdown menu to navigate to those pages. The tour will continue on the respective page.']

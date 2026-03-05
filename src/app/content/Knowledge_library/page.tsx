@@ -186,10 +186,11 @@ const Honeycomb: React.FC<PageProps> = ({ showDetailTour }) => {
     }
   }, [showDetailTour]);
 
-  // Apply dropdown filters
+  // Apply dropdown filters and search
   useEffect(() => {
     let temp = data;
 
+    // Apply category filter
     if (category) {
       temp = temp.filter((item) => item.category === category);
     }
@@ -199,8 +200,16 @@ const Honeycomb: React.FC<PageProps> = ({ showDetailTour }) => {
       );
     }
 
+    // Apply search term filter (title only)
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      temp = temp.filter((item) =>
+        (item.title || "").toLowerCase().includes(searchLower)
+      );
+    }
+
     setFilteredData(temp);
-  }, [category, subCategory, data]);
+  }, [category, subCategory, searchTerm, data]);
 
   // Get icon for classification item
   // const getItemIcon = (item: string) => {

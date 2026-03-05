@@ -619,7 +619,11 @@ const ProgressDashboard = () => {
       )
     },
     {
-      name: "Actions",
+      name: (
+        <div id="task-table-actions">
+          <div>Actions</div>
+        </div>
+      ),
       cell: row => (
         <div className="flex items-center space-x-2">
           <Button
