@@ -64,7 +64,7 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
       useModalOverlay: true,
       defaultStepOptions: {
         cancelIcon: { enabled: true },
-        scrollTo: { behavior: "smooth", block: "center" },
+        scrollTo: false,
         classes: "shepherd-theme-arrows",
       },
     });
@@ -269,7 +269,7 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
       useModalOverlay: true,
       defaultStepOptions: {
         cancelIcon: { enabled: true },
-        scrollTo: { behavior: "smooth", block: "center" },
+        scrollTo: false,
         classes: "shepherd-theme-arrows",
       },
     });

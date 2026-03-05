@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.0.0",
+    "@floating-ui/dom": "^1.7.5",
     "@genkit-ai/express": "^1.27.0",
     "@genkit-ai/google-genai": "^1.27.0",
     "@genkit-ai/next": "^1.27.0",
