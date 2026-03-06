@@ -410,7 +410,8 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [generatedUrls, setGeneratedUrls] = useState<{ exportUrl?: string; gammaUrl?: string; contentLink?: string } | null>(null);
   const [showDropdownModal, setShowDropdownModal] = useState(false);
   const [currentStandardId, setCurrentStandardId] = useState<number | null>(null);
-  const [currentSubjectId, setCurrentSubjectId] = useState<number | null>(null);
+  const [currentSubjectId, setCurrentSubjectId] = useState<number | null>(null); // This will store the sub_std_map ID
+  const [taskSkillId, setTaskSkillId] = useState<number | null>(null); // Store the original task/skill ID
   const [currentChapterId, setCurrentChapterId] = useState<number | null>(null);
   const [modules, setModules] = useState<any[]>([]);
   const [mappingTypes, setMappingTypes] = useState<any[]>([]);
@@ -421,6 +422,8 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [mappingReasonsLoading, setMappingReasonsLoading] = useState(true);
   const [selectedMappingTypeId, setSelectedMappingTypeId] = useState<number | null>(null);
   const [selectedMappingValueId, setSelectedMappingValueId] = useState<number | null>(null);
+  const [generatedCourseId, setGeneratedCourseId] = useState<number | null>(null);
+  const [subStdMapId, setSubStdMapId] = useState<number | null>(null); // Store the sub_std_map ID
 
   // State for Create Template functionality
 
@@ -564,20 +567,20 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   useEffect(() => {
     if (showDropdownModal && currentStandardId && currentSubjectId) {
       const fetchModules = async () => {
+        // Use currentSubjectId (sub_std_map ID) as the subject_id for chapter_master
         const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${currentStandardId}&subject_id=${currentSubjectId}`;
         const response = await fetch(chapterApiUrl);
         if (response.ok) {
           const data = await response.json();
           const fetchedModules = data.data || [];
           if (fetchedModules.length === 0) {
-            // Automatically create Module 1
+            // Automatically create Module 1 using the sub_std_map ID as subject_id
             const storeChapterApiUrl = `${sessionData.url}/lms/chapter_master/store?type=API&sub_institute_id=${sessionData.subInstituteId}&standard=${currentStandardId}&subject=${currentSubjectId}`;
             const formData = new FormData();
             formData.append('type', 'API');
             formData.append('sub_institute_id', sessionData.subInstituteId.toString());
-            // formData.append('grade', '9');
             formData.append('standard', currentStandardId.toString());
-            formData.append('subject', currentSubjectId.toString());
+            formData.append('subject', currentSubjectId.toString()); // Use sub_std_map ID
             const chapterName = isCriticalWorkFunction ? jsonObject.critical_work_function : isSkillSelection ? (typeof jsonObject.selected_skill === 'object' ? jsonObject.selected_skill.skillName || jsonObject.selected_skill : jsonObject.selected_skill) : 'Module 1';
             formData.append('chapter_name', chapterName);
             formData.append('chapter_code', 'MOD1');
@@ -625,7 +628,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       };
       fetchModules();
     }
-  }, [showDropdownModal, currentStandardId, currentSubjectId, sessionData]);
+  }, [showDropdownModal, currentStandardId, currentSubjectId, sessionData, isCriticalWorkFunction, isSkillSelection, jsonObject]);
 
   // Ensure chapter_id is set when modules are available
   useEffect(() => {
@@ -663,7 +666,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         // Create new module
         const storeChapterApiUrl = `${sessionData.url}/lms/chapter_master/store?type=API&sub_institute_id=${sessionData.subInstituteId}&standard_id=${standardId}&subject_id=${subjectId}`;
         const storeChapterResponse = await fetch(storeChapterApiUrl, {
-          method: 'PUT',
+          method: 'POST', 
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${sessionData.token}`
@@ -673,7 +676,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
             sub_institute_id: sessionData.subInstituteId,
             grade: 9,
             standard: standardId,
-            subject: subjectId,
+            subject: subjectId, // This should be the sub_std_map ID
             chapter_name: chapterName,
             chapter_code: chapterCode,
             chapter_desc: chapterDesc,
@@ -686,7 +689,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         });
 
         if (storeChapterResponse.ok) {
-          console.log('Module created successfully');
+          console.log('Module created successfully with subject_id:', subjectId);
         } else {
           console.error('Failed to create module');
         }
@@ -694,6 +697,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         console.error('Failed to fetch chapters');
       }
     };
+    
     if (!jsonObject) {
       setError("⚠️ No job role data available!");
       return;
@@ -777,12 +781,21 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         if (isCriticalWorkFunction && taskResponse.ok && taskData.usertaskData) {
           const criticalWorkFunctionName = jsonObject.critical_work_function || '';
           const matchingTask = taskData.usertaskData.find((task: any) => task.critical_work_function === criticalWorkFunctionName);
-
+          
           if (matchingTask && departmentId) {
-            const existingMapping = subStdMapData.data.find((item: any) => item.subject_id == matchingTask.id && item.standard_id == departmentId);
+            // Store the original task ID
+            setTaskSkillId(matchingTask.id);
+            
+            // Check if mapping already exists
+            const existingMapping = subStdMapData.data.find((item: any) => 
+              item.subject_id == matchingTask.id && item.standard_id == departmentId
+            );
+            
             if (existingMapping) {
+              // Use the existing mapping's ID as the subject_id for chapter_master and content_master
+              setSubStdMapId(existingMapping.id);
+              setCurrentSubjectId(existingMapping.id); // Use the sub_std_map ID as subject_id
               setCurrentStandardId(departmentId);
-              setCurrentSubjectId(matchingTask.id);
               setShowDropdownModal(true);
             } else {
               // Call the store API for task
@@ -800,17 +813,26 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                 })
               });
 
-              if (!storeResponse.ok) {
-                const errorData = await storeResponse.json();
-                console.error('Error calling store API:', errorData);
-              } else {
-                console.log('Store API called successfully for task');
-                // Create module
-                await createModule(departmentId, matchingTask.id, criticalWorkFunctionName);
+              if (storeResponse.ok) {
+                const storeData = await storeResponse.json();
+                console.log('Store API called successfully for task', storeData);
+                
+                // Get the newly created mapping ID
+                if (storeData.data && storeData.data.id) {
+                  setSubStdMapId(storeData.data.id);
+                  setCurrentSubjectId(storeData.data.id); // Use the sub_std_map ID as subject_id
+                }
+                
+                // Create module using the sub_std_map ID as subject_id
+                await createModule(departmentId, storeData.data.id, criticalWorkFunctionName);
+                
                 // Show dropdown with the new module
                 setCurrentStandardId(departmentId);
-                setCurrentSubjectId(matchingTask.id);
+                setCurrentSubjectId(storeData.data.id);
                 setShowDropdownModal(true);
+              } else {
+                const errorData = await storeResponse.json();
+                console.error('Error calling store API:', errorData);
               }
             }
           } else {
@@ -820,12 +842,21 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           const selectedSkill = jsonObject.selected_skill || '';
           const skillName = typeof selectedSkill === 'object' ? selectedSkill.skillName || selectedSkill : selectedSkill;
           const matchingSkill = skillData.userskillData.find((skill: any) => skill.skill === skillName) || skillData.userskillData[0];
-
+          
           if (matchingSkill && departmentId) {
-            const existingMapping = subStdMapData.data.find((item: any) => item.subject_id == matchingSkill.id && item.standard_id == departmentId);
+            // Store the original skill ID
+            setTaskSkillId(matchingSkill.id);
+            
+            // Check if mapping already exists
+            const existingMapping = subStdMapData.data.find((item: any) => 
+              item.subject_id == matchingSkill.id && item.standard_id == departmentId
+            );
+            
             if (existingMapping) {
+              // Use the existing mapping's ID as the subject_id for chapter_master and content_master
+              setSubStdMapId(existingMapping.id);
+              setCurrentSubjectId(existingMapping.id); // Use the sub_std_map ID as subject_id
               setCurrentStandardId(departmentId);
-              setCurrentSubjectId(matchingSkill.id);
               setShowDropdownModal(true);
             } else {
               // Call the store API for skill
@@ -843,17 +874,26 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                 })
               });
 
-              if (!storeResponse.ok) {
-                const errorData = await storeResponse.json();
-                console.error('Error calling store API:', errorData);
-              } else {
-                console.log('Store API called successfully for skill');
-                // Create module
-                await createModule(departmentId, matchingSkill.id, skillName);
+              if (storeResponse.ok) {
+                const storeData = await storeResponse.json();
+                console.log('Store API called successfully for skill', storeData);
+                
+                // Get the newly created mapping ID
+                if (storeData.data && storeData.data.id) {
+                  setSubStdMapId(storeData.data.id);
+                  setCurrentSubjectId(storeData.data.id); // Use the sub_std_map ID as subject_id
+                }
+                
+                // Create module using the sub_std_map ID as subject_id
+                await createModule(departmentId, storeData.data.id, skillName);
+                
                 // Show dropdown with the new module
                 setCurrentStandardId(departmentId);
-                setCurrentSubjectId(matchingSkill.id);
+                setCurrentSubjectId(storeData.data.id);
                 setShowDropdownModal(true);
+              } else {
+                const errorData = await storeResponse.json();
+                console.error('Error calling store API:', errorData);
               }
             }
           } else {
@@ -938,15 +978,26 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         return;
       }
 
-      // Call store_content_master API with the actual PDF link
+      // Validate that currentSubjectId (sub_std_map ID) is set
+      if (!currentSubjectId) {
+        setError("⚠️ Subject ID not found. Please regenerate the course outline.");
+        setCourseLoading(false);
+        return;
+      }
+
+      // Generate course id first
+      const newCourseId = Date.now();
+      setGeneratedCourseId(newCourseId);
+
+      // Call store_content_master API
       const storeContentApiUrl = `${sessionData.url}/lms/store_content_master`;
       const formData = new FormData();
 
-      // Add form data parameters
+      // Add form data parameters - subject_id should be the sub_std_map ID (currentSubjectId)
       formData.append('type', 'API');
       formData.append('grade_id', '9');
       formData.append('standard_id', currentStandardId?.toString() || '');
-      formData.append('subject_id', currentSubjectId?.toString() || '');
+      formData.append('subject_id', currentSubjectId.toString()); // Use the sub_std_map ID as subject_id
       formData.append('chapter_id', currentChapterId?.toString() || '');
       formData.append('title', jsonObject?.critical_work_function || jsonObject?.jobrole || 'Newton Law Video');
       formData.append('description', manualPreview?.substring(0, 100) || 'Explains motion laws');
@@ -993,9 +1044,9 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
 
       // Save generated course to Course Library
       const generatedCourse = {
-        id: Date.now(), // Use timestamp as unique ID
-        subject_id: Date.now(),
-        standard_id: Date.now(),
+        id: newCourseId, // Use timestamp as unique ID
+        subject_id: currentSubjectId, // Use the sub_std_map ID as subject_id
+        standard_id: currentStandardId?.toString() || '',
         title: isCriticalWorkFunction ? `CWF: ${jsonObject.jobrole} - ${jsonObject.critical_work_function}` : isSkillSelection ? `Skill: ${jsonObject.jobrole} - ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
         description: manualPreview?.substring(0, 100) + "..." || "AI-generated course content",
         thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop", // Default course image
