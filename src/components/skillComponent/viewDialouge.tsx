@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import EditDialog from "./editDialouge";
-import ConfigurationModelSkill from "./ConfigurationModelSkill";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -45,9 +44,6 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
     add: false,
     edit: false,
   });
-
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [configJsonObject, setConfigJsonObject] = useState<any>(null);
 
   const [isCourseBuilding, setIsCourseBuilding] = useState(false);
 
@@ -279,17 +275,29 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
   }
 
   const handleCousreCreation = async () => {
-    // Open ConfigurationModelSkill modal with skill data
-    if (viewData) {
+    const slideCount = prompt('Please enter the slide count:');
+    if (!slideCount || isNaN(Number(slideCount))) {
+      alert('Please enter a valid slide count to proceed.');
+      return;
+    }
+
+    alert('Course Creation in progress, Please Wait it will take sometime ! If failed then please try after some seconds');
+    setIsCourseBuilding(true);
+    try {
+      // Get jobrole from jobroleData if available
       const jobrole = jobroleData && jobroleData.length > 0 ? jobroleData[0].jobrole : '';
-      const jsonObject = {
-        selected_skill: viewData.title,
-        jobrole: jobrole,
-        department: viewData.department,
-        sub_department: viewData.sub_department,
-      };
-      setConfigJsonObject(jsonObject);
-      setIsConfigModalOpen(true);
+      
+      const res = await fetch(
+        `${sessionUrl}/gammaContent?sub_institute_id=${sessionSubInstituteId}&token=${sessionToken}&user_id=${sessionUserID}&user_profile_name=${sessionUserProfile}&syear=${sessionSyear}&industry=${sessionOrgType}&department=${viewData?.department}&skill=${viewData?.title}&jobrole=${jobrole}&content_title=${viewData?.title}&slide_count=${slideCount}`,
+      );
+
+      const data = await res.json();
+      alert(data.message);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      alert("Error creating course");
+    } finally {
+      setIsCourseBuilding(false);
     }
   }
 
@@ -493,7 +501,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
                 <button
                   onClick={() => handleCousreCreation()}
                   disabled={isCourseBuilding}
-                  className={`flex items-center justify-center space-x-2 rounded-lg border-2 border-yellow-300 bg-white px-2 py-1.5 md:px-1 md:py-1 text-xs md:text-sm font-semibold transition duration-200 shadow-sm w-full md:w-auto ${isCourseBuilding ? 'cursor-not-allowed opacity-70' : 'text-yellow-600 hover:bg-yellow-50'}`}
+                  className={`flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold transition duration-200 shadow-sm ${isCourseBuilding ? 'cursor-not-allowed opacity-70' : 'text-yellow-600 hover:bg-yellow-50'}`}
                 >
                   {isCourseBuilding ? (
                     <>
@@ -865,13 +873,6 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
             )}
           </div>
         </div>
-
-        {/* Configuration Modal for Skill-based Course Building */}
-        <ConfigurationModelSkill
-          isOpen={isConfigModalOpen}
-          onClose={() => setIsConfigModalOpen(false)}
-          jsonObject={configJsonObject}
-        />
       </div>
     </div>
   );
