@@ -370,7 +370,8 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [generatedUrls, setGeneratedUrls] = useState<{ exportUrl?: string; gammaUrl?: string; contentLink?: string } | null>(null);
   const [showDropdownModal, setShowDropdownModal] = useState(false);
   const [currentStandardId, setCurrentStandardId] = useState<number | null>(null);
-  const [currentSubjectId, setCurrentSubjectId] = useState<number | null>(null);
+  const [currentSubjectId, setCurrentSubjectId] = useState<number | null>(null); // This will store the sub_std_map ID
+  const [taskSkillId, setTaskSkillId] = useState<number | null>(null); // Store the original task/skill ID
   const [currentChapterId, setCurrentChapterId] = useState<number | null>(null);
   const [modules, setModules] = useState<any[]>([]);
   const [mappingTypes, setMappingTypes] = useState<any[]>([]);
@@ -379,6 +380,8 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [mappingValuesLoading, setMappingValuesLoading] = useState(true);
   const [selectedMappingTypeId, setSelectedMappingTypeId] = useState<number | null>(null);
   const [selectedMappingValueId, setSelectedMappingValueId] = useState<number | null>(null);
+  const [generatedCourseId, setGeneratedCourseId] = useState<number | null>(null);
+  const [subStdMapId, setSubStdMapId] = useState<number | null>(null); // Store the sub_std_map ID
 
   // Add smooth scrollbar styles to document
   useEffect(() => {
@@ -513,6 +516,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   useEffect(() => {
     if (showDropdownModal && currentStandardId && currentSubjectId) {
       const fetchModules = async () => {
+        // Use currentSubjectId (sub_std_map ID) as the subject_id for chapter_master
         const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${currentStandardId}&subject_id=${currentSubjectId}`;
         console.log('Fetching modules from:', chapterApiUrl);
         const response = await fetch(chapterApiUrl, {
@@ -656,6 +660,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         throw error;
       }
     };
+    
     if (!jsonObject) {
       setError("⚠️ No job role data available!");
       return;
@@ -757,7 +762,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           console.log('🔍 Looking for task with CWF:', criticalWorkFunctionName);
           
           const matchingTask = taskData.usertaskData.find((task: any) => task.critical_work_function === criticalWorkFunctionName);
-
+          
           if (matchingTask && departmentId) {
             console.log('✅ Matching task found:', matchingTask);
             
@@ -858,7 +863,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           console.log('🔍 Looking for skill:', skillName);
           
           const matchingSkill = skillData.userskillData.find((skill: any) => skill.skill === skillName) || skillData.userskillData[0];
-
+          
           if (matchingSkill && departmentId) {
             console.log('✅ Matching skill found:', matchingSkill);
             
@@ -1024,15 +1029,26 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         return;
       }
 
-      // Call store_content_master API with the actual PDF link
+      // Validate that currentSubjectId (sub_std_map ID) is set
+      if (!currentSubjectId) {
+        setError("⚠️ Subject ID not found. Please regenerate the course outline.");
+        setCourseLoading(false);
+        return;
+      }
+
+      // Generate course id first
+      const newCourseId = Date.now();
+      setGeneratedCourseId(newCourseId);
+
+      // Call store_content_master API
       const storeContentApiUrl = `${sessionData.url}/lms/store_content_master`;
       const formData = new FormData();
 
-      // Add form data parameters
+      // Add form data parameters - subject_id should be the sub_std_map ID (currentSubjectId)
       formData.append('type', 'API');
       formData.append('grade_id', '9');
       formData.append('standard_id', currentStandardId?.toString() || '');
-      formData.append('subject_id', currentSubjectId?.toString() || '');
+      formData.append('subject_id', currentSubjectId.toString()); // Use the sub_std_map ID as subject_id
       formData.append('chapter_id', currentChapterId?.toString() || '');
       formData.append('title', jsonObject?.critical_work_function || jsonObject?.jobrole || 'Newton Law Video');
       formData.append('description', manualPreview?.substring(0, 100) || 'Explains motion laws');
@@ -1079,9 +1095,9 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
 
       // Save generated course to Course Library
       const generatedCourse = {
-        id: Date.now(), // Use timestamp as unique ID
-        subject_id: Date.now(),
-        standard_id: Date.now(),
+        id: newCourseId, // Use timestamp as unique ID
+        subject_id: currentSubjectId, // Use the sub_std_map ID as subject_id
+        standard_id: currentStandardId?.toString() || '',
         title: isCriticalWorkFunction ? `CWF: ${jsonObject.jobrole} - ${jsonObject.critical_work_function}` : isSkillSelection ? `Skill: ${jsonObject.jobrole} - ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
         description: manualPreview?.substring(0, 100) + "..." || "AI-generated course content",
         thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop", // Default course image
