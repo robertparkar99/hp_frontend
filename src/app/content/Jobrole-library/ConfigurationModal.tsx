@@ -8,16 +8,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 import {
   Settings,
   Eye,
-  Copy,
   RotateCcw,
   ChevronRight,
-  GraduationCap,
   Sparkles,
   X,
   CheckCircle2,
@@ -26,22 +22,11 @@ import {
   Loader2,
   Play
 } from "lucide-react";
-import loading from "@/components/utils/loading";
 
 interface ConfigurationModalProps {
   isOpen: boolean;
   onClose: () => void;
   jsonObject?: any;
-}
-
-interface JobRole {
-  id: string;
-  jobrole: string;
-}
-
-interface Department {
-  id: string;
-  department: string;
 }
 
 // AI Models data
@@ -70,7 +55,6 @@ const aiModels = [
   { id: "meta-llama/llama-4-maverick", name: "LLaMA 4 Maverick", contextWindow: 8192, type: "experimental", notes: "Unstable, early release." }
 ];
 
-
 type Config = {
   department: string;
   jobRole: string;
@@ -85,7 +69,6 @@ type Config = {
   slideCount: number;
   presentationStyle: string;
   language: string;
-  // repetition: boolean;
   aiModel: string;
 };
 
@@ -103,10 +86,8 @@ const DEFAULT_CONFIG: Config = {
   slideCount: 15,
   presentationStyle: "Modern",
   language: "English",
-  // repetition: false,
   aiModel: "deepseek/deepseek-chat-v3.1",
 };
-
 
 // AI Model Dropdown Component
 function AiModelDropdown({
@@ -168,7 +149,6 @@ function AiModelDropdown({
                 <div className="font-medium">{model.name}</div>
                 <div className="text-xs text-gray-500 flex justify-between">
                   <span>{model.contextWindow.toLocaleString()} context</span>
-                  {/* <span>{model.price}</span> */}
                 </div>
               </button>
             ))}
@@ -192,7 +172,6 @@ function AiModelDropdown({
                 <div className="font-medium">{model.name}</div>
                 <div className="text-xs text-gray-500 flex justify-between">
                   <span>{model.contextWindow.toLocaleString()} context</span>
-                  {/* <span>{model.price}</span> */}
                 </div>
               </button>
             ))}
@@ -216,7 +195,6 @@ function AiModelDropdown({
                 <div className="font-medium">{model.name}</div>
                 <div className="text-xs text-gray-500 flex justify-between">
                   <span>{model.contextWindow.toLocaleString()} context</span>
-                  {/* <span>{model.price}</span> */}
                 </div>
               </button>
             ))}
@@ -235,7 +213,6 @@ function AiModelDropdown({
                 ? "text-amber-600"
                 : "text-red-600"
               }`}>
-              {/* {selectedModel.price} */}
             </span>
           </div>
           <div className="text-gray-400 mt-1">{selectedModel.notes}</div>
@@ -244,7 +221,6 @@ function AiModelDropdown({
     </div>
   );
 }
-
 
 // Model Information Display Component
 function ModelInfoDisplay({ modelId }: { modelId: string }) {
@@ -260,7 +236,6 @@ function ModelInfoDisplay({ modelId }: { modelId: string }) {
           <div className="text-xs text-blue-700 mt-1 space-y-1">
             <div>Context: {model.contextWindow.toLocaleString()} tokens</div>
             <div>Type: {model.type}</div>
-            {/* <div>Price: {model.price}</div> */}
           </div>
         </div>
         <div className={`px-2 py-1 rounded text-xs font-medium ${model.type === "structured-output" || model.type === "high-accuracy"
@@ -343,22 +318,6 @@ function SuccessDisplay({ message, onDismiss }: { message: string; onDismiss: ()
   );
 }
 
-// Loading Spinner Component
-function LoadingSpinner({ size = "sm", text = "Loading..." }: { size?: "sm" | "md" | "lg"; text?: string }) {
-  const sizeClasses = {
-    sm: "h-4 w-4",
-    md: "h-6 w-6",
-    lg: "h-8 w-8"
-  };
-
-  return (
-    <div className="flex items-center gap-2 text-sm text-gray-600">
-      <Loader2 className={`animate-spin ${sizeClasses[size]}`} />
-      <span>{text}</span>
-    </div>
-  );
-}
-
 export default function ConfigurationModal({ isOpen, onClose, jsonObject }: ConfigurationModalProps) {
   // Detect the type of jsonObject
   const isCriticalWorkFunction = jsonObject && 'critical_work_function' in jsonObject;
@@ -375,6 +334,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       }
     }
   }, [isOpen, jsonObject, isCriticalWorkFunction, isSkillSelection]);
+  
   const [cfg, setCfg] = React.useState<Config>(DEFAULT_CONFIG);
   const [activeTab, setActiveTab] = useState<'courseParams' | 'presentationConfig'>('presentationConfig');
   const [preview, setPreview] = React.useState("Click 'Generate Course Outline with AI' to create slides.");
@@ -415,16 +375,10 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [modules, setModules] = useState<any[]>([]);
   const [mappingTypes, setMappingTypes] = useState<any[]>([]);
   const [mappingValues, setMappingValues] = useState<any[]>([]);
-  const [mappingReasons, setMappingReasons] = useState<any[]>([]);
   const [mappingTypesLoading, setMappingTypesLoading] = useState(true);
   const [mappingValuesLoading, setMappingValuesLoading] = useState(true);
-  const [mappingReasonsLoading, setMappingReasonsLoading] = useState(true);
   const [selectedMappingTypeId, setSelectedMappingTypeId] = useState<number | null>(null);
   const [selectedMappingValueId, setSelectedMappingValueId] = useState<number | null>(null);
-
-  // State for Create Template functionality
-
-  // Template structure options
 
   // Add smooth scrollbar styles to document
   useEffect(() => {
@@ -524,18 +478,15 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
             }));
             setMappingValues(values);
             // Reset reasons when values change
-            setMappingReasons([]);
             setSelectedMappingValueId(null);
             setCfg(prev => ({ ...prev, mappingValue: "", mappingReason: "" }));
           } else {
             console.error('Failed to fetch mapping values:', response.statusText);
             setMappingValues([]);
-            setMappingReasons([]);
           }
         } catch (error) {
           console.error('Error fetching mapping values:', error);
           setMappingValues([]);
-          setMappingReasons([]);
         } finally {
           setMappingValuesLoading(false);
         }
@@ -544,13 +495,11 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     } else {
       setMappingValues([]);
       setMappingValuesLoading(false);
-      setMappingReasons([]);
       setSelectedMappingValueId(null);
     }
   }, [selectedMappingTypeId, sessionData.url, sessionData.token]);
 
   // Fetch mapping reasons when selectedMappingValueId changes
-  // Note: Reasons are now retrieved directly from mappingValues, not from a separate API call
   useEffect(() => {
     if (selectedMappingValueId && cfg.mappingValue) {
       const selectedValue = mappingValues.find(v => v.id === selectedMappingValueId);
@@ -565,61 +514,23 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     if (showDropdownModal && currentStandardId && currentSubjectId) {
       const fetchModules = async () => {
         const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${currentStandardId}&subject_id=${currentSubjectId}`;
-        const response = await fetch(chapterApiUrl);
+        console.log('Fetching modules from:', chapterApiUrl);
+        const response = await fetch(chapterApiUrl, {
+          headers: {
+            'Authorization': `Bearer ${sessionData.token}`
+          }
+        });
         if (response.ok) {
           const data = await response.json();
           const fetchedModules = data.data || [];
-          if (fetchedModules.length === 0) {
-            // Automatically create Module 1
-            const storeChapterApiUrl = `${sessionData.url}/lms/chapter_master/store?type=API&sub_institute_id=${sessionData.subInstituteId}&standard=${currentStandardId}&subject=${currentSubjectId}`;
-            const formData = new FormData();
-            formData.append('type', 'API');
-            formData.append('sub_institute_id', sessionData.subInstituteId.toString());
-            // formData.append('grade', '9');
-            formData.append('standard', currentStandardId.toString());
-            formData.append('subject', currentSubjectId.toString());
-            const chapterName = isCriticalWorkFunction ? jsonObject.critical_work_function : isSkillSelection ? (typeof jsonObject.selected_skill === 'object' ? jsonObject.selected_skill.skillName || jsonObject.selected_skill : jsonObject.selected_skill) : 'Module 1';
-            formData.append('chapter_name', chapterName);
-            formData.append('chapter_code', 'MOD1');
-            formData.append('chapter_desc', 'Default module');
-            formData.append('availability', '1');
-            formData.append('show_hide', '1');
-            formData.append('sort_order', '1');
-            formData.append('syear', new Date().getFullYear().toString());
-            formData.append('token', sessionData.token);
-
-            const storeResponse = await fetch(storeChapterApiUrl, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${sessionData.token}`
-              },
-              body: formData
-            });
-            if (storeResponse.ok) {
-              const responseData = await storeResponse.json();
-              // Store the created chapter ID
-              if (responseData.data && responseData.data.id) {
-                setCurrentChapterId(responseData.data.id);
-              }
-              // Refetch modules to include the new one
-              const refetchResponse = await fetch(chapterApiUrl);
-              if (refetchResponse.ok) {
-                const refetchData = await refetchResponse.json();
-                setModules(refetchData.data || []);
-              } else {
-                setModules([]);
-              }
-            } else {
-              setModules([]);
-            }
-          } else {
-            setModules(fetchedModules);
-            // Set the first module as current chapter ID
-            if (fetchedModules.length > 0) {
-              setCurrentChapterId(fetchedModules[0].id);
-            }
+          console.log('Fetched modules:', fetchedModules);
+          setModules(fetchedModules);
+          // Set the first module as current chapter ID
+          if (fetchedModules.length > 0) {
+            setCurrentChapterId(fetchedModules[0].id);
           }
         } else {
+          console.error('Failed to fetch modules:', response.status);
           setModules([]);
         }
       };
@@ -634,64 +545,115 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     }
   }, [modules, currentChapterId]);
 
-  // Handle tab switching based on repetition checkbox
-  // useEffect(() => {
-  //   if (!cfg.repetition && activeTab === 'courseParams') {
-  //     setActiveTab('presentationConfig');
-  //   }
-  // }, [cfg.repetition, activeTab]);
-
-  // Update handleResync function
-
-
-
   // OpenRouter API Integration - UPDATED to use jsonObject
   const handleGenerateCourseOutline = async () => {
     const createModule = async (standardId: number, subjectId: number, displayName: string) => {
-      // Fetch existing modules
-      const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${standardId}&subject_id=${subjectId}`;
-      const chapterResponse = await fetch(chapterApiUrl);
-
-      if (chapterResponse.ok) {
-        const chapterData = await chapterResponse.json();
-        const existingModules = chapterData.data || [];
-        const nextModuleNumber = existingModules.length + 1;
-        const chapterName = `Module ${nextModuleNumber}`;
-        const chapterCode = `MOD${nextModuleNumber}`;
-        const chapterDesc = `Module for ${displayName}`;
-
-        // Create new module
-        const storeChapterApiUrl = `${sessionData.url}/lms/chapter_master/store?type=API&sub_institute_id=${sessionData.subInstituteId}&standard_id=${standardId}&subject_id=${subjectId}`;
-        const storeChapterResponse = await fetch(storeChapterApiUrl, {
-          method: 'PUT',
+      try {
+        // First, check if module already exists for this subject
+        const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${standardId}&subject_id=${subjectId}`;
+        console.log('🔍 Fetching existing modules from:', chapterApiUrl);
+        
+        const chapterResponse = await fetch(chapterApiUrl, {
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${sessionData.token}`
-          },
-          body: JSON.stringify({
+          }
+        });
+        
+        if (chapterResponse.ok) {
+          const chapterData = await chapterResponse.json();
+          const existingModules = chapterData.data || [];
+          
+          // If modules exist, use the first one
+          if (existingModules.length > 0) {
+            console.log('✅ Existing modules found:', existingModules);
+            setCurrentChapterId(existingModules[0].id);
+            setModules(existingModules);
+            return existingModules[0].id;
+          }
+          
+          // No modules exist, create a new one
+          const nextModuleNumber = existingModules.length + 1;
+          const chapterName = displayName || `Module ${nextModuleNumber}`;
+          const chapterCode = `MOD${nextModuleNumber}`;
+          const chapterDesc = `Module for ${displayName}`;
+          
+          const storeChapterApiUrl = `${sessionData.url}/lms/chapter_master/store`;
+          console.log('📝 Creating new module at:', storeChapterApiUrl);
+          
+          // Create FormData for the request
+          const formData = new FormData();
+          formData.append('type', 'API');
+          formData.append('sub_institute_id', sessionData.subInstituteId.toString());
+          formData.append('standard', standardId.toString());
+          formData.append('subject', subjectId.toString());
+          formData.append('chapter_name', chapterName);
+          formData.append('chapter_code', chapterCode);
+          formData.append('chapter_desc', chapterDesc);
+          formData.append('availability', '1');
+          formData.append('show_hide', '1');
+          formData.append('sort_order', nextModuleNumber.toString());
+          formData.append('syear', new Date().getFullYear().toString());
+          formData.append('token', sessionData.token);
+          
+          console.log('📦 FormData being sent:', {
             type: 'API',
             sub_institute_id: sessionData.subInstituteId,
-            grade: 9,
             standard: standardId,
             subject: subjectId,
             chapter_name: chapterName,
             chapter_code: chapterCode,
-            chapter_desc: chapterDesc,
-            availability: 1,
-            show_hide: 1,
-            sort_order: 1,
-            syear: new Date().getFullYear(),
-            token: sessionData.token
-          })
-        });
+            chapter_desc: chapterDesc
+          });
 
-        if (storeChapterResponse.ok) {
-          console.log('Module created successfully');
+          const storeResponse = await fetch(storeChapterApiUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${sessionData.token}`
+            },
+            body: formData
+          });
+
+          if (storeResponse.ok) {
+            const responseData = await storeResponse.json();
+            console.log('✅ Module created successfully:', responseData);
+            
+            // Store the created chapter ID
+            if (responseData.data && responseData.data.id) {
+              setCurrentChapterId(responseData.data.id);
+              
+              // Refetch modules to include the new one
+              const refetchResponse = await fetch(chapterApiUrl, {
+                headers: {
+                  'Authorization': `Bearer ${sessionData.token}`
+                }
+              });
+              if (refetchResponse.ok) {
+                const refetchData = await refetchResponse.json();
+                setModules(refetchData.data || []);
+              }
+              
+              return responseData.data.id;
+            }
+          } else {
+            const errorText = await storeResponse.text();
+            console.error('❌ Failed to create module. Status:', storeResponse.status, 'Response:', errorText);
+            
+            try {
+              const errorData = JSON.parse(errorText);
+              console.error('Error details:', errorData);
+            } catch (e) {
+              // Not JSON, leave as text
+            }
+            
+            throw new Error(`Failed to create module: ${storeResponse.status}`);
+          }
         } else {
-          console.error('Failed to create module');
+          console.error('❌ Failed to fetch chapters. Status:', chapterResponse.status);
+          throw new Error('Failed to fetch existing modules');
         }
-      } else {
-        console.error('Failed to fetch chapters');
+      } catch (error) {
+        console.error('❌ Error in createModule:', error);
+        throw error;
       }
     };
     if (!jsonObject) {
@@ -729,7 +691,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           mappingValue: selectedMappingValueId,
           mappingTypeName: cfg.mappingType,
           mappingValueName: cfg.mappingValue,
-          // Include reason if available
           mappingReason: cfg.mappingReason || undefined
         }),
       });
@@ -757,9 +718,21 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       const skillApiUrl = `${sessionData.url}/jobrole_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&jobrole=${encodeURIComponent(jsonObject.jobrole)}&formType=skills`;
       const subStdMapApiUrl = `${sessionData.url}/school_setup/sub_std_map?sub_institute_id=${sessionData.subInstituteId}&type=API`;
 
+      console.log('📡 Fetching task data from:', taskApiUrl);
+      console.log('📡 Fetching skill data from:', skillApiUrl);
+      console.log('📡 Fetching sub_std_map from:', subStdMapApiUrl);
+
       const [taskResponse, skillResponse, subStdMapResponse] = await Promise.all([
-        fetch(taskApiUrl),
-        fetch(skillApiUrl),
+        fetch(taskApiUrl, {
+          headers: {
+            'Authorization': `Bearer ${sessionData.token}`
+          }
+        }),
+        fetch(skillApiUrl, {
+          headers: {
+            'Authorization': `Bearer ${sessionData.token}`
+          }
+        }),
         fetch(subStdMapApiUrl, {
           headers: {
             'Authorization': `Bearer ${sessionData.token}`
@@ -771,104 +744,219 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       const skillData = await skillResponse.json();
       const subStdMapData = await subStdMapResponse.json();
 
+      console.log('📊 Task data received:', taskData);
+      console.log('📊 Skill data received:', skillData);
+      console.log('📊 SubStdMap data received:', subStdMapData);
+
       if (skillResponse.ok && skillData.userskillData && skillData.userskillData.length > 0 && subStdMapResponse.ok && subStdMapData.data) {
         const departmentId = skillData.userskillData[0].user_jobrole.department_id;
+        console.log('🏢 Department ID:', departmentId);
 
         if (isCriticalWorkFunction && taskResponse.ok && taskData.usertaskData) {
           const criticalWorkFunctionName = jsonObject.critical_work_function || '';
+          console.log('🔍 Looking for task with CWF:', criticalWorkFunctionName);
+          
           const matchingTask = taskData.usertaskData.find((task: any) => task.critical_work_function === criticalWorkFunctionName);
 
           if (matchingTask && departmentId) {
-            const existingMapping = subStdMapData.data.find((item: any) => item.subject_id == matchingTask.id && item.standard_id == departmentId);
+            console.log('✅ Matching task found:', matchingTask);
+            
+            // Store the original task ID
+            setTaskSkillId(matchingTask.id);
+            
+            // Check if mapping already exists
+            const existingMapping = subStdMapData.data.find((item: any) => 
+              item.subject_id == matchingTask.id && item.standard_id == departmentId
+            );
+            
             if (existingMapping) {
+              console.log('✅ Existing mapping found:', existingMapping);
+              // Use the existing mapping's ID as the subject_id
+              setSubStdMapId(existingMapping.id);
+              setCurrentSubjectId(existingMapping.id);
               setCurrentStandardId(departmentId);
-              setCurrentSubjectId(matchingTask.id);
+              
+              // Create module using the existing mapping
+              await createModule(departmentId, existingMapping.id, criticalWorkFunctionName);
               setShowDropdownModal(true);
             } else {
+              console.log('🆕 No existing mapping found, creating new mapping');
               // Call the store API for task
-              const storeApiUrl = `${sessionData.url}/sub_std_map/store?type=API&sub_institute_id=${sessionData.subInstituteId}&standard_id=${departmentId}&subject_id=${matchingTask.id}&jobrole=${encodeURIComponent(jsonObject.jobrole)}&display_name=${encodeURIComponent(criticalWorkFunctionName)}`;
+              const storeApiUrl = `${sessionData.url}/sub_std_map/store?type=API&sub_institute_id=${sessionData.subInstituteId}`;
+              console.log('📝 Creating sub_std_map at:', storeApiUrl);
+              
+              const storeFormData = new FormData();
+              storeFormData.append('type', 'API');
+              storeFormData.append('sub_institute_id', sessionData.subInstituteId.toString());
+              storeFormData.append('standard_id', departmentId.toString());
+              storeFormData.append('subject_id', matchingTask.id.toString());
+              storeFormData.append('jobrole', jsonObject.jobrole);
+              storeFormData.append('display_name', criticalWorkFunctionName);
+              storeFormData.append('allow_content', 'Yes');
+              storeFormData.append('subject_category', 'Task');
+              storeFormData.append('token', sessionData.token);
 
               const storeResponse = await fetch(storeApiUrl, {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'application/json',
                   'Authorization': `Bearer ${sessionData.token}`
                 },
-                body: JSON.stringify({
-                  allow_content: 'Yes',
-                  subject_category: 'Task'
-                })
+                body: storeFormData
               });
 
-              if (!storeResponse.ok) {
-                const errorData = await storeResponse.json();
-                console.error('Error calling store API:', errorData);
+              if (storeResponse.ok) {
+                const storeData = await storeResponse.json();
+                console.log('✅ Store API called successfully for task', storeData);
+                
+                // Get the newly created mapping ID - store in variable first
+                if (storeData.data && storeData.data.id) {
+                  // 🔹 mapping id મેળવવા sub_std_map ફરી fetch કરો
+                  const refreshResponse = await fetch(subStdMapApiUrl, {
+                    headers: {
+                      Authorization: `Bearer ${sessionData.token}`,
+                    },
+                  });
+
+                  const refreshData = await refreshResponse.json();
+
+                  const newMapping = refreshData.data.find(
+                    (item: any) =>
+                      item.subject_id == matchingTask.id &&
+                      item.standard_id == departmentId,
+                  );
+
+                  if (newMapping) {
+                    const newMappingId = newMapping.id;
+
+                    console.log("🆕 New mapping ID after refresh:", newMappingId);
+
+                    setSubStdMapId(newMappingId);
+                    setCurrentSubjectId(newMappingId);
+                    setCurrentStandardId(departmentId);
+
+                    await createModule(
+                      departmentId,
+                      newMappingId,
+                      criticalWorkFunctionName,
+                    );
+
+                    setShowDropdownModal(true);
+                  }
+                }
               } else {
-                console.log('Store API called successfully for task');
-                // Create module
-                await createModule(departmentId, matchingTask.id, criticalWorkFunctionName);
-                // Show dropdown with the new module
-                setCurrentStandardId(departmentId);
-                setCurrentSubjectId(matchingTask.id);
-                setShowDropdownModal(true);
+                const errorText = await storeResponse.text();
+                console.error('❌ Error calling store API:', errorText);
+                throw new Error('Failed to create subject mapping');
               }
             }
           } else {
-            console.error('Matching task or department_id not found');
+            console.error('❌ Matching task or department_id not found');
           }
         } else if (isSkillSelection) {
           const selectedSkill = jsonObject.selected_skill || '';
           const skillName = typeof selectedSkill === 'object' ? selectedSkill.skillName || selectedSkill : selectedSkill;
+          console.log('🔍 Looking for skill:', skillName);
+          
           const matchingSkill = skillData.userskillData.find((skill: any) => skill.skill === skillName) || skillData.userskillData[0];
 
           if (matchingSkill && departmentId) {
-            const existingMapping = subStdMapData.data.find((item: any) => item.subject_id == matchingSkill.id && item.standard_id == departmentId);
+            console.log('✅ Matching skill found:', matchingSkill);
+            
+            // Store the original skill ID
+            setTaskSkillId(matchingSkill.id);
+            
+            // Check if mapping already exists
+            const existingMapping = subStdMapData.data.find((item: any) => 
+              item.subject_id == matchingSkill.id && item.standard_id == departmentId
+            );
+            
             if (existingMapping) {
+              console.log('✅ Existing mapping found:', existingMapping);
+              // Use the existing mapping's ID as the subject_id
+              setSubStdMapId(existingMapping.id);
+              setCurrentSubjectId(existingMapping.id);
               setCurrentStandardId(departmentId);
-              setCurrentSubjectId(matchingSkill.id);
+              
+              // Create module using the existing mapping
+              await createModule(departmentId, existingMapping.id, skillName);
               setShowDropdownModal(true);
             } else {
+              console.log('🆕 No existing mapping found, creating new mapping');
               // Call the store API for skill
-              const storeApiUrl = `${sessionData.url}/sub_std_map/store?type=API&sub_institute_id=${sessionData.subInstituteId}&standard_id=${departmentId}&subject_id=${matchingSkill.id}&jobrole=${encodeURIComponent(jsonObject.jobrole)}&display_name=${encodeURIComponent(skillName)}`;
+              const storeApiUrl = `${sessionData.url}/sub_std_map/store?type=API&sub_institute_id=${sessionData.subInstituteId}`;
+              console.log('📝 Creating sub_std_map at:', storeApiUrl);
+              
+              const storeFormData = new FormData();
+              storeFormData.append('type', 'API');
+              storeFormData.append('sub_institute_id', sessionData.subInstituteId.toString());
+              storeFormData.append('standard_id', departmentId.toString());
+              storeFormData.append('subject_id', matchingSkill.id.toString());
+              storeFormData.append('jobrole', jsonObject.jobrole);
+              storeFormData.append('display_name', skillName);
+              storeFormData.append('allow_content', 'Yes');
+              storeFormData.append('subject_category', 'Skill');
+              storeFormData.append('token', sessionData.token);
 
               const storeResponse = await fetch(storeApiUrl, {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'application/json',
                   'Authorization': `Bearer ${sessionData.token}`
                 },
-                body: JSON.stringify({
-                  allow_content: 'Yes',
-                  subject_category: 'Skill'
-                })
+                body: storeFormData
               });
 
-              if (!storeResponse.ok) {
-                const errorData = await storeResponse.json();
-                console.error('Error calling store API:', errorData);
-              } else {
-                console.log('Store API called successfully for skill');
-                // Create module
-                await createModule(departmentId, matchingSkill.id, skillName);
-                // Show dropdown with the new module
-                setCurrentStandardId(departmentId);
-                setCurrentSubjectId(matchingSkill.id);
-                setShowDropdownModal(true);
+              if (storeResponse.ok) {
+  const storeData = await storeResponse.json();
+  console.log('✅ Store API called successfully for skill', storeData);
+
+  // 🔹 mapping id મેળવવા sub_std_map ફરી fetch કરો
+  const refreshResponse = await fetch(subStdMapApiUrl, {
+    headers: {
+      'Authorization': `Bearer ${sessionData.token}`
+    }
+  });
+
+  const refreshData = await refreshResponse.json();
+
+  const newMapping = refreshData.data.find((item: any) =>
+    item.subject_id == matchingSkill.id &&
+    item.standard_id == departmentId
+  );
+
+  if (newMapping) {
+
+    const newMappingId = newMapping.id;
+
+    console.log("🆕 New mapping ID after refresh:", newMappingId);
+
+    setSubStdMapId(newMappingId);
+    setCurrentSubjectId(newMappingId);
+    setCurrentStandardId(departmentId);
+
+    // ✅ module create થશે
+    await createModule(departmentId, newMappingId, skillName);
+
+    setShowDropdownModal(true);
+  }
+} else {
+                const errorText = await storeResponse.text();
+                console.error('❌ Error calling store API:', errorText);
+                throw new Error('Failed to create subject mapping');
               }
             }
           } else {
-            console.error('Matching skill or department_id not found');
+            console.error('❌ Matching skill or department_id not found');
           }
         }
       } else {
-        console.error('Failed to fetch skill or sub_std_map data');
+        console.error('❌ Failed to fetch skill or sub_std_map data');
       }
 
       setSuccess(`✅ Course outline generated successfully using ${selectedModel.name}!`);
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error("Error generating course outline:", err);
+      console.error("❌ Error generating course outline:", err);
 
       if (errorMessage.includes("API key not configured") || errorMessage.includes("401")) {
         setError("❌ Invalid API key. Please check your OpenRouter API key configuration.");
@@ -901,8 +989,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     setCourseLoading(true);
     setError(null);
     setSuccess(null);
-
-
 
     try {
       // Call Gamma API for course generation first
@@ -1303,25 +1389,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
 
                           </div>
 
-                          {/* Mapping Type Reason Display */}
-                          {/* {cfg.mappingType && mappingTypes.find(t => t.name === cfg.mappingType)?.reason && (
-  <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
-    <div className="flex justify-between items-start">
-      <div>
-        <h4 className="font-medium text-green-900">
-          Why {cfg.mappingType}?
-        </h4>
-        <p className="text-xs text-green-600 mt-2">
-          {mappingTypes.find(t => t.name === cfg.mappingType)?.reason}
-        </p>
-      </div>
-      <div className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-        Category Explanation
-      </div>
-    </div>
-  </div>
-)} */}
-
                           {/* AI Model */}
                           <div className="mb-4">
                             <AiModelDropdown
@@ -1397,59 +1464,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                                 max="15"
                               />
                             </div>
-                            {/* <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">
-                                Language
-                              </label>
-                              <select
-                                value={cfg.language}
-                                onChange={(e) => setCfg({ ...cfg, language: e.target.value })}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              >
-                                <option value="English">English</option>
-                                <option value="Spanish">Spanish</option>
-                                <option value="French">French</option>
-                                <option value="German">German</option>
-                                <option value="Chinese">Chinese</option>
-                              </select>
-                            </div> */}
-                            {/* <div className="space-y-2">
-                              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                                Style
-                                <button
-                                  onClick={() => {
-                                    setCfg({
-                                      ...cfg,
-                                      presentationStyle: "Modern"
-                                    });
-                                  }}
-                                  className="ml-2 p-1 text-yellow-500 hover:text-yellow-600"
-                                  title="Auto Set Style"
-                                >
-                                  <Sparkles className="h-4 w-4" />
-                                </button>
-                              </label>
-                              <select
-                                value={cfg.presentationStyle}
-                                onChange={(e) => setCfg({ ...cfg, presentationStyle: e.target.value })}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              >
-                                <option value="Modern">Modern</option>
-                                <option value="Classic">Classic</option>
-                                <option value="Minimal">Minimal</option>
-                              </select>
-                            </div> */}
-                            {/* <div className="space-y-2 md:col-span-2">
-                              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                                <input
-                                  type="checkbox"
-                                  checked={cfg.repetition}
-                                  onChange={(e) => setCfg({ ...cfg, repetition: e.target.checked })}
-                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                                />
-                                No repetition of content across slides
-                              </label>
-                            </div> */}
                           </div>
                         </fieldset>
                       )}
@@ -1467,25 +1481,13 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                   Preview
                 </h2>
 
-
                 {/* ✅ Module Dropdown – RIGHT SIDE */}
-                {showDropdownModal && (
+                {showDropdownModal && modules.length > 0 && (
                   <select
                     className="px-3 py-2 text-sm border rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={
-                      modules.length === 1
-                        ? modules[0].id           // ✅ auto-show module name
-                        : currentChapterId ?? ""  // ✅ placeholder for multiple modules
-                    }
+                    value={currentChapterId || ''}
                     onChange={(e) => setCurrentChapterId(Number(e.target.value))}
                   >
-                    {/* Show placeholder ONLY if multiple modules */}
-                    {modules.length > 1 && (
-                      <option value="" disabled>
-                        Select Module
-                      </option>
-                    )}
-
                     {modules.map((module: any) => (
                       <option key={module.id} value={module.id}>
                         {module.chapter_name}
@@ -1493,8 +1495,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                     ))}
                   </select>
                 )}
-
-
               </div>
 
               {/* Preview Content */}
@@ -1529,7 +1529,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
             <div className="flex items-center justify-end gap-3">
               <Button
                 variant="outline"
-                // onClick={() => onOpenChange(false)}
+                onClick={onClose}
                 className="transition-all duration-200"
               >
                 Cancel
