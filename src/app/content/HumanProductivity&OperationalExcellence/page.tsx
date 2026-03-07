@@ -28,7 +28,7 @@ export default function HumanProductivityAndOperationalExcellence() {
                 <div className="w-full h-full overflow-hidden rounded-[12px]">
                     <iframe
                         src="https://lookerstudio.google.com/embed/reporting/6cb8787d-de6b-4754-96a4-6e22160e8c4a/page/rfErF"
-                        style={{ width: '100%', height: 'calc(100% + 55px)', border: 'none' }}
+                        style={{ width: '100%', height: 'calc(100%)', border: 'none' }}
                         title="Human Productivity & Operational Excellence"
                         loading="lazy"
                         allowFullScreen

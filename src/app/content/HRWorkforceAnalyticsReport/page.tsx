@@ -28,7 +28,7 @@ export default function HRWorkforceAnalyticsReport() {
                 <div className="w-full h-full overflow-hidden rounded-[12px]">
                     <iframe
                         src="https://lookerstudio.google.com/embed/reporting/3a7b9fa7-35b5-49cc-aabe-6dae3dcdcd23/page/jnrpF"
-                        style={{ width: '100%', height: 'calc(100% + 55px)', border: 'none' }}
+                        style={{ width: '100%', height: 'calc(100%)', border: 'none' }}
                         title="HR Workforce Analytics Report"
                         loading="lazy"
                         allowFullScreen
