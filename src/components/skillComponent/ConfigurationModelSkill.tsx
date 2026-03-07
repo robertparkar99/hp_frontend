@@ -23,7 +23,7 @@ import {
   Play
 } from "lucide-react";
 
-interface ConfigurationModalProps {
+interface ConfigurationModelSkillProps {
   isOpen: boolean;
   onClose: () => void;
   jsonObject?: any;
@@ -58,8 +58,6 @@ const aiModels = [
 type Config = {
   department: string;
   jobRole: string;
-  criticalWorkFunction: string;
-  tasks: string[];
   skills: string[];
   proficiencyTarget: number;
   modality: { selfPaced: boolean; instructorLed: boolean; };
@@ -75,8 +73,6 @@ type Config = {
 const DEFAULT_CONFIG: Config = {
   department: "",
   jobRole: "",
-  criticalWorkFunction: "",
-  tasks: [],
   skills: [],
   proficiencyTarget: 3,
   modality: { selfPaced: true, instructorLed: false },
@@ -253,7 +249,7 @@ function ModelInfoDisplay({ modelId }: { modelId: string }) {
   );
 }
 
-// Custom scrollbar styles for smooth scrolling with hidden scrollbars
+// Custom scrollbar styles
 const scrollbarStyles = `
   .smooth-scrollbar {
     scrollbar-width: none;
@@ -318,23 +314,15 @@ function SuccessDisplay({ message, onDismiss }: { message: string; onDismiss: ()
   );
 }
 
-export default function ConfigurationModal({ isOpen, onClose, jsonObject }: ConfigurationModalProps) {
-  // Detect the type of jsonObject
-  const isCriticalWorkFunction = jsonObject && 'critical_work_function' in jsonObject;
-  const isSkillSelection = jsonObject && 'selected_skill' in jsonObject;
-
+export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }: ConfigurationModelSkillProps) {
   // Log jsonObject when modal opens or jsonObject changes
   useEffect(() => {
     if (isOpen && jsonObject) {
-      console.log("Configuration Modal Data:", JSON.stringify(jsonObject, null, 2));
-      if (isCriticalWorkFunction) {
-        console.log("Type: Critical Work Function Selection");
-      } else if (isSkillSelection) {
-        console.log("Type: Skill Selection");
-      }
+      console.log("ConfigurationModelSkill Modal Data:", JSON.stringify(jsonObject, null, 2));
+      console.log("Type: Skill Selection Only");
     }
-  }, [isOpen, jsonObject, isCriticalWorkFunction, isSkillSelection]);
-  
+  }, [isOpen, jsonObject]);
+
   const [cfg, setCfg] = React.useState<Config>(DEFAULT_CONFIG);
   const [activeTab, setActiveTab] = useState<'courseParams' | 'presentationConfig'>('presentationConfig');
   const [preview, setPreview] = React.useState("Click 'Generate Course Outline with AI' to create slides.");
@@ -371,6 +359,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [showDropdownModal, setShowDropdownModal] = useState(false);
   const [currentStandardId, setCurrentStandardId] = useState<number | null>(null);
   const [currentSubjectId, setCurrentSubjectId] = useState<number | null>(null);
+  const [taskSkillId, setTaskSkillId] = useState<number | null>(null);
   const [currentChapterId, setCurrentChapterId] = useState<number | null>(null);
   const [modules, setModules] = useState<any[]>([]);
   const [mappingTypes, setMappingTypes] = useState<any[]>([]);
@@ -379,6 +368,8 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   const [mappingValuesLoading, setMappingValuesLoading] = useState(true);
   const [selectedMappingTypeId, setSelectedMappingTypeId] = useState<number | null>(null);
   const [selectedMappingValueId, setSelectedMappingValueId] = useState<number | null>(null);
+  const [generatedCourseId, setGeneratedCourseId] = useState<number | null>(null);
+  const [subStdMapId, setSubStdMapId] = useState<number | null>(null);
 
   // Add smooth scrollbar styles to document
   useEffect(() => {
@@ -411,7 +402,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
   // Fetch mapping types and values from API
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
-      // Fetch mapping types
       const fetchMappingTypes = async () => {
         try {
           setMappingTypesLoading(true);
@@ -426,13 +416,11 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           if (response.ok) {
             const data = await response.json();
             console.log('Mapping types data:', data);
-            // Ensure each mapping type has a reason field
             const types = (data.data || data || []).map((type: any) => ({
               ...type,
               reason: type.reason || `The ${type.name} category encompasses various pedagogical approaches for effective learning and skill development.`
             }));
             setMappingTypes(types);
-            // Auto-select the first type and fetch its values
             if (types.length > 0) {
               const firstType = types[0];
               const defaultValue = firstType.name || firstType.id;
@@ -450,7 +438,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       };
 
       fetchMappingTypes();
-      // Don't fetch values initially
     }
   }, [sessionData.url, sessionData.token]);
 
@@ -472,12 +459,10 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           if (response.ok) {
             const data = await response.json();
             console.log('Mapping values data:', data);
-            // Use the reason field directly from API without fallback
             const values = (data.data || data || []).map((value: any) => ({
               ...value
             }));
             setMappingValues(values);
-            // Reset reasons when values change
             setSelectedMappingValueId(null);
             setCfg(prev => ({ ...prev, mappingValue: "", mappingReason: "" }));
           } else {
@@ -495,7 +480,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     } else {
       setMappingValues([]);
       setMappingValuesLoading(false);
-      setSelectedMappingValueId(null);
     }
   }, [selectedMappingTypeId, sessionData.url, sessionData.token]);
 
@@ -525,7 +509,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           const fetchedModules = data.data || [];
           console.log('Fetched modules:', fetchedModules);
           setModules(fetchedModules);
-          // Set the first module as current chapter ID
           if (fetchedModules.length > 0) {
             setCurrentChapterId(fetchedModules[0].id);
           }
@@ -545,11 +528,10 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     }
   }, [modules, currentChapterId]);
 
-  // OpenRouter API Integration - UPDATED to use jsonObject
+  // OpenRouter API Integration - Skill Only Version
   const handleGenerateCourseOutline = async () => {
     const createModule = async (standardId: number, subjectId: number, displayName: string) => {
       try {
-        // First, check if module already exists for this subject
         const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${standardId}&subject_id=${subjectId}`;
         console.log('🔍 Fetching existing modules from:', chapterApiUrl);
         
@@ -563,7 +545,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           const chapterData = await chapterResponse.json();
           const existingModules = chapterData.data || [];
           
-          // If modules exist, use the first one
           if (existingModules.length > 0) {
             console.log('✅ Existing modules found:', existingModules);
             setCurrentChapterId(existingModules[0].id);
@@ -571,7 +552,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
             return existingModules[0].id;
           }
           
-          // No modules exist, create a new one
           const nextModuleNumber = existingModules.length + 1;
           const chapterName = displayName || `Module ${nextModuleNumber}`;
           const chapterCode = `MOD${nextModuleNumber}`;
@@ -580,7 +560,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           const storeChapterApiUrl = `${sessionData.url}/lms/chapter_master/store`;
           console.log('📝 Creating new module at:', storeChapterApiUrl);
           
-          // Create FormData for the request
           const formData = new FormData();
           formData.append('type', 'API');
           formData.append('sub_institute_id', sessionData.subInstituteId.toString());
@@ -617,11 +596,9 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
             const responseData = await storeResponse.json();
             console.log('✅ Module created successfully:', responseData);
             
-            // Store the created chapter ID
             if (responseData.data && responseData.data.id) {
               setCurrentChapterId(responseData.data.id);
               
-              // Refetch modules to include the new one
               const refetchResponse = await fetch(chapterApiUrl, {
                 headers: {
                   'Authorization': `Bearer ${sessionData.token}`
@@ -637,14 +614,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           } else {
             const errorText = await storeResponse.text();
             console.error('❌ Failed to create module. Status:', storeResponse.status, 'Response:', errorText);
-            
-            try {
-              const errorData = JSON.parse(errorText);
-              console.error('Error details:', errorData);
-            } catch (e) {
-              // Not JSON, leave as text
-            }
-            
             throw new Error(`Failed to create module: ${storeResponse.status}`);
           }
         } else {
@@ -656,8 +625,9 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         throw error;
       }
     };
+    
     if (!jsonObject) {
-      setError("⚠️ No job role data available!");
+      setError("⚠️ No skill data available!");
       return;
     }
 
@@ -669,9 +639,9 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       const selectedModel = aiModels.find(model => model.id === cfg.aiModel);
       if (!selectedModel) throw new Error("Selected AI model not found");
 
-      // Prepare jsonObject for outline generation
+      // Prepare jsonObject for outline generation - Skill only
       let outlineJsonObject = { ...jsonObject };
-      if (isSkillSelection) {
+      if (jsonObject.selected_skill) {
         outlineJsonObject.critical_work_function = jsonObject.selected_skill;
       }
 
@@ -695,7 +665,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         }),
       });
 
-      // Process the outline response
       const outlineData = await outlineResponse.json();
 
       if (!outlineResponse.ok) {
@@ -713,21 +682,14 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       setPreview(generatedContent);
       setDiverged(true);
 
-      // Fetch the task, skill, and sub_std_map data
-      const taskApiUrl = `${sessionData.url}/jobrole_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&jobrole=${encodeURIComponent(jsonObject.jobrole)}&formType=tasks`;
+      // Fetch skill and sub_std_map data only (no task data)
       const skillApiUrl = `${sessionData.url}/jobrole_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&jobrole=${encodeURIComponent(jsonObject.jobrole)}&formType=skills`;
       const subStdMapApiUrl = `${sessionData.url}/school_setup/sub_std_map?sub_institute_id=${sessionData.subInstituteId}&type=API`;
 
-      console.log('📡 Fetching task data from:', taskApiUrl);
       console.log('📡 Fetching skill data from:', skillApiUrl);
       console.log('📡 Fetching sub_std_map from:', subStdMapApiUrl);
 
-      const [taskResponse, skillResponse, subStdMapResponse] = await Promise.all([
-        fetch(taskApiUrl, {
-          headers: {
-            'Authorization': `Bearer ${sessionData.token}`
-          }
-        }),
+      const [skillResponse, subStdMapResponse] = await Promise.all([
         fetch(skillApiUrl, {
           headers: {
             'Authorization': `Bearer ${sessionData.token}`
@@ -740,213 +702,105 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         })
       ]);
 
-      const taskData = await taskResponse.json();
       const skillData = await skillResponse.json();
       const subStdMapData = await subStdMapResponse.json();
 
-      console.log('📊 Task data received:', taskData);
       console.log('📊 Skill data received:', skillData);
       console.log('📊 SubStdMap data received:', subStdMapData);
 
+      // Handle skill selection only (no task handling)
       if (skillResponse.ok && skillData.userskillData && skillData.userskillData.length > 0 && subStdMapResponse.ok && subStdMapData.data) {
         const departmentId = skillData.userskillData[0].user_jobrole.department_id;
         console.log('🏢 Department ID:', departmentId);
 
-        if (isCriticalWorkFunction && taskResponse.ok && taskData.usertaskData) {
-          const criticalWorkFunctionName = jsonObject.critical_work_function || '';
-          console.log('🔍 Looking for task with CWF:', criticalWorkFunctionName);
+        const selectedSkill = jsonObject.selected_skill || '';
+        const skillName = typeof selectedSkill === 'object' ? selectedSkill.skillName || selectedSkill : selectedSkill;
+        console.log('🔍 Looking for skill:', skillName);
+        
+        const matchingSkill = skillData.userskillData.find((skill: any) => skill.skill === skillName) || skillData.userskillData[0];
+        
+        if (matchingSkill && departmentId) {
+          console.log('✅ Matching skill found:', matchingSkill);
           
-          const matchingTask = taskData.usertaskData.find((task: any) => task.critical_work_function === criticalWorkFunctionName);
+          // Store the original skill ID
+          setTaskSkillId(matchingSkill.id);
+          
+          // Check if mapping already exists
+          const existingMapping = subStdMapData.data.find((item: any) => 
+            item.subject_id == matchingSkill.id && item.standard_id == departmentId
+          );
+          
+          if (existingMapping) {
+            console.log('✅ Existing mapping found:', existingMapping);
+            setSubStdMapId(existingMapping.id);
+            setCurrentSubjectId(existingMapping.id);
+            setCurrentStandardId(departmentId);
+            
+            // Create module using the existing mapping
+            await createModule(departmentId, existingMapping.id, skillName);
+            setShowDropdownModal(true);
+          } else {
+            console.log('🆕 No existing mapping found, creating new mapping');
+            const storeApiUrl = `${sessionData.url}/sub_std_map/store?type=API&sub_institute_id=${sessionData.subInstituteId}`;
+            console.log('📝 Creating sub_std_map at:', storeApiUrl);
+            
+            const storeFormData = new FormData();
+            storeFormData.append('type', 'API');
+            storeFormData.append('sub_institute_id', sessionData.subInstituteId.toString());
+            storeFormData.append('standard_id', departmentId.toString());
+            storeFormData.append('subject_id', matchingSkill.id.toString());
+            storeFormData.append('jobrole', jsonObject.jobrole);
+            storeFormData.append('display_name', skillName);
+            storeFormData.append('allow_content', 'Yes');
+            storeFormData.append('subject_category', 'Skill library');
+            storeFormData.append('token', sessionData.token);
 
-          if (matchingTask && departmentId) {
-            console.log('✅ Matching task found:', matchingTask);
-            
-            // Store the original task ID
-            setTaskSkillId(matchingTask.id);
-            
-            // Check if mapping already exists
-            const existingMapping = subStdMapData.data.find((item: any) => 
-              item.subject_id == matchingTask.id && item.standard_id == departmentId
-            );
-            
-            if (existingMapping) {
-              console.log('✅ Existing mapping found:', existingMapping);
-              // Use the existing mapping's ID as the subject_id
-              setSubStdMapId(existingMapping.id);
-              setCurrentSubjectId(existingMapping.id);
-              setCurrentStandardId(departmentId);
-              
-              // Create module using the existing mapping
-              await createModule(departmentId, existingMapping.id, criticalWorkFunctionName);
-              setShowDropdownModal(true);
-            } else {
-              console.log('🆕 No existing mapping found, creating new mapping');
-              // Call the store API for task
-              const storeApiUrl = `${sessionData.url}/sub_std_map/store?type=API&sub_institute_id=${sessionData.subInstituteId}`;
-              console.log('📝 Creating sub_std_map at:', storeApiUrl);
-              
-              const storeFormData = new FormData();
-              storeFormData.append('type', 'API');
-              storeFormData.append('sub_institute_id', sessionData.subInstituteId.toString());
-              storeFormData.append('standard_id', departmentId.toString());
-              storeFormData.append('subject_id', matchingTask.id.toString());
-              storeFormData.append('jobrole', jsonObject.jobrole);
-              storeFormData.append('display_name', criticalWorkFunctionName);
-              storeFormData.append('allow_content', 'Yes');
-              storeFormData.append('subject_category', 'Task');
-              storeFormData.append('token', sessionData.token);
+            const storeResponse = await fetch(storeApiUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${sessionData.token}`
+              },
+              body: storeFormData
+            });
 
-              const storeResponse = await fetch(storeApiUrl, {
-                method: 'POST',
+            if (storeResponse.ok) {
+              const storeData = await storeResponse.json();
+              console.log('✅ Store API called successfully for skill', storeData);
+
+              const refreshResponse = await fetch(subStdMapApiUrl, {
                 headers: {
                   'Authorization': `Bearer ${sessionData.token}`
-                },
-                body: storeFormData
-              });
-
-              if (storeResponse.ok) {
-                const storeData = await storeResponse.json();
-                console.log('✅ Store API called successfully for task', storeData);
-                
-                // Get the newly created mapping ID - store in variable first
-                if (storeData.data && storeData.data.id) {
-                  // 🔹 mapping id મેળવવા sub_std_map ફરી fetch કરો
-                  const refreshResponse = await fetch(subStdMapApiUrl, {
-                    headers: {
-                      Authorization: `Bearer ${sessionData.token}`,
-                    },
-                  });
-
-                  const refreshData = await refreshResponse.json();
-
-                  const newMapping = refreshData.data.find(
-                    (item: any) =>
-                      item.subject_id == matchingTask.id &&
-                      item.standard_id == departmentId,
-                  );
-
-                  if (newMapping) {
-                    const newMappingId = newMapping.id;
-
-                    console.log("🆕 New mapping ID after refresh:", newMappingId);
-
-                    setSubStdMapId(newMappingId);
-                    setCurrentSubjectId(newMappingId);
-                    setCurrentStandardId(departmentId);
-
-                    await createModule(
-                      departmentId,
-                      newMappingId,
-                      criticalWorkFunctionName,
-                    );
-
-                    setShowDropdownModal(true);
-                  }
                 }
-              } else {
-                const errorText = await storeResponse.text();
-                console.error('❌ Error calling store API:', errorText);
-                throw new Error('Failed to create subject mapping');
-              }
-            }
-          } else {
-            console.error('❌ Matching task or department_id not found');
-          }
-        } else if (isSkillSelection) {
-          const selectedSkill = jsonObject.selected_skill || '';
-          const skillName = typeof selectedSkill === 'object' ? selectedSkill.skillName || selectedSkill : selectedSkill;
-          console.log('🔍 Looking for skill:', skillName);
-          
-          const matchingSkill = skillData.userskillData.find((skill: any) => skill.skill === skillName) || skillData.userskillData[0];
-
-          if (matchingSkill && departmentId) {
-            console.log('✅ Matching skill found:', matchingSkill);
-            
-            // Store the original skill ID
-            setTaskSkillId(matchingSkill.id);
-            
-            // Check if mapping already exists
-            const existingMapping = subStdMapData.data.find((item: any) => 
-              item.subject_id == matchingSkill.id && item.standard_id == departmentId
-            );
-            
-            if (existingMapping) {
-              console.log('✅ Existing mapping found:', existingMapping);
-              // Use the existing mapping's ID as the subject_id
-              setSubStdMapId(existingMapping.id);
-              setCurrentSubjectId(existingMapping.id);
-              setCurrentStandardId(departmentId);
-              
-              // Create module using the existing mapping
-              await createModule(departmentId, existingMapping.id, skillName);
-              setShowDropdownModal(true);
-            } else {
-              console.log('🆕 No existing mapping found, creating new mapping');
-              // Call the store API for skill
-              const storeApiUrl = `${sessionData.url}/sub_std_map/store?type=API&sub_institute_id=${sessionData.subInstituteId}`;
-              console.log('📝 Creating sub_std_map at:', storeApiUrl);
-              
-              const storeFormData = new FormData();
-              storeFormData.append('type', 'API');
-              storeFormData.append('sub_institute_id', sessionData.subInstituteId.toString());
-              storeFormData.append('standard_id', departmentId.toString());
-              storeFormData.append('subject_id', matchingSkill.id.toString());
-              storeFormData.append('jobrole', jsonObject.jobrole);
-              storeFormData.append('display_name', skillName);
-              storeFormData.append('allow_content', 'Yes');
-              storeFormData.append('subject_category', 'Skill');
-              storeFormData.append('token', sessionData.token);
-
-              const storeResponse = await fetch(storeApiUrl, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${sessionData.token}`
-                },
-                body: storeFormData
               });
 
-              if (storeResponse.ok) {
-  const storeData = await storeResponse.json();
-  console.log('✅ Store API called successfully for skill', storeData);
+              const refreshData = await refreshResponse.json();
 
-  // 🔹 mapping id મેળવવા sub_std_map ફરી fetch કરો
-  const refreshResponse = await fetch(subStdMapApiUrl, {
-    headers: {
-      'Authorization': `Bearer ${sessionData.token}`
-    }
-  });
+              const newMapping = refreshData.data.find((item: any) =>
+                item.subject_id == matchingSkill.id &&
+                item.standard_id == departmentId
+              );
 
-  const refreshData = await refreshResponse.json();
+              if (newMapping) {
+                const newMappingId = newMapping.id;
 
-  const newMapping = refreshData.data.find((item: any) =>
-    item.subject_id == matchingSkill.id &&
-    item.standard_id == departmentId
-  );
+                console.log("🆕 New mapping ID after refresh:", newMappingId);
 
-  if (newMapping) {
+                setSubStdMapId(newMappingId);
+                setCurrentSubjectId(newMappingId);
+                setCurrentStandardId(departmentId);
 
-    const newMappingId = newMapping.id;
+                await createModule(departmentId, newMappingId, skillName);
 
-    console.log("🆕 New mapping ID after refresh:", newMappingId);
-
-    setSubStdMapId(newMappingId);
-    setCurrentSubjectId(newMappingId);
-    setCurrentStandardId(departmentId);
-
-    // ✅ module create થશે
-    await createModule(departmentId, newMappingId, skillName);
-
-    setShowDropdownModal(true);
-  }
-} else {
-                const errorText = await storeResponse.text();
-                console.error('❌ Error calling store API:', errorText);
-                throw new Error('Failed to create subject mapping');
+                setShowDropdownModal(true);
               }
+            } else {
+              const errorText = await storeResponse.text();
+              console.error('❌ Error calling store API:', errorText);
+              throw new Error('Failed to create subject mapping');
             }
-          } else {
-            console.error('❌ Matching skill or department_id not found');
           }
+        } else {
+          console.error('❌ Matching skill or department_id not found');
         }
       } else {
         console.error('❌ Failed to fetch skill or sub_std_map data');
@@ -981,7 +835,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
       return;
     }
 
-    // Ensure chapter_id is set before proceeding
     if (!currentChapterId && modules.length > 0) {
       setCurrentChapterId(modules[0].id);
     }
@@ -991,7 +844,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
     setSuccess(null);
 
     try {
-      // Call Gamma API for course generation first
       const response = await fetch("/api/generate-course", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1009,33 +861,37 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
 
       console.log("✅ Course generated successfully:", data);
 
-      // Store the generated URLs
       const generatedPdfUrl = data.data?.exportUrl || data.data?.gammaUrl || '';
 
-      // Ensure chapter_id is set before proceeding
       if (!currentChapterId && modules.length > 0) {
         setCurrentChapterId(modules[0].id);
       }
 
-      // Validate that chapter_id is set
       if (!currentChapterId) {
         setError("⚠️ Chapter not found. Please select a module first.");
         setCourseLoading(false);
         return;
       }
 
-      // Call store_content_master API with the actual PDF link
+      if (!currentSubjectId) {
+        setError("⚠️ Subject ID not found. Please regenerate the course outline.");
+        setCourseLoading(false);
+        return;
+      }
+
+      const newCourseId = Date.now();
+      setGeneratedCourseId(newCourseId);
+
       const storeContentApiUrl = `${sessionData.url}/lms/store_content_master`;
       const formData = new FormData();
 
-      // Add form data parameters
       formData.append('type', 'API');
       formData.append('grade_id', '9');
       formData.append('standard_id', currentStandardId?.toString() || '');
-      formData.append('subject_id', currentSubjectId?.toString() || '');
+      formData.append('subject_id', currentSubjectId.toString());
       formData.append('chapter_id', currentChapterId?.toString() || '');
-      formData.append('title', jsonObject?.critical_work_function || jsonObject?.jobrole || 'Newton Law Video');
-      formData.append('description', manualPreview?.substring(0, 100) || 'Explains motion laws');
+      formData.append('title', jsonObject?.selected_skill || jsonObject?.jobrole || 'Skill Course');
+      formData.append('description', manualPreview?.substring(0, 100) || 'Skill-based course content');
       formData.append('link', generatedPdfUrl);
       formData.append('contentType', 'link');
       formData.append('show_hide', '1');
@@ -1061,7 +917,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         const responseData = await storeResponse.json();
         console.log('store_content_master API called successfully');
 
-        // Store the content link from the response
         if (responseData.data && responseData.data.link) {
           setGeneratedUrls({
             exportUrl: data.data?.exportUrl,
@@ -1079,22 +934,22 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
 
       // Save generated course to Course Library
       const generatedCourse = {
-        id: Date.now(), // Use timestamp as unique ID
-        subject_id: Date.now(),
-        standard_id: Date.now(),
-        title: isCriticalWorkFunction ? `CWF: ${jsonObject.jobrole} - ${jsonObject.critical_work_function}` : isSkillSelection ? `Skill: ${jsonObject.jobrole} - ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
+        id: newCourseId,
+        subject_id: currentSubjectId,
+        standard_id: currentStandardId?.toString() || '',
+        title: jsonObject?.selected_skill ? `Skill: ${jsonObject.jobrole} - ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
         description: manualPreview?.substring(0, 100) + "..." || "AI-generated course content",
-        thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop", // Default course image
+        thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop",
         contentType: "presentation",
         category: "AI Generated",
         difficulty: "intermediate",
-        short_name: isCriticalWorkFunction ? `CWF: ${jsonObject.critical_work_function}` : isSkillSelection ? `Skill: ${jsonObject.selected_skill}` : "AI Course",
+        short_name: jsonObject?.selected_skill ? `Skill: ${jsonObject.selected_skill}` : "AI Course",
         subject_type: "Training",
         progress: 0,
         instructor: "AI Assistant",
         isNew: true,
         isMandatory: false,
-        display_name: isCriticalWorkFunction ? `CWF: ${jsonObject.critical_work_function}` : isSkillSelection ? `Skill: ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
+        display_name: jsonObject?.selected_skill ? `Skill: ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
         sort_order: "1",
         status: "1",
         subject_category: "AI Generated",
@@ -1103,13 +958,11 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         jobrole: jsonObject?.jobrole || "N/A"
       };
 
-      // Save to localStorage for Course Library
       const existingCourses = JSON.parse(localStorage.getItem("generatedCourses") || "[]");
-      // Unshift to add new course at the beginning of the array
       existingCourses.unshift(generatedCourse);
       localStorage.setItem("generatedCourses", JSON.stringify(existingCourses));
 
-      // Call the save-generated-course API to store all course data
+      // Call the save-generated-course API
       const requestData = {
         type: "API",
         sub_institute_id: sessionData.subInstituteId,
@@ -1118,10 +971,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         input_fields: {
           jobrole: jsonObject?.jobrole || "",
           jobrole_description: jsonObject?.jobrole_description || "",
-          critical_work_function: isCriticalWorkFunction ? {
-            critical_work_function: jsonObject?.critical_work_function || "",
-            key_task: jsonObject?.key_task || {}
-          } : {}
+          selected_skill: jsonObject?.selected_skill || ""
         },
         configure_fields: {
           modality: cfg.modality.selfPaced ? "self-paced" : "instructor-led",
@@ -1130,7 +980,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
           "AI model": cfg.aiModel || ""
         },
         outline: manualPreview ? [manualPreview] : [],
-        title: isCriticalWorkFunction ? `CWF: ${jsonObject.jobrole} - ${jsonObject.critical_work_function}` : isSkillSelection ? `Skill: ${jsonObject.jobrole} - ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
+        title: jsonObject?.selected_skill ? `Skill: ${jsonObject.jobrole} - ${jsonObject.selected_skill}` : jsonObject?.jobrole || "Generated Course",
         description: manualPreview?.substring(0, 200) || "AI-generated course content",
         export_url: data.data?.exportUrl || "",
         presentation_platform: "Gamma",
@@ -1193,7 +1043,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-blue-600" />
-            Configuration {isCriticalWorkFunction ? 'for Critical Work Function' : isSkillSelection ? 'for Skill' : ''}
+            Configuration for Skill
           </DialogTitle>
         </DialogHeader>
 
@@ -1353,7 +1203,6 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
              focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 disabled={mappingValuesLoading || mappingValues.length === 0}
                               >
-                                {/* ✅ Placeholder */}
                                 <option value="" disabled>
                                   Select Mapping Value
                                 </option>
@@ -1481,7 +1330,7 @@ export default function ConfigurationModal({ isOpen, onClose, jsonObject }: Conf
                   Preview
                 </h2>
 
-                {/* ✅ Module Dropdown – RIGHT SIDE */}
+                {/* Module Dropdown */}
                 {showDropdownModal && modules.length > 0 && (
                   <select
                     className="px-3 py-2 text-sm border rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
