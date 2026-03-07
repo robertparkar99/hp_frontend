@@ -745,8 +745,8 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                           <label>
                           Gender
                         </label>
-                          <div className="flex gap-4 items-center">
-                            <label className="gender-radio-label flex items-center gap-2 cursor-pointer">
+                          <div className="flex gap-2 md:gap-4 items-center">
+                            <label className="gender-radio-label flex items-center gap-1 md:gap-2 cursor-pointer">
                             <input
                               type="radio"
                               name="gender"
@@ -755,11 +755,11 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               onChange={() =>
                                 handleInputChange("personal", "gender", "M")
                               }
-                                className="gender-radio-input w-4 h-4 no-shadow"
+                                className="gender-radio-input no-shadow"
                             />
                             Male
                           </label>
-                            <label className="gender-radio-label flex items-center gap-2 cursor-pointer">
+                            <label className="gender-radio-label flex items-center gap-1 md:gap-2 cursor-pointer">
                             <input
                               type="radio"
                               name="gender"
@@ -768,7 +768,7 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               onChange={() =>
                                 handleInputChange("personal", "gender", "F")
                               }
-                                className="gender-radio-input w-4 h-4 no-shadow"
+                                className="gender-radio-input no-shadow"
                             />
                             Female
                           </label>
