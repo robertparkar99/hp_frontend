@@ -1103,11 +1103,24 @@ ${formatKabaFull("Behaviour", parsedBehaviour)}
   } catch (error: any) {
     console.error("⚠️ Server-side course generation error:", error);
 
+    // Check if it's a fetch/network error
+    const errorMessage = error?.message || String(error);
+    let userMessage = "Internal server error during course generation.";
+    
+    if (errorMessage.includes("fetch failed") || errorMessage.includes("network") || errorMessage.includes("ENOTFOUND") || errorMessage.includes("ECONNREFUSED")) {
+      userMessage = "Failed to connect to AI service. Please check your network connection and try again.";
+    } else if (errorMessage.includes("401") || errorMessage.includes("unauthorized")) {
+      userMessage = "Invalid API key. Please check your OpenRouter API key configuration.";
+    } else if (errorMessage.includes("429") || errorMessage.includes("rate limit")) {
+      userMessage = "Rate limit exceeded. Please try again later.";
+    } else if (errorMessage.includes("500") || errorMessage.includes("502") || errorMessage.includes("503")) {
+      userMessage = "AI service is currently unavailable. Please try again later.";
+    }
+
     return NextResponse.json(
       {
-        error:
-          error.message ||
-          "Internal server error during course generation.",
+        error: userMessage,
+        details: errorMessage
       },
       { status: 500 }
     );

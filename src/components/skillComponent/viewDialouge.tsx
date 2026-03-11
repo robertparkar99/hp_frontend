@@ -284,6 +284,9 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
       const jobrole = jobroleData && jobroleData.length > 0 ? jobroleData[0].jobrole : '';
       const jsonObject = {
         selected_skill: viewData.title,
+        skill_description: viewData.description,
+        skill_category: viewData.category,
+        skill_sub_category: viewData.sub_category,
         jobrole: jobrole,
         department: viewData.department,
         sub_department: viewData.sub_department,
@@ -493,7 +496,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
                 <button
                   onClick={() => handleCousreCreation()}
                   disabled={isCourseBuilding}
-                  className={`flex items-center justify-center space-x-2 rounded-lg border-2 border-yellow-300 bg-white px-2 py-1.5 md:px-1 md:py-1 text-xs md:text-sm font-semibold transition duration-200 shadow-sm w-full md:w-auto ${isCourseBuilding ? 'cursor-not-allowed opacity-70' : 'text-yellow-600 hover:bg-yellow-50'}`}
+                  className={`flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm ${isCourseBuilding ? 'cursor-not-allowed opacity-70' : 'text-yellow-600 hover:bg-yellow-50'}`}
                 >
                   {isCourseBuilding ? (
                     <>

@@ -60,6 +60,8 @@ type Config = {
   jobRole: string;
   skills: string[];
   proficiencyTarget: number;
+  proficiencyLevel: string;
+  description: string;
   modality: { selfPaced: boolean; instructorLed: boolean; };
   mappingType: string;
   mappingValue: string;
@@ -75,6 +77,8 @@ const DEFAULT_CONFIG: Config = {
   jobRole: "",
   skills: [],
   proficiencyTarget: 3,
+  proficiencyLevel: "",
+  description: "",
   modality: { selfPaced: true, instructorLed: false },
   mappingType: "",
   mappingValue: "",
@@ -355,6 +359,7 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
     userId: '',
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   const [generatedUrls, setGeneratedUrls] = useState<{ exportUrl?: string; gammaUrl?: string; contentLink?: string } | null>(null);
   const [showDropdownModal, setShowDropdownModal] = useState(false);
   const [currentStandardId, setCurrentStandardId] = useState<number | null>(null);
@@ -368,6 +373,10 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
   const [mappingValuesLoading, setMappingValuesLoading] = useState(true);
   const [selectedMappingTypeId, setSelectedMappingTypeId] = useState<number | null>(null);
   const [selectedMappingValueId, setSelectedMappingValueId] = useState<number | null>(null);
+  const [proficiencyLevels, setProficiencyLevels] = useState<any[]>([]);
+  const [descriptions, setDescriptions] = useState<any[]>([]);
+  const [proficiencyLevelsLoading, setProficiencyLevelsLoading] = useState(true);
+  const [descriptionsLoading, setDescriptionsLoading] = useState(true);
   const [generatedCourseId, setGeneratedCourseId] = useState<number | null>(null);
   const [subStdMapId, setSubStdMapId] = useState<number | null>(null);
 
@@ -382,106 +391,123 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
     };
   }, []);
 
+  // Set mounted state
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Load sessionData from localStorage once
   useEffect(() => {
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      const { APP_URL, token, sub_institute_id, department_id, org_type, user_id } = JSON.parse(userData);
-      setSessionData({
-        url: APP_URL,
-        token,
-        subInstituteId: sub_institute_id,
-        departmentId: department_id || '',
-        orgType: org_type,
-        userId: user_id,
-      });
+    if (!isMounted) return;
+    
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        const { APP_URL, token, sub_institute_id, department_id, org_type, user_id } = parsed;
+        setSessionData({
+          url: APP_URL || '',
+          token: token || '',
+          subInstituteId: sub_institute_id || '',
+          departmentId: department_id || '',
+          orgType: org_type || '',
+          userId: user_id || '',
+        });
+      }
     }
     setIsLoading(false);
-  }, []);
+  }, [isMounted]);
 
   // Fetch mapping types and values from API
   useEffect(() => {
-    if (sessionData.url && sessionData.token) {
-      const fetchMappingTypes = async () => {
-        try {
-          setMappingTypesLoading(true);
-          const url = `${sessionData.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[item_type]=content`;
-          console.log('Fetching mapping types from:', url);
-          const response = await fetch(url, {
-            headers: {
-              'Authorization': `Bearer ${sessionData.token}`
-            }
-          });
-          console.log('Mapping types response status:', response.status);
-          if (response.ok) {
-            const data = await response.json();
-            console.log('Mapping types data:', data);
-            const types = (data.data || data || []).map((type: any) => ({
-              ...type,
-              reason: type.reason || `The ${type.name} category encompasses various pedagogical approaches for effective learning and skill development.`
-            }));
-            setMappingTypes(types);
-            if (types.length > 0) {
-              const firstType = types[0];
-              const defaultValue = firstType.name || firstType.id;
-              setCfg(prev => ({ ...prev, mappingType: defaultValue }));
-              setSelectedMappingTypeId(firstType.id);
-            }
-          } else {
-            console.error('Failed to fetch mapping types:', response.statusText);
-          }
-        } catch (error) {
-          console.error('Error fetching mapping types:', error);
-        } finally {
-          setMappingTypesLoading(false);
-        }
-      };
-
-      fetchMappingTypes();
+    // Skip if not mounted or missing required data
+    if (!isMounted || !sessionData.url || !sessionData.token) {
+      setMappingTypesLoading(false);
+      return;
     }
-  }, [sessionData.url, sessionData.token]);
+    
+    const fetchMappingTypes = async () => {
+      try {
+        setMappingTypesLoading(true);
+        const url = `${sessionData.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[item_type]=content`;
+        console.log('Fetching mapping types from:', url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${sessionData.token}`
+          }
+        });
+        console.log('Mapping types response status:', response.status);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Mapping types data:', data);
+          const types = (data.data || data || []).map((type: any) => ({
+            ...type,
+            reason: type.reason || `The ${type.name} category encompasses various pedagogical approaches for effective learning and skill development.`
+          }));
+          setMappingTypes(types);
+          if (types.length > 0) {
+            const firstType = types[0];
+            const defaultValue = firstType.name || firstType.id;
+            setCfg(prev => ({ ...prev, mappingType: defaultValue }));
+            setSelectedMappingTypeId(firstType.id);
+          }
+        } else {
+          console.error('Failed to fetch mapping types:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error fetching mapping types:', error);
+      } finally {
+        setMappingTypesLoading(false);
+      }
+    };
+
+    fetchMappingTypes();
+  }, [sessionData.url, sessionData.token, isMounted]);
 
   // Fetch mapping values when selectedMappingTypeId changes
   useEffect(() => {
     console.log('useEffect for mapping values triggered, selectedMappingTypeId:', selectedMappingTypeId);
-    if (selectedMappingTypeId && sessionData.url && sessionData.token) {
-      const fetchMappingValues = async () => {
-        try {
-          setMappingValuesLoading(true);
-          const url = `${sessionData.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[parent_id]=${selectedMappingTypeId}`;
-          console.log('Fetching mapping values from:', url);
-          const response = await fetch(url, {
-            headers: {
-              'Authorization': `Bearer ${sessionData.token}`
-            }
-          });
-          console.log('Mapping values response status:', response.status);
-          if (response.ok) {
-            const data = await response.json();
-            console.log('Mapping values data:', data);
-            const values = (data.data || data || []).map((value: any) => ({
-              ...value
-            }));
-            setMappingValues(values);
-            setSelectedMappingValueId(null);
-            setCfg(prev => ({ ...prev, mappingValue: "", mappingReason: "" }));
-          } else {
-            console.error('Failed to fetch mapping values:', response.statusText);
-            setMappingValues([]);
-          }
-        } catch (error) {
-          console.error('Error fetching mapping values:', error);
-          setMappingValues([]);
-        } finally {
-          setMappingValuesLoading(false);
-        }
-      };
-      fetchMappingValues();
-    } else {
+    
+    // Skip if not mounted or missing required data
+    if (!isMounted || !selectedMappingTypeId || !sessionData.url || !sessionData.token) {
       setMappingValues([]);
       setMappingValuesLoading(false);
+      return;
     }
-  }, [selectedMappingTypeId, sessionData.url, sessionData.token]);
+    
+    const fetchMappingValues = async () => {
+      try {
+        setMappingValuesLoading(true);
+        const url = `${sessionData.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[parent_id]=${selectedMappingTypeId}`;
+        console.log('Fetching mapping values from:', url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${sessionData.token}`
+          }
+        });
+        console.log('Mapping values response status:', response.status);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Mapping values data:', data);
+          const values = (data.data || data || []).map((value: any) => ({
+            ...value
+          }));
+          setMappingValues(values);
+          setSelectedMappingValueId(null);
+          setCfg(prev => ({ ...prev, mappingValue: "", mappingReason: "" }));
+        } else {
+          console.error('Failed to fetch mapping values:', response.statusText);
+          setMappingValues([]);
+        }
+      } catch (error) {
+        console.error('Error fetching mapping values:', error);
+        setMappingValues([]);
+      } finally {
+        setMappingValuesLoading(false);
+      }
+    };
+    fetchMappingValues();
+  }, [selectedMappingTypeId, sessionData.url, sessionData.token, isMounted]);
 
   // Fetch mapping reasons when selectedMappingValueId changes
   useEffect(() => {
@@ -493,33 +519,120 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
     }
   }, [selectedMappingValueId, cfg.mappingValue, mappingValues]);
 
-  // Fetch modules when dropdown is shown
+  // Fetch proficiency levels from API
   useEffect(() => {
-    if (showDropdownModal && currentStandardId && currentSubjectId) {
-      const fetchModules = async () => {
-        const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${currentStandardId}&subject_id=${currentSubjectId}`;
-        console.log('Fetching modules from:', chapterApiUrl);
-        const response = await fetch(chapterApiUrl, {
+    // Skip if not mounted or missing required data
+    if (!isMounted || !sessionData.url || !sessionData.token || !sessionData.subInstituteId) {
+      setProficiencyLevelsLoading(false);
+      return;
+    }
+    
+    const fetchProficiencyLevels = async () => {
+      try {
+        setProficiencyLevelsLoading(true);
+        const url = `${sessionData.url}/table_data?table=s_proficiency_levels&filters[sub_institute_id]=${sessionData.subInstituteId}`;
+        console.log('Fetching proficiency levels from:', url);
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${sessionData.token}`
           }
         });
+        console.log('Proficiency levels response status:', response.status);
         if (response.ok) {
           const data = await response.json();
-          const fetchedModules = data.data || [];
-          console.log('Fetched modules:', fetchedModules);
-          setModules(fetchedModules);
-          if (fetchedModules.length > 0) {
-            setCurrentChapterId(fetchedModules[0].id);
-          }
+          console.log('Proficiency levels data:', data);
+          const levels = (data.data || data || []).map((level: any) => ({
+            ...level,
+            displayName: level.proficiency_level || level.id,
+            description: level.description || ''
+          }));
+          setProficiencyLevels(levels);
         } else {
-          console.error('Failed to fetch modules:', response.status);
-          setModules([]);
+          console.error('Failed to fetch proficiency levels:', response.statusText);
+          setProficiencyLevels([]);
         }
-      };
-      fetchModules();
+      } catch (error) {
+        console.error('Error fetching proficiency levels:', error);
+        setProficiencyLevels([]);
+      } finally {
+        setProficiencyLevelsLoading(false);
+      }
+    };
+
+    fetchProficiencyLevels();
+  }, [sessionData.url, sessionData.token, sessionData.subInstituteId, isMounted]);
+
+  // Fetch descriptions from API
+  useEffect(() => {
+    // Skip if not mounted or missing required data
+    if (!isMounted || !sessionData.url || !sessionData.token) {
+      setDescriptionsLoading(false);
+      return;
     }
-  }, [showDropdownModal, currentStandardId, currentSubjectId, sessionData]);
+    
+    const fetchDescriptions = async () => {
+      try {
+        setDescriptionsLoading(true);
+        const url = `${sessionData.url}/table_data?table=lms_mapping_type&filters[status]=1&filters[globally]=1&filters[item_type]=description`;
+        console.log('Fetching descriptions from:', url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${sessionData.token}`
+          }
+        });
+        console.log('Descriptions response status:', response.status);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Descriptions data:', data);
+          const descs = (data.data || data || []).map((desc: any) => ({
+            ...desc
+          }));
+          setDescriptions(descs);
+        } else {
+          console.error('Failed to fetch descriptions:', response.statusText);
+          setDescriptions([]);
+        }
+      } catch (error) {
+        console.error('Error fetching descriptions:', error);
+        setDescriptions([]);
+      } finally {
+        setDescriptionsLoading(false);
+      }
+    };
+
+    fetchDescriptions();
+  }, [sessionData.url, sessionData.token, isMounted]);
+
+  // Fetch modules when dropdown is shown
+  useEffect(() => {
+    // Skip if not mounted or missing required data
+    if (!isMounted || !showDropdownModal || !currentStandardId || !currentSubjectId || !sessionData.url || !sessionData.token) {
+      return;
+    }
+    
+    const fetchModules = async () => {
+      const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${currentStandardId}&subject_id=${currentSubjectId}`;
+      console.log('Fetching modules from:', chapterApiUrl);
+      const response = await fetch(chapterApiUrl, {
+        headers: {
+          'Authorization': `Bearer ${sessionData.token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const fetchedModules = data.data || [];
+        console.log('Fetched modules:', fetchedModules);
+        setModules(fetchedModules);
+        if (fetchedModules.length > 0) {
+          setCurrentChapterId(fetchedModules[0].id);
+        }
+      } else {
+        console.error('Failed to fetch modules:', response.status);
+        setModules([]);
+      }
+    };
+    fetchModules();
+  }, [showDropdownModal, currentStandardId, currentSubjectId, sessionData, isMounted]);
 
   // Ensure chapter_id is set when modules are available
   useEffect(() => {
@@ -530,6 +643,13 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
 
   // OpenRouter API Integration - Skill Only Version
   const handleGenerateCourseOutline = async () => {
+    // Check if session data is available
+    if (!sessionData.url || !sessionData.token || !sessionData.subInstituteId) {
+      setError("⚠️ Session data not loaded. Please refresh the page and try again.");
+      console.error('Session data not available:', sessionData);
+      return;
+    }
+    
     const createModule = async (standardId: number, subjectId: number, displayName: string) => {
       try {
         const chapterApiUrl = `${sessionData.url}/lms/chapter_master?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}&standard_id=${standardId}&subject_id=${subjectId}`;
@@ -646,7 +766,7 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
       }
 
       // Call the outline API
-      const outlineResponse = await fetch("/api/generate-outline-new", {
+      const outlineResponse = await fetch("/api/generate-outline-skill", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -661,7 +781,9 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
           mappingValue: selectedMappingValueId,
           mappingTypeName: cfg.mappingType,
           mappingValueName: cfg.mappingValue,
-          mappingReason: cfg.mappingReason || undefined
+          mappingReason: cfg.mappingReason || undefined,
+          proficiencyLevel: cfg.proficiencyLevel || undefined,
+          description: cfg.description || undefined
         }),
       });
 
@@ -753,6 +875,7 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
             storeFormData.append('display_name', skillName);
             storeFormData.append('allow_content', 'Yes');
             storeFormData.append('subject_category', 'Skill library');
+            storeFormData.append('proficiency', cfg.proficiencyLevel || '');
             storeFormData.append('token', sessionData.token);
 
             const storeResponse = await fetch(storeApiUrl, {
@@ -830,6 +953,13 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
 
   // Generate Course using Gamma API
   const handleGenerateCourse = async () => {
+    // Check if session data is available
+    if (!sessionData.url || !sessionData.token || !sessionData.subInstituteId) {
+      setError("⚠️ Session data not loaded. Please refresh the page and try again.");
+      console.error('Session data not available:', sessionData);
+      return;
+    }
+
     if (!manualPreview || manualPreview === "Click 'Generate Course Outline with AI' to create slides.") {
       setError("⚠️ No course outline available! Please generate a course outline first.");
       return;
@@ -901,6 +1031,7 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
       console.log('Selected mapping_type ID:', selectedMappingTypeId, 'mapping_value ID:', selectedMappingValueId);
       formData.append('mapping_type[]', selectedMappingTypeId?.toString() || '');
       formData.append('mapping_value[]', selectedMappingValueId?.toString() || '');
+      formData.append('proficiency_level', cfg.proficiencyLevel || '');
 
       const storeResponse = await fetch(storeContentApiUrl, {
         method: 'POST',
@@ -1036,6 +1167,28 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
       window.open(generatedUrls.gammaUrl, '_blank');
     }
   };
+
+  // Show loading state while session data is being loaded
+  if (isLoading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="w-[95vw] max-w-full md:max-w-6xl lg:max-w-7xl xl:max-w-7xl max-h-[90vh] p-0 overflow-auto rounded-xl smooth-scrollbar">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="text-lg font-semibold flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-blue-600" />
+              Configuration for Skill
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-blue-600" />
+              <p className="text-gray-500">Loading configuration...</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -1238,6 +1391,54 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
 
                           </div>
 
+                          {/* Proficiency Level and Description Dropdowns */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                Proficiency Level
+                              </label>
+                              <select
+                                value={cfg.proficiencyLevel}
+                                onChange={(e) => {
+                                  const selectedLevel = proficiencyLevels.find(level => (level.proficiency_level || level.id) === e.target.value);
+                                  setCfg({ 
+                                    ...cfg, 
+                                    proficiencyLevel: e.target.value,
+                                    description: selectedLevel?.description || ''
+                                  });
+                                }}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                disabled={proficiencyLevelsLoading || proficiencyLevels.length === 0}
+                              >
+                                <option value="">Select Proficiency Level</option>
+                                {proficiencyLevels.length > 0 ? (
+                                  proficiencyLevels.map((level) => (
+                                    <option key={level.id} value={level.proficiency_level || level.id}>
+                                      {level.proficiency_level} - {level.type_description}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option value="">No proficiency levels available</option>
+                                )}
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                Description
+                              </label>
+                              <textarea
+                                value={cfg.description}
+                                onChange={(e) => {
+                                  setCfg({ ...cfg, description: e.target.value });
+                                }}
+                                rows={4}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                                placeholder="Description will appear here based on selected proficiency level..."
+                                readOnly
+                              />
+                            </div>
+                          </div>
+
                           {/* AI Model */}
                           <div className="mb-4">
                             <AiModelDropdown
@@ -1269,8 +1470,8 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
                           <div className="pt-4 border-t border-gray-200">
                             <button
                               onClick={handleGenerateCourseOutline}
-                              disabled={outlineLoading}
-                              className={`w-full rounded-lg px-4 py-3 text-sm font-semibold flex items-center gap-2 justify-center transition-all duration-200 ${outlineLoading
+                              disabled={outlineLoading || !sessionData.url || !sessionData.token}
+                              className={`w-full rounded-lg px-4 py-3 text-sm font-semibold flex items-center gap-2 justify-center transition-all duration-200 ${outlineLoading || !sessionData.url || !sessionData.token
                                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                                 : "bg-green-600 text-white hover:bg-green-700 shadow-sm"
                                 }`}
@@ -1394,8 +1595,8 @@ export default function ConfigurationModelSkill({ isOpen, onClose, jsonObject }:
               )}
               <button
                 onClick={handleGenerateCourse}
-                disabled={!jsonObject || outlineLoading || courseLoading}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-all duration-200 ${!jsonObject || outlineLoading || courseLoading
+                disabled={!jsonObject || outlineLoading || courseLoading || !sessionData.url || !sessionData.token}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-all duration-200 ${!jsonObject || outlineLoading || courseLoading || !sessionData.url || !sessionData.token
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
