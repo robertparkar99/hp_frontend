@@ -322,6 +322,8 @@ const ProgressDashboard = () => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    // Close the modal immediately when Update button is clicked
+    setIsEditModalOpen(false);
     try {
       const formData = new FormData();
 
@@ -358,10 +360,27 @@ const ProgressDashboard = () => {
         throw new Error(errorData.message || 'Failed to update task');
       }
 
-
+      // Trigger webhook after successful update
+      try {
+        await fetch('https://n8n.triz.co.in/webhook/449cab91-32ac-4c27-ab77-b6a9389185c4', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            taskId: currentTask.id,
+            updatedData: currentTask,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+      } catch (webhookError) {
+        console.error('Webhook trigger failed:', webhookError);
+      }
 
       const result = await response.json();
       alert(result.message || 'Task updated successfully');
+
+
       fetchAllData();
       setIsEditModalOpen(false);
     } catch (error) {
@@ -600,7 +619,11 @@ const ProgressDashboard = () => {
       )
     },
     {
-      name: "Actions",
+      name: (
+        <div id="task-table-actions">
+          <div>Actions</div>
+        </div>
+      ),
       cell: row => (
         <div className="flex items-center space-x-2">
           <Button
@@ -663,7 +686,7 @@ const ProgressDashboard = () => {
           <p className="text-muted-foreground text-sm">Track and monitor task assignment progress</p>
         </div> */}
 
-        <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto" id="task-filters">
           <Select
             options={departmentOptions}
             value={departmentFilter}
@@ -696,6 +719,7 @@ const ProgressDashboard = () => {
             variant="outline"
             size="sm"
             iconName="Download"
+            id="task-export"
             iconPosition="left"
             disabled={true}
             className="cursor-not-allowed w-full md:w-auto"
@@ -705,7 +729,7 @@ const ProgressDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6" id="task-dashboard-stats">
         {stats.map((stat, index) => (
           <div key={index} className="bg-card border border-border rounded-lg p-4 md:p-6">
             <div className="flex items-center justify-between">
@@ -723,7 +747,7 @@ const ProgressDashboard = () => {
         ))}
       </div>
 
-      <div className="bg-card ">
+      <div className="bg-card " id="task-data-table">
         <div className="p-3">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-foreground">Task Assignments</h3>
@@ -751,183 +775,207 @@ const ProgressDashboard = () => {
           </DialogHeader>
 
           {currentTask && (
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              {/* ... rest of the edit form remains the same ... */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Input
-                    label="Task Title"
-                    value={currentTask.task_title}
-                    onChange={(e) => handleInputChange('task_title', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Input
-                    label="Observer"
-                    value={currentTask.ALLOCATOR}
-                    disabled
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Task Description
-                    </label>
-                    <textarea
-                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={currentTask.task_description || ''}
-                      onChange={(e) => handleInputChange('task_description', e.target.value)}
-                      rows={5}
+            <form onSubmit={handleEditSubmit} className="space-y-6">
+              {/* Task Details Section */}
+              <div className="border rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-4 text-black-700">Task Details :</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Input
+                      label="Task Title"
+                      value={currentTask.task_title}
+                      onChange={(e) => handleInputChange('task_title', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      label="Observer"
+                      value={currentTask.ALLOCATOR}
+                      disabled
                     />
                   </div>
                 </div>
-                <div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Monitoring Points
-                    </label>
-                    <textarea
-                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={currentTask.observation_point || ''}
-                      onChange={(e) => handleInputChange('observation_point', e.target.value)}
-                      rows={5}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Task Description
+                      </label>
+                      <textarea
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={currentTask.task_description || ''}
+                        rows={5}
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Monitoring Points
+                      </label>
+                      <textarea
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={currentTask.observation_point || ''}
+                        onChange={(e) => handleInputChange('observation_point', e.target.value)}
+                        rows={5}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <Input
+                      label="Key Result Area (KRAs)"
+                      value={currentTask.kra}
+                      onChange={(e) => handleInputChange('kra', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      label="Performance Indicator (KPIs)"
+                      value={currentTask.kpa}
+                      onChange={(e) => handleInputChange('kpa', e.target.value)}
                     />
                   </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Input
-                    label="Key Result Area (KRAs)"
-                    value={currentTask.kra}
-                    onChange={(e) => handleInputChange('kra', e.target.value)}
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <Select
+                      label="Assigned To"
+                      options={employees.map(emp => ({
+                        value: emp.id,
+                        label: `${emp.first_name} ${emp.last_name}`
+                      }))}
+                      value={currentTask.task_allocated_to || ''}
+                      onChange={(value) => handleInputChange('ALLOCATED_TO_ID', value)}
+                      required
+                      disabled
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      label="Due Date"
+                      type="date"
+                      value={currentTask.task_date}
+                      onChange={(e) => handleInputChange('task_date', e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Input
-                    label="Performance Indicator (KPIs)"
-                    value={currentTask.kpa}
-                    onChange={(e) => handleInputChange('kpa', e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Select
-                    label="Assigned To"
-                    options={employees.map(emp => ({
-                      value: emp.id,
-                      label: `${emp.first_name} ${emp.last_name}`
-                    }))}
-                    value={currentTask.task_allocated_to || ''}
-                    onChange={(value) => handleInputChange('ALLOCATED_TO_ID', value)}
-                    required
-                    disabled
-                  />
-                </div>
-                <div>
-                  <Input
-                    label="Due Date"
-                    type="date"
-                    value={currentTask.task_date}
-                    onChange={(e) => handleInputChange('task_date', e.target.value)}
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <Select
+                      label="Task Priority"
+                      options={taskTypeOptions}
+                      value={currentTask.task_type}
+                      onChange={(value) => handleInputChange('task_type', value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Attachment
+                      </label>
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                      {filePreview && (
+                        <div className="mt-2">
+                          <p className="text-sm text-muted-foreground mb-1">Preview:</p>
+                          {filePreview.startsWith('data:image/') ||
+                            filePreview.includes('digitaloceanspaces.com') ? (
+                            <img
+                              src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_task/${currentTask.task_attachment}`}
+                              alt="Attachment preview"
+                              className="max-h-40 rounded-md border border-border"
+                            />
+                          ) : (
+                            <a
+                              href={filePreview}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary underline flex items-center"
+                            >
+                              <Icon name="File" className="mr-1" />
+                              View attached file
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Input
+                      label="Repeat Once in Every"
+                      value={currentTask.repeat_days}
+                      onChange={(e) => handleInputChange('repeat_days', e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Select
-                    label="Task Priority"
-                    options={taskTypeOptions}
-                    value={currentTask.task_type}
-                    onChange={(value) => handleInputChange('task_type', value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Select
-                    label="Task Status"
-                    options={statusEditOptions}
-                    value={currentTask.status}
-                    onChange={(value) => handleInputChange('status', value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Select
-                    label="Approve Status"
-                    options={approveStatusOptions}
-                    value={currentTask.approve_status?.toLowerCase() || 'pending'}
-                    onChange={(value) => handleInputChange('approve_status', value)}
-                    disabled={sessionData.user_profile_name?.toLowerCase().includes('employee')}
-                  />
-                </div>
-                <div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Approve Remarks
-                    </label>
-                    <textarea
-                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={currentTask.approve_remarks || ''}
-                      onChange={(e) => handleInputChange('approve_remarks', e.target.value)}
-                      rows={5}
+              {/* Completion Section */}
+              <div className="border rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-4 text-black-700">Completion :</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        User Completion Remark
+                      </label>
+                      <textarea
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={currentTask.taskcompletation_remarks || ''}
+                        onChange={(e) => handleInputChange('completion_remark', e.target.value)}
+                        placeholder="Enter completion remark..."
+                        rows={5}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Select
+                      label="Task Status"
+                      options={statusEditOptions}
+                      value={currentTask.status}
+                      onChange={(value) => handleInputChange('status', value)}
+                      required
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Attachment
-                    </label>
-                    <input
-                      type="file"
-                      onChange={handleFileChange}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              {/* Approval Section */}
+              <div className="border rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-4 text-black-700">Approval :</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Select
+                      label="Approve Status"
+                      options={approveStatusOptions}
+                      value={currentTask.approve_status?.toLowerCase() || 'pending'}
+                      onChange={(value) => handleInputChange('approve_status', value)}
+                      disabled={sessionData.user_profile_name?.toLowerCase().includes('employee')}
                     />
-                    {filePreview && (
-                      <div className="mt-2">
-                        <p className="text-sm text-muted-foreground mb-1">Preview:</p>
-                        {filePreview.startsWith('data:image/') ||
-                          filePreview.includes('digitaloceanspaces.com') ? (
-                          <img
-                            src={`https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_task/${currentTask.task_attachment}`}
-                            alt="Attachment preview"
-                            className="max-h-40 rounded-md border border-border"
-                          />
-                        ) : (
-                          <a
-                            href={filePreview}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary underline flex items-center"
-                          >
-                            <Icon name="File" className="mr-1" />
-                            View attached file
-                          </a>
-                        )}
-                      </div>
-                    )}
                   </div>
-                </div>
-                <div>
-                  <Input
-                    label="Repeat Once in every "
-                    value={currentTask.repeat_days}
-                    onChange={(e) => handleInputChange('repeat_days', e.target.value)}
-                  />
+                  <div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Approve Remarks
+                      </label>
+                      <textarea
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={currentTask.approve_remarks || ''}
+                        onChange={(e) => handleInputChange('approve_remarks', e.target.value)}
+                        rows={5}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 

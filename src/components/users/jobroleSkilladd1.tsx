@@ -47,7 +47,7 @@ export default function Index({ skills }: JobroleSkilladd1Props) {
                         {/* Left Panel */}
                         <div className="w-full xl:w-[280px] bg-white rounded-2xl border-2 border-[#D4EBFF] shadow-lg p-2">
                             <h2 className="text-[#23395B] font-bold text-md mb-3" style={{ fontFamily: 'Inter, sans-serif' }}>
-                                📈 Compenetncy Overview
+                                📈 Skill Proficiency Overview
                             </h2>
                             <div className="w-full h-0.5 bg-[#686868] mb-8"></div>
 

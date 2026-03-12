@@ -49,6 +49,9 @@ import DataTable, { TableColumn, TableStyles } from "react-data-table-component"
 import JobDescriptionModal from "./JobDescriptionModal";
 import ConfigurationModal from "./ConfigurationModal";
 import GenerateAssessmentModal from "./GenerateAssessmentModal";
+
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "../../../lib/tourSteps";
 import Loader from "@/components/utils/loading";
 
 type JobRole = {
@@ -64,7 +67,11 @@ type JobRole = {
   related_jobrole: string;
 };
 
-export default function HomePage() {
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+export default function HomePage({ showDetailTour }: PageProps) {
   const [roles, setRoles] = useState<JobRole[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +79,9 @@ export default function HomePage() {
   const [selectedDept, setSelectedDept] = useState<string>("All Departments");
   const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
   const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
 
   // State for modals
   const [dialogOpen, setDialogOpen] = useState({
@@ -192,7 +202,7 @@ export default function HomePage() {
     const fetchDepartments = async () => {
       try {
         const res = await fetch(
-          `https://hp.triz.co.in/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
+          `${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`
         );
         const json = await res.json();
 
@@ -218,6 +228,13 @@ export default function HomePage() {
     fetchData();
   }, [sessionData]);
 
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
   // ✅ Delete role
   const handleDeleteClick = async (id: number) => {
     if (!id) return;
@@ -497,7 +514,7 @@ export default function HomePage() {
         <div className="flex items-center flex-wrap gap-1">
           <Popover>
             <PopoverTrigger asChild>
-              <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors">
+              <button className="p-2 hover:rounded-md hover:bg-gray-100 transition-colors" title="Filter">
                 <Funnel className="w-5 h-5" />
               </button>
             </PopoverTrigger>
@@ -721,7 +738,7 @@ export default function HomePage() {
       ) : viewMode === "myview" ? (
         // ✅ My View (cards)
         <div
-          className="
+          className="jobrolecard-wrapper
             grid gap-2.5 min-h-40 w-full
             sm:grid-cols-6 grid-cols-2 grid-flow-dense
             auto-rows-[110px]
@@ -866,6 +883,20 @@ export default function HomePage() {
           />
         </div>
       )}
+
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps("Jobrole")}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
+        />
+      )}
+
     </div>
   );
 }

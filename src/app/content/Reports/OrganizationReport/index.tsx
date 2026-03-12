@@ -1,5 +1,4 @@
 "use client";
-import { useState, useEffect } from "react";
 import { FilterBar } from "./components/FilterBar";
 import { KPICard } from "./components/KPICard";
 import { OrganizationalGrowth } from "./components/OrganizationalGrowth";
@@ -9,53 +8,6 @@ import { InsightsRecommendations } from "./components/InsightsRecommendations";
 import { DepartmentalGapsTable } from "./components/DepartmentalGapsTable";
 
 const Index = () => {
-  const [kpiData, setKpiData] = useState({
-    totalEmployees: 0,
-    newHires: 0,
-    attritionRate: 0,
-    growthPercent: 0
-  });
-  const [sessionData, setSessionData] = useState({
-    url: "",
-    token: "",
-    subInstituteId: "",
-    orgType: "",
-    userId: "",
-  });
-
-  useEffect(() => {
-    const userData = localStorage.getItem("userData");
-    if (userData) {
-      const { APP_URL, token, sub_institute_id, org_type, user_id } =
-        JSON.parse(userData);
-      setSessionData({
-        url: APP_URL,
-        token,
-        subInstituteId: sub_institute_id,
-        orgType: org_type,
-        userId: user_id,
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!sessionData.url) return;
-
-    const fetchKPI = async () => {
-      try {
-        const response = await fetch(`${sessionData.url}/api/reports/kpi?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`);
-        const result = await response.json();
-        if (result.success) {
-          setKpiData(result.data);
-        }
-      } catch (error) {
-        console.error('Error fetching KPI data:', error);
-      }
-    };
-
-    fetchKPI();
-  }, [sessionData]);
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -73,19 +25,31 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <KPICard
             title="Total Employees"
-            value={kpiData.totalEmployees.toLocaleString()}
+            value="1,024"
+            change={12.4}
+            changeLabel="from last quarter"
+            trend="up"
           />
           <KPICard
             title="New Hires"
-            value={kpiData.newHires}
+            value="234"
+            change={8.2}
+            changeLabel="from last quarter"
+            trend="up"
           />
           <KPICard
             title="Attrition Rate"
-            value={`${kpiData.attritionRate}%`}
+            value="6.8%"
+            change={2.1}
+            changeLabel="from last quarter"
+            trend="down"
           />
           <KPICard
             title="Growth %"
-            value={`${kpiData.growthPercent}%`}
+            value="12.4%"
+            change={3.8}
+            changeLabel="from last quarter"
+            trend="up"
           />
         </div>
 

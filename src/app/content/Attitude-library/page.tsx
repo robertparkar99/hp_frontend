@@ -19,10 +19,12 @@ import {
   Funnel, LayoutGrid, Table, Plus, Download, Upload,
   Sparkles, Settings, Eye, Pencil, Trash2, Copy, Search, MoreVertical
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/AttitudeComponent/viewDialouge";
-import Loader from "@/components/utils/loading";
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "@/lib/tourSteps";
+import Loader from '@/components/utils/loading';
 
 // ---------- Types ----------
 type CardData = {
@@ -41,7 +43,11 @@ interface SessionData {
 }
 
 // ---------- Main Page ----------
-export default function Index() {
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+export default function Index({ showDetailTour }: PageProps) {
   const [skills, setSkills] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [subCategories, setSubCategories] = useState<string[]>([]);
@@ -65,8 +71,24 @@ export default function Index() {
   // Dialog state for viewing attitude details
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
 
-  // State for inline actions menu
-  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
+
+  // // Detail tour handler
+  // useEffect(() => {
+  //   (window as any).detailOnboardingHandler = (tab: string) => {
+  //     if (tab === 'Attitude') {
+  //       setShowTour(true);
+  //     }
+  //   };
+  // }, []);
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
   // ✅ Table filters
   const [columnFilters, setColumnFilters] = useState({
@@ -337,19 +359,41 @@ export default function Index() {
     },
   };
 
-  // ✅ Table filtering
+  // ✅ Table filtering - Combined search and column filters
   const filteredData = cards.filter(
-    (row) =>
-      (row.classification_item || '')
-        .toLowerCase()
-        .includes(columnFilters.classification_item.toLowerCase()) &&
-      (row.classification_category || '')
-        .toLowerCase()
-        .includes(columnFilters.classification_category.toLowerCase()) &&
-      (row.classification_sub_category || '')
-        .toLowerCase()
-        .includes(columnFilters.classification_sub_category.toLowerCase())
+    (row) => {
+      // Main search term filter
+      const searchLower = (searchTerm || '').toLowerCase();
+      const matchesSearch = !searchTerm || (
+        (row.classification_item?.toLowerCase() || '').includes(searchLower) ||
+        (row.classification_category?.toLowerCase() || '').includes(searchLower) ||
+        (row.classification_sub_category?.toLowerCase() || '').includes(searchLower) ||
+        (row.proficiency_level?.toLowerCase() || '').includes(searchLower)
+      );
+
+      // Column filter filters
+      const matchesColumnFilters =
+        (row.classification_item?.toLowerCase() || '')
+          .includes((columnFilters.classification_item || '').toLowerCase()) &&
+        (row.classification_category?.toLowerCase() || '')
+          .includes((columnFilters.classification_category || '').toLowerCase()) &&
+        (row.classification_sub_category?.toLowerCase() || '')
+          .includes((columnFilters.classification_sub_category || '').toLowerCase());
+
+      return matchesSearch && matchesColumnFilters;
+    }
   );
+
+  // Filter cards for card view (using search term)
+  const filteredCards = cards.filter((card) => {
+    const searchLower = (searchTerm || '').toLowerCase();
+    return !searchTerm || (
+      (card.classification_item?.toLowerCase() || '').includes(searchLower) ||
+      (card.classification_category?.toLowerCase() || '').includes(searchLower) ||
+      (card.classification_sub_category?.toLowerCase() || '').includes(searchLower) ||
+      (card.proficiency_level?.toLowerCase() || '').includes(searchLower)
+    );
+  });
 
   return (
     <>
@@ -359,6 +403,7 @@ export default function Index() {
         <div className="relative w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
+            id="search-attitude-input"
             type="text"
             placeholder="Search attitude, categories, or proficiency levels..."
             value={searchTerm}
@@ -398,7 +443,7 @@ export default function Index() {
           </Popover>
 
           {/* View Toggle */}
-          <div className="flex border rounded-md overflow-hidden">
+          <div id="attitude-view-toggle" className="flex border rounded-md overflow-hidden">
             <button
               onClick={() => setViewMode("cards")}
               className={`px-3 py-2 flex items-center justify-center ${viewMode === "cards"
@@ -418,46 +463,49 @@ export default function Index() {
               <Table className="h-5 w-5" />
             </button>
           </div>
-          <AnimatePresence>
-            {isActionsMenuOpen && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center gap-1"
-              >
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Add New Attitude">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="More Actions">
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-auto p-4 bg-white shadow-xl rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                {/* Add New Attitude */}
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Add New Attitude">
                   <Plus className="w-5 h-5 text-gray-600" />
                 </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Get AI Suggestions">
+
+                {/* AI Suggestions */}
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Get AI Suggestions">
                   <Sparkles className="w-5 h-5 text-gray-600" />
                 </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Import">
+
+                {/* Import/Export */}
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Import ">
                   <Upload className="w-5 h-5 text-gray-600" />
                 </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Export">
+                <button className="flex items-center px-2 py-2 rounded-lg hover:bg-gray-100 transition" title="Export ">
                   <Download className="w-5 h-5 text-gray-600" />
                 </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Settings">
+
+                {/* Settings */}
+                <button className="p-2 rounded-lg hover:bg-gray-100" title="Settings">
                   <Settings className="w-5 h-5 text-gray-600" />
                 </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <button
-            onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <MoreVertical className="w-5 h-5 text-gray-600" />
-          </button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
 
       {/* 🔽 Switch View */}
       {viewMode === "cards" ? (
-        <CardGrid cards={cards} loadingCards={loadingCards} onCardClick={setSelectedCardId} />
+        <CardGrid cards={filteredCards} loadingCards={loadingCards} onCardClick={setSelectedCardId} />
       ) : (
         <DataTable
           columns={columns}
@@ -478,6 +526,19 @@ export default function Index() {
           onSuccess={() => {}}
           classification="attitude"
           typeName="Attitude"
+        />
+      )}
+
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps('Attitude')}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
         />
       )}
     </>
@@ -597,9 +658,7 @@ function CardGrid({
 }) {
   if (loadingCards) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader />
-      </div>
+      <Loader />
     );
   }
 

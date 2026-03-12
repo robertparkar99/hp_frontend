@@ -58,7 +58,7 @@ const ForgotPassword: React.FC = () => {
                     <img src="./Group 292.svg" alt="Company Logo" className="w-2/3 mb-4" />
                     <h1 className="text-2xl md:text-3xl font-bold mb-1 text-center">Streamlining Success,</h1>
                     <h1 className="text-2xl md:text-2xl font-bold mb-1 text-center">Energizing Employees</h1>
-                    {/* <p className="text-sm md:text-sm text-center">One line Description of The Company</p> */}
+                    <p className="text-sm md:text-sm text-center">One line Description of The Company</p>
                   </div>
 
                   {/* Right Panel */}

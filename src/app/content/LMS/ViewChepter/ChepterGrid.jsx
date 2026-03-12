@@ -22,6 +22,7 @@ const ChepterGrid = ({
   standardName,
   viewMode = "list", // Added default value for viewMode
   onContentViewed, // New prop
+  contentCategory, // New prop for content category mapping
 }) => {
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -118,6 +119,7 @@ const ChepterGrid = ({
             courseDisplayName={courseDisplayName}  // ✅ Pass course display name
             standardName={standardName}
             onContentViewed={onContentViewed}  // ✅ Pass callback
+            contentCategory={contentCategory}
           />
         ))}
       </div>

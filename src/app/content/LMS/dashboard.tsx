@@ -1,7 +1,8 @@
   // 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback , useRef} from 'react'
 import { useRouter } from 'next/navigation'
+import Shepherd from 'shepherd.js'
 
 import FilterSidebar from './components/FilterSidebar'
 import SearchToolbar from './components/SearchToolbar'
@@ -11,6 +12,11 @@ import { Button } from '../../../components/ui/button'
 import AddCourseDialog from './components/AddCourseDialog'
 import AiCourseDialog from './components/AiCourseDialog'
 import ViewDetail from '../LMS/ViewChepter/ViewDetail'
+import {
+  createLearningCatalogSteps,
+  learningCatalogTourOptions,
+  injectLearningCatalogTourStyles
+} from './LearningCatalogTourSteps'
 
 type Course = {
     id: number
@@ -100,6 +106,10 @@ const LearningCatalog: React.FC = () => {
   const [externalSearchQuery, setExternalSearchQuery] = useState('react')
   const [externalPage, setExternalPage] = useState(0)
 
+  // ✅ Tour state
+  const tourInstanceRef = useRef<Shepherd.Tour | null>(null)
+  const [isTourActive, setIsTourActive] = useState(false)
+
   useEffect(() => {
     const userData = localStorage.getItem('userData')
     if (userData) {
@@ -109,6 +119,101 @@ const LearningCatalog: React.FC = () => {
     } else {
       console.warn('⚠️ No session data found in localStorage')
     }
+
+    // Set localStorage for chatbot to detect LMS Course module
+    localStorage.setItem('activeSection', 'LMS');
+    localStorage.setItem('activeSubItem', 'Course List');
+    
+    // Dispatch event to notify chatbot of module change
+    window.dispatchEvent(new Event('activeItemChange'));
+  }, [])
+
+  // ✅ Tour: Check for trigger and initialize tour
+  useEffect(() => {
+    // Inject tour styles
+    injectLearningCatalogTourStyles()
+
+    // Check if tour was triggered from sidebar
+    const triggerValue = sessionStorage.getItem('triggerPageTour')
+    const tourCompleted = sessionStorage.getItem('learningCatalogTourCompleted')
+
+    // Only start tour if triggered from sidebar AND not completed
+    if (triggerValue === 'learning-catalog' && !tourCompleted) {
+      console.log('🎯 Tour triggered from sidebar for Learning Catalog')
+
+      // Initialize tour after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        initializeTour()
+      }, 500)
+
+      // Clear trigger to prevent re-triggering
+      sessionStorage.removeItem('triggerPageTour')
+    }
+
+    return () => {
+      // Cleanup tour instance on unmount
+      if (tourInstanceRef.current) {
+        tourInstanceRef.current.cancel()
+        tourInstanceRef.current = null
+      }
+    }
+  }, [])
+
+  // ✅ Initialize the Learning Catalog tour
+  const initializeTour = useCallback(() => {
+    // Check if tour already exists
+    if (tourInstanceRef.current) {
+      console.log('Tour instance already exists')
+      return
+    }
+
+    // Check if tour was completed
+    if (sessionStorage.getItem('learningCatalogTourCompleted') === 'true') {
+      console.log('Tour already completed, skipping')
+      return
+    }
+
+    console.log('🎯 Initializing Learning Catalog tour')
+    setIsTourActive(true)
+
+    // Create new tour instance
+    const tour = new Shepherd.Tour({
+      ...learningCatalogTourOptions,
+
+    })
+
+    // Create and add steps
+    const steps = createLearningCatalogSteps(tour, () => {
+      console.log('🎉 Learning Catalog tour completed')
+      setIsTourActive(false)
+    })
+
+    steps.forEach(step => {
+      tour.addStep(step)
+    })
+
+    // Store tour instance
+    tourInstanceRef.current = tour
+
+    // Handle tour completion/cancel
+    tour.on('complete', () => {
+      console.log('Tour completed')
+      setIsTourActive(false)
+      tourInstanceRef.current = null
+    })
+
+    tour.on('cancel', () => {
+      console.log('Tour cancelled')
+      setIsTourActive(false)
+      tourInstanceRef.current = null
+    })
+
+    // Start the tour
+    setTimeout(() => {
+      if (tourInstanceRef.current) {
+        tour.start()
+      }
+    }, 100)
   }, [])
 
   // ✅ Build API URL
@@ -322,6 +427,8 @@ const LearningCatalog: React.FC = () => {
 
   const handleViewDetails = (subject_id: number, standard_id: number) => {
     if (subject_id && standard_id) {
+      // Set trigger for ViewDetail tour
+      sessionStorage.setItem('triggerViewDetailTour', 'true')
       setSubjectId(subject_id)
       setStandardId(standard_id)
       setIsViewOpen(true)
@@ -385,7 +492,8 @@ const LearningCatalog: React.FC = () => {
       subject_category: 'external',
       is_external: true,
       external_url: externalCourse.url,
-      platform: externalCourse.platform
+      platform: externalCourse.platform,
+      enrollment_status: 'enrolled'
     };
 
     // Add to courses list and sort by id to show latest first
@@ -409,37 +517,39 @@ const LearningCatalog: React.FC = () => {
       {!isViewOpen ? (
         <div className="min-h-screen bg-background rounded-xl">
           <main>
-            <div className="max-w-full o px-4 sm:px-6 lg:px-8 py-8">
+            <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
               {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">
+              <div id="lc-header"  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
                     Learning Catalog
                   </h1>
-                  <p className="text-muted-foreground mt-2 text-sm">
+                  <p className="text-muted-foreground mt-1 text-sm truncate">
                     Discover and enroll in courses to advance your skills and career
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div id="lc-admin-actions" className="flex flex-wrap gap-2">
                   {sessionData &&
                     sessionData.user_profile_name &&
                     ["ADMIN", "HR"].includes(sessionData.user_profile_name.toUpperCase()) ? (
                     <>
                       <Button
                         onClick={() => handleExternalDialogOpen(true)}
-                        className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+                        className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors text-xs sm:text-sm whitespace-nowrap"
                       >
-                        <Icon name="Plus" size={16} className="mr-2" />
-                        External Course
+                        <Icon name="Plus" size={16} className="mr-1 sm:mr-2 flex-shrink-0" />
+                        <span className="hidden sm:inline">External</span>
+                        <span className="sm:hidden">Course</span>
                       </Button>
                       
                       <Button
                         onClick={() => setIsAiDialogOpen(true)}
-                        className="flex items-center gap-2 bg-[#e8f0ff] text-blue-700 hover:bg-blue-100 transition-colors"
+                        className="flex items-center gap-2 bg-[#e8f0ff] text-blue-700 hover:bg-blue-100 transition-colors text-xs sm:text-sm whitespace-nowrap"
                       >
-                        <span className="mdi mdi-creation text-xl"></span>
-                        Build with AI
+                        <span className="mdi mdi-creation text-lg sm:text-xl flex-shrink-0"></span>
+                        <span className="hidden sm:inline">Build with AI</span>
+                        <span className="sm:hidden">AI</span>
                       </Button>
 
                       <Button
@@ -447,20 +557,21 @@ const LearningCatalog: React.FC = () => {
                           setCourseToEdit(null)
                           setIsAddDialogOpen(true)
                         }}
-                        className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors"
+                        className="flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors text-xs sm:text-sm whitespace-nowrap"
                       >
-                        <Icon name="Plus" size={16} className="mr-2" />
+                        <Icon name="Plus" size={16} className="mr-1 sm:mr-2 flex-shrink-0" />
                         Create Course
                       </Button>
                     </>
                   ) : null}
 
                   <Button
+                   id="lc-filters-toggle"
                     variant="outline"
-                    className="lg:hidden"
+                    className="lg:hidden text-xs sm:text-sm"
                     onClick={() => setIsFilterDrawerOpen(true)}
                   >
-                    <Icon name="Filter" size={16} className="mr-2" />
+                    <Icon name="Filter" size={16} className="mr-1 sm:mr-2 flex-shrink-0" />
                     Filters
                   </Button>
                 </div>
@@ -469,7 +580,7 @@ const LearningCatalog: React.FC = () => {
               {/* Body */}
               <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
                 {isFilterVisible && (
-                  <div className="lg:col-span-3 hidden lg:block">
+                  <div id="lc-filter-sidebar" className="lg:col-span-3 hidden lg:block">
                     <FilterSidebar
                       filters={filters}
                       onFilterChange={handleFilterChange}
@@ -478,7 +589,7 @@ const LearningCatalog: React.FC = () => {
                   </div>
                 )}
 
-                <div className={isFilterVisible ? 'lg:col-span-6' : 'lg:col-span-9'}>
+                <div id="lc-search-toolbar" className={isFilterVisible ? 'lg:col-span-6' : 'lg:col-span-9'}>
                   <SearchToolbar
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
@@ -490,7 +601,9 @@ const LearningCatalog: React.FC = () => {
                     onClearAll={handleClearAllFilters}
                   />
 
-                  <CourseGrid
+
+ <div id="lc-course-grid">
+                   <CourseGrid
                     totalcourse={courses.length}
                     courses={filteredCourses}
                     viewMode={viewMode}
@@ -502,6 +615,7 @@ const LearningCatalog: React.FC = () => {
                     onEditCourse={handleEditCourse}
                     sessionInfo={sessionData}
                   />
+                  </div> 
                 </div>
               </div>
             </div>

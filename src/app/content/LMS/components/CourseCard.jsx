@@ -259,7 +259,7 @@ const CourseCard = ({
   }, [contentData]);
 
   const handleViewDetails = () => {
-    onViewDetails(correctSubjectId || course.subject_id, course.standard_id);
+    onViewDetails(course.subject_id || correctSubjectId, course.standard_id);
   };
 
   const handleEnroll = async () => {
@@ -469,8 +469,21 @@ const CourseCard = ({
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   };
 
+  // Check if job role should be shown based on category
+  const shouldShowJobRole = () => {
+    const category = (course.category || course.subject_category || '').toLowerCase().trim();
+    // Show job role only for "Skill" and "Task" categories
+    // Do NOT show for "Skill Library", "Knowledge Library", or other libraries
+    return category === 'skill' || category === 'task';
+  };
+
   // Get job role from course object or extract from title
   const getJobRole = () => {
+    // Only return job role if category allows it
+    if (!shouldShowJobRole()) {
+      return null;
+    }
+    
     if (course.jobrole) return course.jobrole;
     
     // Extract from title if it follows the format "CWF: JobRole - Department" or "Skill: JobRole - Department"
@@ -482,7 +495,7 @@ const CourseCard = ({
       }
     }
     
-    return 'N/A';
+    return null;
   };
 
   // ---------------- LIST VIEW ----------------
@@ -555,9 +568,11 @@ const CourseCard = ({
             <p className="text-muted-foreground text-sm mb-1 line-clamp-1">
               {course.description}
             </p>
-            <p className="text-muted-foreground text-sm mb-3 line-clamp-1">
-              {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
-            </p>
+            {(shouldShowJobRole() && (jobRoles.length > 0 || getJobRole())) && (
+              <p className="text-muted-foreground text-sm mb-3 line-clamp-1">
+                {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
+              </p>
+            )}
 
             <div className="text-sm text-muted-foreground mb-4">
               <div className="flex items-center">
@@ -573,15 +588,15 @@ const CourseCard = ({
             <div className="flex items-center justify-between p-3 rounded-lg">
               <div className="flex items-center space-x-6">
                 <div className="flex items-center text-sm">
-                  <Icon name="Clock" size={14} className="mr-1 text-muted-foreground" />
+                  <Icon name="Clock" size={16} className="mr-1.5 text-muted-foreground" />
                   <span className="font-medium">{formatTime(course.duration)}</span>
                 </div>
                 <div className="flex items-center text-sm">
-                  <Icon name="Star" size={14} className="mr-1 text-amber-500" />
+                  <Icon name="Star" size={16} className="mr-1.5 text-amber-500" />
                   <span className="font-medium">{course.rating || "4.3"}</span>
                 </div>
                 <div className="flex items-center text-sm">
-                  <Icon name="Users" size={14} className="mr-1 text-muted-foreground" />
+                  <Icon name="Users" size={16} className="mr-1.5 text-muted-foreground" />
                   <span className="font-medium">{course.userCount || "2.1K"}</span>
                 </div>
               </div>
@@ -706,22 +721,24 @@ const CourseCard = ({
         <p className="text-muted-foreground text-sm mb-1 line-clamp-2">
           <span className="font-medium mr-1">Department:</span> {course.description}
         </p>
-        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-          <span className="font-medium mr-1">Job Role:</span> {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
-        </p>
+        {(shouldShowJobRole() && (jobRoles.length > 0 || getJobRole())) && (
+          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+            <span className="font-medium mr-1">Job Role:</span> {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
+          </p>
+        )}
 
-        <div className="flex items-center justify-between mt-auto p-3 rounded-lg">
+        <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
           <div className="flex justify-between items-center w-full text-xs">
             <div className="flex items-center">
-              <Icon name="Clock" size={12} className="mr-1 text-muted-foreground" />
+              <Icon name="Clock" size={14} className="mr-1.5 text-muted-foreground" />
               <span className="font-medium">{formatTime(course.duration)}</span>
             </div>
             <div className="flex items-center">
-              <Icon name="Star" size={12} className="mr-1 text-amber-500" />
+              <Icon name="Star" size={14} className="mr-1.5 text-amber-500" />
               <span className="font-medium">{course.rating || "4.3"}</span>
             </div>
             <div className="flex items-center">
-              <Icon name="Users" size={12} className="mr-1 text-muted-foreground" />
+              <Icon name="Users" size={14} className="mr-1.5 text-muted-foreground" />
               <span className="font-medium">{course.userCount || "2.1K"}</span>
             </div>
           </div>

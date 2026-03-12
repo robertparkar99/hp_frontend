@@ -104,11 +104,11 @@ const Login: React.FC = () => {
                     className="w-2/3 mb-4"
                   />
                   <h1 className="text-2xl md:text-3xl font-bold mb-1">
-                  Scholar Clone
+                    Company Name
                   </h1>
-                  {/* <p className="text-sm md:text-lg text-center">
+                  <p className="text-sm md:text-lg text-center">
                     One line Description of The Company
-                  </p> */}
+                  </p>
                 </div>
 
                 {/* Right Panel */}

@@ -11,6 +11,7 @@ import EmployeeProfileModal from './components/EmployeeProfileModal';
 import PaginationControls from './components/PaginationControls';
 import { Button } from '../../../components/ui/button';
 import dynamic from 'next/dynamic';
+import EmployeeDirectoryTour from './components/EmployeeDirectoryTour';
   const AddUserModal = dynamic(() => import('./AddUserModal'), {
     ssr: false,
     loading: () => <p>Loading...</p>
@@ -43,9 +44,28 @@ const EmployeeDirectory = () => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [userProfiles, setUserProfiles] = useState([]);
+  const [showTour, setShowTour] = useState(false);
 
+  // Check if tour should start (only when navigated from sidebar tour)
+  useEffect(() => {
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+    console.log('[User] triggerPageTour value:', triggerTour);
 
-  // Load session data once from localStorage
+    if (triggerTour === 'employee-directory') {
+      console.log('[User] Starting page tour automatically');
+      setShowTour(true);
+      // Clean up the flag
+      sessionStorage.removeItem('triggerPageTour');
+    }
+  }, []);
+
+  // Check if first visit and show tour (disabled - now using sidebar trigger)
+  const handleTourComplete = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('employeeDirectoryTourSeen', 'true');
+    }
+    setShowTour(false);
+  }, []);
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('userData');
@@ -345,6 +365,7 @@ const EmployeeDirectory = () => {
           </div>
           {sessionData.user_profile_name !== 'Employee' && (
             <Button
+                  id="add-employee-btn"
               variant="outline"
               size="sm"
               className="justify-start"
@@ -407,8 +428,9 @@ const EmployeeDirectory = () => {
                   <span className="ml-2 text-primary">({selectedEmployees.length} selected)</span>
                 )}
               </div>
-              <div className="flex items-center space-x-2">
+              <div id="view-mode-toggle-container" className="flex items-center space-x-2">
                 <Button
+                      id="view-mode-table"
                   variant="outline"
                   size="sm"
                   onClick={() => setViewMode('table')}
@@ -459,6 +481,7 @@ const EmployeeDirectory = () => {
               <span className="ml-2 text-muted-foreground">Loading employees...</span>
             </div>
           ) : viewMode === 'table' ? (
+              <div id="employee-table-section">
             <EmployeeTable
               employees={paginatedEmployees}
               selectedEmployees={selectedEmployees}
@@ -470,8 +493,9 @@ const EmployeeDirectory = () => {
               onAssignTask={handleAssignTask}
               onEdit={handleEdit}
             />
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6">
+            <div id="employee-card-container" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6">
               {paginatedEmployees.map((employee) => (
                 <EmployeeCard
                   key={employee.id}
@@ -485,7 +509,9 @@ const EmployeeDirectory = () => {
           )}
 
           {/* Pagination moved INSIDE the grid */}
+          
           {totalPages > 1 && (
+             <div id="pagination-controls">
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
@@ -494,6 +520,7 @@ const EmployeeDirectory = () => {
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
+            </div>
           )}
     </div>
   </main>
@@ -505,6 +532,9 @@ const EmployeeDirectory = () => {
     onAssignTask={handleAssignTask}
     onEdit={handleEdit}
   />
+
+      {/* Tour Component */}
+      {showTour && <EmployeeDirectoryTour onComplete={handleTourComplete} />}
 
   {/* <QuickActionMenu /> */}
 </div>

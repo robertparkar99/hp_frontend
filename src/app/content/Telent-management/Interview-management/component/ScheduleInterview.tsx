@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect , useRef} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -307,7 +307,7 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="tour-schedule-form">
       <div>
         <h1 className="text-xl font-bold text-foreground">
           {interview ? `Reschedule Interview for ${interview.candidateName}` : "Schedule Interview"}
@@ -326,7 +326,7 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-2" id="tour-position-select">
                   <Label htmlFor="position">Position</Label>
                                   <Select onValueChange={setSelectedPosition} value={selectedPosition} disabled={!!interview}>
                     <SelectTrigger>
@@ -342,7 +342,7 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                   </Select>
                 </div>
                 
-                <div className="space-y-2">
+                <div className="space-y-2" id="tour-candidate-select">
                   <Label htmlFor="candidate">Candidate</Label>
                                   <Select disabled={!selectedPosition || !!interview} onValueChange={setSelectedCandidate} value={selectedCandidate}>
                     <SelectTrigger>
@@ -359,12 +359,13 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="tour-date-time-duration-row">
+                <div className="space-y-2" id="tour-date-picker">
                   <Label htmlFor="date">Date</Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
+                      id="date-input"
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
@@ -373,12 +374,13 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                {/* Time */}
+                <div className="space-y-2" id="tour-time-picker">
                   <Label htmlFor="time">Time</Label>
-                  <div className="relative">
+                  <div className="relative" id="time-select-container">
                     <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                       <Select onValueChange={setTime} value={time}>
-                      <SelectTrigger className="pl-10">
+                      <SelectTrigger className="pl-10" id="time-select">
                         <SelectValue placeholder="Select time" />
                       </SelectTrigger>
                       <SelectContent>
@@ -393,10 +395,11 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                {/* Duration */}
+                <div className="space-y-2" id="tour-duration-picker">
                   <Label htmlFor="duration">Duration</Label>
                                   <Select onValueChange={setDuration} value={duration}>
-                    <SelectTrigger>
+                    <SelectTrigger id="duration-select">
                       <SelectValue placeholder="Duration" />
                     </SelectTrigger>
                     <SelectContent>
@@ -409,11 +412,13 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* Location */}
+              <div className="space-y-2" id="tour-location-input">
                 <Label htmlFor="location">Location</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
+                    id="location-input"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="Conference Room A, Video Call, etc."
@@ -422,9 +427,11 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* Notes */}
+              <div className="space-y-2" id="tour-notes-input">
                 <Label htmlFor="notes">Additional Notes</Label>
                 <Textarea
+                  id="notes-textarea"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Any special instructions or requirements..."
@@ -437,7 +444,7 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
 
         {/* Interview Panel */}
         <div>
-          <Card className="widget-card">
+          <Card className="widget-card" id="tour-interview-panel">
             <CardHeader>
               <CardTitle className="flex items-center text-xl">
                 <Users className="mr-2 h-5 w-5" />
@@ -495,8 +502,8 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                 </div>
               )))}
               
-              <div className="pt-4 border-t">
-                <Button onClick={handleSchedule} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              <div className="pt-4 border-t" id="tour-schedule-button">
+                <Button onClick={handleSchedule} className="w-full bg-blue-600 hover:bg-blue-700 text-white" id="schedule-submit-button">
                   {interview ? "Reschedule Interview" : "Schedule Interview"}
                 </Button>
               </div>

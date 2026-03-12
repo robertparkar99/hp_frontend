@@ -8,10 +8,11 @@ import AlignmentWidget from "./Alignment-Standardization";
 import CombinedDashboard from "./Competency-HealthRadar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, Users, Calendar, Target, ChevronDown, TrendingDown, Minus, Filter, Briefcase } from "lucide-react";
+import { initializeTour, isTourCompleted, resetTour } from "./CompetencyDashboardTour";
 
 // UI Components (simplified versions for single file)
 const Badge = ({ className, variant, children, ...props }: any) => (
-  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${className}`} {...props}>k
+  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${className}`} {...props}>
     {children}
   </span>
 );
@@ -74,8 +75,6 @@ const SelectItem = ({ children, ...props }: any) => (
 // Navigation tabs
 const NAVIGATION_TABS = [
   { id: "balance-equity", name: "Role–Task–Skill Balance & Equity" },
-  { id: "health-completeness", name: "Competency Health & Completeness" },
-  { id: "alignment-standardization", name: "Alignment & Standardization" },
   { id: "stakeholder-lenses", name: "Stakeholder-Specific Lenses" },
 ];
 
@@ -355,7 +354,6 @@ const KPICard = ({ label, value, trend, trendValue, icon }: any) => {
 const DashboardHeader = () => {
   return (
     <div className="space-y-6 animate-slide-up">
-
       {/* KPI Strip */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
@@ -676,12 +674,31 @@ const DrillDownPanel = ({ selectedRole }: any) => {
 };
 
 export default function MainDashboard() {
-  const [activeTab, setActiveTab] = useState("balance-equity"); // Changed default to "balance-equity"
+  const [activeTab, setActiveTab] = useState("balance-equity");
 
-  // This ensures the tab is always set to "balance-equity" on component mount
   useEffect(() => {
     setActiveTab("balance-equity");
   }, []);
+
+  // Initialize tour only when triggered via sidebar tour flow
+  useEffect(() => {
+    // Check if tour was triggered via sidebar tour flow
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+
+    if (triggerTour && !isTourCompleted()) {
+      // Clear the trigger flag immediately to prevent re-triggering
+      sessionStorage.removeItem('triggerPageTour');
+
+      const timer = setTimeout(() => {
+        // Pass setActiveTab as tab switcher callback
+        const tour = initializeTour((tabId: string) => {
+          setActiveTab(tabId);
+        });
+        tour.start();
+      }, 1000); // Delay to allow elements to render
+      return () => clearTimeout(timer);
+    }
+  }, [setActiveTab]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -694,14 +711,29 @@ export default function MainDashboard() {
       case "stakeholder-lenses":
         return <CompetencyDashboard />;
       default:
-        return <BalanceEquityView />; // Fallback to balance-equity
+        return <BalanceEquityView />;
     }
   };
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
+    <div className="p-6 bg-slate-50 min-h-screen" id="tour-dashboard-container">
       {/* Top KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+      {/* Tour Controls */}
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => {
+            resetTour();
+            const tour = initializeTour((tabId: string) => {
+              setActiveTab(tabId);
+            });
+            tour.start();
+          }}
+          className="text-xs text-blue-500 hover:text-blue-700 underline"
+        >
+          Restart Tour
+        </button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6" id="tour-kpi-cards">
         {KPIS.map((kpi, i) => (
           <Card key={i} className="shadow-sm border rounded-xl bg-white/90">
             <CardContent className="p-4 flex flex-col justify-between">
@@ -715,11 +747,12 @@ export default function MainDashboard() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="mb-6">
+      <div className="mb-6" id="tour-navigation-tabs">
         <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg">
           {NAVIGATION_TABS.map((tab) => (
             <button
               key={tab.id}
+              id={`tour-tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 py-2 px-3 text-xs font-medium rounded-md transition-all duration-200 ${
                 activeTab === tab.id
@@ -741,10 +774,10 @@ export default function MainDashboard() {
 
 // Role–Task–Skill Balance & Equity View
 function BalanceEquityView() {
-  const [similarityThreshold, setSimilarityThreshold] = useState(50);
+  const [similarityThreshold, setSimilarityThreshold] = useState(63);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [hoveredRole, setHoveredRole] = useState<string | null>(null);
-  const [heatmapData, setHeatmapData] = useState(HEATMAP);
+  const [heatmapData, setHeatmapData] = useState<any[]>([]);
   const [nodes, setNodes] = useState<any[]>([]);
   const [edges, setEdges] = useState<any[]>([]);
   const [scorecardData, setScorecardData] = useState<any>(null);
@@ -799,7 +832,7 @@ function BalanceEquityView() {
         .catch(err => console.error('Error fetching heatmap data:', err));
 
       // Fetch role similarity data
-      fetch(`${sessionData.url}/api/competency/role-similarity?threshold=0.5&sub_institude_id=${sessionData.subInstituteId}`, {
+      fetch(`${sessionData.url}/api/competency/role-similarity?threshold=${similarityThreshold}&sub_institute_id=${sessionData.subInstituteId}`, {
         credentials: 'include',
         headers: {
           'Authorization': `Bearer ${sessionData.token}`,
@@ -807,16 +840,31 @@ function BalanceEquityView() {
       })
         .then(res => res.json())
         .then(data => {
-          // Map nodes with positions
-          const centerX = 50;
-          const centerY = 50;
-          const radius = 35;
+          console.log('API Response:', data);
+          console.log('Nodes count:', data.nodes?.length);
+          console.log('Edges count:', data.edges?.length);
+          console.log('Sample edge:', data.edges?.[0]);
+          // Map nodes with positions in a circular layout
+          const centerX = 250;
+          const centerY = 250;
+
+          // Dynamic radius based on node count
+          const baseRadius = 100;
+          const radius = Math.max(baseRadius, data.nodes.length * 8);
           const mappedNodes = data.nodes.map((node: any, index: number) => {
             const angle = (index / data.nodes.length) * 2 * Math.PI;
-            const x = centerX + radius * Math.cos(angle);
-            const y = centerY + radius * Math.sin(angle);
-            const size = node.importance * 0.3;
-            return { ...node, x, y, size };
+            const x = node.x ?? centerX + radius * Math.cos(angle);
+            const y = node.y ?? centerY + radius * Math.sin(angle);
+            // Scale node size: importance * 10 for larger nodes
+            const size = node.importance * 8;
+            return { 
+              ...node, 
+              x, 
+              y, 
+              size, 
+              uniqueKey: `${node.id}-${index}`,
+              label: node.label || node.name || node.id
+            };
           });
           setNodes(mappedNodes);
           setEdges(data.edges);
@@ -836,26 +884,90 @@ function BalanceEquityView() {
         })
         .catch(err => console.error('Error fetching scorecard data:', err));
     }
-  }, [sessionData]);
+  }, [sessionData, similarityThreshold]);
+
+
+
+  // ID and similarity helpers with normalization
+  const toId = (val: any): string => {
+    if (val && typeof val === 'object') {
+      const candidate = val.id ?? val.nodeId ?? val.roleId ?? val.value ?? val.key;
+      return candidate !== undefined && candidate !== null ? String(candidate) : '';
+    }
+    return val !== undefined && val !== null ? String(val) : '';
+  };
+
+  // Helper function to get node ID (string) with fallback for different field names
+  const getNodeId = (node: any): string => {
+    return toId(node?.id ?? node?.roleId ?? node?.nodeId);
+  };
 
   const filteredRoles = selectedDepartment === "all"
     ? nodes
     : nodes.filter((node: any) => node.department === selectedDepartment);
 
-  const filteredConnections = edges.filter((edge: any) =>
-    edge.similarity >= similarityThreshold &&
-    filteredRoles.some((node: any) => node.id === edge.source) &&
-    filteredRoles.some((node: any) => node.id === edge.target)
-  );
+  // Helper function to get similarity percentage (0–100), handling 0–1 and string values
+  const getSimilarity = (edge: any): number => {
+    let raw: any = edge?.similarity ?? edge?.score ?? edge?.weight ?? edge?.percentage ?? 0;
+    if (typeof raw === 'string') {
+      const parsed = parseFloat(raw);
+      raw = isNaN(parsed) ? 0 : parsed;
+    }
+    // If API returns 0–1, convert to percentage; clamp to [0,100]
+    if (raw > 0 && raw <= 1) raw = raw * 100;
+    if (raw < 0) raw = 0;
+    if (raw > 100) raw = 100;
+    return Number(raw);
+  };
+
+  // Helper to get edge source/target with fallback for different field names
+  const getEdgeSource = (edge: any): string => {
+    return toId(edge?.source ?? edge?.sourceId ?? edge?.from ?? edge?.sourceNode);
+  };
+  const getEdgeTarget = (edge: any): string => {
+    return toId(edge?.target ?? edge?.targetId ?? edge?.to ?? edge?.targetNode);
+  };
+
+  const filteredConnections = edges.filter((edge: any) => {
+    const sourceId: string = getEdgeSource(edge);
+    const targetId: string = getEdgeTarget(edge);
+    const similarity = getSimilarity(edge);
+    return (
+      similarity >= similarityThreshold &&
+      filteredRoles.some((node: any) => getNodeId(node) === String(sourceId)) &&
+      filteredRoles.some((node: any) => getNodeId(node) === String(targetId))
+    );
+  });
+
+  // If no edges pass the threshold filter, show all edges between visible nodes
+  const displayConnections = filteredConnections.length > 0 ? filteredConnections : edges.filter((edge: any) => {
+    const sourceId: string = getEdgeSource(edge);
+    const targetId: string = getEdgeTarget(edge);
+    return (
+      filteredRoles.some((node: any) => getNodeId(node) === String(sourceId)) &&
+      filteredRoles.some((node: any) => getNodeId(node) === String(targetId))
+    );
+  });
+
+  console.log('Debug - Edges:', edges.length, 'Filtered connections:', filteredConnections.length, 'Display connections:', displayConnections.length);
+  console.log('Debug - similarityThreshold:', similarityThreshold);
 
   const uniqueDepartments = Array.from(new Set(nodes.map((node: any) => node.department)));
 
+  // Get department colors for legend
+  const departmentColorMap = nodes.reduce((acc: any, node: any) => {
+    if (node.department && !acc[node.department]) {
+      acc[node.department] = node.color || DEPARTMENT_COLORS[node.department] || '#64748B';
+    }
+    return acc;
+  }, {});
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left Side */}
-      <div className="lg:col-span-2 space-y-6">
+    <div className="space-y-6">
+      {/* First Row: Side by Side Layout (60-40 ratio) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
         {/* Workload Heatmap */}
-        <Card className="shadow-sm border rounded-xl">
+        <Card className="shadow-sm border rounded-xl" id="tour-workload-heatmap">
           <CardContent className="p-5">
             <h3 className="text-lg font-semibold mb-1">Workload Equity Heatmap</h3>
             <p className="text-xs text-slate-400 mb-4">Task volume vs skill requirement</p>
@@ -863,7 +975,7 @@ function BalanceEquityView() {
             <div className="space-y-3">
               {heatmapData.map((row, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-40 text-xs text-slate-600">{row.label}</div>
+                  <div className="w-40 text-xs text-slate-600 truncate" title={row.label}>{row.label}</div>
                   <div className="flex-1 bg-slate-100 h-5 rounded-full overflow-hidden relative">
                     <div className={`h-full ${row.color}`} style={{ width: `${row.value}%` }}></div>
                   </div>
@@ -873,15 +985,15 @@ function BalanceEquityView() {
               ))}
             </div>
 
-            <div className="mt-4 text-xs text-slate-400 flex justify-between">
-              <div>
-                <span className="inline-flex items-center mr-3">
+            <div className="mt-4 text-xs text-slate-400 flex flex-wrap justify-between">
+              <div className="flex flex-wrap gap-3">
+                <span className="inline-flex items-center">
                   <span className="w-3 h-3 bg-green-400 rounded mr-1"></span>Low (0–25)
                 </span>
-                <span className="inline-flex items-center mr-3">
+                <span className="inline-flex items-center">
                   <span className="w-3 h-3 bg-amber-400 rounded mr-1"></span>Medium (26–60)
                 </span>
-                <span className="inline-flex items-center mr-3">
+                <span className="inline-flex items-center">
                   <span className="w-3 h-3 bg-red-500 rounded mr-1"></span>High (61–80)
                 </span>
                 <span className="inline-flex items-center">
@@ -893,165 +1005,8 @@ function BalanceEquityView() {
           </CardContent>
         </Card>
 
-        {/* Task Risk Analysis */}
-        <Card className="shadow-sm border rounded-xl">
-          <CardContent className="p-5">
-            <h3 className="text-lg font-semibold mb-1">Task Risk Analysis</h3>
-            <p className="text-xs text-slate-400 mb-4">Task-wise coverage (bubble size = criticality)</p>
-
-            <div className="w-full h-52 bg-white border rounded-md">
-              <svg viewBox="0 0 600 220" className="w-full h-full">
-                <line x1="40" y1="200" x2="560" y2="200" stroke="#e7e7e7" />
-                <line x1="40" y1="200" x2="40" y2="20" stroke="#e7e7e7" />
-                <circle cx="120" cy="80" r="7" fill="#3b82f6" />
-                <circle cx="200" cy="100" r="6" fill="#10b981" />
-                <circle cx="280" cy="60" r="8" fill="#f59e0b" />
-                <circle cx="380" cy="120" r="7" fill="#ef4444" />
-                <circle cx="460" cy="150" r="6" fill="#8b5cf6" />
-              </svg>
-            </div>
-
-            <p className="mt-3 text-xs text-slate-500">
-              High risk, low coverage tasks require immediate attention. Bubble size indicates task criticality.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Right Side */}
-      <div className="space-y-6">
-        {/* Role Similarity Network */}
-        <Card className="shadow-sm border rounded-xl">
-          <CardContent className="p-5">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-1">Role Similarity Network</h3>
-                <p className="text-xs text-slate-400">Visualize overlaps between roles based on skill/task similarity</p>
-              </div>
-              <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                Similarity ≥ 50%
-              </div>
-            </div>
-
-            {/* Network Visualization */}
-            <div className="w-full h-64 bg-white border rounded-md relative overflow-hidden mb-4">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                {/* Draw connections */}
-                {filteredConnections.map((conn, i) => {
-                  const source = filteredRoles.find((n: any) => n.id === conn.source);
-                  const target = filteredRoles.find((n: any) => n.id === conn.target);
-                  if (!source || !target) return null;
-
-                  return (
-                    <line
-                      key={i}
-                      x1={source.x}
-                      y1={source.y}
-                      x2={target.x}
-                      y2={target.y}
-                      stroke={DEPARTMENT_COLORS[source.department] || '#64748B'}
-                      strokeWidth={(conn.similarity / 100) * 3}
-                      strokeOpacity={0.4}
-                      className="transition-all duration-200"
-                    />
-                  );
-                })}
-
-                {/* Draw nodes */}
-                {filteredRoles.map((role: any) => {
-                  return (
-                    <g
-                      key={role.id}
-                      className="cursor-pointer transition-all duration-200"
-                    >
-                      <circle
-                        cx={role.x}
-                        cy={role.y}
-                        r={role.size * 2}
-                        fill={DEPARTMENT_COLORS[role.department] || '#64748B'}
-                        stroke="#fff"
-                        strokeWidth="1"
-                        className="transition-all duration-200"
-                      />
-                      <text
-                        x={role.x}
-                        y={role.y + 0.8}
-                        textAnchor="middle"
-                        fontSize="2.5"
-                        fill="white"
-                        fontWeight="bold"
-                        className="pointer-events-none select-none"
-                      >
-                        {role.label.split(' ').map((word: string) => word[0]).join('')}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-            </div>
-
-            {/* Filters & Controls */}
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-slate-600 font-medium">Similarity Threshold</label>
-                  <span className="text-xs text-slate-500">50%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  defaultValue={50}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider"
-                />
-                <div className="text-xs text-slate-400 mt-1">
-                  Show connections with similarity ≥ 50%
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-600 font-medium mb-2 block">Department Filter</label>
-                <select
-                  value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(e.target.value)}
-                  className="w-full text-xs border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Departments</option>
-                  {uniqueDepartments.map((dept: string) => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Department Colors Legend */}
-              <div>
-                <label className="text-xs text-slate-600 font-medium mb-2 block">Department Colors</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {uniqueDepartments.map((dept: string) => (
-                    <div key={dept} className="flex items-center text-xs">
-                      <div
-                        className="w-3 h-3 rounded mr-2 flex-shrink-0"
-                        style={{ backgroundColor: DEPARTMENT_COLORS[dept] || '#64748B' }}
-                      ></div>
-                      <span className="text-slate-700 truncate">{dept}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Node size info */}
-              <div className="text-xs text-slate-500 border-t pt-3">
-                <div className="flex justify-between">
-                  <span>Node size: Role importance</span>
-                  <span>Edge thickness: Similarity strength</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Coverage Scorecards */}
-        <Card className="shadow-sm border rounded-xl">
+        <Card className="shadow-sm border rounded-xl" id="tour-task-risk-analysis">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -1064,7 +1019,7 @@ function BalanceEquityView() {
             </div>
 
             <div className="space-y-3">
-              {(scorecardData?.metrics || SCORECARD).map((item: { name?: string; title?: string; display?: string; current?: number; target?: number }, i: number) => (
+              {(scorecardData?.metrics || []).map((item: { name?: string; title?: string; display?: string; current?: number; target?: number }, i: number) => (
                 <div key={i}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-slate-700">{item.name || item.title}</span>
@@ -1072,7 +1027,10 @@ function BalanceEquityView() {
                       {item.display || `${item.current || 0}% / ${item.target || 0}%`}
                     </span>
                   </div>
-                  <Progress value={item.current && item.target ? (item.current / item.target) * 100 : 0} className="h-2" />
+                  <Progress 
+                    value={item.current && item.target ? (item.current / item.target) * 100 : 0} 
+                    className="h-2" 
+                  />
                 </div>
               ))}
             </div>
@@ -1084,6 +1042,181 @@ function BalanceEquityView() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Second Row: Role Similarity Network (Full Width) */}
+      <Card className="shadow-sm border rounded-xl" id="tour-role-similarity-network">
+        <CardContent className="p-5">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">Role Similarity Network</h3>
+              <p className="text-xs text-slate-400">Visualize overlaps between roles based on skill/task similarity</p>
+            </div>
+            <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+              Similarity ≥ {similarityThreshold}%
+            </div>
+          </div>
+
+          {/* Network Visualization - Fixed with larger circles */}
+          <div className="w-full h-[400px] bg-white border rounded-md relative overflow-hidden mb-4">
+            <svg viewBox="0 0 500 500" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+              {/* Draw connections first so they appear behind nodes */}
+              {displayConnections.map((conn, i) => {
+                const sourceId = getEdgeSource(conn);
+                const targetId = getEdgeTarget(conn);
+                const source = filteredRoles.find((n: any) => getNodeId(n) === sourceId);
+                const target = filteredRoles.find((n: any) => getNodeId(n) === targetId);
+                if (!source || !target) return null;
+
+                return (
+                  <line
+                    key={`${sourceId}-${targetId}-${i}`}
+                    x1={source.x}
+                    y1={source.y}
+                    x2={target.x}
+                    y2={target.y}
+                    stroke={source.color || DEPARTMENT_COLORS[source.department] || '#64748B'}
+                    strokeWidth={Math.max(1.5, (getSimilarity(conn) / 100) * 6)}
+                    strokeOpacity={0.5}
+                    className="transition-all duration-200"
+                  />
+                );
+              })}
+
+              {/* Draw nodes with larger circles */}
+              {filteredRoles.map((role: any) => {
+                const isHovered = hoveredRole === role.id;
+                
+                return (
+                  <g
+                    key={role.uniqueKey || role.id}
+                    className="cursor-pointer transition-all duration-200"
+                    onMouseEnter={() => setHoveredRole(role.id)}
+                    onMouseLeave={() => setHoveredRole(null)}
+                  >
+                    {/* Glow effect on hover */}
+                    {isHovered && (
+                      <circle
+                        cx={role.x}
+                        cy={role.y}
+                        r={role.size * 1.2}
+                        fill="none"
+                        stroke={role.color || DEPARTMENT_COLORS[role.department] || '#64748B'}
+                        strokeWidth="3"
+                        strokeOpacity="0.3"
+                      />
+                    )}
+                    
+                    {/* Main circle - LARGER SIZE */}
+                    <circle
+                      cx={role.x}
+                      cy={role.y}
+                      r={role.size} // Size is already multiplied by 12 in the node mapping
+                      fill={role.color || DEPARTMENT_COLORS[role.department] || '#64748B'}
+                      stroke="#fff"
+                      strokeWidth="2"
+                      className="transition-all duration-200"
+                      style={{
+                        filter: isHovered ? 'drop-shadow(0 0 6px rgba(0,0,0,0.3))' : 'none',
+                        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+                        transformOrigin: `${role.x}px ${role.y}px`
+                      }}
+                    />
+                    
+                    {/* Role initials - LARGER FONT */}
+                    <text
+                      x={role.x}
+                      y={role.y + 2}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={role.size * 0.6}
+                      fill="white"
+                      fontWeight="bold"
+                      className="pointer-events-none select-none"
+                    >
+                      {role.label.split(' ').map((word: string) => word[0]).join('').substring(0, 3)}
+                    </text>
+                    
+                    {/* Role label on hover */}
+                    {isHovered && (
+                      <text
+                        x={role.x}
+                        y={role.y - role.size - 5}
+                        textAnchor="middle"
+                        fontSize="6"
+                        fill="#1e293b"
+                        fontWeight="bold"
+                        className="pointer-events-none select-none bg-white bg-opacity-75 px-1 py-0.5 rounded"
+                      >
+                        {role.label}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+
+          {/* Filters & Controls */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs text-slate-600 font-medium">Similarity Threshold</label>
+                <span className="text-xs text-slate-500">{similarityThreshold}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={similarityThreshold}
+                onChange={(e) => setSimilarityThreshold(Number(e.target.value))}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="text-xs text-slate-400 mt-1">
+                Show connections with similarity ≥ {similarityThreshold}%
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-600 font-medium mb-2 block">Department Filter</label>
+              <select
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+                className="w-full text-xs border border-slate-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Departments</option>
+                {uniqueDepartments.map((dept: string) => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Color Legend */}
+            <div>
+              <label className="text-xs text-slate-600 font-medium mb-2 block">Role Colors</label>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(departmentColorMap).slice(0, 6).map(([dept, color]: [string, any]) => (
+                  <div key={dept} className="flex items-center text-xs">
+                    <div
+                      className="w-3 h-3 rounded-full mr-1 flex-shrink-0"
+                      style={{ backgroundColor: color }}
+                    ></div>
+                    <span className="text-slate-700 truncate capitalize">{dept}</span>
+                  </div>
+                ))}
+                {Object.keys(departmentColorMap).length > 6 && (
+                  <span className="text-xs text-slate-400">+{Object.keys(departmentColorMap).length - 6} more</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Node size and edge thickness info */}
+          <div className="mt-4 text-xs text-slate-500 border-t pt-3 flex justify-between">
+            <span>⚪ Node size: Role importance (larger = more critical)</span>
+            <span>📊 Edge thickness: Similarity strength (thicker = more overlap)</span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

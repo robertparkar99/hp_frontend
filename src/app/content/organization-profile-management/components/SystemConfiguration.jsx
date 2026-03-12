@@ -741,9 +741,9 @@ const SystemConfiguration = () => {
       {/* Add Form */}
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white shadow border border-gray-200 p-6 rounded-lg mb-10"
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white shadow border border-gray-200 p-6 rounded-lg mb-10" id="compliance-form"
       >
-        <div>
+        <div id="compliance-name">
           <label className="block text-sm font-medium text-gray-700 mb-1">Name{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <input
@@ -755,7 +755,7 @@ const SystemConfiguration = () => {
           />
         </div>
 
-        <div className="md:col-span-2">
+        <div className="md:col-span-2" id="compliance-description">
           <label className="block text-sm font-medium text-gray-700 mb-1">Description{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <textarea
@@ -766,7 +766,7 @@ const SystemConfiguration = () => {
           />
         </div>
 
-        <div>
+        <div id="compliance-department">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Department{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
@@ -788,7 +788,7 @@ const SystemConfiguration = () => {
             </SelectContent>
           </Select>
         </div>
-        <div>
+        <div id="compliance-assignee">
           <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <Select
@@ -809,7 +809,7 @@ const SystemConfiguration = () => {
           </Select>
         </div>
 
-        <div>
+        <div id="compliance-due-date">
           <label className="block text-sm font-medium text-gray-700 mb-1">Due Date{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <input
@@ -821,7 +821,7 @@ const SystemConfiguration = () => {
           />
         </div>
 
-        <div>
+        <div id="compliance-frequency">
           <label className="block text-sm font-medium text-gray-700 mb-1">Frequency{" "}
             <span className="mdi mdi-asterisk text-[10px] text-danger"></span></label>
           <Select
@@ -860,7 +860,7 @@ const SystemConfiguration = () => {
           </div>
         )}
 
-        <div>
+        <div id="compliance-attachment">
           <label className="block text-sm font-medium text-gray-700 mb-1">Attachment</label>
           <label className="flex items-center px-3 py-2 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-50 transition">
             <input type="file" className="hidden" onChange={handleFileChange} />
@@ -868,7 +868,7 @@ const SystemConfiguration = () => {
           </label>
         </div>
 
-        <div className="col-span-1 md:col-span-3 flex justify-center">
+        <div className="col-span-1 md:col-span-3 flex justify-center" id="compliance-submit-btn">
           <button
             type="submit"
             className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
@@ -879,12 +879,12 @@ const SystemConfiguration = () => {
       </form>
 
       {/* Data Table */}
-      <div className="mt-2 w-full overflow-hidden">
+      <div className="mt-2 w-full overflow-hidden" id="compliance-data-table">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 py-4 gap-4 w-full">
           <div className="flex items-center gap-4 w-full sm:w-auto">
             {/* Pagination controls if needed */}
           </div>
-          <div className="flex items-center gap-2 flex-nowrap flex-shrink-0">
+          <div className="flex items-center gap-2 flex-nowrap flex-shrink-0" id="compliance-export-buttons">
             <PrintButton
               data={printData}
               title="compliance Reports"

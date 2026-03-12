@@ -6,8 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StatusBadge from '../../AgentDashboard/Component/StatusBadge';
-import { ArrowLeft, Settings, Play, Pause } from 'lucide-react';
-import { KnowledgeToolForm, EmailToolForm, VisualizationToolForm, WebSearchToolForm, SQLExecutionToolForm, FileToolForm } from './ToolForms';
+import { ArrowLeft, Settings, Play, Pause, Zap } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const KnowledgeToolForm = dynamic(() => import('./ToolForms').then(mod => mod.KnowledgeToolForm));
+const EmailToolForm = dynamic(() => import('./ToolForms').then(mod => mod.EmailToolForm));
+const VisualizationToolForm = dynamic(() => import('./ToolForms').then(mod => mod.VisualizationToolForm));
+const WebSearchToolForm = dynamic(() => import('./ToolForms').then(mod => mod.WebSearchToolForm));
+const SQLExecutionToolForm = dynamic(() => import('./ToolForms').then(mod => mod.SQLExecutionToolForm));
+const FileToolForm = dynamic(() => import('./ToolForms').then(mod => mod.FileToolForm));
+// const N8nToolForm = dynamic(() => import('./ToolForms').then(mod => mod.N8nToolForm));
 // Agent Detail Component
 export default function AgentDetail() {
   const searchParams = useSearchParams();
@@ -41,6 +49,12 @@ export default function AgentDetail() {
   const agentRuns = runs.filter((r) => r.agent_id === id);
 
   const startAgentRun = async (agentId: string) => {
+    // Check if n8n tool is present - if so, don't allow activation
+    // if (agentTools.includes('n8n')) {
+    //   alert('Cannot activate agent with n8n tool. Please configure n8n workflow first.');
+    //   return;
+    // }
+
     try {
       const response = await fetch(`https://pariharajit6348-agenticai.hf.space/agents/${agentId}/run`, {
         method: 'POST',
@@ -59,8 +73,33 @@ export default function AgentDetail() {
       alert("Error starting agent run");
       console.error('Error starting agent run:', error);
     }
-    fetchRuns()
-      ;
+    fetchRuns();
+  };
+
+  // Function to update agent status
+  const updateAgentStatus = async (agentId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`https://pariharajit6348-agenticai.hf.space/agents/${agentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Agent status updated:', data);
+        // Update local agent state
+        setAgent((prev: any) => prev ? { ...prev, status: newStatus } : null);
+        alert(`Agent ${newStatus === 'active' ? 'activated' : 'paused'} successfully`);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to update agent status:', errorData);
+        alert(`Failed to update agent status: ${errorData.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error updating agent status:', error);
+      alert('Error updating agent status');
+    }
   };
   const fetchAgentTools = async () => {
     if (!id) return;
@@ -178,16 +217,25 @@ export default function AgentDetail() {
             <Settings className="h-4 w-4" />
           </Button>
           {agent.status === 'active' ? (
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={() => updateAgentStatus(agent.id, 'draft')}>
               <Pause className="h-4 w-4" />
               Pause
             </Button>
+          ) : agentTools.includes('n8n') ? (
+            <Button className="gap-2" onClick={() => alert('Cannot activate agent with n8n tool. Please configure n8n workflow first.')}>
+              <Play className="h-4 w-4" />
+              Activate
+            </Button>
           ) : (
-              <Button className="gap-2" onClick={() => startAgentRun(agent.id)}>
+                <Button className="gap-2" onClick={() => updateAgentStatus(agent.id, 'active')}>
               <Play className="h-4 w-4" />
               Activate
             </Button>
           )}
+          <Button variant="outline" className="gap-2" onClick={() => startAgentRun(agent.id)}>
+            <Zap className="h-4 w-4" />
+            Run
+          </Button>
         </div>
       </div>
 

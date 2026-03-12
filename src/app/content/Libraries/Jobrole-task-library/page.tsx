@@ -46,6 +46,8 @@ import DataTable, {
 } from "react-data-table-component";
 import ConfigurationModal from "../../Jobrole-library/ConfigurationModal";
 import Loader from "@/components/utils/loading";
+import ShepherdTour from "../../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "@/lib/tourSteps";
 
 type JobRoleTask = {
   id: number;
@@ -57,8 +59,18 @@ type JobRoleTask = {
   task_type: string;
   sub_institute_id: number;
 };
+interface CriticalWorkFunctionGridProps {
+  showDetailTour?: {
+    show: boolean;
+    onComplete: () => void;
+  };
+}
 
-const CriticalWorkFunctionGrid = () => {
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
+
+const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ showDetailTour }: PageProps) => {
   const [data, setData] = useState<JobRoleTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [editData, setEditData] = useState<any>({});
@@ -96,7 +108,8 @@ const CriticalWorkFunctionGrid = () => {
 
   // Content section ref
   const contentRef = useRef<HTMLElement>(null);
-
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
   // ✅ View toggle state
   const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
 
@@ -186,6 +199,14 @@ const CriticalWorkFunctionGrid = () => {
     if (!sessionData.url || !sessionData.subInstituteId) return;
     fetchData();
   }, [sessionData]);
+
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -401,10 +422,22 @@ const CriticalWorkFunctionGrid = () => {
 
   // Filtered grid data
   const filteredData = data.filter((item) => {
+    // Filter by dropdown selections
     if (selectedDept && item.track !== selectedDept) return false;
     if (selectedJobrole && item.jobrole !== selectedJobrole) return false;
     if (selectedFunction && item.critical_work_function !== selectedFunction)
       return false;
+    // Filter by search term
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch =
+        (item.task?.toLowerCase().includes(searchLower)) ||
+        (item.jobrole?.toLowerCase().includes(searchLower)) ||
+        (item.track?.toLowerCase().includes(searchLower)) ||
+        (item.critical_work_function?.toLowerCase().includes(searchLower)) ||
+        (item.task_type?.toLowerCase().includes(searchLower));
+      if (!matchesSearch) return false;
+    }
     return true;
   });
 
@@ -559,16 +592,31 @@ const CriticalWorkFunctionGrid = () => {
     },
   };
 
-  // ✅ Apply column filters
-  const filteredTableData = filteredData.filter((row) =>
-    Object.entries(columnFilters).every(([key, val]) =>
+  // ✅ Apply column filters and search term
+  const filteredTableData = filteredData.filter((row) => {
+    // Apply column filters
+    const columnMatch = Object.entries(columnFilters).every(([key, val]) =>
       val
         ? String(row[key as keyof JobRoleTask] || "")
             .toLowerCase()
             .includes(val.toLowerCase())
         : true
-    )
-  );
+    );
+    if (!columnMatch) return false;
+
+    // Apply search term filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch =
+        (row.task?.toLowerCase().includes(searchLower)) ||
+        (row.jobrole?.toLowerCase().includes(searchLower)) ||
+        (row.track?.toLowerCase().includes(searchLower)) ||
+        (row.critical_work_function?.toLowerCase().includes(searchLower)) ||
+        (row.task_type?.toLowerCase().includes(searchLower));
+      if (!matchesSearch) return false;
+    }
+    return true;
+  });
 
   return (
     <>
@@ -726,7 +774,7 @@ const CriticalWorkFunctionGrid = () => {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -10 }}
                       transition={{ duration: 0.2 }}
-                      className="flex gap-1"
+                      className="flex gap-1" 
                     >
                       {/* Generate with AI */}
                       <button
@@ -968,6 +1016,19 @@ const CriticalWorkFunctionGrid = () => {
           isOpen={isConfigModalOpen}
           onClose={() => setIsConfigModalOpen(false)}
           jsonObject={configJsonObject}
+        />
+      )}
+
+      {/* Detail Tour */}
+      {showTour && (
+        <ShepherdTour
+          steps={generateDetailTourSteps('Jobrole Task')}
+          onComplete={() => {
+            setShowTour(false);
+            if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+              showDetailTour.onComplete();
+            }
+          }}
         />
       )}
     </>

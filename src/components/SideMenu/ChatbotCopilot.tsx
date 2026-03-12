@@ -1,9 +1,51 @@
+// 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { submitFeedback } from "@/lib1/feedback-service";
 import { v4 as uuidv4 } from 'uuid';
+
+// Question suggestions for different LMS modules (based on URL path)
+const moduleSuggestions: Record<string, string[]> = {
+  'course': [
+    "How do I create a new course?",
+    "What are the best practices for course design?",
+    "How can I track Employee progress?",
+    "How do I add assessments to a course?"
+  ],
+  'assessment': [
+    "How do I create an assessment?",
+    "What question types are available?",
+    "How do I set assessment deadlines?",
+    "How can I view assessment results?"
+  ],
+  'learning': [
+    "How do I enroll in a course?",
+    "What courses are available for me?",
+    "How do I track my learning progress?",
+    "How do I complete a course?"
+  ],
+  'question-bank': [
+    "How do I add questions to the bank?",
+    "How do I organize questions by category?",
+    "Can I import questions from other sources?",
+    "How do I edit existing questions?"
+  ]
+};
+
+// Get module key from current URL path
+const getModuleFromURL = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const path = window.location.pathname.toLowerCase();
+  
+  if (path.includes('/lms') || path.includes('/course') || path.includes('courses')) return 'course';
+  if (path.includes('/assessment') || path.includes('/quiz')) return 'assessment';
+  if (path.includes('/my-learning') || path.includes('/mylearning')) return 'learning';
+  if (path.includes('/question')) return 'question-bank';
+  
+  return null;
+};
 
 
 interface Message {
@@ -67,6 +109,10 @@ export default function ChatbotCopilot({
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
   const recognitionRef = useRef<any>(null);
   const originalInputRef = useRef<string>(''); // specific for keeping track of text before voice started
+
+  // State for contextual suggestions (LMS)
+  const [contextualSuggestions, setContextualSuggestions] = useState<string[]>([]);
+  const [currentModule, setCurrentModule] = useState<string | null>(null);
 
   // Voice to text logic
   const toggleListening = () => {
@@ -156,10 +202,20 @@ export default function ChatbotCopilot({
 
   useEffect(() => {
     const handleOpenChatbot = (e: any) => {
-      // Calculate origin relative to the panel (400px wide, aligned right)
-      // Panel starts at window.innerWidth - 400
+      // Calculate origin relative to the panel (responsive width, aligned right)
       if (e.detail && typeof window !== 'undefined') {
-        const panelWidth = 400;
+        // Get the panel width based on screen size
+        let panelWidth = 420; // default xl width
+        if (window.innerWidth < 640) {
+          panelWidth = 280;
+        } else if (window.innerWidth < 768) {
+          panelWidth = 320;
+        } else if (window.innerWidth < 1024) {
+          panelWidth = 360;
+        } else if (window.innerWidth < 1280) {
+          panelWidth = 400;
+        }
+        
         const panelTop = 64;
         // fixed: right-0 aligns to clientWidth (excluding scrollbar), not innerWidth
         const panelLeft = document.documentElement.clientWidth - panelWidth;
@@ -185,6 +241,18 @@ export default function ChatbotCopilot({
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   }, [input]);
+
+  // Detect module and set contextual suggestions when chatbot opens
+  useEffect(() => {
+    const moduleKey = getModuleFromURL();
+    if (moduleKey && moduleSuggestions[moduleKey]) {
+      setCurrentModule(moduleKey);
+      setContextualSuggestions(moduleSuggestions[moduleKey]);
+    } else {
+      setCurrentModule(null);
+      setContextualSuggestions([]);
+    }
+  }, []);
 
   const positionClasses = {
     'bottom-right': 'bottom-6 right-6',
@@ -215,6 +283,27 @@ export default function ChatbotCopilot({
     setIsLoading(true);
     setPendingFormMessageId(messageId);
     console.log('Form Data:', formData);
+
+    // Get user session data from localStorage
+    let userId: string | null = null;
+    let subInstituteId: string | null = null;
+    
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionData = localStorage.getItem('userData');
+        console.log('[ChatbotCopilot] handleFormSubmit - sessionData from localStorage:', sessionData);
+        if (sessionData) {
+          const parsed = JSON.parse(sessionData);
+          console.log('[ChatbotCopilot] handleFormSubmit - parsed session data:', parsed);
+          userId = parsed.user_id || null;
+          subInstituteId = parsed.sub_institute_id || null;
+          console.log('[ChatbotCopilot] handleFormSubmit - userId:', userId, 'subInstituteId:', subInstituteId);
+        }
+      } catch (e) {
+        console.error('[ChatbotCopilot] handleFormSubmit - Error reading session data from localStorage:', e);
+      }
+    }
+
     try {
       const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -228,7 +317,9 @@ export default function ChatbotCopilot({
             role: m.type === 'user' ? 'user' : 'assistant',
             content: m.content
           })),
-          formData // Pass form data to backend
+          formData, // Pass form data to backend
+          userId,
+          subInstituteId
         })
       });
 
@@ -299,6 +390,26 @@ export default function ChatbotCopilot({
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    // Get user session data from localStorage
+    let userId: string | null = null;
+    let subInstituteId: string | null = null;
+    
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionData = localStorage.getItem('userData');
+        console.log('[ChatbotCopilot] handleSend - sessionData from localStorage:', sessionData);
+        if (sessionData) {
+          const parsed = JSON.parse(sessionData);
+          console.log('[ChatbotCopilot] handleSend - parsed session data:', parsed);
+          userId = parsed.user_id || null;
+          subInstituteId = parsed.sub_institute_id || null;
+          console.log('[ChatbotCopilot] handleSend - userId:', userId, 'subInstituteId:', subInstituteId);
+        }
+      } catch (e) {
+        console.error('[ChatbotCopilot] handleSend - Error reading session data from localStorage:', e);
+      }
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -311,6 +422,7 @@ export default function ChatbotCopilot({
     setIsLoading(true);
 
     try {
+      console.log('[ChatbotCopilot] Sending request with userId:', userId, 'subInstituteId:', subInstituteId);
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -322,7 +434,9 @@ export default function ChatbotCopilot({
           conversationHistory: messages.slice(-6).map(m => ({
             role: m.type === 'user' ? 'user' : 'assistant',
             content: m.content
-          }))
+          })),
+          userId,
+          subInstituteId
         })
       });
 
@@ -510,7 +624,7 @@ export default function ChatbotCopilot({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/10 z-40"
+            className="fixed inset-0 bg-black/5 sm:bg-black/10 z-40"
             onClick={() => setIsOpen(false)}
           />
 
@@ -560,7 +674,9 @@ export default function ChatbotCopilot({
               delayChildren: 0.2
             }}
             className="fixed right-0 flex flex-col bg-white shadow-2xl border-l border-gray-200
-                 top-[64px] h-[calc(100vh-64px)] w-[400px] overflow-hidden"
+                 top-16 sm:top-16 md:top-16 lg:top-16 xl:top-16 h-[calc(100vh-4rem)] 
+                 w-[280px] sm:w-[320px] md:w-[360px] lg:w-[400px] xl:w-[420px] max-w-[420px]
+                 mx-2 sm:mx-0 overflow-hidden"
           >
             {/* Header - Wrap in motion for stagger */}
             <motion.div
@@ -571,14 +687,14 @@ export default function ChatbotCopilot({
               transition={{ duration: 0.3 }}
               className="flex-shrink-0" // Ensure header doesn't shrink
             >
-              <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white rounded-t-3xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                    <Bot className="w-6 h-6 text-blue-600" />
+              <div className="flex items-center justify-between px-3 sm:px-4 md:px-5 py-3 sm:py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white rounded-t-3xl">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center">
+                    <Bot className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg leading-tight">Conversational AI</h3>
-                    <p className="text-xs text-white/90">Hello! I am Conversational AI, your assistant to help you with...</p>
+                    <h3 className="font-bold text-sm sm:text-base md:text-lg leading-tight">Conversational AI</h3>
+                    {/* <p className="text-[10px] sm:text-xs text-white/90 hidden sm:block">Hello! I am Conversational AI, your assistant to help you with...</p> */}
                   </div>
                 </div>
 
@@ -603,24 +719,45 @@ export default function ChatbotCopilot({
 
             {/* Messages */}
             <motion.div
-              className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50/50"
+              className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50/50 flex flex-col"
               variants={{
                 closed: { opacity: 0 },
                 open: { opacity: 1, transition: { staggerChildren: 0.05 } }
               }}
+              style={{ flexDirection: 'column' }}
             >
-              {/* Logo/Branding Section */}
+              {/* Logo/Branding Section - Welcome Message */}
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg flex items-center justify-center">
                   <Bot className="w-12 h-12 text-white" />
                 </div>
                 <div className="text-center">
                   <h4 className="font-semibold text-gray-800">Conversational AI</h4>
-                  <p className="text-sm text-gray-500 mt-1 max-w-[280px]">
+                  {/* <p className="text-sm text-gray-500 mt-1 max-w-[200px] sm:max-w-[240px] md:max-w-[260px]">
                     Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?
-                  </p>
+                  </p> */}
                 </div>
               </div>
+
+              {/* Contextual Question Suggestions - Below Welcome Message */}
+              {contextualSuggestions.length > 0 && messages.length <= 1 && (
+                <div className="flex flex-col items-center justify-center py-4 space-y-3 px-4">
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                    Suggested questions for {currentModule}
+                  </p>
+                  <div className="flex flex-col gap-2 w-full max-w-[220px] sm:max-w-[260px] md:max-w-[300px]">
+                    {contextualSuggestions.map((question, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setInput(question)}
+                        className="px-4 py-3 text-sm text-left bg-white border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 hover:shadow-md transition-all duration-200 text-gray-700"
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {messages.map((message) => (
                 <div
@@ -644,13 +781,13 @@ export default function ChatbotCopilot({
 
                   {/* Message Content */}
                   <div
-                    className={`flex flex-col gap-1 max-w-[85%] ${message.type === "user"
+                    className={`flex flex-col gap-1 max-w-[75%] sm:max-w-[80%] md:max-w-[85%] ${message.type === "user"
                       ? "items-end"
                       : "items-start"
                       }`}
                   >
                     <div
-                      className={`px-4 py-3 text-sm shadow-sm ${message.type === "user"
+                      className={`px-4 py-3 text-sm shadow-sm whitespace-pre-wrap ${message.type === "user"
                         ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
                         : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm"
                         }`}
@@ -864,7 +1001,7 @@ export default function ChatbotCopilot({
             </button>
           </div> */}
 
-              <div className="relative flex flex-col gap-2 bg-gray-50 border border-gray-200 rounded-2xl p-3 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all shadow-sm">
+              <div className="relative flex flex-col gap-2 bg-gray-50 border border-gray-200 rounded-2xl p-2 sm:p-3 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all shadow-sm">
                 <textarea
                   ref={textareaRef}
                   value={input}

@@ -54,4 +54,3 @@ export default function Loader({ isRouteLoading = false }: LoaderProps) {
     </div>
   );
 }
-

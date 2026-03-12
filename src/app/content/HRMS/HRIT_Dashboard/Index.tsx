@@ -66,10 +66,14 @@ const Index = () => {
 
             <main className="container mx-auto px-6 py-8">
                 {/* KPI Overview Section */}
-                <section className="mb-8">
+                <section id="overview-section" className="mb-8">
                     <h2 className="text-2xl font-bold text-foreground mb-4">Overview</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        
+                        
                         <KPICard
+id="kpi-present-today"
+
                             title="Present Today"
                             value={kpiData.present_today}
                             change={3.2}
@@ -79,6 +83,7 @@ const Index = () => {
                         />
 
                         <KPICard
+                            id="kpi-leave-utilization"
                             title="Leave Utilization"
                             value={kpiData.leave_utilization}
                             change={-2.1}
@@ -110,6 +115,7 @@ const Index = () => {
               trend="up"
             /> */}
                         <KPICard
+                            id="kpi-active-employees"
                             title="Active Employees"
                             value={kpiData?.active_employees?.toLocaleString() || '0'}
                             change={2.8}
@@ -121,13 +127,13 @@ const Index = () => {
                 </section>
 
                 {/* Attendance Module */}
-                <section className="mb-8">
+                <section id="attendance-section" className="mb-8">
                     <h2 className="text-2xl font-bold text-foreground mb-4">Attendance</h2>
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                        <div className="lg:col-span-3">
+                        <div id="attendance-chart" className="lg:col-span-3">
                             <AttendanceChart />
                         </div>
-                        <div className="lg:col-span-2">
+                        <div id="leave-chart" className="lg:col-span-2">
                             <LeaveChart />
                         </div>
                     </div>
@@ -164,13 +170,13 @@ const Index = () => {
                 </section> */}
 
                 {/* Leave & Payroll Module */}
-                <section className="mb-8">
+                <section id="payroll-section"  className="mb-8">
                     {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"> */}
                     <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
                         {/* <div className="lg:col-span-2">
                             <PayrollChart />
                         </div> */}
-                        <div className="lg:col-span-1">
+                        <div id="insights-card"  className="lg:col-span-1">
                             <InsightsCard />
                         </div>
                     </div>

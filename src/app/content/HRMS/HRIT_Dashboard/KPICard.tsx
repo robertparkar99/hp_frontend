@@ -3,6 +3,7 @@ import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface KPICardProps {
+  id?: string;
   title: string;
   value: string | number;
   change?: number;
@@ -13,6 +14,7 @@ interface KPICardProps {
 }
 
 export const KPICard = ({ 
+  id,
   title, 
   value, 
   change, 
@@ -34,7 +36,7 @@ export const KPICard = ({
   };
 
   return (
-    <Card className={cn("transition-all duration-300 hover:shadow-lg", className)}>
+    <Card id={id}  className={cn("transition-all duration-300 hover:shadow-lg", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <Icon className={cn("h-5 w-5", iconColor)} />

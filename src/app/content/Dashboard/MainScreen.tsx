@@ -4,7 +4,7 @@ import * as React from "react";
 import { useEffect, useState, Suspense, lazy } from "react";
 import StatGrid from "./StatGrid";
 import { useRouter } from "next/navigation";
-import Loading from "../../../components/utils/loading";
+import Loader from "@/components/utils/loading";
 
 type MenuDetail = {
   menu: string;
@@ -84,9 +84,7 @@ const MainScreen: React.FC = () => {
     return (
       <Suspense
         fallback={
-          <div className="flex justify-center items-center h-screen">
-            Loading...
-          </div>
+          <Loader />
         }
       >
         <DynamicComponent />
@@ -110,8 +108,8 @@ const MainScreen: React.FC = () => {
   // ✅ Dynamic Content View
   return !isLoading ? (
     <main
-      className={`flex overflow-scroll flex-col w-full pr-2 pl-2 bg-white rounded-2xl shadow-sm pb-6 h-[87vh] hide-scroll transition-all duration-300 ${
-        isSidebarOpen ? "md:ml-64 lg:ml-72" : "ml-0"
+      className={`flex overflow-scroll flex-col w-auto pr-2 pl-2 bg-white rounded-2xl shadow-sm pb-6 h-[87vh] hide-scroll transition-all duration-300 ${
+        isSidebarOpen ? "ml-72" : "ml-20"
       }`}
     >
       <div className="self-center mt-4 w-full max-w-[1360px] max-md:max-w-full">

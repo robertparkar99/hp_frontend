@@ -3,6 +3,7 @@ import EditDialog from "./editDialouge";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
+import ConfigurationModelKnowledge from "./ConfigurationModelKnowledge";
 
 interface ViewKnowledgeProps {
   knowledgeId: number;
@@ -49,6 +50,20 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
     edit: false,
   });
 
+  // State for Configuration Modal
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [configJsonObject, setConfigJsonObject] = useState<any>(null);
+
+  const [isCourseBuilding, setIsCourseBuilding] = useState(false);
+const [sessionData, setSessionData] = useState({
+    url: '',
+    token: '',
+    subInstituteId: '',
+    departmentId: '',
+    orgType: '',
+    userId: '',
+  });
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = localStorage.getItem("userData");
@@ -58,6 +73,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
           token,
           org_type,
           sub_institute_id,
+          department_id,
           user_id,
           user_profile_name,
           syear,
@@ -69,6 +85,14 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
         setessionUserID(user_id);
         setessionUserProfile(user_profile_name);
         setessionSyear(syear);
+        setSessionData({
+          url: APP_URL || '',
+          token: token || '',
+          subInstituteId: sub_institute_id || '',
+          departmentId: department_id || '',
+          orgType: org_type || '',
+          userId: user_id || '',
+        });
       }
     }
   }, []);
@@ -79,7 +103,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
         setLoading(true);
         try {
           const res = await fetch(
-            `${sessionUrl}/table_data?filters[sub_institute_id]=3&table=s_user_knowledge`,
+            `${sessionUrl}/table_data?filters[sub_institute_id]=${sessionSubInstituteId || 3}&table=s_user_knowledge`,
             {
               headers: {
                 Authorization: `Bearer ${sessionToken}`,
@@ -97,7 +121,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
       };
       fetchData();
     }
-  }, [sessionUrl, sessionToken, knowledgeId]);
+  }, [sessionUrl, sessionToken, knowledgeId, sessionSubInstituteId]);
 
   // ✅ Auto-select first KAAB tab when in kaab-only mode
   useEffect(() => {
@@ -287,19 +311,49 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
   }
 
   const handleCousreCreation = async () => {
-    alert(
-      "Course Creation in progress, Please Wait it will take sometime ! If failed then please try after some seconds"
-    );
-    try {
-      const res = await fetch(
-        `${sessionUrl}/AICourseGeneration?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&user_id=${sessionUserID}&user_profile_name=${sessionUserProfile}&syear=${sessionSyear}&industry=${sessionOrgType}&department=${viewData?.department}&skill_category=${viewData?.category}&skill_sub_category=${viewData?.sub_category}&skill_micro_category=${viewData?.micro_category}&skill_name=${viewData?.title}&skill_description=${viewData?.description}`
-      );
-
-      const data = await res.json();
-      alert(data.message);
-    } catch (error) {
-      console.error("Error deleting job role:", error);
-      alert("Error deleting job role");
+    // Open ConfigurationModelKnowledge modal with knowledge data
+    if (viewData) {
+      // Get department_id from jobroleData if available, otherwise use viewData or session
+      let departmentId = viewData.department_id;
+      
+      // If no department_id in viewData, try to get from jobroleData
+      if (!departmentId && jobroleData && jobroleData.length > 0) {
+        // Try to get department_id from jobrole if available
+        departmentId = jobroleData[0].department_id || jobroleData[0].standard_id || sessionData.departmentId;
+      }
+      
+      // Fallback to session departmentId
+      if (!departmentId) {
+        departmentId = sessionData.departmentId || sessionSubInstituteId;
+      }
+      
+      const jobrole = jobroleData && jobroleData.length > 0 ? jobroleData[0].jobrole : '';
+      
+      console.log('📝 handleCousreCreation - Knowledge Data:', {
+        knowledgeId: viewData.id,
+        selected_knowledge: viewData.title,
+        knowledge_description: viewData.description,
+        knowledge_category: viewData.category,
+        knowledge_sub_category: viewData.sub_category,
+        jobrole: jobrole,
+        department_id: departmentId,
+        department: viewData.department,
+        sub_department: viewData.sub_department
+      });
+      
+      const jsonObject = {
+        knowledgeId: viewData.id,
+        selected_knowledge: viewData.title,
+        knowledge_description: viewData.description,
+        knowledge_category: viewData.category,
+        knowledge_sub_category: viewData.sub_category,
+        jobrole: jobrole,
+        department_id: departmentId,
+        department: viewData.department,
+        sub_department: viewData.sub_department,
+      };
+      setConfigJsonObject(jsonObject);
+      setConfigModalOpen(true);
     }
   };
 
@@ -587,14 +641,22 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                       }}
                     />
                   )}
+
+                  {/* Configuration Modal for Knowledge (KAAB) */}
+                  <ConfigurationModelKnowledge
+                    isOpen={configModalOpen}
+                    onClose={() => setConfigModalOpen(false)}
+                    jsonObject={configJsonObject}
+                  />
                 </div>
 
                 <button
                   onClick={() => handleCousreCreation()}
-                  className="flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm"
+                  disabled={isCourseBuilding}
+                  className="flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="mdi mdi-creation text-xl"></span>
-                  <span>Build Course</span>
+                  <span>{isCourseBuilding ? 'Building...' : 'Build Course'}</span>
                 </button>
               </div>
             </div>

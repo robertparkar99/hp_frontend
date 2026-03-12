@@ -182,12 +182,12 @@ const SearchBar = ({ searchQuery, onSearchChange, onToggleFilters, isMobile }) =
     );
 
   return (
-    <div className="space-y-6 mb-6">
+    <div id="tour-search-bar" className="space-y-6 mb-6">
       {/* 🔝 Search Bar Row with Toolbar in Between */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         {/* Search Input */}
         <form className="flex-1 min-w-[260px]">
-          <div className="relative">
+          <div className="relative" data-tour="search-input">
             <Search
               size={20}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"

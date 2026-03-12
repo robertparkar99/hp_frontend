@@ -36,6 +36,8 @@ import {
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/BehaviourComponent/viewDialouge";
 import Loader from "@/components/utils/loading";
+import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { generateDetailTourSteps } from "@/lib/tourSteps";
 
 interface BehaviourItem {
   id: number;
@@ -67,8 +69,11 @@ interface SessionData {
   sub_institute_id?: string;
   org_type?: string;
 }
+interface PageProps {
+  showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+}
 
-const BehaviourGrid = () => {
+const BehaviourGrid = ({ showDetailTour }: PageProps) => {
   const [skills, setSkills] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [subCategories, setSubCategories] = useState<string[]>([]);
@@ -91,6 +96,25 @@ const BehaviourGrid = () => {
 
   // Dialog state for viewing behaviour details
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
+
+  // Detail tour state
+  const [showTour, setShowTour] = useState(false);
+
+  // Detail tour handler
+  useEffect(() => {
+    (window as any).detailOnboardingHandler = (tab: string) => {
+      if (tab === 'Behaviour') {
+        setShowTour(true);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const shouldShow = typeof showDetailTour === 'object' ? showDetailTour.show : showDetailTour;
+    if (shouldShow) {
+      setShowTour(true);
+    }
+  }, [showDetailTour]);
 
 
   const handleClick = (id: number) => {
@@ -388,6 +412,18 @@ const BehaviourGrid = () => {
     },
   };
 
+  // Filter cardData by searchTerm for cards view
+  const filteredCardData = cardData.filter((item) => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      item.title?.toLowerCase().includes(search) ||
+      item.category?.toLowerCase().includes(search) ||
+      item.sub_category?.toLowerCase().includes(search) ||
+      item.proficiency_level?.toLowerCase().includes(search)
+    );
+  });
+
   const filteredData = cardData.filter(
     (row) =>
       row.title
@@ -405,8 +441,8 @@ const BehaviourGrid = () => {
     <>
       {/* 🔽 Search Bar (Conditional) */}
       {showSearch && (
-        <div className="px-4 mb-4">
-          <div className="relative max-w-md">
+        <div className="px-4 mb-4 w-full">
+          <div className="relative w-full max-w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
@@ -420,12 +456,13 @@ const BehaviourGrid = () => {
       )}
 
       {/* 🔽 Filters + Toggle + Clear Filters */}
-      <div className="flex p-4 justify-between items-center gap-1 mb-4">
-        <div className="flex items-center gap-1">
+      <div className="flex flex-col sm:flex-row p-4 justify-between items-start sm:items-center gap-3 mb-4 w-full">
+        <div className="flex items-center gap-1 w-full sm:w-auto">
           {/* Search Input */}
-          <div className="relative w-96">
+          <div className="relative w-full max-w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
+              id="search-behaviour-input"
               type="text"
               placeholder="Search behaviour, categories, or proficiency levels..."
               value={searchTerm}
@@ -435,7 +472,7 @@ const BehaviourGrid = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
 
 
           {/* Utility Icons Dropdown */}
@@ -482,7 +519,7 @@ const BehaviourGrid = () => {
           {/* Filter Button */}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Filter">
                 <Funnel className="w-5 h-5 text-gray-600" />
               </button>
             </PopoverTrigger>
@@ -506,7 +543,7 @@ const BehaviourGrid = () => {
           </Popover>
 
           {/* View Mode Toggle */}
-          <div className="flex border rounded-md overflow-hidden">
+          <div id="behaviour-view-toggle" className="flex border rounded-md overflow-hidden">
             <button
               onClick={() => setViewMode("cards")}
               className={`px-3 py-2 flex items-center justify-center ${viewMode === "cards"
@@ -534,8 +571,8 @@ const BehaviourGrid = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.2 }}
-                className="flex items-center gap-1"
-              >
+                className="flex flex-wrap items-center gap-1"
+                title="More Actions">
                 <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Add New Behavior">
                   <Plus className="w-5 h-5 text-gray-600" />
                 </button>
@@ -575,17 +612,17 @@ const BehaviourGrid = () => {
       {/* 🔽 Switch View */}
       {viewMode === "cards" ? (
         loadingCards ? (
-          <div className="flex justify-center items-center h-screen">
-            <Loader/>
+          <div className="flex justify-center items-center h-full min-h-[400px]">
+            <Loader />
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-6xl mx-auto mt-5">
-            {cardData.length === 0 ? (
+              {filteredCardData.length === 0 ? (
               <p className="text-gray-500 col-span-full text-center">
                 No data found for this filter
               </p>
             ) : (
-              cardData.map((card) => (
+                  filteredCardData.map((card) => (
                 <motion.div
                   key={card.id}
                   className="group bg-blue-100 border-2 border-blue-300 rounded-xl p-4 shadow-sm min-h-[180px] relative cursor-pointer"
@@ -645,15 +682,17 @@ const BehaviourGrid = () => {
           </div>
         )
       ) : (
-        <DataTable
-          columns={columns}
-          data={filteredData}
-          customStyles={customStyles}
-          progressPending={loadingCards}
-          highlightOnHover
-          pagination
-          dense
-        />
+          <div className="w-full overflow-x-auto">
+            <DataTable
+              columns={columns}
+              data={filteredData}
+              customStyles={customStyles}
+              progressPending={loadingCards}
+              highlightOnHover
+              pagination
+              dense
+            />
+          </div>
       )}
 
       {/* Behaviour View Dialog */}
@@ -661,11 +700,23 @@ const BehaviourGrid = () => {
         <ViewKnowledge
           knowledgeId={selectedCardId}
           onClose={() => setSelectedCardId(null)}
-          onSuccess={() => {}}
+          onSuccess={() => { }}
           classification="behaviour"
           typeName="Behaviour"
         />
       )}
+      {/* Detail Tour */}
+{showTour && (
+  <ShepherdTour
+    steps={generateDetailTourSteps('Behaviour')}
+    onComplete={() => {
+      setShowTour(false);
+      if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {
+        showDetailTour.onComplete();
+      }
+    }}
+  />
+  )}
     </>
   );
 };

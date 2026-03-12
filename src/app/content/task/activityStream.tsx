@@ -16,8 +16,12 @@ import {
   CheckCircle,
   TrendingUp,
   Users,
-  Activity
+  Activity,
+  HelpCircle
 } from 'lucide-react';
+import Shepherd from 'shepherd.js';
+import 'shepherd.js/dist/css/shepherd.css';
+import { activityStreamTourSteps, tourStyles } from '@/lib/activityStreamTourSteps';
 import {
   isToday,
   isThisWeek,
@@ -61,6 +65,78 @@ const ActivityStream = () => {
     syear: '',
   });
   const [loading, setLoading] = useState(true);
+  const [showTour, setShowTour] = useState(false);
+
+  // Check if tour should start (only when navigated from sidebar tour)
+  useEffect(() => {
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+    console.log('[ActivityStream] triggerPageTour value:', triggerTour);
+
+    if (triggerTour === 'activity-stream') {
+      console.log('[ActivityStream] Starting page tour automatically');
+      setShowTour(true);
+      // Clean up the flag
+      sessionStorage.removeItem('triggerPageTour');
+    }
+  }, []);
+
+  // Initialize Shepherd tour
+  useEffect(() => {
+    if (showTour) {
+      const tour = new Shepherd.Tour({
+        useModalOverlay: true,
+        defaultStepOptions: {
+          classes: 'shepherd-theme-custom',
+          scrollTo: { behavior: 'smooth', block: 'center' },
+          cancelIcon: {
+            enabled: true
+          }
+        }
+      });
+
+      // Add all steps from the tour steps file
+      activityStreamTourSteps.forEach((step) => {
+        const buttons = step.buttons.map((btn: any) => ({
+          text: btn.text,
+          action: btn.action === 'finish' ? () => {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('activityStreamTourSeen', 'true');
+              localStorage.setItem('activityStreamTourCompleted', 'true');
+            }
+            setShowTour(false);
+            tour.complete();
+          } : btn.action === 'back' ? tour.back : tour.next
+        }));
+
+        tour.addStep({
+          id: step.id,
+          title: step.title,
+          text: step.text,
+          attachTo: step.attachTo,
+          buttons
+        });
+      });
+
+      // Start tour after a small delay to ensure UI is ready
+      setTimeout(() => {
+        tour.start();
+      }, 500);
+
+      return () => {
+        if (tour) {
+          tour.complete();
+        }
+      };
+    }
+  }, [showTour]);
+
+  // Start tour manually
+  const startTour = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('activityStreamTourSeen');
+    }
+    setShowTour(true);
+  };
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -104,16 +180,16 @@ const ActivityStream = () => {
       const data = await response.json();
       setTasks(Array.isArray(data.allTask) ? data.allTask : []);
       setTodayTaskList([
-        ...(data.today?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || []),
-        ...(data.today?.complianceAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || [])
+        ...(data.today?.taskAssigned?.map((t: any) => ({ ...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status })) || []),
+        ...(data.today?.complianceAssigned?.map((t: any) => ({ ...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status })) || [])
       ]);
       setUpcomingTaskList([
-        ...(data.upcoming?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || []),
-        ...(data.upcoming?.complianceAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || [])
+        ...(data.upcoming?.taskAssigned?.map((t: any) => ({ ...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status })) || []),
+        ...(data.upcoming?.complianceAssigned?.map((t: any) => ({ ...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status })) || [])
       ]);
       setRecentTaskLists([
-        ...(data.recent?.taskAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || []),
-        ...(data.recent?.complianceAssigned?.map((t: any) => ({...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status})) || [])
+        ...(data.recent?.taskAssigned?.map((t: any) => ({ ...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status })) || []),
+        ...(data.recent?.complianceAssigned?.map((t: any) => ({ ...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status })) || [])
       ]);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -204,18 +280,18 @@ const ActivityStream = () => {
       ...filteredUpcomingTasks,
       ...filteredRecentTasks
     ];
-    
+
     const total = allFilteredTasks.length;
     const completed = allFilteredTasks.filter(t => t.status === 'COMPLETED').length;
     const inProgress = allFilteredTasks.filter(t => t.status === 'IN-PROGRESS').length;
     const pending = allFilteredTasks.filter(t => t.status === 'PENDING').length;
-  
+
     return { total, completed, inProgress, pending };
   }, [filteredTodayTasks, filteredUpcomingTasks, filteredRecentTasks]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className=" bg-white flex items-center justify-center h-full">
         <div className="text-center">
           <p>Loading tasks...</p>
         </div>
@@ -224,189 +300,192 @@ const ActivityStream = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white rounded-xl">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
-          <p className="text-gray-600 text-sm">Track task progress across your team</p>
-        </div>
+    <>
+      <style>{tourStyles}</style>
+      <div className="h-full bg-white rounded-xl">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="mb-4" id="tour-header">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Task Activity Stream</h1>
+            <p className="text-gray-600 text-sm">Track task progress across your team</p>
+          </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="shafow-lg shadow-blue-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Tasks</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                </div>
-                <Activity className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="shafow-lg shadow-blue-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.pending}</p>
-                </div>
-                <Clock className="w-8 h-8 text-red-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="shafow-lg shadow-blue-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-                </div>
-                <CheckCircle className="w-8 h-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="shafow-lg shadow-blue-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">In Progress</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
-                </div>
-                <TrendingUp className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Filters */}
-            <Card className="mb-6 shafow-lg shadow-blue-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <Filter className="w-5 h-5" />
-                  Filters
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="shafow-lg shadow-blue-200" id="tour-stats-total">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        placeholder="Search tasks..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
+                    <p className="text-sm font-medium text-gray-600">Total Tasks</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="PENDING">PENDING</SelectItem>
-                        <SelectItem value="IN-PROGRESS">IN-PROGRESS</SelectItem>
-                        <SelectItem value="COMPLETED">COMPLETED</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Activity className="w-8 h-8 text-blue-500" />
                 </div>
               </CardContent>
             </Card>
+            <Card className="shafow-lg shadow-blue-200" id="tour-stats-pending">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Pending</p>
+                    <p className="text-2xl font-bold text-red-600">{stats.pending}</p>
+                  </div>
+                  <Clock className="w-8 h-8 text-red-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shafow-lg shadow-blue-200" id="tour-stats-completed">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Completed</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+                  </div>
+                  <CheckCircle className="w-8 h-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shafow-lg shadow-blue-200" id="tour-stats-inprogress">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">In Progress</p>
+                    <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
+                  </div>
+                  <TrendingUp className="w-8 h-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-            {/* Task Tabs */}
-            <Tabs defaultValue="today" className="w-full ">
-              <TabsList className="grid w-full grid-cols-3 bg-[#EFF4FF]">
-                <TabsTrigger value="today" className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Today ({filteredTodayTasks.length})
-                </TabsTrigger>
-                <TabsTrigger value="upcoming" className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Upcoming ({filteredUpcomingTasks.length})
-                </TabsTrigger>
-                <TabsTrigger value="recent" className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  Recent ({filteredRecentTasks.length})
-                </TabsTrigger>
-              </TabsList>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2">
+              {/* Filters */}
+              <Card className="mb-6 shafow-lg shadow-blue-200" id="tour-filters">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Filter className="w-5 h-5" />
+                    Filters
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div id="tour-filter-search">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <Input
+                          placeholder="Search tasks..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <div id="tour-filter-status">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="PENDING">PENDING</SelectItem>
+                          <SelectItem value="IN-PROGRESS">IN-PROGRESS</SelectItem>
+                          <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <TabsContent value="today" className="space-y-4">
-                {filteredTodayTasks.length > 0 ? (
-                  filteredTodayTasks.map((task, index) => (
-                    <TaskCard
-                      key={index}
-                      task={task}
-                      sessionData={sessionData}
-                      onStatusUpdate={handleStatusUpdate}
-                      onRefetch={fetchTask}
-                      employees={employees}
-                    />
-                  ))
-                ) : (
-                  <Card className="p-8 text-center">
-                    <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No tasks for today</h3>
-                    <p className="text-gray-600">You're all caught up for today!</p>
-                  </Card>
-                )}
-              </TabsContent>
+              {/* Task Tabs */}
+              <Tabs defaultValue="today" className="w-full " id="tour-tabs">
+                <TabsList className="grid w-full grid-cols-3 bg-[#EFF4FF]" id="tour-tabs-list">
+                  <TabsTrigger value="today" className="flex items-center gap-2" id="tour-tab-today">
+                    <Calendar className="w-4 h-4" />
+                    Today ({filteredTodayTasks.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="upcoming" className="flex items-center gap-2" id="tour-tab-upcoming">
+                    <Clock className="w-4 h-4" />
+                    Upcoming ({filteredUpcomingTasks.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="recent" className="flex items-center gap-2" id="tour-tab-recent">
+                    <CheckCircle className="w-4 h-4" />
+                    Recent ({filteredRecentTasks.length})
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="upcoming" className="space-y-4">
-                {filteredUpcomingTasks.length > 0 ? (
-                  filteredUpcomingTasks.map((task, index) => (
-                    <TaskCard
-                      key={index}
-                      sessionData={sessionData}
-                      task={task}
-                      onStatusUpdate={handleStatusUpdate}
-                      onRefetch={fetchTask}
-                      employees={employees}
-                    />
-                  ))
-                ) : (
-                  <Card className="p-8 text-center">
-                    <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No upcoming tasks</h3>
-                    <p className="text-gray-600">No tasks scheduled for this week.</p>
-                  </Card>
-                )}
-              </TabsContent>
+                <TabsContent value="today" className="space-y-4">
+                  {filteredTodayTasks.length > 0 ? (
+                    filteredTodayTasks.map((task, index) => (
+                      <TaskCard
+                        key={index}
+                        task={task}
+                        sessionData={sessionData}
+                        onStatusUpdate={handleStatusUpdate}
+                        onRefetch={fetchTask}
+                        employees={employees}
+                      />
+                    ))
+                  ) : (
+                    <Card className="p-8 text-center">
+                      <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No tasks for today</h3>
+                      <p className="text-gray-600">You're all caught up for today!</p>
+                    </Card>
+                  )}
+                </TabsContent>
 
-              <TabsContent value="recent" className="space-y-4">
-                {filteredRecentTasks.length > 0 ? (
-                  filteredRecentTasks.map((task, index) => (
-                    <TaskCard
-                      key={index}
-                      sessionData={sessionData}
-                      task={task}
-                      onStatusUpdate={handleStatusUpdate}
-                      onRefetch={fetchTask}
-                      employees={employees}
-                    />
-                  ))
-                ) : (
-                  <Card className="p-8 text-center">
-                    <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No recent activity</h3>
-                    <p className="text-gray-600">No tasks have been updated recently.</p>
-                  </Card>
-                )}
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="upcoming" className="space-y-4">
+                  {filteredUpcomingTasks.length > 0 ? (
+                    filteredUpcomingTasks.map((task, index) => (
+                      <TaskCard
+                        key={index}
+                        sessionData={sessionData}
+                        task={task}
+                        onStatusUpdate={handleStatusUpdate}
+                        onRefetch={fetchTask}
+                        employees={employees}
+                      />
+                    ))
+                  ) : (
+                    <Card className="p-8 text-center">
+                      <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No upcoming tasks</h3>
+                      <p className="text-gray-600">No tasks scheduled for this week.</p>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="recent" className="space-y-4">
+                  {filteredRecentTasks.length > 0 ? (
+                    filteredRecentTasks.map((task, index) => (
+                      <TaskCard
+                        key={index}
+                        sessionData={sessionData}
+                        task={task}
+                        onStatusUpdate={handleStatusUpdate}
+                        onRefetch={fetchTask}
+                        employees={employees}
+                      />
+                    ))
+                  ) : (
+                    <Card className="p-8 text-center">
+                      <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No recent activity</h3>
+                      <p className="text-gray-600">No tasks have been updated recently.</p>
+                    </Card>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

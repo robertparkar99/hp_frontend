@@ -42,6 +42,33 @@ interface Skill {
   title: string;
 }
 
+// KAAB Item interface for separate KAAB categories
+interface KAABItem {
+  id: number;
+  knowledge_id?: number;
+  ability_id?: number;
+  attitude_id?: number;
+  behaviour_id?: number;
+  title: string;
+  knowledge?: string;
+  ability?: string;
+  attitude?: string;
+  behaviour?: string;
+  description?: string;
+  proficiency_level?: string | number;
+}
+
+// Rated KAAB interface
+interface RatedKAAB {
+  id: string;
+  category: 'knowledge' | 'ability' | 'attitude' | 'behaviour';
+  title: string;
+  self_rating: number;
+  expected: number;
+  ratings: Record<string, string>;
+  created_at?: string;
+}
+
 interface RatedSkill {
   id: number;
   skill_level: string;
@@ -340,16 +367,28 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
 };
 
 export default function Page({
-  sub_institute_id = 3,
-  type = "jobrole",
-  type_id = 3154,
-  title = "Nurse Manager",
-  user_id = 6,
-  jobrole_id = 3154,
+  sub_institute_id,
+  type,
+  type_id,
+  title,
+  user_id,
+  jobrole_id,
   SkillLevels = [],
 }: JobroleSkilladd1Props) {
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [kaabData, setKaabData] = useState<{
+    knowledge: KAABItem[];
+    ability: KAABItem[];
+    attitude: KAABItem[];
+    behaviour: KAABItem[];
+  }>({
+    knowledge: [],
+    ability: [],
+    attitude: [],
+    behaviour: []
+  });
   const [userRatedSkills, setUserRatedSkills] = useState<RatedSkill[]>([]);
+  const [userRatedKAAB, setUserRatedKAAB] = useState<RatedKAAB[]>([]);
   const [userRatingData, setUserRatingData] = useState<UserRatingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
@@ -359,6 +398,7 @@ export default function Page({
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showEmptyState, setShowEmptyState] = useState(false);
   const [showFullscreenChart, setShowFullscreenChart] = useState(false);
+  const [activeTab, setActiveTab] = useState<"skills" | "kaab">("skills");
 
   const [sessionData, setSessionData] = useState({
     APP_URL: "",
@@ -368,23 +408,19 @@ export default function Page({
     user_id: user_id,
   });
 
-  useEffect(() => {
-    const userData = localStorage.getItem("userData");
+ useEffect(() => {
+    const userData = localStorage.getItem('userData');
     if (userData) {
-      try {
-        const parsed = JSON.parse(userData);
-        setSessionData({
-          APP_URL: parsed.APP_URL || "",
-          token: parsed.token || "",
-          sub_institute_id: parsed.sub_institute_id ?? sub_institute_id,
-          org_type: parsed.org_type || "",
-          user_id: parsed.user_id ?? user_id,
-        });
-      } catch {
-        // ignore
-      }
+      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        APP_URL: APP_URL,
+        token,
+        sub_institute_id: sub_institute_id,
+        org_type: org_type,
+        user_id: user_id,
+      });
     }
-  }, [sub_institute_id, user_id]);
+  }, []);
 
   const parseExpectedLevel = (value: string | number | undefined): number => {
     if (value === undefined || value === null) return 5;
@@ -405,8 +441,12 @@ export default function Page({
 
   // Fetch all skills from first API
   const fetchAllSkills = async () => {
+    if (!sessionData.APP_URL) {
+      console.warn("Session URL not available");
+      return [];
+    }
     try {
-      const base = sessionData.APP_URL || "http://127.0.0.1:8000";
+      const base = sessionData.APP_URL;
       const response = await fetch(
         `${base}/get-kaba?sub_institute_id=${sessionData.sub_institute_id}&type=${type}&type_id=${type_id}&title=${encodeURIComponent(title)}`
       );
@@ -433,6 +473,51 @@ export default function Page({
         })) || [];
         // console.log('kya hume transfomed skills mil rahe hai??',data.skill);
         setSkills(transformedSkills);
+        
+        // Also store KAAB data from the API response
+        const knowledgeItems: KAABItem[] = (data.knowledge || []).map((item: any) => ({
+          id: item.id || item.knowledge_id || 0,
+          knowledge_id: item.knowledge_id || item.id,
+          title: item.knowledge || item.title || "",
+          knowledge: item.knowledge || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        const abilityItems: KAABItem[] = (data.ability || []).map((item: any) => ({
+          id: item.id || item.ability_id || 0,
+          ability_id: item.ability_id || item.id,
+          title: item.ability || item.title || "",
+          ability: item.ability || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        const attitudeItems: KAABItem[] = (data.attitude || []).map((item: any) => ({
+          id: item.id || item.attitude_id || 0,
+          attitude_id: item.attitude_id || item.id,
+          title: item.attitude || item.title || "",
+          attitude: item.attitude || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        const behaviourItems: KAABItem[] = (data.behaviour || data.behavior || []).map((item: any) => ({
+          id: item.id || item.behaviour_id || item.behavior_id || 0,
+          behaviour_id: item.behaviour_id || item.behavior_id || item.id,
+          title: item.behaviour || item.behavior || item.title || "",
+          behaviour: item.behaviour || item.behavior || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        setKaabData({
+          knowledge: knowledgeItems,
+          ability: abilityItems,
+          attitude: attitudeItems,
+          behaviour: behaviourItems
+        });
+        
         return transformedSkills;
       }
     } catch (error) {
@@ -443,10 +528,14 @@ export default function Page({
 
   // Fetch user rating data from second API
   const fetchUserRatingData = async () => {
+    if (!sessionData.APP_URL) {
+      console.warn("Session URL not available");
+      return null;
+    }
     try {
-      const base = sessionData.APP_URL || "http://127.0.0.1:8000";
+      const base = sessionData.APP_URL;
       const response = await fetch(
-        `${base}/table_data/?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${sessionData.user_id}&filters[jobrole_id]=${jobrole_id}`
+        `${base}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${user_id}&filters[jobrole_id]=${jobrole_id}`
       );
       
       if (response.ok) {
@@ -561,9 +650,101 @@ export default function Page({
     setUserRatedSkills(ratedSkillsArray);
   };
 
+  // Process KAAB ratings into separate rated items
+  const processKAABData = (ratingData: UserRatingData | null) => {
+    if (!ratingData) {
+      setUserRatedKAAB([]);
+      return;
+    }
+
+    const ratedKAABArray: RatedKAAB[] = [];
+    
+    // Parse the JSON strings from the API response
+    const knowledgeRatings = ratingData.knowledge_ids ? JSON.parse(ratingData.knowledge_ids) : {};
+    const abilityRatings = ratingData.ability_ids ? JSON.parse(ratingData.ability_ids) : {};
+    const attitudeRatings = ratingData.attitude_ids ? JSON.parse(ratingData.attitude_ids) : {};
+    const behaviorRatings = ratingData.behavior_ids ? JSON.parse(ratingData.behavior_ids) : {};
+
+    // Process Knowledge items
+    kaabData.knowledge.forEach((item) => {
+      const itemId = item.knowledge_id?.toString() || item.id.toString();
+      if (knowledgeRatings[itemId]) {
+        const rating = parseInt(knowledgeRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `knowledge-${itemId}`,
+          category: 'knowledge',
+          title: item.knowledge || item.title || "Unknown Knowledge",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.knowledge || item.title || ""]: knowledgeRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    // Process Ability items
+    kaabData.ability.forEach((item) => {
+      const itemId = item.ability_id?.toString() || item.id.toString();
+      if (abilityRatings[itemId]) {
+        const rating = parseInt(abilityRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `ability-${itemId}`,
+          category: 'ability',
+          title: item.ability || item.title || "Unknown Ability",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.ability || item.title || ""]: abilityRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    // Process Attitude items
+    kaabData.attitude.forEach((item) => {
+      const itemId = item.attitude_id?.toString() || item.id.toString();
+      if (attitudeRatings[itemId]) {
+        const rating = parseInt(attitudeRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `attitude-${itemId}`,
+          category: 'attitude',
+          title: item.attitude || item.title || "Unknown Attitude",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.attitude || item.title || ""]: attitudeRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    // Process Behaviour items
+    kaabData.behaviour.forEach((item) => {
+      const itemId = item.behaviour_id?.toString() || item.id.toString();
+      if (behaviorRatings[itemId]) {
+        const rating = parseInt(behaviorRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `behaviour-${itemId}`,
+          category: 'behaviour',
+          title: item.behaviour || item.title || "Unknown Behaviour",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.behaviour || item.title || ""]: behaviorRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    console.log("Processed rated KAAB:", ratedKAABArray);
+    setUserRatedKAAB(ratedKAABArray);
+  };
+
   // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
+      // Wait for session data to be loaded
+      if (!sessionData.APP_URL || !sessionData.user_id) {
+        return;
+      }
+      
       setLoading(true);
       try {
         // Fetch both APIs in parallel
@@ -577,7 +758,13 @@ export default function Page({
 
         // Check if we should show empty state
         const hasRatedSkills = ratingData && ratingData.skill_ids && ratingData.skill_ids !== "{}";
-        setShowEmptyState(!hasRatedSkills);
+        const hasRatedKAAB = ratingData && (
+          (ratingData.knowledge_ids && ratingData.knowledge_ids !== "{}") ||
+          (ratingData.ability_ids && ratingData.ability_ids !== "{}") ||
+          (ratingData.attitude_ids && ratingData.attitude_ids !== "{}") ||
+          (ratingData.behavior_ids && ratingData.behavior_ids !== "{}")
+        );
+        setShowEmptyState(!hasRatedSkills && !hasRatedKAAB);
       } catch (error) {
         console.error("Error fetching data:", error);
         setShowEmptyState(true);
@@ -587,12 +774,60 @@ export default function Page({
     };
 
     fetchData();
-  }, [sub_institute_id, type_id, user_id, jobrole_id]);
+  }, [sub_institute_id, type_id, user_id, jobrole_id, sessionData]);
+
+  // Process KAAB data when kaabData or userRatingData changes
+  useEffect(() => {
+    if ((kaabData.knowledge.length > 0 || kaabData.ability.length > 0 || 
+        kaabData.attitude.length > 0 || kaabData.behaviour.length > 0) && userRatingData) {
+      processKAABData(userRatingData);
+    }
+  }, [kaabData, userRatingData]);
 
   // Compute un-rated skills
   const unRatedSkills = skills.filter(
     skill => !userRatedSkills.some(rated => rated.skill_id === skill.skill_id)
   );
+
+  // Compute un-rated KAAB items
+  const unRatedKAAB = React.useMemo(() => {
+    const ratedKAABIds = new Set(userRatedKAAB.map(r => r.id));
+    const unrated: KAABItem[] = [];
+    
+    // Filter unrated knowledge items
+    kaabData.knowledge.forEach(item => {
+      const id = `knowledge-${item.knowledge_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    // Filter unrated ability items
+    kaabData.ability.forEach(item => {
+      const id = `ability-${item.ability_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    // Filter unrated attitude items
+    kaabData.attitude.forEach(item => {
+      const id = `attitude-${item.attitude_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    // Filter unrated behaviour items
+    kaabData.behaviour.forEach(item => {
+      const id = `behaviour-${item.behaviour_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    return unrated;
+  }, [kaabData, userRatedKAAB]);
 
   const calculateOverallSkillIndex = () => {
     if (!userRatedSkills || userRatedSkills.length === 0) return "0.0";
@@ -672,7 +907,7 @@ export default function Page({
   }
 
   return (
-    <main className="p-6 space-y-6">
+    <main className="p-2 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       {/* Fullscreen Chart Modal */}
       {showFullscreenChart && (
         <FullscreenChart
@@ -683,14 +918,14 @@ export default function Page({
       )}
 
       {/* 🔥 Chart Section */}
-      <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200">
+      <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200">
         <div className={showEmptyState ? "filter blur-sm pointer-events-none" : ""}>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center">
               <span className="mdi mdi-chart-line text-green-600 mr-2"></span>
               Skill Ratings
               {fullChartData.length > 6 && (
-                <span className="text-sm text-gray-500 ml-2">
+                <span className="text-xs sm:text-sm text-gray-500 ml-2">
                   (Showing {Math.min(6, fullChartData.length)} of {fullChartData.length})
                 </span>
               )}
@@ -699,7 +934,7 @@ export default function Page({
             {fullChartData.length > 6 && (
               <button
                 onClick={() => setShowFullscreenChart(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
+                className="bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-2 text-xs sm:text-sm"
               >
                 <span className="mdi mdi-fullscreen"></span>
                 View Full Chart
@@ -709,16 +944,16 @@ export default function Page({
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Chart */}
-            <div className="lg:col-span-2 h-72">
+            <div className="lg:col-span-2 h-56 sm:h-64 md:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
   data={limitedChartData}
-  margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+  margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
 >
   <CartesianGrid strokeDasharray="3 3" />
 
-  <XAxis dataKey="skill" />
-  <YAxis allowDecimals={false} domain={[0, totalLevels]} />
+  <XAxis dataKey="skill" tick={{ fontSize: 10 }} />
+  <YAxis allowDecimals={false} domain={[0, totalLevels]} tick={{ fontSize: 10 }} />
 
   <Tooltip />
 
@@ -741,14 +976,14 @@ export default function Page({
               </ResponsiveContainer>
 
               {/* Legend */}
-              <div className="flex gap-6 justify-center mt-4">
-  <div className="flex items-center gap-2">
-    <div className="w-4 h-4 bg-blue-500 rounded"></div>
-    <span className="text-sm">Rated</span>
+              <div className="flex gap-4 sm:gap-6 justify-center mt-3 sm:mt-4">
+  <div className="flex items-center gap-1.5 sm:gap-2">
+    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded"></div>
+    <span className="text-xs sm:text-sm">Rated</span>
   </div>
-  <div className="flex items-center gap-2">
-    <div className="w-4 h-4 bg-green-500 rounded"></div>
-    <span className="text-sm">Expected</span>
+  <div className="flex items-center gap-1.5 sm:gap-2">
+    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded"></div>
+    <span className="text-xs sm:text-sm">Expected</span>
   </div>
 </div>
 
@@ -756,8 +991,8 @@ export default function Page({
 
             {/* Overall Skill Index */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 text-center">
-                <h3 className="text-md font-semibold text-gray-700 mb-4">
+              <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 text-center">
+                <h3 className="text-sm sm:text-md font-semibold text-gray-700 mb-3 sm:mb-4">
                   Overall Skill Index
                 </h3>
 
@@ -851,13 +1086,13 @@ export default function Page({
                       </div>
 
                       <div className="mb-2">
-                        <span className={`inline-block px-3 py-1 text-sm font-medium rounded border ${overallStatusColor}`}>
+                        <span className={`inline-block px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded border ${overallStatusColor}`}>
                           {overallStatus}
                         </span>
                       </div>
 
                       <div className="mb-2">
-                        <div className="text-xs text-gray-600 mb-1">
+                        <div className="text-[10px] sm:text-xs text-gray-600 mb-1">
                           Skill Gap: {skillGap.toFixed(1)} points ({gapPercentage}% below target)
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-1">
@@ -867,7 +1102,7 @@ export default function Page({
                           ></div>
                         </div>
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-[10px] sm:text-xs text-gray-500">
                         Based on {userRatedSkills.length} skills
                       </div>
                     </>
@@ -880,253 +1115,375 @@ export default function Page({
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col h-[calc(100vh-8rem)]">
-        <div className="grid grid-cols-2 gap-6 h-[calc(100vh-12rem)] ">
+      <div className="flex flex-col h-auto min-h-[calc(100vh-8rem)]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 h-auto">
           {/* Skill List */}
-          <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200 h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">🚨 Un-Rated Skills</h2>
+          <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200 h-auto max-h-[500px] sm:max-h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">🚨 Un-Rated Skills & KAAB</h2>
 
-            <div className="space-y-4 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
-              {unRatedSkills.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-12">
-                  <div className="mb-6">
+            <div className="space-y-3 sm:space-y-4 h-auto overflow-y-auto hide-scroll">
+               {unRatedSkills.length === 0 && unRatedKAAB.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-8 sm:py-12">
+                  <div className="mb-4 sm:mb-6">
                     <img
                       src="/assets/image/rated.jpeg"
                       alt="All Skills Rated"
-                      className="w-110 h-70 mx-auto full object-cover shadow-lg border-4 "
+                      className="w-full max-w-[280px] sm:max-w-[400px] h-auto mx-auto object-cover shadow-lg border-2 sm:border-4 "
                     />
                   </div>
-                  <h3 className="text-xl font-bold text-green-700 mb-2">All Skills Rated!</h3>
-                  <p className="text-gray-600 text-center max-w-md">
-                    Great job! You've successfully rated all your skills.
+                  <h3 className="text-lg sm:text-xl font-bold text-green-700 mb-2">All Skills & KAAB Rated!</h3>
+                  <p className="text-gray-600 text-center text-sm sm:text-base max-w-md px-4">
+                    Great job! You've successfully rated all your skills and KAAB items.
                     Your development plan will now be more personalized and effective.
                   </p>
                 </div>
               ) : (
-                unRatedSkills.map(skill => (
-                  <div
-                    key={skill.jobrole_skill_id}
-                    className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm"
-                  >
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-semibold text-gray-800">{skill.title || skill.skill}</h3>
-                      <span className="text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
-                        {skill.proficiency_level}
-                      </span>
-                    </div>
-                    <p className="text-gray-700 text-sm mt-1">{skill.description}</p>
-                    <div className="flex gap-2 mt-2">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded border border-blue-200">{skill.category}</span>
-                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded border border-green-200">{skill.sub_category}</span>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-2">Job Role: {skill.jobrole}</p>
-                    <div className="flex gap-3 mt-3">
-                      {/* <button
-                        onClick={() => {
-                          setSelectedSkill(skill);
-                          setIsEditModalOpen(true);
-                        }}
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                      >
-                        View More
-                      </button> */}
-                    </div>
-                  </div>
-                ))
+                <>
+                  {/* Un-Rated Skills */}
+                  {unRatedSkills.length > 0 && (
+                    <>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Skills</h3>
+                      {unRatedSkills.map(skill => (
+                        <div
+                          key={skill.jobrole_skill_id}
+                          className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-white shadow-sm"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{skill.title || skill.skill}</h3>
+                            <span className="text-xs sm:text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
+                              {skill.proficiency_level}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 text-xs sm:text-sm mt-1">{skill.description}</p>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
+                            <span className="px-1.5 sm:px-2 py-1 bg-blue-100 text-blue-800 text-[10px] sm:text-xs rounded border border-blue-200">{skill.category}</span>
+                            <span className="px-1.5 sm:px-2 py-1 bg-green-100 text-green-800 text-[10px] sm:text-xs rounded border border-green-200">{skill.sub_category}</span>
+                          </div>
+                          <p className="text-[10px] sm:text-xs text-gray-600 mt-2">Job Role: {skill.jobrole}</p>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {/* Un-Rated KAAB */}
+                  {unRatedKAAB.length > 0 && (
+                    <>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2 mt-4">KAAB</h3>
+                      {unRatedKAAB.map((item, index) => {
+                        // Determine category
+                        let category = 'knowledge';
+                        let categoryColor = 'blue';
+                        let categoryBg = 'bg-blue-100';
+                        let categoryText = 'text-blue-800';
+                        let categoryBorder = 'border-blue-200';
+                        
+                        if (item.ability_id) {
+                          category = 'ability';
+                          categoryColor = 'green';
+                          categoryBg = 'bg-green-100';
+                          categoryText = 'text-green-800';
+                          categoryBorder = 'border-green-200';
+                        } else if (item.attitude_id) {
+                          category = 'attitude';
+                          categoryColor = 'orange';
+                          categoryBg = 'bg-orange-100';
+                          categoryText = 'text-orange-800';
+                          categoryBorder = 'border-orange-200';
+                        } else if (item.behaviour_id) {
+                          category = 'behaviour';
+                          categoryColor = 'purple';
+                          categoryBg = 'bg-purple-100';
+                          categoryText = 'text-purple-800';
+                          categoryBorder = 'border-purple-200';
+                        }
+                        
+                        return (
+                          <div
+                            key={`${category}-${item.id}-${index}`}
+                            className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-white shadow-sm"
+                          >
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${categoryBg} ${categoryText} border ${categoryBorder}`}>
+                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </span>
+                                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                                  {item.knowledge || item.ability || item.attitude || item.behaviour || item.title || 'Unknown'}
+                                </h3>
+                              </div>
+                              <span className="text-xs sm:text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                {item.proficiency_level || 'Level 5'}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 text-xs sm:text-sm mt-1">{item.description}</p>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </>
               )}
             </div>
           </div>
 
           {/* User Rated Skills */}
-          <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200 h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">📅 Rated Skills</h2>
+          <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200 h-auto max-h-[500px] sm:max-h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800">📅 Rated Skills</h2>
+                {/* Tabs */}
+                <div className="flex border-b border-gray-200">
+                  <button
+                    onClick={() => setActiveTab("skills")}
+                    className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition-colors ${
+                      activeTab === "skills"
+                        ? "border-b-2 border-blue-500 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    Skill Ratings
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("kaab")}
+                    className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition-colors ${
+                      activeTab === "kaab"
+                        ? "border-b-2 border-blue-500 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    KAAB Ratings
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={() => setShowRecommendations(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm"
+                className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-xs sm:text-sm"
               >
                 View Actions
               </button>
             </div>
 
-            <div className="space-y-5 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
+            <div className="space-y-3 sm:space-y-5 h-auto overflow-y-auto hide-scroll">
               {userRatedSkills && userRatedSkills.length > 0 ? (
-                userRatedSkills.map((ratedSkill: RatedSkill) => {
-                  const totalLevels = ratedSkill.proficiency_level || 5;
-                  const currentLevel = ratedSkill.skill_level
-                    ? parseInt(ratedSkill.skill_level.replace("Level ", ""))
-                    : 1;
-                  const completionPercentage = Math.round((currentLevel / Number(totalLevels)) * 100);
-                  const status =
-                    completionPercentage >= 80
-                      ? "On Track"
-                      : completionPercentage >= 60
-                        ? "Medium Risk"
-                        : "At Risk";
-                  const statusColor =
-                    completionPercentage >= 80
-                      ? "text-green-700"
-                      : completionPercentage >= 60
-                        ? "text-yellow-700"
-                        : "text-red-700";
-                  const created_at = ratedSkill.created_at
-                    ? new Date(ratedSkill.created_at).toLocaleDateString()
-                    : "N/A";
+                activeTab === "skills" ? (
+                  userRatedSkills.map((ratedSkill: RatedSkill) => {
+                    const totalLevels = ratedSkill.proficiency_level || 5;
+                    const currentLevel = ratedSkill.skill_level
+                      ? parseInt(ratedSkill.skill_level.replace("Level ", ""))
+                      : 1;
+                    const completionPercentage = Math.round((currentLevel / Number(totalLevels)) * 100);
+                    const status =
+                      completionPercentage >= 80
+                        ? "On Track"
+                        : completionPercentage >= 60
+                          ? "Medium Risk"
+                          : "At Risk";
+                    const statusColor =
+                      completionPercentage >= 80
+                        ? "text-green-700"
+                        : completionPercentage >= 60
+                          ? "text-yellow-700"
+                          : "text-red-700";
+                    const created_at = ratedSkill.created_at
+                      ? new Date(ratedSkill.created_at).toLocaleDateString()
+                      : "N/A";
 
-                  const selfRating = ratedSkill.skill_level !== undefined ?
-                    parseFloat(ratedSkill.skill_level.replace("Level ", "")) || 0 : 0;
-      const expected = parseExpectedLevel(ratedSkill.proficiency_level);
+                    const selfRating = ratedSkill.skill_level !== undefined ?
+                      parseFloat(ratedSkill.skill_level.replace("Level ", "")) || 0 : 0;
+                    const expected = parseExpectedLevel(ratedSkill.proficiency_level);
 
-                  return (
-                    <div
-                      key={ratedSkill.id}
-                      className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm"
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-semibold text-gray-800 text-base">
-                          {ratedSkill.title || ratedSkill.skill || "Untitled Skill"}
-                        </h3>
-                        <span className="font-medium text-gray-500 flex items-center space-x-1 text-xs">
-                          Gap:{(() => {
-                            const gap = selfRating - expected;
-                            if (gap > 0) {
-                              return (
-                                <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
-                                  <span className="mdi mdi-trending-up text-sm"></span>
+                    return (
+                      <div
+                        key={ratedSkill.id}
+                        className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-gray-50 shadow-sm"
+                      >
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                            {ratedSkill.title || ratedSkill.skill || "Untitled Skill"}
+                          </h3>
+                          <span className="font-medium text-gray-500 flex items-center space-x-1 text-[10px] sm:text-xs">
+                            Gap:{(() => {
+                              const gap = selfRating - expected;
+                              if (gap > 0) {
+                                return (
+                                  <div className="flex items-center space-x-1 text-green-600 font-medium text-[10px] sm:text-xs">
+                                    <span className="mdi mdi-trending-up text-xs sm:text-sm"></span>
+                                    <span>+{gap.toFixed(1)}</span>
+                                  </div>
+                                );
+                              } else if (gap < 0) {
+                                return (
+                                  <div className="flex items-center space-x-1 text-red-600 font-medium text-[10px] sm:text-xs">
+                                    <span className="mdi mdi-alert-circle text-xs sm:text-sm"></span>
+                                    <span>{gap.toFixed(1)}</span>
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
+                                    <span className="mdi mdi-check-circle text-sm"></span>
+                                    <span>0.0</span>
+                                  </div>
+                                );
+                              }
+                            })()}
+                          </span>
+                          <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            {created_at}
+                          </span>
+                        </div>
+
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          {ratedSkill.category || "General"} •{" "}
+                          {ratedSkill.sub_category || "Uncategorized"}
+                        </p>
+
+                        <div className="w-full bg-gray-300 rounded h-2 mt-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded"
+                            style={{ width: `${completionPercentage}%` }}
+                          ></div>
+                        </div>
+
+                        <div className="grid grid-cols-2 text-xs sm:text-sm font-semibold text-gray-700 border-b pb-1 mt-3 sm:mt-4">
+                          <p>Self Rating</p>
+                          <p>Expected</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-xs items-center">
+                          {/* Self Rating */}
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            {renderCircles(selfRating, Number(totalLevels))}
+                            <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}/{totalLevels}</span>
+                          </div>
+
+                          {/* Expected Rating */}
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              {renderCircles(expected, Number(totalLevels))}
+                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}/{totalLevels}</span>
+                            </div>
+
+                            <span
+                              className={`inline-flex items-center rounded-full border px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold transition-colors
+                                focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
+                                hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
+                            >
+                              {status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Add detailed ratings expandable here */}
+                        {renderDetailedRatings(ratedSkill)}
+                      </div>
+                    );
+                  })
+                ) : (
+                  // KAAB Tab Content - Show rated KAAB items
+                  userRatedKAAB && userRatedKAAB.length > 0 ? (
+                    userRatedKAAB.map((ratedKAAB: RatedKAAB) => {
+                      const selfRating = ratedKAAB.self_rating || 0;
+                      const expected = ratedKAAB.expected || 5;
+                      const gap = selfRating - expected;
+                      const completionPercentage = Math.round((selfRating / 5) * 100);
+                      const status = completionPercentage >= 80 ? "On Track" : completionPercentage >= 60 ? "Medium Risk" : "At Risk";
+                      const statusColor = completionPercentage >= 80 ? "text-green-700" : completionPercentage >= 60 ? "text-yellow-700" : "text-red-700";
+                      const created_at = ratedKAAB.created_at ? new Date(ratedKAAB.created_at).toLocaleDateString() : "N/A";
+                      
+                      const categoryColors: Record<string, { bg: string; border: string; text: string }> = {
+                        knowledge: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700" },
+                        ability: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
+                        attitude: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700" },
+                        behaviour: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700" }
+                      };
+                      
+                      const colors = categoryColors[ratedKAAB.category] || categoryColors.knowledge;
+                      
+                      return (
+                        <div
+                          key={ratedKAAB.id}
+                          className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-gray-50 shadow-sm"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text} border ${colors.border}`}>
+                                {ratedKAAB.category.charAt(0).toUpperCase() + ratedKAAB.category.slice(1)}
+                              </span>
+                              <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                                {ratedKAAB.title}
+                              </h3>
+                            </div>
+                            <span className="font-medium text-gray-500 flex items-center space-x-1 text-[10px] sm:text-xs">
+                              Gap:{" "}
+                              {gap > 0 ? (
+                                <div className="flex items-center space-x-1 text-green-600 font-medium text-[10px] sm:text-xs">
+                                  <span className="mdi mdi-trending-up text-xs sm:text-sm"></span>
                                   <span>+{gap.toFixed(1)}</span>
                                 </div>
-                              );
-                            } else if (gap < 0) {
-                              return (
-                                <div className="flex items-center space-x-1 text-red-600 font-medium text-xs">
-                                  <span className="mdi mdi-alert-circle text-sm"></span>
+                              ) : gap < 0 ? (
+                                <div className="flex items-center space-x-1 text-red-600 font-medium text-[10px] sm:text-xs">
+                                  <span className="mdi mdi-alert-circle text-xs sm:text-sm"></span>
                                   <span>{gap.toFixed(1)}</span>
                                 </div>
-                              );
-                            } else {
-                              return (
+                              ) : (
                                 <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
                                   <span className="mdi mdi-check-circle text-sm"></span>
                                   <span>0.0</span>
                                 </div>
-                              );
-                            }
-                          })()}
-                        </span>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                          {created_at}
-                        </span>
-                      </div>
-
-                      <p className="text-sm text-gray-600">
-                        {ratedSkill.category || "General"} •{" "}
-                        {ratedSkill.sub_category || "Uncategorized"}
-                      </p>
-
-                      <div className="w-full bg-gray-300 rounded h-2 mt-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded"
-                          style={{ width: `${completionPercentage}%` }}
-                        ></div>
-                      </div>
-
-                      <div className="grid grid-cols-2 text-sm font-semibold text-gray-700 border-b pb-1 mt-4">
-                        <p>Self Rating</p>
-                        <p>Expected</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 mt-2 text-xs items-center">
-                        {/* Self Rating */}
-                        <div className="flex items-center space-x-2">
-                          {renderCircles(selfRating, totalLevels)}
-                          <span className="ml-2 text-sm font-medium">{selfRating}/{totalLevels}</span>
-                        </div>
-
-                        {/* Expected Rating */}
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center space-x-2">
-                            {renderCircles(expected, totalLevels)}
-                            <span className="ml-2 text-sm font-medium">{expected}/{totalLevels}</span>
+                              )}
+                            </span>
+                            <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                              {created_at}
+                            </span>
                           </div>
 
-                          <span
-                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors
-                              focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
-                              hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
-                          >
-                            {status}
-                          </span>
+                          <div className="w-full bg-gray-300 rounded h-2 mt-2">
+                            <div
+                              className={`h-2 rounded ${colors.bg.split('-')[1] === 'blue' ? 'bg-blue-600' : colors.bg.split('-')[1] === 'green' ? 'bg-green-600' : colors.bg.split('-')[1] === 'orange' ? 'bg-orange-500' : 'bg-purple-500'}`}
+                              style={{ width: `${completionPercentage}%` }}
+                            ></div>
+                          </div>
+
+                          <div className="grid grid-cols-2 text-xs sm:text-sm font-semibold text-gray-700 border-b pb-1 mt-3 sm:mt-4">
+                            <p>Self Rating</p>
+                            <p>Expected</p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-xs items-center">
+                            {/* Self Rating */}
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              {renderCircles(selfRating, 5)}
+                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}/5</span>
+                            </div>
+
+                            {/* Expected Rating */}
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center space-x-1 sm:space-x-2">
+                                {renderCircles(expected, 5)}
+                                <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}/5</span>
+                              </div>
+
+                              <span
+                                className={`inline-flex items-center rounded-full border px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold transition-colors
+                                  bg-red-50 text-red-700 border-red-200 ${statusColor}`}
+                              >
+                                {status}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* KAAB Ratings Summary - Always Visible */}
-                      <div className="mt-4 border-t pt-3">
-                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                          <span className="mdi mdi-chart-bar mr-1"></span>
-                          KAAB Ratings:
-                        </h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          {(() => {
-                            const detailedRatings = ratedSkill.detailed_ratings || {
-                              knowledge: ratedSkill.knowledge_ratings || {},
-                              ability: ratedSkill.ability_ratings || {},
-                              behaviour: ratedSkill.behaviour_ratings || {},
-                              attitude: ratedSkill.attitude_ratings || {}
-                            };
-
-                            const attrArray = [
-                              { title: "knowledge", icon: "mdi-book-open-page-variant", color: "blue" },
-                              { title: "ability", icon: "mdi-lightbulb-on", color: "green" },
-                              { title: "behaviour", icon: "mdi-account-group", color: "purple" },
-                              { title: "attitude", icon: "mdi-emoticon-happy-outline", color: "orange" },
-                            ];
-
-                            const getScore = (ratings: Record<string, string>) => {
-                              const yesCount = Object.values(ratings).filter(val => {
-                                const v = String(val).toLowerCase();
-                                return v === "yes" || v === "true" || v === "1";
-                              }).length;
-                              const totalCount = Object.keys(ratings).length;
-                              return { yesCount, totalCount, percentage: totalCount > 0 ? Math.round((yesCount / totalCount) * 100) : 0 };
-                            };
-
-                            return attrArray.map((attr) => {
-                              const ratings = detailedRatings[attr.title as keyof typeof detailedRatings] || {};
-                              const { yesCount, totalCount, percentage } = getScore(ratings);
-
-                              return (
-                                <div key={attr.title} className={`bg-${attr.color}-50 border border-${attr.color}-200 rounded-lg p-2`}>
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-medium capitalize flex items-center">
-                                      <span className={`mdi ${attr.icon} mr-1 text-${attr.color}-600`}></span>
-                                      {attr.title}:
-                                    </span>
-                                    <span className={`text-xs font-bold text-${attr.color}-700`}>
-                                      {yesCount}/{totalCount}
-                                    </span>
-                                  </div>
-                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                    <div
-                                      className={`bg-${attr.color}-500 h-1.5 rounded-full`}
-                                      style={{ width: `${percentage}%` }}
-                                    ></div>
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1 text-right">{percentage}%</div>
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      </div>
-
-                      {/* Add detailed ratings expandable here */}
-                      {renderDetailedRatings(ratedSkill)}
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600 text-sm">No KAAB ratings found</p>
+                      <p className="text-gray-400 text-xs mt-1">Rate KAAB items to see them here</p>
                     </div>
-                  );
-                })
+                  )
+                )
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-gray-600">No user rated skills found</p>
+                  <p className="text-gray-600 text-sm">No user rated skills found</p>
                 </div>
               )}
             </div>
@@ -1135,65 +1492,65 @@ export default function Page({
 
         {/* Recommendations Modal */}
         {showRecommendations && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto p-4">
-            <div className="bg-white rounded-lg w-full max-w-3xl p-6 relative">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto p-2 sm:p-4">
+            <div className="bg-white rounded-lg w-full max-w-3xl p-4 sm:p-6 relative my-4 sm:my-0">
               <button
                 onClick={() => setShowRecommendations(false)}
-                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold"
+                className="absolute top-2 sm:top-3 right-2 sm:right-3 text-gray-500 hover:text-gray-700 text-lg sm:text-xl font-bold"
               >
                 &times;
               </button>
 
-              <h2 className="text-xl font-semibold text-blue-600 mb-4 flex items-center">
+              <h2 className="text-lg sm:text-xl font-semibold text-blue-600 mb-3 sm:mb-4 flex items-center">
                 <span className="mdi mdi-lightbulb-on-outline mr-2 text-blue-500"></span>
                 Development Recommendations
               </h2>
 
-              <div className="flex flex-col gap-6">
-                <div className="p-4 rounded-lg border transition-all duration-300 transform cursor-pointer animate-slide-up border-error/30 bg-error-bg/50 hover:shadow-md hover:scale-[1.01]">
-                  <h3 className="font-semibold text-blue-700 flex items-center">
+              <div className="flex flex-col gap-4 sm:gap-6">
+                <div className="p-3 sm:p-4 rounded-lg border transition-all duration-300 transform cursor-pointer animate-slide-up border-error/30 bg-error-bg/50 hover:shadow-md hover:scale-[1.01]">
+                  <h3 className="font-semibold text-blue-700 flex items-center text-sm sm:text-base">
                     <span className="mdi mdi-book-open-page-variant mr-2"></span>
                     Excel Advanced Training
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Improve reporting efficiency and data analysis capabilities
                   </p>
-                  <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+                  <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-red-100 text-red-700">
                     High
                   </span>
-                  <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors">
+                  <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-xs sm:text-sm hover:bg-blue-700 transition-colors">
                     <span className="mdi mdi-open-in-new mr-1"></span> Learn More
                   </button>
                 </div>
 
-                <div className="p-4 rounded-lg border border-yellow-200 bg-yellow-50 shadow hover:shadow-lg transition-all duration-300">
-                  <h3 className="font-semibold text-yellow-700 flex items-center">
+                <div className="p-3 sm:p-4 rounded-lg border border-yellow-200 bg-yellow-50 shadow hover:shadow-lg transition-all duration-300">
+                  <h3 className="font-semibold text-yellow-700 flex items-center text-sm sm:text-base">
                     <span className="mdi mdi-account-group mr-2"></span>
                     Leadership Workshop
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Build project management and team leadership skills
                   </p>
-                  <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
+                  <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
                     Medium
                   </span>
-                  <button className="mt-3 w-full px-3 py-2 rounded bg-yellow-600 text-white text-sm hover:bg-yellow-700 transition-colors">
+                  <button className="mt-3 w-full px-3 py-2 rounded bg-yellow-600 text-white text-xs sm:text-sm hover:bg-yellow-700 transition-colors">
                     <span className="mdi mdi-open-in-new mr-1"></span> Learn More
                   </button>
                 </div>
 
-                <div className="p-4 rounded-lg border border-blue-200 bg-blue-50 shadow hover:shadow-lg transition-all duration-300">
-                  <h3 className="font-semibold text-blue-700 flex items-center">
+                <div className="p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50 shadow hover:shadow-lg transition-all duration-300">
+                  <h3 className="font-semibold text-blue-700 flex items-center text-sm sm:text-base">
                     <span className="mdi mdi-presentation mr-2"></span>
                     Public Speaking Seminar
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Strengthen presentation impact and confidence
                   </p>
-                  <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                  <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-blue-100 text-blue-700">
                     Low
                   </span>
-                  <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors">
+                  <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-xs sm:text-sm hover:bg-blue-700 transition-colors">
                     <span className="mdi mdi-open-in-new mr-1"></span> Learn More
                   </button>
                 </div>

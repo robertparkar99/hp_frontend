@@ -192,7 +192,7 @@ OUTPUT FORMAT (JSON ONLY)
                 Ensure the final output strictly follows this structure.`,
             },
             { role: "user", content: JSON.stringify(prompt, null, 2) }],
-          max_tokens: 6000,
+          max_tokens: 8000,
           temperature: 0.0,
           top_p: 0.0,
           top_k: 1,

@@ -157,12 +157,12 @@ export default function Home() {
   };
 
   return (
-    <div className='rounded-xl' style={{
+    <div className='rounded-xl max-md:rounded-none' style={{
       minHeight: '100vh',
       background: 'background',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }} className='max-md:p-4'>
         <header style={{ marginBottom: '3rem' }}>
           <h1 style={{
             fontSize: '2.5rem',
@@ -177,7 +177,7 @@ export default function Home() {
             color: '#64748b',
             fontWeight: '400'
           }}>
-            Comprehensive career development and skill gap analysis for corporate teams
+            Comprehensive career development and skill gap analysis for corporate teams.
           </p>
         </header>
 

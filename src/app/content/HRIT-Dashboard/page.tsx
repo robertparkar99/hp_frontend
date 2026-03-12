@@ -2,7 +2,14 @@
 "use client";
 import Index  from '../HRMS/HRIT_Dashboard/Index';
 import Header from "@/components/Header/Header";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+
+// Wrapper component that uses useSearchParams - wrapped in Suspense
+function IndexWithSearchParams() {
+  const searchParams = useSearchParams();
+  return <Index />;
+}
 
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -32,7 +39,9 @@ export default function HomePage() {
         <Header />
       </div>
       <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-0 md:ml-24 lg:ml-76" : "ml-0 md:ml-24"} px-4 py-4`}>
-        <Index />
+        <Suspense fallback={<div>Loading...</div>}>
+          <IndexWithSearchParams />
+        </Suspense>
       </div>
     </>
   );

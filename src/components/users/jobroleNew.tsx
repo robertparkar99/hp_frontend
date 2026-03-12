@@ -332,6 +332,7 @@ export default function Index({ onBack, knowledge, ability, behaviour, attitude,
             <div className="hidden xl:block">
                 <div className="max-w-screen-xl mx-auto overflow-y-auto hide-scrollbar">
                     <button
+                        id="skill-detail-back-button"
                         onClick={onBack}
                         className="mt-6 mb-6 text-blue-500 hover:text-blue-700 hover:cursor-pointer"
                     >
@@ -342,7 +343,7 @@ export default function Index({ onBack, knowledge, ability, behaviour, attitude,
                         {/* Sidebar */}
                         <div className="w-[200px] flex-shrink-0">
                             <div className="mb-4">
-                                <h1 className="text-[#393939] font-inter text-[24px] font-bold mb-2">
+                                <h1 id="skill-detail-header" className="text-[#393939] font-inter text-[24px] font-bold mb-2">
                                     Skill
                                     {/* Skill {activeSkillName && `- ${activeSkillName}`} */}
                                 </h1>
@@ -351,12 +352,12 @@ export default function Index({ onBack, knowledge, ability, behaviour, attitude,
                                     <div className="flex-1 h-[2px] bg-[#393939] ml-2"></div>
                                 </div>
                             </div>
-                            <div className="bg-[#C8C8C8] rounded-[15px] border-[1.5px] border-[rgba(71,160,255,0.25)] shadow-[0px_0px_6px_1px_rgba(0,0,0,0.25)] h-[calc(76vh-120px)] overflow-hidden">
+                            <div id="skills-sidebar-list" className="bg-[#C8C8C8] rounded-[15px] border-[1.5px] border-[rgba(71,160,255,0.25)] shadow-[0px_0px_6px_1px_rgba(0,0,0,0.25)] h-[calc(76vh-120px)] overflow-hidden">
                                 <div className="space-y-px">
                                     {skills.map((skill, index) => {
                                         const isActive = skill.skill === selectedSkill?.skill;
                                         return (
-                                            <div key={index} className="relative group" onClick={() => setSelectedSkill(skill)}>
+                                            <div id={`skill-item-${index}`} key={index} className="relative group" onClick={() => setSelectedSkill(skill)}>
                                                 <div className={`w-[12px] h-[32px] ${isActive ? 'bg-[#47A0FF]' : 'bg-transparent'} rounded-r-[4px] absolute -left-[6px] top-[2px] transition-all duration-300 group-hover:w-full group-hover:left-0 group-hover:rounded-none opacity-100 group-hover:opacity-0 group-hover:delay-[0ms]`}></div>
                                                 <div className={`h-[36px] flex items-center transition-all duration-300 ${isActive
                                                     ? 'bg-[#47A0FF] text-white'
@@ -425,7 +426,7 @@ export default function Index({ onBack, knowledge, ability, behaviour, attitude,
                         <div className="flex-1 space-y-4">
                             {/* Knowledge Section */}
                             {hasData(selectedSkill?.knowledge || knowledge) && (
-                                <div >
+                                <div id="skill-knowledge-section">
                                     <div className="w-full flex items-center justify-between mb-3">
                                         <div className="w-full">
                                             <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
@@ -459,7 +460,7 @@ export default function Index({ onBack, knowledge, ability, behaviour, attitude,
                             )}
                             {/* Ability Section */}
                             {hasData(selectedSkill?.ability || ability) && (
-                                <div >
+                                <div id="skill-ability-section">
                                     <div className="w-full flex items-center justify-between mb-3">
                                         <div className="w-full">
                                             <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
@@ -478,7 +479,7 @@ export default function Index({ onBack, knowledge, ability, behaviour, attitude,
                             )}
                             {/* behaviour Section */}
                             {hasData(selectedSkill?.behaviour || behaviour) && (
-                                <div>
+                                <div id="skill-behaviour-section">
                                     <div className="w-full flex items-center justify-between mb-3">
                                         <div className="w-full">
                                             <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">
@@ -512,7 +513,7 @@ export default function Index({ onBack, knowledge, ability, behaviour, attitude,
                             )}
                             {/* attitude Section */}
                             {hasData(selectedSkill?.attitude || attitude) && (
-                                <div >
+                                <div id="skill-attitude-section">
                                     <div className="w-full flex items-center justify-between mb-3">
                                         <div className="w-full">
                                             <h2 className="text-[#393939] font-inter text-[18px] font-bold mb-1">

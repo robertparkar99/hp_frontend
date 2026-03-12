@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
-import DataTable from "react-data-table-component";
+
 import { Clock, Calendar, AlertCircle, User, ChevronUp, ChevronDown, Search } from "lucide-react";
 import { AttendanceRecord, Employee } from "../types/attendance";
 import { format, parseISO } from "date-fns";
+import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 
 interface AttendanceListProps {
   records: AttendanceRecord[];
@@ -218,7 +219,7 @@ const handleColumnFilter = (columnKey: string, value: string) => {
     setEditedRecords({});
   };
 
-  const customStyles = {
+  const customStyles: TableStyles = {
       headCells: {
         style: {
           fontSize: "14px",
@@ -362,7 +363,7 @@ const handleColumnFilter = (columnKey: string, value: string) => {
   //   },
   // ];
 
-  const columns = [
+  const columns: TableColumn<AttendanceRecord>[] = [
   {
     name: (
       <div>

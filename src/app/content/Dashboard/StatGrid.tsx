@@ -1,12 +1,18 @@
+//
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { MoreVertical, ChevronDown, MoreHorizontal, Building2Icon, UsersIcon, MapPinIcon, BriefcaseIcon, CreditCardIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import { toast } from "@/hooks/use-toast";
+import { Edit, Plus } from "lucide-react";
 import icon from '@/components/AppIcon';
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
 import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
 import { UserCircle, Search, AlertCircle } from "lucide-react";
+import Shepherd, { Tour } from "shepherd.js";
+import 'shepherd.js/dist/css/shepherd.css';
+import Loader from '../../../components/utils/loading'
 
 import {
   Dialog,
@@ -125,6 +131,29 @@ interface SkillMatrixData {
   gap: "critical" | "high" | "medium" | "low";
 }
 
+// Interface for Course API Response
+interface SuggestedCourseResponse {
+  status: number;
+  message: string;
+  data: SuggestedCourse[];
+}
+
+interface SuggestedCourse {
+  id: number;
+  employee_id: number;
+  course_id: number;
+  course_name: string;
+  task_id: number;
+  task_title: string;
+  sub_institute_id: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: null;
+  create_by: null;
+  updated_by: null;
+  deleted_by: null;
+}
+
 // Task Progress Card API Response Interfaces
 interface TaskProgressResponse {
   success: boolean;
@@ -204,6 +233,7 @@ export default function Dashboard() {
 
   const [orgData, setOrgData] = useState<any>(null);
   const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [openAssessmentModal, setOpenAssessmentModal] = useState(false);
 
@@ -222,8 +252,29 @@ export default function Dashboard() {
     emp.jobrole?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Add these state variables to your component
+  const [showActions, setShowActions] = useState<number | string | null>(null);
+  const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0 });
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
 
+  // Add these handler functions
+  const handleActionMenuClick = (e: React.MouseEvent, employee: Employee) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenuCoords({
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX,
+    });
+    setShowActions(employee.id);
+    setSelectedEmployee(employee);
+  };
+
+  const handleEditEmployeeMenu = (employee: Employee) => {
+    console.log("Edit employee:", employee);
+    setShowActions(null);
+    // Implement your edit employee logic here
+  };
   // Add this function at the top level of your component (with your other functions)
   const triggerMenuNavigation = (employeeId: number | string | null, menu: string) => {
     ;
@@ -235,6 +286,28 @@ export default function Dashboard() {
     );
   };
 
+
+
+  const handleAssignTaskMenu = (employee: Employee) => {
+    console.log("Assign task to:", employee);
+    setShowActions(null);
+    triggerMenuNavigation(employee.id, 'task/taskManagement.tsx');
+  };
+
+  // Add useEffect to close menu when clicking outside
+  // Add useEffect to close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showActions !== null) {
+        setShowActions(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showActions]);
 
 
 
@@ -277,6 +350,8 @@ export default function Dashboard() {
     inProgress: number;
     total: number;
   } | null>(null);
+  // Tour instance ref
+  const tourRef = useRef<Tour | null>(null);
 
   const attrArray = [
     { title: "knowledge", icon: "mdi-book-open-page-variant" },
@@ -314,6 +389,295 @@ export default function Dashboard() {
 
     return () => {
       window.removeEventListener("sidebarStateChange", checkSidebarState);
+    };
+  }, []);
+
+  // Initialize Shepherd.js tour
+  useEffect(() => {
+    // Function to start the tour
+    const startTour = () => {
+      // Get user profile for role-based filtering (default to non-admin if not available)
+      const userData = localStorage.getItem("userData");
+      let isAdmin = false;
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        isAdmin = parsed.user_profile_name === "Admin";
+      }
+      console.log('Tour initializing - isAdmin:', isAdmin);
+
+      // Create the tour
+      const tour = new Shepherd.Tour({
+        defaultStepOptions: {
+          cancelIcon: {
+            enabled: true
+          },
+          classes: 'shepherd-theme-custom',
+          scrollTo: {
+            behavior: 'smooth',
+            block: 'center'
+          },
+          modalOverlayOpeningPadding: 10,
+          modalOverlayOpeningRadius: 8
+        },
+        useModalOverlay: true,
+        exitOnEsc: true,
+        keyboardNavigation: true
+      });
+
+      // Define all possible tour steps
+      const allSteps = [
+        {
+          id: 'welcome',
+          title: 'Welcome to Your Dashboard!',
+          text: 'Let\'s take a quick tour to help you navigate through all the amazing features available to you.',
+          attachTo: {
+            element: '#tour-header',
+            on: 'bottom' as const
+          },
+          buttons: [
+            {
+              text: 'Skip Tour',
+              action: () => {
+                localStorage.setItem('dashboardTourCompleted', 'true');
+                tour.cancel();
+              },
+              classes: 'shepherd-button-secondary'
+            },
+            {
+              text: 'Start Tour',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'stats',
+          title: 'Key Statistics',
+          text: 'Here you can see your key metrics at a glance: Total Employees, Mapped Jobroles, and Total Skills.',
+          attachTo: {
+            element: '#tour-stats',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'chart',
+          title: 'Weekly Task Progress',
+          text: 'This chart shows your weekly task progress. Completed tasks appear in dark blue, in-progress in medium blue, and pending in light blue.',
+          attachTo: {
+            element: '#tour-chart',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        // Admin-only: Skills Heatmap
+        ...(isAdmin ? [{
+          id: 'skills-heatmap',
+          title: 'Enterprise Skills Heatmap',
+          text: 'View skills gaps across departments. Click on any cell to drill down into detailed gap analysis.',
+          attachTo: {
+            element: '#tour-skills-heatmap',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        }] : []),
+        // Non-admin: Skill Profile
+        ...(!isAdmin ? [{
+          id: 'skill-profile',
+          title: 'My Skill Profile',
+          text: 'View your skills endorsed by peers and managers. Click "View More" to see detailed skill information.',
+          attachTo: {
+            element: '#tour-skill-profile',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        }] : []),
+        // Non-admin: Growth Opportunities
+        ...(!isAdmin ? [{
+          id: 'growth-opportunities',
+          title: 'Growth Opportunities',
+          text: 'Track your current role proficiency and view growth opportunities based on your skills.',
+          attachTo: {
+            element: '#tour-growth-opportunities',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        }] : []),
+        {
+          id: 'employee-table',
+          title: 'Employee Directory',
+          text: 'This table displays all employees. You can search, filter, and view employee details here.',
+          attachTo: {
+            element: '#tour-employee-table',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'today-tasks',
+          title: 'Today\'s Tasks',
+          text: 'View and manage your tasks for today. Click the + button to create new tasks.',
+          attachTo: {
+            element: '#tour-today-tasks',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'weekly-tasks',
+          title: 'Weekly Tasks',
+          text: 'Switch to this tab to view your weekly task progress and upcoming tasks. Click on the "Weekly Tasks" tab button above.',
+          attachTo: {
+            element: '#tour-weekly-tasks-tab',
+            on: 'bottom' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'course-list',
+          title: 'Course List',
+          text: 'Browse available courses. Click the + button to add new courses.',
+          attachTo: {
+            element: '#tour-course-list',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'assessment-list',
+          title: 'Assessment List',
+          text: 'View and manage assessments. Click the + button to create new assessments.',
+          attachTo: {
+            element: '#tour-assessment-list',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Finish',
+              action: () => {
+                localStorage.setItem('dashboardTourCompleted', 'true');
+                tour.complete();
+              }
+            }
+          ]
+        }
+      ];
+
+      // Add all steps to tour
+      allSteps.forEach(step => tour.addStep(step));
+
+      // Store tour reference
+      tourRef.current = tour;
+
+      // Start tour
+      console.log('Starting dashboard tour...', { isAdmin, stepsCount: allSteps.length });
+      tour.start();
+    };
+
+    // Check if we should trigger the tour (from sidebar tour navigation)
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+
+    if (triggerTour === 'dashboard') {
+      // Clear the trigger flag
+      sessionStorage.removeItem('triggerPageTour');
+      console.log('Trigger found, starting tour...');
+
+      // Wait for DOM to be ready then start tour
+      setTimeout(startTour, 500);
+    } else {
+      console.log('No tour trigger found');
+    }
+
+    // Cleanup
+    return () => {
+      if (tourRef.current) {
+        tourRef.current.cancel();
+        tourRef.current = null;
+      }
     };
   }, []);
 
@@ -462,7 +826,7 @@ export default function Dashboard() {
             const currentJobroleId = currentUser?.jobrole_id || data.employeeList?.find((emp: any) => emp.id == sessionData.userId)?.jobrole_id;
 
             const ratingsRes = await fetch(
-              `${sessionData.url}/table_data/?table=user_rating_details&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[user_id]=${sessionData.userId}&filters[jobrole_id]=${currentJobroleId}`
+              `${sessionData.url}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[user_id]=${sessionData.userId}&filters[jobrole_id]=${currentJobroleId}`
             );
 
             let ratedSkillIds: string[] = [];
@@ -522,45 +886,37 @@ export default function Dashboard() {
           totalSkills: data.totle_skills ?? 0,
         });
 
-        // Fetch courses
+        // Fetch suggested courses from new API
         try {
-          const courseUrl = sessionData.userProfileName === "Admin"
-            ? `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfileName}`
-            : `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.subInstituteId}&syear=2025&user_id=${sessionData.userId}&user_profile_name=${sessionData.userProfileName}&jobrole=${encodeURIComponent(userJobrole)}&department=${encodeURIComponent(currentUser?.department_name || '')}`;
+          const courseApiUrl = `${sessionData.url}/getSuggestedCoursesByUser?user_id=${sessionData.userId}&sub_institute_id=${sessionData.subInstituteId}`;
 
-          const courseRes = await fetch(courseUrl);
+          const courseRes = await fetch(courseApiUrl);
           if (!courseRes.ok) throw new Error(`Course API error: ${courseRes.status}`);
-          const courseData = await courseRes.json();
-          const mappedCourses: any[] = [];
-          if (courseData?.lms_subject) {
-            Object.keys(courseData.lms_subject).forEach((category) => {
-              courseData.lms_subject[category].forEach((item: any) => {
-                // Check if course is enrolled (either by enrollment_status or in localStorage)
-                const isEnrolled = item.enrollment_status !== null ||
-                  (() => {
-                    const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
-                    return enrolledCourses.some((c: any) => c.id === item.subject_id);
-                  })();
 
-                // Only show enrolled courses
-                if (isEnrolled && (sessionData.userProfileName === "Admin" || item.jobrole === userJobrole)) {
-                  const course = {
-                    id: item.subject_id,
-                    title: item.subject_name,
-                    description: item.standard_name,
-                    thumbnail: item.display_image || placeholderImage,
-                    jobrole: item.jobrole,
-                    category: category,
-                    enrollment_status: item.enrollment_status
-                  };
-                  mappedCourses.push(course);
-                }
-              });
-            });
-          }
+          const courseData: SuggestedCourseResponse = await courseRes.json();
+
+          // Map the new API response to the courses state
+          const mappedCourses: any[] = courseData.data?.map((item: SuggestedCourse) => ({
+            id: item.id,
+            title: item.course_name,
+            description: '',
+            thumbnail: placeholderImage,
+            jobrole: '',
+            category: 'Suggested Course',
+            enrollment_status: null,
+            course_id: item.course_id,
+            task_id: item.task_id,
+            task_title: item.task_title,
+            employee_id: item.employee_id,
+            sub_institute_id: item.sub_institute_id,
+            created_at: item.created_at,
+            updated_at: item.updated_at
+          })) || [];
+
           setCourses(mappedCourses);
         } catch (err) {
-          console.error("Error fetching courses:", err);
+          console.error("Error fetching suggested courses:", err);
+          setCourses([]);
         }
 
         // Fetch assessments
@@ -761,7 +1117,94 @@ export default function Dashboard() {
     return "bg-gray-300 hover:bg-gray-200";
   };
 
-  // Render proportional task bar with multiple colors
+  // Render stacked task bar chart with combined colors in single bar
+  const renderTaskBarChart = (data: any[], isMonthly: boolean = false) => {
+    const maxValue = Math.max(...data.map(d => d.total), 1);
+    const chartHeight = 192; // h-48 = 192px
+
+    return (
+      <div className="relative">
+        {/* Y-axis labels */}
+        <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500 pr-2">
+          <span>{maxValue}</span>
+          <span>{Math.round(maxValue * 0.75)}</span>
+          <span>{Math.round(maxValue * 0.5)}</span>
+          <span>{Math.round(maxValue * 0.25)}</span>
+          <span>0</span>
+        </div>
+
+        {/* Chart area */}
+        <div className="ml-10 h-48 flex items-end gap-3">
+          {data.map((item, i) => {
+            const completed = item.COMPLETED ?? item.Completed ?? 0;
+            const inProgress = item.IN_PROGRESS ?? item["In Progress"] ?? 0;
+            const pending = item.PENDING ?? item.Pending ?? 0;
+            const total = item.total;
+
+            // Calculate heights for stacked bar
+            // Bar height represents the total count
+            const barHeight = total > 0 ? (total / maxValue) * chartHeight : 0;
+            // Segment heights are proportional to their counts relative to total
+            const completedHeight = total > 0 ? (completed / total) * barHeight : 0;
+            const inProgressHeight = total > 0 ? (inProgress / total) * barHeight : 0;
+            const pendingHeight = total > 0 ? (pending / total) * barHeight : 0;
+
+            return (
+              <div
+                key={i}
+                className="flex flex-col items-center flex-1 cursor-pointer group"
+                onMouseEnter={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setTooltipData({
+                    visible: true,
+                    x: rect.left + rect.width / 2,
+                    y: rect.top,
+                    date: isMonthly ? item.month : item.date,
+                    completed,
+                    pending,
+                    inProgress,
+                    total: item.total
+                  });
+                }}
+                onMouseLeave={() => setTooltipData(null)}
+              >
+                {/* Stacked bar container */}
+                <div className="w-8 h-40 flex flex-col justify-end rounded-t overflow-hidden">
+                  {/* Pending bar (bottom) */}
+                  <div
+                    className="w-full bg-yellow-400 transition-all duration-200 group-hover:bg-yellow-500"
+                    style={{ height: `${pendingHeight}px` }}
+                    title={`Pending: ${pending}`}
+                  />
+                  {/* In Progress bar (middle) */}
+                  <div
+                    className="w-full bg-blue-500 transition-all duration-200 group-hover:bg-blue-600"
+                    style={{ height: `${inProgressHeight}px` }}
+                    title={`In Progress: ${inProgress}`}
+                  />
+                  {/* Completed bar (top) */}
+                  <div
+                    className="w-full bg-green-500 transition-all duration-200 group-hover:bg-green-600"
+                    style={{ height: `${completedHeight}px` }}
+                    title={`Completed: ${completed}`}
+                  />
+                </div>
+                {/* Total value label */}
+                <span className="text-xs text-gray-700 font-medium mt-1">
+                  {total > 0 ? total : '-'}
+                </span>
+                <span className="text-xs text-gray-500 mt-1">
+                  {isMonthly ? item.month : item.date}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Render proportional task bar with multiple colors (legacy - kept for compatibility)
   const renderProportionalTaskBar = (Completed: number, InProgress: number, Pending: number, total: number) => {
     if (total === 0) {
       return <div className="w-full bg-gray-200 rounded" style={{ height: '4px' }} />;
@@ -975,6 +1418,11 @@ export default function Dashboard() {
     }
   };
 
+  if (loading) {
+    return (
+      <Loader />
+    );
+  }
   const currentPercent =
     maxLevel > 0 ? Math.min(100, Math.round((currentLevel / maxLevel) * 100)) : 0;
 
@@ -982,7 +1430,7 @@ export default function Dashboard() {
   return (
     <div className={`min-h-[90vh] text-gray-900 transition-all duration-300 ${isSidebarOpen ? "ml-0 md:ml-60" : "ml-0 md:ml-10"}`}>
       {/* 🔹 Header: Welcome + Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl shadow p-4 mb-6 gap-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl shadow p-4 mb-6 gap-4 " id="tour-header">
 
         {/* Welcome with icon */}
         <div className="flex items-center gap-2">
@@ -993,7 +1441,7 @@ export default function Dashboard() {
         </div>
 
         {/* Search bar */}
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-full sm:w-64" id="tour-search">
           <input
             type="text"
             placeholder="Search employees..."
@@ -1011,7 +1459,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl shadow p-6">
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Stats Section */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 divide-x divide-y border rounded-lg overflow-hidden flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 divide-x divide-y border rounded-lg overflow-hidden flex-1" id="tour-stats">
                 <div className="flex items-center gap-3 border-b border-r pb-4 pr-6">
                   <div className="flex items-center gap-3 p-4">
                     <div className="w-9 h-9 rounded bg-blue-300 mb-7" />
@@ -1051,7 +1499,7 @@ export default function Dashboard() {
               </div>
 
               {/* Chart */}
-              <div className="bg-white rounded-lg shadow p-4">
+              <div className="bg-white rounded-lg shadow p-4" id="tour-chart">
                 <div className="flex-1">
                   <div className="flex items-center justify-center gap-2 mb-4">
                     <h2 className="font-semibold text-center">Task Progress</h2>
@@ -1191,65 +1639,8 @@ export default function Dashboard() {
                       {/* Weekly */}
                       <TabsContent value="weekly">
                         {taskProgressData.data.weekly.date_wise_counts.length > 0 ? (
-                          <div className="relative">
-                            <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
-                              <span>{Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total))}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.8)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.6)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.4)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.weekly.date_wise_counts.map(d => d.total)) * 0.2)}</span>
-                              <span>0</span>
-                            </div>
-                            <div className="ml-6 h-48 flex justify-between items-end gap-2">
-                              {taskProgressData.data.weekly.date_wise_counts.map((item, i) => {
-                                return (
-                                  <div
-                                    key={i}
-                                    className="flex flex-col items-center flex-1 cursor-pointer"
-                                    onMouseEnter={(e) => {
-                                      const rect = e.currentTarget.getBoundingClientRect();
-                                      setTooltipData({
-                                        visible: true,
-                                        x: rect.left + rect.width / 2,
-                                        y: rect.top,
-                                        date: item.date,
-                                        completed: item.COMPLETED ?? item.Completed ?? 0,
-                                        pending: item.PENDING ?? item.Pending ?? 0,
-                                        inProgress: item.IN_PROGRESS ?? item["In Progress"] ?? 0,
-                                        total: item.total
-                                      });
-                                    }}
-                                    onMouseLeave={() => setTooltipData(null)}
-                                  >
-                                    {renderProportionalTaskBar(item.COMPLETED ?? item.Completed ?? 0, item.IN_PROGRESS ?? item["In Progress"] ?? 0, item.PENDING ?? item.Pending ?? 0, item.total)}
-                                    <span className="text-xs text-gray-500 mt-2">
-                                      {new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-
-                            {/* Tooltip */}
-                            {tooltipData && tooltipData.visible && (
-                              <div
-                                className="fixed z-50 w-52 rounded-lg bg-white text-gray-800 text-xs shadow-lg border border-gray-200 p-3 pointer-events-none transition-opacity duration-150"
-
-                                style={{
-                                  left: tooltipData.x,
-                                  top: tooltipData.y - 10,
-                                  transform: 'translateX(-50%) translateY(-100%)'
-                                }}
-                              >
-                                <p className="font-semibold mb-1">{new Date(tooltipData.date).toLocaleDateString()}</p>
-                                <div className="space-y-0.5">
-                                  <p className="text-green-500">Completed: {tooltipData.completed}</p>
-                                  <p className="text-blue-500">In Progress: {tooltipData.inProgress}</p>
-                                  <p className="text-yellow-400">Pending: {tooltipData.pending}</p>
-                                  <p className="font-semibold mt-1 border-t border-gray-700 pt-1">Total: {tooltipData.total}</p>
-                                </div>
-                              </div>
-                            )}
+                          <div className="py-4">
+                            {renderTaskBarChart(taskProgressData.data.weekly.date_wise_counts, false)}
                           </div>
                         ) : (
                           <p className="text-center text-gray-500 py-8">No weekly data</p>
@@ -1259,63 +1650,8 @@ export default function Dashboard() {
                       {/* Monthly */}
                       <TabsContent value="monthly">
                         {taskProgressData.data.monthly.month_wise_counts.length > 0 ? (
-                          <div className="relative">
-                            <div className="absolute left-0 h-48 flex flex-col justify-between text-xs text-gray-500">
-                              <span>{Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total))}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.8)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.6)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.4)}</span>
-                              <span>{Math.round(Math.max(...taskProgressData.data.monthly.month_wise_counts.map(d => d.total)) * 0.2)}</span>
-                              <span>0</span>
-                            </div>
-                            <div className="ml-6 h-48 flex justify-between items-end gap-2">
-                              {taskProgressData.data.monthly.month_wise_counts.map((item, i) => {
-                                return (
-                                  <div
-                                    key={i}
-                                    className="flex flex-col items-center flex-1 cursor-pointer"
-                                    onMouseEnter={(e) => {
-                                      const rect = e.currentTarget.getBoundingClientRect();
-                                      setTooltipData({
-                                        visible: true,
-                                        x: rect.left + rect.width / 2,
-                                        y: rect.top,
-                                        date: item.month,
-                                        completed: item.COMPLETED ?? item.Completed ?? 0,
-                                        pending: item.PENDING ?? item.Pending ?? 0,
-                                        inProgress: item.IN_PROGRESS ?? item["In Progress"] ?? 0,
-                                        total: item.total
-                                      });
-                                    }}
-                                    onMouseLeave={() => setTooltipData(null)}
-                                  >
-                                    {renderProportionalTaskBar(item.COMPLETED ?? item.Completed ?? 0, item.IN_PROGRESS ?? item["In Progress"] ?? 0, item.PENDING ?? item.Pending ?? 0, item.total)}
-                                    <span className="text-xs text-gray-500 mt-2">{item.month}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-
-                            {/* Tooltip */}
-                            {tooltipData && tooltipData.visible && (
-                              <div
-                                className="fixed z-50 w-52 rounded-lg bg-white text-gray-800 text-xs shadow-lg border border-gray-200 p-3 pointer-events-none transition-opacity duration-150"
-
-                                style={{
-                                  left: tooltipData.x,
-                                  top: tooltipData.y - 10,
-                                  transform: 'translateX(-50%) translateY(-100%)'
-                                }}
-                              >
-                                <p className="font-semibold mb-1">{tooltipData.date}</p>
-                                <div className="space-y-0.5">
-                                  <p className="text-green-400">Completed: {tooltipData.completed}</p>
-                                  <p className="text-blue-400">In Progress: {tooltipData.inProgress}</p>
-                                  <p className="text-yellow-400">Pending: {tooltipData.pending}</p>
-                                  <p className="font-semibold mt-1 border-t border-gray-700 pt-1">Total: {tooltipData.total}</p>
-                                </div>
-                              </div>
-                            )}
+                          <div className="py-4">
+                            {renderTaskBarChart(taskProgressData.data.monthly.month_wise_counts, true)}
                           </div>
                         ) : (
                           <p className="text-center text-gray-500 py-8">No monthly data</p>
@@ -1354,7 +1690,7 @@ export default function Dashboard() {
             // Admin view - Skills Heatmap
             <div className="grid grid-cols-1 gap-4">
               {/* Left: Enterprise Skills Heatmap */}
-              <div className="bg-white rounded-xl shadow p-4">
+              <div className="bg-white rounded-xl shadow p-4" id="tour-skills-heatmap">
                 <h2 className="font-semibold text-lg mb-2">Department Skills Heatmap</h2>
 
                 {/* Legend */}
@@ -1559,7 +1895,7 @@ export default function Dashboard() {
             // Non-admin view - Skill Profile and Growth Opportunities
             <div className="space-y-6">
               {/* My Skill Profile */}
-              <div className="p-4 bg-white rounded-lg shadow min-h-[27.5rem] h-110 md:h-128 overflow-y-auto hide-scroll">
+              <div className="p-4 bg-white rounded-lg shadow min-h-[27.5rem] h-110 md:h-128 overflow-y-auto hide-scroll" id="tour-skill-profile">
                 <h2 className="font-semibold text-lg flex items-center gap-2 mb-1">
                   <span>🧑‍💻</span> My Skill Profile
                 </h2>
@@ -1708,7 +2044,7 @@ export default function Dashboard() {
                 </DialogContent>
               </Dialog>
               {/* My Growth Opportunities */}
-              <div className="bg-white border rounded-xl p-5 w-full col-span-12 -mx-1 px-6">
+              <div className="bg-white border rounded-xl p-5 w-full col-span-12 -mx-1 px-6" id="tour-growth-opportunities">
                 <h2 className="font-semibold text-lg flex items-center gap-2 mb-2">
                   ⊚ My Growth Opportunities
                 </h2>
@@ -1765,7 +2101,7 @@ export default function Dashboard() {
             </div>
           )}
           {/* Employee Table - Full width row */}
-          <div className="col-span-full md:col-span-9 bg-white rounded-xl shadow min-h-[24rem] h-96 md:h-[28rem] overflow-x-auto md:overflow-x-visible overflow-y-auto hide-scroll mb-15 ">
+          <div className="col-span-full md:col-span-9 bg-white rounded-xl shadow min-h-[24rem] h-96 md:h-[28rem] overflow-x-auto md:overflow-x-visible overflow-y-auto hide-scroll mb-15 " id="tour-employee-table">
             {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
 
             {/* Table Headers with Search Fields */}
@@ -1871,7 +2207,7 @@ export default function Dashboard() {
         </div>
 
         {/* Right Section - Adjust column span based on sidebar state */}
-        <div className="col-span-full md:col-span-3 space-y-6">
+        <div className="col-span-full md:col-span-3 space-y-6" id="tour-tasks">
           <div className="bg-white rounded-lg shadow">
             {/* Tab Navigation */}
             <div className="flex border-b">
@@ -1882,6 +2218,7 @@ export default function Dashboard() {
                 Today's Tasks
               </button>
               <button
+                id="tour-weekly-tasks-tab"
                 className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Week Task List" ? "text-blue-400 border-b-2 border-blue-400" : "text-gray-500 hover:text-gray-700"}`}
                 onClick={() => setSelectedWidget("Week Task List")}
               >
@@ -1893,7 +2230,7 @@ export default function Dashboard() {
             <div className="p-4">
               {/* Today's Tasks */}
               {(selectedWidget === "Today Task List" || !selectedWidget) && (
-                <div className="h-48 sm:h-56 md:h-64 overflow-y-auto hide-scroll">
+                <div className="h-48 sm:h-56 md:h-64 overflow-y-auto hide-scroll" id="tour-today-tasks">
                   {/* Header with + button */}
                   <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white dark:bg-gray-900">
                     <h2 className="font-semibold">Today's Task Progress</h2>
@@ -1966,7 +2303,7 @@ export default function Dashboard() {
 
               {/* Weekly Tasks */}
               {selectedWidget === "Week Task List" && (
-                <div className="h-52 sm:h-60 md:h-72 overflow-y-auto hide-scroll">
+                <div className="h-52 sm:h-60 md:h-72 overflow-y-auto hide-scroll" id="tour-weekly-tasks">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-semibold">Weekly Task Progress</h2>
 
@@ -2039,7 +2376,7 @@ export default function Dashboard() {
           </div>
           <div className={`${isSidebarOpen ? "col-span-3" : "col-span-3"} space-y-6`}>
             {/* Course List */}
-            <div className=" bg-white rounded-lg shadow h-80 sm:h-125 overflow-y-auto hide-scroll">
+            <div className=" bg-white rounded-lg shadow h-80 sm:h-125 overflow-y-auto hide-scroll" id="tour-course-list">
               {/* Header with + button */}
               <div className="sticky top-0 z-10 flex items-center justify-between mb-4 px-4 pt-2 pb-1 bg-white shadow-sm">
                 <h2 className="font-semibold">Course List</h2>
@@ -2055,15 +2392,12 @@ export default function Dashboard() {
                 courses.slice(0, 5).map(course => (
                   <div key={course.id} className="mb-4 border-l-2 pl-3 border-blue-300">
                     <span className="text-xs font-semibold px-2 py-1 rounded text-blue-700 bg-blue-100 border-blue-400">
-                      {course.category.toLowerCase().includes('task') ? 'Task-Based' : 'Skill-Based'}: {course.category}
+                      {course.category}
                     </span>
-                    <p className="mt-2">{course.title}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div>
-                        <p className="text-sm font-medium">{course.jobrole}</p>
-                        <p className="text-xs text-gray-400">{course.description}</p>
-                      </div>
-                    </div>
+                    <p className="mt-2 font-medium">{course.title}</p>
+                    {course.task_title && (
+                      <p className="text-xs text-gray-500 mt-1">Task: {course.task_title}</p>
+                    )}
                   </div>
                 ))
               ) : (
@@ -2078,7 +2412,7 @@ export default function Dashboard() {
             />
 
             {/* Assessment List */}
-            <div className="bg-white rounded-lg shadow h-64 sm:h-95 overflow-y-auto hide-scroll">
+            <div className="bg-white rounded-lg shadow h-64 sm:h-95 overflow-y-auto hide-scroll" id="tour-assessment-list">
               {/* Header with + button */}
               <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white px-2 pt-2 pb-1 shadow-sm">
                 <h2 className="font-semibold">Assessment List</h2>
@@ -2090,21 +2424,58 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {assessments.length > 0 ? (
-                assessments.slice(0, 5).map(assessment => (
-                  <div key={assessment.id} className="mb-4 border-l-2 pl-3 border-green-300">
-                    <span className="text-xs font-semibold px-2 py-1 rounded text-green-700 bg-green-100 border-green-400">
-                      {assessment.category.toLowerCase().includes('task') ? 'Task-Based' : 'Skill-Based'}: {assessment.category}
-                    </span>
-                    <p className="mt-2">{assessment.title}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div>
-                        <p className="text-sm font-medium">{assessment.jobrole}</p>
-                        <p className="text-xs text-gray-400">{assessment.description}</p>
+              {weekTasks.length > 0 ? (
+                weekTasks.map((task, index) => {
+                  // ✅ Define color mapping
+                  const badgeColors: Record<string, string> = {
+                    Hard: "text-red-700 bg-red-500 border-red-400",
+                    Medium: "text-yellow-700 bg-yellow-100 border-yellow-400",
+                    Low: "text-green-700 bg-green-500 border-green-400",
+                  };
+
+                  return (
+                    <div key={index} className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
+                      }`}>
+                      {/* Badge */}
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
+                        }`}>
+                        {task.task_type}
+                      </span>
+
+                      {/* Title */}
+                      <p className="mt-2">{task.task_title}</p>
+
+                      {/* Profile */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <img
+                          src={
+                            task.image && task.image !== ""
+                              ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${task.image}`
+                              : placeholderImage
+                          }
+                          alt={task.allocatedUser}
+                          className="w-8 h-8 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                          }}
+                        />
+                        <div>
+                          <p className="text-sm font-medium">{task.allocatedUser}</p>
+                          <p className="text-xs text-gray-400">
+                            {(() => {
+                              if (!task.task_date) return "";
+                              const d = new Date(task.task_date);
+                              const day = String(d.getDate()).padStart(2, "0");
+                              const month = String(d.getMonth() + 1).padStart(2, "0");
+                              const year = d.getFullYear();
+                              return `${day}-${month}-${year}`;
+                            })()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               ) : (
                 <p className="text-gray-500 text-sm">No assessments available</p>
               )}
@@ -2136,4 +2507,76 @@ export default function Dashboard() {
 }
 function triggerMenuNavigation(id: string | number, arg1: string) {
   throw new Error("Function not implemented.");
+}
+
+// Custom CSS for Shepherd tour
+const tourStyles = `
+  .shepherd-theme-custom {
+    --shepherd-theme-primary: #3080ff;
+    --shepherd-theme-secondary: #6c757d;
+  }
+
+  .shepherd-theme-custom .shepherd-header {
+    background: #007BE5;
+    color: white;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .shepherd-theme-custom .shepherd-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: white;
+  }
+
+  .shepherd-theme-custom .shepherd-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #171717;
+    padding: 16px;
+  }
+
+  .shepherd-theme-custom .shepherd-button {
+    background: #007BE5;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .shepherd-theme-custom .shepherd-button:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+  }
+
+  .shepherd-theme-custom .shepherd-button-secondary {
+    background: #007BE5 !important;
+  }
+
+  .shepherd-theme-custom .shepherd-button-secondary:hover {
+    background: #0056b3 !important;
+  }
+
+  .shepherd-theme-custom .shepherd-cancel-icon {
+    color: white;
+    font-size: 20px;
+  }
+
+  .shepherd-has-title .shepherd-content .shepherd-header {
+    background: #546ee5;
+    padding: 1em;
+  }
+
+  .shepherd-theme-custom .shepherd-element {
+    box-shadow: 0 8px 32px rgba(0, 123, 229, 0.3);
+    border-radius: 12px;
+  }
+`;
+
+// Inject styles into document head
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = tourStyles;
+  document.head.appendChild(styleSheet);
 }

@@ -6,6 +6,8 @@ import { useState, useEffect } from "react";
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("Skill Library");
+
   // Sync with localStorage and handle sidebar state changes
   useEffect(() => {
     const checkSidebarState = () => {
@@ -40,7 +42,7 @@ export default function HomePage() {
         firstName: "",
         lastName: ""
       }} /> */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-76" : "ml-24"} p-2`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-[304px]" : "md:ml-24"} ml-0 p-4 md:p-6`}>
         <SkillLibrary />
       </div>
     </>

@@ -33,6 +33,7 @@ const ChapterCard = ({
   standardName,
   onCompleteCourse, // New prop to handle course completion
   onContentViewed, // New prop to notify when content is viewed
+  contentCategory, // New prop for content category mapping
 }) => {
   const [loading, setLoading] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
@@ -251,6 +252,20 @@ const ChapterCard = ({
     setSelectedContent(null);
   };
 
+  // Function to get category display name from ID
+  const getCategoryDisplayName = (category) => {
+    // If category is already a string (not an ID), return it as is
+    if (typeof category === 'string' && !contentCategory?.[category]) {
+      return category;
+    }
+    // If category is a number/string ID, look up the name from contentCategory
+    if (contentCategory?.[category]) {
+      return contentCategory[category];
+    }
+    // Return the original category if not found
+    return category;
+  };
+
 
   return (
     <>
@@ -400,7 +415,7 @@ const ChapterCard = ({
                                 <Icon name="FolderOpen" size={14} className="text-blue-600" />
                               </div>
                               <div className="text-left">
-                                <h4 className="text-sm font-semibold ">{category}</h4>
+                                <h4 className="text-sm font-semibold ">{getCategoryDisplayName(category)}</h4>
                                 <p className="text-xs text-blue-700 bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded-full border border-blue-200">
                                   {items.length} {items.length === 1 ? 'item' : 'items'}
                                 </p>

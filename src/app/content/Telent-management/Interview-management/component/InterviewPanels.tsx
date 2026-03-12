@@ -66,6 +66,7 @@ const availableInterviewers = [
 
 
 export default function InterviewPanels() {
+  
    const [searchTerm, setSearchTerm] = useState("");
    const [statusFilter, setStatusFilter] = useState("all");
    const [selectedPanel, setSelectedPanel] = useState<any>(null);
@@ -307,7 +308,7 @@ export default function InterviewPanels() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="tour-panel-members">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -327,7 +328,7 @@ export default function InterviewPanels() {
           }
         }}>
           <DialogTrigger asChild>
-            <Button className="btn-professional flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors" onClick={() => setIsEditing(false)}>
+            <Button className="btn-professional flex items-center gap-2 bg-[#f5f5f5] text-black hover:bg-gray-200 transition-colors" id="tour-create-panel-button" onClick={() => setIsEditing(false)}>
               <Plus className="mr-2  h-4 w-4" />
               Create Panel
             </Button>

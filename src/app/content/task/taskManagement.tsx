@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import TaskListModel from "../task/components/taskListModel";
+import TaskManagementTour from "../task/components/TaskManagementTour";
 
 interface SessionData {
   url: string;
@@ -105,6 +106,7 @@ const TaskManagement = () => {
   const [isjobroleList, setIsJobroleList] = useState(false);
   const [isjobroleModel, setIsJobroleModel] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showTour, setShowTour] = useState(false);
 
   // Add state for form fields to better manage them
   const [taskDescription, setTaskDescription] = useState<string>("");
@@ -147,6 +149,23 @@ const TaskManagement = () => {
       fetchObserver();
     }
   }, [sessionData.url, sessionData.token]);
+
+  // Check if tour should start (when navigated from employee directory tour)
+  useEffect(() => {
+    const triggerTour = sessionStorage.getItem('triggerPageTour');
+    console.log('[Task Assignment] triggerPageTour value:', triggerTour);
+
+    if (triggerTour === 'task-assignment') {
+      console.log('[Task Assignment] Starting page tour automatically');
+      setShowTour(true);
+      // Clean up the flag
+      sessionStorage.removeItem('triggerPageTour');
+    }
+  }, []);
+
+  const handleTourComplete = () => {
+    setShowTour(false);
+  };
 
   // Cleanup object URLs when component unmounts
   useEffect(() => {
@@ -293,16 +312,45 @@ const TaskManagement = () => {
       setPreviouslyAllocatedTasks([]);
     } else {
       try {
-        const response = await fetch(
+        // Fetch skills from the new user-skills API
+        const skillResponse = await fetch(
+          `${sessionData.url}/api/user-skills/${userId}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`
+        );
+        const skillData = await skillResponse.json();
+        
+        // Transform skills to match Skill interface
+        const transformedSkills: Skill[] = [];
+        
+        if (skillData.data && Array.isArray(skillData.data)) {
+          skillData.data.forEach((item: any) => {
+            transformedSkills.push({
+              skill_id: item.skill_id || item.id || 0,
+              jobrole: item.jobrole || item.job_role || '',
+              skill: item.skill || item.skill_name || item.name || ''
+            });
+          });
+        } else if (Array.isArray(skillData)) {
+          skillData.forEach((item: any) => {
+            transformedSkills.push({
+              skill_id: item.skill_id || item.id || 0,
+              jobrole: item.jobrole || item.job_role || '',
+              skill: item.skill || item.skill_name || item.name || ''
+            });
+          });
+        }
+        
+        setSkillList(transformedSkills);
+        
+        // Fetch tasks from the original employee details API
+        const taskResponse = await fetch(
           `${sessionData.url}/user/add_user/${userId}/edit?type=API&token=${sessionData.token}` +
           `&sub_institute_id=${sessionData.subInstituteId}` +
           `&org_type=${sessionData.orgType}&syear=${sessionData.syear}`
         );
-
-        const data = await response.json();
-        setSkillList(data.jobroleSkills || []);
-        setTaskList(data.jobroleTasks || []);
-        setTaskListArr(data.jobroleTasks || []);
+        
+        const taskData = await taskResponse.json();
+        setTaskList(taskData.jobroleTasks || []);
+        setTaskListArr(taskData.jobroleTasks || []);
         
         // Fetch previously allocated tasks for this employee
         await fetchPreviouslyAllocatedTasks(userId);
@@ -422,7 +470,7 @@ const TaskManagement = () => {
       alert("Please select either employees or a department");
       return;
     }
-    
+
     if (!selTask || !taskType) {
       alert("Please fill all required fields");
       return;
@@ -446,21 +494,19 @@ const TaskManagement = () => {
       const formData = new FormData();
 
       // Add all form fields to formData
-      // Include department_id for each employee in TASK_ALLOCATED_TO
-      // Use the selected department ID if available, otherwise fall back to employee's department_id
       const employeesWithDept = selEmployee.map(empId => {
         const employee = employeeList.find(e => e.id === empId);
         const deptId = selDepartmentId || employee?.department_id || '';
         return employee ? `${empId}:${deptId}` : empId;
       });
-      
+
       // If no employees are selected but a department is selected, use the department ID
       if (selDepartmentId && selEmployee.length === 0) {
         formData.append("TASK_ALLOCATED_TO", selDepartmentId);
       } else if (employeesWithDept.length > 0) {
         formData.append("TASK_ALLOCATED_TO", employeesWithDept.join(","));
       }
-      
+
       // Also log the formatted data for debugging
       const finalAllocatedTo = selDepartmentId && selEmployee.length === 0
         ? selDepartmentId
@@ -480,7 +526,7 @@ const TaskManagement = () => {
       formData.append("KPA", kpis);
       formData.append("selType", taskType);
       formData.append("repeat_days", repeatDays);
-      formData.append("repeat_until", formattedRepeatUntil); // Use formatted date
+      formData.append("repeat_until", formattedRepeatUntil);
 
       if (file) {
         formData.append("TASK_ATTACHMENT", file);
@@ -512,8 +558,91 @@ const TaskManagement = () => {
 
       const result = await response.json();
 
+      console.log('[DEBUG] Full API response:', result);
+      console.log('[DEBUG] Response status:', response.ok);
+
       if (response.ok) {
+        // Extract task_id from the response using multiple fallbacks
+        const extractTaskId = (payload: any): string | undefined => {
+          if (!payload) return undefined;
+
+          const candidates = [
+            payload.task_id,
+            payload.taskId,
+            payload.id,
+            payload.insertId,
+            payload.lastInsertId,
+            payload?.data?.task_id,
+            payload?.data?.taskId,
+            payload?.data?.id,
+            payload?.data?.insertId,
+            payload?.data?.lastInsertId,
+            payload?.data?.task?.task_id,
+            payload?.data?.task?.id,
+            payload?.data?.new_task?.task_id,
+            payload?.data?.new_task?.id,
+          ];
+
+          const hit = candidates.find(
+            (val) => val !== undefined && val !== null && val !== ""
+          );
+
+          return hit !== undefined ? String(hit) : undefined;
+        };
+
+        let taskId = extractTaskId(result);
+
+        // Fallback: fetch the most recent matching task if API didn't return the id
+        if (!taskId) {
+          try {
+            // Fetch the single most recently created task (avoid title clashes)
+            const lookupUrl = `${sessionData.url}/table_data?table=task` +
+              `&filters[sub_institute_id]=${sessionData.subInstituteId}` +
+              `&order_by[column]=id&order_by[direction]=desc&limit=1`;
+
+            const lookupRes = await fetch(lookupUrl, {
+              headers: { Authorization: `Bearer ${sessionData.token}` },
+            });
+
+            const lookupData = await lookupRes.json();
+
+            const latestTask =
+              (Array.isArray(lookupData) && lookupData[0]) ||
+              lookupData?.data?.[0] ||
+              lookupData?.tasks?.[0] ||
+              lookupData?.[0];
+
+            const fallbackId =
+              latestTask?.task_id ||
+              latestTask?.id ||
+              latestTask?.taskId;
+
+            if (fallbackId) {
+              taskId = String(fallbackId);
+              console.log('[DEBUG] Fallback task_id from lookup:', taskId);
+            } else {
+              console.warn('[DEBUG] Fallback lookup did not return a task id');
+            }
+          } catch (lookupError) {
+            console.error('[DEBUG] Error fetching fallback task id:', lookupError);
+          }
+        }
+
+        console.log('[DEBUG] Extracted task_id:', taskId);
+        console.log('[DEBUG] Result keys:', Object.keys(result));
+
+        if (!taskId) {
+          console.warn('[DEBUG] WARNING: No task_id found in response! Webhook will be sent without id.');
+        }
+
         alert("Task created successfully for all selected employees!");
+
+        // Send notification to all assigned users
+        await sendTaskNotification(selEmployee, selTask);
+
+        // Call webhook to notify external system with task ID
+        await callTaskAssignedWebhook(selEmployee, selTask, taskDescription, taskId);
+
         resetForm();
       } else {
         throw new Error(result.message || "Failed to create task");
@@ -526,6 +655,122 @@ const TaskManagement = () => {
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Function to send notification to assigned users
+  const sendTaskNotification = async (userIds: string[], taskTitle: string) => {
+    try {
+      for (const userId of userIds) {
+        // Create notification object
+        const notification = {
+          id: Date.now().toString() + '_' + userId,
+          user_id: userId,
+          title: "New Task Assigned",
+          message: `You have been assigned a new task: ${taskTitle}`,
+          type: "task_assignment",
+          sender_id: sessionData.userId,
+          read: false,
+          created_at: new Date().toISOString(),
+        };
+
+        // Store notification in localStorage for the specific user
+        // This ensures only the assigned user can see their notifications
+        const storageKey = `notifications_${userId}`;
+        const existingNotifications = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        existingNotifications.push(notification);
+        localStorage.setItem(storageKey, JSON.stringify(existingNotifications));
+
+        // Also update the pendingTasksCount in localStorage
+        const currentCount = parseInt(localStorage.getItem('pendingTasksCount') || '0', 10);
+        localStorage.setItem('pendingTasksCount', (currentCount + 1).toString());
+
+        // Also try to send to backend API if available
+        try {
+          const notificationRes = await fetch(
+            `${sessionData.url}/api/send-notification`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${sessionData.token}`,
+              },
+              body: JSON.stringify({
+                user_id: userId,
+                title: "New Task Assigned",
+                message: `You have been assigned a new task: ${taskTitle}`,
+                type: "task_assignment",
+                sender_id: sessionData.userId,
+              }),
+            }
+          );
+
+          if (!notificationRes.ok) {
+            console.error(`Failed to send notification to user ${userId} via API`);
+          }
+        } catch (apiError) {
+          console.warn('Backend notification API not available, using localStorage only');
+        }
+      }
+
+      // Dispatch event to update notification count in header
+      window.dispatchEvent(new CustomEvent('notificationUpdated'));
+    } catch (error) {
+      console.error("Error sending notifications:", error);
+    }
+  };
+
+  // Function to call the n8n webhook for task assignment notification
+  // Function to call the n8n webhook for task assignment notification
+  const callTaskAssignedWebhook = async (userIds: string[], taskTitle: string, taskDescription: string, taskId?: string) => {
+    try {
+      const webhookUrl = "https://n8n.triz.co.in/webhook-test/task-assigned";
+
+      console.log('[DEBUG WEBHOOK] Received taskId:', taskId);
+      console.log('[DEBUG WEBHOOK] Received taskTitle:', taskTitle);
+      console.log('[DEBUG WEBHOOK] All params:', { userIds, taskTitle, taskDescription, taskId });
+
+      // Prepare the payload with relevant task information including task ID
+      const webhookPayload = {
+        task_id: taskId, // Include the task ID
+        task_title: taskTitle,
+        task_description: taskDescription,
+        assigned_users: userIds,
+        assigned_by: sessionData.userId,
+        department: selDepartment,
+        job_role: selJobroleText,
+        observer: selObserver,
+        repeat_days: repeatDays,
+        repeat_until: repeatUntil,
+        skills: selSkill,
+        priority: taskType,
+        kras: kras,
+        kpis: kpis,
+        observation_point: observationPoint,
+        created_at: new Date().toISOString(),
+      };
+
+      console.log('[Webhook] Calling task-assigned webhook with task ID:', taskId);
+      console.log('[Webhook] Payload:', webhookPayload);
+
+      // Make the webhook call (fire and forget - don't block UI)
+      const webhookResponse = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload),
+      });
+
+      if (webhookResponse.ok) {
+        const responseData = await webhookResponse.json();
+        console.log('[Webhook] Task-assigned webhook successful:', responseData);
+      } else {
+        console.warn('[Webhook] Task-assigned webhook returned non-OK status:', webhookResponse.status);
+      }
+    } catch (error) {
+      // Log error but don't fail the main task creation flow
+      console.error('[Webhook] Error calling task-assigned webhook:', error);
     }
   };
 
@@ -618,7 +863,7 @@ const TaskManagement = () => {
             <div className="px-1 mb-2">
               <div className="w-full flex justify-between">
                 <div>
-                  <h2 className="text-2xl mt-2 text-left font-semibold text-foreground">
+                  <h2 className="text-2xl mt-2 text-left font-semibold text-foreground" id="new-assignment-header">
                     New Assignment
                   </h2>
                   <p className="text-muted-foreground">
@@ -641,10 +886,10 @@ const TaskManagement = () => {
                 </div>
               </div>
 
-              <form className="space-y-6 mt-6" onSubmit={handleSubmit} ref={formRef}>
+              <form className="space-y-6 mt-6" onSubmit={handleSubmit} ref={formRef} id="assignment-form">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {/* Department */}
-                  <div>
+                  <div id="assignment-department">
                     <label className="block mb-1 text-sm text-gray-900">
                       Department<span className="text-red-500">*</span>
                     </label>
@@ -674,7 +919,7 @@ const TaskManagement = () => {
 
                   </div>
                   {/* Job Role */}
-                  <div>
+                  <div id="assignment-jobrole">
                     <label className="block mb-1 text-sm text-gray-900">
                       Job Role <span className="text-red-500">*</span>
                     </label>
@@ -707,7 +952,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* Assign To */}
-                  <div>
+                  <div id="assignment-employees">
                     <label
                       htmlFor="assignTo"
                       className="block mb-1 text-sm text-gray-900"
@@ -754,7 +999,7 @@ const TaskManagement = () => {
                       Task Title{" "}
                       <span className="mdi mdi-asterisk text-[10px] text-danger"></span>
                     </label>
-                    <div className="flex">
+                    <div className="flex" id="assignment-task-title">
                       <input
                         id="taskTitle"
                         list="taskList"
@@ -764,7 +1009,7 @@ const TaskManagement = () => {
                         placeholder="Type or select a task"
                         required
                       />
-                      <span className="mdi mdi-creation text-[20px] text-yellow-400" onClick={() => geminiChat(selTask)} title="Generate Task with the help of AI"></span>
+                      <span className="mdi mdi-creation text-[20px] text-yellow-400" id="assignment-ai-gen" onClick={() => geminiChat(selTask)} title="Generate Task with the help of AI"></span>
                     </div>
                     {message === 1 && (
                       <div className="flex items-center text-yellow-400">
@@ -834,7 +1079,7 @@ const TaskManagement = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Task Description */}
-                  <div>
+                  <div id="assignment-description">
                     <label
                       htmlFor="task_description"
                       className="block mb-1 text-sm text-gray-900"
@@ -853,7 +1098,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* Repeat Days */}
-                  <div>
+                  <div id="assignment-repeat">
                     <label
                       htmlFor="days"
                       className="block mb-1 text-sm text-gray-900"
@@ -914,7 +1159,7 @@ const TaskManagement = () => {
                 {/* Make sure to update all other form fields to use controlled components */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Skills Required */}
-                  <div>
+                  <div id="assignment-skills">
                     <label
                       htmlFor="skillsRequired"
                       className="block mb-1 text-sm text-gray-900"
@@ -947,7 +1192,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* Observer */}
-                  <div>
+                  <div id="assignment-observer">
                     <label
                       htmlFor="observer"
                       className="block mb-1 text-sm text-gray-900"
@@ -977,7 +1222,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* KRAs */}
-                  <div>
+                  <div id="assignment-kras">
                     <label
                       htmlFor="kras"
                       className="block mb-1 text-sm text-gray-900"
@@ -997,7 +1242,7 @@ const TaskManagement = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* KPIs */}
-                  <div>
+                  <div id="assignment-kpis">
                     <label
                       htmlFor="kpis"
                       className="block mb-1 text-sm text-gray-900"
@@ -1015,7 +1260,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* Monitoring Points */}
-                  <div>
+                  <div id="assignment-monitoring">
                     <label
                       htmlFor="observation_point"
                       className="block mb-1 text-sm text-gray-900"
@@ -1033,7 +1278,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* File Upload with Preview */}
-                  <div className="space-y-2">
+                  <div className="space-y-2" id="assignment-attachment">
                     <label className="block text-sm text-gray-900">
                       Attachment
                     </label>
@@ -1092,7 +1337,7 @@ const TaskManagement = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Task Type Buttons */}
-                  <div>
+                  <div id="assignment-priority">
                     <label
                       htmlFor="task_type"
                       className="block mb-1 text-sm text-gray-900"
@@ -1139,7 +1384,7 @@ const TaskManagement = () => {
                 </div>
 
                 {/* Submit Button */}
-                <div className="flex justify-center mt-8">
+                <div className="flex justify-center mt-8" id="assignment-submit">
                   <button
                     type="submit"
                     className="px-8 py-2 rounded-full text-white font-semibold transition duration-300 ease-in-out bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-md disabled:opacity-60"
@@ -1164,7 +1409,7 @@ const TaskManagement = () => {
                           <path
                             className="opacity-75"
                             fill="currentColor"
-                            d="M4 12a8 8 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
                         Submitting...
@@ -1201,6 +1446,9 @@ const TaskManagement = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Tour Component */}
+      {showTour && <TaskManagementTour onComplete={handleTourComplete} onSwitchView={() => { }} />}
     </>
   );
 };

@@ -1,6 +1,4 @@
 
-"use client";
-import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -13,18 +11,47 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface DepartmentItem {
-  department: string;
-  headcount: number;
-  hires: number;
-  attrition: number;
-  growth: number;
-  color: string;
-}
-
-const colors = [
-  "#0da2e7", "#10b77f", "#f9a825", "#7c3bed", "#e92063",
-  "#fb923c", "#06b6d4", "#84cc16", "#f59e0b", "#ef4444"
+const departmentData = [
+  { 
+    department: "Engineering", 
+    headcount: 320, 
+    hires: 45, 
+    attrition: 7.2, 
+    growth: 16.4,
+    color: "#0da2e7"
+  },
+  { 
+    department: "Sales", 
+    headcount: 195, 
+    hires: 28, 
+    attrition: 5.8, 
+    growth: 12.1,
+    color: "#10b77f"
+  },
+  { 
+    department: "Marketing", 
+    headcount: 165, 
+    hires: 22, 
+    attrition: 4.5, 
+    growth: 11.8,
+    color: "#f9a825"
+  },
+  { 
+    department: "Operations", 
+    headcount: 210, 
+    hires: 32, 
+    attrition: 3.2, 
+    growth: 18.6,
+    color: "#7c3bed"
+  },
+  { 
+    department: "HR", 
+    headcount: 62, 
+    hires: 8, 
+    attrition: 6.1, 
+    growth: 9.2,
+    color: "#e92063"
+  },
 ];
 
 const GrowthIndicator = ({ value }: { value: number }) => {
@@ -67,72 +94,13 @@ const AttritionIndicator = ({ value }: { value: number }) => {
 };
 
 export const DepartmentalGapsTable = () => {
-  const [departmentData, setDepartmentData] = useState<DepartmentItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sessionData, setSessionData] = useState({
-    url: "",
-    token: "",
-    subInstituteId: "",
-  });
-
-  useEffect(() => {
-    const userData = localStorage.getItem("userData");
-    if (userData) {
-      const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
-      setSessionData({
-        url: APP_URL,
-        token,
-        subInstituteId: sub_institute_id,
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!sessionData.url) return;
-
-    const fetchDepartmentGap = async () => {
-      try {
-        setLoading(true);
-
-        const res = await fetch(
-          `${sessionData.url}/api/reports/departments/summary?sub_institute_id=${sessionData.subInstituteId}&type=API&token=${sessionData.token}`
-        );
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch department summary");
-        }
-
-        const data = await res.json();
-
-        const dataWithColors: DepartmentItem[] = data
-          .map((item: any, index: number) => ({
-            ...item,
-            color: colors[index % colors.length],
-          }))
-          .sort((a: DepartmentItem, b: DepartmentItem) => a.department.localeCompare(b.department));
-
-        setDepartmentData(dataWithColors);
-      } catch (error) {
-        console.error("Error fetching department summary data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDepartmentGap();
-  }, [sessionData.url]);
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>Departmental Summary</CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="text-center py-8">Loading department summary data...</div>
-        ) : (
-          <div className="max-h-96 overflow-y-auto">
-              <Table>
+        <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Department</TableHead>
@@ -143,8 +111,8 @@ export const DepartmentalGapsTable = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {departmentData.map((dept, index) => (
-              <TableRow key={index} className="hover:bg-muted/50 transition-colors">
+            {departmentData.map((dept) => (
+              <TableRow key={dept.department} className="hover:bg-muted/50 transition-colors">
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <div 
@@ -168,8 +136,6 @@ export const DepartmentalGapsTable = () => {
             ))}
           </TableBody>
         </Table>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
