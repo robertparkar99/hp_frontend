@@ -367,12 +367,12 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
 };
 
 export default function Page({
-  sub_institute_id = 3,
-  type = "jobrole",
-  type_id = 3154,
-  title = "Nurse Manager",
-  user_id = 6,
-  jobrole_id = 3154,
+  sub_institute_id,
+  type,
+  type_id,
+  title,
+  user_id,
+  jobrole_id,
   SkillLevels = [],
 }: JobroleSkilladd1Props) {
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -535,7 +535,7 @@ export default function Page({
     try {
       const base = sessionData.APP_URL;
       const response = await fetch(
-        `${base}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${sessionData.user_id}&filters[jobrole_id]=${jobrole_id}`
+        `${base}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${user_id}&filters[jobrole_id]=${jobrole_id}`
       );
       
       if (response.ok) {

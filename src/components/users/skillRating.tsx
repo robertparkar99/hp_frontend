@@ -39,6 +39,7 @@ interface JobroleSkilladd1Props {
   setUserRatedSkills: React.Dispatch<React.SetStateAction<any[]>>;
   clickedUser: any;
   userJobroleSkills: any;
+  userDetails: any;
 }
 
 // FIXED: Changed to string type for "yes"/"no" values
@@ -68,6 +69,7 @@ export default function Index({
   setUserRatedSkills,
   clickedUser,
   userJobroleSkills,
+  userDetails,
 }: JobroleSkilladd1Props) {
   const router = useRouter();
   const [currentSkillIndex, setCurrentSkillIndex] = useState<number>(0);
@@ -86,6 +88,7 @@ export default function Index({
   const [viewPart, setViewPart] = useState<any>("jobrole-skillrating");
   const [activeTab, setActiveTab] = useState<string>("knowledge");
 
+
   // FIXED: Initialize with empty objects for string values
   const [validationState, setValidationState] = useState<ValidationState>({
     knowledge: {},
@@ -100,7 +103,7 @@ export default function Index({
   const [skillTempData, setSkillTempData] = useState<
     Record<number, SkillTempData>
   >({});
-
+// console.log('uma', userDetails.allocated_standards);
   const [attrArray] = useState([
     { title: "knowledge", icon: "mdi-library" },
     { title: "ability", icon: "mdi-hand-okay" },
@@ -952,11 +955,13 @@ export default function Index({
     return (
       <>
         <AdminSkillRating
-          skills={skills}
-          userRatedSkills={localRatedSkills}
-          parentSetUserRatedSkills={setLocalRatedSkills}
+          sub_institute_id={sessionData.sub_institute_id}
+          type="jobrole"
+          type_id={userDetails.allocated_standards}
+          title={userJobroleSkills[0]?.jobrole}
+          user_id={clickedUser}
+          jobrole_id={userDetails.allocated_standards}
           SkillLevels={SkillLevels}
-          userJobroleSkills={userJobroleSkills}
         />
         {/* Render dialogs still so parent page has them if AdminSkillRating returns early */}
         <ValidationDialog />
@@ -999,18 +1004,21 @@ export default function Index({
             </div>
 
             {viewPart === "rated skill" ? (
-              <AdminSkillRating
-                skills={skills}
-                userRatedSkills={localRatedSkills}
-                parentSetUserRatedSkills={setLocalRatedSkills}
-                SkillLevels={SkillLevels}
-                userJobroleSkills={userJobroleSkills}
-              />
+               <AdminSkillRating
+          sub_institute_id={sessionData.sub_institute_id}
+          type="jobrole"
+          type_id={userDetails.allocated_standards}
+          title={userJobroleSkills[0]?.jobrole}
+          user_id={clickedUser}
+          jobrole_id={userDetails.allocated_standards}
+          SkillLevels={SkillLevels}
+        />
             ) : viewPart === "jobrole-skillrating" ? (
               <JobroleSkillRatingDesign
                 subInstituteId={sessionData.subInstituteId}
-                jobroleId={3154} // TODO: Get actual jobrole id
+                jobroleId={userDetails.allocated_standards} // TODO: Get actual jobrole id
                 jobroleTitle={userJobroleSkills[0]?.jobrole || "Community Care Associate"}
+                clickedUser={clickedUser}
               />
             ) : (
               <div className="flex flex-col lg:flex-row xl:flex-row gap-4 sm:gap-6 xl:gap-8">

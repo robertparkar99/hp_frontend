@@ -16,6 +16,7 @@ interface JobroleSkillRatingDesignProps {
   subInstituteId: number;
   jobroleId: number;
   jobroleTitle: string;
+  clickedUser: number;
 }
 
 type CategoryType = 'skill' | 'knowledge' | 'ability' | 'attitude' | 'behaviour';
@@ -60,6 +61,7 @@ export default function JobroleSkillRatingDesign({
   subInstituteId,
   jobroleId,
   jobroleTitle,
+  clickedUser,
 }: JobroleSkillRatingDesignProps) {
   // State for all categories
   const [categories, setCategories] = useState<Record<CategoryType, SkillItem[]>>({
@@ -215,7 +217,7 @@ export default function JobroleSkillRatingDesign({
 
     try {
       const response = await fetch(
-        `${sessionData.url}/table_data?table=user_rating_details&filters[sub_institute_id]=${subInstituteId}&filters[user_id]=${sessionData.userId}&filters[jobrole_id]=${jobroleId}`
+        `${sessionData.url}/table_data?table=user_rating_details&filters[sub_institute_id]=${subInstituteId}&filters[user_id]=${clickedUser}&filters[jobrole_id]=${jobroleId}`
       );
       
       if (response.ok) {
