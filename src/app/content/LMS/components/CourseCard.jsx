@@ -469,8 +469,21 @@ const CourseCard = ({
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   };
 
+  // Check if job role should be shown based on category
+  const shouldShowJobRole = () => {
+    const category = (course.category || course.subject_category || '').toLowerCase().trim();
+    // Show job role only for "Skill" and "Task" categories
+    // Do NOT show for "Skill Library", "Knowledge Library", or other libraries
+    return category === 'skill' || category === 'task';
+  };
+
   // Get job role from course object or extract from title
   const getJobRole = () => {
+    // Only return job role if category allows it
+    if (!shouldShowJobRole()) {
+      return null;
+    }
+    
     if (course.jobrole) return course.jobrole;
     
     // Extract from title if it follows the format "CWF: JobRole - Department" or "Skill: JobRole - Department"
@@ -482,7 +495,7 @@ const CourseCard = ({
       }
     }
     
-    return 'N/A';
+    return null;
   };
 
   // ---------------- LIST VIEW ----------------
@@ -555,9 +568,11 @@ const CourseCard = ({
             <p className="text-muted-foreground text-sm mb-1 line-clamp-1">
               {course.description}
             </p>
-            <p className="text-muted-foreground text-sm mb-3 line-clamp-1">
-              {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
-            </p>
+            {(shouldShowJobRole() && (jobRoles.length > 0 || getJobRole())) && (
+              <p className="text-muted-foreground text-sm mb-3 line-clamp-1">
+                {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
+              </p>
+            )}
 
             <div className="text-sm text-muted-foreground mb-4">
               <div className="flex items-center">
@@ -706,9 +721,11 @@ const CourseCard = ({
         <p className="text-muted-foreground text-sm mb-1 line-clamp-2">
           <span className="font-medium mr-1">Department:</span> {course.description}
         </p>
-        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-          <span className="font-medium mr-1">Job Role:</span> {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
-        </p>
+        {(shouldShowJobRole() && (jobRoles.length > 0 || getJobRole())) && (
+          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+            <span className="font-medium mr-1">Job Role:</span> {jobRoles.length > 0 ? jobRoles.map(role => role.jobrole || role.name).join(', ') : getJobRole()}
+          </p>
+        )}
 
         <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
           <div className="flex justify-between items-center w-full text-xs">
