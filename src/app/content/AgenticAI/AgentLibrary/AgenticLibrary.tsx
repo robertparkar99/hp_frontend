@@ -1,5 +1,5 @@
 import Loader from '@/components/utils/loading';
-import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp } from 'lucide-react';
+import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -169,6 +169,23 @@ const agents: Agent[] = [
     outputs: ['Candidate Fit Scores', 'Skill Match Analysis', 'Hiring Recommendations', 'Reduced Screening Time'],
     cta: 'Go to Talent Acquisition',
     ctaLink: '/content/Telent-management/Recruitment-management'
+  },
+  {
+    id: 'content-automation',
+    name: 'Content Automation System',
+    icon: Zap,
+    module: 'Content Management → Automation',
+    summary: 'Automates content creation, curation, and distribution across multiple channels using AI',
+    function: 'The Content Automation System streamlines content workflows by automatically generating, organizing, and distributing content based on defined rules and AI-powered insights.',
+    workflow: [
+      'User defines content requirements and targets',
+      'System analyzes existing content and trends',
+      'AI generates or curates relevant content',
+      'Content is automatically formatted and distributed'
+    ],
+    outputs: ['Automated Content Generation', 'Multi-Channel Distribution', 'Content Analytics', 'Workflow Optimization'],
+    cta: 'Explore Content Automation',
+    ctaLink: '/content/AgenticAI/Automation'
   }
 ];
 
