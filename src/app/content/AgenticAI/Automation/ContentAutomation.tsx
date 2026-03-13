@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileSpreadsheet } from "lucide-react";
+import { FileSpreadsheet, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import BulkContentGenerate from "./BulkContentGenerate";
+import { useRouter } from 'next/navigation';
 
 interface SessionData {
   url?: string;
@@ -13,6 +15,7 @@ interface SessionData {
 }
 
 export default function ContentAutomation() {
+  const router = useRouter();
   const [sessionData, setSessionData] = useState<SessionData>({});
 
   const tabs: { id: "bulk"; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -37,8 +40,12 @@ export default function ContentAutomation() {
       <div className="w-full">
         <main className="p-4 md:p-6">
           {/* Header Section */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="ghost" size="icon" onClick={() => router.push("/content/AgenticAI/AgentLibrary")}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
             <div>
+
               <h1 className="text-xl md:text-2xl font-bold text-foreground">Content Automation System</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Generate AI-powered educational content for your organization.
