@@ -169,7 +169,13 @@ export default function GenerateAssessmentModal({
   /* ------------------------------
      NAVIGATION
   ------------------------------ */
-  const next = () => setCurrentStep((s) => Math.min(s + 1, steps.length - 1));
+  const next = () => {
+    console.log("[DEBUG] Next button clicked");
+    console.log("[DEBUG] currentStep:", currentStep);
+    console.log("[DEBUG] questionsGenerated:", questionsGenerated);
+    console.log("[DEBUG] questionsSaved:", questionsSaved);
+    setCurrentStep((s) => Math.min(s + 1, steps.length - 1));
+  };
   const prev = () => setCurrentStep((s) => Math.max(s - 1, 0));
 
   /* ------------------------------
@@ -308,6 +314,7 @@ export default function GenerateAssessmentModal({
       setQuestions(result.questions as Question[]);
       // setQuestionIds((result.questions as Question[]).map(q => q.id).filter(Boolean));
       setQuestionsGenerated(true);
+      console.log("[DEBUG] questionsGenerated set to true");
     } catch (err: any) {
       setError(err.message || "Generation failed");
     } finally {
@@ -448,8 +455,7 @@ export default function GenerateAssessmentModal({
 
       setQuestionIds(ids);
       setQuestionsSaved(true);
-
-      console.log("Stored question IDs:", ids);
+      console.log("[DEBUG] questionsSaved set to true, questionIds:", ids);
 
       return { questionIds: ids };
     } catch (err) {
@@ -670,6 +676,7 @@ export default function GenerateAssessmentModal({
             </div>
           </div>
 
+          {!questionsSaved && (
           <div className="flex justify-end">
             {error && <div className="text-red-500 mr-4">{error}</div>}
             <Button
@@ -680,6 +687,7 @@ export default function GenerateAssessmentModal({
               {loading ? "Generating..." : "Generate Question(AI)"}
             </Button>
           </div>
+          )}
 
           <div className="border-b mb-4">
             <div className="flex gap-6 text-sm font-medium text-gray-500">
@@ -1082,12 +1090,15 @@ export default function GenerateAssessmentModal({
                     {loading ? "Saving..." : "Save Question"}
                   </Button>
                   )}
-                <Button
-                  onClick={next}
-                  disabled={currentStep === 1 && isStep1Invalid}
-                >
-                  Next
-                </Button>
+                {/* Next button visible only after Generate Question(AI) AND Save Question successfully on step 0 */}
+                {((currentStep === 0 && questionsGenerated && questionsSaved) || currentStep > 0) && (
+                  <Button
+                    onClick={next}
+                    disabled={currentStep === 1 && isStep1Invalid}
+                  >
+                    Next
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="flex gap-3">
