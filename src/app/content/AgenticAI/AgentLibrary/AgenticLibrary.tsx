@@ -1,5 +1,5 @@
 import Loader from '@/components/utils/loading';
-import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, Zap } from 'lucide-react';
+import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -135,6 +135,23 @@ const agents: Agent[] = [
     outputs: ['Personalized Learning Paths', 'Real-Time Adaptation', 'Skill Progress Insights', 'Outcome-Oriented Learning'],
     cta: 'Launch PAL Agent',
     ctaLink: 'https://learningagent-kxvkny4y8p5ud4abjappvx7.streamlit.app/'
+  },
+  {
+    id: 'marketing-strategy',
+    name: 'Marketing Strategy Agent',
+    icon: TrendingUp,
+    module: 'Marketing → Strategy & Planning',
+    summary: 'Generates comprehensive marketing strategies aligned with business goals and target audience insights',
+    function: 'The Marketing Strategy Agent generates data-driven marketing strategies by analyzing market trends, competitor insights, and business objectives to create actionable go-to-market plans.',
+    workflow: [
+      'User defines business goals and target audience',
+      'Agent analyzes market trends and competitor landscape',
+      'Generates strategic recommendations and channels',
+      'Creates detailed marketing plan with timelines'
+    ],
+    outputs: ['Marketing Strategy Document', 'Target Audience Personas', 'Channel Recommendations', 'Campaign Timeline & Budget'],
+    cta: 'Launch Marketing Strategy Agent',
+    ctaLink: '/content/AgenticAI/MarketingStrategy/'
   },
   {
     id: 'smart-recruitment',

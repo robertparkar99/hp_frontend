@@ -4,7 +4,7 @@ export async function POST(req: Request) {
   try {
     // ✅ Parse input from frontend
     const { inputText, slideCount } = await req.json();
-
+    console.log("Darshana did the blunder");
     if (!inputText) {
       return NextResponse.json(
         { error: "inputText is required" },
@@ -19,7 +19,6 @@ export async function POST(req: Request) {
       inputText: inputText,
       textMode: "generate",
       format: "presentation",
-      themeName: "Oasis",
 
       // 🔥 FIX: dynamic slide count from frontend
       numCards: slideCount,
@@ -52,7 +51,7 @@ export async function POST(req: Request) {
     console.log("🧮 Slide Count:", slideCount);
 
     const response = await fetch(
-      "https://public-api.gamma.app/v0.2/generations",
+      "https://public-api.gamma.app/v1.0/generations",
       {
         method: "POST",
         headers: {
@@ -91,7 +90,7 @@ export async function POST(req: Request) {
       attempts++;
 
       const pollResponse = await fetch(
-        `https://public-api.gamma.app/v0.2/generations/${generationId}`,
+        `https://public-api.gamma.app/v1.0/generations/${generationId}`,
         {
           headers: {
             "x-api-key": process.env.GAMMA_API_KEY || "",

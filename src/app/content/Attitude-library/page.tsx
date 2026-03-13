@@ -19,12 +19,12 @@ import {
   Funnel, LayoutGrid, Table, Plus, Download, Upload,
   Sparkles, Settings, Eye, Pencil, Trash2, Copy, Search, MoreVertical
 } from "lucide-react";
-import { Atom } from "react-loading-indicators";
 import { motion } from "framer-motion";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ViewKnowledge from "@/components/AttitudeComponent/viewDialouge";
 import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
 import { generateDetailTourSteps } from "@/lib/tourSteps";
+import Loader from '@/components/utils/loading';
 
 // ---------- Types ----------
 type CardData = {
@@ -359,19 +359,41 @@ export default function Index({ showDetailTour }: PageProps) {
     },
   };
 
-  // ✅ Table filtering
+  // ✅ Table filtering - Combined search and column filters
   const filteredData = cards.filter(
-    (row) =>
-      row.classification_item
-        .toLowerCase()
-        .includes(columnFilters.classification_item.toLowerCase()) &&
-      row.classification_category
-        .toLowerCase()
-        .includes(columnFilters.classification_category.toLowerCase()) &&
-      row.classification_sub_category
-        .toLowerCase()
-        .includes(columnFilters.classification_sub_category.toLowerCase())
+    (row) => {
+      // Main search term filter
+      const searchLower = (searchTerm || '').toLowerCase();
+      const matchesSearch = !searchTerm || (
+        (row.classification_item?.toLowerCase() || '').includes(searchLower) ||
+        (row.classification_category?.toLowerCase() || '').includes(searchLower) ||
+        (row.classification_sub_category?.toLowerCase() || '').includes(searchLower) ||
+        (row.proficiency_level?.toLowerCase() || '').includes(searchLower)
+      );
+
+      // Column filter filters
+      const matchesColumnFilters =
+        (row.classification_item?.toLowerCase() || '')
+          .includes((columnFilters.classification_item || '').toLowerCase()) &&
+        (row.classification_category?.toLowerCase() || '')
+          .includes((columnFilters.classification_category || '').toLowerCase()) &&
+        (row.classification_sub_category?.toLowerCase() || '')
+          .includes((columnFilters.classification_sub_category || '').toLowerCase());
+
+      return matchesSearch && matchesColumnFilters;
+    }
   );
+
+  // Filter cards for card view (using search term)
+  const filteredCards = cards.filter((card) => {
+    const searchLower = (searchTerm || '').toLowerCase();
+    return !searchTerm || (
+      (card.classification_item?.toLowerCase() || '').includes(searchLower) ||
+      (card.classification_category?.toLowerCase() || '').includes(searchLower) ||
+      (card.classification_sub_category?.toLowerCase() || '').includes(searchLower) ||
+      (card.proficiency_level?.toLowerCase() || '').includes(searchLower)
+    );
+  });
 
   return (
     <>
@@ -483,7 +505,7 @@ export default function Index({ showDetailTour }: PageProps) {
 
       {/* 🔽 Switch View */}
       {viewMode === "cards" ? (
-        <CardGrid cards={cards} loadingCards={loadingCards} onCardClick={setSelectedCardId} />
+        <CardGrid cards={filteredCards} loadingCards={loadingCards} onCardClick={setSelectedCardId} />
       ) : (
         <DataTable
           columns={columns}
@@ -636,9 +658,7 @@ function CardGrid({
 }) {
   if (loadingCards) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
-      </div>
+      <Loader />
     );
   }
 

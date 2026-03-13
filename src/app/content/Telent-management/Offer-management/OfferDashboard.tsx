@@ -514,6 +514,14 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   const stats = getStatusCounts();
 
   const downloadOfferLetter = (offer: Offer) => {
+    // If offer_letter_url exists in the API response, use it
+    if (offer.offerLetterUrl) {
+      // Open the PDF URL in a new tab for viewing/downloading
+      window.open(offer.offerLetterUrl, '_blank');
+      return;
+    }
+
+    // Fallback: Generate HTML template if no URL is available
     const htmlContent = `
 <!DOCTYPE html>
 <html>

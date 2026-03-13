@@ -302,6 +302,7 @@ const SearchAndFilters = ({
         />
         <div className="flex space-x-2">
           <Button
+            id="filters-button"
             variant="outline"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             iconName="Filter"

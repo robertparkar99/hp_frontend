@@ -74,7 +74,7 @@ export const taskAssignmentTourSteps = [
     },
     buttons: [],
     highlightClass: 'highlight',
-    scrollTo: { behavior: 'smooth', block: 'center' },
+    scrollTo: false,
     cancelIcon: { enabled: true },
     title: 'Task Assignments Table',
     text: ['View all task assignments in this table. You can search, filter by columns, and view task details. Click on column headers to sort.']
@@ -89,7 +89,7 @@ export const taskAssignmentTourSteps = [
     },
     buttons: [],
     highlightClass: 'highlight',
-    scrollTo: { behavior: 'smooth', block: 'center' },
+    scrollTo: false,
     cancelIcon: { enabled: true },
     title: 'Table Actions',
     text: ['Use the Edit button to modify task assignments or the Delete button to remove tasks. These actions are only available to administrators.']

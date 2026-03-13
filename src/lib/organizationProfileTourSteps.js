@@ -248,13 +248,13 @@ export const organizationProfileTourSteps = [
   // Step 17: Department List
   {
     id: 'department-list',
-    attachTo: { element: '#department-list-container', on: 'top' },
+    attachTo: { element: '#department-structure-container', on: 'top' },
     beforeShowPromise: function() {
       return new Promise(resolve => setTimeout(resolve, 300));
     },
     buttons: [],
     highlightClass: 'highlight',
-    scrollTo: { behavior: 'smooth', block: 'center' },
+    scrollTo: false,
     cancelIcon: { enabled: true },
     title: 'Department List',
     text: ['View all your organization\'s departments here. Each department card shows the department name and allows various actions.']
@@ -653,7 +653,7 @@ export const organizationProfileTourSteps = [
   // Step 44: Completion
   {
     id: 'tour-complete',
-    attachTo: { element: '#org-profile-header', on: 'bottom' },
+    attachTo: { element: '#org-profile-header', on: 'top' },
     beforeShowPromise: function() {
       return new Promise(resolve => setTimeout(resolve, 300));
     },

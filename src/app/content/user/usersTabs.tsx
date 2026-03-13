@@ -341,6 +341,7 @@ export default function EditProfilePage() {
                     clickedUser={clickedUser}
                     userRatedSkills={userRatedSkills}
                     userJobroleSkills={userJobroleSkills}
+                    userDetails={userDetails}
                   />
                 </div>
             )}

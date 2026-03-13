@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import EditDialog from "./editDialouge";
+import ConfigurationModelSkill from "./ConfigurationModelSkill";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -44,6 +45,11 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
     add: false,
     edit: false,
   });
+
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [configJsonObject, setConfigJsonObject] = useState<any>(null);
+
+  const [isCourseBuilding, setIsCourseBuilding] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -273,17 +279,20 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
   }
 
   const handleCousreCreation = async () => {
-    alert('Course Creation in progress, Please Wait it will take sometime ! If failed then please try after some seconds');
-    try {
-      const res = await fetch(
-        `${sessionUrl}/AICourseGeneration?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&user_id=${sessionUserID}&user_profile_name=${sessionUserProfile}&syear=${sessionSyear}&industry=${sessionOrgType}&department=${viewData?.department}&skill_category=${viewData?.category}&skill_sub_category=${viewData?.sub_category}&skill_micro_category=${viewData?.micro_category}&skill_name=${viewData?.title}&skill_description=${viewData?.description}`,
-      );
-
-      const data = await res.json();
-      alert(data.message);
-    } catch (error) {
-      console.error("Error deleting job role:", error);
-      alert("Error deleting job role");
+    // Open ConfigurationModelSkill modal with skill data
+    if (viewData) {
+      const jobrole = jobroleData && jobroleData.length > 0 ? jobroleData[0].jobrole : '';
+      const jsonObject = {
+        selected_skill: viewData.title,
+        skill_description: viewData.description,
+        skill_category: viewData.category,
+        skill_sub_category: viewData.sub_category,
+        jobrole: jobrole,
+        department: viewData.department,
+        sub_department: viewData.sub_department,
+      };
+      setConfigJsonObject(jsonObject);
+      setIsConfigModalOpen(true);
     }
   }
 
@@ -486,10 +495,23 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
 
                 <button
                   onClick={() => handleCousreCreation()}
-                  className="flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm"
+                  disabled={isCourseBuilding}
+                  className={`flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm ${isCourseBuilding ? 'cursor-not-allowed opacity-70' : 'text-yellow-600 hover:bg-yellow-50'}`}
                 >
-                  <span className="mdi mdi-creation text-xl"></span>
-                  <span>Build Course</span>
+                  {isCourseBuilding ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Building...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="mdi mdi-creation text-xl"></span>
+                      <span>Build Course</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -846,6 +868,13 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
             )}
           </div>
         </div>
+
+        {/* Configuration Modal for Skill-based Course Building */}
+        <ConfigurationModelSkill
+          isOpen={isConfigModalOpen}
+          onClose={() => setIsConfigModalOpen(false)}
+          jsonObject={configJsonObject}
+        />
       </div>
     </div>
   );

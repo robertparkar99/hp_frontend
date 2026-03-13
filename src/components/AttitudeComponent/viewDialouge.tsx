@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import EditDialog from "./editDialouge";
+import ConfigurationModelAttitude from "./ConfigurationModelAttitude";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
@@ -24,6 +25,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
   const [sessionToken, setSessionToken] = useState<string>("");
   const [sessionOrgType, setessionOrgType] = useState<string>();
   const [sessionSubInstituteId, setessinSubInstituteId] = useState<string>();
+  const [sessionDepartmentId, setSessionDepartmentId] = useState<string>();
   const [sessionUserID, setessionUserID] = useState<string>();
   const [sessionUserProfile, setessionUserProfile] = useState<string>();
   const [sessionSyear, setessionSyear] = useState<string>();
@@ -53,6 +55,11 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
     edit: false,
   });
 
+  // Configuration Model states
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [configJsonObject, setConfigJsonObject] = useState<any>(null);
+  const [isCourseBuilding, setIsCourseBuilding] = useState(false);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = localStorage.getItem("userData");
@@ -62,6 +69,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
           token,
           org_type,
           sub_institute_id,
+          department_id,
           user_id,
           user_profile_name,
           syear,
@@ -70,6 +78,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
         setSessionToken(token);
         setessionOrgType(org_type);
         setessinSubInstituteId(sub_institute_id);
+        setSessionDepartmentId(department_id);
         setessionUserID(user_id);
         setessionUserProfile(user_profile_name);
         setessionSyear(syear);
@@ -290,19 +299,49 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
   }
 
   const handleCousreCreation = async () => {
-    alert(
-      "Course Creation in progress, Please Wait it will take sometime ! If failed then please try after some seconds"
-    );
-    try {
-      const res = await fetch(
-        `${sessionUrl}/AICourseGeneration?type=API&token=${sessionToken}&sub_institute_id=${sessionSubInstituteId}&org_type=${sessionOrgType}&user_id=${sessionUserID}&user_profile_name=${sessionUserProfile}&syear=${sessionSyear}&industry=${sessionOrgType}&department=${viewData?.department}&skill_category=${viewData?.category}&skill_sub_category=${viewData?.sub_category}&skill_micro_category=${viewData?.micro_category}&skill_name=${viewData?.title}&skill_description=${viewData?.description}`
-      );
-
-      const data = await res.json();
-      alert(data.message);
-    } catch (error) {
-      console.error("Error deleting job role:", error);
-      alert("Error deleting job role");
+    // Open ConfigurationModelAttitude modal with attitude data
+    if (viewData) {
+      // Get department_id from jobroleData if available, otherwise use viewData or session
+      let departmentId = viewData.department_id;
+      
+      // If no department_id in viewData, try to get from jobroleData
+      if (!departmentId && jobroleData && jobroleData.length > 0) {
+        // Try to get department_id from jobrole if available
+        departmentId = jobroleData[0].department_id || jobroleData[0].standard_id || sessionDepartmentId;
+      }
+      
+      // Fallback to session departmentId
+      if (!departmentId) {
+        departmentId = sessionDepartmentId || sessionSubInstituteId;
+      }
+      
+      const jobrole = jobroleData && jobroleData.length > 0 ? jobroleData[0].jobrole : '';
+      
+      console.log('📝 handleCousreCreation - Attitude Data:', {
+        attitudeId: viewData.id,
+        selected_attitude: viewData.title,
+        attitude_description: viewData.description,
+        attitude_category: viewData.category,
+        attitude_sub_category: viewData.sub_category,
+        jobrole: jobrole,
+        department_id: departmentId,
+        department: viewData.department,
+        sub_department: viewData.sub_department
+      });
+      
+      const jsonObject = {
+        attitudeId: viewData.id,
+        selected_attitude: viewData.title,
+        attitude_description: viewData.description,
+        attitude_category: viewData.category,
+        attitude_sub_category: viewData.sub_category,
+        jobrole: jobrole,
+        department_id: departmentId,
+        department: viewData.department,
+        sub_department: viewData.sub_department,
+      };
+      setConfigJsonObject(jsonObject);
+      setIsConfigModalOpen(true);
     }
   };
 
@@ -1259,6 +1298,13 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
             )}
           </div>
         </div>
+
+        {/* Configuration Model Modal for Course Generation */}
+        <ConfigurationModelAttitude
+          isOpen={isConfigModalOpen}
+          onClose={() => setIsConfigModalOpen(false)}
+          jsonObject={configJsonObject}
+        />
       </div>
     </div>
   );

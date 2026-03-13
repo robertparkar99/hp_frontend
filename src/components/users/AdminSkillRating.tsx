@@ -35,23 +35,52 @@ interface Skill {
   knowledge: any[];
   behaviour: any[];
   attitude: any[];
-  proficiency_level: string;
+  proficiency_level: string | number;
   skill: string;
   skill_id: number;
   sub_category: string;
   title: string;
 }
 
+// KAAB Item interface for separate KAAB categories
+interface KAABItem {
+  id: number;
+  knowledge_id?: number;
+  ability_id?: number;
+  attitude_id?: number;
+  behaviour_id?: number;
+  title: string;
+  knowledge?: string;
+  ability?: string;
+  attitude?: string;
+  behaviour?: string;
+  description?: string;
+  proficiency_level?: string | number;
+}
+
+// Rated KAAB interface
+interface RatedKAAB {
+  id: string;
+  category: 'knowledge' | 'ability' | 'attitude' | 'behaviour';
+  title: string;
+  self_rating: number;
+  expected: number;
+  ratings: Record<string, string>;
+  created_at?: string;
+}
+
 interface RatedSkill {
   id: number;
   skill_level: string;
   title?: string;
+  skill?: string;
   category?: string;
   sub_category?: string;
   created_at?: string;
   proficiency_level?: string;
   self_rating?: number;
   SkillLevels?: string[];
+  skill_id?: number;
   // Add detailed ratings fields
   detailed_ratings?: {
     knowledge: Record<string, string>;
@@ -65,12 +94,30 @@ interface RatedSkill {
   attitude_ratings?: Record<string, string>;
 }
 
+interface UserRatingData {
+  id: number;
+  user_id: number;
+  jobrole_id: number;
+  skill_ids: string;
+  knowledge_ids: string;
+  ability_ids: string | null;
+  attitude_ids: string | null;
+  behavior_ids: string | null;
+  sub_institute_id: number;
+  created_by: number;
+  updated_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
 interface JobroleSkilladd1Props {
-  skills: Skill[];
-  userRatedSkills: RatedSkill[];
-  parentSetUserRatedSkills: React.Dispatch<React.SetStateAction<RatedSkill[]>>;
+  sub_institute_id: number;
+  type: string;
+  type_id: number;
+  title: string;
+  user_id: number;
+  jobrole_id: number;
   SkillLevels: any[];
-  userJobroleSkills: any[];
 }
 
 // ✅ Tooltip Component for Chart
@@ -81,7 +128,7 @@ const CustomTooltip = ({ active, payload }: any) => {
       <div className="bg-white border border-gray-300 p-3 rounded shadow-md">
         <p className="font-semibold text-gray-800">{data.skill}</p>
         <p className="text-sm text-gray-600">
-          Rating: {data.rating}/{data.max}
+          Rating: {data.rating}/{data.proficiency_level}
         </p>
         <p className="text-sm text-gray-600">
           proficiency : {data.proficiency_level || "Not Set"}
@@ -141,7 +188,7 @@ const renderCircles = (value: number, max: number) => {
   );
 };
 
-// Detailed Ratings Component
+// Detailed Ratings Component - Expandable Individual Details
 const renderDetailedRatings = (ratedSkill: RatedSkill) => {
   const detailedRatings = ratedSkill.detailed_ratings || {
     knowledge: ratedSkill.knowledge_ratings || {},
@@ -158,56 +205,38 @@ const renderDetailedRatings = (ratedSkill: RatedSkill) => {
   ];
 
   const getScore = (ratings: Record<string, string>) => {
-    const yesCount = Object.values(ratings).filter(val => val === "yes").length;
+    const yesCount = Object.values(ratings).filter(val => {
+      const v = String(val).toLowerCase();
+      return v === "yes" || v === "true" || v === "1";
+    }).length;
     const totalCount = Object.keys(ratings).length;
     return { yesCount, totalCount, percentage: totalCount > 0 ? Math.round((yesCount / totalCount) * 100) : 0 };
   };
 
+  // Check if there are any ratings to show
+  const hasAnyRatings = attrArray.some(attr => {
+    const ratings = detailedRatings[attr.title as keyof typeof detailedRatings] || {};
+    return Object.keys(ratings).length > 0;
+  });
+
+  if (!hasAnyRatings) {
+    return null; // Don't show if no ratings
+  }
+
   return (
     <div className="mt-4 border-t pt-3">
-      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-        <span className="mdi mdi-chart-bar mr-1"></span>
-        Detailed Ratings:
-      </h4>
-
       {/* Expandable Detailed View */}
       <details className="group">
         <summary className="text-sm font-medium text-gray-600 cursor-pointer hover:text-gray-800 list-none flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg">
           <span>View Individual Attribute Ratings</span>
           <span className="mdi mdi-chevron-down group-open:mdi-chevron-up transition-transform"></span>
         </summary>
-        {/* Compact View */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          {attrArray.map((attr) => {
-            const ratings = detailedRatings[attr.title as keyof typeof detailedRatings] || {};
-            const { yesCount, totalCount, percentage } = getScore(ratings);
-
-            return (
-              <div key={attr.title} className={`bg-${attr.color}-50 border border-${attr.color}-200 rounded-lg p-2`}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium capitalize flex items-center">
-                    <span className={`mdi ${attr.icon} mr-1 text-${attr.color}-600`}></span>
-                    {attr.title}:
-                  </span>
-                  <span className={`text-xs font-bold text-${attr.color}-700`}>
-                    {yesCount}/{totalCount}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <div
-                    className={`bg-${attr.color}-500 h-1.5 rounded-full`}
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
-                <div className="text-xs text-gray-500 mt-1 text-right">{percentage}%</div>
-              </div>
-            );
-          })}
-        </div>
         <div className="mt-3 space-y-3">
           {attrArray.map((attr) => {
             const ratings = detailedRatings[attr.title as keyof typeof detailedRatings] || {};
             const { yesCount, totalCount, percentage } = getScore(ratings);
+
+            if (totalCount === 0) return null; // Skip if no attributes
 
             return (
               <div key={attr.title} className="border rounded-lg p-3 bg-white">
@@ -218,25 +247,29 @@ const renderDetailedRatings = (ratedSkill: RatedSkill) => {
                   </h5>
                 </div>
                 <div className="grid grid-cols-1 gap-2">
-                  {Object.entries(ratings).map(([attribute, value]) => (
-                    <div key={attribute} className="flex items-center justify-between text-sm py-1 border-b border-gray-100 last:border-b-0">
-                      <span className="text-gray-600 flex-1 truncate mr-2">{attribute}</span>
-                      <span className={`flex items-center ${value === "yes" ? "text-green-600" : "text-red-600"
-                        }`}>
-                        {value === "yes" ? (
-                          <>
+                  {Object.entries(ratings).map(([attribute, value]) => {
+                    const v = String(value).toLowerCase();
+                    const isYes = v === "yes" || v === "true" || v === "1";
+                    const isNo = v === "no" || v === "false" || v === "0";
+                    return (
+                      <div key={attribute} className="flex items-center justify-between text-sm py-1 border-b border-gray-100 last:border-b-0">
+                        <span className="text-gray-600 flex-1 truncate mr-2">{attribute}</span>
+                        {isYes ? (
+                          <span className="flex items-center text-green-600">
                             <CheckCircle className="h-4 w-4 mr-1" />
                             <span className="text-xs font-medium">Yes</span>
-                          </>
-                        ) : (
-                          <>
+                          </span>
+                        ) : isNo ? (
+                          <span className="flex items-center text-red-600">
                             <XCircle className="h-4 w-4 mr-1" />
                             <span className="text-xs font-medium">No</span>
-                          </>
+                          </span>
+                        ) : (
+                          <span className="text-gray-700 text-xs font-medium">{String(value)}</span>
                         )}
-                      </span>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -274,53 +307,56 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
       {/* Chart Container */}
       <div className="flex-1">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData.map((entry) => ({
-              ...entry,
-              remaining: entry.max - entry.rating,
-            }))}
-            margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="skill"
-              angle={-45}
-              textAnchor="end"
-              height={80}
-              interval={0}
-            />
-            <YAxis
-              type="number"
-              allowDecimals={false}
-              domain={[0, max]}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="rating" stackId="a" name="Current Rating">
-              {chartData.map((_, index) => (
-                <Cell key={`cell-rating-${index}`} fill="#3B82F6" />
-              ))}
-            </Bar>
-            <Bar dataKey="remaining" stackId="a" name="Remaining">
-              {chartData.map((entry, index) => {
-                const color = entry.remaining === 0 ? "#3B82F6" : "#1E40AF";
-                return <Cell key={`cell-remaining-${index}`} fill={color} />;
-              })}
-            </Bar>
-          </BarChart>
+         <BarChart
+  data={chartData}
+  margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+>
+  <CartesianGrid strokeDasharray="3 3" />
+
+  <XAxis
+    dataKey="skill"
+    angle={-45}
+    textAnchor="end"
+    height={80}
+    interval={0}
+  />
+
+  <YAxis allowDecimals={false} domain={[0, SkillLevels.length || 5]} />
+
+  <Tooltip />
+
+  {/* Rated */}
+  <Bar
+    dataKey="rated"
+    name="Rated"
+    fill="#3B82F6"
+    radius={[4, 4, 0, 0]}
+  />
+
+  {/* Expected */}
+  <Bar
+    dataKey="expected"
+    name="Expected"
+    fill="#22C55E"
+    radius={[4, 4, 0, 0]}
+  />
+</BarChart>
+
         </ResponsiveContainer>
       </div>
 
       {/* Legend */}
-      <div className="flex gap-4 mt-4 justify-center pt-4 border-t">
-        <div className="flex items-center gap-2">
-          <div style={{ backgroundColor: "#3B82F6", width: 20, height: 20 }}></div>
-          <span className="text-sm">Current Rating</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div style={{ backgroundColor: "#1E40AF", width: 20, height: 20 }}></div>
-          <span className="text-sm">Highest Rating Possible</span>
-        </div>
-      </div>
+      <div className="flex gap-6 justify-center mt-4">
+  <div className="flex items-center gap-2">
+    <div className="w-4 h-4 bg-blue-500 rounded"></div>
+    <span className="text-sm">Rated</span>
+  </div>
+  <div className="flex items-center gap-2">
+    <div className="w-4 h-4 bg-green-500 rounded"></div>
+    <span className="text-sm">Expected</span>
+  </div>
+</div>
+
 
       {/* Skills Count */}
       <div className="text-center mt-2 text-sm text-gray-600">
@@ -331,23 +367,30 @@ const FullscreenChart = ({ chartData, SkillLevels, onClose }: {
 };
 
 export default function Page({
-  skills: initialSkills,
-  userRatedSkills: initialUserRatedSkills,
-  parentSetUserRatedSkills,
-  SkillLevels,
-  userJobroleSkills,
+  sub_institute_id,
+  type,
+  type_id,
+  title,
+  user_id,
+  jobrole_id,
+  SkillLevels = [],
 }: JobroleSkilladd1Props) {
-  const [skills, setSkills] = useState<Skill[]>(initialSkills || []);
-  const [userRatedSkills, setUserRatedSkills] = useState<RatedSkill[]>(initialUserRatedSkills || []);
-
-  // Compute un-rated skills
-  const unRatedSkills = skills.filter(
-    skill =>
-      !userRatedSkills.some(
-        rated =>
-          rated.id === skill.skill_id || rated.title === skill.skill
-      )
-  );
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [kaabData, setKaabData] = useState<{
+    knowledge: KAABItem[];
+    ability: KAABItem[];
+    attitude: KAABItem[];
+    behaviour: KAABItem[];
+  }>({
+    knowledge: [],
+    ability: [],
+    attitude: [],
+    behaviour: []
+  });
+  const [userRatedSkills, setUserRatedSkills] = useState<RatedSkill[]>([]);
+  const [userRatedKAAB, setUserRatedKAAB] = useState<RatedKAAB[]>([]);
+  const [userRatingData, setUserRatingData] = useState<UserRatingData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selfRating, setSelfRating] = useState<any>(0);
@@ -355,54 +398,450 @@ export default function Page({
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showEmptyState, setShowEmptyState] = useState(false);
   const [showFullscreenChart, setShowFullscreenChart] = useState(false);
+  const [activeTab, setActiveTab] = useState<"skills" | "kaab">("skills");
 
-  // Check if chart data is empty
+  const [sessionData, setSessionData] = useState({
+    APP_URL: "",
+    token: "",
+    sub_institute_id: sub_institute_id,
+    org_type: "",
+    user_id: user_id,
+  });
+
+ useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+      setSessionData({
+        APP_URL: APP_URL,
+        token,
+        sub_institute_id: sub_institute_id,
+        org_type: org_type,
+        user_id: user_id,
+      });
+    }
+  }, []);
+
+  const parseExpectedLevel = (value: string | number | undefined): number => {
+    if (value === undefined || value === null) return 5;
+    if (typeof value === "number" && !isNaN(value)) return Math.max(1, Math.min(5, value));
+    const str = String(value);
+    const match = str.match(/\d+/);
+    if (match) {
+      const num = parseInt(match[0], 10);
+      return Math.max(1, Math.min(5, num));
+    }
+    const lower = str.toLowerCase();
+    if (lower.includes("novice")) return 1;
+    if (lower.includes("beginner")) return 2;
+    if (lower.includes("intermediate")) return 3;
+    if (lower.includes("advanced")) return 5;
+    return 5;
+  };
+
+  // Fetch all skills from first API
+  const fetchAllSkills = async () => {
+    if (!sessionData.APP_URL) {
+      console.warn("Session URL not available");
+      return [];
+    }
+    try {
+      const base = sessionData.APP_URL;
+      const response = await fetch(
+        `${base}/get-kaba?sub_institute_id=${sessionData.sub_institute_id}&type=${type}&type_id=${type_id}&title=${encodeURIComponent(title)}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Fetched skills jobroke data:", data.title);
+        
+        // Transform the API response to match our Skill interface
+        const transformedSkills: Skill[] = (data.skills || data.skill || []).map((skill: any) => ({
+          ability: skill.ability || [],
+          category: skill.category || "",
+          description: skill.description || "",
+          jobrole: data.title || "",
+          jobrole_skill_id: skill.jobrole_skill_id || 0,
+          knowledge: skill.knowledge || [],
+          behaviour: skill.behaviour || [],
+          attitude: skill.attitude || [],
+          proficiency_level: skill.proficiency_level ?? "Level 5",
+          skill: skill.title || "",
+          skill_id: skill.id || 0,
+          sub_category: skill.sub_category || "",
+          title: skill.title || skill.skill || ""
+        })) || [];
+        // console.log('kya hume transfomed skills mil rahe hai??',data.skill);
+        setSkills(transformedSkills);
+        
+        // Also store KAAB data from the API response
+        const knowledgeItems: KAABItem[] = (data.knowledge || []).map((item: any) => ({
+          id: item.id || item.knowledge_id || 0,
+          knowledge_id: item.knowledge_id || item.id,
+          title: item.knowledge || item.title || "",
+          knowledge: item.knowledge || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        const abilityItems: KAABItem[] = (data.ability || []).map((item: any) => ({
+          id: item.id || item.ability_id || 0,
+          ability_id: item.ability_id || item.id,
+          title: item.ability || item.title || "",
+          ability: item.ability || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        const attitudeItems: KAABItem[] = (data.attitude || []).map((item: any) => ({
+          id: item.id || item.attitude_id || 0,
+          attitude_id: item.attitude_id || item.id,
+          title: item.attitude || item.title || "",
+          attitude: item.attitude || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        const behaviourItems: KAABItem[] = (data.behaviour || data.behavior || []).map((item: any) => ({
+          id: item.id || item.behaviour_id || item.behavior_id || 0,
+          behaviour_id: item.behaviour_id || item.behavior_id || item.id,
+          title: item.behaviour || item.behavior || item.title || "",
+          behaviour: item.behaviour || item.behavior || item.title || "",
+          description: item.description || "",
+          proficiency_level: item.proficiency_level || "Level 5"
+        }));
+        
+        setKaabData({
+          knowledge: knowledgeItems,
+          ability: abilityItems,
+          attitude: attitudeItems,
+          behaviour: behaviourItems
+        });
+        
+        return transformedSkills;
+      }
+    } catch (error) {
+      console.error("Error fetching skills:", error);
+    }
+    return [];
+  };
+
+  // Fetch user rating data from second API
+  const fetchUserRatingData = async () => {
+    if (!sessionData.APP_URL) {
+      console.warn("Session URL not available");
+      return null;
+    }
+    try {
+      const base = sessionData.APP_URL;
+      const response = await fetch(
+        `${base}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${user_id}&filters[jobrole_id]=${jobrole_id}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Fetched user rating data:", data);
+        
+        if (data.length > 0) {
+          setUserRatingData(data[0]);
+          return data[0];
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user rating data:", error);
+    }
+    return null;
+  };
+
+  // Process and combine data from both APIs
+  const processSkillsData = (allSkills: Skill[], ratingData: UserRatingData | null) => {
+    if (!ratingData) {
+      // No rating data, all skills are unrated
+      setUserRatedSkills([]);
+      return;
+    }
+    // Parse the JSON strings from the API response
+    const skillRatings = JSON.parse(ratingData.skill_ids);
+    const knowledgeRatings = JSON.parse(ratingData.knowledge_ids);
+    const abilityRatings = ratingData.ability_ids ? JSON.parse(ratingData.ability_ids) : {};
+    const behaviorRatings = ratingData.behavior_ids ? JSON.parse(ratingData.behavior_ids) : {};
+    const attitudeRatings = ratingData.attitude_ids ? JSON.parse(ratingData.attitude_ids) : {};
+
+    // Create rated skills array
+    const ratedSkillsArray: RatedSkill[] = [];
+    
+    allSkills.forEach(skill => {
+      const skillId = skill.skill_id;
+      if (skillRatings[skillId]) {
+        // Get detailed ratings for this specific skill
+        const skillKnowledge = skill.knowledge || [];
+        const skillAbility = skill.ability || [];
+        const skillBehaviour = skill.behaviour || [];
+        const skillAttitude = skill.attitude || [];
+
+        // Create knowledge ratings object for this skill
+        const knowledgeRatingObj: Record<string, string> = {};
+        skillKnowledge.forEach((knowledgeItem: any) => {
+          const knowledgeId = knowledgeItem.knowledge_id?.toString();
+          if (knowledgeId && knowledgeRatings[knowledgeId]) {
+            knowledgeRatingObj[knowledgeItem.knowledge || "Unknown"] =
+              String(knowledgeRatings[knowledgeId]);
+          }
+        });
+
+        // Create ability ratings object for this skill
+        const abilityRatingObj: Record<string, string> = {};
+        skillAbility.forEach((abilityItem: any) => {
+          const abilityId = abilityItem.ability_id?.toString();
+          if (abilityId && abilityRatings[abilityId]) {
+            abilityRatingObj[abilityItem.ability || "Unknown"] =
+              String(abilityRatings[abilityId]);
+          }
+        });
+
+        // Create behaviour ratings object for this skill
+        const behaviourRatingObj: Record<string, string> = {};
+        skillBehaviour.forEach((behaviourItem: any) => {
+          const behaviourId = behaviourItem.behaviour_id?.toString();
+          if (behaviourId && behaviorRatings[behaviourId]) {
+            behaviourRatingObj[behaviourItem.behaviour || "Unknown"] =
+              String(behaviorRatings[behaviourId]);
+          }
+        });
+
+        // Create attitude ratings object for this skill
+        const attitudeRatingObj: Record<string, string> = {};
+        skillAttitude.forEach((attitudeItem: any) => {
+          const attitudeId = attitudeItem.attitude_id?.toString();
+          if (attitudeId && attitudeRatings[attitudeId]) {
+            attitudeRatingObj[attitudeItem.attitude || "Unknown"] =
+              String(attitudeRatings[attitudeId]);
+          }
+        });
+
+        const ratedSkill: RatedSkill = {
+          id: skill.skill_id,
+          skill_id: skill.skill_id,
+          skill_level: `Level ${skillRatings[skillId]}`,
+          title: skill.title || skill.skill,
+          skill: skill.skill,
+          category: skill.category,
+          sub_category: skill.sub_category,
+          created_at: ratingData.created_at,
+          proficiency_level: String(skill.proficiency_level),
+          self_rating: parseInt(skillRatings[skillId]),
+          knowledge_ratings: knowledgeRatingObj,
+          ability_ratings: abilityRatingObj,
+          behaviour_ratings: behaviourRatingObj,
+          attitude_ratings: attitudeRatingObj,
+          detailed_ratings: {
+            knowledge: knowledgeRatingObj,
+            ability: abilityRatingObj,
+            behaviour: behaviourRatingObj,
+            attitude: attitudeRatingObj
+          }
+        };
+
+        ratedSkillsArray.push(ratedSkill);
+      }
+    });
+
+    console.log("Processed rated skills:", ratedSkillsArray);
+    setUserRatedSkills(ratedSkillsArray);
+  };
+
+  // Process KAAB ratings into separate rated items
+  const processKAABData = (ratingData: UserRatingData | null) => {
+    if (!ratingData) {
+      setUserRatedKAAB([]);
+      return;
+    }
+
+    const ratedKAABArray: RatedKAAB[] = [];
+    
+    // Parse the JSON strings from the API response
+    const knowledgeRatings = ratingData.knowledge_ids ? JSON.parse(ratingData.knowledge_ids) : {};
+    const abilityRatings = ratingData.ability_ids ? JSON.parse(ratingData.ability_ids) : {};
+    const attitudeRatings = ratingData.attitude_ids ? JSON.parse(ratingData.attitude_ids) : {};
+    const behaviorRatings = ratingData.behavior_ids ? JSON.parse(ratingData.behavior_ids) : {};
+
+    // Process Knowledge items
+    kaabData.knowledge.forEach((item) => {
+      const itemId = item.knowledge_id?.toString() || item.id.toString();
+      if (knowledgeRatings[itemId]) {
+        const rating = parseInt(knowledgeRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `knowledge-${itemId}`,
+          category: 'knowledge',
+          title: item.knowledge || item.title || "Unknown Knowledge",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.knowledge || item.title || ""]: knowledgeRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    // Process Ability items
+    kaabData.ability.forEach((item) => {
+      const itemId = item.ability_id?.toString() || item.id.toString();
+      if (abilityRatings[itemId]) {
+        const rating = parseInt(abilityRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `ability-${itemId}`,
+          category: 'ability',
+          title: item.ability || item.title || "Unknown Ability",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.ability || item.title || ""]: abilityRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    // Process Attitude items
+    kaabData.attitude.forEach((item) => {
+      const itemId = item.attitude_id?.toString() || item.id.toString();
+      if (attitudeRatings[itemId]) {
+        const rating = parseInt(attitudeRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `attitude-${itemId}`,
+          category: 'attitude',
+          title: item.attitude || item.title || "Unknown Attitude",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.attitude || item.title || ""]: attitudeRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    // Process Behaviour items
+    kaabData.behaviour.forEach((item) => {
+      const itemId = item.behaviour_id?.toString() || item.id.toString();
+      if (behaviorRatings[itemId]) {
+        const rating = parseInt(behaviorRatings[itemId]) || 0;
+        ratedKAABArray.push({
+          id: `behaviour-${itemId}`,
+          category: 'behaviour',
+          title: item.behaviour || item.title || "Unknown Behaviour",
+          self_rating: rating,
+          expected: parseExpectedLevel(item.proficiency_level),
+          ratings: { [item.behaviour || item.title || ""]: behaviorRatings[itemId] },
+          created_at: ratingData.created_at
+        });
+      }
+    });
+
+    console.log("Processed rated KAAB:", ratedKAABArray);
+    setUserRatedKAAB(ratedKAABArray);
+  };
+
+  // Fetch data on component mount
   useEffect(() => {
-    const hasChartData = userRatedSkills && userRatedSkills.length > 0;
-    setShowEmptyState(!hasChartData);
-  }, [userRatedSkills]);
+    const fetchData = async () => {
+      // Wait for session data to be loaded
+      if (!sessionData.APP_URL || !sessionData.user_id) {
+        return;
+      }
+      
+      setLoading(true);
+      try {
+        // Fetch both APIs in parallel
+        const [allSkills, ratingData] = await Promise.all([
+          fetchAllSkills(),
+          fetchUserRatingData()
+        ]);
 
-  // Fetch rated skills with self_rating and proficiency_level
-  // useEffect(() => {
-  //   const fetchUserRatedSkills = async () => {
-  //     try {
-  //       const userData = localStorage.getItem("userData");
-  //       if (!userData) return;
+        // Process the data
+        processSkillsData(allSkills, ratingData);
 
-  //       const { APP_URL, token, user_id } = JSON.parse(userData);
-  //       const response = await fetch(
-  //         `${APP_URL}/user-rated-skills?user_id=${user_id}&token=${token}&include_proficiency=true`
-  //       );
+        // Check if we should show empty state
+        const hasRatedSkills = ratingData && ratingData.skill_ids && ratingData.skill_ids !== "{}";
+        const hasRatedKAAB = ratingData && (
+          (ratingData.knowledge_ids && ratingData.knowledge_ids !== "{}") ||
+          (ratingData.ability_ids && ratingData.ability_ids !== "{}") ||
+          (ratingData.attitude_ids && ratingData.attitude_ids !== "{}") ||
+          (ratingData.behavior_ids && ratingData.behavior_ids !== "{}")
+        );
+        setShowEmptyState(!hasRatedSkills && !hasRatedKAAB);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setShowEmptyState(true);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  //       if (response.ok) {
-  //         const data = await response.json();
-  //         console.log("Fetched rated skills:", data.userRatedSkills);
-  //         setUserRatedSkills(data.userRatedSkills || []);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching user rated skills:", error);
-  //     }
-  //   };
+    fetchData();
+  }, [sub_institute_id, type_id, user_id, jobrole_id, sessionData]);
 
-  //   if (!initialUserRatedSkills || initialUserRatedSkills.length === 0) {
-  //     fetchUserRatedSkills();
-  //   }
-  // }, [initialUserRatedSkills]);
+  // Process KAAB data when kaabData or userRatingData changes
+  useEffect(() => {
+    if ((kaabData.knowledge.length > 0 || kaabData.ability.length > 0 || 
+        kaabData.attitude.length > 0 || kaabData.behaviour.length > 0) && userRatingData) {
+      processKAABData(userRatingData);
+    }
+  }, [kaabData, userRatingData]);
+
+  // Compute un-rated skills
+  const unRatedSkills = skills.filter(
+    skill => !userRatedSkills.some(rated => rated.skill_id === skill.skill_id)
+  );
+
+  // Compute un-rated KAAB items
+  const unRatedKAAB = React.useMemo(() => {
+    const ratedKAABIds = new Set(userRatedKAAB.map(r => r.id));
+    const unrated: KAABItem[] = [];
+    
+    // Filter unrated knowledge items
+    kaabData.knowledge.forEach(item => {
+      const id = `knowledge-${item.knowledge_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    // Filter unrated ability items
+    kaabData.ability.forEach(item => {
+      const id = `ability-${item.ability_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    // Filter unrated attitude items
+    kaabData.attitude.forEach(item => {
+      const id = `attitude-${item.attitude_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    // Filter unrated behaviour items
+    kaabData.behaviour.forEach(item => {
+      const id = `behaviour-${item.behaviour_id || item.id}`;
+      if (!ratedKAABIds.has(id)) {
+        unrated.push({ ...item, id: item.id });
+      }
+    });
+    
+    return unrated;
+  }, [kaabData, userRatedKAAB]);
 
   const calculateOverallSkillIndex = () => {
     if (!userRatedSkills || userRatedSkills.length === 0) return "0.0";
     const totalRating = userRatedSkills.reduce((sum: number, skill: RatedSkill) => {
-      const rating = parseInt(skill.skill_level) || 0;
+      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
       return sum + rating;
     }, 0);
     return (totalRating / userRatedSkills.length).toFixed(1);
   };
 
   const overallSkillIndex = calculateOverallSkillIndex();
-  const percentage = Math.round((parseFloat(overallSkillIndex) / 5) * 100);
-  const improvement = "+0.3";
+  const percentage = Math.round((parseFloat(overallSkillIndex) / (SkillLevels.length || 5)) * 100);
 
-  const totalLevels = SkillLevels.length;
+  const totalLevels = SkillLevels.length || 5;
 
   const overallStatus =
     percentage >= 80
@@ -432,41 +871,32 @@ export default function Page({
         ? "text-yellow-600"
         : "text-red-600";
 
-  const attrArray = [
-    { title: "knowledge", icon: "mdi-book-open-page-variant" },
-    { title: "ability", icon: "mdi-lightbulb-on" },
-    { title: "behaviour", icon: "mdi-account-group" },
-    { title: "attitude", icon: "mdi-emoticon-happy-outline" },
-  ];
-
   // Prepare chart data
-  const fullChartData = userRatedSkills.map((s: RatedSkill) => {
-    const rating = parseInt(s.skill_level) || 0;
-    const max = SkillLevels.length;
+ const fullChartData = userRatedSkills.map((s: RatedSkill) => {
+  const rated = parseInt(s.skill_level?.replace("Level ", "") || "0");
+  const expected = parseExpectedLevel(s.proficiency_level);
 
-    const remaining = max - rating;
-    const level =
-      s.proficiency_level ||
-      (rating >= 6
-        ? "Advanced"
-        : rating >= 4
-          ? "Intermediate"
-          : rating >= 2
-            ? "Beginner"
-            : "Novice");
+  return {
+    skill: s.title || s.skill || "Unknown",
+    rated,
+    expected,
+  };
+});
 
-    return {
-      skill: s.title || "Unknown",
-      rating,
-      remaining,
-      max,
-      level,
-      proficiency_level: s.proficiency_level,
-    };
-  });
 
   // Limited chart data for main view (first 6 items)
   const limitedChartData = fullChartData.slice(0, 6);
+
+  if (loading) {
+    return (
+      <main className="p-6 flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading skills data...</p>
+        </div>
+      </main>
+    );
+  }
 
   if (showEmptyState) {
     return (
@@ -477,7 +907,7 @@ export default function Page({
   }
 
   return (
-    <main className="p-6 space-y-6">
+    <main className="p-2 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       {/* Fullscreen Chart Modal */}
       {showFullscreenChart && (
         <FullscreenChart
@@ -488,14 +918,14 @@ export default function Page({
       )}
 
       {/* 🔥 Chart Section */}
-      <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200">
+      <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200">
         <div className={showEmptyState ? "filter blur-sm pointer-events-none" : ""}>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center">
               <span className="mdi mdi-chart-line text-green-600 mr-2"></span>
               Skill Ratings
               {fullChartData.length > 6 && (
-                <span className="text-sm text-gray-500 ml-2">
+                <span className="text-xs sm:text-sm text-gray-500 ml-2">
                   (Showing {Math.min(6, fullChartData.length)} of {fullChartData.length})
                 </span>
               )}
@@ -504,7 +934,7 @@ export default function Page({
             {fullChartData.length > 6 && (
               <button
                 onClick={() => setShowFullscreenChart(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
+                className="bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-2 text-xs sm:text-sm"
               >
                 <span className="mdi mdi-fullscreen"></span>
                 View Full Chart
@@ -514,61 +944,66 @@ export default function Page({
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Chart */}
-            <div className="lg:col-span-2 h-72">
+            <div className="lg:col-span-2 h-56 sm:h-64 md:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={limitedChartData.map((entry) => ({
-                    ...entry,
-                    remaining: entry.max - entry.rating,
-                  }))}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="skill" />
-                  <YAxis type="number" allowDecimals={false} domain={[0, totalLevels]} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="rating" stackId="a" name="Current Rating">
-                    {limitedChartData.map((_, index) => (
-                      <Cell key={`cell-rating-${index}`} fill="#3B82F6" />
-                    ))}
-                  </Bar>
-                  <Bar dataKey="remaining" stackId="a" name="Remaining">
-                    {limitedChartData.map((entry, index) => {
-                      const color = entry.remaining === 0 ? "#3B82F6" : "#1E40AF";
-                      return <Cell key={`cell-remaining-${index}`} fill={color} />;
-                    })}
-                  </Bar>
-                </BarChart>
+  data={limitedChartData}
+  margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+>
+  <CartesianGrid strokeDasharray="3 3" />
+
+  <XAxis dataKey="skill" tick={{ fontSize: 10 }} />
+  <YAxis allowDecimals={false} domain={[0, totalLevels]} tick={{ fontSize: 10 }} />
+
+  <Tooltip />
+
+  {/* Rated */}
+  <Bar
+    dataKey="rated"
+    name="Rated"
+    fill="#3B82F6"
+    radius={[4, 4, 0, 0]}
+  />
+
+  {/* Expected */}
+  <Bar
+    dataKey="expected"
+    name="Expected"
+    fill="#22C55E"
+    radius={[4, 4, 0, 0]}
+  />
+</BarChart>
               </ResponsiveContainer>
 
               {/* Legend */}
-              <div className="flex gap-4 mt-4 justify-center">
-                <div className="flex items-center gap-2">
-                  <div style={{ backgroundColor: "#3B82F6", width: 20, height: 20 }}></div>
-                  <span className="text-sm">Current Rating</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div style={{ backgroundColor: "#1E40AF", width: 20, height: 20 }}></div>
-                  <span className="text-sm">Highest Rating Possible</span>
-                </div>
-              </div>
+              <div className="flex gap-4 sm:gap-6 justify-center mt-3 sm:mt-4">
+  <div className="flex items-center gap-1.5 sm:gap-2">
+    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded"></div>
+    <span className="text-xs sm:text-sm">Rated</span>
+  </div>
+  <div className="flex items-center gap-1.5 sm:gap-2">
+    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded"></div>
+    <span className="text-xs sm:text-sm">Expected</span>
+  </div>
+</div>
+
             </div>
 
             {/* Overall Skill Index */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 text-center">
-                <h3 className="text-md font-semibold text-gray-700 mb-4">
+              <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 shadow-sm border border-gray-200 text-center">
+                <h3 className="text-sm sm:text-md font-semibold text-gray-700 mb-3 sm:mb-4">
                   Overall Skill Index
                 </h3>
 
                 {(() => {
                   const totalRating = userRatedSkills.reduce((sum: number, skill: RatedSkill) => {
-                    const rating = parseInt(skill.skill_level) || 0;
+                    const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                     return sum + rating;
                   }, 0);
 
                   const averageRating = userRatedSkills.length > 0 ? totalRating / userRatedSkills.length : 0;
-                  const maxRating = SkillLevels.length;
+                  const maxRating = totalLevels;
                   const percentage = Math.round((averageRating / maxRating) * 100);
 
                   const improvement = userRatedSkills.length > 0 ?
@@ -578,15 +1013,15 @@ export default function Page({
 
                   const proficiencyCounts = {
                     advanced: userRatedSkills.filter(skill => {
-                      const rating = parseInt(skill.skill_level) || 0;
+                      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                       return rating >= 5;
                     }).length,
                     intermediate: userRatedSkills.filter(skill => {
-                      const rating = parseInt(skill.skill_level) || 0;
+                      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                       return rating >= 3 && rating < 5;
                     }).length,
                     beginner: userRatedSkills.filter(skill => {
-                      const rating = parseInt(skill.skill_level) || 0;
+                      const rating = parseInt(skill.skill_level?.replace("Level ", "") || "0");
                       return rating < 3;
                     }).length
                   };
@@ -651,13 +1086,13 @@ export default function Page({
                       </div>
 
                       <div className="mb-2">
-                        <span className={`inline-block px-3 py-1 text-sm font-medium rounded border ${overallStatusColor}`}>
+                        <span className={`inline-block px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded border ${overallStatusColor}`}>
                           {overallStatus}
                         </span>
                       </div>
 
                       <div className="mb-2">
-                        <div className="text-xs text-gray-600 mb-1">
+                        <div className="text-[10px] sm:text-xs text-gray-600 mb-1">
                           Skill Gap: {skillGap.toFixed(1)} points ({gapPercentage}% below target)
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-1">
@@ -667,7 +1102,7 @@ export default function Page({
                           ></div>
                         </div>
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-[10px] sm:text-xs text-gray-500">
                         Based on {userRatedSkills.length} skills
                       </div>
                     </>
@@ -680,194 +1115,375 @@ export default function Page({
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col h-[calc(100vh-8rem)]">
-        <div className="grid grid-cols-2 gap-6 h-[calc(100vh-12rem)] ">
+      <div className="flex flex-col h-auto min-h-[calc(100vh-8rem)]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 h-auto">
           {/* Skill List */}
-          <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200 h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">🚨 Un-Rated Skills</h2>
+          <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200 h-auto max-h-[500px] sm:max-h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">🚨 Un-Rated Skills & KAAB</h2>
 
-            <div className="space-y-4 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
-              {unRatedSkills.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-12">
-                  <div className="mb-6">
+            <div className="space-y-3 sm:space-y-4 h-auto overflow-y-auto hide-scroll">
+               {unRatedSkills.length === 0 && unRatedKAAB.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-8 sm:py-12">
+                  <div className="mb-4 sm:mb-6">
                     <img
                       src="/assets/image/rated.jpeg"
                       alt="All Skills Rated"
-                      className="w-110 h-70 mx-auto full object-cover shadow-lg border-4 "
+                      className="w-full max-w-[280px] sm:max-w-[400px] h-auto mx-auto object-cover shadow-lg border-2 sm:border-4 "
                     />
                   </div>
-                  <h3 className="text-xl font-bold text-green-700 mb-2">All Skills Rated!</h3>
-                  <p className="text-gray-600 text-center max-w-md">
-                    Great job! You've successfully rated all your skills.
+                  <h3 className="text-lg sm:text-xl font-bold text-green-700 mb-2">All Skills & KAAB Rated!</h3>
+                  <p className="text-gray-600 text-center text-sm sm:text-base max-w-md px-4">
+                    Great job! You've successfully rated all your skills and KAAB items.
                     Your development plan will now be more personalized and effective.
                   </p>
                 </div>
               ) : (
-                unRatedSkills.map(skill => (
-                  <div
-                    key={skill.jobrole_skill_id}
-                    className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm"
-                  >
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-semibold text-gray-800">{skill.title || skill.skill}</h3>
-                      <span className="text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
-                        {skill.proficiency_level}
-                      </span>
-                    </div>
-                    <p className="text-gray-700 text-sm mt-1">{skill.description}</p>
-                    <div className="flex gap-2 mt-2">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded border border-blue-200">{skill.category}</span>
-                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded border border-green-200">{skill.sub_category}</span>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-2">Job Role: {skill.jobrole}</p>
-                    <div className="flex gap-3 mt-3">
-                      <button
-                        onClick={() => {
-                          setSelectedSkill(skill);
-                          setIsEditModalOpen(true);
-                        }}
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                      >
-                        View More
-                      </button>
-                    </div>
-                  </div>
-                ))
+                <>
+                  {/* Un-Rated Skills */}
+                  {unRatedSkills.length > 0 && (
+                    <>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Skills</h3>
+                      {unRatedSkills.map(skill => (
+                        <div
+                          key={skill.jobrole_skill_id}
+                          className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-white shadow-sm"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{skill.title || skill.skill}</h3>
+                            <span className="text-xs sm:text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
+                              {skill.proficiency_level}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 text-xs sm:text-sm mt-1">{skill.description}</p>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
+                            <span className="px-1.5 sm:px-2 py-1 bg-blue-100 text-blue-800 text-[10px] sm:text-xs rounded border border-blue-200">{skill.category}</span>
+                            <span className="px-1.5 sm:px-2 py-1 bg-green-100 text-green-800 text-[10px] sm:text-xs rounded border border-green-200">{skill.sub_category}</span>
+                          </div>
+                          <p className="text-[10px] sm:text-xs text-gray-600 mt-2">Job Role: {skill.jobrole}</p>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {/* Un-Rated KAAB */}
+                  {unRatedKAAB.length > 0 && (
+                    <>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2 mt-4">KAAB</h3>
+                      {unRatedKAAB.map((item, index) => {
+                        // Determine category
+                        let category = 'knowledge';
+                        let categoryColor = 'blue';
+                        let categoryBg = 'bg-blue-100';
+                        let categoryText = 'text-blue-800';
+                        let categoryBorder = 'border-blue-200';
+                        
+                        if (item.ability_id) {
+                          category = 'ability';
+                          categoryColor = 'green';
+                          categoryBg = 'bg-green-100';
+                          categoryText = 'text-green-800';
+                          categoryBorder = 'border-green-200';
+                        } else if (item.attitude_id) {
+                          category = 'attitude';
+                          categoryColor = 'orange';
+                          categoryBg = 'bg-orange-100';
+                          categoryText = 'text-orange-800';
+                          categoryBorder = 'border-orange-200';
+                        } else if (item.behaviour_id) {
+                          category = 'behaviour';
+                          categoryColor = 'purple';
+                          categoryBg = 'bg-purple-100';
+                          categoryText = 'text-purple-800';
+                          categoryBorder = 'border-purple-200';
+                        }
+                        
+                        return (
+                          <div
+                            key={`${category}-${item.id}-${index}`}
+                            className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-white shadow-sm"
+                          >
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${categoryBg} ${categoryText} border ${categoryBorder}`}>
+                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </span>
+                                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                                  {item.knowledge || item.ability || item.attitude || item.behaviour || item.title || 'Unknown'}
+                                </h3>
+                              </div>
+                              <span className="text-xs sm:text-sm px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                {item.proficiency_level || 'Level 5'}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 text-xs sm:text-sm mt-1">{item.description}</p>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </>
               )}
             </div>
           </div>
 
           {/* User Rated Skills */}
-          <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200 h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">📅 Rated Skills</h2>
+          <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 border border-gray-200 h-auto max-h-[500px] sm:max-h-[calc(100vh-12rem)] overflow-y-auto hide-scroll">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800">📅 Rated Skills</h2>
+                {/* Tabs */}
+                <div className="flex border-b border-gray-200">
+                  <button
+                    onClick={() => setActiveTab("skills")}
+                    className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition-colors ${
+                      activeTab === "skills"
+                        ? "border-b-2 border-blue-500 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    Skill Ratings
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("kaab")}
+                    className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition-colors ${
+                      activeTab === "kaab"
+                        ? "border-b-2 border-blue-500 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    KAAB Ratings
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={() => setShowRecommendations(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm"
+                className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-xs sm:text-sm"
               >
                 View Actions
               </button>
             </div>
 
-            <div className="space-y-5 h-[calc(100%-3rem)] overflow-y-auto hide-scroll">
+            <div className="space-y-3 sm:space-y-5 h-auto overflow-y-auto hide-scroll">
               {userRatedSkills && userRatedSkills.length > 0 ? (
-                userRatedSkills.map((ratedSkill: RatedSkill) => {
-                  const totalLevels = SkillLevels.length;
-                  const currentLevel = ratedSkill.skill_level
-                    ? parseInt(ratedSkill.skill_level)
-                    : 1;
-                  const completionPercentage = Math.round((currentLevel / totalLevels) * 100);
-                  const status =
-                    completionPercentage >= 80
-                      ? "On Track"
-                      : completionPercentage >= 60
-                        ? "Medium Risk"
-                        : "At Risk";
-                  const statusColor =
-                    completionPercentage >= 80
-                      ? "text-green-700"
-                      : completionPercentage >= 60
-                        ? "text-yellow-700"
-                        : "text-red-700";
-                  const created_at = ratedSkill.created_at
-                    ? new Date(ratedSkill.created_at).toLocaleDateString()
-                    : "N/A";
+                activeTab === "skills" ? (
+                  userRatedSkills.map((ratedSkill: RatedSkill) => {
+                    const totalLevels = ratedSkill.proficiency_level || 5;
+                    const currentLevel = ratedSkill.skill_level
+                      ? parseInt(ratedSkill.skill_level.replace("Level ", ""))
+                      : 1;
+                    const completionPercentage = Math.round((currentLevel / Number(totalLevels)) * 100);
+                    const status =
+                      completionPercentage >= 80
+                        ? "On Track"
+                        : completionPercentage >= 60
+                          ? "Medium Risk"
+                          : "At Risk";
+                    const statusColor =
+                      completionPercentage >= 80
+                        ? "text-green-700"
+                        : completionPercentage >= 60
+                          ? "text-yellow-700"
+                          : "text-red-700";
+                    const created_at = ratedSkill.created_at
+                      ? new Date(ratedSkill.created_at).toLocaleDateString()
+                      : "N/A";
 
-                  const selfRating = ratedSkill.skill_level !== undefined ?
-                    parseFloat(ratedSkill.skill_level) || 0 : 0;
-                  const expected = ratedSkill.proficiency_level !== undefined ?
-                    parseFloat(ratedSkill.proficiency_level) || 0 : 0;
+                    const selfRating = ratedSkill.skill_level !== undefined ?
+                      parseFloat(ratedSkill.skill_level.replace("Level ", "")) || 0 : 0;
+                    const expected = parseExpectedLevel(ratedSkill.proficiency_level);
 
-                  return (
-                    <div
-                      key={ratedSkill.id}
-                      className="border border-gray-300 rounded-lg p-4 bg-gray-50 shadow-sm"
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-semibold text-gray-800 text-base">
-                          {ratedSkill.title || "Untitled Skill"}
-                        </h3>
-                        <span className="font-medium text-gray-500 flex items-center space-x-1 text-xs">
-                          Gap:{(() => {
-                            const gap = selfRating - expected;
-                            if (gap > 0) {
-                              return (
-                                <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
-                                  <span className="mdi mdi-trending-up text-sm"></span>
+                    return (
+                      <div
+                        key={ratedSkill.id}
+                        className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-gray-50 shadow-sm"
+                      >
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                            {ratedSkill.title || ratedSkill.skill || "Untitled Skill"}
+                          </h3>
+                          <span className="font-medium text-gray-500 flex items-center space-x-1 text-[10px] sm:text-xs">
+                            Gap:{(() => {
+                              const gap = selfRating - expected;
+                              if (gap > 0) {
+                                return (
+                                  <div className="flex items-center space-x-1 text-green-600 font-medium text-[10px] sm:text-xs">
+                                    <span className="mdi mdi-trending-up text-xs sm:text-sm"></span>
+                                    <span>+{gap.toFixed(1)}</span>
+                                  </div>
+                                );
+                              } else if (gap < 0) {
+                                return (
+                                  <div className="flex items-center space-x-1 text-red-600 font-medium text-[10px] sm:text-xs">
+                                    <span className="mdi mdi-alert-circle text-xs sm:text-sm"></span>
+                                    <span>{gap.toFixed(1)}</span>
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
+                                    <span className="mdi mdi-check-circle text-sm"></span>
+                                    <span>0.0</span>
+                                  </div>
+                                );
+                              }
+                            })()}
+                          </span>
+                          <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            {created_at}
+                          </span>
+                        </div>
+
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          {ratedSkill.category || "General"} •{" "}
+                          {ratedSkill.sub_category || "Uncategorized"}
+                        </p>
+
+                        <div className="w-full bg-gray-300 rounded h-2 mt-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded"
+                            style={{ width: `${completionPercentage}%` }}
+                          ></div>
+                        </div>
+
+                        <div className="grid grid-cols-2 text-xs sm:text-sm font-semibold text-gray-700 border-b pb-1 mt-3 sm:mt-4">
+                          <p>Self Rating</p>
+                          <p>Expected</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-xs items-center">
+                          {/* Self Rating */}
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            {renderCircles(selfRating, Number(totalLevels))}
+                            <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}/{totalLevels}</span>
+                          </div>
+
+                          {/* Expected Rating */}
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              {renderCircles(expected, Number(totalLevels))}
+                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}/{totalLevels}</span>
+                            </div>
+
+                            <span
+                              className={`inline-flex items-center rounded-full border px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold transition-colors
+                                focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
+                                hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
+                            >
+                              {status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Add detailed ratings expandable here */}
+                        {renderDetailedRatings(ratedSkill)}
+                      </div>
+                    );
+                  })
+                ) : (
+                  // KAAB Tab Content - Show rated KAAB items
+                  userRatedKAAB && userRatedKAAB.length > 0 ? (
+                    userRatedKAAB.map((ratedKAAB: RatedKAAB) => {
+                      const selfRating = ratedKAAB.self_rating || 0;
+                      const expected = ratedKAAB.expected || 5;
+                      const gap = selfRating - expected;
+                      const completionPercentage = Math.round((selfRating / 5) * 100);
+                      const status = completionPercentage >= 80 ? "On Track" : completionPercentage >= 60 ? "Medium Risk" : "At Risk";
+                      const statusColor = completionPercentage >= 80 ? "text-green-700" : completionPercentage >= 60 ? "text-yellow-700" : "text-red-700";
+                      const created_at = ratedKAAB.created_at ? new Date(ratedKAAB.created_at).toLocaleDateString() : "N/A";
+                      
+                      const categoryColors: Record<string, { bg: string; border: string; text: string }> = {
+                        knowledge: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700" },
+                        ability: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
+                        attitude: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700" },
+                        behaviour: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700" }
+                      };
+                      
+                      const colors = categoryColors[ratedKAAB.category] || categoryColors.knowledge;
+                      
+                      return (
+                        <div
+                          key={ratedKAAB.id}
+                          className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-gray-50 shadow-sm"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text} border ${colors.border}`}>
+                                {ratedKAAB.category.charAt(0).toUpperCase() + ratedKAAB.category.slice(1)}
+                              </span>
+                              <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                                {ratedKAAB.title}
+                              </h3>
+                            </div>
+                            <span className="font-medium text-gray-500 flex items-center space-x-1 text-[10px] sm:text-xs">
+                              Gap:{" "}
+                              {gap > 0 ? (
+                                <div className="flex items-center space-x-1 text-green-600 font-medium text-[10px] sm:text-xs">
+                                  <span className="mdi mdi-trending-up text-xs sm:text-sm"></span>
                                   <span>+{gap.toFixed(1)}</span>
                                 </div>
-                              );
-                            } else if (gap < 0) {
-                              return (
-                                <div className="flex items-center space-x-1 text-red-600 font-medium text-xs">
-                                  <span className="mdi mdi-alert-circle text-sm"></span>
+                              ) : gap < 0 ? (
+                                <div className="flex items-center space-x-1 text-red-600 font-medium text-[10px] sm:text-xs">
+                                  <span className="mdi mdi-alert-circle text-xs sm:text-sm"></span>
                                   <span>{gap.toFixed(1)}</span>
                                 </div>
-                              );
-                            } else {
-                              return (
+                              ) : (
                                 <div className="flex items-center space-x-1 text-green-600 font-medium text-xs">
                                   <span className="mdi mdi-check-circle text-sm"></span>
                                   <span>0.0</span>
                                 </div>
-                              );
-                            }
-                          })()}
-                        </span>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                          {created_at}
-                        </span>
-                      </div>
+                              )}
+                            </span>
+                            <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                              {created_at}
+                            </span>
+                          </div>
 
-                      <p className="text-sm text-gray-600">
-                        {ratedSkill.category || "General"} •{" "}
-                        {ratedSkill.sub_category || "Uncategorized"}
-                      </p>
+                          <div className="w-full bg-gray-300 rounded h-2 mt-2">
+                            <div
+                              className={`h-2 rounded ${colors.bg.split('-')[1] === 'blue' ? 'bg-blue-600' : colors.bg.split('-')[1] === 'green' ? 'bg-green-600' : colors.bg.split('-')[1] === 'orange' ? 'bg-orange-500' : 'bg-purple-500'}`}
+                              style={{ width: `${completionPercentage}%` }}
+                            ></div>
+                          </div>
 
-                      <div className="w-full bg-gray-300 rounded h-2 mt-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded"
-                          style={{ width: `${completionPercentage}%` }}
-                        ></div>
-                      </div>
+                          <div className="grid grid-cols-2 text-xs sm:text-sm font-semibold text-gray-700 border-b pb-1 mt-3 sm:mt-4">
+                            <p>Self Rating</p>
+                            <p>Expected</p>
+                          </div>
 
-                      <div className="grid grid-cols-2 text-sm font-semibold text-gray-700 border-b pb-1 mt-4">
-                        <p>Self Rating</p>
-                        <p>Expected</p>
-                      </div>
+                          <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-xs items-center">
+                            {/* Self Rating */}
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              {renderCircles(selfRating, 5)}
+                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}/5</span>
+                            </div>
 
-                  <div className="grid grid-cols-2 gap-4 mt-2 text-xs items-center">
-  {/* Self Rating */}
-  <div className="flex items-center space-x-2">
-    {renderCircles(selfRating, SkillLevels.length)}
-    <span className="ml-2 text-sm font-medium">{selfRating}/{SkillLevels.length}</span>
-  </div>
+                            {/* Expected Rating */}
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center space-x-1 sm:space-x-2">
+                                {renderCircles(expected, 5)}
+                                <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}/5</span>
+                              </div>
 
-  {/* Expected Rating */}
-  <div className="flex items-center justify-between w-full">
-    <div className="flex items-center space-x-2">
-      {renderCircles(expected, SkillLevels.length)}
-      <span className="ml-2 text-sm font-medium">{expected}/{SkillLevels.length}</span>
-    </div>
-
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors 
-        focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
-        hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
-    >
-      {status}
-    </span>
-  </div>
-</div>
-
-                      {/* Add detailed ratings here */}
-                      {renderDetailedRatings(ratedSkill)}
+                              <span
+                                className={`inline-flex items-center rounded-full border px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold transition-colors
+                                  bg-red-50 text-red-700 border-red-200 ${statusColor}`}
+                              >
+                                {status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600 text-sm">No KAAB ratings found</p>
+                      <p className="text-gray-400 text-xs mt-1">Rate KAAB items to see them here</p>
                     </div>
-                  );
-                })
+                  )
+                )
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-gray-600">No user rated skills found</p>
+                  <p className="text-gray-600 text-sm">No user rated skills found</p>
                 </div>
               )}
             </div>
@@ -876,65 +1492,65 @@ export default function Page({
 
         {/* Recommendations Modal */}
         {showRecommendations && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto p-4">
-            <div className="bg-white rounded-lg w-full max-w-3xl p-6 relative">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto p-2 sm:p-4">
+            <div className="bg-white rounded-lg w-full max-w-3xl p-4 sm:p-6 relative my-4 sm:my-0">
               <button
                 onClick={() => setShowRecommendations(false)}
-                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold"
+                className="absolute top-2 sm:top-3 right-2 sm:right-3 text-gray-500 hover:text-gray-700 text-lg sm:text-xl font-bold"
               >
                 &times;
               </button>
 
-              <h2 className="text-xl font-semibold text-blue-600 mb-4 flex items-center">
+              <h2 className="text-lg sm:text-xl font-semibold text-blue-600 mb-3 sm:mb-4 flex items-center">
                 <span className="mdi mdi-lightbulb-on-outline mr-2 text-blue-500"></span>
                 Development Recommendations
               </h2>
 
-              <div className="flex flex-col gap-6">
-                <div className="p-4 rounded-lg border transition-all duration-300 transform cursor-pointer animate-slide-up border-error/30 bg-error-bg/50 hover:shadow-md hover:scale-[1.01]">
-                  <h3 className="font-semibold text-blue-700 flex items-center">
+              <div className="flex flex-col gap-4 sm:gap-6">
+                <div className="p-3 sm:p-4 rounded-lg border transition-all duration-300 transform cursor-pointer animate-slide-up border-error/30 bg-error-bg/50 hover:shadow-md hover:scale-[1.01]">
+                  <h3 className="font-semibold text-blue-700 flex items-center text-sm sm:text-base">
                     <span className="mdi mdi-book-open-page-variant mr-2"></span>
                     Excel Advanced Training
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Improve reporting efficiency and data analysis capabilities
                   </p>
-                  <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+                  <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-red-100 text-red-700">
                     High
                   </span>
-                  <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors">
+                  <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-xs sm:text-sm hover:bg-blue-700 transition-colors">
                     <span className="mdi mdi-open-in-new mr-1"></span> Learn More
                   </button>
                 </div>
 
-                <div className="p-4 rounded-lg border border-yellow-200 bg-yellow-50 shadow hover:shadow-lg transition-all duration-300">
-                  <h3 className="font-semibold text-yellow-700 flex items-center">
+                <div className="p-3 sm:p-4 rounded-lg border border-yellow-200 bg-yellow-50 shadow hover:shadow-lg transition-all duration-300">
+                  <h3 className="font-semibold text-yellow-700 flex items-center text-sm sm:text-base">
                     <span className="mdi mdi-account-group mr-2"></span>
                     Leadership Workshop
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Build project management and team leadership skills
                   </p>
-                  <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
+                  <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
                     Medium
                   </span>
-                  <button className="mt-3 w-full px-3 py-2 rounded bg-yellow-600 text-white text-sm hover:bg-yellow-700 transition-colors">
+                  <button className="mt-3 w-full px-3 py-2 rounded bg-yellow-600 text-white text-xs sm:text-sm hover:bg-yellow-700 transition-colors">
                     <span className="mdi mdi-open-in-new mr-1"></span> Learn More
                   </button>
                 </div>
 
-                <div className="p-4 rounded-lg border border-blue-200 bg-blue-50 shadow hover:shadow-lg transition-all duration-300">
-                  <h3 className="font-semibold text-blue-700 flex items-center">
+                <div className="p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50 shadow hover:shadow-lg transition-all duration-300">
+                  <h3 className="font-semibold text-blue-700 flex items-center text-sm sm:text-base">
                     <span className="mdi mdi-presentation mr-2"></span>
                     Public Speaking Seminar
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Strengthen presentation impact and confidence
                   </p>
-                  <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                  <span className="inline-block mt-2 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-full bg-blue-100 text-blue-700">
                     Low
                   </span>
-                  <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors">
+                  <button className="mt-3 w-full px-3 py-2 rounded bg-blue-600 text-white text-xs sm:text-sm hover:bg-blue-700 transition-colors">
                     <span className="mdi mdi-open-in-new mr-1"></span> Learn More
                   </button>
                 </div>

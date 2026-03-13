@@ -6,13 +6,13 @@ import { createPortal } from "react-dom";
 import { toast } from "@/hooks/use-toast";
 import { Edit, Plus } from "lucide-react";
 import icon from '@/components/AppIcon';
-import { Atom } from "react-loading-indicators"
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
 import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
 import { UserCircle, Search ,AlertCircle} from "lucide-react";
 import Shepherd, { Tour } from "shepherd.js";
 import 'shepherd.js/dist/css/shepherd.css';
+import Loader from '../../../components/utils/loading'
 
 import {
   Dialog,
@@ -394,296 +394,286 @@ export default function Dashboard() {
 
   // Initialize Shepherd.js tour
   useEffect(() => {
+    // Function to start the tour
+    const startTour = () => {
+      // Get user profile for role-based filtering (default to non-admin if not available)
+      const userData = localStorage.getItem("userData");
+      let isAdmin = false;
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        isAdmin = parsed.user_profile_name === "Admin";
+      }
+      console.log('Tour initializing - isAdmin:', isAdmin);
+
+      // Create the tour
+      const tour = new Shepherd.Tour({
+        defaultStepOptions: {
+          cancelIcon: {
+            enabled: true
+          },
+          classes: 'shepherd-theme-custom',
+          scrollTo: {
+            behavior: 'smooth',
+            block: 'center'
+          },
+          modalOverlayOpeningPadding: 10,
+          modalOverlayOpeningRadius: 8
+        },
+        useModalOverlay: true,
+        exitOnEsc: true,
+        keyboardNavigation: true
+      });
+
+      // Define all possible tour steps
+      const allSteps = [
+        {
+          id: 'welcome',
+          title: 'Welcome to Your Dashboard!',
+          text: 'Let\'s take a quick tour to help you navigate through all the amazing features available to you.',
+          attachTo: {
+            element: '#tour-header',
+            on: 'bottom' as const
+          },
+          buttons: [
+            {
+              text: 'Skip Tour',
+              action: () => {
+                localStorage.setItem('dashboardTourCompleted', 'true');
+                tour.cancel();
+              },
+              classes: 'shepherd-button-secondary'
+            },
+            {
+              text: 'Start Tour',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'stats',
+          title: 'Key Statistics',
+          text: 'Here you can see your key metrics at a glance: Total Employees, Mapped Jobroles, and Total Skills.',
+          attachTo: {
+            element: '#tour-stats',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'chart',
+          title: 'Weekly Task Progress',
+          text: 'This chart shows your weekly task progress. Completed tasks appear in dark blue, in-progress in medium blue, and pending in light blue.',
+          attachTo: {
+            element: '#tour-chart',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        // Admin-only: Skills Heatmap
+        ...(isAdmin ? [{
+          id: 'skills-heatmap',
+          title: 'Enterprise Skills Heatmap',
+          text: 'View skills gaps across departments. Click on any cell to drill down into detailed gap analysis.',
+          attachTo: {
+            element: '#tour-skills-heatmap',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        }] : []),
+        // Non-admin: Skill Profile
+        ...(!isAdmin ? [{
+          id: 'skill-profile',
+          title: 'My Skill Profile',
+          text: 'View your skills endorsed by peers and managers. Click "View More" to see detailed skill information.',
+          attachTo: {
+            element: '#tour-skill-profile',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        }] : []),
+        // Non-admin: Growth Opportunities
+        ...(!isAdmin ? [{
+          id: 'growth-opportunities',
+          title: 'Growth Opportunities',
+          text: 'Track your current role proficiency and view growth opportunities based on your skills.',
+          attachTo: {
+            element: '#tour-growth-opportunities',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        }] : []),
+        {
+          id: 'employee-table',
+          title: 'Employee Directory',
+          text: 'This table displays all employees. You can search, filter, and view employee details here.',
+          attachTo: {
+            element: '#tour-employee-table',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'today-tasks',
+          title: 'Today\'s Tasks',
+          text: 'View and manage your tasks for today. Click the + button to create new tasks.',
+          attachTo: {
+            element: '#tour-today-tasks',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'weekly-tasks',
+          title: 'Weekly Tasks',
+          text: 'Switch to this tab to view your weekly task progress and upcoming tasks. Click on the "Weekly Tasks" tab button above.',
+          attachTo: {
+            element: '#tour-weekly-tasks-tab',
+            on: 'bottom' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'course-list',
+          title: 'Course List',
+          text: 'Browse available courses. Click the + button to add new courses.',
+          attachTo: {
+            element: '#tour-course-list',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Next',
+              action: () => tour.next()
+            }
+          ]
+        },
+        {
+          id: 'assessment-list',
+          title: 'Assessment List',
+          text: 'View and manage assessments. Click the + button to create new assessments.',
+          attachTo: {
+            element: '#tour-assessment-list',
+            on: 'top' as const
+          },
+          buttons: [
+            {
+              text: 'Back',
+              action: () => tour.back()
+            },
+            {
+              text: 'Finish',
+              action: () => {
+                localStorage.setItem('dashboardTourCompleted', 'true');
+                tour.complete();
+              }
+            }
+          ]
+        }
+      ];
+
+      // Add all steps to tour
+      allSteps.forEach(step => tour.addStep(step));
+
+      // Store tour reference
+      tourRef.current = tour;
+
+      // Start tour
+      console.log('Starting dashboard tour...', { isAdmin, stepsCount: allSteps.length });
+      tour.start();
+    };
+
     // Check if we should trigger the tour (from sidebar tour navigation)
     const triggerTour = sessionStorage.getItem('triggerPageTour');
 
-    // Store whether tour should start
-    const shouldStartTour = triggerTour === 'dashboard';
-
-    // Clear the trigger flag
-    if (triggerTour) {
+    if (triggerTour === 'dashboard') {
+      // Clear the trigger flag
       sessionStorage.removeItem('triggerPageTour');
-      console.log('Triggering dashboard tour from navigation...');
+      console.log('Trigger found, starting tour...');
+
+      // Wait for DOM to be ready then start tour
+      setTimeout(startTour, 500);
+    } else {
+      console.log('No tour trigger found');
     }
 
-    // Don't start tour if not triggered from sidebar
-    if (!shouldStartTour) {
-      console.log('Tour not triggered, skipping...');
-      return;
-    }
-
-    // Create the tour
-    const tour = new Shepherd.Tour({
-      defaultStepOptions: {
-        cancelIcon: {
-          enabled: true
-        },
-        classes: 'shepherd-theme-custom',
-        scrollTo: {
-          behavior: 'smooth',
-          block: 'center'
-        },
-        modalOverlayOpeningPadding: 10,
-        modalOverlayOpeningRadius: 8
-      },
-      useModalOverlay: true,
-      exitOnEsc: true,
-      keyboardNavigation: true
-    });
-
-    // Define tour steps with proper typing
-    const steps = [
-      {
-        id: 'welcome',
-        title: 'Welcome to Your Dashboard!',
-        text: 'Let\'s take a quick tour to help you navigate through all the amazing features available to you.',
-        attachTo: {
-          element: '#tour-header',
-          on: 'bottom' as const
-        },
-        buttons: [
-          {
-            text: 'Skip Tour',
-            action: () => {
-              localStorage.setItem('dashboardTourCompleted', 'true');
-              tour.cancel();
-            },
-            classes: 'shepherd-button-secondary'
-          },
-          {
-            text: 'Start Tour',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'stats',
-        title: 'Key Statistics',
-        text: 'Here you can see your key metrics at a glance: Total Employees, Mapped Jobroles, and Total Skills.',
-        attachTo: {
-          element: '#tour-stats',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Next',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'chart',
-        title: 'Weekly Task Progress',
-        text: 'This chart shows your weekly task progress. Completed tasks appear in dark blue, in-progress in medium blue, and pending in light blue.',
-        attachTo: {
-          element: '#tour-chart',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Next',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'skills-heatmap',
-        title: 'Enterprise Skills Heatmap',
-        text: 'View skills gaps across departments. Click on any cell to drill down into detailed gap analysis.',
-        attachTo: {
-          element: '#tour-skills-heatmap',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Next',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'attendance-matrix',
-        title: 'Employee Attendance Matrix',
-        text: 'Track and manage employee attendance efficiently. Click on data points to view skill details.',
-        attachTo: {
-          element: '#tour-attendance-matrix',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Next',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'skill-profile',
-        title: 'My Skill Profile',
-        text: 'View your skills endorsed by peers and managers. Click "View More" to see detailed skill information.',
-        attachTo: {
-          element: '#tour-skill-profile',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Next',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'growth-opportunities',
-        title: 'Growth Opportunities',
-        text: 'Track your current role proficiency and view growth opportunities based on your skills.',
-        attachTo: {
-          element: '#tour-growth-opportunities',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Next',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'employee-table',
-        title: 'Employee Directory',
-        text: 'This table displays all employees. You can search, filter, and view employee details here.',
-        attachTo: {
-          element: '#tour-employee-table',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Next',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'today-tasks',
-        title: 'Today\'s Tasks',
-        text: 'View and manage your tasks for today. Click the + button to create new tasks.',
-        attachTo: {
-          element: '#tour-today-tasks',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Next',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'weekly-tasks',
-        title: 'Weekly Tasks',
-        text: 'Switch to this tab to view your weekly task progress and upcoming tasks.',
-        attachTo: {
-          element: '#tour-weekly-tasks',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Next',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'course-list',
-        title: 'Course List',
-        text: 'Browse available courses. Click the + button to add new courses.',
-        attachTo: {
-          element: '#tour-course-list',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Next',
-            action: () => tour.next()
-          }
-        ]
-      },
-      {
-        id: 'assessment-list',
-        title: 'Assessment List',
-        text: 'View and manage assessments. Click the + button to create new assessments.',
-        attachTo: {
-          element: '#tour-assessment-list',
-          on: 'top' as const
-        },
-        buttons: [
-          {
-            text: 'Back',
-            action: () => tour.back()
-          },
-          {
-            text: 'Finish',
-            action: () => {
-              localStorage.setItem('dashboardTourCompleted', 'true');
-              tour.complete();
-            }
-          }
-        ]
-      }
-    ];
-
-    // Add steps to tour
-    steps.forEach(step => tour.addStep(step));
-
-    // Store tour reference
-    tourRef.current = tour;
-
-    // Start tour after a short delay to ensure DOM is ready
-    const startTimer = setTimeout(() => {
-      console.log('Starting dashboard tour...');
-      tour.start();
-    }, 1000);
-
+    // Cleanup
     return () => {
-      clearTimeout(startTimer);
       if (tourRef.current) {
         tourRef.current.cancel();
         tourRef.current = null;
@@ -836,7 +826,7 @@ export default function Dashboard() {
             const currentJobroleId = currentUser?.jobrole_id || data.employeeList?.find((emp: any) => emp.id == sessionData.userId)?.jobrole_id;
             
             const ratingsRes = await fetch(
-              `${sessionData.url}/table_data/?table=user_rating_details&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[user_id]=${sessionData.userId}&filters[jobrole_id]=${currentJobroleId}`
+              `${sessionData.url}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[user_id]=${sessionData.userId}&filters[jobrole_id]=${currentJobroleId}`
             );
             
             let ratedSkillIds: string[] = [];
@@ -1430,9 +1420,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-600">
-        <Atom color="#525ceaff" size="medium" text="" textColor="" />
-      </div>
+        <Loader />
     );
   }
   const currentPercent =
@@ -2230,6 +2218,7 @@ export default function Dashboard() {
                 Today's Tasks
               </button>
               <button
+                id="tour-weekly-tasks-tab"
                 className={`flex-1 py-3 px-4 text-center font-medium text-sm ${selectedWidget === "Week Task List" ? "text-blue-400 border-b-2 border-blue-400" : "text-gray-500 hover:text-gray-700"}`}
                 onClick={() => setSelectedWidget("Week Task List")}
               >

@@ -4,8 +4,7 @@ import * as React from "react";
 import { useEffect, useState, Suspense, lazy } from "react";
 import StatGrid from "./StatGrid";
 import { useRouter } from "next/navigation";
-import Loading from "../../../components/utils/loading";
-import { Atom } from "react-loading-indicators"; // Import the Loading component
+import Loader from "@/components/utils/loading";
 
 type MenuDetail = {
   menu: string;
@@ -85,9 +84,7 @@ const MainScreen: React.FC = () => {
     return (
       <Suspense
         fallback={
-          <div className="flex justify-center items-center h-screen">
-            <Atom color="#525ceaff" size="medium" text="" textColor="" />
-          </div>
+          <Loader />
         }
       >
         <DynamicComponent />
