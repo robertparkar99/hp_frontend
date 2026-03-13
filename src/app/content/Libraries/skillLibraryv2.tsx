@@ -178,7 +178,6 @@ const SkillLibrary: React.FC<SkillLibraryProps> = ({ showTour, onTourComplete, o
                 {activeTab === "Ability" && <Ability showDetailTour={{ show: detailTourTab === 'Ability', onComplete: () => { onDetailComplete && onDetailComplete(); setTourTabs(tabs.slice(tabs.indexOf('Ability') + 1)); setShowMainTour(true); } }} />}
                 {activeTab === "Attitude" && <Attitude showDetailTour={{ show: detailTourTab === 'Attitude', onComplete: () => { onDetailComplete && onDetailComplete(); setTourTabs(tabs.slice(tabs.indexOf('Attitude') + 1)); setShowMainTour(true); } }} />}
                 {activeTab === "Behaviour" && <Behaviour showDetailTour={{ show: detailTourTab === 'Behaviour', onComplete: () => { onDetailComplete && onDetailComplete(); setTourTabs(tabs.slice(tabs.indexOf('Behaviour') + 1)); setShowMainTour(true); } }} />}
-            {activeTab === "Behaviour" && <Behaviour />}
 
                 {activeTab === "Invisible" && <InvisibleLibrary showDetailTour={{ show: detailTourTab === 'Invisible', onComplete: () => { onDetailComplete && onDetailComplete(); setTourTabs(tabs.slice(tabs.indexOf('Invisible') + 1)); setShowMainTour(true); } }} />}
           </>
