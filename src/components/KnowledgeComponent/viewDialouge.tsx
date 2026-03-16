@@ -132,11 +132,11 @@ const [sessionData, setSessionData] = useState({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-4">
-        <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative h-screen overflow-auto hide-scroll">
+      <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-2 md:p-4">
+        <div className="bg-white p-4 md:p-6 rounded-md w-full md:w-4/5 max-w-5xl shadow-lg relative max-h-[90vh] md:max-h-screen overflow-auto hide-scroll">
           <button
             onClick={onClose}
-            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl z-10"
           >
             ✖
           </button>
@@ -148,11 +148,11 @@ const [sessionData, setSessionData] = useState({
 
   if (!viewData) {
     return (
-      <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-4">
-        <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative h-screen overflow-auto hide-scroll">
+      <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-2 md:p-4">
+        <div className="bg-white p-4 md:p-6 rounded-md w-full md:w-4/5 max-w-5xl shadow-lg relative max-h-[90vh] md:max-h-screen overflow-auto hide-scroll">
           <button
             onClick={onClose}
-            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl z-10"
           >
             ✖
           </button>
@@ -379,17 +379,17 @@ const [sessionData, setSessionData] = useState({
       case "attitude":
         // For attitude, show direct data since no proficiency levels
         return (
-          <div className="cardDetails grid grid-cols-1 gap-6 p-4">
+          <div className="cardDetails grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-3 md:p-4">
             {!empty(attitudeData) ? (
               attitudeData.map((item, index) => (
                 <div
                   key={index}
-                  className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-4 rounded-lg"
+                  className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-3 md:p-4 rounded-lg"
                 >
-                  <h3 className="text-[16px] font-bold text-[#2060E6] mb-2">
+                  <h3 className="text-sm md:text-[16px] font-bold text-[#2060E6] mb-2">
                     {item.classification_item || "N/A"}
                   </h3>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs md:text-sm text-gray-600">
                     <p>
                       <strong>Category:</strong>{" "}
                       {item.classification_category || "-"}
@@ -402,7 +402,7 @@ const [sessionData, setSessionData] = useState({
                 </div>
               ))
             ) : (
-              <div className="text-center text-gray-500 text-sm mt-4">
+              <div className="text-center text-gray-500 text-sm mt-4 col-span-full">
                 No {type} data available
               </div>
             )}
@@ -411,17 +411,17 @@ const [sessionData, setSessionData] = useState({
       case "behaviour":
         // For behaviour, show direct data since no proficiency levels
         return (
-          <div className="cardDetails grid grid-cols-1 gap-6 p-4">
+          <div className="cardDetails grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-3 md:p-4">
             {!empty(behaviourData) ? (
               behaviourData.map((item, index) => (
                 <div
                   key={index}
-                  className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-4 rounded-lg"
+                  className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-3 md:p-4 rounded-lg"
                 >
-                  <h3 className="text-[16px] font-bold text-[#2060E6] mb-2">
+                  <h3 className="text-sm md:text-[16px] font-bold text-[#2060E6] mb-2">
                     {item.classification_item || "N/A"}
                   </h3>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs md:text-sm text-gray-600">
                     <p>
                       <strong>Category:</strong>{" "}
                       {item.classification_category || "-"}
@@ -434,7 +434,7 @@ const [sessionData, setSessionData] = useState({
                 </div>
               ))
             ) : (
-              <div className="text-center text-gray-500 text-sm mt-4">
+              <div className="text-center text-gray-500 text-sm mt-4 col-span-full">
                 No {type} data available
               </div>
             )}
@@ -452,12 +452,12 @@ const [sessionData, setSessionData] = useState({
 
     return (
       <>
-        <div className="flex justify-center mt-4 flex-wrap gap-2">
+        <div className="flex justify-center mt-3 md:mt-4 flex-wrap gap-2 px-1">
           {levels.map((level, index) => (
             <button
               key={`${type}Tab-${index}`}
               onClick={() => setActiveTab(level.proficiency_level)}
-              className={`px-4 py-2 text-sm font-bold rounded-md border shadow-lg transition ${
+              className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-md border shadow-lg transition ${
                 activeTab === level.proficiency_level
                   ? "bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50"
                   : "bg-[#e7efff] text-gray-700 border-[#c1d2f7]"
@@ -468,10 +468,10 @@ const [sessionData, setSessionData] = useState({
           ))}
         </div>
 
-        <div className="w-full mt-6 p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
+        <div className="w-full mt-4 md:mt-6 p-3 md:p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
           {levels.find((k: any) => k.proficiency_level === activeTab) ? (
             <div>
-              <h3 className="text-lg font-semibold text-[#2060E6] mb-4">
+              <h3 className="text-base md:text-lg font-semibold text-[#2060E6] mb-3 md:mb-4">
                 Level {activeTab} -{" "}
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </h3>
@@ -532,8 +532,8 @@ const [sessionData, setSessionData] = useState({
   };
 
   return (
-    <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative h-screen overflow-auto hide-scroll">
+    <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-2 md:p-4 overflow-x-hidden">
+      <div className="bg-white p-3 md:p-6 rounded-md w-full md:w-4/5 max-w-5xl shadow-lg relative max-h-[90vh] md:max-h-screen overflow-auto hide-scroll">
         <button
           onClick={onClose}
           className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
@@ -545,32 +545,28 @@ const [sessionData, setSessionData] = useState({
         {showHeader && (
           <>
             {/* header parts start  */}
-            <div className="flex w-full">
+            <div className="flex flex-col md:flex-row w-full gap-2 md:gap-0">
               {/* Left: GIF */}
-              <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
+              <div className="w-full md:w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg flex-shrink-0">
                 <img
                   src={`/assets/loading/robo_dance.gif`}
                   alt="Loading..."
-                  className="w-full h-auto"
+                  className="w-16 h-16 md:w-full md:h-auto mx-auto md:mx-0 object-contain"
                 />
               </div>
 
               {/* Center Content */}
-              <div className="w-[70%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 flex justify-center">
-                <div className="heade">
-                  <h2 className="text-gray-800 font-bold text-lg">
+              <div className="w-full md:w-[70%] bg-gradient-to-r from-violet-100 to-violet-200 p-3 md:p-4 flex justify-center">
+                <div className="heade text-center md:text-left">
+                  <h2 className="text-gray-800 font-bold text-base md:text-lg">
                     <b>Knowledge Name : </b>
                     {viewData?.title}
                   </h2>
-                  {/* <h5 className="text-gray-600 font-semibold text-sm">
-                    <b>Industry : </b>
-                    {sessionOrgType}
-                  </h5> */}
-                  <h5 className="text-gray-600 font-semibold text-sm">
+                  <h5 className="text-gray-600 font-semibold text-xs md:text-sm">
                     <b>Category : </b>
                     {viewData?.category}
                   </h5>
-                  <h5 className="text-gray-600 font-semibold text-sm">
+                  <h5 className="text-gray-600 font-semibold text-xs md:text-sm">
                     <b>Sub Category : </b>
                     {viewData?.sub_category}
                   </h5>
@@ -578,15 +574,15 @@ const [sessionData, setSessionData] = useState({
               </div>
 
               {/* Right Level */}
-              <div className="w-[20%] bg-gradient-to-br from-violet-200 to-violet-100 p-4 rounded-r-lg flex flex-col items-center justify-center space-y-2">
+              <div className="w-full md:w-[20%] bg-gradient-to-br from-violet-200 to-violet-100 p-3 md:p-4 rounded-r-lg flex flex-row md:flex-col items-center justify-center gap-2 md:space-y-2">
                 <div className="relative w-full">
                   <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="inline-flex justify-between w-full rounded-lg border-2 border-violet-300 bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 hover:bg-violet-50 transition duration-200 shadow-sm"
+                    className="inline-flex justify-between w-full rounded-lg border-2 border-violet-300 bg-white px-3 md:px-4 py-2 text-xs md:text-sm font-semibold text-violet-700 hover:bg-violet-50 transition duration-200 shadow-sm"
                   >
                     <span className="flex items-center">
-                      <span className="mdi mdi-cog-outline mr-2"></span>
+                      <span className="mdi mdi-cog-outline mr-1 md:mr-2"></span>
                       Actions
                     </span>
                     <svg
@@ -666,12 +662,14 @@ const [sessionData, setSessionData] = useState({
 
         {/* table Data parts start  */}
         <div
-          className="w-[100%] bg-gradient-to-b from-blue-200 to-blue-100 p-2 rounded-lg mt-4"
+          className="w-full bg-gradient-to-b from-blue-200 to-blue-100 p-2 md:p-4 rounded-lg mt-2 md:mt-4"
           id="printData"
         >
           <div
-            className={`grid gap-6 p-4 ${
-              viewMode === "kaab-only" ? "grid-cols-2" : "grid-cols-3"
+            className={`grid gap-3 md:gap-6 p-2 md:p-4 ${
+              viewMode === "kaab-only" 
+                ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-2" 
+                : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3"
             }`}
           >
             {cardData
@@ -703,7 +701,7 @@ const [sessionData, setSessionData] = useState({
               ))}
           </div>
 
-          <div className="w-[100%] p-8">
+          <div className="w-full p-2 md:p-8">
             {/* ✅ Show only KAAB content when in kaab-only mode */}
             {viewMode === "kaab-only" ? (
               <>
@@ -758,7 +756,7 @@ const [sessionData, setSessionData] = useState({
                           <b>Knowledge Details</b>
                       </h2>
                     </div>
-                    <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                    <div className="cardDetails grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 p-2 md:p-4">
                       {/* ... existing Skill Details content ... */}
                         {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
@@ -1054,7 +1052,7 @@ const [sessionData, setSessionData] = useState({
                       </h2>
                     </div>
                     {jobroleData && jobroleData.length > 0 ? (
-                      <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                      <div className="cardDetails grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 p-2 md:p-4">
                         {jobroleData.map((jobrole, index) => (
                           <div
                             key={index}
@@ -1113,7 +1111,7 @@ const [sessionData, setSessionData] = useState({
                       </h2>
                     </div>
                     {proficiencyLevel && proficiencyLevel.length > 0 ? (
-                      <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                      <div className="cardDetails grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 p-2 md:p-4">
                         {proficiencyLevel.map((proficiencyLevel, index) => (
                           <div
                             key={index}

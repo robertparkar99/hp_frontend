@@ -120,11 +120,11 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-4">
-        <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative h-screen overflow-auto hide-scroll">
+      <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-2 md:p-4">
+        <div className="bg-white p-4 md:p-6 rounded-md w-full md:w-4/5 max-w-5xl shadow-lg relative max-h-[90vh] md:max-h-screen overflow-auto hide-scroll">
           <button
             onClick={onClose}
-            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl z-10"
           >
             ✖
           </button>
@@ -136,11 +136,11 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
 
   if (!viewData) {
     return (
-      <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-4">
-        <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative h-screen overflow-auto hide-scroll">
+      <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-2 md:p-4">
+        <div className="bg-white p-4 md:p-6 rounded-md w-full md:w-4/5 max-w-5xl shadow-lg relative max-h-[90vh] md:max-h-screen overflow-auto hide-scroll">
           <button
             onClick={onClose}
-            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl z-10"
           >
             ✖
           </button>
@@ -367,17 +367,17 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
       case "attitude":
         // For attitude, show direct data since no proficiency levels
         return (
-          <div className="cardDetails grid grid-cols-1 gap-6 p-4">
+          <div className="cardDetails grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-3 md:p-4">
             {!empty(attitudeData) ? (
               attitudeData.map((item, index) => (
                 <div
                   key={index}
-                  className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-4 rounded-lg"
+                  className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-3 md:p-4 rounded-lg"
                 >
-                  <h3 className="text-[16px] font-bold text-[#2060E6] mb-2">
+                  <h3 className="text-sm md:text-[16px] font-bold text-[#2060E6] mb-2">
                     {item.classification_item || "N/A"}
                   </h3>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs md:text-sm text-gray-600">
                     <p>
                       <strong>Category:</strong>{" "}
                       {item.classification_category || "-"}
@@ -390,7 +390,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                 </div>
               ))
             ) : (
-              <div className="text-center text-gray-500 text-sm mt-4">
+              <div className="text-center text-gray-500 text-sm mt-4 col-span-full">
                 No {type} data available
               </div>
             )}
@@ -399,17 +399,17 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
       case "behaviour":
         // For behaviour, show direct data since no proficiency levels
         return (
-          <div className="cardDetails grid grid-cols-1 gap-6 p-4">
+          <div className="cardDetails grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-3 md:p-4">
             {!empty(behaviourData) ? (
               behaviourData.map((item, index) => (
                 <div
                   key={index}
-                  className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-4 rounded-lg"
+                  className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-3 md:p-4 rounded-lg"
                 >
-                  <h3 className="text-[16px] font-bold text-[#2060E6] mb-2">
+                  <h3 className="text-sm md:text-[16px] font-bold text-[#2060E6] mb-2">
                     {item.classification_item || "N/A"}
                   </h3>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs md:text-sm text-gray-600">
                     <p>
                       <strong>Category:</strong>{" "}
                       {item.classification_category || "-"}
@@ -422,7 +422,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                 </div>
               ))
             ) : (
-              <div className="text-center text-gray-500 text-sm mt-4">
+              <div className="text-center text-gray-500 text-sm mt-4 col-span-full">
                 No {type} data available
               </div>
             )}
@@ -440,12 +440,12 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
 
     return (
       <>
-        <div className="flex justify-center mt-4 flex-wrap gap-2">
+        <div className="flex justify-center mt-3 md:mt-4 flex-wrap gap-2 px-1">
           {levels.map((level, index) => (
             <button
               key={`${type}Tab-${index}`}
               onClick={() => setActiveTab(level.proficiency_level)}
-              className={`px-4 py-2 text-sm font-bold rounded-md border shadow-lg transition ${
+              className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-md border shadow-lg transition ${
                 activeTab === level.proficiency_level
                   ? "bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50"
                   : "bg-[#e7efff] text-gray-700 border-[#c1d2f7]"
@@ -456,10 +456,10 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
           ))}
         </div>
 
-        <div className="w-full mt-6 p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
+        <div className="w-full mt-4 md:mt-6 p-3 md:p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
           {levels.find((k: any) => k.proficiency_level === activeTab) ? (
             <div>
-              <h3 className="text-lg font-semibold text-[#2060E6] mb-4">
+              <h3 className="text-base md:text-lg font-semibold text-[#2060E6] mb-3 md:mb-4">
                 Level {activeTab} -{" "}
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </h3>
@@ -520,11 +520,11 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative h-screen overflow-auto hide-scroll">
+    <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-2 md:p-4 overflow-x-hidden">
+      <div className="bg-white p-3 md:p-6 rounded-md w-full md:w-4/5 max-w-5xl shadow-lg relative max-h-[90vh] md:max-h-screen overflow-auto hide-scroll">
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl z-10"
         >
           ✖
         </button>
@@ -533,32 +533,28 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
         {showHeader && (
           <>
             {/* header parts start  */}
-            <div className="flex w-full">
+            <div className="flex flex-col md:flex-row w-full gap-2 md:gap-0">
               {/* Left: GIF */}
-              <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
+              <div className="w-full md:w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg flex-shrink-0">
                 <img
                   src={`/assets/loading/robo_dance.gif`}
                   alt="Loading..."
-                  className="w-full h-auto"
+                  className="w-16 h-16 md:w-full md:h-auto mx-auto md:mx-0 object-contain"
                 />
               </div>
 
               {/* Center Content */}
-              <div className="w-[70%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 flex justify-center">
-                <div className="heade">
-                  <h2 className="text-gray-800 font-bold text-lg">
+              <div className="w-full md:w-[70%] bg-gradient-to-r from-violet-100 to-violet-200 p-3 md:p-4 flex justify-center">
+                <div className="heade text-center md:text-left">
+                  <h2 className="text-gray-800 font-bold text-base md:text-lg">
                     <b>{typeName} Name : </b>
                     {viewData?.title}
                   </h2>
-                  {/* <h5 className="text-gray-600 font-semibold text-sm">
-                    <b>Industry : </b>
-                    {sessionOrgType}
-                  </h5> */}
-                  <h5 className="text-gray-600 font-semibold text-sm">
+                  <h5 className="text-gray-600 font-semibold text-xs md:text-sm">
                     <b>Category : </b>
                     {viewData?.category}
                   </h5>
-                  <h5 className="text-gray-600 font-semibold text-sm">
+                  <h5 className="text-gray-600 font-semibold text-xs md:text-sm">
                     <b>Sub Category : </b>
                     {viewData?.sub_category}
                   </h5>
@@ -566,19 +562,19 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
               </div>
 
               {/* Right Level */}
-              <div className="w-[20%] bg-gradient-to-br from-violet-200 to-violet-100 p-4 rounded-r-lg flex flex-col items-center justify-center space-y-2">
-                <div className="relative w-full">
+              <div className="w-full md:w-[20%] bg-gradient-to-br from-violet-200 to-violet-100 p-3 md:p-4 rounded-r-lg flex flex-row md:flex-col items-center justify-center gap-2 md:space-y-2">
+                <div className="relative w-full max-w-[180px] md:max-w-none">
                   <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="inline-flex justify-between w-full rounded-lg border-2 border-violet-300 bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 hover:bg-violet-50 transition duration-200 shadow-sm"
+                    className="inline-flex justify-between w-full rounded-lg border-2 border-violet-300 bg-white px-3 md:px-4 py-2 text-xs md:text-sm font-semibold text-violet-700 hover:bg-violet-50 transition duration-200 shadow-sm"
                   >
                     <span className="flex items-center">
-                      <span className="mdi mdi-cog-outline mr-2"></span>
+                      <span className="mdi mdi-cog-outline mr-1 md:mr-2"></span>
                       Actions
                     </span>
                     <svg
-                      className="h-5 w-5 text-violet-500"
+                      className="h-4 w-4 md:h-5 md:w-5 text-violet-500"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -633,9 +629,9 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
 
                 <button
                   onClick={() => handleCousreCreation()}
-                  className="flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm"
+                  className="flex items-center justify-center space-x-1 md:space-x-2 w-full max-w-[180px] md:max-w-none rounded-lg border-2 border-yellow-300 bg-white px-2 md:px-4 py-1 md:py-2 text-xs md:text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm"
                 >
-                  <span className="mdi mdi-creation text-xl"></span>
+                  <span className="mdi mdi-creation text-lg md:text-xl"></span>
                   <span>Build Course</span>
                 </button>
               </div>
@@ -646,44 +642,46 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
 
         {/* table Data parts start  */}
         <div
-          className="w-[100%] bg-gradient-to-b from-blue-200 to-blue-100 p-2 rounded-lg mt-4"
+          className="w-full bg-gradient-to-b from-blue-200 to-blue-100 p-2 md:p-4 rounded-lg mt-2 md:mt-4"
           id="printData"
         >
           <div
-            className={`grid gap-6 p-4 ${
-              viewMode === "kaab-only" ? "grid-cols-2" : "grid-cols-3"
+            className={`grid gap-3 md:gap-6 p-2 md:p-4 ${
+              viewMode === "kaab-only" 
+                ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-2" 
+                : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3"
             }`}
           >
             {cardData
               .filter(
                 (card) =>
                   viewMode !== "kaab-only" || [3, 4, 6, 7].includes(card.id)
-              ) // ✅ Show only KAAB cards in kaab-only mode
+              )
               .map((card, index) => (
                 <div
                   key={`card` + index}
-                  className="flex relative mx-auto w-[250px] h-[120px] bg-white shadow-[5px_5px_60px_rgb(235,235,235),-5px_-5px_60px_rgb(237,237,237)] rounded-[15px] transition-all duration-[2s] items-center justify-center cursor-pointer group overflow-hidden"
+                  className="flex relative mx-auto w-full sm:w-[200px] md:w-[250px] h-[100px] md:h-[120px] bg-white shadow-[5px_5px_60px_rgb(235,235,235),-5px_-5px_60px_rgb(237,237,237)] rounded-[15px] transition-all duration-[2s] items-center justify-center cursor-pointer group overflow-hidden"
                   onClick={() => handleCardClick(card.id)}
                 >
                   {/* Card Title */}
-                  <div className="flex flex-col items-center justify-center w-full">
+                  <div className="flex flex-col items-center justify-center w-full p-2">
                     <img
                       src={`/${card.images}`}
                       alt={card.title}
-                      className="w-[80px] group-hover:opacity-[10] z-[20]"
+                      className="w-[50px] md:w-[80px] group-hover:opacity-[10] z-[20]"
                     />
-                    <h4 className="text-[#2060E6] font-semibold text-center w-full z-[20]">
+                    <h4 className="text-[#2060E6] font-semibold text-center text-xs md:text-sm w-full z-[20] line-clamp-2">
                       {card.title}
                     </h4>
                   </div>
 
-                  {/* Circle element - adjust its absolute positioning as needed */}
-                  <div className="absolute z-[10] left-0 bottom-0 w-[52px] h-[60px] bg-[#FFDB97] rounded-[0px_50px_0px_15px] transition-all duration-500 group-hover:w-[250px] group-hover:h-[120px] group-hover:rounded-[15px] group-hover:opacity-[0.5]"></div>
+                  {/* Circle element */}
+                  <div className="absolute z-[10] left-0 bottom-0 w-[40px] md:w-[52px] h-[50px] md:h-[60px] bg-[#FFDB97] rounded-[0px_50px_0px_15px] transition-all duration-500 group-hover:w-full group-hover:h-full group-hover:rounded-[15px] group-hover:opacity-[0.5]"></div>
                 </div>
               ))}
           </div>
 
-          <div className="w-[100%] p-8">
+          <div className="w-full p-2 md:p-8">
             {/* ✅ Show only KAAB content when in kaab-only mode */}
             {viewMode === "kaab-only" ? (
               <>
@@ -738,7 +736,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                         <b>Attitude Details</b>
                       </h2>
                     </div>
-                    <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                    <div className="cardDetails grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 p-2 md:p-4">
                       {/* ... existing Skill Details content ... */}
                         {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                         <h4 className="text-[14px] text-[#2060E6] font-bold">
@@ -1050,14 +1048,14 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   </div>
                 )}
                 {activeCardIndex === 1 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold">
                           <b>Attitude Jobrole</b>
                       </h2>
                     </div>
                     {jobroleData && jobroleData.length > 0 ? (
-                      <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                      <div className="cardDetails grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 p-2 md:p-4">
                         {jobroleData.map((jobrole, index) => (
                           <div
                             key={index}
@@ -1109,14 +1107,14 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   </div>
                 )}
                 {activeCardIndex === 2 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold">
                           <b>{typeName.toUpperCase()} Level</b>
                       </h2>
                     </div>
                     {proficiencyLevel && proficiencyLevel.length > 0 ? (
-                      <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                      <div className="cardDetails grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 p-2 md:p-4">
                         {proficiencyLevel.map((proficiencyLevel, index) => (
                           <div
                             key={index}
@@ -1171,9 +1169,9 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   </div>
                 )}
                 {activeCardIndex === 3 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold">
                           <b>Attitude Skill</b>
                       </h2>
                     </div>
@@ -1181,9 +1179,9 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   </div>
                 )}
                 {activeCardIndex === 4 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold">
                           <b>Attitude Ability</b>
                       </h2>
                     </div>
@@ -1191,7 +1189,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   </div>
                 )}
                 {activeCardIndex === 5 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
                       <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
                         <b>{typeName.toUpperCase()} APPLICATION</b>
@@ -1199,7 +1197,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                     </div>
                     {applicationLevel.length > 0 ? (
                       <>
-                        <div className="flex justify-center mt-4 flex-wrap gap-2">
+                        <div className="flex justify-center mt-3 md:mt-4 flex-wrap gap-2 px-1">
                           {applicationLevel.map((applicationValue, index) => (
                             <button
                               key={`ApplicationTab-${index}`}
@@ -1208,7 +1206,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                                   applicationValue.proficiency_level
                                 )
                               }
-                              className={`px-3 py-1 text-lg font-bold mr-6 rounded-md border shadow-lg shadow-blue-300/30 transition ${
+                              className={`px-2 md:px-3 py-1 text-xs md:text-lg font-bold mr-2 md:mr-6 rounded-md border shadow-lg shadow-blue-300/30 transition ${
                                 activeApplicationTab ===
                                 applicationValue.proficiency_level
                                   ? "bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50"
@@ -1220,7 +1218,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                           ))}
                         </div>
 
-                        <div className="w-full mt-6 p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
+                        <div className="w-full mt-4 md:mt-6 p-3 md:p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
                           {applicationLevel.find(
                             (k) => k.proficiency_level === activeApplicationTab
                           ) ? (
@@ -1275,9 +1273,9 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   </div>
                 )}
                 {activeCardIndex === 6 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold">
                           <b>ABILITY Attitude</b>
                       </h2>
                     </div>
@@ -1285,9 +1283,9 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
                   </div>
                 )}
                 {activeCardIndex === 7 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold">
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold">
                           <b>Attitude Behaviour</b>
                       </h2>
                     </div>
