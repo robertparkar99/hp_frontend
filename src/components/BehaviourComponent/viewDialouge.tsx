@@ -528,7 +528,7 @@ const ViewKnowledge: React.FC<ViewKnowledgeProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-2 md:p-4">
+    <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-2 md:p-4 overflow-x-hidden">
       <div className="bg-white p-3 md:p-6 rounded-md w-full md:w-4/5 max-w-5xl shadow-lg relative max-h-[90vh] md:max-h-screen overflow-auto hide-scroll">
         <button
           onClick={onClose}
