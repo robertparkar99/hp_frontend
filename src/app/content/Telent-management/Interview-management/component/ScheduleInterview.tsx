@@ -474,7 +474,7 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                     <div>
                       <p className="font-medium text-sm">{panel.panel_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {panel.target_positions.split(',').map((s: string) => {
+                        {(panel.target_positions || '').split(',').map((s: string) => {
                           const id = s.trim();
                           const pos = positions.find(p => p.id.toString() === id);
                           return pos ? pos.title : id;
