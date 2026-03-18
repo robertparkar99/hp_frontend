@@ -117,7 +117,7 @@ export default function InterviewPanels() {
         const mappedPanels = data.data.map((item: any) => {
           let panelInterviewers: any[] = [];
           try {
-            const interviewerIds = JSON.parse(item.available_interviewers);
+            const interviewerIds = JSON.parse(item.available_interviewers || '[]');
             panelInterviewers = interviewerIds.map((id: string | number) => {
               const interviewer = interviewers.find(i => i.id.toString() === id.toString());
               return interviewer || { id: parseInt(id.toString()), name: id.toString(), role: '', expertise: [] };
@@ -125,7 +125,7 @@ export default function InterviewPanels() {
           } catch (e) {
             panelInterviewers = [];
           }
-          const positionTitles = item.target_positions.split(',').map((s: string) => {
+          const positionTitles = (item.target_positions || '').split(',').map((s: string) => {
             const trimmed = s.trim();
             const pos = positions.find(p => p.id.toString() === trimmed);
             return pos ? pos.title : trimmed;

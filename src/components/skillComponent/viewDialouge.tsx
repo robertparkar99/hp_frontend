@@ -316,38 +316,38 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
       case 'attitude':
         // For attitude, show direct data since no proficiency levels
         return (
-          <div className="cardDetails grid grid-cols-1 gap-6 p-4">
+          <div className="cardDetails grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-3 md:p-4">
             {!empty(attitudeData) ? (
               attitudeData.map((item, index) => (
-                <div key={index} className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-4 rounded-lg">
-                  <h3 className="text-[16px] font-bold text-[#2060E6] mb-2">{item.classification_item || 'N/A'}</h3>
-                  <div className="text-sm text-gray-600">
+                <div key={index} className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-3 md:p-4 rounded-lg">
+                  <h3 className="text-sm md:text-[16px] font-bold text-[#2060E6] mb-2">{item.classification_item || 'N/A'}</h3>
+                  <div className="text-xs md:text-sm text-gray-600">
                     <p><strong>Category:</strong> {item.classification_category || '-'}</p>
                     <p><strong>Sub-Category:</strong> {item.classification_sub_category || '-'}</p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center text-gray-500 text-sm mt-4">No {type} data available</div>
+              <div className="text-center text-gray-500 text-sm mt-4 col-span-full">No {type} data available</div>
             )}
           </div>
         );
       case 'behaviour':
         // For behaviour, show direct data since no proficiency levels
         return (
-          <div className="cardDetails grid grid-cols-1 gap-6 p-4">
+          <div className="cardDetails grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-3 md:p-4">
             {!empty(behaviourData) ? (
               behaviourData.map((item, index) => (
-                <div key={index} className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-4 rounded-lg">
-                  <h3 className="text-[16px] font-bold text-[#2060E6] mb-2">{item.classification_item || 'N/A'}</h3>
-                  <div className="text-sm text-gray-600">
+                <div key={index} className="cardData border-2 border-[#E6E6E6] shadow-md bg-[#F7FAFC] p-3 md:p-4 rounded-lg">
+                  <h3 className="text-sm md:text-[16px] font-bold text-[#2060E6] mb-2">{item.classification_item || 'N/A'}</h3>
+                  <div className="text-xs md:text-sm text-gray-600">
                     <p><strong>Category:</strong> {item.classification_category || '-'}</p>
                     <p><strong>Sub-Category:</strong> {item.classification_sub_category || '-'}</p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center text-gray-500 text-sm mt-4">No {type} data available</div>
+              <div className="text-center text-gray-500 text-sm mt-4 col-span-full">No {type} data available</div>
             )}
           </div>
         );
@@ -359,12 +359,12 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
 
     return (
       <>
-        <div className="flex justify-center mt-4 flex-wrap gap-2">
+        <div className="flex justify-center mt-3 md:mt-4 flex-wrap gap-2 px-1">
           {levels.map((level, index) => (
             <button
               key={`${type}Tab-${index}`}
               onClick={() => setActiveTab(level.proficiency_level)}
-              className={`px-4 py-2 text-sm font-bold rounded-md border shadow-lg transition ${activeTab === level.proficiency_level
+              className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-md border shadow-lg transition ${activeTab === level.proficiency_level
                   ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
                   : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
                 }`}
@@ -374,7 +374,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
           ))}
         </div>
 
-        <div className="w-full mt-6 p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
+        <div className="w-full mt-4 md:mt-6 p-3 md:p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
           {levels.find((k: any) => k.proficiency_level === activeTab) ? (
             <div>
               <h3 className="text-lg font-semibold text-[#2060E6] mb-4">
@@ -420,44 +420,44 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
   };
 
   return (
-    <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-6 rounded-md w-4/5 max-w-5xl shadow-lg relative h-screen overflow-auto hide-scroll">
-        <button onClick={onClose} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">✖</button>
+    <div className="fixed inset-0 bg-[var(--background)] backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-2 md:p-4 overflow-hidden">
+      <div className="bg-white p-3 md:p-6 rounded-md w-full md:w-4/5 max-w-5xl shadow-lg relative max-h-[90vh] md:max-h-screen overflow-y-auto overflow-x-hidden">
+        <button onClick={onClose} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl z-10">✖</button>
 
         {/* ✅ Conditionally render header */}
         {showHeader && (
           <>
             {/* header parts start  */}
-            <div className="flex w-full">
+            <div className="flex flex-col md:flex-row w-full gap-2 md:gap-0">
               {/* Left: GIF */}
-              <div className="w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg">
-                <img src={`/assets/loading/robo_dance.gif`} alt="Loading..." className="w-full h-auto" />
+              <div className="w-full md:w-[10%] bg-gradient-to-b from-violet-100 to-violet-200 p-2 rounded-l-lg flex-shrink-0">
+                <img src={`/assets/loading/robo_dance.gif`} alt="Loading..." className="w-12 h-12 md:w-full md:h-auto mx-auto md:mx-0 object-contain" />
               </div>
 
               {/* Center Content */}
-              <div className="w-[70%] bg-gradient-to-r from-violet-100 to-violet-200 p-4 flex justify-center">
-                <div className="heade">
-                  <h2 className="text-gray-800 font-bold text-lg"><b>Skill Name : </b>{viewData?.title}</h2>
-                  <h5 className="text-gray-600 font-semibold text-sm">
+              <div className="w-full md:w-[70%] bg-gradient-to-r from-violet-100 to-violet-200 p-3 md:p-4 flex justify-center">
+                <div className="heade text-center md:text-left">
+                  <h2 className="text-gray-800 font-bold text-base md:text-lg"><b>Skill Name : </b>{viewData?.title}</h2>
+                  <h5 className="text-gray-600 font-semibold text-xs md:text-sm">
                     <b>Industry : </b>{sessionOrgType}
                   </h5>
-                  <h5 className="text-gray-600 font-semibold text-sm"><b>Skill Department : </b>{viewData?.department}</h5>
+                  <h5 className="text-gray-600 font-semibold text-xs md:text-sm"><b>Skill Department : </b>{viewData?.department}</h5>
                   {viewData.sub_department ? (
-                    <h5 className="text-gray-600 font-semibold text-sm"><b>Skill Sub Department : </b>{viewData.sub_department}</h5>
+                    <h5 className="text-gray-600 font-semibold text-xs md:text-sm"><b>Skill Sub Department : </b>{viewData.sub_department}</h5>
                   ) : ''}
                 </div>
               </div>
 
               {/* Right Dropdown */}
-              <div className="w-[20%] bg-gradient-to-br from-violet-200 to-violet-100 p-4 rounded-r-lg flex flex-col items-center justify-center space-y-2">
+              <div className="w-full md:w-[20%] bg-gradient-to-br from-violet-200 to-violet-100 p-3 md:p-4 rounded-r-lg flex flex-row md:flex-col items-center justify-center gap-2 md:space-y-2">
                 <div className="relative w-full">
                   <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="inline-flex justify-between w-full rounded-lg border-2 border-violet-300 bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 hover:bg-violet-50 transition duration-200 shadow-sm"
+                    className="inline-flex justify-between w-full rounded-lg border-2 border-violet-300 bg-white px-3 md:px-4 py-2 text-xs md:text-sm font-semibold text-violet-700 hover:bg-violet-50 transition duration-200 shadow-sm"
                   >
                     <span className="flex items-center">
-                      <span className="mdi mdi-cog-outline mr-2"></span>
+                      <span className="mdi mdi-cog-outline mr-1 md:mr-2"></span>
                       Actions
                     </span>
                     <svg className="h-5 w-5 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -496,19 +496,16 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
                 <button
                   onClick={() => handleCousreCreation()}
                   disabled={isCourseBuilding}
-                  className={`flex items-center justify-center space-x-2 w-full rounded-lg border-2 border-yellow-300 bg-white px-1 py-1 text-sm font-semibold text-yellow-600 hover:bg-yellow-50 transition duration-200 shadow-sm ${isCourseBuilding ? 'cursor-not-allowed opacity-70' : 'text-yellow-600 hover:bg-yellow-50'}`}
+                  className={`flex items-center justify-center space-x-1 md:space-x-2 w-full max-w-[180px] md:max-w-none rounded-lg border-2 border-yellow-300 bg-white px-2 md:px-4 py-1 md:py-2 text-xs md:text-sm font-semibold shadow-sm ${isCourseBuilding ? 'cursor-not-allowed opacity-70' : 'text-yellow-600 hover:bg-yellow-50'}`}
                 >
                   {isCourseBuilding ? (
                     <>
-                      <svg className="animate-spin h-4 w-4 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      <span className="mdi mdi-creation text-lg md:text-xl animate-pulse"></span>
                       <span>Building...</span>
                     </>
                   ) : (
                     <>
-                      <span className="mdi mdi-creation text-xl"></span>
+                      <span className="mdi mdi-creation text-lg md:text-xl"></span>
                       <span>Build Course</span>
                     </>
                   )}
@@ -520,67 +517,67 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
         )}
 
         {/* table Data parts start  */}
-        <div className="w-[100%] bg-gradient-to-b from-blue-200 to-blue-100 p-2 rounded-lg mt-4" id="printData">
+        <div className="w-full bg-gradient-to-b from-blue-200 to-blue-100 p-2 md:p-4 rounded-lg mt-2 md:mt-4 overflow-x-hidden" id="printData">
 
-          <div className={`grid gap-6 p-4 ${viewMode === "kaab-only" ? "grid-cols-2" : "grid-cols-3"}`}>
+          <div className={`grid gap-3 md:gap-6 p-2 md:p-4 ${viewMode === "kaab-only" ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-2" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3"}`}>
             {cardData
               .filter(card => viewMode !== "kaab-only" || [3, 4, 6, 7].includes(card.id)) // ✅ Show only KAAB cards in kaab-only mode
               .map((card, index) => (
                 <div
                   key={`card` + index}
-                  className="flex relative mx-auto w-[250px] h-[120px] bg-white shadow-[5px_5px_60px_rgb(235,235,235),-5px_-5px_60px_rgb(237,237,237)] rounded-[15px] transition-all duration-[2s] items-center justify-center cursor-pointer group overflow-hidden"
+                  className="flex relative mx-auto w-full max-w-[180px] md:max-w-[250px] h-[100px] md:h-[120px] bg-white shadow-[5px_5px_60px_rgb(235,235,235),-5px_-5px_60px_rgb(237,237,237)] rounded-[15px] transition-all duration-[2s] items-center justify-center cursor-pointer group overflow-hidden"
                   onClick={() => handleCardClick(card.id)}
                 >
                   {/* Card Title */}
-                  <div className="flex flex-col items-center justify-center w-full">
+                  <div className="flex flex-col items-center justify-center w-full p-2">
                     <img
                       src={`/${card.images}`}
                       alt={card.title}
-                      className="w-[80px] group-hover:opacity-[10] z-[20]"
+                      className="w-[50px] md:w-[80px] group-hover:opacity-[10] z-[20]"
                     />
-                    <h4 className="text-[#2060E6] font-semibold text-center w-full z-[20]">
+                    <h4 className="text-[#2060E6] font-semibold text-center text-xs md:text-sm w-full z-[20] line-clamp-2">
                       {card.title}
                     </h4>
                   </div>
 
                   {/* Circle element - adjust its absolute positioning as needed */}
-                  <div className="absolute z-[10] left-0 bottom-0 w-[52px] h-[60px] bg-[#FFDB97] rounded-[0px_50px_0px_15px] transition-all duration-500 group-hover:w-[250px] group-hover:h-[120px] group-hover:rounded-[15px] group-hover:opacity-[0.5]"></div>
+                  <div className="absolute z-[10] left-0 bottom-0 w-8 h-8 md:w-[52px] md:h-[60px] bg-[#FFDB97] rounded-[0px_50px_0px_15px] transition-all duration-500 group-hover:w-full group-hover:h-full group-hover:rounded-[15px] group-hover:opacity-[0.5]"></div>
                 </div>
               ))}
           </div>
 
-          <div className="w-[100%] p-8">
+          <div className="w-full p-4 md:p-8">
             {/* ✅ Show only KAAB content when in kaab-only mode */}
             {viewMode === "kaab-only" ? (
               <>
                 {activeCardIndex === 3 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL KNOWLEDGE</b></h2>
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL KNOWLEDGE</b></h2>
                     </div>
                     {renderKaabWithProficiencyLevels('knowledge')}
                   </div>
                 )}
                 {activeCardIndex === 4 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL ABILITY</b></h2>
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL ABILITY</b></h2>
                     </div>
                     {renderKaabWithProficiencyLevels('ability')}
                   </div>
                 )}
                 {activeCardIndex === 6 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL ATTITUDE</b></h2>
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL ATTITUDE</b></h2>
                     </div>
                     {renderKaabWithProficiencyLevels('attitude')}
                   </div>
                 )}
                 {activeCardIndex === 7 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL BEHAVIOUR</b></h2>
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL BEHAVIOUR</b></h2>
                     </div>
                     {renderKaabWithProficiencyLevels('behaviour')}
                   </div>
@@ -590,141 +587,141 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
               // ✅ Show all content when in full mode (existing code)
               <>
                 {activeCardIndex === 0 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL DETAILS</b></h2>
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL DETAILS</b></h2>
                     </div>
-                    <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                    <div className="cardDetails grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-3 md:p-4">
                       {/* ... existing Skill Details content ... */}
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Category</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Category</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.category ? viewData.category : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.category ? viewData.category : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Sub Category</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Sub Category</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.sub_category ? viewData.sub_category : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.sub_category ? viewData.sub_category : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Micro Category</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Micro Category</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.micro_category ? viewData.micro_category : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.micro_category ? viewData.micro_category : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Name</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Name</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.title ? viewData.title : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.title ? viewData.title : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Description</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Description</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.description ? viewData.description : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.description ? viewData.description : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Related Skills</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Related Skills</h4>
                         <hr className="text-[#ddd] pt-2" />
                         {(relatedSkills && !empty(relatedSkills)) ? relatedSkills.map((skill, index) => (
-                          <ul key={`related` + index} className="skill-item px-4">
-                            <li className="list-disc text-[12px]">{skill}</li>
+                          <ul key={`related` + index} className="skill-item px-2 md:px-4">
+                            <li className="list-disc text-[10px] md:text-[12px]">{skill}</li>
                           </ul>
-                        )) : (<p className="text-[12px]">-</p>)}
+                        )) : (<p className="text-[10px] md:text-[12px]">-</p>)}
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Custom Tags</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Custom Tags</h4>
                         <hr className="text-[#ddd] pt-2" />
                         {(customTags && !empty(customTags)) ? customTags.map((skill, index) => (
-                          <ul key={`tags` + index} className="skill-item px-4">
-                            <li className="list-disc text-[12px]">{skill}</li>
+                          <ul key={`tags` + index} className="skill-item px-2 md:px-4">
+                            <li className="list-disc text-[10px] md:text-[12px]">{skill}</li>
                           </ul>
                         )) : '-'}
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Business Links</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Business Links</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.bussiness_links ? viewData.bussiness_links : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.bussiness_links ? viewData.bussiness_links : '-'}</p>
                       </div>
                       {/* <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                      <h4 className="text-[14px] text-[#2060E6] font-bold">Proficiency Level</h4>
                      <hr className="text-[#ddd] pt-2" />
                      <p className="text-[12px]">{viewData.proficiency_level ? viewData.proficiency_level : '-'}</p>
                    </div> */}
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Learning Resource</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Learning Resource</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.learning_resources ? viewData.learning_resources : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.learning_resources ? viewData.learning_resources : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Assesment Method</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Assesment Method</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.assesment_method ? viewData.assesment_method : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.assesment_method ? viewData.assesment_method : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Certification/Qualification</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Certification/Qualification</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.certification_qualifications ? viewData.certification_qualifications : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.certification_qualifications ? viewData.certification_qualifications : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Experience/Project</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Experience/Project</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p>{viewData.experience_project ? viewData.experience_project : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.experience_project ? viewData.experience_project : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Maps</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Maps</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.skill_maps ? viewData.skill_maps : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.skill_maps ? viewData.skill_maps : '-'}</p>
                       </div>
 
 
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Status</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Status</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.skill_status ? viewData.skill_status : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.skill_status ? viewData.skill_status : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Importance</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Importance</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.skill_importance ? viewData.skill_importance : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.skill_importance ? viewData.skill_importance : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Legel/Compliance Relevance</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Legel/Compliance Relevance</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.legal_compliance_relevance ? viewData.legal_compliance_relevance : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.legal_compliance_relevance ? viewData.legal_compliance_relevance : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill SOP Practice Link</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill SOP Practice Link</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.sop_practice_link ? viewData.sop_practice_link : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.sop_practice_link ? viewData.sop_practice_link : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Performance Metrics</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Performance Metrics</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.performance_metrics ? viewData.performance_metrics : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.performance_metrics ? viewData.performance_metrics : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Common Errors Tips</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Common Errors Tips</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.common_errors_tips ? viewData.common_errors_tips : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.common_errors_tips ? viewData.common_errors_tips : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill SME/Help Contacts</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill SME/Help Contacts</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.sme_contacts ? viewData.sme_contacts : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.sme_contacts ? viewData.sme_contacts : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Sub-Skills</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Sub-Skills</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.sub_skills ? viewData.sub_skills : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.sub_skills ? viewData.sub_skills : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Workflow/Mindmap</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Workflow/Mindmap</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.skill_flow ? viewData.skill_flow : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.skill_flow ? viewData.skill_flow : '-'}</p>
                       </div>
-                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                        <h4 className="text-[14px] text-[#2060E6] font-bold">Skill Tasklist</h4>
+                      <div className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                        <h4 className="text-xs md:text-[14px] text-[#2060E6] font-bold">Skill Tasklist</h4>
                         <hr className="text-[#ddd] pt-2" />
-                        <p className="text-[12px]">{viewData.tasklist ? viewData.tasklist : '-'}</p>
+                        <p className="text-[10px] md:text-[12px]">{viewData.tasklist ? viewData.tasklist : '-'}</p>
                       </div>
                     </div>
                   </div>
@@ -732,18 +729,18 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
                 {activeCardIndex === 1 && (
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL JOBROLE</b></h2>
+                      <h2 className="text-lg md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL JOBROLE</b></h2>
                     </div>
                     {jobroleData && jobroleData.length > 0 ? (
-                      <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                      <div className="cardDetails grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-3 md:p-4">
                         {jobroleData.map((jobrole, index) => (
-                          <div key={index} className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
-                            <p className="text-[12px]"><span><b>Category : </b></span>{jobrole.jobrole_category ? jobrole.jobrole_category : '-'}</p>
-                            <h2 className="text-[14px] h-[48px] text-[#2060E6] font-bold" data-titleHead={jobrole.jobrole ? jobrole.jobrole : '-'}> {jobrole.jobrole
+                          <div key={index} className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                            <p className="text-[10px] md:text-[12px]"><span><b>Category : </b></span>{jobrole.jobrole_category ? jobrole.jobrole_category : '-'}</p>
+                            <h2 className="text-xs md:text-[14px] h-auto md:h-[48px] text-[#2060E6] font-bold" data-titleHead={jobrole.jobrole ? jobrole.jobrole : '-'}> {jobrole.jobrole
                               ? jobrole.jobrole.slice(0, 50) + (jobrole.jobrole.length > 50 ? "..." : "")
                               : "-"}</h2>
                             <hr className="text-[#ddd] pt-2" />
-                            <p className="text-[12px]" data-titleHead={jobrole.description}><span><b>Jobrole Description : </b></span>{jobrole.description
+                            <p className="text-[10px] md:text-[12px]" data-titleHead={jobrole.description}><span><b>Jobrole Description : </b></span>{jobrole.description
                               ? jobrole.description.slice(0, 150) + (jobrole.description.length > 150 ? "..." : "")
                               : "-"}</p>
                           </div>
@@ -757,14 +754,14 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
                 {activeCardIndex === 2 && (
                   <div className="bg-white p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL PROFICIENCY LEVEL</b></h2>
+                      <h2 className="text-lg md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL PROFICIENCY LEVEL</b></h2>
                     </div>
                     {proficiencyLevel && proficiencyLevel.length > 0 ? (
-                      <div className="cardDetails grid grid-cols-3 gap-6 p-4">
+                      <div className="cardDetails grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-3 md:p-4">
                         {proficiencyLevel.map((proficiencyLevel, index) => (
-                          <div key={index} className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
+                          <div key={index} className="cardData border-2 border-[#E6E6E6] shadow-[4px_8px_8px_-1px_rgba(173,216,230,1),4px_8px_8px_-1px_rgba(173,216,230,1)] bg-[#F7FAFC] p-3 md:p-4 rounded-lg transition-all duration-200 hover:shadow-[0_10px_15px_-3px_rgba(173,216,230,0.3),0_4px_6px_-2px_rgba(173,216,230,0.2)]">
                             <h2
-                              className="text-[14px] h-[48px] text-[#2060E6] font-bold"
+                              className="text-xs md:text-[14px] h-auto md:h-[48px] text-[#2060E6] font-bold"
                               title={proficiencyLevel.proficiency_level ? proficiencyLevel.proficiency_level : '-'}
                             >
                               {proficiencyLevel.proficiency_level
@@ -772,9 +769,9 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
                                 : "-"}
                             </h2>
                             <hr className="text-[#ddd] pt-2" />
-                            <p className="text-[12px]"><span><b>Level Description :</b></span> {proficiencyLevel.description || '-'}</p>
-                            <p className="text-[12px]"><span><b>Level Type :</b></span> {proficiencyLevel.proficiency_type || '-'}</p>
-                            <p className="text-[12px]"><span><b>Type Description :</b></span> {proficiencyLevel.type_description || '-'}</p>
+                            <p className="text-[10px] md:text-[12px]"><span><b>Level Description :</b></span> {proficiencyLevel.description || '-'}</p>
+                            <p className="text-[10px] md:text-[12px]"><span><b>Level Type :</b></span> {proficiencyLevel.proficiency_type || '-'}</p>
+                            <p className="text-[10px] md:text-[12px]"><span><b>Type Description :</b></span> {proficiencyLevel.type_description || '-'}</p>
                           </div>
                         ))}
                       </div>
@@ -784,34 +781,34 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
                   </div>
                 )}
                 {activeCardIndex === 3 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL KNOWLEDGE</b></h2>
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL KNOWLEDGE</b></h2>
                     </div>
                     {renderKaabWithProficiencyLevels('knowledge')}
                   </div>
                 )}
                 {activeCardIndex === 4 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL ABILITY</b></h2>
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL ABILITY</b></h2>
                     </div>
                     {renderKaabWithProficiencyLevels('ability')}
                   </div>
                 )}
                 {activeCardIndex === 5 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL APPLICATION</b></h2>
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL APPLICATION</b></h2>
                     </div>
                     {applicationLevel.length > 0 ? (
                       <>
-                        <div className="flex justify-center mt-4 flex-wrap gap-2">
+                        <div className="flex justify-center mt-3 md:mt-4 flex-wrap gap-2 px-1">
                           {applicationLevel.map((applicationValue, index) => (
                             <button
                               key={`ApplicationTab-${index}`}
                               onClick={() => setActiveApplicationTab(applicationValue.proficiency_level)}
-                              className={`px-3 py-1 text-lg font-bold mr-6 rounded-md border shadow-lg shadow-blue-300/30 transition ${activeApplicationTab === applicationValue.proficiency_level
+                              className={`px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-md border shadow-lg transition ${activeApplicationTab === applicationValue.proficiency_level
                                 ? 'bg-[#dfd9ff] text-[#4135ff] border-blue-500 shadow-blue-500/50'
                                 : 'bg-[#e7efff] text-gray-700 border-[#c1d2f7]'
                                 }`}
@@ -821,7 +818,7 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
                           ))}
                         </div>
 
-                        <div className="w-full mt-6 p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
+                        <div className="w-full mt-4 md:mt-6 p-3 md:p-4 border border-[#c1d2f7] rounded-lg shadow-lg shadow-blue-400/50">
                           {applicationLevel.find(k => k.proficiency_level === activeApplicationTab) ? (
                             <div>
                               <ul className="space-y-1">
@@ -849,17 +846,17 @@ const ViewSkill: React.FC<ViewSkillProps> = ({ skillId, formType, onClose, viewM
                   </div>
                 )}
                 {activeCardIndex === 6 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL ATTITUDE</b></h2>
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL ATTITUDE</b></h2>
                     </div>
                     {renderKaabWithProficiencyLevels('attitude')}
                   </div>
                 )}
                 {activeCardIndex === 7 && (
-                  <div className="bg-white p-4 rounded-lg">
+                  <div className="bg-white p-3 md:p-4 rounded-lg">
                     <div className="cardTitle border-b-[5px] border-[#FFDB97] rounded pb-2">
-                      <h2 className="text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL BEHAVIOUR</b></h2>
+                      <h2 className="text-base md:text-[20px] text-[#2060E6] text-center font-semibold"><b>SKILL BEHAVIOUR</b></h2>
                     </div>
                     {renderKaabWithProficiencyLevels('behaviour')}
                   </div>

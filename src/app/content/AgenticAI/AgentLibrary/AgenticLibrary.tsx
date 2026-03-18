@@ -1,5 +1,5 @@
 import Loader from '@/components/utils/loading';
-import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users } from 'lucide-react';
+import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -137,6 +137,23 @@ const agents: Agent[] = [
     ctaLink: 'https://learningagent-kxvkny4y8p5ud4abjappvx7.streamlit.app/'
   },
   {
+    id: 'marketing-strategy',
+    name: 'Marketing Strategy Agent',
+    icon: TrendingUp,
+    module: 'Marketing → Strategy & Planning',
+    summary: 'Generates comprehensive marketing strategies aligned with business goals and target audience insights',
+    function: 'The Marketing Strategy Agent generates data-driven marketing strategies by analyzing market trends, competitor insights, and business objectives to create actionable go-to-market plans.',
+    workflow: [
+      'User defines business goals and target audience',
+      'Agent analyzes market trends and competitor landscape',
+      'Generates strategic recommendations and channels',
+      'Creates detailed marketing plan with timelines'
+    ],
+    outputs: ['Marketing Strategy Document', 'Target Audience Personas', 'Channel Recommendations', 'Campaign Timeline & Budget'],
+    cta: 'Launch Marketing Strategy Agent',
+    ctaLink: '/content/AgenticAI/MarketingStrategy/'
+  },
+  {
     id: 'smart-recruitment',
     name: 'Smart Recruitment Agent',
     icon: Users,
@@ -152,6 +169,23 @@ const agents: Agent[] = [
     outputs: ['Candidate Fit Scores', 'Skill Match Analysis', 'Hiring Recommendations', 'Reduced Screening Time'],
     cta: 'Go to Talent Acquisition',
     ctaLink: '/content/Telent-management/Recruitment-management'
+  },
+  {
+    id: 'content-automation',
+    name: 'Content Automation System',
+    icon: Zap,
+    module: 'Content Management → Automation',
+    summary: 'Automates content creation, curation, and distribution across multiple channels using AI',
+    function: 'The Content Automation System streamlines content workflows by automatically generating, organizing, and distributing content based on defined rules and AI-powered insights.',
+    workflow: [
+      'User defines content requirements and targets',
+      'System analyzes existing content and trends',
+      'AI generates or curates relevant content',
+      'Content is automatically formatted and distributed'
+    ],
+    outputs: ['Automated Content Generation', 'Multi-Channel Distribution', 'Content Analytics', 'Workflow Optimization'],
+    cta: 'Explore Content Automation',
+    ctaLink: '/content/AgenticAI/Automation'
   }
 ];
 
