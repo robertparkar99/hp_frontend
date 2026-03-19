@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { API_BASE_URL } from "../../components/utils/api_url";
 import Loading from "../../components/utils/loading"; // Import the Loading component
 
@@ -11,6 +12,7 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setLoading] = useState(true);
+  const [isSubmitting, setSubmitting] = useState(false);
   const [logMessage, setMessage] = useState("");
 
   // Disable browser back button and handle browser back button click
@@ -37,8 +39,7 @@ const Login: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    setLoading(true);
+    setSubmitting(true);
 
     // get server
     try {
@@ -53,9 +54,9 @@ const Login: React.FC = () => {
         }
       );
       const data = await response.json();
+      setSubmitting(false);
       // console.log("data=", data);
       if (data.status === 0) {
-        setLoading(false);
         setMessage(data.message);
       } 
       else if(data.status===1) {
@@ -66,9 +67,7 @@ const Login: React.FC = () => {
         router.push("/Maindashboard");
       }
     } catch (error) {
-      const gif = document.getElementById("overloadGif");
-      const mainDiv = document.getElementById("mainDiv");
-      setLoading(false);
+      setSubmitting(false);
       setMessage(`Error fetching menu items: ${error}`);
       console.error("Error fetching menu items:", error);
     }
@@ -104,10 +103,10 @@ const Login: React.FC = () => {
                     className="w-2/3 mb-4"
                   />
                   <h1 className="text-2xl md:text-3xl font-bold mb-1">
-                    Company Name
+                    Gaps to Growth
                   </h1>
                   <p className="text-sm md:text-lg text-center">
-                    One line Description of The Company
+                    Empowering skills for a brighter future
                   </p>
                 </div>
 
@@ -152,19 +151,29 @@ const Login: React.FC = () => {
                     />
                     <button
                       type="submit"
-                      className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-2xl mt-2"
+                      disabled={isSubmitting}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-2xl mt-2 disabled:opacity-70"
                     >
-                      Login
+                      {isSubmitting ? "Logging in..." : "Login"}
                     </button>
                   </form>
 
-                  <div className="mt-3">
+                  <div className="mt-3 flex flex-col items-center gap-2">
                     <a
                       href="/forget-password"
                       className="text-sm text-blue-500 hover:underline"
                     >
                       Forgot Password?
                     </a>
+                    <p className="text-center text-sm text-gray-600">
+                      Don't have an account?{" "}
+                      <Link
+                        href="/signup"
+                        className="text-blue-500 hover:underline font-semibold"
+                      >
+                        Sign up
+                      </Link>
+                    </p>
                   </div>
                 </div>
               </div>
