@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { API_BASE_URL } from "../../components/utils/api_url";
+import UserProfileForm from "./UserProfileForm";
 
 const Signup: React.FC = () => {
   const router = useRouter(); 
@@ -16,6 +17,8 @@ const Signup: React.FC = () => {
     department: "",
   });
   
+  const [mobile, setMobile] = useState("");
+  
   const [industries, setIndustries] = useState<{ id: number; industries: string }[]>([]);
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -25,6 +28,14 @@ const Signup: React.FC = () => {
   const [success, setSuccess] = useState("");
   const [message, setMessage] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [showUserProfileForm, setShowUserProfileForm] = useState(false);
+  const [userData, setUserData] = useState({
+    email: "",
+    mobile: "",
+    firstName: "",
+    lastName: "",
+    subInstituteId: ""
+  });
 
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOtp(e.target.value);
@@ -154,22 +165,42 @@ const Signup: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/register?first_name=${formData.firstName}&last_name=${formData.lastName}&email=${formData.email}&organization=${formData.organization}&department=${formData.department}&type=API`,
+        `http://127.0.0.1:8000/api/school-setup`,
         {
-          method: "GET",
+          method: "POST",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            SchoolName: formData.organization,
+            ContactPerson: `${formData.firstName} ${formData.lastName}`,
+            Mobile: mobile,
+            Email: formData.email,
+            syear: "2026",
+            institute_type: formData.department
+          }),
         }
       );
       const data = await response.json();
+      console.log("School setup API response:", data);
 
-      if (data.status === 1) {
-        setSuccess("Registration successful! Redirecting to login...");
+      if (data.status === 1 || data.message === 'School setup successful' || data.message === 'Registration successful' || data.message === 'School setup created successfully' || data.success === true) {
+        setSuccess("Registration successful! Please complete your profile...");
+        // Store user data and show profile form
+        // Get sub_institute_id from the API response - the ID is nested in data.data
+        const subInstituteId = data.data?.id || data.sub_institute_id || data.institute_id || data.id || "";
+        console.log("Captured subInstituteId:", subInstituteId);
+        setUserData({
+          email: formData.email,
+          mobile: mobile,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          subInstituteId: subInstituteId.toString()
+        });
         setTimeout(() => {
-          router.push("/login");
-        }, 2000);
+          setShowUserProfileForm(true);
+        }, 1500);
       } else {
         setError(data.message || "Registration failed. Please try again.");
       }
@@ -180,6 +211,10 @@ const Signup: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (showUserProfileForm) {
+    return <UserProfileForm email={userData.email} mobile={userData.mobile} firstName={userData.firstName} lastName={userData.lastName} subInstituteId={userData.subInstituteId} />;
+  }
 
   return (
     <main className="flex min-h-screen bg-blue-400 overflow-hidden">
@@ -195,7 +230,7 @@ const Signup: React.FC = () => {
         </div>
 
         {/* Center Form Column */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-8">
+        <div className="w-full xl:w-2/2 lg:w-1/2 sm:w-1/2 flex items-center justify-center px-4 py-8">
           <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden">
             <div className="flex flex-col md:flex-row">
               {/* Left Panel - Gradient */}
@@ -306,6 +341,8 @@ const Signup: React.FC = () => {
                     <input
                       type="tel"
                       placeholder="Mobile Number"
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value)}
                       className="flex-1 p-2.5 border border-gray-300 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
                     />
                   </div>
