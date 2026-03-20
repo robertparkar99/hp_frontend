@@ -22,20 +22,13 @@ import {
 import { ArrowLeft, Plus, History, Eye, Trash2, Sparkles, Calendar, Target, Users, TrendingUp } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 // API Base URL
-const API_BASE_URL = "https://karan-01-hpmarktingagent.hf.space";
+// const API_BASE_URL = "https://karan-01-hpmarktingagent.hf.space";
 
 // Default agent_id (can be changed or stored in localStorage)
 const DEFAULT_AGENT_ID = "a6b36706-3fa3-4146-98c2-ff05321e8123";
-
-interface StrategyReport {
-  kpis: string[];
-  focus: string;
-  optimization: string;
-  growth_strategy: string[];
-  content_strategy: string;
-}
 
 interface Strategy {
   id: string;
@@ -43,9 +36,76 @@ interface Strategy {
   business_type: string;
   target_audience: string;
   goal: string;
-  report: StrategyReport;
-  priority_actions: string[];
+  strategy: string;
+  strategy_type: string;
+  focus_area: string;
   created_at: string;
+}
+
+// --------------------------------------------------
+// STRATEGY CONTENT PARSER
+// --------------------------------------------------
+interface StrategySection {
+  title: string;
+  content: string;
+}
+
+const parseStrategyContent = (content: string): StrategySection[] => {
+  const sections: StrategySection[] = [];
+
+  // Define section patterns to look for
+  const patterns = [
+    { key: 'Platform Strategy', pattern: /Platform Strategy:\s*([\s\S]*?)(?=\n\n|\n[A-Z]|$)/i },
+    { key: 'Content Plan', pattern: /Content Plan:\s*([\s\S]*?)(?=\n\n|\n[A-Z]|$)/i },
+    { key: 'Posting Frequency', pattern: /Posting Frequency:\s*([\s\S]*?)(?=\n\n|\n[A-Z]|$)/i },
+    { key: 'Lead Generation Tactics', pattern: /Lead Generation Tactics:\s*([\s\S]*?)(?=\n\n|\n[A-Z]|$)/i },
+    { key: 'Growth Hacks', pattern: /Growth Hacks:\s*([\s\S]*?)(?=\n\n|\n[A-Z]|$)/i },
+    { key: 'Unique Angle', pattern: /Unique Angle:\s*([\s\S]*?)(?=\n\n|\n[A-Z]|$)/i },
+  ];
+
+  patterns.forEach(({ key, pattern }) => {
+    const match = content.match(pattern);
+    if (match && match[1]) {
+      sections.push({
+        title: key,
+        content: match[1].trim()
+      });
+    }
+  });
+
+  return sections;
+};
+
+// Strategy Content Display Component
+function StrategyContentParser({ content }: { content: string }) {
+  const sections = parseStrategyContent(content);
+
+  // If no sections found, show raw content
+  if (sections.length === 0) {
+    return (
+      <div className="p-4 border rounded-lg bg-muted/50">
+        <div className="whitespace-pre-wrap text-sm leading-relaxed">{content}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {sections.map((section, index) => (
+        <div key={index} className="p-4 border rounded-lg hover:bg-muted/30 transition-colors">
+          <h4 className="font-semibold text-primary flex items-center gap-2 mb-2">
+            <Badge variant="outline" className="bg-primary/10">
+              {index + 1}
+            </Badge>
+            {section.title}
+          </h4>
+          <div className="text-sm text-muted-foreground whitespace-pre-wrap pl-8">
+            {section.content}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 interface FormDataType {
@@ -85,7 +145,9 @@ export default function MarketingStrategy() {
     setErrorMessage('');
     
     try {
-      const response = await fetch(`${API_BASE_URL}/strategies/${formData.agentId}`);
+      const response = await fetch(`https://karan-01-hpgooglecalendar.hf.space/api/marketing/strategy/a6b36706-3fa3-4146-98c2-ff05321
+e8123
+`);
       
       if (response.ok) {
         const data = await response.json();
@@ -132,7 +194,7 @@ export default function MarketingStrategy() {
     setIsGenerating(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/generate-strategy`, {
+      const response = await fetch(`https://karan-01-hpgooglecalendar.hf.space/api/marketing/strategy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -377,6 +439,11 @@ export default function MarketingStrategy() {
                       <div className="flex-1 cursor-pointer" onClick={() => viewStrategyDetails(strategy)}>
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold">{strategy.business_type}</h3>
+                          {strategy.strategy_type && (
+                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full capitalize">
+                              {strategy.strategy_type}
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                           <Users className="h-3 w-3 inline mr-1" />
@@ -386,6 +453,12 @@ export default function MarketingStrategy() {
                           <Target className="h-3 w-3 inline mr-1" />
                           {strategy.goal}
                         </p>
+                        {strategy.focus_area && (
+                          <p className="text-sm text-muted-foreground">
+                            <TrendingUp className="h-3 w-3 inline mr-1" />
+                            Focus: {strategy.focus_area}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground mt-2">
                           <Calendar className="h-3 w-3 inline mr-1" />
                           {formatDate(strategy.created_at)}
@@ -440,6 +513,24 @@ export default function MarketingStrategy() {
                   <CardDescription>Marketing Strategy Details</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Strategy Type and Focus Area - Prominent Display */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <Label className="text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        Strategy Type
+                      </Label>
+                      <p className="mt-1 font-semibold text-lg capitalize">{selectedStrategy.strategy_type?.replace(/-/g, ' ') || 'Standard'}</p>
+                    </div>
+                    <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                      <Label className="text-green-600 dark:text-green-400 flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        Focus Area
+                      </Label>
+                      <p className="mt-1 font-semibold text-lg capitalize">{selectedStrategy.focus_area?.replace(/-/g, ' ') || 'General'}</p>
+                    </div>
+                  </div>
+
                   {/* Basic Info */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="p-4 bg-muted rounded-lg">
@@ -452,73 +543,16 @@ export default function MarketingStrategy() {
                     </div>
                   </div>
 
-                  {/* Report Section */}
-                  {selectedStrategy.report && (
+                  {/* Parsed Strategy Content */}
+                  {selectedStrategy.strategy && (
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">Strategy Report</h3>
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Sparkles className="h-5 w-5" />
+                        Your Marketing Strategy
+                      </h3>
                       
-                      {/* KPIs */}
-                      <div className="p-4 border rounded-lg">
-                        <Label className="text-muted-foreground flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4" />
-                          Key Performance Indicators (KPIs)
-                        </Label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {selectedStrategy.report.kpis.map((kpi, index) => (
-                            <span key={index} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                              {kpi}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Focus */}
-                      <div className="p-4 border rounded-lg">
-                        <Label className="text-muted-foreground">Primary Focus</Label>
-                        <p className="mt-1 font-medium">{selectedStrategy.report.focus}</p>
-                      </div>
-
-                      {/* Optimization */}
-                      <div className="p-4 border rounded-lg">
-                        <Label className="text-muted-foreground">Optimization Strategy</Label>
-                        <p className="mt-1 font-medium">{selectedStrategy.report.optimization}</p>
-                      </div>
-
-                      {/* Content Strategy */}
-                      <div className="p-4 border rounded-lg">
-                        <Label className="text-muted-foreground">Content Strategy</Label>
-                        <p className="mt-1 font-medium">{selectedStrategy.report.content_strategy}</p>
-                      </div>
-
-                      {/* Growth Strategy */}
-                      <div className="p-4 border rounded-lg">
-                        <Label className="text-muted-foreground">Growth Strategy</Label>
-                        <ul className="mt-2 space-y-2">
-                          {selectedStrategy.report.growth_strategy.map((strategy, index) => (
-                            <li key={index} className="flex items-center gap-2">
-                              <span className="h-2 w-2 bg-primary rounded-full"></span>
-                              {strategy}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Priority Actions */}
-                  {selectedStrategy.priority_actions && selectedStrategy.priority_actions.length > 0 && (
-                    <div className="p-4 border rounded-lg">
-                      <Label className="text-muted-foreground font-semibold">Priority Actions</Label>
-                      <ul className="mt-2 space-y-2">
-                        {selectedStrategy.priority_actions.map((action, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="flex-shrink-0 h-6 w-6 flex items-center justify-center bg-primary text-primary-foreground rounded-full text-xs">
-                              {index + 1}
-                            </span>
-                            {action}
-                          </li>
-                        ))}
-                      </ul>
+                      {/* Parse and display strategy sections */}
+                      <StrategyContentParser content={selectedStrategy.strategy} />
                     </div>
                   )}
                 </CardContent>
