@@ -16,9 +16,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Import course recommendation flow
 // @ts-ignore - Flow is a JavaScript module
-// Import course recommendation flow
-// @ts-ignore - Flow is a JavaScript module
 import { courseRecommendationFlow } from "@/ai/flows/courseRecommendationFlow";
+
+// Import skill gap analysis flow
+// @ts-ignore - Flow is a JavaScript module
+import { skillGapAnalysisFlow } from "@/ai/flows/skillGapAnalysisFlow";
 
 interface ChatRequest {
   query: string;
@@ -28,6 +30,8 @@ interface ChatRequest {
   role?: string;
   conversationHistory?: Array<{ role: string; content: string }>;
   debugMode?: boolean;
+  selectedJobRole?: string;
+  selectedjobRoleId?: string;
   formData?: {
     industry?: string;
     department?: string;
@@ -56,6 +60,11 @@ interface ChatResponse {
   suggestion?: string;
   canEscalate?: boolean;
   id?: string;
+  // Skill Gap Analysis fields
+  selectionOptions?: Array<{ id?: number; name: string }>;
+  stepLabel?: string;
+  currentStep?: string;
+  nextStep?: string;
 }
 
 interface SuggestionRequest {
@@ -943,6 +952,18 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
       );
     }
 
+    // === SKILL_GAP_ANALYSIS Routing ===
+    if (intent.intent === 'SKILL_GAP_ANALYSIS') {
+      console.log('SKILL_GAP_ANALYSIS intent detected');
+      return handleSkillGapAnalysisRequest(
+        request,
+        { userId: anonymousId },
+        conversationId,
+        intent,
+        entities
+      );
+    }
+
     // === CREATE_JOB_DESCRIPTION Routing ===
 
     if (intent.intent === 'CREATE_JOB_DESCRIPTION') {
@@ -1395,6 +1416,161 @@ async function handleCourseRecommendationRequest(
       recoverable: false,
       suggestion: 'Would you like me to try again or escalate to a human agent?',
       canEscalate: true,
+    };
+  }
+}
+
+/**
+ * handleSkillGapAnalysisRequest
+ * Handles SKILL_GAP_ANALYSIS intent by calling the skill gap analysis flow
+ */
+async function handleSkillGapAnalysisRequest(
+  request: ChatRequest,
+  userContext: { userId: string },
+  conversationId: string,
+  intent: IntentClassificationResult,
+  entities: any
+): Promise<ChatResponse> {
+  console.log('[handleSkillGapAnalysisRequest] Processing skill gap analysis request');
+
+  try {
+    let currentStep = 'industry';
+    let industry = '';
+    let department = '';
+    let jobRole = '';
+
+    const query = request.query.toLowerCase();
+    
+    // Check for explicit department selection patterns - these should trigger showing the department list
+    // regardless of whether an entity is detected
+    const departmentSelectPatterns = [
+      'select department',
+      'choose department',
+      'select my department',
+      'choose my department',
+      'department as',
+      'select the department',
+      'i want to select department',
+      'show me departments',
+      'list departments',
+      'department list',
+      'pick department',
+      'selecting department',
+      'choosing department',
+      'i want department',
+      'need department',
+      'what departments',
+      'department options',
+      'department selection'
+    ];
+    
+    const isExplicitDepartmentRequest = departmentSelectPatterns.some(pattern => query.includes(pattern));
+    
+    // First check for entities - but only if it's NOT an explicit department selection request
+    // If user explicitly asks to select department, show them the list even if they mention a department name
+    if (!isExplicitDepartmentRequest) {
+      if (entities?.industry) {
+        industry = entities.industry;
+        currentStep = 'department';
+      } else if (entities?.department) {
+        department = entities.department;
+        currentStep = 'jobRole';
+      } else if (entities?.jobRole) {
+        jobRole = entities.jobRole;
+        currentStep = 'tasks';
+      }
+    }
+    
+    // Only use keyword detection as fallback when no entities found
+    // and when starting fresh (no previous selection)
+    // Only show department list when user explicitly asks for department selection
+    
+    if (!industry && !department && !jobRole) {
+      if (query.includes('industry') || query === 'start' || query.includes('skill gap')) {
+        currentStep = 'industry';
+      } else if (departmentSelectPatterns.some(pattern => query.includes(pattern))) {
+        currentStep = 'department';
+      } else if (query.includes('role') || query.includes('job')) {
+        currentStep = 'jobRole';
+      } else if (query.includes('task')) {
+        currentStep = 'tasks';
+      } else if (query.includes('skill')) {
+        currentStep = 'skills';
+      }
+    }
+
+    console.log('[handleSkillGapAnalysisRequest] Step:', currentStep);
+    console.log('[handleSkillGapAnalysisRequest] Industry:', industry);
+    console.log('[handleSkillGapAnalysisRequest] Department:', department);
+    console.log('[handleSkillGapAnalysisRequest] Query:', request.query);
+    console.log('[handleSkillGapAnalysisRequest] Entities:', entities);
+    
+    const flowResult = await skillGapAnalysisFlow({
+      currentStep: currentStep as any,
+      industry,
+      department,
+      jobRole
+    });
+    
+    console.log('[handleSkillGapAnalysisRequest] Flow result:', flowResult);
+
+    let answer = '';
+    let stepLabel = '';
+    let selectionOptions: Array<{ id?: number; name: string }> = [];
+
+    switch (currentStep) {
+      case 'industry':
+        stepLabel = 'Select your industry';
+        answer = 'Select your industry from the options below:';
+        selectionOptions = flowResult.data || [];
+        break;
+      case 'department':
+        stepLabel = `Select department in ${industry}`;
+        answer = `Great! You selected **${industry}**. Now select your department:`;
+        selectionOptions = flowResult.data || [];
+        break;
+      case 'jobRole':
+        stepLabel = `Select job role in ${department}`;
+        answer = `Perfect! You selected **${department}**. Now choose your job role:`;
+        selectionOptions = flowResult.data || [];
+        break;
+      case 'tasks':
+        stepLabel = `Tasks for ${jobRole}`;
+        answer = `Excellent! Here are the key tasks for **${jobRole}**:`;
+        selectionOptions = flowResult.data || [];
+        break;
+      case 'skills':
+        stepLabel = `Skills for ${jobRole}`;
+        answer = `Now let's assess your skills for **${jobRole}**. Rate your proficiency (1-5):`;
+        selectionOptions = flowResult.data || [];
+        break;
+      default:
+        answer = 'Skill Gap Analysis completed!';
+    }
+
+    return {
+      answer,
+      conversationId,
+      intent: 'SKILL_GAP_ANALYSIS',
+      confidence: intent.confidence,
+      action: 'SHOW_SKILL_GAP_OPTIONS',
+      selectionOptions,
+      stepLabel,
+      // FIX: Use currentStep (not flowResult.nextStep) to correctly represent the current step
+      currentStep: currentStep,
+      nextStep: flowResult.nextStep
+    };
+
+  } catch (error) {
+    const errorMessage = `Failed to process skill gap analysis: ${(error as Error).message}`;
+    console.error('[handleSkillGapAnalysisRequest] Error:', error);
+    
+    return {
+      answer: errorMessage,
+      conversationId,
+      intent: 'SKILL_GAP_ANALYSIS',
+      error: (error as Error).message,
+      recoverable: true,
     };
   }
 }
