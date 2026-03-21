@@ -26,10 +26,10 @@ export default function HRWorkforceAnalyticsReport() {
             </div>
             <div className={`transition-all duration-300 p-2 h-[calc(100vh-100px)] ${isSidebarOpen ? "lg:ml-72" : "lg:ml-20"}`}>
                 <div className="w-full h-full overflow-hidden rounded-[12px]">
-                    <iframe
-                        src="https://lookerstudio.google.com/embed/reporting/3a7b9fa7-35b5-49cc-aabe-6dae3dcdcd23/page/jnrpF"
+                   <iframe
+                        src="https://lookerstudio.google.com/embed/u/0/reporting/92836c16-a074-43b1-9f8e-f75b0d3cc51c/page/7jIsF"
                         style={{ width: '100%', height: 'calc(100%)', border: 'none' }}
-                        title="HR Workforce Analytics Report"
+                        title="My Learning Dashboard"
                         loading="lazy"
                         allowFullScreen
                         sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
