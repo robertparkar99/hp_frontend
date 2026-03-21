@@ -273,8 +273,8 @@ export default function Index({
 
   // FIXED: Load KAAB data when selectedSkill changes - Ensure values are "yes"/"no" strings
   useEffect(() => {
-    if (selectedSkill && localRatedSkills && localRatedSkills.length > 0) {
-      const ratedSkill = localRatedSkills.find(
+    if (selectedSkill && SkillLevels.length > 0) {
+      const ratedSkill = localRatedSkills?.find(
         (rated: any) => rated.skill_id === selectedSkill.skill_id
       );
 
@@ -328,8 +328,20 @@ export default function Index({
 
         setShowDetails(hasKAABData);
       } else {
-        setSelectedLevelIndex(null);
-        setSelectedSkillLevel("");
+        // Use the proficiency level from the API if no rated skill exists
+        const skillProficiencyLevel = selectedSkill.proficiency_level;
+        if (skillProficiencyLevel) {
+          const levelIndex = SkillLevels.findIndex(level =>
+            level.proficiency_level === skillProficiencyLevel ||
+            level.proficiency_type === skillProficiencyLevel ||
+            level.proficiency_level?.includes(skillProficiencyLevel)
+          );
+          setSelectedLevelIndex(levelIndex >= 0 ? levelIndex : null);
+          setSelectedSkillLevel(skillProficiencyLevel);
+        } else {
+          setSelectedLevelIndex(null);
+          setSelectedSkillLevel("");
+        }
         setValidationState({
           knowledge: {},
           ability: {},
@@ -511,8 +523,9 @@ export default function Index({
   const moveToNextSkill = (): void => {
     if (currentSkillIndex < userJobroleSkills.length - 1) {
       const nextIndex = currentSkillIndex + 1;
+      const nextSkill = userJobroleSkills[nextIndex];
       setCurrentSkillIndex(nextIndex);
-      setSelectedSkill(userJobroleSkills[nextIndex]);
+      setSelectedSkill(nextSkill);
 
       // Reset for new skill - but data will be loaded from useEffect
       setActiveTab("knowledge");
@@ -523,8 +536,20 @@ export default function Index({
         attitude: {},
       });
       setShowDetails(false);
-      setSelectedLevelIndex(null);
-      setSelectedSkillLevel("");
+
+      // Set the proficiency level from the skill's data
+      const skillProficiencyLevel = nextSkill.proficiency_level;
+      if (skillProficiencyLevel) {
+        const levelIndex = SkillLevels.findIndex(level =>
+          level.proficiency_level === skillProficiencyLevel ||
+          level.proficiency_type === skillProficiencyLevel
+        );
+        setSelectedLevelIndex(levelIndex >= 0 ? levelIndex : null);
+        setSelectedSkillLevel(skillProficiencyLevel);
+      } else {
+        setSelectedLevelIndex(null);
+        setSelectedSkillLevel("");
+      }
 
       // The useEffect will automatically load data for the new selectedSkill
     }
@@ -538,10 +563,22 @@ export default function Index({
       saveCurrentSkillData();
 
       const prevIndex = currentSkillIndex - 1;
+      const prevSkill = userJobroleSkills[prevIndex];
       setCurrentSkillIndex(prevIndex);
-      setSelectedSkill(userJobroleSkills[prevIndex]);
+      setSelectedSkill(prevSkill);
       setActiveTab("knowledge");
       loadSkillData(prevIndex);
+
+      // Set the proficiency level from the skill's data
+      const skillProficiencyLevel = prevSkill.proficiency_level;
+      if (skillProficiencyLevel) {
+        const levelIndex = SkillLevels.findIndex(level =>
+          level.proficiency_level === skillProficiencyLevel ||
+          level.proficiency_type === skillProficiencyLevel
+        );
+        setSelectedLevelIndex(levelIndex >= 0 ? levelIndex : null);
+        setSelectedSkillLevel(skillProficiencyLevel);
+      }
     }
   };
 
@@ -636,8 +673,19 @@ export default function Index({
         });
         setShowDetails(true);
       } else {
-        setSelectedLevelIndex(null);
-        setSelectedSkillLevel("");
+        // Use the skill's proficiency_level from API if no rated skill exists
+        const skillProficiencyLevel = skill.proficiency_level;
+        if (skillProficiencyLevel) {
+          const levelIndex = SkillLevels.findIndex(level =>
+            level.proficiency_level === skillProficiencyLevel ||
+            level.proficiency_type === skillProficiencyLevel
+          );
+          setSelectedLevelIndex(levelIndex >= 0 ? levelIndex : null);
+          setSelectedSkillLevel(skillProficiencyLevel);
+        } else {
+          setSelectedLevelIndex(null);
+          setSelectedSkillLevel("");
+        }
         setValidationState({
           knowledge: {}, ability: {}, behaviour: {}, attitude: {}
         });
@@ -1093,62 +1141,104 @@ export default function Index({
                     {/* Skill Level Selection with Description */}
                     <div className="flex flex-col items-center gap-6">
                       <div className="flex justify-center flex-wrap gap-0">
-                        {SkillLevels.length > 0 && SkillLevels.map((val: any, key) => {
-                          const levelMatch = val?.proficiency_level?.match(/\d+/);
-                          const levelNumber = levelMatch ? levelMatch[0] : '0';
+                        {(() => {
+                          // Get the proficiency level (expected) from the selected skill
+                          const skillProficiencyLevel = selectedSkill?.proficiency_level;
+                          const expectedLevel = skillProficiencyLevel ? parseInt(skillProficiencyLevel) : 5;
+                          
+                          // Filter to show levels from 1 up to the expected proficiency level
+                          // e.g., if expected is 3, show 1, 2, 3
+                          const filteredLevels = SkillLevels.filter(val => {
+                            const levelMatch = val?.proficiency_level?.match(/\d+/);
+                            const levelNumber = levelMatch ? parseInt(levelMatch[0]) : 0;
+                            return levelNumber <= expectedLevel;
+                          });
+                          
+                          // Use filtered levels; fallback to all if empty
+                          const levelsToShow = filteredLevels.length > 0 ? filteredLevels : SkillLevels;
+                          
+                          // Find the selected level in the filtered array
+                          const selectedLevelValue = selectedLevelIndex !== null ? SkillLevels[selectedLevelIndex] : null;
+                          const selectedIndexInFiltered = selectedLevelValue 
+                            ? levelsToShow.findIndex(l => l.proficiency_level === selectedLevelValue?.proficiency_level)
+                            : -1;
+                          
+                          return levelsToShow.map((val: any, key) => {
+                            const levelMatch = val?.proficiency_level?.match(/\d+/);
+                            const levelNumber = levelMatch ? levelMatch[0] : '0';
 
-                          const levelColors = [
-                            'bg-blue-100 text-blue-800 border-blue-300',
-                            'bg-green-100 text-green-800 border-green-300',
-                            'bg-yellow-100 text-yellow-800 border-yellow-300',
-                            'bg-orange-100 text-orange-800 border-orange-300',
-                            'bg-red-100 text-red-800 border-red-300',
-                            'bg-purple-100 text-purple-800 border-purple-300',
-                            'bg-pink-100 text-pink-800 border-pink-300'
-                          ];
-                          const ringColors = [
-                            "ring-blue-400 shadow-blue-400/50",
-                            "ring-green-400 shadow-green-400/50",
-                            "ring-yellow-400 shadow-yellow-400/50",
-                            "ring-orange-400 shadow-orange-400/50",
-                            "ring-red-400 shadow-red-400/50",
-                            "ring-purple-400 shadow-purple-400/50",
-                            "ring-pink-400 shadow-pink-400/50",
-                          ];
+                            const levelColors = [
+                              'bg-blue-100 text-blue-800 border-blue-300',
+                              'bg-green-100 text-green-800 border-green-300',
+                              'bg-yellow-100 text-yellow-800 border-yellow-300',
+                              'bg-orange-100 text-orange-800 border-orange-300',
+                              'bg-red-100 text-red-800 border-red-300',
+                              'bg-purple-100 text-purple-800 border-purple-300',
+                              'bg-pink-100 text-pink-800 border-pink-300'
+                            ];
+                            const ringColors = [
+                              "ring-blue-400 shadow-blue-400/50",
+                              "ring-green-400 shadow-green-400/50",
+                              "ring-yellow-400 shadow-yellow-400/50",
+                              "ring-orange-400 shadow-orange-400/50",
+                              "ring-red-400 shadow-red-400/50",
+                              "ring-purple-400 shadow-purple-400/50",
+                              "ring-pink-400 shadow-pink-400/50",
+                            ];
 
-                          const colorClass = levelColors[parseInt(levelNumber) - 1] || levelColors[0];
-                          const isSelected = selectedLevelIndex === key;
-                          let borderLeft = '';
-                          let borderRight = '';
-                          if (key == 0) {
-                            borderLeft = 'rounded-l-[30px]';
-                          }
-                          if (SkillLevels.length === (key + 1)) {
-                            borderRight = 'rounded-r-[30px]';
-                          }
-                          return (
-                            <button
-                              id={`skill-level-${key}`}
-                              key={key}
-                              onClick={() => handleLevelSelect(key, val)}
-                              className={`px-4 py-2 shadow-lg border-2 ${borderLeft} ${borderRight} cursor-pointer flex items-center justify-center min-w-[80px] font-medium transition-all duration-200
+                            const colorClass = levelColors[parseInt(levelNumber) - 1] || levelColors[0];
+                            const isSelected = selectedIndexInFiltered === key;
+                            let borderLeft = '';
+                            let borderRight = '';
+                            if (key == 0) {
+                              borderLeft = 'rounded-l-[30px]';
+                            }
+                            if (levelsToShow.length === (key + 1)) {
+                              borderRight = 'rounded-r-[30px]';
+                            }
+                            return (
+                              <button
+                                id={`skill-level-${key}`}
+                                key={key}
+                                onClick={() => {
+                                  // Find the index in the original SkillLevels array
+                                  const originalIndex = SkillLevels.findIndex(l => l.proficiency_level === val.proficiency_level);
+                                  handleLevelSelect(originalIndex, val);
+                                }}
+                                className={`px-4 py-2 shadow-lg border-2 ${borderLeft} ${borderRight} cursor-pointer flex items-center justify-center min-w-[80px] font-medium transition-all duration-200
       ${isSelected
                                   ? `scale-105 ${colorClass} ring-2 ${ringColors[parseInt(levelNumber) - 1] || "ring-blue-400 shadow-blue-400/50"}`
                                   : `hover:scale-105 hover:shadow-lg hover:shadow-current/50 hover:border-current ${colorClass}`
                                 }`}
-                            >
-                              {levelNumber}
-                            </button>
-                          );
-                        })}
+                              >
+                                {levelNumber}
+                              </button>
+                            );
+                          });
+                        })()}
                       </div>
 
                       {/* Description Below Levels */}
-                      {selectedLevelIndex !== null && SkillLevels[selectedLevelIndex]?.description && (
-                        <p className="text-gray-700 text-sm font-medium text-center mt-2 max-w-2xl">
-                          {SkillLevels[selectedLevelIndex]?.description}
-                        </p>
-                      )}
+                      {(() => {
+                        const skillProficiencyLevel = selectedSkill?.proficiency_level;
+                        const expectedLevel = skillProficiencyLevel ? parseInt(skillProficiencyLevel) : 5;
+                        const filteredLevels = SkillLevels.filter(val => {
+                          const levelMatch = val?.proficiency_level?.match(/\d+/);
+                          const levelNumber = levelMatch ? parseInt(levelMatch[0]) : 0;
+                          return levelNumber <= expectedLevel;
+                        });
+                        const levelsToShow = filteredLevels.length > 0 ? filteredLevels : SkillLevels;
+                        const selectedLevelValue = selectedLevelIndex !== null ? SkillLevels[selectedLevelIndex] : null;
+                        const selectedIndexInFiltered = selectedLevelValue 
+                          ? levelsToShow.findIndex(l => l.proficiency_level === selectedLevelValue?.proficiency_level)
+                          : -1;
+                        
+                        return selectedIndexInFiltered !== null && levelsToShow[selectedIndexInFiltered]?.description && (
+                          <p className="text-gray-700 text-sm font-medium text-center mt-2 max-w-2xl">
+                            {levelsToShow[selectedIndexInFiltered]?.description}
+                          </p>
+                        );
+                      })()}
 
                       {/* Next and Previous Buttons - positioned at start and end */}
                       <div className="flex justify-between items-center w-full mt-4">

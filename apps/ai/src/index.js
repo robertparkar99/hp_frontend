@@ -15,6 +15,9 @@ import { suggestionFlow } from './flows/suggestionFlow.js';
 // Import course recommendation flow
 import { courseRecommendationFlow } from './flows/courseRecommendationFlow.js';
 
+// Import skill gap analysis flow
+import { skillGapAnalysisFlow } from './flows/skillGapAnalysisFlow.js';
+
 // Initialize genkit with the plugin
 const gk = genkit({
   plugins: [googleAIPlugin]
@@ -42,7 +45,8 @@ startFlowServer({
     jobRoleCompetencyFlowInstance,
     jobRoleCompetencyTestFlowInstance,
     suggestionFlow,
-    courseRecommendationFlow
+    courseRecommendationFlow,
+    skillGapAnalysisFlow
   ],
   port: 3400,
 });

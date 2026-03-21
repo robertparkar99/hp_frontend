@@ -21,7 +21,7 @@ export default function HumanProductivityAndOperationalExcellence() {
 
     return (
         <div className="min-h-screen bg-gray-50/50">
-            <div className={`mb-5 transition-all duration-300 ${isSidebarOpen ? "lg:ml-69" : "lg:ml-18"}`}>
+            <div className={`mb-5 transition-all duration-300 ${isSidebarOpen ? "lg:ml-72" : "lg:ml-20"}`}>
                 <Header />
             </div>
             <div className={`transition-all duration-300 p-2 h-[calc(100vh-100px)] ${isSidebarOpen ? "lg:ml-72" : "lg:ml-20"}`}>
