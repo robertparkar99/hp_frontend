@@ -34,7 +34,8 @@ const Signup: React.FC = () => {
     mobile: "",
     firstName: "",
     lastName: "",
-    subInstituteId: ""
+    subInstituteId: "",
+    departmentId: ""
   });
 
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -196,13 +197,26 @@ const Signup: React.FC = () => {
           mobile: mobile,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          subInstituteId: subInstituteId.toString()
+          subInstituteId: subInstituteId.toString(),
+          departmentId: formData.department
         });
         setTimeout(() => {
           setShowUserProfileForm(true);
         }, 1500);
       } else {
-        setError(data.message || "Registration failed. Please try again.");
+        // Check for duplicate email error
+        const errorMessage = data.message || "Registration failed. Please try again.";
+        const lowerMessage = errorMessage.toLowerCase();
+        
+        if (lowerMessage.includes('duplicate') || 
+            lowerMessage.includes('unique constraint') || 
+            lowerMessage.includes('email') ||
+            lowerMessage.includes('already exists') ||
+            lowerMessage.includes('already registered')) {
+          setError("This email is already registered. Please use a different email.");
+        } else {
+          setError(errorMessage);
+        }
       }
     } catch (err) {
       setError("Error during registration. Please try again.");
@@ -213,7 +227,7 @@ const Signup: React.FC = () => {
   };
 
   if (showUserProfileForm) {
-    return <UserProfileForm email={userData.email} mobile={userData.mobile} firstName={userData.firstName} lastName={userData.lastName} subInstituteId={userData.subInstituteId} />;
+    return <UserProfileForm email={userData.email} mobile={userData.mobile} firstName={userData.firstName} lastName={userData.lastName} subInstituteId={userData.subInstituteId} departmentId={userData.departmentId} />;
   }
 
   return (
@@ -328,7 +342,7 @@ const Signup: React.FC = () => {
                       Select industries Type
                     </option>
                     {industries.map((industry) => (
-                      <option key={industry.id} value={industry.industries}>
+                      <option key={industry.id} value={industry.id}>
                         {industry.industries}
                       </option>
                     ))}
