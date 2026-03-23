@@ -1070,7 +1070,7 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
                   const botMessage: Message = {
                     id: Date.now().toString(),
                     type: 'bot',
-                    content: `You have selected ${selectedName} department. The skill gap analysis is complete!`,
+                    content: `You have selected ${selectedName} department.`,
                     timestamp: new Date(),
                     metadata: {
                       currentStep: 'complete',
@@ -1644,8 +1644,9 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
     const allRated = options.length > 0 && options.every((opt: any) => localRatings[opt.name]);
 
     return (
-      <div className="mt-2 sm:mt-3 w-full box-border">
-        <div className="p-2 sm:p-3 bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl border border-indigo-200 shadow-sm">
+      <div className="mt-2 sm:mt-3 box-border">
+        <div className="p-2 sm:p-3 mr-4 bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl border border-indigo-200 shadow-sm">
+                        
           <h4 className="text-xs sm:text-sm font-semibold text-indigo-900 mb-2 sm:mb-3 flex items-center gap-2">
             <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600" />
             Please rate your skills
