@@ -11,9 +11,10 @@ interface UserProfileFormProps {
   firstName: string;
   lastName: string;
   subInstituteId?: string;
+  departmentId?: string;
 }
 
-const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstName, lastName, subInstituteId }) => {
+const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstName, lastName, subInstituteId, departmentId }) => {
   const router = useRouter();
   // Set initial form data including subInstituteId
   const getInitialFormData = () => ({
@@ -26,22 +27,24 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
     user_profile_id: "",
     sub_institute_id: subInstituteId || "",
     client_id: "",
-    is_admin: "false",
+    is_admin: "true",
     status: "Active",
     allocated_standard: "",
-    department_id: "",
-    employee_id: ""
+    department_id: departmentId || "",
+    employee_id: "",
+    job_role_id: ""
   });
   
   const [formData, setFormData] = useState(getInitialFormData());
 
-  // Update form data when subInstituteId changes
+  // Update form data when subInstituteId or departmentId changes
   useEffect(() => {
     setFormData(prev => ({
       ...prev,
-      sub_institute_id: subInstituteId || prev.sub_institute_id
+      sub_institute_id: subInstituteId || prev.sub_institute_id,
+      department_id: departmentId || prev.department_id
     }));
-  }, [subInstituteId]);
+  }, [subInstituteId, departmentId]);
   
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -49,7 +52,8 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
   const [userProfiles, setUserProfiles] = useState<{ id: number; name: string }[]>([]);
   const [substitutes, setSubstitutes] = useState<{ id: number; name: string }[]>([]);
   const [clients, setClients] = useState<{ id: number; client_name: string }[]>([]);
-  const [departments, setDepartments] = useState<{ id: number; department_name: string }[]>([]);
+  const [departments, setDepartments] = useState<{ id: number | string; department?: string; name?: string; department_name?: string }[]>([]);
+  const [jobRoles, setJobRoles] = useState<{ id: number | string; jobrole?: string }[]>([]);
 
   // Fetch dropdown data
   useEffect(() => {
@@ -85,10 +89,43 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
         }
 
         // Fetch departments
-        const departmentsResponse = await fetch("http://127.0.0.1:8000/table_data?table=hrms_department&fields=id,department_name");
+        console.log("Fetching departments for subInstituteId:", subInstituteId);
+        const departmentsResponse = await fetch(`http://127.0.0.1:8000/table_data?table=hrms_departments&fields=id,department&filters[sub_institute_id]=${subInstituteId}`);
         const departmentsData = await departmentsResponse.json();
+        console.log("Departments API response:", departmentsData);
+        
+        // Handle different response formats
+        let departmentsArray = [];
         if (Array.isArray(departmentsData)) {
-          setDepartments(departmentsData);
+          departmentsArray = departmentsData;
+        } else if (departmentsData.data && Array.isArray(departmentsData.data)) {
+          departmentsArray = departmentsData.data;
+        } else if (departmentsData.result && Array.isArray(departmentsData.result)) {
+          departmentsArray = departmentsData.result;
+        }
+        
+        if (departmentsArray.length > 0) {
+          console.log("Setting departments:", departmentsArray.map((d: any) => ({ id: d.id, name: d.department || d.name })));
+          setDepartments(departmentsArray);
+        }
+
+        // Fetch job roles
+        const jobRolesResponse = await fetch(`http://127.0.0.1:8000/table_data?table=s_user_jobrole&fields=id,jobrole&filters[sub_institute_id]=${subInstituteId}`);
+        const jobRolesData = await jobRolesResponse.json();
+        console.log("Job Roles API response:", jobRolesData);
+        
+        // Handle different response formats
+        let jobRolesArray = [];
+        if (Array.isArray(jobRolesData)) {
+          jobRolesArray = jobRolesData;
+        } else if (jobRolesData.data && Array.isArray(jobRolesData.data)) {
+          jobRolesArray = jobRolesData.data;
+        } else if (jobRolesData.result && Array.isArray(jobRolesData.result)) {
+          jobRolesArray = jobRolesData.result;
+        }
+        
+        if (jobRolesArray.length > 0) {
+          setJobRoles(jobRolesArray);
         }
       } catch (err) {
         console.error("Error fetching dropdown data:", err);
@@ -99,9 +136,11 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
   }, [subInstituteId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    console.log(`handleChange: ${name} = ${value}`);
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
@@ -117,16 +156,42 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
 
     setLoading(true);
 
+    // Prepare form data with required format
+    const currentYear = new Date().getFullYear();
+    
+    // Use department_id from the form (which includes the selected department from UserProfileForm dropdown)
+    const selectedDepartmentId = formData.department_id || departmentId || "";
+    
+    const submitData = {
+      user_name: formData.user_name,
+      password: formData.password,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      email: formData.email,
+      mobile: formData.mobile,
+      user_profile_id: formData.user_profile_id,
+      sub_institute_id: formData.sub_institute_id,
+      client_id: formData.client_id,
+      is_admin: formData.is_admin === "true" ? "1" : "0",
+      status: "1",
+      allocated_standards: formData.allocated_standard,
+      department_id: selectedDepartmentId,
+      employee_id: formData.employee_id,
+      syear: currentYear.toString()
+    };
+    
+    console.log("Submitting form data:", submitData);
+
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/tbluser",
+        "http://127.0.0.1:8000/api/user-signup",
         {
           method: "POST",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(submitData),
         }
       );
       const data = await response.json();
@@ -137,7 +202,36 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
           router.push("/login");
         }, 2000);
       } else {
-        setError(data.message || "Failed to create profile. Please try again.");
+        // Extract exact error message from various possible response formats
+        let errorMessage = "Failed to create profile. Please try again.";
+        
+        // Get the raw error message to check for duplicates
+        let rawError = "";
+        if (data.error) {
+          rawError = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+        } else if (data.errors && Array.isArray(data.errors)) {
+          rawError = data.errors.map((err: any) => 
+            typeof err === 'string' ? err : JSON.stringify(err)
+          ).join(', ');
+        } else if (data.detail) {
+          rawError = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+        } else if (data.message) {
+          rawError = data.message;
+        }
+        
+        // Check for duplicate email error patterns
+        const lowerError = rawError.toLowerCase();
+        if (lowerError.includes('duplicate') || 
+            lowerError.includes('unique constraint') || 
+            lowerError.includes('email') ||
+            lowerError.includes('already exists') ||
+            lowerError.includes('already registered')) {
+          errorMessage = "This email is already registered. Please use a different email.";
+        } else {
+          errorMessage = rawError;
+        }
+        
+        setError(errorMessage);
       }
     } catch (err) {
       setError("Error creating profile. Please try again.");
@@ -280,7 +374,7 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
                     ))}
                   </select>
 
-                  <select
+                  {/* <select
                     name="sub_institute_id"
                     value={subInstituteId || formData.sub_institute_id}
                     onChange={handleChange}
@@ -292,7 +386,7 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
                         {sub.name}
                       </option>
                     ))}
-                  </select>
+                  </select> */}
 
                   <select
                     name="client_id"
@@ -317,7 +411,7 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
                     <option value="">Select Department</option>
                     {departments.map((dept) => (
                       <option key={dept.id} value={dept.id}>
-                        {dept.department_name}
+                        {dept.department || dept.department_name || dept.name || `Department ${dept.id}`}
                       </option>
                     ))}
                   </select>
@@ -331,14 +425,19 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
                     className="w-full p-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
                   />
 
-                  <input
-                    type="text"
-                    placeholder="Allocated Standard"
+                  <select
                     name="allocated_standard"
                     value={formData.allocated_standard}
                     onChange={handleChange}
-                    className="w-full p-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-                  />
+                    className="w-full p-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm text-gray-500"
+                  >
+                    <option value="">Select Job Role</option>
+                    {jobRoles.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.jobrole || `Job Role ${role.id}`}
+                      </option>
+                    ))}
+                  </select>
 
                   <div className="flex gap-4">
                     <label className="flex items-center gap-2 text-sm">
