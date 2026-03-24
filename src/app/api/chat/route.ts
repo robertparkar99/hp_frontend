@@ -57,6 +57,10 @@ export async function POST(request: Request) {
         const departmentPattern = /^select my department\s+(?:as\s+|in\s+)?(.+?)(?:\s+industry)?$/i;
         const departmentMatch = query.match(departmentPattern);
         
+        // Check if this is a "Selected Industry as X" pattern (new format from frontend)
+        const selectedIndustryPattern = /^selected industry\s+as\s+(.+)$/i;
+        const selectedIndustryMatch = query.match(selectedIndustryPattern);
+        
         // Check if user selected a department (e.g., "selected department: design" or "department: design")
         const selectedDeptPattern = /^(?:selected )?department[:\s]+(.+)$/i;
         const selectedDeptMatch = query.match(selectedDeptPattern);
@@ -74,6 +78,40 @@ export async function POST(request: Request) {
             // Extract industry name from the query
             const industry = departmentMatch[1].trim();
             console.log('[chat] Detected department selection pattern, industry:', industry);
+            
+            try {
+                // Call get-departments API
+                const deptResponse = await fetch(new URL('/api/get-departments', request.url).toString(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ industry })
+                });
+                
+                if (!deptResponse.ok) {
+                    throw new Error('Failed to fetch departments');
+                }
+                
+                const deptData = await deptResponse.json();
+                console.log('[chat] get-departments response:', deptData);
+                
+                result = {
+                    answer: `Select your department in ${industry} from the list below:`,
+                    selectionOptions: deptData.data || [],
+                    currentStep: 'department',
+                    nextStep: 'department',
+                    action: 'SHOW_SKILL_GAP_OPTIONS'
+                };
+            } catch (deptError) {
+                console.error('[chat] Error fetching departments:', deptError);
+                result = {
+                    answer: "Sorry, I couldn't fetch the departments. Please try again.",
+                    error: String(deptError)
+                };
+            }
+        } else if (selectedIndustryMatch && selectedIndustryMatch[1]) {
+            // Handle "Selected Industry as X" pattern (new format from frontend)
+            const industry = selectedIndustryMatch[1].trim();
+            console.log('[chat] Detected selected industry pattern, industry:', industry);
             
             try {
                 // Call get-departments API

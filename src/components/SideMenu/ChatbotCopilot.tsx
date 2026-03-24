@@ -1056,7 +1056,7 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
                 if (currentStep === 'industry') {
                   console.log('[SkillGapSelection] Handling INDUSTRY selection');
                   // Just set the input text - user must send the message to get departments
-                  setInput(`Select my department as ${selectedName}`);
+                  setInput(`Selected Industry as ${selectedName}`);
                   
                   // SECURITY FIX: Explicitly do NOT call any APIs here
                   // User must press Enter to send the message and trigger department list
@@ -1582,7 +1582,7 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
         const botMessage: Message = {
           id: Date.now().toString(),
           type: 'bot',
-          content: 'Thank you! Your skill ratings have been submitted successfully.\n\nYou can now proceed to skill gap calculation and report generation.',
+          content: 'Thank you! Your skill ratings have been submitted successfully.\n\nIf you want to proceed to skill gap calculation and report generation, type "proceed"?',
           timestamp: new Date(),
           metadata: {
             currentStep: 'complete',
