@@ -1,5 +1,7 @@
 import Shepherd, { Tour } from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger';
+import { useState, useEffect, useRef } from 'react';
 
 // Tab switcher callback type
 export type TabSwitcher = (tabId: string) => void;
@@ -51,7 +53,53 @@ const logElementPosition = (selector: string, element: Element | null) => {
   });
 };
 
-// Tour steps configuration with tab switching capability
+// Map on_click to element IDs
+const getAttachToConfig = (stepId: string) => {
+  const configs: Record<string, { element: string; on: 'top' | 'bottom' | 'left' | 'right' }> = {
+    'welcome': { element: '#tour-dashboard-container', on: 'bottom' },
+    'kpi-cards': { element: '#tour-kpi-cards', on: 'bottom' },
+    'navigation-tabs': { element: '#tour-navigation-tabs', on: 'bottom' },
+    'tab-balance-equity': { element: '#tour-tab-balance-equity', on: 'bottom' },
+    'workload-heatmap': { element: '#tour-workload-heatmap', on: 'top' },
+    'task-risk-analysis': { element: '#tour-task-risk-analysis', on: 'top' },
+    'role-similarity-network': { element: '#tour-role-similarity-network', on: 'top' },
+    'coverage-scorecards': { element: '#tour-coverage-scorecards', on: 'top' },
+    'tab-health-completeness': { element: '#tour-tab-health-completeness', on: 'bottom' },
+    'competency-radar': { element: '#tour-competency-radar', on: 'top' },
+    'skills-funnel': { element: '#tour-skills-funnel', on: 'top' },
+    'tab-alignment': { element: '#tour-tab-alignment-standardization', on: 'bottom' },
+    'benchmark-gauge': { element: '#tour-benchmark-gauge', on: 'top' },
+    'alignment-stats': { element: '#tour-alignment-stats', on: 'top' },
+    'tab-stakeholder': { element: '#tour-tab-stakeholder-lenses', on: 'bottom' },
+    'stakeholder-views': { element: '#tour-stakeholder-views', on: 'bottom' },
+    'stakeholder-filters': { element: '#tour-stakeholder-filters', on: 'top' },
+    'tour-complete': { element: '#tour-dashboard-container', on: 'bottom' },
+  };
+  return configs[stepId] || { element: '#tour-dashboard-container', on: 'bottom' };
+};
+
+// Map on_click to tab switches
+const getTabSwitchFromStep = (stepId: string): string | null => {
+  const tabMappings: Record<string, string> = {
+    'tab-balance-equity': 'balance-equity',
+    'workload-heatmap': 'balance-equity',
+    'task-risk-analysis': 'balance-equity',
+    'role-similarity-network': 'balance-equity',
+    'coverage-scorecards': 'balance-equity',
+    'tab-health-completeness': 'health-completeness',
+    'competency-radar': 'health-completeness',
+    'skills-funnel': 'health-completeness',
+    'tab-alignment': 'alignment-standardization',
+    'benchmark-gauge': 'alignment-standardization',
+    'alignment-stats': 'alignment-standardization',
+    'tab-stakeholder': 'stakeholder-lenses',
+    'stakeholder-views': 'stakeholder-lenses',
+    'stakeholder-filters': 'stakeholder-lenses',
+  };
+  return tabMappings[stepId] || null;
+};
+
+// Tour steps configuration with tab switching capability (fallback)
 export const createTourSteps = (switchTab: TabSwitcher) => [
   {
     id: 'welcome',
@@ -556,8 +604,111 @@ const addTourStyles = () => {
   document.head.appendChild(styleSheet);
 };
 
+// Hook to fetch tour steps from API
+export const useTourStepsFromAPI = (menuId: number = 182) => {
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionData, setSessionData] = useState<{ url: string; token: string; subInstituteId: string } | null>(null);
+
+  // Load session data from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      try {
+        const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+        setSessionData({
+          url: APP_URL,
+          token,
+          subInstituteId: String(sub_institute_id),
+        });
+      } catch (e) {
+        console.error('[CompetencyDashboardTour] Invalid userData in localStorage', e);
+      }
+    }
+  }, []);
+
+  // Fetch tour steps from API
+  useEffect(() => {
+    async function fetchTourSteps() {
+      if (!sessionData) return;
+
+      setIsLoading(true);
+      try {
+        // Get page info for access_link
+        const pageInfo = getPageInfo();
+        console.log('[CompetencyDashboardTour] Current page menuId:', pageInfo.menuId, 'accessLink:', pageInfo.accessLink);
+
+        // Fetch tour steps with proper authentication and filtering
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=Onboarding_tour_details&filters[menu_id]=${menuId}&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`
+        );
+
+        if (!res.ok) {
+          const errorRes = res.clone();
+          try {
+            const errorText = await errorRes.text();
+            console.error('[CompetencyDashboardTour] Tour steps API error:', res.status, errorText);
+          } catch (e) {
+            console.error('[CompetencyDashboardTour] Tour steps API error:', res.status);
+          }
+          throw new Error(`Failed to fetch tour steps: ${res.status}`);
+        }
+
+        const json = await res.json();
+        console.log('[CompetencyDashboardTour] Tour steps API response:', json);
+
+        // Handle different response formats
+        let tourData: any[] = [];
+        if (Array.isArray(json)) {
+          tourData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+          tourData = json.data;
+        } else if (json.result && Array.isArray(json.result)) {
+          tourData = json.result;
+        }
+
+        console.log('[CompetencyDashboardTour] Parsed tour data:', tourData);
+
+        // Filter by menu_id and access_link from getPageInfo
+        // Note: We use menu_id from query param (182) but also check access_link
+        // Handle access_link with or without leading slash
+        const normalizeAccessLink = (link: string) => {
+          return link?.startsWith('/') ? link.slice(1) : link;
+        };
+
+        console.log('[CompetencyDashboardTour] Page accessLink:', pageInfo.accessLink);
+        console.log('[CompetencyDashboardTour] First few API access_links:', tourData.slice(0, 3).map((s: any) => s.access_link));
+
+        const filteredData = tourData.filter((step: any) => {
+          const apiAccessLink = normalizeAccessLink(step.access_link);
+          const pageAccessLink = normalizeAccessLink(pageInfo.accessLink);
+          // Only filter by access_link since menu_id is already in the query
+          const matches = apiAccessLink === pageAccessLink;
+          if (!matches) {
+            console.log('[CompetencyDashboardTour] Filtering out step:', step.access_link, 'vs', pageInfo.accessLink, '-> normalized:', apiAccessLink, 'vs', pageAccessLink);
+          }
+          return matches;
+        });
+
+        console.log('[CompetencyDashboardTour] Filtered tour data:', filteredData);
+
+        // Use filtered data if available, otherwise use all data
+        setTourStepsFromAPI(filteredData.length > 0 ? filteredData : tourData);
+      } catch (error) {
+        console.error('[CompetencyDashboardTour] Error fetching tour steps:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchTourSteps();
+  }, [sessionData, menuId]);
+
+  return { tourStepsFromAPI, isLoading };
+};
+
 // Create and initialize the tour with tab switching capability
-export const initializeTour = (switchTab: TabSwitcher) => {
+export const initializeTour = (switchTab: TabSwitcher, tourStepsFromAPI: any[] = []) => {
   addTourStyles();
 
   const tour = new Shepherd.Tour({
@@ -578,12 +729,180 @@ export const initializeTour = (switchTab: TabSwitcher) => {
     keyboardNavigation: true
   });
 
-  // Create steps with tab switcher
-  const steps = createTourSteps(switchTab);
-  
-  // Add steps to tour
-  steps.forEach((step: any) => {
-    tour.addStep(step);
+  const isUsingAPI = tourStepsFromAPI.length > 0;
+  console.log('[CompetencyDashboardTour] Using API data:', isUsingAPI, 'Steps count:', tourStepsFromAPI.length);
+
+  // Get page info for journey logging
+  const getTourMenuId = () => {
+    const pageInfo = getPageInfo();
+    return pageInfo.menuId || 5; // Fallback to 5 if no menuId found
+  };
+
+  // Button logic for API-based tour
+  const getAPITourButtons = (index: number, totalSteps: number) => {
+    const currentStep = tourStepsFromAPI[index];
+    const stepId = currentStep?.on_click;
+    const targetTab = getTabSwitchFromStep(stepId);
+
+    const skip = {
+      text: 'Skip',
+      action: async function (this: any) {
+        if (targetTab) {
+          switchTab(targetTab);
+        }
+        this.cancel();
+        logUserJourney({
+          eventType: 'tour_skipped',
+          stepKey: stepId || `step_${index}`,
+          menuId: getTourMenuId(),
+          accessLink: '/competency-dashboard',
+        }).catch(err => console.error('JourneyLogger: Error logging tour skip:', err));
+      },
+      classes: 'shepherd-button-secondary',
+    };
+
+    const back = {
+      text: 'Previous',
+      action: async function (this: any) {
+        const prevStepId = tourStepsFromAPI[index - 1]?.on_click;
+        const prevTab = getTabSwitchFromStep(prevStepId);
+        if (prevTab && prevTab !== targetTab) {
+          switchTab(prevTab);
+          setTimeout(() => tour.back(), 600);
+        } else {
+          tour.back();
+        }
+      },
+      classes: 'shepherd-button-secondary',
+    };
+
+    const next = {
+      text: 'Next',
+      action: async function (this: any) {
+        const nextStepId = tourStepsFromAPI[index + 1]?.on_click;
+        const nextTab = getTabSwitchFromStep(nextStepId);
+        if (nextTab && nextTab !== targetTab) {
+          switchTab(nextTab);
+          setTimeout(() => tour.next(), 600);
+        } else {
+          tour.next();
+        }
+      },
+      classes: 'shepherd-button',
+    };
+
+    const finish = {
+      text: 'Finish',
+      action: function (this: any) {
+        this.complete();
+        logUserJourney({
+          eventType: 'tour_step_complete',
+          stepKey: stepId || `step_${index}`,
+          menuId: getTourMenuId(),
+          accessLink: '/competency-dashboard',
+        }).catch(err => console.error('JourneyLogger: Error logging tour complete:', err));
+        setTourCompleted();
+      },
+      classes: 'shepherd-button',
+    };
+
+    if (index === 0) return [skip, next];
+    if (index === totalSteps - 1) return [skip, back, finish];
+    return [skip, back, next];
+  };
+
+  // Add steps to tour - use API data or fallback to hardcoded
+  if (isUsingAPI) {
+    // Map API data to tour steps format
+    tourStepsFromAPI.forEach((apiStep, index) => {
+      const attachTo = getAttachToConfig(apiStep.on_click);
+      const stepId = apiStep.on_click;
+      const targetTab = getTabSwitchFromStep(stepId);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (tour as any).addStep({
+        id: stepId,
+        title: apiStep.title,
+        text: apiStep.description || '',
+        attachTo,
+        beforeShowPromise: function (this: any) {
+          return new Promise<void>(resolve => {
+            // Switch to the appropriate tab if needed
+            if (targetTab) {
+              switchTab(targetTab);
+              setTimeout(() => {
+                waitForElement(attachTo.element, 50, 100).then((element) => {
+                  logElementPosition(attachTo.element, element);
+                  setTimeout(resolve, 800);
+                });
+              }, 500);
+            } else {
+              setTimeout(resolve, 300);
+            }
+          });
+        },
+        buttons: getAPITourButtons(index, tourStepsFromAPI.length),
+        cancelIcon: { enabled: true },
+      } as any);
+    });
+  } else {
+    // Use hardcoded steps
+    const steps = createTourSteps(switchTab);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    steps.forEach((step: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (tour as any).addStep(step);
+    });
+  }
+
+  // Add journey logging event listeners
+  tour.on('start', () => {
+    console.log('Tour started - logging journey');
+    const menuId = getTourMenuId();
+    console.log('Using menuId for tour:', menuId);
+    logUserJourney({
+      eventType: 'tour_started',
+      stepKey: isUsingAPI ? tourStepsFromAPI[0]?.on_click : 'welcome',
+      menuId: menuId,
+      accessLink: '/competency-dashboard',
+    }).catch(err => console.error('JourneyLogger: Error logging tour start:', err));
+  });
+
+  tour.on('show', (e: any) => {
+    const step = e.step;
+    console.log('Tour step shown:', step.id, '- logging journey');
+    const menuId = getTourMenuId();
+    logUserJourney({
+      eventType: 'tour_step_view',
+      stepKey: step.id,
+      menuId: menuId,
+      accessLink: '/competency-dashboard',
+    }).catch(err => console.error('JourneyLogger: Error logging tour step view:', err));
+  });
+
+  tour.on('complete', () => {
+    console.log('Tour completed - logging journey');
+    const menuId = getTourMenuId();
+    logUserJourney({
+      eventType: 'tour_step_complete',
+      stepKey: isUsingAPI ? tourStepsFromAPI[tourStepsFromAPI.length - 1]?.on_click : 'tour_complete',
+      menuId: menuId,
+      accessLink: '/competency-dashboard',
+    }).catch(err => console.error('JourneyLogger: Error logging tour complete:', err));
+
+    // Mark tour as completed
+    setTourCompleted();
+  });
+
+  tour.on('cancel', () => {
+    console.log('Tour cancelled/skipped - logging journey');
+    const menuId = getTourMenuId();
+    logUserJourney({
+      eventType: 'tour_skipped',
+      stepKey: 'tour_skipped',
+      menuId: menuId,
+      accessLink: '/competency-dashboard',
+    }).catch(err => console.error('JourneyLogger: Error logging tour skip:', err));
   });
 
   return tour;

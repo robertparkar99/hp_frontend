@@ -1,5 +1,6 @@
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo, setCurrentPageMenuId } from '../../utils/journeyLogger';
 
 export interface TourStep {
     id: string;
@@ -25,6 +26,7 @@ export interface TourStep {
         hide?: () => void;
     };
     pageUrl?: string;  // Page URL to navigate to when this step is shown
+    menuId?: string;   // Menu ID for the current step
 }
 
 export interface SectionItem {
@@ -83,6 +85,25 @@ export class SidebarTourGuide {
         if (element) {
             element.style.animation = 'pulse 2s infinite';
         }
+
+        // 3️⃣ Log tour step view journey event
+        const { menuId: currentMenuId, accessLink } = getPageInfo();
+        const stepId = currentStep.id || `step-${stepIndex}`;
+
+        // Get menuId from step options (prioritize step's menuId)
+        const stepMenuIdFromStep = (currentStep as any).options?.menuId || (currentStep as any).menuId;
+
+        // Use step's menuId if available, otherwise fall back to current page's menuId
+        const stepMenuId = stepMenuIdFromStep ?
+            (isNaN(parseInt(stepMenuIdFromStep, 10)) ? stepMenuIdFromStep : parseInt(stepMenuIdFromStep, 10)) :
+            currentMenuId;
+
+        logUserJourney({
+            eventType: "tour_step_view",
+            stepKey: stepId,
+            accessLink: accessLink,
+            menuId: stepMenuId,
+        }).catch(console.error);
     };
 
     private handleHide = (event: any): void => {
@@ -101,14 +122,52 @@ export class SidebarTourGuide {
         const steps = this.tour?.steps || [];
         const currentStepIndex = steps.findIndex((s: any) => s.id === currentStep.id);
 
+        // Log tour step complete journey event
+        const { menuId: currentMenuId, accessLink } = getPageInfo();
+        const stepId = currentStep.id || `step-${currentStepIndex}`;
+
+        // Get menuId from current step
+        const stepMenuIdFromStep = (currentStep as any).options?.menuId || (currentStep as any).menuId;
+        const stepMenuId = stepMenuIdFromStep ?
+            (isNaN(parseInt(stepMenuIdFromStep, 10)) ? stepMenuIdFromStep : parseInt(stepMenuIdFromStep, 10)) :
+            currentMenuId;
+
+        logUserJourney({
+            eventType: "tour_step_complete",
+            stepKey: stepId,
+            accessLink: accessLink,
+            menuId: stepMenuId,
+        }).catch(console.error);
+
         // If there's a next step with pageUrl, navigate to it
         if (currentStepIndex >= 0 && currentStepIndex < steps.length - 1) {
             const nextStep = steps[currentStepIndex + 1];
-            // Access pageUrl from the step options (custom property we added)
+            // Access pageUrl and menuId from the step options
             const nextPageUrl = (nextStep as any).options?.pageUrl || (nextStep as any).pageUrl;
+            const nextMenuIdFromStep = (nextStep as any).options?.menuId || (nextStep as any).menuId;
 
             if (nextPageUrl) {
                 console.log('[SidebarTour] Step completed, navigating to next page:', nextPageUrl);
+
+                // Log the page visit with the DESTINATION URL and its menuId
+                // Convert nextMenuId to appropriate format (number if numeric, string if not)
+                let numericNextMenuId: string | number | undefined = undefined;
+                if (nextMenuIdFromStep) {
+                    numericNextMenuId = isNaN(parseInt(nextMenuIdFromStep, 10))
+                        ? nextMenuIdFromStep
+                        : parseInt(nextMenuIdFromStep, 10);
+                }
+
+                logUserJourney({
+                    eventType: "page_visit",
+                    accessLink: nextPageUrl,
+                    menuId: numericNextMenuId,
+                }).catch(console.error);
+
+                // Set the current page menuId for journey logging
+                if (numericNextMenuId !== undefined) {
+                    setCurrentPageMenuId(numericNextMenuId);
+                }
 
                 // Update paused step index to next step
                 this.pausedStepIndex = currentStepIndex + 1;
@@ -218,13 +277,6 @@ export class SidebarTourGuide {
 
         console.log('Starting sidebar tour from step:', stepIndex);
 
-        // Ensure the dashboard element exists before starting
-        // if (!document.querySelector('#tour-dashboard')) {
-        //     console.log('Dashboard element not found, delaying tour start');
-        //     setTimeout(() => this.startTourFromStep(stepIndex), 1000);
-        //     return;
-        // }
-
         // Load paused step from localStorage if stepIndex is 0 but we have a saved paused step
         if (stepIndex === 0) {
             const savedPausedStep = parseInt(localStorage.getItem(SidebarTourGuide.PAUSED_STEP_KEY) || '0', 10);
@@ -269,6 +321,15 @@ export class SidebarTourGuide {
             if (!this.isPaused) {
                 this.isActive = false;
                 this.clearTourState();
+
+                // Log tour skipped journey event
+                const { menuId, accessLink } = getPageInfo();
+                logUserJourney({
+                    eventType: "tour_skipped",
+                    stepKey: "cancelled",
+                    accessLink: accessLink,
+                    menuId: menuId,
+                }).catch(console.error);
             }
         });
 
@@ -300,257 +361,127 @@ export class SidebarTourGuide {
         const steps: TourStep[] = [];
         let currentStepIndex = 0;
 
-        // Helper function to get next step index and create "Next" action with page navigation
-        const createNextAction = () => {
-            const nextIndex = currentStepIndex + 1;
-            return () => {
-                const tourSteps = this.tour?.steps || [];
-                const nextStep = tourSteps[nextIndex];
-                const nextPageUrl = (nextStep as any).pageUrl;
+        // Helper function to get the trigger value based on URL
+        const getTriggerValueFromUrl = (url: string): string => {
+            // Convert URL to lowercase for case-insensitive matching
+            const urlLower = url.toLowerCase();
 
-                // Save paused step index before navigation
-                this.pausedStepIndex = nextIndex;
-                localStorage.setItem(SidebarTourGuide.PAUSED_STEP_KEY, String(nextIndex));
-
-                if (nextPageUrl) {
-                    console.log('[SidebarTour] Next button clicked, navigating to:', nextPageUrl);
-
-                    // Clear all page tour completed flags before navigating
-                    // This ensures tours will run when triggered from sidebar
-                    sessionStorage.removeItem('leaveTypeTourCompleted');
-                    sessionStorage.removeItem('myLeaveTourCompleted');
-                    sessionStorage.removeItem('organizationDashboardTourCompleted');
-                    sessionStorage.removeItem('organizationProfileTourCompleted');
-                    sessionStorage.removeItem('attendanceDashboardTourCompleted');
-                    sessionStorage.removeItem('skillLibraryTourCompleted');
-                    sessionStorage.removeItem('holidayMasterTourCompleted');
-                    sessionStorage.removeItem('payrollTypesTourCompleted');
-                    sessionStorage.removeItem('payrollDeductionTourCompleted');
-                    sessionStorage.removeItem('salaryCertificateTourCompleted');
-                    sessionStorage.removeItem('monthlyPayrollTourCompleted');
-
-                    // Determine the trigger value based on the destination page
-                    let triggerValue = 'true';
-                    if (nextPageUrl.includes('/MyLearningDashboard') || nextPageUrl.includes('my-learning-dashboard') || nextPageUrl.includes('LMS/MyLearning')) {
-                        triggerValue = 'my-learning-dashboard';
-                    }
-                    else if (nextPageUrl.includes('/organization-dashboard')) {
-                        triggerValue = 'organization-dashboard';
-                    } else if (nextPageUrl.includes('/organization-profile')) {
-                        triggerValue = 'organization-profile';
-                    } else if (nextPageUrl.includes('/activityStream') || nextPageUrl.includes('/activity-stream') || nextPageUrl.includes('/task/activityStream')) {
-                        triggerValue = 'activity-stream';
-                    } else if (nextPageUrl.includes('/taskList') || nextPageUrl.includes('/task/taskList') || nextPageUrl.includes('/task/list') || nextPageUrl.includes('/task-management')) {
-                        triggerValue = 'task-list';
-                    } else if (nextPageUrl.includes('taskActivityStream') || nextPageUrl.includes('task/activity')) {
-                        triggerValue = 'task-activity';
-                    } else if (nextPageUrl.includes('/user') || nextPageUrl.includes('employee-directory')) {
-                        triggerValue = 'employee-directory';
-                    } else if (nextPageUrl.includes('/Libraries/LOR')) {
-                        triggerValue = 'learning-object-repository';
-                    } else if (nextPageUrl.includes('/HRIT-Dashboard')) {
-                        triggerValue = 'HRIT-dashboard';
-                    }
-                    else if (nextPageUrl === '/' || (nextPageUrl.includes('Dashboard') && !nextPageUrl.includes('MyLearningDashboard'))) {
-                        triggerValue = 'dashboard';
-                    }
-                    else if (nextPageUrl.includes('/my-attendance') || nextPageUrl.includes('/attendance')) {
-                        triggerValue = 'attendance-dashboard';
-                    }
-                    else if (nextPageUrl.includes('/User-Attendance')) {
-                        triggerValue = 'user-attendance';
-                    }
-                    else if (nextPageUrl.includes('/AttendanceReport')) {
-                        triggerValue = 'attendance-report';
-                    }
-                    else if (nextPageUrl.includes('/EarlyGoingReport') || nextPageUrl.includes('/early-going') || nextPageUrl.includes('/earlygoing')) {
-                        triggerValue = 'early-going';
-                    }
-                    else if (nextPageUrl.includes('/DepartmentWiseReport')) {
-                        triggerValue = 'department-wise-report';
-                    }
-                    else if (nextPageUrl.includes('/Leave-Management/ApplyLeave') || nextPageUrl.includes('apply-leave')) {
-                        triggerValue = 'apply-leave';
-                    }
-                    else if (nextPageUrl.includes('/Leave-Management/Leave-Authorisation') || nextPageUrl.includes('leave-authorisation') || nextPageUrl.includes('Leave-Authorisation')) {
-                        triggerValue = 'leave-authorisation';
-                    }
-                    else if (nextPageUrl.includes('/Leave-Management/My-Leave') || nextPageUrl.includes('my-leave')) {
-                        triggerValue = 'my-leave';
-                    }
-                    else if (nextPageUrl.includes('/Leave-Management/Leave-Type') || nextPageUrl.includes('leave-type') || nextPageUrl.includes('Leave-Type')) {
-                        triggerValue = 'leave-type';
-                    }
-                    else if (nextPageUrl.includes('/Leave-Management/Leave-Allocation') || nextPageUrl.includes('leave-allocation') || nextPageUrl.includes('Leave-Allocation')) {
-                        triggerValue = 'leave-allocation';
-                    }
-                    else if (nextPageUrl.includes('/Leave-Management/Holiday-Master') || nextPageUrl.includes('holiday-master') || nextPageUrl.includes('Holiday-Master')) {
-                        triggerValue = 'holiday-master';
-                    }
-                    else if (nextPageUrl.includes('/Payroll/Payroll-type') || nextPageUrl.includes('payroll-type') || nextPageUrl.includes('Payroll-Type')) {
-                        triggerValue = 'payroll-types';
-                    }
-                    else if (nextPageUrl.includes('/Payroll/Payroll-Deduction') || nextPageUrl.includes('payroll-deduction') || nextPageUrl.includes('Payroll-Deduction')) {
-                        triggerValue = 'payroll-deduction';
-                    }
-                    else if (nextPageUrl.includes('/Payroll/Salary-Structure') || nextPageUrl.includes('salary-structure') || nextPageUrl.includes('Salary-Structure')) {
-                        triggerValue = 'salary-structure';
-                    }
-                    else if (nextPageUrl.includes('/Payroll/form-16') || nextPageUrl.includes('form-16') || nextPageUrl.includes('Form-16')) {
-                        triggerValue = 'form-16';
-                    }
-                    else if (nextPageUrl.includes('/Payroll/Salary-Certificate') || nextPageUrl.includes('salary-certificate') || nextPageUrl.includes('Salary-Certificate')) {
-                        triggerValue = 'salary-certificate';
-                    }
-                    else if (nextPageUrl.includes('/Payroll/Monthly-Payroll') || nextPageUrl.includes('monthly-payroll') || nextPageUrl.includes('Monthly-Payroll')) {
-                        triggerValue = 'monthly-payroll';
-                    }
-                    // 🎓 Learning Catalog trigger
-                    else if (nextPageUrl.includes('/LMS/dashboard') || nextPageUrl.includes('learning-catalog') || nextPageUrl.includes('/content/LMS')) {
-                        triggerValue = 'learning-catalog';
-                    }
-                    // 📝 Assessment Library trigger
-                    else if (nextPageUrl.includes('/Assessment-Library') || nextPageUrl.includes('/assessment-library') || nextPageUrl.includes('Assessment-Library')) {
-                        triggerValue = 'assessment-library';
-                    }
-                    // 🎯 Recruitment Management trigger
-                    else if (nextPageUrl.includes('/Recruitment-management') || nextPageUrl.includes('/recruitment-management') || nextPageUrl.includes('Recruitment-Management')) {
-                        triggerValue = 'recruitment-management';
-                    }
-                    // 🎯 Manager Hub trigger
-                    else if (nextPageUrl.includes('/ManagerHub') || nextPageUrl.includes('/manager-hub') || nextPageUrl.includes('Manager-Hub')) {
-                        triggerValue = 'manager-hub';
-                    }
-                    // 🎯 Offer Management trigger
-                    else if (nextPageUrl.includes('/Offer-management') || nextPageUrl.includes('/offer-management') || nextPageUrl.includes('Offer-Management')) {
-                        triggerValue = 'offer-management';
-                    }
-                    // 🎯 Candidate Portal trigger
-                    else if (nextPageUrl.includes('/JobPortal') || nextPageUrl.includes('/job-portal') || nextPageUrl.includes('Job-Portal')) {
-                        triggerValue = 'candidate-portal';
-                    }
-                    // 🎯 Interview Management trigger
-                    else if (nextPageUrl.includes('/Telent-management') || nextPageUrl.includes('/Talent-management') || nextPageUrl.includes('/interview-management') || nextPageUrl.includes('/Interview-Management')) {
-                        triggerValue = 'interview-management';
-                    }
-
-
-                    // Set flag to trigger page tour on destination page using sessionStorage
-                    sessionStorage.setItem('triggerPageTour', triggerValue);
-
-                    if (this.navigateToPage) {
-                        this.navigateToPage(nextPageUrl);
-                    } else {
-                        window.location.href = nextPageUrl;
-                    }
-                } else {
-                    this.tour?.next();
-                }
-            };
+            if (urlLower.includes('/mylearningdashboard') || url.includes('/MyLearningDashboard') || url.includes('my-learning-dashboard') || url.includes('LMS/MyLearning')) {
+                return 'my-learning-dashboard';
+            } else if (url.includes('/organization-dashboard')) {
+                return 'organization-dashboard';
+            } else if (url.includes('/organization-profile')) {
+                return 'organization-profile';
+            } else if (url.includes('/activityStream') || url.includes('/activity-stream') || url.includes('/task/activityStream')) {
+                return 'activity-stream';
+            } else if (url.includes('/taskList') || url.includes('/task/taskList') || url.includes('/task/list') || url.includes('/task-management') || url.includes('/content/task') || url.includes('/content/task')) {
+                return 'task-list';
+            } else if (url.includes('taskActivityStream') || url.includes('task/activity')) {
+                return 'task-activity';
+            } else if (url.includes('content/user') || url.includes('/user')) {
+                return 'employee-directory';
+            } else if (url.includes('/Libraries/LOR')) {
+                return 'learning-object-repository';
+            } else if (url.includes('/HRIT-Dashboard')) {
+                return 'HRIT-dashboard';
+            } else if (url === '/' || (url.includes('Dashboard') && !url.includes('MyLearningDashboard'))) {
+                return 'dashboard';
+            } else if (url.includes('/my-attendance') || url.includes('/attendance')) {
+                return 'attendance-dashboard';
+            } else if (url.includes('/User-Attendance')) {
+                return 'user-attendance';
+            } else if (url.includes('/AttendanceReport')) {
+                return 'attendance-report';
+            } else if (url.includes('/EarlyGoingReport') || url.includes('/early-going') || url.includes('/earlygoing')) {
+                return 'early-going';
+            } else if (url.includes('/DepartmentWiseReport')) {
+                return 'department-wise-report';
+            } else if (url.includes('/Leave-Management/ApplyLeave') || url.includes('apply-leave')) {
+                return 'apply-leave';
+            } else if (url.includes('/Leave-Management/Leave-Authorisation') || url.includes('leave-authorisation') || url.includes('Leave-Authorisation')) {
+                return 'leave-authorisation';
+            } else if (url.includes('/Leave-Management/My-Leave') || url.includes('my-leave')) {
+                return 'my-leave';
+            } else if (url.includes('/Leave-Management/Leave-Type') || url.includes('leave-type') || url.includes('Leave-Type')) {
+                return 'leave-type';
+            } else if (url.includes('/Leave-Management/Leave-Allocation') || url.includes('leave-allocation') || url.includes('Leave-Allocation')) {
+                return 'leave-allocation';
+            } else if (url.includes('/Leave-Management/Holiday-Master') || url.includes('holiday-master') || url.includes('Holiday-Master')) {
+                return 'holiday-master';
+            } else if (url.includes('/Payroll/Payroll-type') || url.includes('payroll-type') || url.includes('Payroll-Type')) {
+                return 'payroll-types';
+            } else if (url.includes('/Payroll/Payroll-Deduction') || url.includes('payroll-deduction') || url.includes('Payroll-Deduction')) {
+                return 'payroll-deduction';
+            } else if (url.includes('/Payroll/Salary-Structure') || url.includes('salary-structure') || url.includes('Salary-Structure')) {
+                return 'salary-structure';
+            } else if (url.includes('/Payroll/form-16') || url.includes('form-16') || url.includes('Form-16')) {
+                return 'form-16';
+            } else if (url.includes('/Payroll/Salary-Certificate') || url.includes('salary-certificate') || url.includes('Salary-Certificate')) {
+                return 'salary-certificate';
+            } else if (url.includes('/Payroll/Monthly-Payroll') || url.includes('monthly-payroll') || url.includes('Monthly-Payroll')) {
+                return 'monthly-payroll';
+            } else if (url.includes('/LMS/dashboard') || url.includes('learning-catalog') || url.includes('/content/LMS')) {
+                return 'learning-catalog';
+            } else if (urlLower.includes('/assessment-library') || url.includes('/content/LMS/Assessment-Library') || url.includes('Assessment-Library')) {
+                console.log('[SidebarTour] Detected Assessment Library URL, setting trigger to: assessment-library');
+                return 'assessment-library';
+            } else if (url.includes('/Recruitment-management') || url.includes('/recruitment-management') || url.includes('Recruitment-Management')) {
+                return 'recruitment-management';
+            } else if (url.includes('/ManagerHub') || url.includes('/manager-hub') || url.includes('Manager-Hub')) {
+                return 'manager-hub';
+            } else if (url.includes('/Offer-management') || url.includes('/offer-management') || url.includes('Offer-Management')) {
+                return 'offer-management';
+            } else if (url.includes('/JobPortal') || url.includes('/job-portal') || url.includes('Job-Portal')) {
+                return 'candidate-portal';
+            } else if (url.includes('/Telent-management') || url.includes('/Talent-management') || url.includes('/interview-management') || url.includes('/Interview-Management')) {
+                return 'interview-management';
+            }
+            console.log('[SidebarTour] Unknown URL, setting trigger to: true');
+            return 'true';
         };
 
-        const nextMenuRedirect = (url: string) => {
+        // Helper function to create navigation action
+        const createNavigationAction = (url: string, menuId: string | null, isFromNextButton: boolean = false) => {
             return () => {
-                console.log('[SidebarTour] New button clicked, navigating to:', url);
+                console.log(`[SidebarTour] ${isFromNextButton ? 'Next' : 'View More'} button clicked, navigating to:`, url);
 
                 // Clear all page tour completed flags before navigating
-                // This ensures tours will run when triggered from sidebar
-                sessionStorage.removeItem('leaveTypeTourCompleted');
-                sessionStorage.removeItem('myLeaveTourCompleted');
-                sessionStorage.removeItem('organizationDashboardTourCompleted');
-                sessionStorage.removeItem('organizationProfileTourCompleted');
-                sessionStorage.removeItem('attendanceDashboardTourCompleted');
-                sessionStorage.removeItem('skillLibraryTourCompleted');
-                sessionStorage.removeItem('myLeaveTourCompleted');
-                sessionStorage.removeItem('holidayMasterTourCompleted');
-                sessionStorage.removeItem('payrollTypesTourCompleted');
-                sessionStorage.removeItem('payrollDeductionTourCompleted');
-                sessionStorage.removeItem('salaryCertificateTourCompleted');
-                sessionStorage.removeItem('monthlyPayrollTourCompleted');
+                const tourFlags = [
+                    'leaveTypeTourCompleted',
+                    'myLeaveTourCompleted',
+                    'organizationDashboardTourCompleted',
+                    'organizationProfileTourCompleted',
+                    'attendanceDashboardTourCompleted',
+                    'skillLibraryTourCompleted',
+                    'holidayMasterTourCompleted',
+                    'payrollTypesTourCompleted',
+                    'payrollDeductionTourCompleted',
+                    'salaryCertificateTourCompleted',
+                    'monthlyPayrollTourCompleted',
+                    'assessmentLibraryTourCompleted',
+                    'learningCatalogTourCompleted'
+                ];
+                tourFlags.forEach(flag => sessionStorage.removeItem(flag));
 
-                // Determine the trigger value based on the destination page
-                let triggerValue = 'true';
-                // Check for My Learning Dashboard first - before generic Dashboard check
-                if (url.includes('/MyLearningDashboard') || url.includes('my-learning-dashboard') || url.includes('LMS/MyLearning')) {
-                    triggerValue = 'my-learning-dashboard';
-                } else if (url.includes('organization-dashboard')) {
-                    triggerValue = 'organization-dashboard';
-                } else if (url.includes('organization-profile')) {
-                    triggerValue = 'organization-profile';
-                } else if (url.includes('activityStream') || url.includes('activity-stream') || url.includes('task/activityStream')) {
-                    triggerValue = 'activity-stream';
-                } else if (url.includes('taskList') || url.includes('task/taskList') || url.includes('task/list') || url.includes('/task') || url.includes('task-management')) {
-                    triggerValue = 'task-list';
-                } else if (url.includes('taskActivityStream') || url.includes('task/activity')) {
-                    triggerValue = 'task-activity';
-                } else if (url.includes('/user') || url.includes('employee-directory')) {
-                    triggerValue = 'employee-directory';
-                } else if (url.includes('/HRIT-Dashboard')) {
-                    triggerValue = 'HRIT-dashboard';
-                } else if (url === '/' || (url.includes('Dashboard') && !url.includes('MyLearningDashboard'))) {
-                    triggerValue = 'dashboard';
-                } else if (url.includes('/my-attendance') || url.includes('/attendance')) {
-                    triggerValue = 'attendance-dashboard';
-                } else if (url.includes('/User-Attendance')) {
-                    triggerValue = 'user-attendance';
-                } else if (url.includes('/AttendanceReport')) {
-                    triggerValue = 'attendance-report';
-                } else if (url.includes('/EarlyGoingReport') || url.includes('/early-going') || url.includes('/earlygoing')) {
-                    triggerValue = 'early-going';
-                } else if (url.includes('/DepartmentWiseReport')) {
-                    triggerValue = 'department-wise-report';
-                } else if (url.includes('/Leave-Management/ApplyLeave') || url.includes('apply-leave')) {
-                    triggerValue = 'apply-leave';
-                } else if (url.includes('/Leave-Management/Leave-Authorisation') || url.includes('leave-authorisation') || url.includes('Leave-Authorisation')) {
-                    triggerValue = 'leave-authorisation';
-                } else if (url.includes('/Leave-Management/My-Leave') || url.includes('My-Leave') || url.includes('my-leave')) {
-                    triggerValue = 'my-leave';
-                } else if (url.includes('/Leave-Management/Leave-Type') || url.includes('Leave-Type') || url.includes('leave-type')) {
-                    triggerValue = 'leave-type';
-                } else if (url.includes('/Leave-Management/Leave-Allocation') || url.includes('Leave-Allocation') || url.includes('leave-allocation')) {
-                    triggerValue = 'leave-allocation';
-                } else if (url.includes('/Leave-Management/Holiday-Master') || url.includes('holiday-master') || url.includes('Holiday-Master')) {
-                    triggerValue = 'holiday-master';
-                } else if (url.includes('/Payroll/Payroll-type') || url.includes('payroll-type') || url.includes('Payroll-Type')) {
-                    triggerValue = 'payroll-types';
-                } else if (url.includes('/Payroll/Payroll-Deduction') || url.includes('payroll-deduction') || url.includes('Payroll-Deduction')) {
-                    triggerValue = 'payroll-deduction';
-                } else if (url.includes('/Payroll/Salary-Structure') || url.includes('salary-structure') || url.includes('Salary-Structure')) {
-                    triggerValue = 'salary-structure';
-                } else if (url.includes('/Payroll/form-16') || url.includes('form-16') || url.includes('Form-16')) {
-                    triggerValue = 'form-16';
-                } else if (url.includes('/Payroll/Salary-Certificate') || url.includes('salary-certificate') || url.includes('Salary-Certificate')) {
-                    triggerValue = 'salary-certificate';
-                } else if (url.includes('/Payroll/Monthly-Payroll') || url.includes('monthly-payroll') || url.includes('Monthly-Payroll')) {
-                    triggerValue = 'monthly-payroll';
+                // Get trigger value based on destination URL
+                const triggerValue = getTriggerValueFromUrl(url);
+
+                // Log the page visit with the DESTINATION URL and its menuId
+                // Convert menuId to appropriate format
+                let formattedMenuId: string | number | undefined = undefined;
+                if (menuId) {
+                    formattedMenuId = isNaN(parseInt(menuId, 10)) ? menuId : parseInt(menuId, 10);
                 }
-                // 🎓 Learning Catalog trigger
-                else if (url.includes('/LMS/dashboard') || url.includes('learning-catalog') || url.includes('/content/LMS')) {
-                    triggerValue = 'learning-catalog';
-                }
-                // 📝 Assessment Library trigger
-                else if (url.includes('/Assessment-Library') || url.includes('/assessment-library') || url.includes('Assessment-Library')) {
-                    triggerValue = 'assessment-library';
-                }
-                // 🎯 Recruitment Management trigger
-                else if (url.includes('/Recruitment-management') || url.includes('/recruitment-management') || url.includes('Recruitment-Management')) {
-                    triggerValue = 'recruitment-management';
-                }
-                // 🎯 Manager Hub trigger
-                else if (url.includes('/ManagerHub') || url.includes('/manager-hub') || url.includes('Manager-Hub')) {
-                    triggerValue = 'manager-hub';
-                }
-                // 🎯 Offer Management trigger
-                else if (url.includes('/Offer-management') || url.includes('/offer-management') || url.includes('Offer-Management')) {
-                    triggerValue = 'offer-management';
-                }
-                // 🎯 Candidate Portal trigger
-                else if (url.includes('/JobPortal') || url.includes('/job-portal') || url.includes('Job-Portal')) {
-                    triggerValue = 'candidate-portal';
-                }
-                // 🎯 Interview Management trigger
-                else if (url.includes('/Telent-management') || url.includes('/Talent-management') || url.includes('/interview-management') || url.includes('/Interview-Management')) {
-                    triggerValue = 'interview-management';
+
+                logUserJourney({
+                    eventType: "page_visit",
+                    accessLink: url,
+                    menuId: formattedMenuId,
+                }).catch(console.error);
+
+                // Set the current page menuId for journey logging
+                if (formattedMenuId !== undefined) {
+                    setCurrentPageMenuId(formattedMenuId);
                 }
 
                 // Set flag to trigger page tour on destination page using sessionStorage
@@ -568,19 +499,45 @@ export class SidebarTourGuide {
                 // Store the paused step index for resuming
                 localStorage.setItem(SidebarTourGuide.PAUSED_STEP_KEY, String(this.pausedStepIndex));
 
-                window.location.href = url;
+                if (this.navigateToPage) {
+                    this.navigateToPage(url);
+                } else {
+                    window.location.href = url;
+                }
+            };
+        };
+
+        // Helper function to create "Next" action
+        const createNextAction = (menuId: string | null) => {
+            const nextIndex = currentStepIndex + 1;
+            return () => {
+                const tourSteps = this.tour?.steps || [];
+                const nextStep = tourSteps[nextIndex];
+                const nextPageUrl = (nextStep as any).pageUrl;
+                const nextMenuId = (nextStep as any).menuId || menuId;
+
+                // Save paused step index before navigation
+                this.pausedStepIndex = nextIndex;
+                localStorage.setItem(SidebarTourGuide.PAUSED_STEP_KEY, String(nextIndex));
+
+                if (nextPageUrl) {
+                    createNavigationAction(nextPageUrl, nextMenuId, true)();
+                } else {
+                    this.tour?.next();
+                }
             };
         };
 
         // Welcome step
         steps.push({
-            id: '',
+            id: 'welcome',
             title: 'Welcome to Your Dashboard!',
             text: 'Let\'s take a quick tour to help you navigate through all the amazing features available to you.',
             attachTo: {
                 element: '',
                 on: 'bottom'
             },
+            menuId: 'welcome',
             buttons: [
                 {
                     text: 'Skip Tour',
@@ -589,7 +546,7 @@ export class SidebarTourGuide {
                 },
                 {
                     text: 'Start Tour',
-                    action: createNextAction()
+                    action: createNextAction('welcome')
                 }
             ]
         });
@@ -597,17 +554,18 @@ export class SidebarTourGuide {
 
         // Header step
         steps.push({
-            id: '',
-            title: ' Main Header',
+            id: 'header',
+            title: 'Main Header',
             text: 'This is your main header showing your welcome message and search functionality. Use the search bar to quickly find employees.',
             attachTo: {
                 element: '',
                 on: 'bottom'
             },
+            menuId: 'header',
             buttons: [
                 {
                     text: 'Next',
-                    action: createNextAction()
+                    action: createNextAction('header')
                 }
             ]
         });
@@ -622,14 +580,15 @@ export class SidebarTourGuide {
                 element: '#tour-dashboard',
                 on: 'right'
             },
+            menuId: '___dashboard___',
             buttons: [
                 {
                     text: 'Got it!',
-                    action: createNextAction()
+                    action: createNextAction('___dashboard___')
                 },
                 {
                     text: 'View More',
-                    action: nextMenuRedirect('/'),
+                    action: createNavigationAction('/', '___dashboard___', false),
                 }
             ],
             advanceOn: {
@@ -656,14 +615,15 @@ export class SidebarTourGuide {
                 : undefined;
 
             steps.push({
-                id: 'organization-management-section',
-                title: ' Organization Management',
+                id: `organization-management-section-${orgManagementSection.key}`,
+                title: 'Organization Management',
                 text: 'This is the Organization Management section. Click on it to expand and see the available options.',
                 attachTo: {
                     element: `#tour-section-${orgManagementSection.key}`,
                     on: 'right'
                 },
                 pageUrl: orgAccessLink,
+                menuId: orgManagementSection.key,
                 beforeShowPromise: () => {
                     if (this.expandSidebar) this.expandSidebar();
                     return new Promise(resolve => setTimeout(resolve, 500));
@@ -671,11 +631,11 @@ export class SidebarTourGuide {
                 buttons: [
                     {
                         text: 'Next',
-                        action: createNextAction()
+                        action: createNextAction(orgManagementSection.key)
                     },
                     {
                         text: 'View More',
-                        action: nextMenuRedirect(orgAccessLink || ''),
+                        action: createNavigationAction(orgAccessLink || '', orgManagementSection.key, false),
                     }
                 ],
                 advanceOn: {
@@ -692,14 +652,15 @@ export class SidebarTourGuide {
 
         if (orgManagementSection && orgDetailSubItem) {
             steps.push({
-                id: 'organization-detail-submenu',
-                title: ' Organization Detail',
+                id: `organization-detail-submenu-${orgDetailSubItem.key}`,
+                title: 'Organization Detail',
                 text: 'This is the Organization Detail submenu. Click on it to view organization details and manage settings.',
                 attachTo: {
                     element: `#tour-sub-${orgDetailSubItem.key}`,
                     on: 'right'
                 },
                 pageUrl: '/content/organization-dashboard',
+                menuId: orgDetailSubItem.key,
                 beforeShowPromise: async () => {
                     // Only expand sidebar and highlight - no page navigation (pageUrl handles it)
                     if (this.expandSidebar) {
@@ -740,7 +701,7 @@ export class SidebarTourGuide {
                 buttons: [
                     {
                         text: 'Next',
-                        action: createNextAction()
+                        action: createNextAction(orgDetailSubItem.key)
                     }
                 ]
             });
@@ -768,6 +729,7 @@ export class SidebarTourGuide {
                         on: 'right'
                     },
                     pageUrl: sectionAccessLink,
+                    menuId: section.key,
                     beforeShowPromise: () => {
                         if (this.expandSidebar) this.expandSidebar();
                         if (this.expandSection) this.expandSection(section.key);
@@ -777,11 +739,11 @@ export class SidebarTourGuide {
                     buttons: [
                         {
                             text: 'Next',
-                            action: createNextAction()
+                            action: createNextAction(section.key)
                         },
                         {
                             text: 'View More',
-                            action: nextMenuRedirect(sectionAccessLink || ''),
+                            action: createNavigationAction(sectionAccessLink || '', section.key, false),
                         }
                     ]
                 });
@@ -798,7 +760,7 @@ export class SidebarTourGuide {
                     const pageUrl = subItem.access_link ? (subItem.access_link.startsWith('/') ? subItem.access_link : `/${subItem.access_link}`) : undefined;
                     steps.push({
                         id: `sub-${subItem.key}`,
-                        title: ` ${subItem.label}`,
+                        title: `${subItem.label}`,
                         text: `${subItem.label} ${hasSubSubItems ? 'has additional sub-options' : 'takes you to a dedicated page'}. ${this.getSubItemDescription(subItem)}`,
                         level: 2, // 👈 Level 2 - NO Detail Tour button
                         attachTo: {
@@ -806,6 +768,7 @@ export class SidebarTourGuide {
                             on: 'right'
                         },
                         pageUrl: pageUrl,
+                        menuId: subItem.key,
                         beforeShowPromise: () => {
                             // Only expand sidebar and highlight - no page navigation
                             if (this.expandSidebar) this.expandSidebar();
@@ -817,7 +780,7 @@ export class SidebarTourGuide {
                         buttons: [
                             {
                                 text: isLastSubItem ? 'New Section' : 'Next',
-                                action: createNextAction()
+                                action: createNextAction(subItem.key)
                             }
                         ].filter(Boolean) as any,
                         advanceOn: hasSubSubItems ? undefined : {
@@ -836,7 +799,7 @@ export class SidebarTourGuide {
 
                         steps.push({
                             id: `subsub-${subSubItem.key}`,
-                            title: ` ${subSubItem.label}`,
+                            title: `${subSubItem.label}`,
                             text: `This is ${subSubItem.label} - a specific feature within ${subItem.label}. ${this.getSubSubItemDescription(subSubItem)}`,
                             level: 3, // 👈 Level 3 - shows Detail Tour button
                             attachTo: {
@@ -844,6 +807,7 @@ export class SidebarTourGuide {
                                 on: 'right'
                             },
                             pageUrl: subSubPageUrl,
+                            menuId: subSubItem.key,
                             beforeShowPromise: () => {
                                 // Only expand sidebar and highlight - no page navigation
                                 if (this.expandSidebar) this.expandSidebar();
@@ -855,11 +819,11 @@ export class SidebarTourGuide {
                             buttons: [
                                 {
                                     text: 'Next',
-                                    action: createNextAction()
+                                    action: createNextAction(subSubItem.key)
                                 },
                                 {
                                     text: 'View More',
-                                    action: nextMenuRedirect(subSubPageUrl || ''),
+                                    action: createNavigationAction(subSubPageUrl || '', subSubItem.key, false),
                                 }
                             ],
                             advanceOn: {
@@ -877,12 +841,13 @@ export class SidebarTourGuide {
                 const nextSection = this.sections[sectionIndex + 1];
                 steps.push({
                     id: `section-complete-${section.key}`,
-                    title: ` ${section.label} Complete!`,
+                    title: `${section.label} Complete!`,
                     text: `Great! You've explored the ${section.label} section. Let's move on to the next category.`,
                     attachTo: {
                         element: `#tour-section-${section.key}`,
                         on: 'right'
                     },
+                    menuId: section.key,
                     beforeShowPromise: () => {
                         if (this.expandSidebar) this.expandSidebar();
                         if (this.expandSection) this.expandSection(section.key);
@@ -892,7 +857,7 @@ export class SidebarTourGuide {
                     buttons: [
                         {
                             text: 'Next',
-                            action: createNextAction()
+                            action: createNextAction(section.key)
                         }
                     ]
                 });
@@ -909,13 +874,14 @@ export class SidebarTourGuide {
                 element: '#tour-dashboard',
                 on: 'right'
             },
+            menuId: '___dashboard___',
             beforeShowPromise: () => {
                 if (this.expandSidebar) this.expandSidebar();
                 return new Promise(resolve => setTimeout(resolve, 500));
             },
             buttons: [
                 {
-                    text: 'Next',
+                    text: 'Finish',
                     action: () => this.tour?.complete()
                 }
             ]
@@ -991,6 +957,15 @@ export class SidebarTourGuide {
 
         console.log('Starting sidebar tour');
 
+        // Log tour started journey event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: "tour_started",
+            stepKey: "welcome",
+            accessLink: accessLink,
+            menuId: menuId,
+        }).catch(console.error);
+
         this.tour = new Shepherd.Tour({
             defaultStepOptions: {
                 cancelIcon: {
@@ -1023,6 +998,15 @@ export class SidebarTourGuide {
             if (!this.isPaused) {
                 this.isActive = false;
                 this.clearTourState();
+
+                // Log tour skipped journey event
+                const { menuId, accessLink } = getPageInfo();
+                logUserJourney({
+                    eventType: "tour_skipped",
+                    stepKey: "cancelled",
+                    accessLink: accessLink,
+                    menuId: menuId,
+                }).catch(console.error);
             }
         });
 
@@ -1147,7 +1131,7 @@ export class SidebarTourGuide {
         // Store the paused step index for resuming
         localStorage.setItem(SidebarTourGuide.PAUSED_STEP_KEY, String(this.pausedStepIndex));
 
-        // // Navigate to the specified page with startTour parameter (default to Competency Library)
+        // Navigate to the specified page with startTour parameter
         const targetUrl = detailTourUrl || '/content/Libraries/skillLibrary?startTour=true';
 
         if (this.navigateToPage) {
@@ -1333,4 +1317,3 @@ if (typeof document !== 'undefined') {
     styleSheet.textContent = tourStyles;
     document.head.appendChild(styleSheet);
 }
-

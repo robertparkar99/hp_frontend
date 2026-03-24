@@ -14,6 +14,7 @@ export interface LearningDashboardTourStep {
         element: string;
         on: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end' | 'left-start' | 'left-end' | 'right-start' | 'right-end';
     };
+    scrollTo?: boolean | { behavior: 'smooth' | 'auto', block: 'start' | 'center' | 'end' };
     buttons?: Array<{
         text: string;
         action: () => void;
@@ -316,6 +317,7 @@ export const createLearningDashboardTourSteps = (tourInstance: Shepherd.Tour): L
                 element: '#tour-learning-calendar',
                 on: 'top'
             },
+            scrollTo: true,
             buttons: [
                 {
                     text: 'Previous',

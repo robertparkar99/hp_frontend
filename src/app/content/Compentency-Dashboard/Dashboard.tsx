@@ -8,7 +8,7 @@ import AlignmentWidget from "./Alignment-Standardization";
 import CombinedDashboard from "./Competency-HealthRadar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, Users, Calendar, Target, ChevronDown, TrendingDown, Minus, Filter, Briefcase } from "lucide-react";
-import { initializeTour, isTourCompleted, resetTour } from "./CompetencyDashboardTour";
+import { initializeTour, isTourCompleted, resetTour, useTourStepsFromAPI } from "./CompetencyDashboardTour";
 
 // UI Components (simplified versions for single file)
 const Badge = ({ className, variant, children, ...props }: any) => (
@@ -676,29 +676,50 @@ const DrillDownPanel = ({ selectedRole }: any) => {
 export default function MainDashboard() {
   const [activeTab, setActiveTab] = useState("balance-equity");
 
+  // Fetch tour steps from API
+  const { tourStepsFromAPI, isLoading: isTourLoading } = useTourStepsFromAPI(182);
+
   useEffect(() => {
     setActiveTab("balance-equity");
   }, []);
 
-  // Initialize tour only when triggered via sidebar tour flow
+  // Initialize tour only when triggered via sidebar tour flow OR automatically when data is available
   useEffect(() => {
+    // Skip if tour already completed
+    if (isTourCompleted()) {
+      return;
+    }
+
     // Check if tour was triggered via sidebar tour flow
     const triggerTour = sessionStorage.getItem('triggerPageTour');
 
-    if (triggerTour && !isTourCompleted()) {
-      // Clear the trigger flag immediately to prevent re-triggering
-      sessionStorage.removeItem('triggerPageTour');
+    // Start tour if triggered OR if we have API data and session is ready
+    if (triggerTour || tourStepsFromAPI.length > 0) {
+      // Clear the trigger flag if present
+      if (triggerTour) {
+        sessionStorage.removeItem('triggerPageTour');
+      }
 
       const timer = setTimeout(() => {
-        // Pass setActiveTab as tab switcher callback
-        const tour = initializeTour((tabId: string) => {
-          setActiveTab(tabId);
-        });
-        tour.start();
+        // Wait for API data to load, then initialize tour
+        const startTour = () => {
+          console.log('[Dashboard] Starting tour with', tourStepsFromAPI.length, 'API steps');
+          // Pass setActiveTab as tab switcher callback and include API tour steps
+          const tour = initializeTour((tabId: string) => {
+            setActiveTab(tabId);
+          }, tourStepsFromAPI);
+          tour.start();
+        };
+
+        // If API data is already loaded, start tour immediately
+        // Otherwise wait for it to load
+        if (tourStepsFromAPI.length > 0 || isTourLoading === false) {
+          startTour();
+        }
       }, 1000); // Delay to allow elements to render
       return () => clearTimeout(timer);
     }
-  }, [setActiveTab]);
+  }, [setActiveTab, tourStepsFromAPI, isTourLoading]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -725,7 +746,7 @@ export default function MainDashboard() {
             resetTour();
             const tour = initializeTour((tabId: string) => {
               setActiveTab(tabId);
-            });
+            }, tourStepsFromAPI);
             tour.start();
           }}
           className="text-xs text-blue-500 hover:text-blue-700 underline"

@@ -1,12 +1,97 @@
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger';
+
+// Interface for API tour step data
+interface ManagerHubTourStepData {
+    on_click: string;
+    title: string;
+    description: string;
+}
+
+// Helper function to get user data from localStorage
+const getUserData = (): { url: string; token: string; subInstituteId: string } | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+            const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+            return {
+                url: APP_URL,
+                token,
+                subInstituteId: String(sub_institute_id)
+            };
+        }
+    } catch (e) {
+        console.error('[ManagerHubTour] Error getting userData:', e);
+    }
+    return null;
+};
+
+// Fetch tour steps from API for Manager Hub page (menu_id=56)
+export const fetchManagerHubTourStepsFromAPI = async (): Promise<ManagerHubTourStepData[]> => {
+    const userData = getUserData();
+    if (!userData) {
+        console.log('[ManagerHubTour] No userData available');
+        return [];
+    }
+
+    try {
+        // Using menu_id=56 for Manager Hub page
+        const apiUrl = `${userData.url}/table_data?table=Onboarding_tour_details&filters[menu_id]=56&token=${userData.token}&sub_institute_id=${userData.subInstituteId}`;
+        console.log('[ManagerHubTour] Fetching tour steps from API:', apiUrl);
+
+        const res = await fetch(apiUrl);
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch tour steps: ${res.status}`);
+        }
+
+        const json = await res.json();
+        console.log('[ManagerHubTour] Raw API response:', json);
+
+        // Handle different response formats
+        let tourData: ManagerHubTourStepData[] = [];
+
+        if (Array.isArray(json)) {
+            tourData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+            tourData = json.data;
+        } else if (json.result && Array.isArray(json.result)) {
+            tourData = json.result;
+        } else if (json.response && Array.isArray(json.response)) {
+            tourData = json.response;
+        } else if (typeof json === 'object') {
+            for (const key of Object.keys(json)) {
+                if (Array.isArray(json[key])) {
+                    tourData = json[key];
+                    console.log(`[ManagerHubTour] Found array data in response.${key}`);
+                    break;
+                }
+            }
+        }
+
+        // Normalize field names
+        const normalizedTourData = tourData.map((step: any) => ({
+            on_click: step.on_click || step.onClick || step.step_key || step.stepKey || step.id,
+            title: step.title || step.Title || step.name || step.step_title || step.stepTitle || '',
+            description: step.description || step.Description || step.text || step.Text || step.content || step.step_description || ''
+        }));
+
+        console.log('[ManagerHubTour] Parsed tour data:', normalizedTourData);
+        return normalizedTourData;
+    } catch (error) {
+        console.error('[ManagerHubTour] Error fetching tour steps:', error);
+        return [];
+    }
+};
 
 // Tour step configuration
 export interface ManagerHubTourStep {
     id: string;
     title: string;
     text: string;
-    attachTo: {
+    attachTo?: {
         element: string;
         on: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end' | 'left-start' | 'left-end' | 'right-start' | 'right-end';
     };
@@ -24,6 +109,18 @@ export type TourTabType = 'interviews' | 'offers' | 'team';
 
 // Custom event name for tab switching
 const TAB_SWITCH_EVENT = 'managerhub-tab-switch';
+
+// Helper function to get Manager Hub menu ID for journey logging
+const getManagerHubMenuId = (): number => {
+    // Try to get from page info first
+    const pageInfo = getPageInfo();
+    if (pageInfo.menuId > 0) {
+        return pageInfo.menuId;
+    }
+    // Default menu ID for Manager Hub (Talent Management > Manager Hub)
+    // This should be configured based on actual menu ID from the sidebar
+    return 23; // Default to a specific menu ID - update based on actual configuration
+};
 
 // Helper function to switch tabs by dispatching custom event
 export const switchManagerHubTab = (tabValue: string): void => {
@@ -429,12 +526,21 @@ const createTeamTabSteps = (): ManagerHubTourStep[] => [
 ];
 
 // Define all tour steps (full tour - backward compatible)
-const createTourSteps = (): ManagerHubTourStep[] => {
+const createTourSteps = (apiStepsFromAPI: ManagerHubTourStepData[] = []): ManagerHubTourStep[] => {
+    // Create a map of on_click to API step for easy lookup
+    const apiStepsMap = new Map();
+    apiStepsFromAPI.forEach((step: ManagerHubTourStepData) => {
+        apiStepsMap.set(step.on_click, step);
+    });
+
+    console.log('[ManagerHubTour] createTourSteps - apiStepsFromAPI:', apiStepsFromAPI);
+    console.log('[ManagerHubTour] apiStepsMap:', apiStepsMap);
+
     return [
         {
-            id: 'welcome',
-            title: '👋 Welcome to Manager Dashboard!',
-            text: 'This dashboard helps you manage interview feedback, track offers, and monitor your hiring team. Let\'s explore all the features together.',
+            id: 'welcome-ManagerHub ',
+            title: apiStepsMap.get('welcome-ManagerHub')?.title || '👋 Welcome to Manager Dashboard!',
+            text: apiStepsMap.get('welcome-ManagerHub')?.description || 'This dashboard helps you manage interview feedback, track offers, and monitor your hiring team. Let\'s explore all the features together.',
             attachTo: {
                 element: '#tour-managerhub-title',
                 on: 'bottom'
@@ -460,8 +566,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'pending-approvals',
-            title: '⏳ Pending Approvals',
-            text: 'This card shows you how many requisitions are waiting for your approval. Click on it to see details.',
+            title: apiStepsMap.get('pending-approvals')?.title || '⏳ Pending Approvals',
+            text: apiStepsMap.get('pending-approvals')?.description || 'This card shows you how many requisitions are waiting for your approval. Click on it to see details.',
             attachTo: {
                 element: '#tour-pending-approvals',
                 on: 'bottom'
@@ -484,8 +590,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'interview-feedback-card',
-            title: '💬 Interview Feedback',
-            text: 'This card shows pending interview feedback that needs your review and input.',
+            title: apiStepsMap.get('interview-feedback-card')?.title || '💬 Interview Feedback',
+            text: apiStepsMap.get('interview-feedback-card')?.description || 'This card shows pending interview feedback that needs your review and input.',
             attachTo: {
                 element: '#tour-interview-feedback-card',
                 on: 'bottom'
@@ -508,8 +614,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'this-month-hires-card',
-            title: '🎉 This Month Hires',
-            text: 'Track your hiring success! This shows how many new hires joined this month compared to last month.',
+            title: apiStepsMap.get('this-month-hires-card')?.title || '🎉 This Month Hires',
+            text: apiStepsMap.get('this-month-hires-card')?.description || 'Track your hiring success! This shows how many new hires joined this month compared to last month.',
             attachTo: {
                 element: '#tour-this-month-hires-card',
                 on: 'bottom'
@@ -532,8 +638,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'dashboard-tabs',
-            title: '📑 Dashboard Tabs',
-            text: 'Switch between Interview Feedback, Offer Management, and Team Overview tabs to access different sections.',
+            title: apiStepsMap.get('dashboard-tabs')?.title || '📑 Dashboard Tabs',
+            text: apiStepsMap.get('dashboard-tabs')?.description || 'Switch between Interview Feedback, Offer Management, and Team Overview tabs to access different sections.',
             attachTo: {
                 element: '#tour-managerhub-tabs',
                 on: 'top'
@@ -557,8 +663,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'interview-tab',
-            title: '💬 Interview Feedback Tab',
-            text: 'This tab shows all interview feedback that requires your review. You can see candidate details, ratings, and make hiring decisions.',
+            title: apiStepsMap.get('interview-tab')?.title || '💬 Interview Feedback Tab',
+            text: apiStepsMap.get('interview-tab')?.description || 'This tab shows all interview feedback that requires your review. You can see candidate details, ratings, and make hiring decisions.',
             attachTo: {
                 element: '#tour-interview-tab',
                 on: 'bottom'
@@ -584,8 +690,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'candidate-card',
-            title: '👤 Candidate Card',
-            text: 'Each candidate card shows their name, applied position, interview date, and interviewer. The rating shows their overall performance.',
+            title: apiStepsMap.get('candidate-card')?.title || '👤 Candidate Card',
+            text: apiStepsMap.get('candidate-card')?.description || 'Each candidate card shows their name, applied position, interview date, and interviewer. The rating shows their overall performance.',
             attachTo: {
                 element: '#tour-first-candidate-card',
                 on: 'top'
@@ -611,8 +717,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'hiring-decision',
-            title: '✅ Hiring Decisions',
-            text: 'After reviewing a candidate\'s profile and feedback, you can either Reject or Hire them. Add notes before making your decision.',
+            title: apiStepsMap.get('hiring-decision')?.title || '✅ Hiring Decisions',
+            text: apiStepsMap.get('hiring-decision')?.description || 'After reviewing a candidate\'s profile and feedback, you can either Reject or Hire them. Add notes before making your decision.',
             attachTo: {
                 element: '#tour-hiring-decision',
                 on: 'top'
@@ -635,8 +741,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'offers-tab',
-            title: '📝 Offer Management Tab',
-            text: 'This tab shows all job offers created for candidates. You can track offer status (Draft, Sent, Accepted, Rejected) and manage the onboarding process.',
+            title: apiStepsMap.get('offers-tab')?.title || '📝 Offer Management Tab',
+            text: apiStepsMap.get('offers-tab')?.description || 'This tab shows all job offers created for candidates. You can track offer status (Draft, Sent, Accepted, Rejected) and manage the onboarding process.',
             attachTo: {
                 element: '#tour-offers-tab',
                 on: 'bottom'
@@ -662,8 +768,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'offers-kpi-cards',
-            title: '📊 KPI Cards',
-            text: 'These KPI cards show the count of total offers and their status breakdown. Track how many offers are in each stage.',
+            title: apiStepsMap.get('offers-kpi-cards')?.title || '📊 KPI Cards',
+            text: apiStepsMap.get('offers-kpi-cards')?.description || 'These KPI cards show the count of total offers and their status breakdown. Track how many offers are in each stage.',
             attachTo: {
                 element: '#tour-offer-stats',
                 on: 'bottom'
@@ -689,8 +795,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'offers-offer-cards',
-            title: '📋 Offer Cards',
-            text: 'Each offer card shows the candidate name, position, salary, and current status. You can view details, download offer letters, or take actions.',
+            title: apiStepsMap.get('offers-offer-cards')?.title || '📋 Offer Cards',
+            text: apiStepsMap.get('offers-offer-cards')?.description || 'Each offer card shows the candidate name, position, salary, and current status. You can view details, download offer letters, or take actions.',
             attachTo: {
                 element: '#tour-first-offer-card',
                 on: 'top'
@@ -716,8 +822,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'offers-status-tracking',
-            title: '🏷️ Offer Status Tracking',
-            text: 'Track the status of each offer through the hiring pipeline. Filter by status (All, Sent, Accepted, Rejected) to find offers that need your attention.',
+            title: apiStepsMap.get('offers-status-tracking')?.title || '🏷️ Offer Status Tracking',
+            text: apiStepsMap.get('offers-status-tracking')?.description || 'Track the status of each offer through the hiring pipeline. Filter by status (All, Sent, Accepted, Rejected) to find offers that need your attention.',
             attachTo: {
                 element: '#tour-offer-tabs',
                 on: 'top'
@@ -743,8 +849,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'team-tab',
-            title: '👥 Team Overview Tab',
-            text: 'Get a comprehensive view of your hiring team\'s progress. Track department-wise hiring status and recent updates.',
+            title: apiStepsMap.get('team-tab')?.title || '👥 Team Overview Tab',
+            text: apiStepsMap.get('team-tab')?.description || 'Get a comprehensive view of your hiring team\'s progress. Track department-wise hiring status and recent updates.',
             attachTo: {
                 element: '#tour-team-tab',
                 on: 'bottom'
@@ -770,8 +876,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'department-status',
-            title: '📊 Department Hiring Status',
-            text: 'See how each department is progressing with their hiring goals. The progress bars show filled positions vs total openings.',
+            title: apiStepsMap.get('department-status')?.title || '📊 Department Hiring Status',
+            text: apiStepsMap.get('department-status')?.description || 'See how each department is progressing with their hiring goals. The progress bars show filled positions vs total openings.',
             attachTo: {
                 element: '#tour-department-status',
                 on: 'left'
@@ -797,8 +903,8 @@ const createTourSteps = (): ManagerHubTourStep[] => {
         },
         {
             id: 'team-updates',
-            title: '📰 Recent Team Updates',
-            text: 'Stay informed about recent hiring activities, open positions needing attention, and scheduled interviews.',
+            title: apiStepsMap.get('team-updates')?.title || '📰 Recent Team Updates',
+            text: apiStepsMap.get('team-updates')?.description || 'Stay informed about recent hiring activities, open positions needing attention, and scheduled interviews.',
             attachTo: {
                 element: '#tour-team-updates',
                 on: 'right'
@@ -847,7 +953,7 @@ const createTour = (): Shepherd.Tour => {
 };
 
 // Create and start the full tour (backward compatible)
-export const startManagerHubTour = (): void => {
+export const startManagerHubTour = async (): Promise<void> => {
     // Check if tour was already completed in this session
     if (typeof window !== 'undefined') {
         const tourCompleted = sessionStorage.getItem('managerHubTourCompleted');
@@ -859,11 +965,15 @@ export const startManagerHubTour = (): void => {
 
     console.log('Starting ManagerHub full tour...');
 
+    // Fetch tour steps from API first
+    const apiStepsFromAPI = await fetchManagerHubTourStepsFromAPI();
+    console.log('[ManagerHubTour] API steps fetched:', apiStepsFromAPI);
+
     // Create new tour instance
     const tour = createTour();
 
-    // Create and add steps
-    const steps = createTourSteps();
+    // Create and add steps with API data
+    const steps = createTourSteps(apiStepsFromAPI);
     steps.forEach(step => {
         tour.addStep(step);
     });
@@ -874,6 +984,14 @@ export const startManagerHubTour = (): void => {
         if (typeof window !== 'undefined') {
             sessionStorage.setItem('managerHubTourCompleted', 'true');
         }
+        // Log tour complete event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_complete',
+            stepKey: 'full_tour_complete',
+            menuId: menuId || getManagerHubMenuId(),
+            accessLink: accessLink || '/talent-management/manager-hub',
+        });
     });
 
     // Handle tour cancellation
@@ -882,10 +1000,41 @@ export const startManagerHubTour = (): void => {
         if (typeof window !== 'undefined') {
             sessionStorage.setItem('managerHubTourCompleted', 'true');
         }
+        // Log tour skipped event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_skipped',
+            stepKey: 'full_tour_skipped',
+            menuId: menuId || getManagerHubMenuId(),
+            accessLink: accessLink || '/talent-management/manager-hub',
+        });
+    });
+
+    // Handle step show event for journey logging
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step && step.id) {
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+                eventType: 'tour_step_view',
+                stepKey: step.id,
+                menuId: menuId || getManagerHubMenuId(),
+                accessLink: accessLink || '/talent-management/manager-hub',
+            });
+        }
     });
 
     // Store instance
     managerHubTourInstance = tour;
+
+    // Log tour started event
+    const { menuId, accessLink } = getPageInfo();
+    logUserJourney({
+        eventType: 'tour_started',
+        stepKey: 'managerhub_full_tour',
+        menuId: menuId || getManagerHubMenuId(),
+        accessLink: accessLink || '/talent-management/manager-hub',
+    });
 
     // Start tour after a short delay to ensure DOM is ready
     setTimeout(() => {
@@ -945,6 +1094,14 @@ export const startTabTour = (tabType: TourTabType): void => {
         if (typeof window !== 'undefined') {
             sessionStorage.setItem(tourCompletedKey, 'true');
         }
+        // Log tour complete event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_complete',
+            stepKey: `${tabType}_tab_tour_complete`,
+            menuId: menuId || getManagerHubMenuId(),
+            accessLink: accessLink || '/talent-management/manager-hub',
+        });
     });
 
     // Handle tour cancellation
@@ -953,10 +1110,41 @@ export const startTabTour = (tabType: TourTabType): void => {
         if (typeof window !== 'undefined') {
             sessionStorage.setItem(tourCompletedKey, 'true');
         }
+        // Log tour skipped event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_skipped',
+            stepKey: `${tabType}_tab_tour_skipped`,
+            menuId: menuId || getManagerHubMenuId(),
+            accessLink: accessLink || '/talent-management/manager-hub',
+        });
+    });
+
+    // Handle step show event for journey logging
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step && step.id) {
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+                eventType: 'tour_step_view',
+                stepKey: step.id,
+                menuId: menuId || getManagerHubMenuId(),
+                accessLink: accessLink || '/talent-management/manager-hub',
+            });
+        }
     });
 
     // Store instance
     managerHubTourInstance = tour;
+
+    // Log tour started event
+    const { menuId, accessLink } = getPageInfo();
+    logUserJourney({
+        eventType: 'tour_started',
+        stepKey: `managerhub_${tabType}_tab_tour`,
+        menuId: menuId || getManagerHubMenuId(),
+        accessLink: accessLink || '/talent-management/manager-hub',
+    });
 
     // Start tour after a short delay to ensure DOM is ready
     setTimeout(() => {
@@ -1059,6 +1247,14 @@ const startTabTourWithCallback = (tabType: TourTabType, onComplete?: () => void)
         if (typeof window !== 'undefined') {
             sessionStorage.setItem(tourCompletedKey, 'true');
         }
+        // Log tour complete event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_complete',
+            stepKey: `${tabType}_tab_tour_complete`,
+            menuId: menuId || getManagerHubMenuId(),
+            accessLink: accessLink || '/talent-management/manager-hub',
+        });
         // Call the completion callback
         if (onComplete) {
             onComplete();
@@ -1071,10 +1267,41 @@ const startTabTourWithCallback = (tabType: TourTabType, onComplete?: () => void)
         if (typeof window !== 'undefined') {
             sessionStorage.setItem(tourCompletedKey, 'true');
         }
+        // Log tour skipped event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_skipped',
+            stepKey: `${tabType}_tab_tour_skipped`,
+            menuId: menuId || getManagerHubMenuId(),
+            accessLink: accessLink || '/talent-management/manager-hub',
+        });
+    });
+
+    // Handle step show event for journey logging
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step && step.id) {
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+                eventType: 'tour_step_view',
+                stepKey: step.id,
+                menuId: menuId || getManagerHubMenuId(),
+                accessLink: accessLink || '/talent-management/manager-hub',
+            });
+        }
     });
 
     // Store instance
     managerHubTourInstance = tour;
+
+    // Log tour started event
+    const { menuId, accessLink } = getPageInfo();
+    logUserJourney({
+        eventType: 'tour_started',
+        stepKey: `managerhub_${tabType}_tab_tour`,
+        menuId: menuId || getManagerHubMenuId(),
+        accessLink: accessLink || '/talent-management/manager-hub',
+    });
 
     // Start tour after a short delay to ensure DOM is ready
     setTimeout(() => {
@@ -1208,16 +1435,55 @@ export const startDirectTeamTour = (): void => {
     tour.on('complete', () => {
         console.log('Direct team tour completed!');
         sessionStorage.setItem('teamTabTourCompleted', 'true');
+        // Log tour complete event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_complete',
+            stepKey: 'direct_team_tour_complete',
+            menuId: menuId || getManagerHubMenuId(),
+            accessLink: accessLink || '/talent-management/manager-hub',
+        });
     });
     
     // Handle tour cancellation
     tour.on('cancel', () => {
         console.log('Direct team tour cancelled');
         sessionStorage.setItem('teamTabTourCompleted', 'true');
+        // Log tour skipped event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_skipped',
+            stepKey: 'direct_team_tour_skipped',
+            menuId: menuId || getManagerHubMenuId(),
+            accessLink: accessLink || '/talent-management/manager-hub',
+        });
+    });
+
+    // Handle step show event for journey logging
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step && step.id) {
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+                eventType: 'tour_step_view',
+                stepKey: step.id,
+                menuId: menuId || getManagerHubMenuId(),
+                accessLink: accessLink || '/talent-management/manager-hub',
+            });
+        }
     });
     
     // Store instance
     managerHubTourInstance = tour;
+
+    // Log tour started event
+    const { menuId, accessLink } = getPageInfo();
+    logUserJourney({
+        eventType: 'tour_started',
+        stepKey: 'managerhub_direct_team_tour',
+        menuId: menuId || getManagerHubMenuId(),
+        accessLink: accessLink || '/talent-management/manager-hub',
+    });
     
     // Start tour
     setTimeout(() => {

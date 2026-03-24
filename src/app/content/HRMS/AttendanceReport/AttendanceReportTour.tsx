@@ -1,5 +1,90 @@
 import Shepherd, { Tour } from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger';
+
+// Interface for API tour step data
+interface AttendanceReportTourStepData {
+  on_click: string;
+  title: string;
+  description: string;
+}
+
+// Helper to get user data from localStorage
+const getUserData = (): { url: string; token: string; subInstituteId: string } | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+      return {
+        url: APP_URL,
+        token,
+        subInstituteId: String(sub_institute_id)
+      };
+    }
+  } catch (e) {
+    console.error('[AttendanceReport Tour] Error getting userData:', e);
+  }
+  return null;
+};
+
+// Fetch tour steps from API
+const fetchAttendanceReportTourStepsFromAPI = async (menuId: number): Promise<AttendanceReportTourStepData[]> => {
+  const userData = getUserData();
+  if (!userData) {
+    console.log('[AttendanceReport Tour] No userData available, using default tour steps');
+    return [];
+  }
+
+  try {
+    const baseUrl = userData.url;
+    const apiUrl = `${baseUrl}/table_data?table=Onboarding_tour_details&filters[menu_id]=${menuId}`;
+    console.log('[AttendanceReport Tour] Fetching tour steps from API:', apiUrl);
+
+    const res = await fetch(apiUrl);
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch tour steps: ${res.status}`);
+    }
+
+    const json = await res.json();
+    console.log('[AttendanceReport Tour] Raw API response:', json);
+
+    // Handle different response formats
+    let tourData: AttendanceReportTourStepData[] = [];
+
+    if (Array.isArray(json)) {
+      tourData = json;
+    } else if (json.data && Array.isArray(json.data)) {
+      tourData = json.data;
+    } else if (json.result && Array.isArray(json.result)) {
+      tourData = json.result;
+    } else if (json.response && Array.isArray(json.response)) {
+      tourData = json.response;
+    } else if (typeof json === 'object') {
+      for (const key of Object.keys(json)) {
+        if (Array.isArray(json[key])) {
+          tourData = json[key];
+          console.log(`[AttendanceReport Tour] Found array data in response.${key}`);
+          break;
+        }
+      }
+    }
+
+    // Normalize field names
+    const normalizedTourData = tourData.map((step: any) => ({
+      on_click: step.on_click || step.onClick || step.step_key || step.stepKey || step.id || '',
+      title: step.title || step.Title || step.name || step.step_title || step.stepTitle || '',
+      description: step.description || step.Description || step.text || step.Text || step.content || step.step_description || ''
+    }));
+
+    console.log('[AttendanceReport Tour] Parsed tour data:', normalizedTourData);
+    return normalizedTourData;
+  } catch (error) {
+    console.error('[AttendanceReport Tour] Error fetching tour steps:', error);
+    return [];
+  }
+};
 
 // Tour step configuration interface
 export interface AttendanceReportTourStep {
@@ -69,15 +154,36 @@ export class AttendanceReportTour {
     }
   }
 
-  // Create tour steps
-  private createSteps(): AttendanceReportTourStep[] {
+  // Create tour steps with optional API data override
+  private createSteps(apiTourData?: AttendanceReportTourStepData[]): AttendanceReportTourStep[] {
     const steps: AttendanceReportTourStep[] = [];
+
+    // Create a Map from API data for easy lookup by step ID
+    const apiStepsMap = new Map<string, { title: string; description: string }>();
+
+    if (apiTourData && apiTourData.length > 0) {
+      console.log('[AttendanceReport Tour] Creating apiStepsMap from API data:', apiTourData.length);
+
+      apiTourData.forEach((stepData) => {
+        const stepId = stepData.on_click || '';
+        const stepTitle = stepData.title || '';
+        const stepDescription = stepData.description || '';
+
+        if (stepId) {
+          apiStepsMap.set(stepId, { title: stepTitle, description: stepDescription });
+        }
+      });
+
+      console.log('[AttendanceReport Tour] apiStepsMap created:', Array.from(apiStepsMap.entries()));
+    }
+
+    console.log('[AttendanceReport Tour] Using tour steps with API overrides');
 
     // Step 1: Welcome / Header
     steps.push({
       id: 'attendance-report-welcome',
-      title: '👋 Welcome to Attendance Report',
-      text: 'This page allows you to generate and view attendance reports for employees. Let me show you around the key features.',
+      title: apiStepsMap.get('attendance-report-welcome')?.title || '👋 Welcome to Attendance Report',
+      text: apiStepsMap.get('attendance-report-welcome')?.description || 'This page allows you to generate and view attendance reports for employees. Let me show you around the key features.',
       attachTo: {
         element: '#tour-attendance-report-header',
         on: 'bottom'
@@ -90,7 +196,19 @@ export class AttendanceReportTour {
         },
         {
           text: 'Next',
-          action: () => this.tour?.next()
+          action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'attendance-report-welcome',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
+            const tour = AttendanceReportTour.getInstance();
+            tour?.next();
+          }
         }
       ]
     });
@@ -98,8 +216,8 @@ export class AttendanceReportTour {
     // Step 2: Employee Selector
     steps.push({
       id: 'attendance-report-employee-selector',
-      title: '👥 Employee/Department Selection',
-      text: 'Select one or more employees or departments to include in the attendance report. You can filter by department or search for specific employees.',
+      title: apiStepsMap.get('attendance-report-employee-selector')?.title || '👥 Employee/Department Selection',
+      text: apiStepsMap.get('attendance-report-employee-selector')?.description || 'Select one or more employees or departments to include in the attendance report. You can filter by department or search for specific employees.',
       attachTo: {
         element: '#tour-employee-selector',
         on: 'bottom'
@@ -112,7 +230,19 @@ export class AttendanceReportTour {
         },
         {
           text: 'Next',
-          action: () => this.tour?.next()
+          action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'attendance-report-employee-selector',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
+            const tour = AttendanceReportTour.getInstance();
+            tour?.next();
+          }
         }
       ]
     });
@@ -120,8 +250,8 @@ export class AttendanceReportTour {
     // Step 3: From Date Filter
     steps.push({
       id: 'attendance-report-from-date',
-      title: '📅 From Date',
-      text: 'Select the start date for your attendance report. This defines the beginning of the date range you want to analyze.',
+      title: apiStepsMap.get('attendance-report-from-date')?.title || '📅 From Date',
+      text: apiStepsMap.get('attendance-report-from-date')?.description || 'Select the start date for your attendance report. This defines the beginning of the date range you want to analyze.',
       attachTo: {
         element: '#tour-from-date',
         on: 'bottom'
@@ -134,7 +264,19 @@ export class AttendanceReportTour {
         },
         {
           text: 'Next',
-          action: () => this.tour?.next()
+          action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'attendance-report-from-date',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
+            const tour = AttendanceReportTour.getInstance();
+            tour?.next();
+          }
         }
       ]
     });
@@ -142,8 +284,8 @@ export class AttendanceReportTour {
     // Step 4: To Date Filter
     steps.push({
       id: 'attendance-report-to-date',
-      title: '📅 To Date',
-      text: 'Select the end date for your attendance report. This defines the last date in your attendance analysis range.',
+      title: apiStepsMap.get('attendance-report-to-date')?.title || '📅 To Date',
+      text: apiStepsMap.get('attendance-report-to-date')?.description || 'Select the end date for your attendance report. This defines the last date in your attendance analysis range.',
       attachTo: {
         element: '#tour-to-date',
         on: 'bottom'
@@ -156,7 +298,19 @@ export class AttendanceReportTour {
         },
         {
           text: 'Next',
-          action: () => this.tour?.next()
+          action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'attendance-report-to-date',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
+            const tour = AttendanceReportTour.getInstance();
+            tour?.next();
+          }
         }
       ]
     });
@@ -164,8 +318,8 @@ export class AttendanceReportTour {
     // Step 5: Search Button
     steps.push({
       id: 'attendance-report-search',
-      title: '🔍 Search Button',
-      text: 'Click this button to generate the attendance report based on your selected filters (employees, departments, and date range).',
+      title: apiStepsMap.get('attendance-report-search')?.title || '🔍 Search Button',
+      text: apiStepsMap.get('attendance-report-search')?.description || 'Click this button to generate the attendance report based on your selected filters (employees, departments, and date range).',
       attachTo: {
         element: '#tour-search-button',
         on: 'bottom'
@@ -178,7 +332,19 @@ export class AttendanceReportTour {
         },
         {
           text: 'Next',
-          action: () => this.tour?.next()
+          action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'attendance-report-search',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
+            const tour = AttendanceReportTour.getInstance();
+            tour?.next();
+          }
         }
       ]
     });
@@ -186,8 +352,8 @@ export class AttendanceReportTour {
     // Step 6: Legend
     steps.push({
       id: 'attendance-report-legend',
-      title: '🎨 Status Colors Legend',
-      text: 'This legend shows the color coding for different attendance statuses: Absent (Red), Latecomer (Orange), HalfDay (Yellow), Weekend (Green), Holiday (Dark Green), SameInOut (Pink), and Present (White).',
+      title: apiStepsMap.get('attendance-report-legend')?.title || '🎨 Status Colors Legend',
+      text: apiStepsMap.get('attendance-report-legend')?.description || 'This legend shows the color coding for different attendance statuses: Absent (Red), Latecomer (Orange), HalfDay (Yellow), Weekend (Green), Holiday (Dark Green), SameInOut (Pink), and Present (White).',
       attachTo: {
         element: '#tour-legend',
         on: 'top'
@@ -200,7 +366,19 @@ export class AttendanceReportTour {
         },
         {
           text: 'Next',
-          action: () => this.tour?.next()
+          action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'attendance-report-legend',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
+            const tour = AttendanceReportTour.getInstance();
+            tour?.next();
+          }
         }
       ]
     });
@@ -208,8 +386,8 @@ export class AttendanceReportTour {
     // Step 7: Data Table
     steps.push({
       id: 'attendance-report-table',
-      title: '📋 Attendance Data Table',
-      text: 'This table displays the attendance records with columns for Date, Department, Employee Name, In Time, Out Time, Duration, and Status. You can also filter by any column using the search inputs.',
+      title: apiStepsMap.get('attendance-report-table')?.title || '📋 Attendance Data Table',
+      text: apiStepsMap.get('attendance-report-table')?.description || 'This table displays the attendance records with columns for Date, Department, Employee Name, In Time, Out Time, Duration, and Status. You can also filter by any column using the search inputs.',
       attachTo: {
         element: '#tour-attendance-table',
         on: 'top'
@@ -231,7 +409,7 @@ export class AttendanceReportTour {
   }
 
   // Initialize and start the tour
-  public start(): void {
+  public async start(): Promise<void> {
     // Check if tour is already active
     if (this.tour && this.tour.getCurrentStep()) {
       console.log('Attendance Report tour is already running');
@@ -239,6 +417,19 @@ export class AttendanceReportTour {
     }
 
     console.log('Starting Attendance Report tour');
+
+    // Fetch tour steps from API (menu_id = 162 for Attendance Report)
+    const apiTourData = await fetchAttendanceReportTourStepsFromAPI(162);
+    console.log('[AttendanceReport Tour] API tour data fetched:', apiTourData);
+
+    // Log tour started event
+    const { menuId, accessLink } = getPageInfo();
+    logUserJourney({
+      eventType: 'tour_started',
+      stepKey: 'user-attendance-tour',
+      menuId: menuId,
+      accessLink: accessLink || '/User-Attendance',
+    }).catch(console.error);
 
     this.tour = new Shepherd.Tour({
       defaultStepOptions: {
@@ -258,8 +449,8 @@ export class AttendanceReportTour {
       keyboardNavigation: true
     });
 
-    // Add steps to the tour
-    const steps = this.createSteps();
+    // Add steps to the tour (with API data override)
+    const steps = this.createSteps(apiTourData);
     steps.forEach(step => {
       this.tour!.addStep(step);
     });
@@ -272,6 +463,15 @@ export class AttendanceReportTour {
         element.classList.add('tour-highlight-active');
       }
       this.currentStepIndex = this.tour?.steps.findIndex((s) => s.id === currentStep.id) || 0;
+      // Log tour step view journey event
+      const { menuId, accessLink } = getPageInfo();
+      const stepId = currentStep.id || `step_${this.currentStepIndex}`;
+      logUserJourney({
+        eventType: 'tour_step_view',
+        stepKey: stepId,
+        menuId: menuId,
+        accessLink: accessLink || '/User-Attendance',
+      }).catch(console.error);
     });
 
     this.tour.on('hide', (event) => {
@@ -283,11 +483,32 @@ export class AttendanceReportTour {
     });
 
     this.tour.on('cancel', () => {
+
+      // Log tour skipped journey event
+      const { menuId, accessLink } = getPageInfo();
+      const currentStep = this.tour?.getCurrentStep();
+      const stepId = currentStep?.id || 'user-attendance-tour';
+      logUserJourney({
+        eventType: 'tour_skipped',
+        stepKey: stepId,
+        menuId: menuId,
+        accessLink: accessLink || '/User-Attendance',
+      }).catch(console.error);
+
       this.cleanup();
       console.log('Attendance Report tour cancelled');
     });
 
     this.tour.on('complete', () => {
+
+      // Log tour completed journey event
+      const { menuId, accessLink } = getPageInfo();
+      logUserJourney({
+        eventType: 'tour_complete',
+        stepKey: 'user-attendance-tour',
+        menuId: menuId,
+        accessLink: accessLink || '/User-Attendance',
+      }).catch(console.error);
       this.cleanup();
       console.log('Attendance Report tour completed');
     });

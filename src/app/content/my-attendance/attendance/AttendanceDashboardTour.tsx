@@ -1,5 +1,97 @@
 import Shepherd, { Tour } from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger';
+
+// Type for tour step data from API
+export interface AttendanceTourStepData {
+    on_click?: string;
+    onClick?: string;
+    step_key?: string;
+    stepKey?: string;
+    id?: number | string;
+    title?: string;
+    Title?: string;
+    name?: string;
+    step_title?: string;
+    stepTitle?: string;
+    description?: string;
+    Description?: string;
+    text?: string;
+    Text?: string;
+    content?: string;
+    step_description?: string;
+}
+
+// Helper to get user data from localStorage
+const getUserData = (): { url: string; token: string; subInstituteId: string } | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const userData = localStorage.getItem("userData");
+        if (userData) {
+            const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+            return {
+                url: APP_URL,
+                token,
+                subInstituteId: String(sub_institute_id)
+            };
+        }
+    } catch (e) {
+        console.error('[Attendance Tour] Error getting userData:', e);
+    }
+    return null;
+};
+
+// Fetch tour steps from API
+const fetchAttendanceTourStepsFromAPI = async (menuId: number): Promise<AttendanceTourStepData[]> => {
+    const userData = getUserData();
+    if (!userData) {
+        console.log('[Attendance Tour] No userData available, using default tour steps');
+        return [];
+    }
+
+    try {
+        // Use localhost as base URL as specified, with token and sub_institute_id from userData
+        const baseUrl = userData.url;
+        const apiUrl = `${baseUrl}/table_data?table=Onboarding_tour_details&filters[menu_id]=${menuId}&token=${userData.token}&sub_institute_id=${userData.subInstituteId}`;
+        console.log('[Attendance Tour] Fetching tour steps from API:', apiUrl);
+
+        const res = await fetch(apiUrl);
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch tour steps: ${res.status}`);
+        }
+
+        const json = await res.json();
+        console.log('[Attendance Tour] Raw API response:', json);
+
+        // Handle different response formats
+        let tourData: AttendanceTourStepData[] = [];
+
+        if (Array.isArray(json)) {
+            tourData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+            tourData = json.data;
+        } else if (json.result && Array.isArray(json.result)) {
+            tourData = json.result;
+        } else if (json.response && Array.isArray(json.response)) {
+            tourData = json.response;
+        } else if (typeof json === 'object') {
+            for (const key of Object.keys(json)) {
+                if (Array.isArray(json[key])) {
+                    tourData = json[key];
+                    console.log(`[Attendance Tour] Found array data in response.${key}`);
+                    break;
+                }
+            }
+        }
+
+        console.log('[Attendance Tour] Parsed tour data:', tourData);
+        return tourData;
+    } catch (error) {
+        console.error('[Attendance Tour] Error fetching tour steps:', error);
+        return [];
+    }
+};
 
 export interface AttendanceTourStep {
     id: string;
@@ -32,6 +124,70 @@ export class AttendanceDashboardTour {
 
     constructor() {}
 
+    // Get page info with menuId - uses getPageInfo from journeyLogger
+    private getPageMenuInfo(): { menuId: number; accessLink: string } {
+        const pageInfo = getPageInfo();
+        return {
+            menuId: pageInfo.menuId,
+            accessLink: pageInfo.accessLink
+        };
+    }
+
+    // Log journey event for tour start
+    private logTourStarted(): void {
+        const { menuId, accessLink } = this.getPageMenuInfo();
+        logUserJourney({
+            eventType: 'tour_started',
+            stepKey: 'attendance-dashboard-tour',
+            menuId: menuId,
+            accessLink: accessLink,
+        }).catch(console.error);
+    }
+
+    // Log journey event for step view
+    private logStepView(stepId: string): void {
+        const { menuId, accessLink } = this.getPageMenuInfo();
+        logUserJourney({
+            eventType: 'tour_step_view',
+            stepKey: stepId,
+            menuId: menuId,
+            accessLink: accessLink,
+        }).catch(console.error);
+    }
+
+    // Log journey event for step completion
+    private logStepComplete(stepId: string): void {
+        const { menuId, accessLink } = this.getPageMenuInfo();
+        logUserJourney({
+            eventType: 'tour_step_complete',
+            stepKey: stepId,
+            menuId: menuId,
+            accessLink: accessLink,
+        }).catch(console.error);
+    }
+
+    // Log journey event for tour skipped
+    private logTourSkipped(): void {
+        const { menuId, accessLink } = this.getPageMenuInfo();
+        logUserJourney({
+            eventType: 'tour_skipped',
+            stepKey: 'attendance-dashboard-tour',
+            menuId: menuId,
+            accessLink: accessLink,
+        }).catch(console.error);
+    }
+
+    // Log journey event for tour complete
+    private logTourComplete(): void {
+        const { menuId, accessLink } = this.getPageMenuInfo();
+        logUserJourney({
+            eventType: 'tour_complete',
+            stepKey: 'attendance-dashboard-tour',
+            menuId: menuId,
+            accessLink: accessLink,
+        }).catch(console.error);
+    }
+
     // Check if tour should be triggered
     public static shouldStartTour(): boolean {
         if (typeof window === 'undefined') return false;
@@ -56,15 +212,37 @@ export class AttendanceDashboardTour {
         }
     }
 
-    // Create tour steps
-    private createSteps(): AttendanceTourStep[] {
+    // Create tour steps - optionally with API data
+    private createSteps(apiTourData?: AttendanceTourStepData[]): AttendanceTourStep[] {
         const steps: AttendanceTourStep[] = [];
+
+        // Create a Map from API data for easy lookup by step ID
+        const apiStepsMap = new Map<string, { title: string; description: string }>();
+
+        if (apiTourData && apiTourData.length > 0) {
+            console.log('[Attendance Tour] Creating apiStepsMap from API data:', apiTourData.length);
+
+            apiTourData.forEach((stepData) => {
+                const stepId = stepData.on_click || stepData.onClick || stepData.step_key || stepData.stepKey || String(stepData.id) || '';
+                const stepTitle = stepData.title || stepData.Title || stepData.name || stepData.step_title || stepData.stepTitle || '';
+                const stepDescription = stepData.description || stepData.Description || stepData.text || stepData.Text || stepData.content || stepData.step_description || '';
+
+                if (stepId) {
+                    apiStepsMap.set(stepId, { title: stepTitle, description: stepDescription });
+                }
+            });
+
+            console.log('[Attendance Tour] apiStepsMap created:', Array.from(apiStepsMap.entries()));
+        }
+
+        // Default hardcoded steps with API overrides
+        console.log('[Attendance Tour] Using default tour steps with API overrides');
 
         // Step 1: Welcome / Header
         steps.push({
             id: 'attendance-welcome',
-            title: '👋 Welcome to My Attendance',
-            text: 'This page helps you track your daily attendance, punch in/out, and view your attendance records. Let\'s take a quick tour!',
+            title: apiStepsMap.get('attendance-welcome')?.title || '👋 Welcome to My Attendance',
+            text: apiStepsMap.get('attendance-welcome')?.description || 'This page helps you track your daily attendance, punch in/out, and view your attendance records. Let\'s take a quick tour!',
             attachTo: {
                 element: '#tour-attendance-header',
                 on: 'bottom'
@@ -72,12 +250,18 @@ export class AttendanceDashboardTour {
             buttons: [
                 {
                     text: 'Skip Tour',
-                    action: () => this.cancelTour(),
+                    action: () => {
+                        this.logTourSkipped();
+                        this.cancelTour();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        this.logStepComplete('attendance-welcome');
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -85,8 +269,8 @@ export class AttendanceDashboardTour {
         // Step 2: Time Tracking Card
         steps.push({
             id: 'attendance-time-tracking',
-            title: '⏱️ Time Tracking',
-            text: 'This is your main time tracking card. Click "Punch In" when you start work and "Punch Out" when you finish. The status indicator shows your current state.',
+            title: apiStepsMap.get('attendance-time-tracking')?.title || '⏱️ Time Tracking',
+            text: apiStepsMap.get('attendance-time-tracking')?.description || 'This is your main time tracking card. Click "Punch In" when you start work and "Punch Out" when you finish. The status indicator shows your current state.',
             attachTo: {
                 element: '#tour-attendance-card',
                 on: 'top'
@@ -94,12 +278,18 @@ export class AttendanceDashboardTour {
             buttons: [
                 {
                     text: 'Back',
-                    action: () => this.tour?.back(),
+                    action: () => {
+                        this.logStepComplete('attendance-time-tracking');
+                        this.tour?.back();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        this.logStepComplete('attendance-time-tracking');
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -107,8 +297,8 @@ export class AttendanceDashboardTour {
         // Step 3: Punch In/Out Button
         steps.push({
             id: 'attendance-punch-button',
-            title: '🔘 Punch In/Out Button',
-            text: 'Use this button to punch in or out. When you\'re checked in, it shows "Punch Out" in green. The button records your arrival time and location.',
+            title: apiStepsMap.get('attendance-punch-button')?.title || '🔘 Punch In/Out Button',
+            text: apiStepsMap.get('attendance-punch-button')?.description || 'Use this button to punch in or out. When you\'re checked in, it shows "Punch Out" in green. The button records your arrival time and location.',
             attachTo: {
                 element: '#tour-punch-button',
                 on: 'top'
@@ -116,12 +306,18 @@ export class AttendanceDashboardTour {
             buttons: [
                 {
                     text: 'Back',
-                    action: () => this.tour?.back(),
+                    action: () => {
+                        this.logStepComplete('attendance-punch-button');
+                        this.tour?.back();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        this.logStepComplete('attendance-punch-button');
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -129,8 +325,8 @@ export class AttendanceDashboardTour {
         // Step 4: Stats Section
         steps.push({
             id: 'attendance-stats',
-            title: '📊 Attendance Statistics',
-            text: 'View your attendance statistics here including total working days, present days, absent days, and your attendance percentage.',
+            title: apiStepsMap.get('attendance-stats')?.title || '📊 Attendance Statistics',
+            text: apiStepsMap.get('attendance-stats')?.description || 'View your attendance statistics here including total working days, present days, absent days, and your attendance percentage.',
             attachTo: {
                 element: '#tour-attendance-stats',
                 on: 'top'
@@ -138,12 +334,18 @@ export class AttendanceDashboardTour {
             buttons: [
                 {
                     text: 'Back',
-                    action: () => this.tour?.back(),
+                    action: () => {
+                        this.logStepComplete('attendance-stats');
+                        this.tour?.back();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        this.logStepComplete('attendance-stats');
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -151,8 +353,8 @@ export class AttendanceDashboardTour {
         // Step 5: Attendance Records
         steps.push({
             id: 'attendance-records',
-            title: '📋 Attendance Records',
-            text: 'This table shows your complete attendance history. You can see dates, punch in/out times, total hours worked, and daily status.',
+            title: apiStepsMap.get('attendance-records')?.title || '📋 Attendance Records',
+            text: apiStepsMap.get('attendance-records')?.description || 'This table shows your complete attendance history. You can see dates, punch in/out times, total hours worked, and daily status.',
             attachTo: {
                 element: '#tour-attendance-records',
                 on: 'top'
@@ -160,12 +362,18 @@ export class AttendanceDashboardTour {
             buttons: [
                 {
                     text: 'Back',
-                    action: () => this.tour?.back(),
+                    action: () => {
+                        this.logStepComplete('attendance-records');
+                        this.tour?.back();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Finish Tour',
-                    action: () => this.completeTour()
+                    action: () => {
+                        this.logStepComplete('attendance-records');
+                        this.completeTour();
+                    }
                 }
             ]
         });
@@ -173,11 +381,22 @@ export class AttendanceDashboardTour {
         return steps;
     }
 
-    // Start the tour
-    public startTour(): void {
+    // Start the tour - fetches from API first, then falls back to default steps
+    public async startTour(): Promise<void> {
         if (this.isActive) return;
 
         console.log('[AttendanceTour] Starting tour...');
+
+        // Get menuId for API call - use 100 as specified in the task
+        const { menuId } = getPageInfo();
+
+        // Fetch tour steps from API
+        console.log('[AttendanceTour] Fetching tour steps from API with menuId:', menuId);
+        const apiTourData = await fetchAttendanceTourStepsFromAPI(menuId);
+
+        // Create steps with API data (or fallback to default if no API data)
+        const steps = this.createSteps(apiTourData);
+        console.log('[AttendanceTour] Tour steps created:', steps.length);
 
         this.tour = new Shepherd.Tour({
             defaultStepOptions: {
@@ -197,22 +416,30 @@ export class AttendanceDashboardTour {
             keyboardNavigation: true
         });
 
-        const steps = this.createSteps();
-        console.log('[AttendanceTour] Tour steps created:', steps.length);
-
         steps.forEach(step => {
             this.tour!.addStep(step);
         });
 
-        // Handle tour events
+        // Handle tour events - log step view when step is shown
+        this.tour.on('show', (e: any) => {
+            const step = e.step;
+            if (step && step.id) {
+                this.logStepView(step.id);
+            }
+        });
+
+        // Handle tour cancel - log skipped
         this.tour.on('cancel', () => {
             this.isActive = false;
+            this.logTourSkipped();
             this.clearTourState();
         });
 
+        // Handle tour complete - log completed
         this.tour.on('complete', () => {
             this.isActive = false;
             localStorage.setItem(AttendanceDashboardTour.COMPLETED_KEY, 'true');
+            this.logTourComplete();
             this.clearTourState();
             this.showCompletionMessage();
         });
@@ -221,6 +448,9 @@ export class AttendanceDashboardTour {
 
         // Clear the trigger and start
         AttendanceDashboardTour.clearTrigger();
+
+        // Log tour started
+        this.logTourStarted();
 
         setTimeout(() => {
             console.log('[AttendanceTour] Calling tour.start()');
@@ -233,6 +463,7 @@ export class AttendanceDashboardTour {
         if (this.tour) {
             this.tour.cancel();
             this.isActive = false;
+            this.logTourSkipped();
             this.clearTourState();
         }
     }
@@ -243,6 +474,7 @@ export class AttendanceDashboardTour {
             this.tour.complete();
             this.isActive = false;
             localStorage.setItem(AttendanceDashboardTour.COMPLETED_KEY, 'true');
+            this.logTourComplete();
             this.clearTourState();
             this.showCompletionMessage();
         }

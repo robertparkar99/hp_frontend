@@ -114,21 +114,25 @@ const LevelResponsibility = () => {
       sessionStorage.removeItem('triggerPageTour');
 
       tourStartedRef.current = true;
-      tourRef.current = initializeLORTour(switchSectionForTour);
-      tourRef.current.start();
-      setIsTourActive(true);
+      
+      // Initialize tour asynchronously to fetch API data
+      initializeLORTour(switchSectionForTour).then((tour) => {
+        tourRef.current = tour;
+        tour.start();
+        setIsTourActive(true);
 
-      // Handle tour completion
-      tourRef.current.on('complete', () => {
-        setLORTourCompleted();
-        setIsTourActive(false);
-        console.log('[LOR Tour] Tour completed');
-      });
+        // Handle tour completion
+        tour.on('complete', () => {
+          setLORTourCompleted();
+          setIsTourActive(false);
+          console.log('[LOR Tour] Tour completed');
+        });
 
-      // Handle tour cancel
-      tourRef.current.on('cancel', () => {
-        setIsTourActive(false);
-        console.log('[LOR Tour] Tour cancelled');
+        // Handle tour cancel
+        tour.on('cancel', () => {
+          setIsTourActive(false);
+          console.log('[LOR Tour] Tour cancelled');
+        });
       });
     } else if (triggerTour && isFirstVisit && !tourStartedRef.current && levelsData.length === 0) {
       // Wait for data to load then start tour
@@ -143,9 +147,13 @@ const LevelResponsibility = () => {
           sessionStorage.removeItem('triggerPageTour');
 
           tourStartedRef.current = true;
-          tourRef.current = initializeLORTour(switchSectionForTour);
-          tourRef.current.start();
-          setIsTourActive(true);
+          
+          // Initialize tour asynchronously to fetch API data
+          initializeLORTour(switchSectionForTour).then((tour) => {
+            tourRef.current = tour;
+            tour.start();
+            setIsTourActive(true);
+          });
         } else if (!triggerTour) {
           console.log('[LOR Tour] Trigger was cleared while waiting');
         }

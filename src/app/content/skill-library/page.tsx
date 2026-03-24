@@ -27,7 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import DataTable, { TableColumn, TableStyles } from "react-data-table-component";
 import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
-import { generateDetailTourSteps } from "../../../lib/tourSteps";
+import { generateDetailTourSteps, fetchTourStepsFromAPI } from "../../../lib/tourSteps";
 import Loader from "@/components/utils/loading";
 
 type Skill = {
@@ -159,6 +159,8 @@ export default function Page({ showDetailTour = false }: PageProps) {
 
   // Detail tour state
   const [showTour, setShowTour] = useState(false);
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState<any[]>([]);
+  const [isLoadingTourSteps, setIsLoadingTourSteps] = useState(true);
 
   // Toggle function for the actions menu
   const toggleActionsMenu = () => {
@@ -198,6 +200,24 @@ export default function Page({ showDetailTour = false }: PageProps) {
       }
     }
   }, []);
+
+  // Fetch tour steps from API for detail tour
+  useEffect(() => {
+    const fetchTourSteps = async () => {
+      if (!sessionData.url) return;
+      
+      // Use menuId 37 as specified in the requirement
+      const menuId = 37;
+      console.log('[SkillLibrary] Fetching tour steps for detail tour, menuId:', menuId);
+      
+      const apiData = await fetchTourStepsFromAPI(menuId);
+      console.log('[SkillLibrary] Fetched tour steps for detail tour:', apiData);
+      setTourStepsFromAPI(apiData);
+      setIsLoadingTourSteps(false);
+    };
+
+    fetchTourSteps();
+  }, [sessionData]);
 
   // Header shrinking on scroll
   useEffect(() => {
@@ -1304,9 +1324,9 @@ export default function Page({ showDetailTour = false }: PageProps) {
         )}
 
         {/* Detail Tour */}
-        {showTour && (
+        {showTour && !isLoadingTourSteps && (
           <ShepherdTour
-            steps={generateDetailTourSteps('Skill')}
+            steps={generateDetailTourSteps('Skill', tourStepsFromAPI)}
             onComplete={() => {
               setShowTour(false);
               if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {

@@ -20,6 +20,7 @@ import "jspdf-autotable";
 import Shepherd from "shepherd.js";
 import 'shepherd.js/dist/css/shepherd.css';
 import { createMonthlyPayrollTour, monthlyPayrollTourStyles } from "./MonthlyPayrollTourSteps";
+import { logUserJourney, getPageInfo } from "@/utils/journeyLogger";
 
 // Define Shepherd Tour type
 type ShepherdTour = InstanceType<typeof Shepherd.Tour>;
@@ -140,7 +141,7 @@ export default function MonthlyPayrollPage() {
     startTour();
   };
 
-  const startTour = () => {
+  const startTour = async () => {
     if (isTourActive) {
       console.log('Tour is already active, skipping...');
       return;
@@ -149,18 +150,30 @@ export default function MonthlyPayrollPage() {
     console.log('Starting tour initialization...');
     setIsTourActive(true);
 
+    // Get current page info including menuId
+    const pageInfo = getPageInfo();
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/HRMS/Payroll/Monthly-Payroll';
+    let finalMenuId = pageInfo.menuId;
+
+    // Try to get menuId from session storage if still not found
+    if (!finalMenuId && typeof window !== 'undefined') {
+      const storedMenuId = sessionStorage.getItem('triggerPageTourMenuId');
+      if (storedMenuId) {
+        finalMenuId = parseInt(storedMenuId) || 0;
+      }
+    }
+
     // Elements required for tour (basic UI elements that are always present)
     const requiredSelectors = [
       '#monthly-payroll-title',
       '#employee-selector-container',
       '#month-select',
       '#year-select',
-      '#search-button',
-      '#submit-payroll-button'
+      '#search-button'
     ];
 
     // Function to check if elements exist and create tour
-    const initTour = () => {
+    const initTour = async () => {
       // Check if all required basic elements exist
       const allReady = requiredSelectors.every(sel => {
         const el = document.querySelector(sel);
@@ -183,29 +196,63 @@ export default function MonthlyPayrollPage() {
         console.log('Table container not found, tour will show basic UI only');
       }
 
-      const tour = createMonthlyPayrollTour();
+      const tour = await createMonthlyPayrollTour(finalMenuId, currentPath);
       tourRef.current = tour;
 
       tour.on('complete', () => {
         console.log('Tour completed');
         setIsTourActive(false);
         sessionStorage.setItem('monthlyPayrollTourCompleted', 'true');
+
+        // Log tour completed
+        logUserJourney({
+          eventType: 'tour_step_complete',
+          stepKey: 'monthly-payroll-tour-complete',
+          menuId: finalMenuId,
+          accessLink: currentPath,
+        }).catch(err => console.error('Journey logging error:', err));
       });
 
       tour.on('cancel', () => {
         console.log('Tour cancelled');
         setIsTourActive(false);
         sessionStorage.setItem('monthlyPayrollTourCompleted', 'true');
+
+        // Log tour skipped
+        logUserJourney({
+          eventType: 'tour_skipped',
+          stepKey: null,
+          menuId: finalMenuId,
+          accessLink: currentPath,
+        }).catch(err => console.error('Journey logging error:', err));
       });
 
       // Add error handler
       tour.on('show', (e) => {
         console.log('Tour step shown:', e.step?.id);
+
+        // Log step view
+        if (e.step && e.step.id) {
+          logUserJourney({
+            eventType: 'tour_step_view',
+            stepKey: e.step.id,
+            menuId: finalMenuId,
+            accessLink: currentPath,
+          }).catch(err => console.error('Journey logging error:', err));
+        }
       });
 
       try {
         tour.start();
         console.log('Tour started successfully');
+
+        // Log tour started
+        logUserJourney({
+          eventType: 'tour_started',
+          stepKey: 'monthly-payroll-tour-welcome',
+          menuId: finalMenuId,
+          accessLink: currentPath,
+        }).catch(err => console.error('Journey logging error:', err));
       } catch (error) {
         console.error('Error starting tour:', error);
         setIsTourActive(false);
@@ -215,19 +262,19 @@ export default function MonthlyPayrollPage() {
     };
 
     // Try to initialize immediately, then poll if needed
-    if (!initTour()) {
+    if (!(await initTour())) {
       let attempts = 0;
       const maxAttempts = 20; // Try for up to 4 seconds
 
-      const waitForDOM = setInterval(() => {
+      const waitForDOM = setInterval(async () => {
         attempts++;
-        if (initTour()) {
+        if (await initTour()) {
           clearInterval(waitForDOM);
         } else if (attempts >= maxAttempts) {
           clearInterval(waitForDOM);
           console.log('Timeout waiting for DOM elements, starting tour with available elements...');
           // Try to start anyway with basic elements
-          initTour();
+          await initTour();
         }
       }, 200);
     }
@@ -478,7 +525,7 @@ export default function MonthlyPayrollPage() {
       const result = await response.json();
       console.log('Delete API Response:', result);
       setTableData(prev => prev.filter(emp => emp.id !== employeeId));
-      setSelectedEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+      setSelectedEmployees(prev => prev.filter(emp => emp.id !== String(employeeId)));
 
       // Remove from both saved and modified sets
       setSavedRows(prev => {
@@ -630,7 +677,7 @@ export default function MonthlyPayrollPage() {
 
     // Filter by selected employees if any are selected
     if (selectedEmployees.length > 0) {
-      const selectedIds = selectedEmployees.map(emp => emp.id);
+      const selectedIds = selectedEmployees.map(emp => Number(emp.id));
       filtered = filtered.filter(row => selectedIds.includes(row.id));
     }
 

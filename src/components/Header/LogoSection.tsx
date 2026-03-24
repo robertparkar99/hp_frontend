@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Bot } from 'lucide-react';
 import WelcomeModal from '@/app/content/Onboarding/Competency-Management/WelcomeModal';
+import { logUserJourney, setCurrentPageMenuId } from "@/utils/journeyLogger";
 
 export const LogoSection: React.FC = () => {
   const router = useRouter();
@@ -267,6 +268,8 @@ export const LogoSection: React.FC = () => {
     const routePath = `/content/${path.replace('/page.tsx', '')}`;
     router.push(routePath);
     (window as any).__currentMenuItem = path;
+    // Set the current page menuId for journey logging
+    setCurrentPageMenuId(path);
     window.dispatchEvent(
       new CustomEvent("menuSelected", {
         detail: { menu: path, pageType: "page", access: path },
@@ -275,6 +278,13 @@ export const LogoSection: React.FC = () => {
   };
 
   const handleStartTour = () => {
+    // Log tour start event
+    logUserJourney({
+      eventType: "tour_started",
+      menuId: 5, // Default menu ID - can be customized per page
+      accessLink: window.location.pathname,
+    });
+
     setIsWelcomeModalOpen(false);
     // Dispatch event to start the onboarding tour in NewSidebar
     window.dispatchEvent(new CustomEvent("startOnboardingTour"));

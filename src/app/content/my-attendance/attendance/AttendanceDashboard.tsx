@@ -164,9 +164,9 @@ export function AttendanceDashboard() {
       if (AttendanceTourClass.shouldStartTour()) {
         console.log('[AttendanceDashboard] Tour trigger detected, starting tour...');
 
-        // Create and start the tour
+        // Create and start the tour (async - fetches from API first)
         const tour = new AttendanceDashboardTour();
-        tour.startTour();
+        await tour.startTour();
         setIsTourInitialized(true);
       }
     };

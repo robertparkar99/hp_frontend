@@ -4,17 +4,27 @@
 import { useEffect, useState } from "react";
 import Shepherd from "shepherd.js";
 import "shepherd.js/dist/css/shepherd.css";
-import { generateTourSteps, TourStep } from "@/lib/tourSteps";
+import { generateTourSteps, TourStep, fetchTourStepsFromAPI } from "@/lib/tourSteps";
+import { logUserJourney, getPageInfo } from "@/utils/journeyLogger";
 
 interface ShepherdTourProps {
   tabs?: string[];
   steps?: TourStep[];
   onComplete?: () => void;
   onOpenDetailModal?: (tab: string) => void;
+  menuId?: number;
 }
 
-const ShepherdTour: React.FC<ShepherdTourProps> = ({ tabs, steps, onComplete, onOpenDetailModal }) => {
+const ShepherdTour: React.FC<ShepherdTourProps> = ({
+  tabs,
+  steps,
+  onComplete,
+  onOpenDetailModal,
+  menuId = 5,
+}: ShepherdTourProps) => {
   const [isMobile, setIsMobile] = useState(false);
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState<any[]>([]);
+  const [isLoadingTourSteps, setIsLoadingTourSteps] = useState(true);
 
   useEffect(() => {
     // Detect mobile
@@ -26,33 +36,133 @@ const ShepherdTour: React.FC<ShepherdTourProps> = ({ tabs, steps, onComplete, on
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Fetch tour steps from API
   useEffect(() => {
-    const tourSteps = steps || (tabs ? generateTourSteps(tabs) : []);
+    const fetchAPI = async () => {
+      // Use the menuId prop or get from pageInfo
+      const pageInfo = getPageInfo();
+      const currentMenuId = menuId || pageInfo.menuId || 37; // Default to 37 as per requirement
 
-    (window as any).detailOnboardingHandler = onOpenDetailModal;
+      console.log('[ShepherdTour] Fetching tour steps for menuId:', currentMenuId);
 
-    // Configure tour with responsive options
-    const tourOptions: any = {
-      useModalOverlay: true,
-      defaultStepOptions: {
-        cancelIcon: { enabled: true },
-        scrollTo: { behavior: "smooth", block: "center" },
-        classes: 'shepherd-theme-arrows custom-shepherd',
-      },
+      const apiData = await fetchTourStepsFromAPI(currentMenuId);
+      console.log('[ShepherdTour] Fetched tour steps from API:', apiData);
+      setTourStepsFromAPI(apiData);
+      setIsLoadingTourSteps(false);
     };
 
-    // Add mobile-specific options
-    if (isMobile) {
-      tourOptions.defaultStepOptions.classes = 'shepherd-theme-arrows custom-shepherd mobile-shepherd';
-    }
+    fetchAPI();
+  }, [menuId]);
 
-    const tour = new Shepherd.Tour(tourOptions);
+  useEffect(() => {
+    // Initialize variables in useEffect scope so cleanup can access them
+    let tour: any = null;
+    let style: HTMLStyleElement | null = null;
 
-    // Store tour instance for radio tab switching
-    (window as any).currentTour = tour;
+    // Initialize tour with proper async handling
+    const initializeTour = async () => {
+      let tourSteps: TourStep[];
 
-    // Add CSS for custom styling
-    const style = document.createElement('style');
+      if (steps) {
+        tourSteps = steps;
+      } else if (tabs) {
+        // generateTourSteps returns Promise<TourStep[]>, so we need to await it
+        // Pass the API data to generateTourSteps
+        tourSteps = await generateTourSteps(tabs, tourStepsFromAPI);
+      } else {
+        tourSteps = [];
+      }
+
+      if (tourSteps.length === 0) {
+        return; // Don't start tour with no steps
+      }
+
+      (window as any).detailOnboardingHandler = onOpenDetailModal;
+
+      // Configure tour with responsive options
+      const tourOptions: any = {
+        useModalOverlay: true,
+        defaultStepOptions: {
+          cancelIcon: { enabled: true },
+          scrollTo: { behavior: "smooth", block: "center" },
+          classes: 'shepherd-theme-arrows custom-shepherd',
+        },
+      };
+
+      // Add mobile-specific options
+      if (isMobile) {
+        tourOptions.defaultStepOptions.classes = 'shepherd-theme-arrows custom-shepherd mobile-shepherd';
+      }
+
+      tour = new Shepherd.Tour(tourOptions);
+
+      // Store tour instance for radio tab switching
+      (window as any).currentTour = tour;
+
+      // ------------------------------
+      // JOURNEY LOGGING - Event Handlers
+      // ------------------------------
+
+      // Log step view when a step is shown
+      tour.on('step-show', (event: any) => {
+        const step = event.step;
+        const stepId = step.id || step.options?.id;
+
+        // Get menuId from step options (prioritize step's menuId), fallback to getPageInfo
+        const stepOptions = step as any;
+        const stepMenuIdFromStep = stepOptions?.options?.menuId || stepOptions?.menuId;
+        const pageInfo = getPageInfo();
+        const stepMenuId = stepMenuIdFromStep ?
+          (isNaN(parseInt(stepMenuIdFromStep, 10)) ? stepMenuIdFromStep : parseInt(stepMenuIdFromStep, 10)) :
+          pageInfo.menuId || menuId;
+
+        logUserJourney({
+          eventType: 'tour_step_view',
+          stepKey: stepId,
+          menuId: stepMenuId,
+          accessLink: window.location.pathname,
+        });
+      });
+
+      // Log tour completion when tour completes
+      tour.on('complete', () => {
+        // Get current step for menuId
+        const currentStep = tour.getCurrentStep();
+        const stepOptions = currentStep as any;
+        const stepMenuIdFromStep = stepOptions?.options?.menuId || stepOptions?.menuId;
+        const pageInfo = getPageInfo();
+        const stepMenuId = stepMenuIdFromStep ?
+          (isNaN(parseInt(stepMenuIdFromStep, 10)) ? stepMenuIdFromStep : parseInt(stepMenuIdFromStep, 10)) :
+          pageInfo.menuId || menuId;
+
+        logUserJourney({
+          eventType: 'tour_step_complete',
+          stepKey: 'tour_complete',
+          menuId: stepMenuId,
+          accessLink: window.location.pathname,
+        });
+      });
+
+      // Log tour cancel/skip
+      tour.on('cancel', () => {
+        // Get current step for menuId
+        const currentStep = tour.getCurrentStep();
+        const stepOptions = currentStep as any;
+        const stepMenuIdFromStep = stepOptions?.options?.menuId || stepOptions?.menuId;
+        const pageInfo = getPageInfo();
+        const stepMenuId = stepMenuIdFromStep ?
+          (isNaN(parseInt(stepMenuIdFromStep, 10)) ? stepMenuIdFromStep : parseInt(stepMenuIdFromStep, 10)) :
+          pageInfo.menuId || menuId;
+
+        logUserJourney({
+          eventType: 'tour_skipped',
+          menuId: stepMenuId,
+          accessLink: window.location.pathname,
+        });
+      });
+
+      // Add CSS for custom styling
+      style = document.createElement('style');
     style.textContent = `
       /* Base Shepherd Styles */
       .shepherd-element {
@@ -296,6 +406,7 @@ const ShepherdTour: React.FC<ShepherdTourProps> = ({ tabs, steps, onComplete, on
       const skip = {
         text: "Skip",
         action: () => {
+          // Log skip event is handled by tour.on('cancel')
           tour.cancel();
           onComplete?.();
         },
@@ -310,13 +421,34 @@ const ShepherdTour: React.FC<ShepherdTourProps> = ({ tabs, steps, onComplete, on
 
       const next = {
         text: "Next",
-        action: tour.next,
+        action: () => {
+          // Log step completion before moving to next step
+          const currentStep = tour.getCurrentStep();
+          const stepId = currentStep?.id || `step_${index}`;
+
+          // Get menuId from step options, fallback to getPageInfo
+          const stepOptions = currentStep as any;
+          const stepMenuIdFromStep = stepOptions?.options?.menuId || stepOptions?.menuId;
+          const pageInfo = getPageInfo();
+          const stepMenuId = stepMenuIdFromStep ?
+            (isNaN(parseInt(stepMenuIdFromStep, 10)) ? stepMenuIdFromStep : parseInt(stepMenuIdFromStep, 10)) :
+            pageInfo.menuId || menuId;
+
+          logUserJourney({
+            eventType: 'tour_step_complete',
+            stepKey: stepId,
+            menuId: stepMenuId,
+            accessLink: window.location.pathname,
+          });
+          tour.next();
+        },
         classes: "shepherd-next",
       };
 
       const finish = {
         text: "Finish",
         action: () => {
+          // Log final step completion - handled by tour.on('complete')
           tour.complete();
           onComplete?.();
         },
@@ -384,13 +516,20 @@ const ShepherdTour: React.FC<ShepherdTourProps> = ({ tabs, steps, onComplete, on
     };
 
     startTour();
+    };
+
+    initializeTour();
 
     return () => {
-      tour.cancel();
-      document.head.removeChild(style);
+      if (tour) {
+        tour.cancel();
+      }
+      if (style && document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
       (window as any).detailOnboardingHandler = undefined;
     };
-  }, [tabs, onComplete, onOpenDetailModal, isMobile]);
+  }, [tabs, onComplete, onOpenDetailModal, isMobile, tourStepsFromAPI, isLoadingTourSteps]);
 
   return null;
 };

@@ -1,5 +1,90 @@
 import Shepherd, { Tour } from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger';
+
+// Interface for API tour step data
+interface ApplyLeaveTourStepData {
+    on_click: string;
+    title: string;
+    description: string;
+}
+
+// Helper to get user data from localStorage
+const getUserData = (): { url: string; token: string; subInstituteId: string } | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const userData = localStorage.getItem("userData");
+        if (userData) {
+            const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+            return {
+                url: APP_URL,
+                token,
+                subInstituteId: String(sub_institute_id)
+            };
+        }
+    } catch (e) {
+        console.error('[ApplyLeave Tour] Error getting userData:', e);
+    }
+    return null;
+};
+
+// Fetch tour steps from API
+const fetchApplyLeaveTourStepsFromAPI = async (menuId: number): Promise<ApplyLeaveTourStepData[]> => {
+    const userData = getUserData();
+    if (!userData) {
+        console.log('[ApplyLeave Tour] No userData available, using default tour steps');
+        return [];
+    }
+
+    try {
+        const baseUrl = userData.url;
+        const apiUrl = `${baseUrl}/table_data?table=Onboarding_tour_details&filters[menu_id]=${menuId}&token=${userData.token}&sub_institute_id=${userData.subInstituteId}`;
+        console.log('[ApplyLeave Tour] Fetching tour steps from API:', apiUrl);
+
+        const res = await fetch(apiUrl);
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch tour steps: ${res.status}`);
+        }
+
+        const json = await res.json();
+        console.log('[ApplyLeave Tour] Raw API response:', json);
+
+        // Handle different response formats
+        let tourData: ApplyLeaveTourStepData[] = [];
+
+        if (Array.isArray(json)) {
+            tourData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+            tourData = json.data;
+        } else if (json.result && Array.isArray(json.result)) {
+            tourData = json.result;
+        } else if (json.response && Array.isArray(json.response)) {
+            tourData = json.response;
+        } else if (typeof json === 'object') {
+            for (const key of Object.keys(json)) {
+                if (Array.isArray(json[key])) {
+                    tourData = json[key];
+                    console.log(`[ApplyLeave Tour] Found array data in response.${key}`);
+                    break;
+                }
+            }
+        }
+
+        // Normalize field names
+        const normalizedTourData = tourData.map((step: any) => ({
+            on_click: step.on_click || step.onClick || step.step_key || step.stepKey || step.id || '',
+            title: step.title || step.Title || step.name || step.step_title || step.stepTitle || '',
+            description: step.description || step.Description || step.text || step.Text || step.content || step.step_description || ''
+        }));
+
+        console.log('[ApplyLeave Tour] Parsed tour data:', normalizedTourData);
+        return normalizedTourData;
+    } catch (error) {
+        console.error('[ApplyLeave Tour] Error fetching tour steps:', error);
+        return [];
+    }
+};
 
 export interface ApplyLeaveTourStep {
     id: string;
@@ -38,6 +123,9 @@ export class ApplyLeaveTour {
     private static readonly TOUR_STATE_KEY = 'applyLeaveTourState';
     private static readonly COMPLETED_KEY = 'applyLeaveTourCompleted';
 
+    // Tour trigger value for this page
+    public static readonly TRIGGER_VALUE = 'apply-leave';
+
     // Global instance for cross-component access
     public static globalInstance: ApplyLeaveTour | null = null;
 
@@ -68,13 +156,26 @@ export class ApplyLeaveTour {
 
 
     // Start the tour
-    public startTour(): void {
+    public async startTour(): Promise<void> {
         if (this.isActive) return;
 
         console.log('Starting ApplyLeave tour...');
 
+        // Fetch tour steps from API (menu_id = 102 for Apply Leave)
+        const apiTourData = await fetchApplyLeaveTourStepsFromAPI(102);
+        console.log('[ApplyLeave Tour] API tour data fetched:', apiTourData);
+
         // Clear the trigger flag
         // sessionStorage.removeItem('triggerPageTour');
+
+        // Log tour started event
+        const { menuId: startMenuId, accessLink: startAccessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_started',
+            stepKey: 'apply-leave-tour',
+            menuId: startMenuId,
+            accessLink: startAccessLink || '/HRMS/Leave-Management/ApplyLeave',
+        }).catch(console.error);
 
         this.tour = new Shepherd.Tour({
             defaultStepOptions: {
@@ -94,7 +195,7 @@ export class ApplyLeaveTour {
             keyboardNavigation: true
         });
 
-        const steps = this.createSteps();
+        const steps = this.createSteps(apiTourData);
         console.log('ApplyLeave tour steps created:', steps.length);
 
         // Add steps to tour
@@ -103,9 +204,32 @@ export class ApplyLeaveTour {
         });
 
         // Handle tour events
+        this.tour.on('show', (event) => {
+            const currentStep = event.step;
+            const stepId = currentStep.id || 'apply-leave-step';
+            // Log tour step view journey event
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+                eventType: 'tour_step_view',
+                stepKey: stepId,
+                menuId: menuId,
+                accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+            }).catch(console.error);
+        });
+
    this.tour.on('cancel', () => {
     this.isActive = false;
     this.saveTourState();
+       // Log tour skipped journey event
+       const { menuId, accessLink } = getPageInfo();
+       const currentStep = this.tour?.getCurrentStep();
+       const stepId = currentStep?.id || 'apply-leave-tour';
+       logUserJourney({
+           eventType: 'tour_skipped',
+           stepKey: stepId,
+           menuId: menuId,
+           accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+       }).catch(console.error);
     localStorage.setItem(ApplyLeaveTour.COMPLETED_KEY, 'true');
     sessionStorage.removeItem('triggerPageTour');
 });
@@ -114,6 +238,14 @@ export class ApplyLeaveTour {
  this.tour.on('complete', () => {
     this.isActive = false;
     this.saveTourState();
+     // Log tour completed journey event
+     const { menuId, accessLink } = getPageInfo();
+     logUserJourney({
+         eventType: 'tour_complete',
+         stepKey: 'apply-leave-tour',
+         menuId: menuId,
+         accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+     }).catch(console.error);
     localStorage.setItem(ApplyLeaveTour.COMPLETED_KEY, 'true');
     sessionStorage.removeItem('triggerPageTour');
     this.showCompletionMessage();
@@ -130,8 +262,29 @@ export class ApplyLeaveTour {
         }, 300);
     }
 
-    private createSteps(): ApplyLeaveTourStep[] {
+    private createSteps(apiTourData?: ApplyLeaveTourStepData[]): ApplyLeaveTourStep[] {
         const steps: ApplyLeaveTourStep[] = [];
+
+        // Create a Map from API data for easy lookup by step ID
+        const apiStepsMap = new Map<string, { title: string; description: string }>();
+
+        if (apiTourData && apiTourData.length > 0) {
+            console.log('[ApplyLeave Tour] Creating apiStepsMap from API data:', apiTourData);
+
+            apiTourData.forEach((stepData) => {
+                const stepId = stepData.on_click || '';
+                const stepTitle = stepData.title || '';
+                const stepDescription = stepData.description || '';
+
+                if (stepId) {
+                    apiStepsMap.set(stepId, { title: stepTitle, description: stepDescription });
+                }
+            });
+
+            console.log('[ApplyLeave Tour] apiStepsMap created:', Array.from(apiStepsMap.entries()));
+        }
+
+        console.log('[ApplyLeave Tour] Using tour steps with API overrides');
 
         // Helper to auto-set form values for tour
         const setupTourForm = async () => {
@@ -147,8 +300,8 @@ export class ApplyLeaveTour {
         // Welcome step
         steps.push({
             id: 'apply-leave-welcome',
-            title: '🏖️ Leave Application',
-            text: 'Welcome to the Leave Application page! This tour will guide you through all the features for submitting leave requests. Let\'s set up the form to show you all available options.',
+            title: apiStepsMap.get('apply-leave-welcome')?.title || '🏖️ Leave Application',
+            text: apiStepsMap.get('apply-leave-welcome')?.description || 'Welcome to the Leave Application page! This tour will guide you through all the features for submitting leave requests. Let\'s set up the form to show you all available options.',
             attachTo: {
                 element: '#tour-leave-title',
                 on: 'bottom'
@@ -164,7 +317,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Start Tour',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-welcome',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -172,8 +335,8 @@ export class ApplyLeaveTour {
         // Type of Leave field - now shows employee option
         steps.push({
             id: 'apply-leave-type',
-            title: '📋 Type of Leave',
-            text: 'Select whether this leave is for "Self" or for an "Employee". We\'ve automatically selected "Employee" to show you additional fields below.',
+            title: apiStepsMap.get('apply-leave-type')?.title || '📋 Type of Leave',
+            text: apiStepsMap.get('apply-leave-type')?.description || 'Select whether this leave is for "Self" or for an "Employee". We\'ve automatically selected "Employee" to show you additional fields below.',
             attachTo: {
                 element: '#tour-type-of-leave',
                 on: 'bottom'
@@ -186,7 +349,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-type',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -194,8 +367,8 @@ export class ApplyLeaveTour {
         // Department field - now visible
         steps.push({
             id: 'apply-leave-department',
-            title: '🏢 Department',
-            text: 'Select the department of the employee you\'re applying leave for. This field appears when "Employee" is selected as the Type of Leave.',
+            title: apiStepsMap.get('apply-leave-department')?.title || '🏢 Department',
+            text: apiStepsMap.get('apply-leave-department')?.description || 'Select the department of the employee you\'re applying leave for. This field appears when "Employee" is selected as the Type of Leave.',
             attachTo: {
                 element: '#tour-department',
                 on: 'right'
@@ -208,7 +381,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-department',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -216,8 +399,8 @@ export class ApplyLeaveTour {
         // Employee field - now visible
         steps.push({
             id: 'apply-leave-employee',
-            title: '👤 Employee',
-            text: 'Select the specific employee you\'re applying leave for. Employees are filtered based on the department selected above.',
+            title: apiStepsMap.get('apply-leave-employee')?.title || '👤 Employee',
+            text: apiStepsMap.get('apply-leave-employee')?.description || 'Select the specific employee you\'re applying leave for. Employees are filtered based on the department selected above.',
             attachTo: {
                 element: '#tour-employee',
                 on: 'right'
@@ -230,7 +413,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-employee',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -238,8 +431,8 @@ export class ApplyLeaveTour {
         // Leave Type field
         steps.push({
             id: 'apply-leave-leave-type',
-            title: '🏷️ Leave Type',
-            text: 'Select the type of leave you want to apply for (e.g., Casual Leave, Sick Leave, Earned Leave, etc.). This will be loaded from your organization\'s leave policy.',
+            title: apiStepsMap.get('apply-leave-leave-type')?.title || '🏷️ Leave Type',
+            text: apiStepsMap.get('apply-leave-leave-type')?.description || 'Select the type of leave you want to apply for (e.g., Casual Leave, Sick Leave, Earned Leave, etc.). This will be loaded from your organization\'s leave policy.',
             attachTo: {
                 element: '#tour-leave-type',
                 on: 'bottom'
@@ -252,7 +445,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-leave-type',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -269,8 +472,8 @@ export class ApplyLeaveTour {
 
         steps.push({
             id: 'apply-leave-day-type',
-            title: '📅 Day Type',
-            text: 'Choose whether you\'re taking a "Full" day leave or a "Half" day leave. We\'ve selected "Full" to show you the date range fields.',
+            title: apiStepsMap.get('apply-leave-day-type')?.title || '📅 Day Type',
+            text: apiStepsMap.get('apply-leave-day-type')?.description || 'Choose whether you\'re taking a "Full" day leave or a "Half" day leave. We\'ve selected "Full" to show you the date range fields.',
             attachTo: {
                 element: '#tour-day-type',
                 on: 'bottom'
@@ -286,7 +489,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-day-type',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -294,8 +507,8 @@ export class ApplyLeaveTour {
         // From Date field - now visible
         steps.push({
             id: 'apply-leave-from-date',
-            title: '📆 From Date',
-            text: 'Select the starting date of your leave. For full day leave, this is when your leave period begins.',
+            title: apiStepsMap.get('apply-leave-from-date')?.title || '📆 From Date',
+            text: apiStepsMap.get('apply-leave-from-date')?.description || 'Select the starting date of your leave. For full day leave, this is when your leave period begins.',
             attachTo: {
                 element: '#tour-from-date',
                 on: 'bottom'
@@ -308,7 +521,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-from-date',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -316,8 +539,8 @@ export class ApplyLeaveTour {
         // To Date field - now visible
         steps.push({
             id: 'apply-leave-to-date',
-            title: '📆 To Date',
-            text: 'Select the end date of your leave. Your leave period will run from the From Date to this To Date (inclusive).',
+            title: apiStepsMap.get('apply-leave-to-date')?.title || '📆 To Date',
+            text: apiStepsMap.get('apply-leave-to-date')?.description || 'Select the end date of your leave. Your leave period will run from the From Date to this To Date (inclusive).',
             attachTo: {
                 element: '#tour-to-date',
                 on: 'bottom'
@@ -330,7 +553,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-to-date',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -338,8 +571,8 @@ export class ApplyLeaveTour {
         // Comment field
         steps.push({
             id: 'apply-leave-comment',
-            title: '💬 Comment',
-            text: 'Add any comments or notes about your leave request. This is optional but can help your manager understand your leave request better.',
+            title: apiStepsMap.get('apply-leave-comment')?.title || '💬 Comment',
+            text: apiStepsMap.get('apply-leave-comment')?.description || 'Add any comments or notes about your leave request. This is optional but can help your manager understand your leave request better.',
             attachTo: {
                 element: '#tour-comment',
                 on: 'top'
@@ -352,7 +585,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-comment',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -360,8 +603,8 @@ export class ApplyLeaveTour {
         // Submit button
         steps.push({
             id: 'apply-leave-submit',
-            title: '✅ Submit',
-            text: 'Click here to submit your leave application. Make sure all required fields are filled before submitting.',
+            title: apiStepsMap.get('apply-leave-submit')?.title || '✅ Submit',
+            text: apiStepsMap.get('apply-leave-submit')?.description || 'Click here to submit your leave application. Make sure all required fields are filled before submitting.',
             attachTo: {
                 element: '#tour-submit-btn',
                 on: 'top'
@@ -374,7 +617,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-submit',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -382,8 +635,8 @@ export class ApplyLeaveTour {
         // Reset button
         steps.push({
             id: 'apply-leave-reset',
-            title: '🔄 Reset',
-            text: 'Use this button to clear all form fields and start fresh. This is useful if you want to cancel the current leave request.',
+            title: apiStepsMap.get('apply-leave-reset')?.title || '🔄 Reset',
+            text: apiStepsMap.get('apply-leave-reset')?.description || 'Use this button to clear all form fields and start fresh. This is useful if you want to cancel the current leave request.',
             attachTo: {
                 element: '#tour-reset-btn',
                 on: 'top'
@@ -396,7 +649,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-reset',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -404,8 +667,8 @@ export class ApplyLeaveTour {
         // Submitted Applications Table
         steps.push({
             id: 'apply-leave-table',
-            title: '📊 Submitted Leave Applications',
-            text: 'This table shows all your submitted leave applications. You can view the status, dates, and details of each request here.',
+            title: apiStepsMap.get('apply-leave-table')?.title || '📊 Submitted Leave Applications',
+            text: apiStepsMap.get('apply-leave-table')?.description || 'This table shows all your submitted leave applications. You can view the status, dates, and details of each request here.',
             attachTo: {
                 element: '#tour-submitted-table',
                 on: 'top'
@@ -418,7 +681,17 @@ export class ApplyLeaveTour {
                 },
                 {
                     text: 'Finish Tour',
-                    action: () => this.tour?.complete()
+                    action: () => {
+                        // Log step complete
+                        const { menuId, accessLink } = getPageInfo();
+                        logUserJourney({
+                            eventType: 'tour_step_complete',
+                            stepKey: 'apply-leave-table',
+                            menuId: menuId,
+                            accessLink: accessLink || '/HRMS/Leave-Management/ApplyLeave',
+                        }).catch(console.error);
+                        this.tour?.complete();
+                    }
                 }
             ]
         });
@@ -451,11 +724,11 @@ export class ApplyLeaveTour {
     }
 
     // Restart tour
-    public restartTour(): void {
+    public async restartTour(): Promise<void> {
         localStorage.removeItem(ApplyLeaveTour.COMPLETED_KEY);
         localStorage.removeItem(ApplyLeaveTour.TOUR_STATE_KEY);
         this.isActive = false;
-        this.startTour();
+        await this.startTour();
     }
 
     // Check if tour is active
