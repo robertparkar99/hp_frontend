@@ -72,10 +72,10 @@ const LeaveAuthorization = () => {
         sessionStorage.removeItem('triggerPageTour');
 
         // Start the tour after a small delay to ensure DOM is ready
-        setTimeout(() => {
+        setTimeout(async () => {
           // Create new tour instance to ensure fresh start
           const tour = new LeaveAuthorisationTour();
-          tour.startTour();
+          await tour.startTour();
         }, 300);
       }
     };

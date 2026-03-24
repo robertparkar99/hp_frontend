@@ -1,9 +1,121 @@
-import Shepherd, { Step, StepOptions, Tour } from 'shepherd.js';
+import Shepherd, { StepOptions, Tour } from 'shepherd.js';
+import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger';
 
-// Extend Shepherd interface to include our custom classes and button actions
+// Type for tour step data from API
+interface MonthlyPayrollTourStepData {
+  on_click?: string;
+  onClick?: string;
+  step_key?: string;
+  stepKey?: string;
+  id?: number | string;
+  title?: string;
+  Title?: string;
+  name?: string;
+  step_title?: string;
+  stepTitle?: string;
+  description?: string;
+  Description?: string;
+  text?: string;
+  Text?: string;
+  content?: string;
+  step_description?: string;
+}
+
+// Helper to get user data from localStorage
+const getUserData = (): { url: string; token: string; subInstituteId: string } | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+      return {
+        url: APP_URL,
+        token,
+        subInstituteId: String(sub_institute_id)
+      };
+    }
+  } catch (e) {
+    console.error('[Monthly Payroll Tour] Error getting userData:', e);
+  }
+  return null;
+};
+
+// Fetch tour steps from API
+const fetchMonthlyPayrollTourStepsFromAPI = async (menuId: number): Promise<MonthlyPayrollTourStepData[]> => {
+  const userData = getUserData();
+  if (!userData) {
+    console.log('[Monthly Payroll Tour] No userData available, using default tour steps');
+    return [];
+  }
+
+  try {
+    const baseUrl = userData.url;
+    const apiUrl = `${baseUrl}/table_data?table=Onboarding_tour_details&filters[menu_id]=${menuId}`;
+    console.log('[Monthly Payroll Tour] Fetching tour steps from API:', apiUrl);
+
+    const res = await fetch(apiUrl);
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch tour steps: ${res.status}`);
+    }
+
+    const json = await res.json();
+    console.log('[Monthly Payroll Tour] Raw API response:', json);
+
+    // Handle different response formats
+    let tourData: MonthlyPayrollTourStepData[] = [];
+
+    if (Array.isArray(json)) {
+      tourData = json;
+    } else if (json.data && Array.isArray(json.data)) {
+      tourData = json.data;
+    } else if (json.result && Array.isArray(json.result)) {
+      tourData = json.result;
+    } else if (json.response && Array.isArray(json.response)) {
+      tourData = json.response;
+    } else if (typeof json === 'object') {
+      for (const key of Object.keys(json)) {
+        if (Array.isArray(json[key])) {
+          tourData = json[key];
+          console.log(`[Monthly Payroll Tour] Found array data in response.${key}`);
+          break;
+        }
+      }
+    }
+
+    console.log('[Monthly Payroll Tour] Parsed tour data:', tourData);
+    return tourData;
+  } catch (error) {
+    console.error('[Monthly Payroll Tour] Error fetching tour steps:', error);
+    return [];
+  }
+};
+
+// Extend Shepherd interface to include our custom properties for StepOptions
 declare module 'shepherd.js' {
   interface StepOptions {
+    id?: string;
+    title?: string;
+    text?: string | string[];
+    attachTo?: {
+      element: string | HTMLElement;
+      on: 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end' | 'left-start' | 'left-end' | 'right-start' | 'right-end';
+    };
+    buttons?: ButtonOptions[];
     classes?: string;
+    cancelIcon?: {
+      enabled?: boolean;
+      label?: string;
+    };
+    scrollTo?: boolean | {
+      behavior?: 'smooth' | 'auto';
+      block?: 'start' | 'center' | 'end';
+    };
+    when?: {
+      show?: () => void;
+      hide?: () => void;
+    };
   }
   
   interface ButtonOptions {
@@ -27,150 +139,191 @@ const nextAction = function(this: Tour) {
   this.next();
 };
 
-export const MonthlyPayrollTourSteps: StepOptions[] = [
-  {
-    id: 'tour-welcome',
-    title: 'Welcome to Monthly Payroll Management',
-    text: 'This tour will guide you through all the features of the Monthly Payroll management system. Click "Next" to begin.',
-    attachTo: { element: '#monthly-payroll-title', on: 'bottom' },
-    buttons: [
-      {
-        classes: 'shepherd-button shepherd-button-secondary',
-        text: 'Skip Tour',
-        action: cancelAction
-      },
-      {
-        classes: 'shepherd-button shepherd-button-primary',
-        text: 'Start Tour',
-        action: nextAction
-      }
-    ]
-  },
-  {
-    id: 'tour-employee-selector',
-    title: '🎯 Employee Selection',
-    text: 'Use this section to select employees for payroll processing. You can filter by department and select specific employees using the dropdown.',
-    attachTo: { element: '#employee-selector-container', on: 'bottom' },
-    buttons: [
-      {
-        classes: 'shepherd-button shepherd-button-secondary',
-        text: 'Back',
-        action: backAction
-      },
-      {
-        classes: 'shepherd-button shepherd-button-primary',
-        text: 'Next',
-        action: nextAction
-      }
-    ]
-  },
-  {
-    id: 'tour-month-selection',
-    title: '📅 Month Selection',
-    text: 'Select the month for which you want to process payroll. The dropdown contains all 12 months.',
-    attachTo: { element: '#month-select', on: 'bottom' },
-    buttons: [
-      {
-        classes: 'shepherd-button shepherd-button-secondary',
-        text: 'Back',
-        action: backAction
-      },
-      {
-        classes: 'shepherd-button shepherd-button-primary',
-        text: 'Next',
-        action: nextAction
-      }
-    ]
-  },
-  {
-    id: 'tour-year-selection',
-    title: '📆 Year Selection',
-    text: 'Select the financial year for payroll processing. The system provides a range of years to choose from.',
-    attachTo: { element: '#year-select', on: 'bottom' },
-    buttons: [
-      {
-        classes: 'shepherd-button shepherd-button-secondary',
-        text: 'Back',
-        action: backAction
-      },
-      {
-        classes: 'shepherd-button shepherd-button-primary',
-        text: 'Next',
-        action: nextAction
-      }
-    ]
-  },
-  {
-    id: 'tour-search-button',
-    title: '🔍 Search Button',
-    text: 'Click this button to fetch employee payroll data based on your selected filters. The button shows "Searching..." while loading.',
-    attachTo: { element: '#search-button', on: 'bottom' },
-    buttons: [
-      {
-        classes: 'shepherd-button shepherd-button-secondary',
-        text: 'Back',
-        action: backAction
-      },
-      {
-        classes: 'shepherd-button shepherd-button-primary',
-        text: 'Next',
-        action: nextAction
-      }
-    ]
-  },
-  {
-    id: 'tour-payroll-table',
-    title: '📊 Payroll Data Table',
-    text: 'After searching, this table will display all employee payroll data. You can sort columns by clicking on headers and filter data using the search inputs.',
-    attachTo: { element: '#payroll-data-table', on: 'top' },
-    buttons: [
-      {
-        classes: 'shepherd-button shepherd-button-secondary',
-        text: 'Back',
-        action: backAction
-      },
-      {
-        classes: 'shepherd-button shepherd-button-primary',
-        text: 'Next',
-        action: nextAction
-      }
-    ]
-  },
-  {
-    id: 'tour-submit-payroll',
-    title: '✅ Submit Payroll',
-    text: 'Click this button to save all payroll data. Once submitted, you can generate PDF salary slips and the records become locked for deletion. The button is disabled if no data is available.',
-    attachTo: { element: '#submit-payroll-button', on: 'top' },
-    buttons: [
-      {
-        classes: 'shepherd-button shepherd-button-secondary',
-        text: 'Back',
-        action: backAction
-      },
-      {
-        classes: 'shepherd-button shepherd-button-primary',
-        text: 'Next',
-        action: nextAction
-      }
-    ]
-  },
-  {
-    id: 'tour-complete',
-    title: '🎉 Tour Complete!',
-    text: 'Congratulations! You have completed the Monthly Payroll Management tour. You can now efficiently manage payroll processing for your organization. Click "Done" to close.',
-    attachTo: { element: '#monthly-payroll-title', on: 'bottom' },
-    buttons: [
-      {
-        classes: 'shepherd-button shepherd-button-primary',
-        text: 'Done',
-        action: nextAction
-      }
-    ]
-  }
-];
+// Function to generate tour steps with API overrides
+export const getMonthlyPayrollTourSteps = (apiTourData?: MonthlyPayrollTourStepData[]): StepOptions[] => {
+  // Create a Map from API data for easy lookup by step ID
+  const apiStepsMap = new Map<string, { title: string; description: string }>();
 
-// Function to create and configure the tour
-export const createMonthlyPayrollTour = (): Tour => {
+  if (apiTourData && apiTourData.length > 0) {
+    console.log('[Monthly Payroll Tour] Creating apiStepsMap from API data:', apiTourData.length);
+
+    apiTourData.forEach((stepData: MonthlyPayrollTourStepData) => {
+      const stepId = stepData.on_click || stepData.onClick || stepData.step_key || stepData.stepKey || String(stepData.id) || '';
+      const stepTitle = stepData.title || stepData.Title || stepData.name || stepData.step_title || stepData.stepTitle || '';
+      const stepDescription = stepData.description || stepData.Description || stepData.text || stepData.Text || stepData.content || stepData.step_description || '';
+
+      if (stepId) {
+        apiStepsMap.set(stepId, { title: stepTitle, description: stepDescription });
+      }
+    });
+
+    console.log('[Monthly Payroll Tour] apiStepsMap created:', Array.from(apiStepsMap.entries()));
+  }
+
+  console.log('[Monthly Payroll Tour] Using default tour steps with API overrides');
+
+  return [
+    {
+      id: 'tour-welcome',
+      title: apiStepsMap.get('tour-welcome')?.title || 'Welcome to Monthly Payroll Management',
+      text: apiStepsMap.get('tour-welcome')?.description || 'This tour will guide you through all the features of the Monthly Payroll management system. Click "Next" to begin.',
+      attachTo: { element: '#monthly-payroll-title', on: 'bottom' },
+      buttons: [
+        {
+          classes: 'shepherd-button shepherd-button-secondary',
+          text: 'Skip Tour',
+          action: cancelAction
+        },
+        {
+          classes: 'shepherd-button shepherd-button-primary',
+          text: 'Start Tour',
+          action: nextAction
+        }
+      ]
+    },
+    {
+      id: 'tour-employee-selector',
+      title: apiStepsMap.get('tour-employee-selector')?.title || '🎯 Employee Selection',
+      text: apiStepsMap.get('tour-employee-selector')?.description || 'Use this section to select employees for payroll processing. You can filter by department and select specific employees using the dropdown.',
+      attachTo: { element: '#employee-selector-container', on: 'bottom' },
+      buttons: [
+        {
+          classes: 'shepherd-button shepherd-button-secondary',
+          text: 'Back',
+          action: backAction
+        },
+        {
+          classes: 'shepherd-button shepherd-button-primary',
+          text: 'Next',
+          action: nextAction
+        }
+      ]
+    },
+    {
+      id: 'tour-month-selection',
+      title: apiStepsMap.get('tour-month-selection')?.title || '📅 Month Selection',
+      text: apiStepsMap.get('tour-month-selection')?.description || 'Select the month for which you want to process payroll. The dropdown contains all 12 months.',
+      attachTo: { element: '#month-select', on: 'bottom' },
+      buttons: [
+        {
+          classes: 'shepherd-button shepherd-button-secondary',
+          text: 'Back',
+          action: backAction
+        },
+        {
+          classes: 'shepherd-button shepherd-button-primary',
+          text: 'Next',
+          action: nextAction
+        }
+      ]
+    },
+    {
+      id: 'tour-year-selection',
+      title: apiStepsMap.get('tour-year-selection')?.title || '📆 Year Selection',
+      text: apiStepsMap.get('tour-year-selection')?.description || 'Select the financial year for payroll processing. The system provides a range of years to choose from.',
+      attachTo: { element: '#year-select', on: 'bottom' },
+      buttons: [
+        {
+          classes: 'shepherd-button shepherd-button-secondary',
+          text: 'Back',
+          action: backAction
+        },
+        {
+          classes: 'shepherd-button shepherd-button-primary',
+          text: 'Next',
+          action: nextAction
+        }
+      ]
+    },
+    {
+      id: 'tour-search-button',
+      title: apiStepsMap.get('tour-search-button')?.title || '🔍 Search Button',
+      text: apiStepsMap.get('tour-search-button')?.description || 'Click this button to fetch employee payroll data based on your selected filters. The button shows "Searching..." while loading.',
+      attachTo: { element: '#search-button', on: 'bottom' },
+      buttons: [
+        {
+          classes: 'shepherd-button shepherd-button-secondary',
+          text: 'Back',
+          action: backAction
+        },
+        {
+          classes: 'shepherd-button shepherd-button-primary',
+          text: 'Next',
+          action: nextAction
+        }
+      ]
+    },
+    {
+      id: 'tour-payroll-table',
+      title: apiStepsMap.get('tour-payroll-table')?.title || '📊 Payroll Data Table',
+      text: apiStepsMap.get('tour-payroll-table')?.description || 'After searching, this table will display all employee payroll data. You can sort columns by clicking on headers and filter data using the search inputs.',
+      attachTo: { element: '#payroll-data-table', on: 'top' },
+      buttons: [
+        {
+          classes: 'shepherd-button shepherd-button-secondary',
+          text: 'Back',
+          action: backAction
+        },
+        {
+          classes: 'shepherd-button shepherd-button-primary',
+          text: 'Next',
+          action: nextAction
+        }
+      ]
+    },
+    {
+      id: 'tour-submit-payroll',
+      title: apiStepsMap.get('tour-submit-payroll')?.title || '✅ Submit Payroll',
+      text: apiStepsMap.get('tour-submit-payroll')?.description || 'Click this button to save all payroll data. Once submitted, you can generate PDF salary slips and the records become locked for deletion. The button is disabled if no data is available.',
+      attachTo: { element: '#submit-payroll-button', on: 'top' },
+      buttons: [
+        {
+          classes: 'shepherd-button shepherd-button-secondary',
+          text: 'Back',
+          action: backAction
+        },
+        {
+          classes: 'shepherd-button shepherd-button-primary',
+          text: 'Next',
+          action: nextAction
+        }
+      ]
+    },
+    {
+      id: 'tour-complete',
+      title: apiStepsMap.get('tour-complete')?.title || '🎉 Tour Complete!',
+      text: apiStepsMap.get('tour-complete')?.description || 'Congratulations! You have completed the Monthly Payroll Management tour. You can now efficiently manage payroll processing for your organization. Click "Done" to close.',
+      attachTo: { element: '#monthly-payroll-title', on: 'bottom' },
+      buttons: [
+        {
+          classes: 'shepherd-button shepherd-button-primary',
+          text: 'Done',
+          action: nextAction
+        }
+      ]
+    }
+  ];
+};
+
+// Keep backward compatibility - export default steps (without API data)
+export const MonthlyPayrollTourSteps: StepOptions[] = getMonthlyPayrollTourSteps();
+
+// Function to create and configure the tour (async to fetch API data)
+export const createMonthlyPayrollTour = async (menuId?: number, accessLink?: string): Promise<Tour> => {
+  // Get menuId dynamically from getPageInfo() - with fallback to session storage trigger
+  const pageInfo = getPageInfo();
+  const menuIdFromStorage = sessionStorage.getItem('triggerPageTourMenuId');
+  const menuIdToUse = menuId || (menuIdFromStorage ? parseInt(menuIdFromStorage) : pageInfo.menuId);
+  
+  // Fetch API data first
+  console.log('[Monthly Payroll Tour] Fetching tour steps from API with menuId:', menuIdToUse);
+  const apiTourData = await fetchMonthlyPayrollTourStepsFromAPI(menuIdToUse);
+  console.log('[Monthly Payroll Tour] API tour data fetched:', apiTourData.length, 'steps');
+
+  // Get steps with API overrides
+  const steps = getMonthlyPayrollTourSteps(apiTourData);
+  console.log('[Monthly Payroll Tour] Tour steps created:', steps.length);
+
   const tour = new Shepherd.Tour({
     defaultStepOptions: {
       cancelIcon: {
@@ -189,9 +342,33 @@ export const createMonthlyPayrollTour = (): Tour => {
     keyboardNavigation: true
   });
 
-  // Add steps to the tour
-  MonthlyPayrollTourSteps.forEach(step => {
-    tour.addStep(step);
+  // Add steps to the tour with journey logging for button clicks
+  steps.forEach((step) => {
+    const modifiedButtons = step.buttons?.map((btn: any) => ({
+      ...btn,
+      action: function(this: Tour) {
+        // Log step completion when user clicks Next or Finish
+        const buttonText = btn.text?.toLowerCase() || '';
+        if (buttonText === 'next' || buttonText === 'start tour' || buttonText === 'done' || buttonText === 'finish tour') {
+          logUserJourney({
+            eventType: 'tour_step_complete',
+            stepKey: step.id || 'monthly-payroll-step',
+            menuId: menuIdToUse,
+            accessLink: accessLink || '/HRMS/Payroll/Monthly-Payroll',
+          }).catch(err => console.error('Journey logging error:', err));
+        }
+
+        // Execute original action
+        if (btn.action) {
+          btn.action.call(this, this);
+        }
+      }
+    }));
+
+    tour.addStep({
+      ...step,
+      buttons: modifiedButtons
+    } as any);
   });
 
   return tour;

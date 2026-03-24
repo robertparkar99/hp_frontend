@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { logUserJourney, getPageInfo } from "../../../../utils/journeyLogger";
 
 type DisciplinaryItem = {
   id: number;
@@ -46,6 +47,20 @@ type DisciplinaryItem = {
   employee_name: string;
   witness_name: string;
   reported_by_name: string;
+};
+
+// Type for API tour steps
+type TourStepAPI = {
+  id: number;
+  menu_id: number;
+  access_link: string;
+  event_type: string;
+  title: string;
+  description: string;
+  on_click: string;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string | null;
 };
 
 type DashboardData = {
@@ -181,6 +196,9 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const tourRef = useRef<Tour | null>(null);
 
+  // State for storing tour steps from API
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState<TourStepAPI[]>([]);
+
   const [sessionData, setSessionData] = useState<{
     url: string;
     token: string;
@@ -214,6 +232,66 @@ export function Dashboard() {
       }
     }
   }, []);
+
+  // 🔹 Fetch tour steps from API
+  useEffect(() => {
+    async function fetchTourSteps() {
+      if (!sessionData) return;
+
+      try {
+        // Get menuId from page info
+        const { menuId } = getPageInfo();
+        console.log('Current page menuId:', menuId);
+
+        // Fetch tour steps with proper authentication and filtering
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=Onboarding_tour_details&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`
+        );
+
+        // Clone response before reading to handle errors properly
+        if (!res.ok) {
+          const errorRes = res.clone();
+          try {
+            const errorText = await errorRes.text();
+            console.error('Tour steps API error:', res.status, errorText);
+          } catch (e) {
+            console.error('Tour steps API error:', res.status);
+          }
+          throw new Error(`Failed to fetch tour steps: ${res.status}`);
+        }
+
+        const json = await res.json();
+
+        // The API returns data in a specific format, extract the data array
+        console.log('Tour steps API response:', json);
+
+        // Handle different response formats
+        let tourData: TourStepAPI[] = [];
+        if (Array.isArray(json)) {
+          tourData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+          tourData = json.data;
+        } else if (json.result && Array.isArray(json.result)) {
+          tourData = json.result;
+        }
+
+        console.log('Parsed tour data:', tourData);
+
+        // Filter by menu_id from getPageInfo and access_link on client side
+        const filteredData = tourData.filter((step: TourStepAPI) =>
+          step.menu_id === menuId && step.access_link === 'content/organization-dashboard'
+        );
+
+        console.log('Filtered tour data:', filteredData);
+
+        setTourStepsFromAPI(filteredData.length > 0 ? filteredData : tourData);
+      } catch (error) {
+        console.error("Error fetching tour steps:", error);
+      }
+    }
+
+    fetchTourSteps();
+  }, [sessionData]);
 
   // 🔹 Fetch dashboard when sessionData is ready
   useEffect(() => {
@@ -251,8 +329,23 @@ export function Dashboard() {
       }
     }
 
+    // Check if API data is available
+    if (tourStepsFromAPI.length === 0) {
+      console.log('No tour steps available from API');
+      return;
+    }
+
     // Wait for DOM to be ready
     setTimeout(() => {
+      // Log tour started journey event
+      const { menuId, accessLink } = getPageInfo();
+      logUserJourney({
+        eventType: "tour_started",
+        stepKey: "welcome",
+        accessLink: accessLink,
+        menuId: menuId,
+      }).catch(console.error);
+
       const tour = new Shepherd.Tour({
         defaultStepOptions: {
           cancelIcon: {
@@ -289,15 +382,42 @@ export function Dashboard() {
         }[];
       }
 
-      const steps: TourStep[] = [
-        {
-          id: 'welcome',
-          title: 'Welcome to Organization Dashboard!',
-          text: 'This tour will guide you through all the key features and elements of your organization dashboard. Click "Next" to begin.',
-          attachTo: {
-            element: '#tour-header',
-            on: 'bottom'
-          },
+      // Define attachTo configuration for each step
+      const getAttachToConfig = (stepId: string) => {
+        const configs: Record<string, { element: string; on: string }> = {
+          'welcome': { element: '#tour-header', on: 'bottom' },
+          'header-org': { element: '#tour-header-org', on: 'bottom' },
+          'edit-org-btn': { element: '#tour-edit-org-btn', on: 'bottom' },
+          'metric-employees': { element: '#tour-metric-employees', on: 'bottom' },
+          'metric-departments': { element: '#tour-metric-departments', on: 'bottom' },
+          'metric-compliance': { element: '#tour-metric-compliance', on: 'bottom' },
+          'metric-disciplinary': { element: '#tour-metric-disciplinary', on: 'bottom' },
+          'org-tree': { element: '#tour-org-tree', on: 'top' },
+          'recent-activity': { element: '#tour-recent-activity', on: 'top' },
+          'quick-actions': { element: '#tour-quick-actions', on: 'top' },
+          'btn-manage-org': { element: '#tour-btn-manage-org', on: 'top' },
+          'btn-manage-dept': { element: '#tour-btn-manage-dept', on: 'top' },
+          'btn-manage-users': { element: '#tour-btn-manage-users', on: 'top' },
+          'btn-view-analytics': { element: '#tour-btn-view-analytics', on: 'top' },
+          'disciplinary-section': { element: '#tour-disciplinary-section', on: 'top' },
+          'disciplinary-items': { element: '#tour-disciplinary-items', on: 'top' },
+          'tour-complete': { element: '#tour-header', on: 'bottom' },
+        };
+        return configs[stepId] || { element: '#tour-header', on: 'bottom' };
+      };
+
+      // Map API data to TourStep format
+      const mappedSteps = tourStepsFromAPI.map((apiStep, index) => {
+        const isFirst = index === 0;
+        const isLast = index === tourStepsFromAPI.length - 1;
+        const attachTo = getAttachToConfig(apiStep.on_click);
+
+        return {
+          id: apiStep.on_click,
+          title: apiStep.title,
+          text: apiStep.description,
+          attachTo,
+          originalIndex: index,
           buttons: [
             {
               text: 'Skip Tour',
@@ -308,330 +428,92 @@ export function Dashboard() {
               classes: 'shepherd-button-secondary'
             },
             {
-              text: 'Next',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'header-org',
-          title: ' Organization Name',
-          text: 'This displays your organization\'s legal name. Click the edit button to modify organization details.',
-          attachTo: {
-            element: '#tour-header-org',
-            on: 'bottom'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next ',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'edit-org-btn',
-          title: ' Edit Organization',
-          text: 'Click this button to open the organization information form where you can update all organization details.',
-          attachTo: {
-            element: '#tour-edit-org-btn',
-            on: 'bottom'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'metric-employees',
-          title: 'Total Employees',
-          text: 'This card shows the total number of active employees in your organization. Click the eye icon to view user management.',
-          attachTo: {
-            element: '#tour-metric-employees',
-            on: 'bottom'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next ',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'metric-departments',
-          title: 'Total Departments',
-          text: 'This displays the total number of departments in your organization. Click the eye icon to view department structure.',
-          attachTo: {
-            element: '#tour-metric-departments',
-            on: 'bottom'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next ',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'metric-compliance',
-          title: 'Compliance',
-          text: 'This shows the number of compliance items awaiting management approval. Monitor this to ensure regulatory compliance.',
-          attachTo: {
-            element: '#tour-metric-compliance',
-            on: 'bottom'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'metric-disciplinary',
-          title: 'Disciplinary',
-          text: 'This displays the count of active disciplinary actions in the organization. Track and manage employee conduct here.',
-          attachTo: {
-            element: '#tour-metric-disciplinary',
-            on: 'bottom'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'org-tree',
-          title: 'Organization Tree',
-          text: 'This section displays the hierarchical structure of your organization. View departments and their relationships here.',
-          attachTo: {
-            element: '#tour-org-tree',
-            on: 'top'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'recent-activity',
-          title: ' Recent Activity',
-          text: 'This panel shows recent compliance activities and updates. Stay informed about the latest organizational changes.',
-          attachTo: {
-            element: '#tour-recent-activity',
-            on: 'top'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next ',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'quick-actions',
-          title: 'Quick Actions',
-          text: 'Access frequently used features quickly. Manage organization, departments, users, and view analytics from here.',
-          attachTo: {
-            element: '#tour-quick-actions',
-            on: 'top'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'btn-manage-org',
-          title: ' Manage Organization',
-          text: 'Navigate to the organization management section to update organization details, policies, and settings.',
-          attachTo: {
-            element: '#tour-btn-manage-org',
-            on: 'top'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'btn-manage-dept',
-          title: ' Manage Departments',
-          text: 'Access the department management section to add, edit, or remove departments and their structures.',
-          attachTo: {
-            element: '#tour-btn-manage-dept',
-            on: 'top'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'btn-manage-users',
-          title: ' Manage Users',
-          text: 'Go to user management to add new users, assign roles, and manage employee accounts and permissions.',
-          attachTo: {
-            element: '#tour-btn-manage-users',
-            on: 'top'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'btn-view-analytics',
-          title: ' View Analytics',
-          text: 'Explore detailed analytics and reports about organization performance, employee metrics, and more.',
-          attachTo: {
-            element: '#tour-btn-view-analytics',
-            on: 'top'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next ',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'disciplinary-section',
-          title: ' Disciplinary Actions',
-          text: 'This section shows recent disciplinary actions taken against employees. Track cases, actions taken, and outcomes.',
-          attachTo: {
-            element: '#tour-disciplinary-section',
-            on: 'top'
-          },
-          buttons: [
-            {
-              text: ' Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Next ',
-              action: () => tour.next()
-            }
-          ]
-        },
-        {
-          id: 'disciplinary-items',
-          title: ' Disciplinary Items',
-          text: 'Each item displays employee name, department, misconduct type, and action taken. Click to view full details.',
-          attachTo: {
-            element: '#tour-disciplinary-items',
-            on: 'top'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Finish Tour',
+              text: isLast ? 'Finish' : 'Next',
               action: () => {
-                localStorage.setItem('dashboardTourCompleted', 'true');
-                tour.complete();
+                if (isLast) {
+                  localStorage.setItem('dashboardTourCompleted', 'true');
+                  tour.complete();
+                } else {
+                  tour.next();
+                }
               }
             }
           ]
-        },
-        {
-          id: 'tour-complete',
-          title: 'Tour Complete!',
-          text: 'Congratulations! You now know how to navigate and use all features of your organization dashboard. Click "Finish" to start exploring!',
-          attachTo: {
-            element: '#tour-header',
-            on: 'bottom'
-          },
-          buttons: [
-            {
-              text: 'Previous',
-              action: () => tour.back()
-            },
-            {
-              text: 'Finish',
-              action: () => {
-                localStorage.setItem('dashboardTourCompleted', 'true');
-                tour.complete();
+        };
+      });
+
+      // Filter out steps where the target element doesn't exist in the DOM
+      const steps: TourStep[] = mappedSteps
+        .filter(step => {
+          const elementExists = document.querySelector(step.attachTo.element) !== null;
+          if (!elementExists) {
+            console.log(`Skipping tour step '${step.id}' - element '${step.attachTo.element}' not found in DOM`);
+          }
+          return elementExists;
+        })
+        .map((step, index, filteredArray) => {
+          const isLast = index === filteredArray.length - 1;
+          return {
+            ...step,
+            buttons: [
+              {
+                text: 'Skip Tour',
+                action: () => {
+                  localStorage.setItem('dashboardTourCompleted', 'true');
+                  tour.cancel();
+                },
+                classes: 'shepherd-button-secondary'
+              },
+              {
+                text: isLast ? 'Finish' : 'Next',
+                action: () => {
+                  if (isLast) {
+                    localStorage.setItem('dashboardTourCompleted', 'true');
+                    tour.complete();
+                  } else {
+                    tour.next();
+                  }
+                }
               }
-            }
-          ]
-        }
-      ];
+            ]
+          };
+        });
 
       // Add steps to tour
+      if (steps.length === 0) {
+        console.log('No valid tour steps found - all elements missing from DOM');
+        return;
+      }
+
       steps.forEach(step => tour.addStep(step));
+
+      // Handle tour step shown
+      tour.on('show', (event) => {
+        const currentStep = event.step;
+        const { menuId, accessLink } = getPageInfo();
+        const stepId = currentStep.id || 'unknown';
+
+        logUserJourney({
+          eventType: "tour_step_view",
+          stepKey: stepId,
+          accessLink: accessLink,
+          menuId: menuId,
+        }).catch(console.error);
+      });
 
       // Handle tour completion
       tour.on('complete', () => {
         console.log('Dashboard tour completed');
         localStorage.setItem('dashboardTourCompleted', 'true');
+
+        // Log tour completed journey event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+          eventType: "tour_step_complete",
+          stepKey: "tour-complete",
+          accessLink: accessLink,
+          menuId: menuId,
+        }).catch(console.error);
 
         // Dispatch event for sidebar tour to resume
         window.dispatchEvent(new CustomEvent('detailTourComplete'));
@@ -652,6 +534,15 @@ export function Dashboard() {
       // Handle tour cancellation
       tour.on('cancel', () => {
         console.log('Dashboard tour cancelled');
+
+        // Log tour skipped journey event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+          eventType: "tour_skipped",
+          stepKey: "cancelled",
+          accessLink: accessLink,
+          menuId: menuId,
+        }).catch(console.error);
 
         // Dispatch event for sidebar tour to resume
         window.dispatchEvent(new CustomEvent('detailTourComplete'));
@@ -674,28 +565,48 @@ export function Dashboard() {
         tour.start();
       }, 500);
     }, 100);
-  }, [loading, data]);
+  }, [loading, data, tourStepsFromAPI]);
 
   // 🔹 Initialize Tour when data is loaded (from sidebar navigation)
   useEffect(() => {
+    // Wait for tour steps to be loaded before checking trigger
+    if (tourStepsFromAPI.length === 0) {
+      return; // Tour steps not loaded yet
+    }
+
     // Check if we should trigger the tour (from sidebar tour navigation)
     const triggerTour = sessionStorage.getItem('triggerPageTour');
     console.log('Tour trigger check - triggerTour:', triggerTour);
+
+    if (!triggerTour) {
+      return; // No trigger, don't start tour
+    }
+
     const shouldStartTour = triggerTour === 'organization-dashboard';
     console.log('Tour trigger check - shouldStartTour:', shouldStartTour);
 
     // Clear the trigger flag immediately
-    if (triggerTour) {
-      sessionStorage.removeItem('triggerPageTour');
-      console.log('Triggering organization dashboard tour from navigation...');
-    }
+    sessionStorage.removeItem('triggerPageTour');
+    console.log('Triggering organization dashboard tour from navigation...');
 
     // Start tour if triggered from sidebar
     if (shouldStartTour) {
       console.log('Starting organization dashboard tour...');
-      initializeTour(true);
+      // Use a timeout to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        try {
+          // Force reset tour completion flag when triggered from sidebar navigation
+          localStorage.removeItem('dashboardTourCompleted');
+          initializeTour(true); // true = force start
+          console.log('Organization dashboard tour initialized and started');
+        } catch (error) {
+          console.error('Error starting organization dashboard tour:', error);
+        }
+      }, 1000);
+
+      return () => clearTimeout(timer);
     }
-  }, [initializeTour]);
+  }, [initializeTour, tourStepsFromAPI]);
 
   // 🔹 Cleanup tour when component unmounts
   useEffect(() => {

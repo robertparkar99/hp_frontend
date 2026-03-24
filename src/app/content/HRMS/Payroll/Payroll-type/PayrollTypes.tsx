@@ -37,8 +37,8 @@ export default function PayrollTypes() {
     const shouldStart = shouldStartPayrollTypesTour();
     if (shouldStart) {
       // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        startPayrollTypesTour();
+      setTimeout(async () => {
+        await startPayrollTypesTour();
       }, 500);
     }
   }, []);

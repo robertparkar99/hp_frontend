@@ -751,7 +751,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
       {/* Search and Filters */}
       <Card id="tour-screening-search">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3" id="screening-all-search">
             <CardTitle className="text-lg">Candidate Screening Results</CardTitle>
             <div className="flex flex-wrap gap-2">
               <div className="relative w-full sm:w-auto">
@@ -825,7 +825,7 @@ const CandidateScreening = ({ jobPostings, onRefresh }: CandidateScreeningProps)
                             <User className="w-6 h-6 text-blue-400" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2" id={index === 0 ? 'screening-all-tabs' : undefined}>
                               <h3 className="text-lg font-semibold truncate" id={index === 0 ? 'tour-candidate-status-badge' : undefined}>{candidate.name}</h3>
                               {getStatusBadge(candidate.status)}
                             </div>

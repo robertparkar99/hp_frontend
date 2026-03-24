@@ -47,7 +47,7 @@ import DataTable, {
 import ConfigurationModal from "../../Jobrole-library/ConfigurationModal";
 import Loader from "@/components/utils/loading";
 import ShepherdTour from "../../Onboarding/Competency-Management/ShepherdTour";
-import { generateDetailTourSteps } from "@/lib/tourSteps";
+import { generateDetailTourSteps, fetchTourStepsFromAPI } from "@/lib/tourSteps";
 
 type JobRoleTask = {
   id: number;
@@ -110,6 +110,8 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
   const contentRef = useRef<HTMLElement>(null);
   // Detail tour state
   const [showTour, setShowTour] = useState(false);
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState<any[]>([]);
+  const [isLoadingTourSteps, setIsLoadingTourSteps] = useState(true);
   // ✅ View toggle state
   const [viewMode, setViewMode] = useState<"myview" | "table">("myview");
 
@@ -143,6 +145,24 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
       });
     }
   }, []);
+
+  // Fetch tour steps from API for detail tour
+  useEffect(() => {
+    const fetchTourSteps = async () => {
+      if (!sessionData.url) return;
+      
+      // Use menuId 37 as specified in the requirement
+      const menuId = 37;
+      console.log('[JobroleTaskLibrary] Fetching tour steps for detail tour, menuId:', menuId);
+      
+      const apiData = await fetchTourStepsFromAPI(menuId);
+      console.log('[JobroleTaskLibrary] Fetched tour steps for detail tour:', apiData);
+      setTourStepsFromAPI(apiData);
+      setIsLoadingTourSteps(false);
+    };
+
+    fetchTourSteps();
+  }, [sessionData]);
 
   // Load permissions
   useEffect(() => {
@@ -1020,9 +1040,9 @@ const CriticalWorkFunctionGrid: React.FC<CriticalWorkFunctionGridProps> = ({ sho
       )}
 
       {/* Detail Tour */}
-      {showTour && (
+      {showTour && !isLoadingTourSteps && (
         <ShepherdTour
-          steps={generateDetailTourSteps('Jobrole Task')}
+          steps={generateDetailTourSteps('Jobrole Task', tourStepsFromAPI)}
           onComplete={() => {
             setShowTour(false);
             if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {

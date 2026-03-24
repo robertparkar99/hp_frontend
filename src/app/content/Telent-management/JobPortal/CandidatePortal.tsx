@@ -36,6 +36,9 @@ import CandidatePortalTourSteps, {
   setTourOpenApplyDialog
 } from "./CandidatePortalTourSteps";
 
+// Import journey logger for page visit logging
+import { logUserJourney, getPageInfo } from "@/utils/journeyLogger";
+
 interface JobPosting {
   id: number;
   title: string;
@@ -167,6 +170,14 @@ const CandidatePortal = () => {
         const parsed = JSON.parse(userData);
         setSessionData(parsed);
 
+        // Log page visit when session data is available
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+          eventType: 'page_visit',
+          menuId: menuId,
+          accessLink: accessLink || `/Telent-management/JobPortal`,
+        }).catch(console.error);
+
         // Pre-fill form with user data if available
         if (parsed.user_name || parsed.email) {
           setFormData(prev => ({
@@ -192,8 +203,12 @@ const CandidatePortal = () => {
       // Check if tour should be triggered
       if (shouldTriggerCandidatePortalTour()) {
         console.log('CandidatePortal tour triggered from sidebar');
-        // Start the tour
-        CandidatePortalTourSteps.startTour();
+        // Start the tour - now async
+        try {
+          await CandidatePortalTourSteps.startTour();
+        } catch (error) {
+          console.error('[CandidatePortal] Error starting tour:', error);
+        }
       } else {
         console.log('CandidatePortal tour NOT triggered - normal page load');
       }
@@ -1074,9 +1089,15 @@ ${formData.current_role || "Not provided"}
                             <Button variant="outline" id={index === 0 ? 'tour-learn-more' : undefined}>Learn More</Button>
 
                           <Dialog open={isDialogOpen && selectedJob?.id === job.id} onOpenChange={setIsDialogOpen}>
-                            <DialogTrigger asChild>
-                              <Button onClick={() => handleApplyClick(job)}>Apply Now</Button>
+                              <div id="tour-apply-button"
+                                className="inline-flex items-center justify-center"
+                              >
+                                <DialogTrigger asChild>
+                                  <Button onClick={() => handleApplyClick(job)} >Apply Now</Button>
+
+
                             </DialogTrigger>
+                              </div>
                               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" id="tour-apply-dialog">
                               <DialogHeader>
                                 <DialogTitle>Apply for {selectedJob?.title}</DialogTitle>

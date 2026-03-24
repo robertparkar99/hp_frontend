@@ -69,8 +69,8 @@ const [columnFilters, setColumnFilters] = useState({
       console.log('Leave Type tour triggered from sidebar');
 
       // Start the tour after a short delay to ensure DOM is ready
-      setTimeout(() => {
-        startLeaveTypeTour();
+      setTimeout(async () => {
+        await startLeaveTypeTour();
       }, 1000);
     }
   }, []);

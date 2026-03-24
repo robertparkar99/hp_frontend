@@ -7,6 +7,7 @@ export type QueryIntent =
   | 'CREATE_JOB_DESCRIPTION'
   | 'JOB_ROLE_COMPETENCY'
   | 'Course_Recommendation'
+  | 'SKILL_GAP_ANALYSIS'
   | 'unclear';
 
   export interface ExtractedEntities {
@@ -77,6 +78,21 @@ const intentPatterns: Record<QueryIntent, string[]> = {
     'learning path suggestion'
   ],
 
+  SKILL_GAP_ANALYSIS: [
+    // Skill gap analysis patterns - ordered by specificity
+    // MUST contain "skill gap" or "gap analysis" to trigger this intent
+    'skill gap analysis',
+    'skill gap for',
+    'skill gap report',
+    'my skill gap',
+    'employee skill gap',
+    'team skill gap',
+    // These require explicit skill gap context
+    'skill gap',
+    'gap analysis',
+    'competency gap'
+  ],
+
   data_retrieval: [
     'how many', 'show me', 'list', 'get', 'count', 'report',
     'analytics', 'statistics', 'summary', 'find', 'search', 'retrieve',
@@ -126,6 +142,10 @@ export function extractEntities(query: string): ExtractedEntities {
   const industryPatterns = [
     /industry[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
     /(?:in|for|within) the ([a-zA-Z]+(?:\s+[a-zA-Z]+)*) (?:sector|industry|field)/i,
+    // Handle "Selected [value] for industry" pattern
+    /selected[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+for\s+industry/i,
+    // Handle "[value] industry" pattern
+    /^([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+industry/i,
   ];
 
   for (const pattern of industryPatterns) {
@@ -140,6 +160,10 @@ export function extractEntities(query: string): ExtractedEntities {
   const departmentPatterns = [
     /department[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
     /(?:in|for|within) ([a-zA-Z]+(?:\s+[a-zA-Z]+)*) department/i,
+    // Handle "Selected [value] for department" pattern
+    /selected[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+for\s+department/i,
+    // Handle "[value] department" pattern
+    /^([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+department/i,
   ];
 
   for (const pattern of departmentPatterns) {
@@ -219,13 +243,35 @@ export function classifyIntent(
     };
   }
 
+  // Check for SKILL_GAP_ANALYSIS patterns (similar to Course_Recommendation flow)
+  const skillGapPatterns = intentPatterns.SKILL_GAP_ANALYSIS.map(p => p.toLowerCase());
+  const skillGapMatches = skillGapPatterns.filter(pattern =>
+    lowerQuery.includes(pattern)
+  ).length;
+  
+  console.log('[classifyIntent] SKILL_GAP_ANALYSIS check - query:', lowerQuery, 'patterns:', skillGapPatterns, 'matches:', skillGapMatches);
+
+  if (skillGapMatches > 0) {
+    const entities = extractEntities(query);
+
+    let confidence = 0.5 + skillGapMatches * 0.15;
+    confidence = Math.min(confidence, 0.98);
+
+    return {
+      intent: 'SKILL_GAP_ANALYSIS',
+      confidence,
+      reasoning: `Detected ${skillGapMatches} skill gap analysis pattern(s)`,
+      entities
+    };
+  }
+
   // Original pattern matching for other intents
   const intents = Object.entries(intentPatterns) as [QueryIntent, string[]][];
   let maxMatches = 0;
   let detectedIntent: QueryIntent = 'unclear';
 
   for (const [intent, patterns] of intents) {
-    if (intent === 'JOB_ROLE_COMPETENCY' || intent === 'Course_Recommendation') continue; // Skip already handled
+    if (intent === 'JOB_ROLE_COMPETENCY' || intent === 'Course_Recommendation' || intent === 'SKILL_GAP_ANALYSIS') continue; // Skip already handled
 
     const matches = patterns.filter(pattern =>
       lowerQuery.includes(pattern.toLowerCase())
@@ -296,6 +342,8 @@ export function classifyIntent(
 export function shouldRouteToAction(intent: QueryIntent): boolean {
   // ✅ Explicit handling for JD creation
   if (intent === 'CREATE_JOB_DESCRIPTION') return true;
+  // SKILL_GAP_ANALYSIS is handled by its own dedicated handler in api-handler.ts
+  // Do NOT route it to generic action handler
 
   return intent === 'action' || intent === 'support';
 }

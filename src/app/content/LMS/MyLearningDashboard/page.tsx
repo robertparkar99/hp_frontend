@@ -5,6 +5,7 @@ import LearningDashboard from "@/app/content/LMS/MyLearningDashboard/learningDas
 import { useState, useEffect, useRef } from "react";
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo } from "@/utils/journeyLogger";
 
 interface TourStep {
   id: string;
@@ -20,10 +21,126 @@ interface TourStep {
     classes?: string;
   }>;
 }
+
+
+interface SessionData {
+  url: string;
+  token: string;
+  subInstituteId: string;
+}
+// ==================== JOURNEY LOGGING HELPERS ====================
+
+// Log tour started event
+const logTourStarted = (tourName: string): void => {
+  const { menuId, accessLink } = getPageInfo();
+  console.log(`[MyLearningDashboard] Logging tour started: ${tourName}, menuId: ${menuId}`);
+  logUserJourney({
+    eventType: 'tour_started',
+    stepKey: `${tourName}_started`,
+    menuId: menuId,
+    accessLink: accessLink || `/LMS/MyLearningDashboard`,
+  }).catch(console.error);
+};
+
+// Log tour step view event
+const logTourStepView = (stepId: string): void => {
+  const { menuId, accessLink } = getPageInfo();
+  logUserJourney({
+    eventType: 'tour_step_view',
+    stepKey: stepId,
+    menuId: menuId,
+    accessLink: accessLink || `/LMS/MyLearningDashboard`,
+  }).catch(console.error);
+};
+
+// Log tour skipped event
+const logTourSkipped = (tourName: string, lastStepId?: string): void => {
+  const { menuId, accessLink } = getPageInfo();
+  console.log(`[MyLearningDashboard] Logging tour skipped: ${tourName}, menuId: ${menuId}`);
+  logUserJourney({
+    eventType: 'tour_skipped',
+    stepKey: lastStepId || `${tourName}_skipped`,
+    menuId: menuId,
+    accessLink: accessLink || `/LMS/MyLearningDashboard`,
+  }).catch(console.error);
+};
+
+// Log tour complete event
+const logTourComplete = (tourName: string): void => {
+  const { menuId, accessLink } = getPageInfo();
+  console.log(`[MyLearningDashboard] Logging tour completed: ${tourName}, menuId: ${menuId}`);
+  logUserJourney({
+    eventType: 'tour_complete',
+    stepKey: `${tourName}_completed`,
+    menuId: menuId,
+    accessLink: accessLink || `/LMS/MyLearningDashboard`,
+  }).catch(console.error);
+};
+
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const tourInstanceRef = useRef<Shepherd.Tour | null>(null);
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState<any[]>([]);
+  const [isLoadingTourSteps, setIsLoadingTourSteps] = useState(true);
+  const hasFetchedRef = useRef(false);
+  const tourStartedRef = useRef(false);
+
+
+
+  // Load session data from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      try {
+        const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+        setSessionData({
+          url: APP_URL,
+          token,
+          subInstituteId: String(sub_institute_id),
+        });
+      } catch (e) {
+        console.error("[RecruitmentManagement] Invalid userData in localStorage", e);
+      }
+    }
+  }, []);
+
+
+  // Fetch tour steps from API
+  useEffect(() => {
+    const fetchTourSteps = async () => {
+      if (!sessionData) return;
+
+      try {
+        const { menuId } = getPageInfo();
+        console.log('[RecruitmentManagement] Fetching tour steps for menuId:', menuId);
+
+        const response = await fetch(
+          `${sessionData.url}/table_data?table=Onboarding_tour_details&filters[menu_id]=${menuId}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`yahi hai API error: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Handle different response formats
+        const stepsArray = Array.isArray(data) ? data : (data.data || []);
+        setTourStepsFromAPI(stepsArray);
+        console.log('[MyLearningDashboard] Tour steps loaded:', stepsArray);
+      } catch (error) {
+        console.error('[MyLearningDashboard] Failed to fetch tour steps:', error);
+        setTourStepsFromAPI([]);
+      } finally {
+        setIsLoadingTourSteps(false);
+      }
+    };
+
+    fetchTourSteps();
+  }, [sessionData]);
+
+
 
   // Sync with localStorage and handle sidebar state changes
   useEffect(() => {
@@ -38,7 +155,15 @@ export default function HomePage() {
     // Set localStorage for chatbot to detect LMS My Learning module
     localStorage.setItem('activeSection', 'LMS');
     localStorage.setItem('activeSubItem', 'My Learning');
-    
+
+    // Log page visit
+    const { menuId, accessLink } = getPageInfo();
+    logUserJourney({
+      eventType: 'page_visit',
+      menuId: menuId,
+      accessLink: accessLink || `/LMS/MyLearningDashboard`,
+    }).catch(console.error);
+
     // Dispatch event to notify chatbot of module change
     window.dispatchEvent(new Event('activeItemChange'));
 
@@ -53,16 +178,22 @@ export default function HomePage() {
       const triggerValue = sessionStorage.getItem('triggerPageTour');
       const isMyLearningTour = triggerValue === 'my-learning-dashboard';
 
-      console.log('[MyLearningDashboard] Tour trigger check:', { triggerValue, isMyLearningTour });
+      console.log('[MyLearningDashboard] Tour trigger check:', { triggerValue, isMyLearningTour, isLoadingTourSteps, tourStepsCount: tourStepsFromAPI.length, tourStarted: tourStartedRef.current });
 
-      if (isMyLearningTour) {
+      // Only start tour if:
+      // 1. It's the correct trigger
+      // 2. Tour steps are loaded (not loading)
+      // 3. Tour hasn't been started yet
+      // 4. Tour steps array has data
+      if (isMyLearningTour && !isLoadingTourSteps && !tourStartedRef.current && tourStepsFromAPI.length > 0) {
         // Clear the trigger to prevent multiple triggers
         sessionStorage.removeItem('triggerPageTour');
 
-        // Start the tour after a short delay to ensure UI is ready
-        setTimeout(() => {
-          startLearningDashboardTour();
-        }, 500);
+        // Mark tour as started
+        tourStartedRef.current = true;
+
+        // Pass the API data to the tour function
+        startLearningDashboardTour(tourStepsFromAPI);
       }
     };
 
@@ -80,11 +211,11 @@ export default function HomePage() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [tourStepsFromAPI, isLoadingTourSteps]); // Add dependencies to re-run when data loads
 
   // Start the learning dashboard tour
-  const startLearningDashboardTour = () => {
-    console.log('[MyLearningDashboard] Starting tour...');
+  const startLearningDashboardTour = (apiTourSteps: any[] = []) => {
+    console.log('[MyLearningDashboard] Starting tour with API steps:', apiTourSteps);
 
     // Check if tour was already completed
     const tourCompleted = sessionStorage.getItem('myLearningDashboardTourCompleted');
@@ -92,6 +223,15 @@ export default function HomePage() {
       console.log('[MyLearningDashboard] Tour already completed, skipping...');
       return;
     }
+
+    // Create a map from API data for easy lookup
+    const apiStepsMap = new Map();
+    apiTourSteps.forEach((step: any) => {
+      // Use on_click as the key
+      apiStepsMap.set(step.on_click, step);
+    });
+
+    console.log('[MyLearningDashboard] API steps map:', apiStepsMap);
 
     // Create tour instance
     const tour = new Shepherd.Tour({
@@ -114,12 +254,12 @@ export default function HomePage() {
 
     tourInstanceRef.current = tour;
 
-    // Define tour steps
+    // Define tour steps - using API data with fallback to default values
     const steps: any[] = [
       {
-        id: 'welcome',
-        title: 'Welcome to My Learning Dashboard!',
-        text: 'Let\'s take a quick tour to help you navigate through all the learning features available to you.',
+        id: 'my-learning-welcome',
+        title: apiStepsMap.get('my-learning-welcome')?.title || 'Welcome to My Learning Dashboard!',
+        text: apiStepsMap.get('my-learning-welcome')?.description || 'Let\'s take a quick tour to help you navigate through all the learning features available to you.',
         attachTo: {
           element: '#tour-page-header',
           on: 'bottom'
@@ -141,8 +281,8 @@ export default function HomePage() {
       },
       {
         id: 'browse-courses',
-        title: 'Browse Courses',
-        text: 'Click this button to browse and discover new courses available for you.',
+        title: apiStepsMap.get('browse-courses')?.title || 'Browse Courses',
+        text: apiStepsMap.get('browse-courses')?.description || 'Click this button to browse and discover new courses available for you.',
         attachTo: {
           element: '#tour-browse-courses',
           on: 'bottom'
@@ -161,8 +301,8 @@ export default function HomePage() {
       },
       {
         id: 'progress-overview',
-        title: 'Progress Overview',
-        text: 'This section shows your learning progress at a glance. You can see courses in progress, completed courses, skills earned, and learning hours.',
+        title: apiStepsMap.get('progress-overview')?.title || 'Progress Overview',
+        text: apiStepsMap.get('progress-overview')?.description || 'This section shows your learning progress at a glance. You can see courses in progress, completed courses, skills earned, and learning hours.',
         attachTo: {
           element: '#tour-progress-overview',
           on: 'top'
@@ -181,8 +321,8 @@ export default function HomePage() {
       },
       {
         id: 'my-courses',
-        title: 'My Courses Section',
-        text: 'This is where you manage all your courses. Switch between tabs to view courses in progress or completed courses.',
+        title: apiStepsMap.get('my-courses')?.title || 'My Courses Section',
+        text: apiStepsMap.get('my-courses')?.description || 'This is where you manage all your courses. Switch between tabs to view courses in progress or completed courses.',
         attachTo: {
           element: '#tour-my-courses',
           on: 'top'
@@ -201,8 +341,8 @@ export default function HomePage() {
       },
       {
         id: 'course-grid',
-        title: 'Course Cards',
-        text: 'Each course card shows the course title, thumbnail, progress, and skills. Click to view details or continue learning.',
+        title: apiStepsMap.get('course-grid')?.title || 'Course Cards',
+        text: apiStepsMap.get('course-grid')?.description || 'Each course card shows the course title, thumbnail, progress, and skills. Click to view details or continue learning.',
         attachTo: {
           element: '#tour-course-grid',
           on: 'top'
@@ -221,8 +361,8 @@ export default function HomePage() {
       },
       {
         id: 'quick-actions',
-        title: 'Quick Actions',
-        text: 'Access frequently used learning actions quickly. Search for courses, view certificates, and more.',
+        title: apiStepsMap.get('quick-actions')?.title || 'Quick Actions',
+        text: apiStepsMap.get('quick-actions')?.description || 'Access frequently used learning actions quickly. Search for courses, view certificates, and more.',
         attachTo: {
           element: '#tour-quick-actions',
           on: 'top'
@@ -241,8 +381,8 @@ export default function HomePage() {
       },
       {
         id: 'skill-progress',
-        title: 'Skill Progress Tracker',
-        text: 'Track your skill development over time. See your proficiency levels and identify areas for improvement.',
+        title: apiStepsMap.get('skill-progress')?.title || 'Skill Progress Tracker',
+        text: apiStepsMap.get('skill-progress')?.description || 'Track your skill development over time. See your proficiency levels and identify areas for improvement.',
         attachTo: {
           element: '#tour-skill-progress',
           on: 'top'
@@ -261,12 +401,13 @@ export default function HomePage() {
       },
       {
         id: 'learning-calendar',
-        title: 'Learning Calendar',
-        text: 'View your scheduled learning activities and deadlines. Plan your study time effectively.',
+        title: apiStepsMap.get('learning-calendar')?.title || 'Learning Calendar',
+        text: apiStepsMap.get('learning-calendar')?.description || 'View your scheduled learning activities and deadlines. Plan your study time effectively.',
         attachTo: {
           element: '#tour-learning-calendar',
           on: 'top'
         },
+        scrollTo: true,
         buttons: [
           {
             text: 'Previous',
@@ -281,8 +422,8 @@ export default function HomePage() {
       },
       {
         id: 'learning-stats',
-        title: 'Learning Statistics',
-        text: 'Detailed analytics and statistics about your learning journey.',
+        title: apiStepsMap.get('learning-stats')?.title || 'Learning Statistics',
+        text: apiStepsMap.get('learning-stats')?.description || 'Detailed analytics and statistics about your learning journey.',
         attachTo: {
           element: '#tour-learning-stats',
           on: 'top'
@@ -304,8 +445,8 @@ export default function HomePage() {
       },
       {
         id: 'tour-complete',
-        title: 'Tour Complete!',
-        text: 'Congratulations! You now know how to navigate your Learning Dashboard. Happy learning!',
+        title: apiStepsMap.get('tour-complete')?.title || 'Tour Complete!',
+        text: apiStepsMap.get('tour-complete')?.description || 'Congratulations! You now know how to navigate your Learning Dashboard. Happy learning!',
         attachTo: {
           element: '#tour-page-header',
           on: 'bottom'
@@ -327,17 +468,34 @@ export default function HomePage() {
       tour.addStep(step);
     });
 
+    // Add journey logging: log step view when shown
+    tour.on('show', (e: any) => {
+      const step = e.step;
+      if (step?.id) {
+        logTourStepView(step.id);
+      }
+    });
+
     // Handle tour completion
     tour.on('complete', () => {
       sessionStorage.setItem('myLearningDashboardTourCompleted', 'true');
+      logTourComplete('my_learning_dashboard');
       console.log('[MyLearningDashboard] Tour completed');
     });
 
     // Handle tour cancellation
     tour.on('cancel', () => {
       sessionStorage.setItem('myLearningDashboardTourCompleted', 'true');
+      logTourSkipped('my_learning_dashboard');
       console.log('[MyLearningDashboard] Tour cancelled');
     });
+
+    // Log tour started when tour is about to start
+    const originalStart = tour.start.bind(tour);
+    tour.start = function () {
+      logTourStarted('my_learning_dashboard');
+      return originalStart();
+    };
 
     // Start the tour
     tour.start();
@@ -347,62 +505,80 @@ export default function HomePage() {
   const handleCloseMobileSidebar = () => {
     setMobileOpen(false);
   };
+
   return (
     <>
       <style>{`
-        .shepherd-theme-custom {
-          --shepherd-theme-primary: #3080ff;
-          --shepherd-theme-secondary: #6c757d;
-        }
-        .shepherd-theme-custom .shepherd-header {
-          background: linear-gradient(135deg, #007BE5 0%, #0056b3 100%);
-          color: white;
-          border-radius: 5px 5px 0 0;
-          padding: 16px 20px;
-        }
-        .shepherd-theme-custom .shepherd-title {
-          font-size: 18px;
-          font-weight: 600;
-          margin: 0;
-          color: white;
-        }
-        .shepherd-theme-custom .shepherd-text {
-          font-size: 14px;
-          line-height: 1.6;
-          color: #333;
-          padding: 20px;
-        }
-        .shepherd-theme-custom .shepherd-button {
-          background: linear-gradient(135deg, #007BE5 0%, #0056b3 100%);
-          border: none;
-          border-radius: 8px;
-          padding: 10px 20px;
-          font-weight: 500;
-          font-size: 14px;
-          transition: all 0.3s ease;
-          margin: 0 5px;
-        }
-        .shepherd-theme-custom .shepherd-button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 123, 229, 0.4);
-        }
-        .shepherd-theme-custom .shepherd-button-secondary {
-          background: #f0f0f0 !important;
-          color: #333 !important;
-          border: 1px solid #ddd !important;
-        }
-        .shepherd-theme-custom .shepherd-element {
-          box-shadow: 0 10px 40px rgba(0, 123, 229, 0.3);
-          border-radius: 12px;
-          max-width: 400px;
-        }
-        .shepherd-theme-custom.shepherd-element {
-          position: relative !important;
-          z-index: 9999 !important;
-        }
-        .shepherd-theme-custom .shepherd-modal-overlay {
-          z-index: 9998 !important;
-        }
+     .shepherd-theme-custom {
+      --shepherd-theme-primary: #3b82f6;
+      --shepherd-theme-secondary: #6b7280;
+    }
+    .shepherd-theme-custom .shepherd-header {
+      background: #3b82f6;
+      color: white;
+      border-radius: 8px 8px 0 0;
+      padding: 12px 16px;
+    }
+    .shepherd-theme-custom .shepherd-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      color: white;
+    }
+    .shepherd-theme-custom .shepherd-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #1f2937;
+      padding: 16px;
+    }
+    .shepherd-theme-custom .shepherd-button {
+      background: #3b82f6;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-weight: 500;
+      color: white;
+      transition: all 0.2s ease;
+      margin-left: 8px;
+    }
+    .shepherd-theme-custom .shepherd-button:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+    }
+    .shepherd-theme-custom .shepherd-button-secondary {
+      background: #e5e7eb;
+      color: #374151;
+    }
+    .shepherd-theme-custom .shepherd-button-secondary:hover {
+      background: #d1d5db;
+    }
+    .shepherd-theme-custom .shepherd-cancel-icon {
+      color: white;
+      font-size: 20px;
+    }
+    .shepherd-theme-custom .shepherd-element {
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      border-radius: 12px;
+      max-width: 420px;
+    }
+    /* Top layer visibility */
+    .shepherd-element {
+      z-index: 99999 !important;
+    }
+    .shepherd-modal-overlay-container {
+      z-index: 99998 !important;
+    }
+    .shepherd-modal-overlay {
+      background: rgba(0, 0, 0, 0.4);
+    }
+    /* Ensure tour content is not clipped */
+    .shepherd-content {
+      overflow: visible !important;
+    }
+    /* Better positioning for tour tooltip */
+    .shepherd-has-title .shepherd-content .shepherd-header {
+      padding-top: 12px;
+    }
       `}</style>
       <div className="mb-5">
         <Header />

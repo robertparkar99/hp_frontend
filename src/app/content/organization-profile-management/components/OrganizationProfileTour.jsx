@@ -3,13 +3,20 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import Shepherd from "shepherd.js";
 import "shepherd.js/dist/css/shepherd.css";
-import { organizationProfileTourSteps } from "@/lib/organizationProfileTourSteps";
+// import { organizationProfileTourSteps } from "@/lib/organizationProfileTourSteps";
+import { logUserJourney, getPageInfo } from "@/utils/journeyLogger";
 
 const OrganizationProfileTour = ({ onComplete, onSwitchTab }) => {
   const [isTourActive, setIsTourActive] = useState(false);
   const currentTabRef = useRef('info');
   const tourInstanceRef = useRef(null);
   const isSwitchingTabRef = useRef(false);
+
+  // State for storing tour steps from API
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState([]);
+
+  // State for session data
+  const [sessionData, setSessionData] = useState(null);
 
   // Tab mapping based on step indices
   const stepTabMap = {
@@ -59,6 +66,133 @@ const OrganizationProfileTour = ({ onComplete, onSwitchTab }) => {
     43: 'info',    // Tour Complete
   };
 
+  // Load session data from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      try {
+        const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+        setSessionData({
+          url: APP_URL,
+          token,
+          subInstituteId: String(sub_institute_id),
+        });
+      } catch (e) {
+        console.error("Invalid userData in localStorage", e);
+      }
+    }
+  }, []);
+
+  // Fetch tour steps from API
+  useEffect(() => {
+    async function fetchTourSteps() {
+      if (!sessionData) return;
+
+      try {
+        // Get menuId and accessLink from page info
+        const { menuId, accessLink } = getPageInfo();
+        console.log('[OrgProfileTour] Current page menuId:', menuId, 'accessLink:', accessLink);
+
+        // Fetch tour steps with proper authentication and filtering
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=Onboarding_tour_details&filters[menu_id]=${menuId}&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`
+        );
+
+        if (!res.ok) {
+          const errorRes = res.clone();
+          try {
+            const errorText = await errorRes.text();
+            console.error('[OrgProfileTour] Tour steps API error:', res.status, errorText);
+          } catch (e) {
+            console.error('[OrgProfileTour] Tour steps API error:', res.status);
+          }
+          throw new Error(`Failed to fetch tour steps: ${res.status}`);
+        }
+
+        const json = await res.json();
+        console.log('[OrgProfileTour] Tour steps API response:', json);
+
+        // Handle different response formats
+        let tourData = [];
+        if (Array.isArray(json)) {
+          tourData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+          tourData = json.data;
+        } else if (json.result && Array.isArray(json.result)) {
+          tourData = json.result;
+        }
+
+        console.log('[OrgProfileTour] Parsed tour data:', tourData);
+
+        // Filter by menu_id and access_link from getPageInfo
+        console.log('[OrgProfileTour] Filtering by menuId:', menuId, 'accessLink:', accessLink);
+
+        const filteredData = tourData.filter((step) =>
+          step.menu_id === menuId && step.access_link === accessLink
+        );
+
+        console.log('[OrgProfileTour] Filtered tour data:', filteredData);
+
+        setTourStepsFromAPI(filteredData.length > 0 ? filteredData : tourData);
+      } catch (error) {
+        console.error("[OrgProfileTour] Error fetching tour steps:", error);
+      }
+    }
+
+    fetchTourSteps();
+  }, [sessionData]);
+
+  // Map on_click to element IDs
+  const getAttachToConfig = (stepId) => {
+    const configs = {
+      'org-profile-welcome': { element: '#org-profile-header', on: 'bottom' },
+      'org-info-tab': { element: '#tab-info', on: 'bottom' },
+      'org-info-legal-name': { element: '#org-legal-name', on: 'right' },
+      'org-info-cin': { element: '#org-cin', on: 'right' },
+      'org-info-pan': { element: '#org-pan', on: 'right' },
+      'org-info-industry': { element: '#org-industry', on: 'right' },
+      'org-info-employee-count': { element: '#org-employee-count', on: 'right' },
+      'org-info-work-week': { element: '#org-work-week', on: 'right' },
+      'org-info-address': { element: '#org-address', on: 'right' },
+      'org-info-logo': { element: '#org-logo-upload', on: 'right' },
+      'org-info-sister-companies': { element: '#org-sister-companies', on: 'top' },
+      'org-info-submit': { element: '#org-info-submit-btn', on: 'top' },
+      'department-tab': { element: '#tab-structure', on: 'bottom' },
+      'department-search': { element: '#department-search-input', on: 'bottom' },
+      'department-actions': { element: '#department-actions-toolbar', on: 'bottom' },
+      'department-add-btn': { element: '#add-department-btn', on: 'left' },
+      'department-list': { element: '#department-structure-container', on: 'top' },
+      'department-card-actions': { element: '#department-card-actions', on: 'left' },
+      'sub-departments': { element: '#sub-departments-list', on: 'right' },
+      'compliance-tab': { element: '#tab-config', on: 'bottom' },
+      'compliance-form-name': { element: '#compliance-name', on: 'right' },
+      'compliance-form-description': { element: '#compliance-description', on: 'right' },
+      'compliance-form-department': { element: '#compliance-department', on: 'right' },
+      'compliance-form-assignee': { element: '#compliance-assignee', on: 'right' },
+      'compliance-form-due-date': { element: '#compliance-due-date', on: 'right' },
+      'compliance-form-frequency': { element: '#compliance-frequency', on: 'right' },
+      'compliance-form-attachment': { element: '#compliance-attachment', on: 'right' },
+      'compliance-form-submit': { element: '#compliance-submit-btn', on: 'top' },
+      'compliance-table': { element: '#compliance-data-table', on: 'top' },
+      'compliance-export': { element: '#compliance-export-buttons', on: 'left' },
+      'disciplinary-tab': { element: '#tab-disciplinary', on: 'bottom' },
+      'disciplinary-form-department': { element: '#disciplinary-department', on: 'right' },
+      'disciplinary-form-employee': { element: '#disciplinary-employee', on: 'right' },
+      'disciplinary-form-datetime': { element: '#disciplinary-datetime', on: 'right' },
+      'disciplinary-form-location': { element: '#disciplinary-location', on: 'right' },
+      'disciplinary-form-misconduct': { element: '#disciplinary-misconduct', on: 'right' },
+      'disciplinary-form-description': { element: '#disciplinary-description', on: 'top' },
+      'disciplinary-form-witness': { element: '#disciplinary-witness', on: 'right' },
+      'disciplinary-form-action': { element: '#disciplinary-action', on: 'right' },
+      'disciplinary-form-remarks': { element: '#disciplinary-remarks', on: 'top' },
+      'disciplinary-form-submit': { element: '#disciplinary-submit-btn', on: 'top' },
+      'disciplinary-table': { element: '#disciplinary-data-table', on: 'top' },
+      'disciplinary-export': { element: '#disciplinary-export-buttons', on: 'left' },
+      'tour-complete': { element: '#org-profile-header', on: 'top' },
+    };
+    return configs[stepId] || { element: '#org-profile-header', on: 'bottom' };
+  };
+
   // Function to switch tabs with delay for rendering
   const switchTab = useCallback(async (targetTab) => {
     if (!targetTab || targetTab === currentTabRef.current || isSwitchingTabRef.current) {
@@ -90,6 +224,11 @@ const OrganizationProfileTour = ({ onComplete, onSwitchTab }) => {
       return;
     }
 
+    // Wait for tour steps to be loaded before starting
+    if (tourStepsFromAPI.length === 0) {
+      return;
+    }
+
     // Start tour after a short delay to ensure DOM is ready
     const timer = setTimeout(() => {
       startTour();
@@ -101,10 +240,25 @@ const OrganizationProfileTour = ({ onComplete, onSwitchTab }) => {
         tourInstanceRef.current.cancel();
       }
     };
-  }, []);
+  }, [tourStepsFromAPI]);
 
   const startTour = () => {
     setIsTourActive(true);
+
+    // Log tour start event
+    const pageInfo = getPageInfo();
+    logUserJourney({
+      eventType: 'tour_started',
+      stepKey: null,
+      menuId: pageInfo.menuId,
+      accessLink: pageInfo.accessLink,
+    });
+
+    // Determine which steps to use: API data or fallback to hardcoded
+    const stepsToUse = tourStepsFromAPI.length > 0 ? tourStepsFromAPI : organizationProfileTourSteps;
+    const isUsingAPI = tourStepsFromAPI.length > 0;
+
+    console.log('[OrgProfileTour] Using API data:', isUsingAPI, 'Steps count:', stepsToUse.length);
 
     const tour = new Shepherd.Tour({
       useModalOverlay: true,
@@ -362,6 +516,9 @@ const OrganizationProfileTour = ({ onComplete, onSwitchTab }) => {
 
     // Button logic with tab switching
     const getButtons = (index) => {
+      const currentStep = stepsToUse[index];
+      const stepId = isUsingAPI ? currentStep?.on_click : currentStep?.id;
+
       const skip = {
         text: "Skip",
         action: async () => {
@@ -369,6 +526,16 @@ const OrganizationProfileTour = ({ onComplete, onSwitchTab }) => {
           tour.cancel();
           setIsTourActive(false);
           localStorage.setItem("orgProfileTourCompleted", "true");
+
+          // Log tour skipped event
+          const pageInfo = getPageInfo();
+          logUserJourney({
+            eventType: 'tour_skipped',
+            stepKey: stepId || `step_${index}`,
+            menuId: pageInfo.menuId,
+            accessLink: pageInfo.accessLink,
+          });
+
           onComplete?.();
         },
         classes: "shepherd-skip",
@@ -404,33 +571,85 @@ const OrganizationProfileTour = ({ onComplete, onSwitchTab }) => {
           tour.complete();
           setIsTourActive(false);
           localStorage.setItem("orgProfileTourCompleted", "true");
+
+          // Log tour complete event
+          const pageInfo = getPageInfo();
+          logUserJourney({
+            eventType: 'tour_complete',
+            stepKey: stepId || `step_${index}`,
+            menuId: pageInfo.menuId,
+            accessLink: pageInfo.accessLink,
+          });
+
           onComplete?.();
         },
         classes: "shepherd-finish",
       };
 
       if (index === 0) return [skip, next];
-      if (index === organizationProfileTourSteps.length - 1) return [skip, back, finish];
+      if (index === stepsToUse.length - 1) return [skip, back, finish];
       return [skip, back, next];
     };
 
-    // Add steps to tour with tab switching
-    organizationProfileTourSteps.forEach((step, index) => {
-      tour.addStep({
-        ...step,
-        title: step.title || "Tour",
-        buttons: getButtons(index),
+    // Add steps to tour - use API data or fallback to hardcoded steps
+    if (isUsingAPI) {
+      // Map API data to tour steps format
+      stepsToUse.forEach((apiStep, index) => {
+        const attachTo = getAttachToConfig(apiStep.on_click);
+        const stepId = apiStep.on_click;
+
+        tour.addStep({
+          id: stepId,
+          title: apiStep.title,
+          text: [apiStep.description],
+          attachTo,
+          beforeShowPromise: function () {
+            return new Promise(resolve => setTimeout(resolve, 300));
+          },
+          buttons: getButtons(index),
+          highlightClass: 'highlight',
+          scrollTo: { behavior: 'smooth', block: 'center' },
+          cancelIcon: { enabled: true },
+        });
       });
-    });
+    } else {
+      // Use hardcoded steps
+      stepsToUse.forEach((step, index) => {
+        tour.addStep({
+          ...step,
+          title: step.title || "Tour",
+          buttons: getButtons(index),
+        });
+      });
+    }
 
     // Handle step show event for tab switching
     tour.on('show', async (event) => {
-      const stepIndex = organizationProfileTourSteps.findIndex(s => s.id === event.step.id);
+      const stepId = event.step.id;
+      let stepIndex;
+
+      if (isUsingAPI) {
+        stepIndex = stepsToUse.findIndex(s => s.on_click === stepId);
+      } else {
+        stepIndex = stepsToUse.findIndex(s => s.id === stepId);
+      }
+
       if (stepIndex >= 0) {
         const targetTab = stepTabMap[stepIndex];
         if (targetTab && targetTab !== currentTabRef.current && !isSwitchingTabRef.current) {
           await switchTab(targetTab);
         }
+
+        // Log tour step view event
+        const currentStep = stepsToUse[stepIndex];
+        const currentStepId = isUsingAPI ? currentStep?.on_click : currentStep?.id;
+        const pageInfo = getPageInfo();
+        logUserJourney({
+          eventType: 'tour_step_view',
+          stepKey: currentStepId || `step_${stepIndex}`,
+          menuId: pageInfo.menuId,
+          accessLink: pageInfo.accessLink,
+        });
       }
     });
 
