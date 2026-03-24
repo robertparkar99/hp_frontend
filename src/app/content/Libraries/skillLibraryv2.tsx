@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 
 import TabsMenu from "../TabMenu/page";
 import ShepherdTour from "../Onboarding/Competency-Management/ShepherdTour";
+import { getPageInfo } from "@/utils/journeyLogger";
 import SkillTaxonomyCreation from "@/app/content/Libraries/SkillTaxonomyCreation";
 import DepartmentStructure from "../organization-profile-management/components/DepartmentStructure";
 import KnowledgeTax from "../Libraries/knowledgeTax";
@@ -60,6 +61,10 @@ const SkillLibrary: React.FC<SkillLibraryProps> = ({ showTour, onTourComplete, o
   const [showMainTour, setShowMainTour] = useState(false);
   const [tourTabs, setTourTabs] = useState(tabs);
   const pathname = usePathname();
+
+  // Get dynamic menuId from journeyLogger
+  const currentPageInfo = typeof window !== 'undefined' ? getPageInfo() : { menuId: 0 };
+  const currentMenuId = currentPageInfo.menuId;
 
   // If user navigates to /taxonomy, hide the tabs
   const isTaxonomyPage = pathname.includes("/taxonomy");
@@ -144,7 +149,7 @@ const SkillLibrary: React.FC<SkillLibraryProps> = ({ showTour, onTourComplete, o
         data-shepherd="tabs"
       />
 
-      {showMainTour && <ShepherdTour tabs={tourTabs} onComplete={onTourComplete} onOpenDetailModal={(tab: string) => { setActiveTab(tab); setDetailTourTab(tab); setShowMainTour(false); setTourTabs(tabs); }} />}
+      {showMainTour && <ShepherdTour tabs={tourTabs} onComplete={onTourComplete} onOpenDetailModal={(tab: string) => { setActiveTab(tab); setDetailTourTab(tab); setShowMainTour(false); setTourTabs(tabs); }} menuId={currentMenuId} />}
 
       <Suspense fallback={<Loader />}>
         {isLoading ? (

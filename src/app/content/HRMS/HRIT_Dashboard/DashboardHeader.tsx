@@ -3,13 +3,13 @@
 import { Calendar, Building2, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useShepherdTour, HRITDashboardTourSteps } from "./HRITdashboardtour step";
+import { useShepherdTour } from "./HRITdashboardtour step";
 
 export const DashboardHeader = () => {
 
   const { showTour, startTour, cancelTour, completeTour } = useShepherdTour(
     "dashboardHeader",
-    HRITDashboardTourSteps,
+    [],
     false
   );
 

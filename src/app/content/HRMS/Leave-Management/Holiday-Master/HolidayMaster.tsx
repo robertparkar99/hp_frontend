@@ -4,10 +4,11 @@ import { Plus, Trash2, Calendar, Filter, Clock, MapPin, Star, Sparkles } from "l
 import Shepherd, { Tour } from "shepherd.js";
 import "shepherd.js/dist/css/shepherd.css";
 import {
-  holidayMasterTourSteps,
   createHolidayMasterTour,
   shouldStartHolidayTour,
-  completeHolidayMasterTour
+  completeHolidayMasterTour,
+  fetchHolidayMasterTourStepsFromAPI,
+  createHolidayMasterTourSteps
 } from "./HolidayMasterTourSteps";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -101,12 +102,18 @@ const HolidayMaster = () => {
       console.log('Holiday Master tour triggered from sidebar');
 
       // Wait a bit for the page to fully render
-      setTimeout(() => {
+      setTimeout(async () => {
+        // Fetch tour steps from API first
+        const apiTourData = await fetchHolidayMasterTourStepsFromAPI(167);
+        
+        // Create tour steps with API data
+        const tourSteps = createHolidayMasterTourSteps(apiTourData);
+        
         const tour = createHolidayMasterTour();
         tourRef.current = tour;
 
         // Add steps to tour
-        holidayMasterTourSteps.forEach(step => {
+        tourSteps.forEach((step) => {
           tour.addStep(step);
         });
 
@@ -123,7 +130,9 @@ const HolidayMaster = () => {
         });
 
         // Start the tour
-        tour.start();
+        if (tour.steps && tour.steps.length > 0) {
+          tour.start();
+        }
       }, 500); // Small delay to ensure DOM is ready
     }
 
@@ -498,7 +507,7 @@ const HolidayMaster = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive-light/50 transition-all opacity-0 group-hover:opacity-100"
+                  className="delete-holiday-btn h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive-light/50 transition-all opacity-0 group-hover:opacity-100"
                   onClick={() => deleteHoliday(item.id)}
                   disabled={deletingId === item.id}
                 >
@@ -558,9 +567,9 @@ const HolidayMaster = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background rounded-xl" id="holiday-header">
+    <div className="min-h-screen bg-background rounded-xl" id="tour-header">
       {/* Modern Gradient Header */}
-      <div className="bg-[#6fb2f2] text-primary-foreground rounded-xl ">
+      <div className="bg-[#6fb2f2] text-primary-foreground rounded-xl " id="holiday-header">
         <div className="px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-3">
@@ -594,7 +603,7 @@ const HolidayMaster = () => {
 
               <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-white text-primary hover:bg-white/90 shadow-lg hover:shadow-xl transition-all">
+                  <Button id="tour-add-button" className="bg-white text-primary hover:bg-white/90 shadow-lg hover:shadow-xl transition-all holiday-add-button">
                     <Plus className="h-5 w-5 mr-2" />
                     Add {activeTab === "holidays" ? "Holiday" : "Day Off"}
                   </Button>
@@ -614,8 +623,8 @@ const HolidayMaster = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="px-4 sm:px-6 -mt-4 pb-6" id="holiday-stats">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="px-4 sm:px-6 -mt-4 pb-6" id="tour-stats">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="holiday-stats">
           <Card className="bg-gradient-to-br from-card to-card/80 border-border/30 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -687,8 +696,8 @@ const HolidayMaster = () => {
         {/* Main Content Card */}
         <Card className="bg-gradient-to-br from-card via-card to-card/50 border-border/30 shadow-lg overflow-hidden">
           <CardHeader className="pb-3 bg-gradient-to-r from-muted/20 to-transparent">
-            <Tabs value={activeTab} onValueChange={setActiveTab} id="holiday-tabs">
-              <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted/30 p-0.5 h-10 bg-[#EFF4FF]">
+            <Tabs value={activeTab} onValueChange={setActiveTab} id="tour-tabs">
+              <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted/30 p-0.5 h-10 bg-[#EFF4FF]" id="holiday-tabs">
                 <TabsTrigger
                   value="holidays"
                   className="data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium text-sm h-8"
@@ -710,9 +719,11 @@ const HolidayMaster = () => {
 
           <CardContent className="p-4 pt-2">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsContent value="holidays" className="mt-0 space-y-4" id="holiday-list-container">
+              <TabsContent value="holidays" className="mt-0 space-y-4" id="tour-holiday-list">
                 {holidays.length > 0 ? (
-                  renderList(holidays)
+                  <div id="holiday-list-container">
+                    {renderList(holidays)}
+                  </div>
                 ) : (
                   <div className="text-center py-8">
                     <div className="p-3 bg-muted/30 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
@@ -725,8 +736,8 @@ const HolidayMaster = () => {
               </TabsContent>
 
               {/* Day Offs UI */}
-              <TabsContent value="dayoffs" className="mt-0 space-y-4" id="dayoffs-container">
-                <div className="space-y-6" id="dayoffs-selections">
+              <TabsContent value="dayoffs" className="mt-0 space-y-4" id="tour-dayoffs-container">
+                <div className="space-y-6" id="tour-dayoffs-selections">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                       "Monday",
@@ -760,9 +771,9 @@ const HolidayMaster = () => {
 
                   <div className="flex justify-center pt-4">
                     <Button
-                      id="dayoffs-submit"
+                      id="tour-dayoffs-submit"
                       onClick={saveDayOffs}
-                      className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700"
+                      className="px-8 py-2 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-blue-700 dayoffs-submit"
                       disabled={savingDayOffs}
                     >
                       {savingDayOffs ? (

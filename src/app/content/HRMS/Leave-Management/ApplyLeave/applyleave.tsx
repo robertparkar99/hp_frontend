@@ -558,8 +558,8 @@ const filteredData = useMemo(() => {
       setIsTourActive(true);
 
       // Start tour after component is mounted
-      setTimeout(() => {
-        tour.startTour();
+      setTimeout(async () => {
+        await tour.startTour();
       }, 500);
     }
 

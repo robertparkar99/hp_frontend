@@ -1,5 +1,6 @@
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger';
 
 // Extend Window interface to include tour instances
 declare global {
@@ -224,26 +225,106 @@ const openDialog = (dialogId: string): Promise<void> => {
 // Helper function to scroll element into view
 const scrollToElement = (elementId: string): Promise<void> => {
     return new Promise((resolve) => {
-        const element = document.querySelector(elementId) as HTMLElement | null;
-        
-        if (element) {
-            console.log(`[RecruitmentTour] Scrolling to element: ${elementId}`);
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(resolve, 500); // Wait for scroll to complete
-        } else {
-            console.log(`[RecruitmentTour] Element not found: ${elementId}`);
-            resolve();
-        }
+        // First wait a bit for any animations or DOM updates
+        setTimeout(() => {
+            const element = document.querySelector(elementId) as HTMLElement | null;
+
+            if (element) {
+                console.log(`[RecruitmentTour] Scrolling to element: ${elementId}`);
+
+                // Scroll element to the top of the viewport
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                // Also scroll window to top for better visibility
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+
+                // Wait for scroll animation to complete
+                setTimeout(() => {
+                    console.log(`[RecruitmentTour] Scroll completed for: ${elementId}`);
+                    resolve();
+                }, 600);
+            } else {
+                console.log(`[RecruitmentTour] Element not found: ${elementId}`);
+                resolve();
+            }
+        }, 300); // Initial delay before checking for element
     });
 };
 
+// ==================== JOURNEY LOGGING HELPERS ====================
+
+// Log tour started event
+const logTourStarted = (tourName: string): void => {
+    const { menuId, accessLink } = getPageInfo();
+    console.log(`[RecruitmentTour] Logging tour started: ${tourName}, menuId: ${menuId}`);
+    logUserJourney({
+        eventType: 'tour_started',
+        stepKey: `${tourName}_started`,
+        menuId: menuId,
+        accessLink: accessLink || `/Telent-management/Recruitment-management`,
+    }).catch(console.error);
+};
+
+// Log tour step view event
+const logTourStepView = (stepId: string): void => {
+    const { menuId, accessLink } = getPageInfo();
+    logUserJourney({
+        eventType: 'tour_step_view',
+        stepKey: stepId,
+        menuId: menuId,
+        accessLink: accessLink || `/Telent-management/Recruitment-management`,
+    }).catch(console.error);
+};
+
+// Log tour step complete event
+const logTourStepComplete = (stepId: string): void => {
+    const { menuId, accessLink } = getPageInfo();
+    logUserJourney({
+        eventType: 'tour_step_complete',
+        stepKey: stepId,
+        menuId: menuId,
+        accessLink: accessLink || `/Telent-management/Recruitment-management`,
+    }).catch(console.error);
+};
+
+// Log tour skipped event
+const logTourSkipped = (tourName: string, lastStepId?: string): void => {
+    const { menuId, accessLink } = getPageInfo();
+    console.log(`[RecruitmentTour] Logging tour skipped: ${tourName}, menuId: ${menuId}`);
+    logUserJourney({
+        eventType: 'tour_skipped',
+        stepKey: lastStepId || `${tourName}_skipped`,
+        menuId: menuId,
+        accessLink: accessLink || `/Telent-management/Recruitment-management`,
+    }).catch(console.error);
+};
+
 // ==================== MAIN RECRUITMENT DASHBOARD TOUR ====================
-export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
+export const getRecruitmentDashboardTourSteps = (tourStepsFromAPI: any[] = []): RecruitmentTourStep[] => {
+    // Create a map of on_click to API step for easy lookup
+    const apiStepsMap = new Map();
+    tourStepsFromAPI.forEach((step: any) => {
+        apiStepsMap.set(step.on_click, step);
+    });
+
+    console.log('[RecruitmentTourSteps] getRecruitmentDashboardTourSteps called');
+    console.log('[RecruitmentTourSteps] tourStepsFromAPI:', tourStepsFromAPI);
+    console.log('[RecruitmentTourSteps] apiStepsMap:', apiStepsMap);
+    console.log('[RecruitmentTourSteps] apiStepsMap.get(recruitment-welcome):', apiStepsMap.get('recruitment-welcome'));
+
     return [
         {
             id: 'recruitment-welcome',
-            title: 'Welcome to Recruitment Management!',
-            text: 'This dashboard helps you manage your entire recruitment process - from creating job postings to reviewing applications. Let\'s explore the key features together.',
+            title: (() => {
+                const apiTitle = apiStepsMap.get('recruitment-welcome')?.title;
+                const fallback = 'Welcome to Recruitment Management!';
+                console.log('[DEBUG] recruitment-welcome: apiTitle =', apiTitle, ', fallback =', fallback);
+                return apiTitle || fallback;
+            })(),
+            text: apiStepsMap.get('recruitment-welcome')?.description || 'This dashboard helps you manage your entire recruitment process - from creating job postings to reviewing applications. Let\'s explore the key features together.',
             attachTo: {
                 element: '#tour-recruitment-header',
                 on: 'bottom'
@@ -272,8 +353,8 @@ export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'recruitment-create-job',
-            title: '📝 Create New Job',
-            text: 'Click this button to create a new job posting. You can define job title, description, requirements, salary range, and more.',
+            title: apiStepsMap.get('recruitment-create-job')?.title || '📝 Create New Job',
+            text: apiStepsMap.get('recruitment-create-job')?.description || 'Click this button to create a new job posting. You can define job title, description, requirements, salary range, and more.',
             attachTo: {
                 element: '#tour-create-job-button',
                 on: 'bottom'
@@ -296,8 +377,8 @@ export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'recruitment-tabs',
-            title: '📑 Navigation Tabs',
-            text: 'Switch between Job Postings, Resume Screening, and Applications tabs to manage different aspects of your recruitment pipeline.',
+            title: apiStepsMap.get('recruitment-tabs')?.title || '📑 Navigation Tabs',
+            text: apiStepsMap.get('recruitment-tabs')?.description || 'Switch between Job Postings, Resume Screening, and Applications tabs to manage different aspects of your recruitment pipeline.',
             attachTo: {
                 element: '#tour-recruitment-tabs',
                 on: 'bottom'
@@ -320,8 +401,8 @@ export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'recruitment-search-filter',
-            title: '🔍 Search & Filter',
-            text: 'Use search to find specific job postings quickly. Apply filters to narrow down results by status, department, or other criteria.',
+            title: apiStepsMap.get('recruitment-search-filter')?.title || '🔍 Search & Filter',
+            text: apiStepsMap.get('recruitment-search-filter')?.description || 'Use search to find specific job postings quickly. Apply filters to narrow down results by status, department, or other criteria.',
             attachTo: {
                 element: '#tour-search-filter',
                 on: 'bottom'
@@ -344,8 +425,8 @@ export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'recruitment-job-postings',
-            title: '📋 Job Postings List',
-            text: 'This section displays all your active job postings. Each card shows the job title, employment type, location, status, and key metrics like open positions and application count.',
+            title: apiStepsMap.get('recruitment-job-postings')?.title || '📋 Job Postings List',
+            text: apiStepsMap.get('recruitment-job-postings')?.description || 'This section displays all your active job postings. Each card shows the job title, employment type, location, status, and key metrics like open positions and application count.',
             attachTo: {
                 element: '#tour-job-postings-list',
                 on: 'top'
@@ -368,8 +449,8 @@ export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'recruitment-job-actions',
-            title: '⚡ Quick Actions',
-            text: 'For each job posting, you can View details, Edit the posting, or Delete it. Use these actions to manage your job listings efficiently.',
+            title: apiStepsMap.get('recruitment-job-actions')?.title || '⚡ Quick Actions',
+            text: apiStepsMap.get('recruitment-job-actions')?.description || 'For each job posting, you can View details, Edit the posting, or Delete it. Use these actions to manage your job listings efficiently.',
             attachTo: {
                 element: '#tour-job-actions',
                 on: 'left'
@@ -392,8 +473,8 @@ export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'recruitment-job-status',
-            title: '🏷️ Status & Priority',
-            text: 'Each job shows its current status (Active/Draft) and priority level (High/Medium/Low). This helps you focus on urgent hiring needs.',
+            title: apiStepsMap.get('recruitment-job-status')?.title || '🏷️ Status & Priority',
+            text: apiStepsMap.get('recruitment-job-status')?.description || 'Each job shows its current status (Active/Draft) and priority level (High/Medium/Low). This helps you focus on urgent hiring needs.',
             attachTo: {
                 element: '#tour-job-status',
                 on: 'bottom'
@@ -416,8 +497,8 @@ export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'recruitment-screening-tab',
-            title: '📋 Resume Screening Tab',
-            text: 'Switch to the Resume Screening tab to review and evaluate candidates who have applied. Use AI-powered screening to find the best candidates quickly.',
+            title: apiStepsMap.get('recruitment-screening-tab')?.title || '📋 Resume Screening Tab',
+            text: apiStepsMap.get('recruitment-screening-tab')?.description || 'Switch to the Resume Screening tab to review and evaluate candidates who have applied. Use AI-powered screening to find the best candidates quickly.',
             attachTo: {
                 element: '#tour-screening-tab',
                 on: 'bottom'
@@ -450,8 +531,8 @@ export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'recruitment-applications-tab',
-            title: '📋 Applications Tab',
-            text: 'Switch to the Applications tab to view all job applications. Track candidate applications, view their profiles, and manage the hiring process.',
+            title: apiStepsMap.get('recruitment-applications-tab')?.title || '📋 Applications Tab',
+            text: apiStepsMap.get('recruitment-applications-tab')?.description || 'Switch to the Applications tab to view all job applications. Track candidate applications, view their profiles, and manage the hiring process.',
             attachTo: {
                 element: '#tour-applications-tab',
                 on: 'bottom'
@@ -487,8 +568,8 @@ export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'recruitment-complete',
-            title: '🎉 Dashboard Tour Complete!',
-            text: 'Congratulations! You now know the basics of the Recruitment Dashboard. Explore all three tabs to manage your entire recruitment process.',
+            title: apiStepsMap.get('recruitment-complete')?.title || '🎉 Dashboard Tour Complete!',
+            text: apiStepsMap.get('recruitment-complete')?.description || 'Congratulations! You now know the basics of the Recruitment Dashboard. Explore all three tabs to manage your entire recruitment process.',
             attachTo: {
                 element: '#tour-recruitment-header',
                 on: 'bottom'
@@ -516,12 +597,18 @@ export const getRecruitmentDashboardTourSteps = (): RecruitmentTourStep[] => {
 };
 
 // ==================== CANDIDATE SCREENING TOUR - ALL TAB ====================
-export const getScreeningAllTabTourSteps = (): RecruitmentTourStep[] => {
+export const getScreeningAllTabTourSteps = (tourStepsFromAPI: any[] = []): RecruitmentTourStep[] => {
+    // Create a map of on_click to API step for easy lookup
+    const apiStepsMap = new Map();
+    tourStepsFromAPI.forEach((step: any) => {
+        apiStepsMap.set(step.on_click, step);
+    });
+
     return [
         {
             id: 'screening-all-welcome',
-            title: '👥 Candidate Overview - All Candidates',
-            text: 'Welcome to the Candidate Screening section! This tab shows all candidates who have applied across your job postings.',
+            title: apiStepsMap.get('screening-all-welcome')?.title || ' Candidate Overview - All Candidates',
+            text: apiStepsMap.get('screening-all-welcome')?.description || 'Welcome to the Candidate Screening section! This tab shows all candidates who have applied across your job postings.',
             attachTo: {
                 element: '#tour-candidate-overview',
                 on: 'bottom'
@@ -547,8 +634,8 @@ export const getScreeningAllTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-all-stats',
-            title: '📊 Statistics Overview',
-            text: 'Quick stats showing total candidates, shortlisted, pending, rejected, and hired counts. The average AI screening score helps you gauge overall candidate quality.',
+            title: apiStepsMap.get('screening-all-stats')?.title || ' Statistics Overview',
+            text: apiStepsMap.get('screening-all-stats')?.description || 'Quick stats showing total candidates, shortlisted, pending, rejected, and hired counts. The average AI screening score helps you gauge overall candidate quality.',
             attachTo: {
                 element: '#tour-screening-stats',
                 on: 'bottom'
@@ -571,8 +658,8 @@ export const getScreeningAllTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-all-search',
-            title: '🔍 Search & Filter Candidates',
-            text: 'Search candidates by name, skills, or position. Use the filter dropdown to filter by candidate status.',
+            title: apiStepsMap.get('screening-all-search')?.title || ' Search & Filter Candidates',
+            text: apiStepsMap.get('screening-all-search')?.description || 'Search candidates by name, skills, or position. Use the filter dropdown to filter by candidate status.',
             attachTo: {
                 element: '#tour-screening-search',
                 on: 'bottom'
@@ -595,8 +682,8 @@ export const getScreeningAllTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-all-tabs',
-            title: '📑 Status Filter Tabs',
-            text: 'Filter candidates by their application status: All, Shortlisted, Pending, Rejected, or Hired. Each tab shows the count of candidates in that category.',
+            title: apiStepsMap.get('screening-all-tabs')?.title || ' Status Filter Tabs',
+            text: apiStepsMap.get('screening-all-tabs')?.description || 'Filter candidates by their application status: All, Shortlisted, Pending, Rejected, or Hired. Each tab shows the count of candidates in that category.',
             attachTo: {
                 element: '#tour-screening-tabs',
                 on: 'bottom'
@@ -623,8 +710,8 @@ export const getScreeningAllTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-all-candidate-list',
-            title: '👤 Candidate Cards',
-            text: 'Each candidate card shows their name, applied position, experience, education, location, and current status. Click "View Profile" to see full details.',
+            title: apiStepsMap.get('screening-all-candidate-list')?.title || ' Candidate Cards',
+            text: apiStepsMap.get('screening-all-candidate-list')?.description || 'Each candidate card shows their name, applied position, experience, education, location, and current status. Click "View Profile" to see full details.',
             attachTo: {
                 element: '#tour-candidate-list',
                 on: 'top'
@@ -647,8 +734,8 @@ export const getScreeningAllTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-all-score',
-            title: '⭐ AI Screening Score',
-            text: 'Each candidate shows their AI screening score (0-100%). Higher scores indicate better matches with job requirements.',
+            title: apiStepsMap.get('screening-all-score')?.title || ' AI Screening Score',
+            text: apiStepsMap.get('screening-all-score')?.description || 'Each candidate shows their AI screening score (0-100%). Higher scores indicate better matches with job requirements.',
             attachTo: {
                 element: '#tour-candidate-score',
                 on: 'left'
@@ -671,8 +758,8 @@ export const getScreeningAllTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-all-status',
-            title: '📋 Application Status',
-            text: 'Track candidate status: Pending (needs review), Shortlisted (selected for next round), Rejected (not selected), or Hired (offer accepted).',
+            title: apiStepsMap.get('screening-all-status')?.title || ' Application Status',
+            text: apiStepsMap.get('screening-all-status')?.description || 'Track candidate status: Pending (needs review), Shortlisted (selected for next round), Rejected (not selected), or Hired (offer accepted).',
             attachTo: {
                 element: '#tour-candidate-status-badge',
                 on: 'left'
@@ -695,8 +782,8 @@ export const getScreeningAllTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-all-actions',
-            title: '⚡ Candidate Actions',
-            text: 'For each candidate, you can: View Profile (see full details), View/Download Resume, Reject, or Shortlist. Take action based on your evaluation.',
+            title: apiStepsMap.get('screening-all-actions')?.title || ' Candidate Actions',
+            text: apiStepsMap.get('screening-all-actions')?.description || 'For each candidate, you can: View Profile (see full details), View/Download Resume, Reject, or Shortlist. Take action based on your evaluation.',
             attachTo: {
                 element: '#tour-candidate-actions',
                 on: 'top'
@@ -734,8 +821,8 @@ export const getScreeningAllTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-all-complete',
-            title: '🎉 Screening Tour Complete!',
-            text: 'You now know how to search, filter, and manage all candidates. Let\'s continue to the Applications tab to see all job applications.',
+            title: apiStepsMap.get('screening-all-complete')?.title || ' Screening Tour Complete!',
+            text: apiStepsMap.get('screening-all-complete')?.description || 'You now know how to search, filter, and manage all candidates. Let\'s continue to the Applications tab to see all job applications.',
             attachTo: {
                 element: '#tour-candidate-overview',
                 on: 'bottom'
@@ -773,12 +860,18 @@ export const getScreeningAllTabTourSteps = (): RecruitmentTourStep[] => {
 };
 
 // ==================== CANDIDATE SCREENING TOUR - SHORTLISTED TAB ====================
-export const getScreeningShortlistedTabTourSteps = (): RecruitmentTourStep[] => {
+export const getScreeningShortlistedTabTourSteps = (tourStepsFromAPI: any[] = []): RecruitmentTourStep[] => {
+    // Create a map of on_click to API step for easy lookup
+    const apiStepsMap = new Map();
+    tourStepsFromAPI.forEach((step: any) => {
+        apiStepsMap.set(step.on_click, step);
+    });
+
     return [
         {
             id: 'screening-shortlisted-welcome',
-            title: '⭐ Shortlisted Candidates',
-            text: 'This tab shows candidates who have been shortlisted for further consideration. These candidates met your initial screening criteria.',
+            title: apiStepsMap.get('screening-shortlisted-welcome')?.title || ' Shortlisted Candidates',
+            text: apiStepsMap.get('screening-shortlisted-welcome')?.description || 'This tab shows candidates who have been shortlisted for further consideration. These candidates met your initial screening criteria.',
             attachTo: {
                 element: '#tour-shortlisted-section',
                 on: 'bottom'
@@ -804,8 +897,8 @@ export const getScreeningShortlistedTabTourSteps = (): RecruitmentTourStep[] => 
         },
         {
             id: 'screening-shortlisted-count',
-            title: '📊 Shortlisted Count',
-            text: 'This badge shows the number of shortlisted candidates. These are candidates ready for interview or further evaluation.',
+            title: apiStepsMap.get('screening-shortlisted-count')?.title || ' Shortlisted Count',
+            text: apiStepsMap.get('screening-shortlisted-count')?.description || 'This badge shows the number of shortlisted candidates. These are candidates ready for interview or further evaluation.',
             attachTo: {
                 element: '#tour-shortlisted-count',
                 on: 'bottom'
@@ -828,8 +921,8 @@ export const getScreeningShortlistedTabTourSteps = (): RecruitmentTourStep[] => 
         },
         {
             id: 'screening-shortlisted-match',
-            title: '🎯 Match Scores',
-            text: 'Review detailed match scores for shortlisted candidates. Look for high skills, experience, and education match percentages.',
+            title: apiStepsMap.get('screening-shortlisted-match')?.title || ' Match Scores',
+            text: apiStepsMap.get('screening-shortlisted-match')?.description || 'Review detailed match scores for shortlisted candidates. Look for high skills, experience, and education match percentages.',
             attachTo: {
                 element: '#tour-shortlisted-match',
                 on: 'top'
@@ -852,8 +945,8 @@ export const getScreeningShortlistedTabTourSteps = (): RecruitmentTourStep[] => 
         },
         {
             id: 'screening-shortlisted-actions',
-            title: '👥 Move to Interview',
-            text: 'Shortlisted candidates can be moved to the interview stage. Click "View Profile" to see full details before scheduling an interview.',
+            title: apiStepsMap.get('screening-shortlisted-actions')?.title || ' Move to Interview',
+            text: apiStepsMap.get('screening-shortlisted-actions')?.description || 'Shortlisted candidates can be moved to the interview stage. Click "View Profile" to see full details before scheduling an interview.',
             attachTo: {
                 element: '#tour-shortlisted-actions',
                 on: 'top'
@@ -881,12 +974,18 @@ export const getScreeningShortlistedTabTourSteps = (): RecruitmentTourStep[] => 
 };
 
 // ==================== CANDIDATE SCREENING TOUR - PENDING TAB ====================
-export const getScreeningPendingTabTourSteps = (): RecruitmentTourStep[] => {
+export const getScreeningPendingTabTourSteps = (tourStepsFromAPI: any[] = []): RecruitmentTourStep[] => {
+    // Create a map of on_click to API step for easy lookup
+    const apiStepsMap = new Map();
+    tourStepsFromAPI.forEach((step: any) => {
+        apiStepsMap.set(step.on_click, step);
+    });
+
     return [
         {
             id: 'screening-pending-welcome',
-            title: '⏳ Pending Review',
-            text: 'This tab shows candidates awaiting your review. These candidates have applied but haven\'t been evaluated yet.',
+            title: apiStepsMap.get('screening-pending-welcome')?.title || ' Pending Review',
+            text: apiStepsMap.get('screening-pending-welcome')?.description || 'This tab shows candidates awaiting your review. These candidates have applied but haven\'t been evaluated yet.',
             attachTo: {
                 element: '#tour-pending-section',
                 on: 'bottom'
@@ -912,8 +1011,8 @@ export const getScreeningPendingTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-pending-count',
-            title: '📊 Pending Count',
-            text: 'This badge shows candidates waiting for review. Review these candidates to move them forward in your hiring process.',
+            title: apiStepsMap.get('screening-pending-count')?.title || ' Pending Count',
+            text: apiStepsMap.get('screening-pending-count')?.description || 'This badge shows candidates waiting for review. Review these candidates to move them forward in your hiring process.',
             attachTo: {
                 element: '#tour-pending-count',
                 on: 'bottom'
@@ -936,8 +1035,8 @@ export const getScreeningPendingTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-pending-review',
-            title: '👁️ Review Process',
-            text: 'Click "View Profile" to examine each candidate\'s application, resume, and AI screening scores. Then decide to Shortlist or Reject.',
+            title: apiStepsMap.get('screening-pending-review')?.title || ' Review Process',
+            text: apiStepsMap.get('screening-pending-review')?.description || 'Click "View Profile" to examine each candidate\'s application, resume, and AI screening scores. Then decide to Shortlist or Reject.',
             attachTo: {
                 element: '#tour-pending-review',
                 on: 'top'
@@ -956,8 +1055,8 @@ export const getScreeningPendingTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-pending-decision',
-            title: '✅ Make Your Decision',
-            text: 'After reviewing, click "Shortlist" to move candidate forward or "Reject" to decline their application.',
+            title: apiStepsMap.get('screening-pending-decision')?.title || ' Make Your Decision',
+            text: apiStepsMap.get('screening-pending-decision')?.description || 'After reviewing, click "Shortlist" to move candidate forward or "Reject" to decline their application.',
             attachTo: {
                 element: '#tour-pending-decision',
                 on: 'left'
@@ -985,12 +1084,18 @@ export const getScreeningPendingTabTourSteps = (): RecruitmentTourStep[] => {
 };
 
 // ==================== CANDIDATE SCREENING TOUR - REJECTED TAB ====================
-export const getScreeningRejectedTabTourSteps = (): RecruitmentTourStep[] => {
+export const getScreeningRejectedTabTourSteps = (tourStepsFromAPI: any[] = []): RecruitmentTourStep[] => {
+    // Create a map of on_click to API step for easy lookup
+    const apiStepsMap = new Map();
+    tourStepsFromAPI.forEach((step: any) => {
+        apiStepsMap.set(step.on_click, step);
+    });
+
     return [
         {
             id: 'screening-rejected-welcome',
-            title: '❌ Rejected Candidates',
-            text: 'This tab shows candidates who have been rejected. You can review them if needed but they won\'t proceed in your hiring pipeline.',
+            title: apiStepsMap.get('screening-rejected-welcome')?.title || ' Rejected Candidates',
+            text: apiStepsMap.get('screening-rejected-welcome')?.description || 'This tab shows candidates who have been rejected. You can review them if needed but they won\'t proceed in your hiring pipeline.',
             attachTo: {
                 element: '#tour-rejected-section',
                 on: 'bottom'
@@ -1016,8 +1121,8 @@ export const getScreeningRejectedTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-rejected-count',
-            title: '📊 Rejected Count',
-            text: 'This badge shows the number of rejected candidates. Review this list to ensure rejections were appropriate.',
+            title: apiStepsMap.get('screening-rejected-count')?.title || ' Rejected Count',
+            text: apiStepsMap.get('screening-rejected-count')?.description || 'This badge shows the number of rejected candidates. Review this list to ensure rejections were appropriate.',
             attachTo: {
                 element: '#tour-rejected-count',
                 on: 'bottom'
@@ -1040,8 +1145,8 @@ export const getScreeningRejectedTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-rejected-reason',
-            title: '📝 Rejection Reason',
-            text: 'When rejecting, it\'s helpful to note the reason. Click "View Profile" to review the candidate\'s details one last time.',
+            title: apiStepsMap.get('screening-rejected-reason')?.title || ' Rejection Reason',
+            text: apiStepsMap.get('screening-rejected-reason')?.description || 'When rejecting, it\'s helpful to note the reason. Click "View Profile" to review the candidate\'s details one last time.',
             attachTo: {
                 element: '#tour-rejected-reason',
                 on: 'top'
@@ -1069,12 +1174,18 @@ export const getScreeningRejectedTabTourSteps = (): RecruitmentTourStep[] => {
 };
 
 // ==================== CANDIDATE SCREENING TOUR - HIRED TAB ====================
-export const getScreeningHiredTabTourSteps = (): RecruitmentTourStep[] => {
+export const getScreeningHiredTabTourSteps = (tourStepsFromAPI: any[] = []): RecruitmentTourStep[] => {
+    // Create a map of on_click to API step for easy lookup
+    const apiStepsMap = new Map();
+    tourStepsFromAPI.forEach((step: any) => {
+        apiStepsMap.set(step.on_click, step);
+    });
+
     return [
         {
             id: 'screening-hired-welcome',
-            title: '🎉 Hired Candidates',
-            text: 'This tab shows candidates who have been hired! These are your successful hires who have accepted offers.',
+            title: apiStepsMap.get('screening-hired-welcome')?.title || ' Hired Candidates',
+            text: apiStepsMap.get('screening-hired-welcome')?.description || 'This tab shows candidates who have been hired! These are your successful hires who have accepted offers.',
             attachTo: {
                 element: '#tour-hired-section',
                 on: 'bottom'
@@ -1100,8 +1211,8 @@ export const getScreeningHiredTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-hired-count',
-            title: '🎊 Hired Count',
-            text: 'This badge shows the number of successful hires. Celebrate your hiring wins!',
+            title: apiStepsMap.get('screening-hired-count')?.title || ' Hired Count',
+            text: apiStepsMap.get('screening-hired-count')?.description || 'This badge shows the number of successful hires. Celebrate your hiring wins!',
             attachTo: {
                 element: '#tour-hired-count',
                 on: 'bottom'
@@ -1124,8 +1235,8 @@ export const getScreeningHiredTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'screening-hired-details',
-            title: '👤 Hired Candidate Details',
-            text: 'View details of hired candidates including their position, start date, and other relevant information.',
+            title: apiStepsMap.get('screening-hired-details')?.title || ' Hired Candidate Details',
+            text: apiStepsMap.get('screening-hired-details')?.description || 'View details of hired candidates including their position, start date, and other relevant information.',
             attachTo: {
                 element: '#tour-hired-details',
                 on: 'top'
@@ -1153,12 +1264,18 @@ export const getScreeningHiredTabTourSteps = (): RecruitmentTourStep[] => {
 };
 
 // ==================== APPLICATIONS TAB TOUR ====================
-export const getApplicationsTabTourSteps = (): RecruitmentTourStep[] => {
+export const getApplicationsTabTourSteps = (tourStepsFromAPI: any[] = []): RecruitmentTourStep[] => {
+    // Create a map of on_click to API step for easy lookup
+    const apiStepsMap = new Map();
+    tourStepsFromAPI.forEach((step: any) => {
+        apiStepsMap.set(step.on_click, step);
+    });
+
     return [
         {
             id: 'applications-welcome',
-            title: '📋 Job Applications Overview',
-            text: 'Welcome to the Applications tab! This section shows all job applications with their current status in your hiring pipeline.',
+            title: apiStepsMap.get('applications-welcome')?.title || ' Job Applications Overview',
+            text: apiStepsMap.get('applications-welcome')?.description || 'Welcome to the Applications tab! This section shows all job applications with their current status in your hiring pipeline.',
             attachTo: {
                 element: '#tour-applications-overview',
                 on: 'bottom'
@@ -1256,8 +1373,8 @@ export const getApplicationsTabTourSteps = (): RecruitmentTourStep[] => {
         // },
         {
             id: 'applications-cards',
-            title: '📝 Application Cards',
-            text: 'Each application card shows the candidate\'s name, applied job position, current status, and application timeline. Click to view full details.',
+            title: apiStepsMap.get('applications-cards')?.title || ' Application Cards',
+            text: apiStepsMap.get('applications-cards')?.description || 'Each application card shows the candidate\'s name, applied job position, current status, and application timeline. Click to view full details.',
             attachTo: {
                 element: '#tour-applications-cards',
                 on: 'top'
@@ -1280,8 +1397,8 @@ export const getApplicationsTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'applications-progress',
-            title: '📈 Application Progress',
-            text: 'Each application shows its progress through your hiring pipeline. See which stage the candidate is currently in.',
+            title: apiStepsMap.get('applications-progress')?.title || ' Application Progress',
+            text: apiStepsMap.get('applications-progress')?.description || 'Each application shows its progress through your hiring pipeline. See which stage the candidate is currently in.',
             attachTo: {
                 element: '#tour-applications-progress',
                 on: 'left'
@@ -1304,8 +1421,8 @@ export const getApplicationsTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'applications-actions',
-            title: '⚡ Quick Actions',
-            text: 'For each application, you can: View Profile (see full details), Update Status, Schedule Interview, or View Resume. Take action to move candidates forward.',
+            title: apiStepsMap.get('applications-actions')?.title || ' Quick Actions',
+            text: apiStepsMap.get('applications-actions')?.description || 'For each application, you can: View Profile (see full details), Update Status, Schedule Interview, or View Resume. Take action to move candidates forward.',
             attachTo: {
                 element: '#tour-applications-actions',
                 on: 'left'
@@ -1328,8 +1445,8 @@ export const getApplicationsTabTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'applications-complete',
-            title: '🎉 Applications Tour Complete!',
-            text: 'Congratulations! You now know how to manage all job applications. Use the filters and actions to efficiently track and move candidates through your hiring pipeline.',
+            title: apiStepsMap.get('applications-complete')?.title || ' Applications Tour Complete!',
+            text: apiStepsMap.get('applications-complete')?.description || 'Congratulations! You now know how to manage all job applications. Use the filters and actions to efficiently track and move candidates through your hiring pipeline.',
             attachTo: {
                 element: '#tour-applications-overview',
                 on: 'bottom'
@@ -1357,12 +1474,18 @@ export const getApplicationsTabTourSteps = (): RecruitmentTourStep[] => {
 };
 
 // ==================== APPLICATION DETAILS DIALOG TOUR ====================
-export const getApplicationDialogTourSteps = (): RecruitmentTourStep[] => {
+export const getApplicationDialogTourSteps = (tourStepsFromAPI: any[] = []): RecruitmentTourStep[] => {
+    // Create a map of on_click to API step for easy lookup
+    const apiStepsMap = new Map();
+    tourStepsFromAPI.forEach((step: any) => {
+        apiStepsMap.set(step.on_click, step);
+    });
+
     return [
         {
             id: 'dialog-welcome',
-            title: '👤 Candidate Profile',
-            text: 'View candidate details and take actions like scheduling interviews or rejecting candidates.',
+            title: apiStepsMap.get('dialog-welcome')?.title || ' Candidate Profile',
+            text: apiStepsMap.get('dialog-welcome')?.description || 'View candidate details and take actions like scheduling interviews or rejecting candidates.',
             attachTo: {
                 element: '#tour-dialog-header',
                 on: 'bottom'
@@ -1383,8 +1506,8 @@ export const getApplicationDialogTourSteps = (): RecruitmentTourStep[] => {
         },
         {
             id: 'dialog-actions',
-            title: '⚡ Actions',
-            text: 'Take action on the candidate: Close the dialog, or Schedule Interview to move them forward in your hiring process.',
+            title: apiStepsMap.get('dialog-actions')?.title || ' Actions',
+            text: apiStepsMap.get('dialog-actions')?.description || 'Take action on the candidate: Close the dialog, or Schedule Interview to move them forward in your hiring process.',
             attachTo: {
                 element: '#tour-dialog-actions',
                 on: 'top'
@@ -1426,7 +1549,7 @@ export const getApplicationDialogTourSteps = (): RecruitmentTourStep[] => {
 // ==================== TOUR FACTORY FUNCTIONS ====================
 
 // Create main recruitment dashboard tour
-export const createRecruitmentDashboardTour = (): Shepherd.Tour => {
+export const createRecruitmentDashboardTour = (tourStepsFromAPI: any[] = []): Shepherd.Tour => {
     const tour = new Shepherd.Tour({
         defaultStepOptions: {
             cancelIcon: { enabled: true },
@@ -1440,8 +1563,32 @@ export const createRecruitmentDashboardTour = (): Shepherd.Tour => {
         keyboardNavigation: true
     });
 
-    const steps = getRecruitmentDashboardTourSteps();
+    const steps = getRecruitmentDashboardTourSteps(tourStepsFromAPI);
     steps.forEach(step => tour.addStep(step));
+
+    // Add journey logging callbacks
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step?.id) {
+            logTourStepView(step.id);
+        }
+    });
+
+    tour.on('complete', () => {
+        console.log('[RecruitmentTour] Dashboard tour completed');
+    });
+
+    tour.on('cancel', () => {
+        const currentStep = tour.getCurrentStep();
+        logTourSkipped('recruitment_dashboard', currentStep?.id);
+    });
+
+    // Log tour started when tour is about to start
+    const originalStart = tour.start.bind(tour);
+    tour.start = function () {
+        logTourStarted('recruitment_dashboard');
+        return originalStart();
+    };
 
     if (typeof window !== 'undefined') {
         window.recruitmentTour = tour;
@@ -1451,7 +1598,7 @@ export const createRecruitmentDashboardTour = (): Shepherd.Tour => {
 };
 
 // Create screening All tab tour
-export const createScreeningAllTabTour = (): Shepherd.Tour => {
+export const createScreeningAllTabTour = (tourStepsFromAPI: any[] = []): Shepherd.Tour => {
     const tour = new Shepherd.Tour({
         defaultStepOptions: {
             cancelIcon: { enabled: true },
@@ -1465,8 +1612,32 @@ export const createScreeningAllTabTour = (): Shepherd.Tour => {
         keyboardNavigation: true
     });
 
-    const steps = getScreeningAllTabTourSteps();
+    const steps = getScreeningAllTabTourSteps(tourStepsFromAPI);
     steps.forEach(step => tour.addStep(step));
+
+    // Add journey logging callbacks
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step?.id) {
+            logTourStepView(step.id);
+        }
+    });
+
+    tour.on('complete', () => {
+        console.log('[RecruitmentTour] Screening All tab tour completed');
+    });
+
+    tour.on('cancel', () => {
+        const currentStep = tour.getCurrentStep();
+        logTourSkipped('screening_all_tab', currentStep?.id);
+    });
+
+    // Log tour started when tour is about to start
+    const originalStart = tour.start.bind(tour);
+    tour.start = function () {
+        logTourStarted('screening_all_tab');
+        return originalStart();
+    };
 
     if (typeof window !== 'undefined') {
         window.recruitmentScreeningTour = tour;
@@ -1476,7 +1647,7 @@ export const createScreeningAllTabTour = (): Shepherd.Tour => {
 };
 
 // Create screening Shortlisted tab tour
-export const createScreeningShortlistedTabTour = (): Shepherd.Tour => {
+export const createScreeningShortlistedTabTour = (tourStepsFromAPI: any[] = []): Shepherd.Tour => {
     const tour = new Shepherd.Tour({
         defaultStepOptions: {
             cancelIcon: { enabled: true },
@@ -1490,8 +1661,32 @@ export const createScreeningShortlistedTabTour = (): Shepherd.Tour => {
         keyboardNavigation: true
     });
 
-    const steps = getScreeningShortlistedTabTourSteps();
+    const steps = getScreeningShortlistedTabTourSteps(tourStepsFromAPI);
     steps.forEach(step => tour.addStep(step));
+
+    // Add journey logging callbacks
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step?.id) {
+            logTourStepView(step.id);
+        }
+    });
+
+    tour.on('complete', () => {
+        console.log('[RecruitmentTour] Screening Shortlisted tab tour completed');
+    });
+
+    tour.on('cancel', () => {
+        const currentStep = tour.getCurrentStep();
+        logTourSkipped('screening_shortlisted_tab', currentStep?.id);
+    });
+
+    // Log tour started when tour is about to start
+    const originalStart = tour.start.bind(tour);
+    tour.start = function () {
+        logTourStarted('screening_shortlisted_tab');
+        return originalStart();
+    };
 
     if (typeof window !== 'undefined') {
         window.recruitmentShortlistedTour = tour;
@@ -1501,7 +1696,7 @@ export const createScreeningShortlistedTabTour = (): Shepherd.Tour => {
 };
 
 // Create screening Pending tab tour
-export const createScreeningPendingTabTour = (): Shepherd.Tour => {
+export const createScreeningPendingTabTour = (tourStepsFromAPI: any[] = []): Shepherd.Tour => {
     const tour = new Shepherd.Tour({
         defaultStepOptions: {
             cancelIcon: { enabled: true },
@@ -1515,8 +1710,32 @@ export const createScreeningPendingTabTour = (): Shepherd.Tour => {
         keyboardNavigation: true
     });
 
-    const steps = getScreeningPendingTabTourSteps();
+    const steps = getScreeningPendingTabTourSteps(tourStepsFromAPI);
     steps.forEach(step => tour.addStep(step));
+
+    // Add journey logging callbacks
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step?.id) {
+            logTourStepView(step.id);
+        }
+    });
+
+    tour.on('complete', () => {
+        console.log('[RecruitmentTour] Screening Pending tab tour completed');
+    });
+
+    tour.on('cancel', () => {
+        const currentStep = tour.getCurrentStep();
+        logTourSkipped('screening_pending_tab', currentStep?.id);
+    });
+
+    // Log tour started when tour is about to start
+    const originalStart = tour.start.bind(tour);
+    tour.start = function () {
+        logTourStarted('screening_pending_tab');
+        return originalStart();
+    };
 
     if (typeof window !== 'undefined') {
         window.recruitmentPendingTour = tour;
@@ -1526,7 +1745,7 @@ export const createScreeningPendingTabTour = (): Shepherd.Tour => {
 };
 
 // Create screening Rejected tab tour
-export const createScreeningRejectedTabTour = (): Shepherd.Tour => {
+export const createScreeningRejectedTabTour = (tourStepsFromAPI: any[] = []): Shepherd.Tour => {
     const tour = new Shepherd.Tour({
         defaultStepOptions: {
             cancelIcon: { enabled: true },
@@ -1540,8 +1759,32 @@ export const createScreeningRejectedTabTour = (): Shepherd.Tour => {
         keyboardNavigation: true
     });
 
-    const steps = getScreeningRejectedTabTourSteps();
+    const steps = getScreeningRejectedTabTourSteps(tourStepsFromAPI);
     steps.forEach(step => tour.addStep(step));
+
+    // Add journey logging callbacks
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step?.id) {
+            logTourStepView(step.id);
+        }
+    });
+
+    tour.on('complete', () => {
+        console.log('[RecruitmentTour] Screening Rejected tab tour completed');
+    });
+
+    tour.on('cancel', () => {
+        const currentStep = tour.getCurrentStep();
+        logTourSkipped('screening_rejected_tab', currentStep?.id);
+    });
+
+    // Log tour started when tour is about to start
+    const originalStart = tour.start.bind(tour);
+    tour.start = function () {
+        logTourStarted('screening_rejected_tab');
+        return originalStart();
+    };
 
     if (typeof window !== 'undefined') {
         window.recruitmentRejectedTour = tour;
@@ -1551,7 +1794,7 @@ export const createScreeningRejectedTabTour = (): Shepherd.Tour => {
 };
 
 // Create screening Hired tab tour
-export const createScreeningHiredTabTour = (): Shepherd.Tour => {
+export const createScreeningHiredTabTour = (tourStepsFromAPI: any[] = []): Shepherd.Tour => {
     const tour = new Shepherd.Tour({
         defaultStepOptions: {
             cancelIcon: { enabled: true },
@@ -1565,8 +1808,32 @@ export const createScreeningHiredTabTour = (): Shepherd.Tour => {
         keyboardNavigation: true
     });
 
-    const steps = getScreeningHiredTabTourSteps();
+    const steps = getScreeningHiredTabTourSteps(tourStepsFromAPI);
     steps.forEach(step => tour.addStep(step));
+
+    // Add journey logging callbacks
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step?.id) {
+            logTourStepView(step.id);
+        }
+    });
+
+    tour.on('complete', () => {
+        console.log('[RecruitmentTour] Screening Hired tab tour completed');
+    });
+
+    tour.on('cancel', () => {
+        const currentStep = tour.getCurrentStep();
+        logTourSkipped('screening_hired_tab', currentStep?.id);
+    });
+
+    // Log tour started when tour is about to start
+    const originalStart = tour.start.bind(tour);
+    tour.start = function () {
+        logTourStarted('screening_hired_tab');
+        return originalStart();
+    };
 
     if (typeof window !== 'undefined') {
         window.recruitmentHiredTour = tour;
@@ -1576,7 +1843,7 @@ export const createScreeningHiredTabTour = (): Shepherd.Tour => {
 };
 
 // Create Applications tab tour
-export const createApplicationsTabTour = (): Shepherd.Tour => {
+export const createApplicationsTabTour = (tourStepsFromAPI: any[] = []): Shepherd.Tour => {
     const tour = new Shepherd.Tour({
         defaultStepOptions: {
             cancelIcon: { enabled: true },
@@ -1590,8 +1857,32 @@ export const createApplicationsTabTour = (): Shepherd.Tour => {
         keyboardNavigation: true
     });
 
-    const steps = getApplicationsTabTourSteps();
+    const steps = getApplicationsTabTourSteps(tourStepsFromAPI);
     steps.forEach(step => tour.addStep(step));
+
+    // Add journey logging callbacks
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step?.id) {
+            logTourStepView(step.id);
+        }
+    });
+
+    tour.on('complete', () => {
+        console.log('[RecruitmentTour] Applications tab tour completed');
+    });
+
+    tour.on('cancel', () => {
+        const currentStep = tour.getCurrentStep();
+        logTourSkipped('applications_tab', currentStep?.id);
+    });
+
+    // Log tour started when tour is about to start
+    const originalStart = tour.start.bind(tour);
+    tour.start = function () {
+        logTourStarted('applications_tab');
+        return originalStart();
+    };
 
     if (typeof window !== 'undefined') {
         window.recruitmentApplicationsTour = tour;
@@ -1601,7 +1892,7 @@ export const createApplicationsTabTour = (): Shepherd.Tour => {
 };
 
 // Create application details dialog tour
-export const createApplicationDialogTour = (): Shepherd.Tour => {
+export const createApplicationDialogTour = (tourStepsFromAPI: any[] = []): Shepherd.Tour => {
     const tour = new Shepherd.Tour({
         defaultStepOptions: {
             cancelIcon: { enabled: true },
@@ -1615,8 +1906,32 @@ export const createApplicationDialogTour = (): Shepherd.Tour => {
         keyboardNavigation: true
     });
 
-    const steps = getApplicationDialogTourSteps();
+    const steps = getApplicationDialogTourSteps(tourStepsFromAPI);
     steps.forEach(step => tour.addStep(step));
+
+    // Add journey logging callbacks
+    tour.on('show', (e: any) => {
+        const step = e.step;
+        if (step?.id) {
+            logTourStepView(step.id);
+        }
+    });
+
+    tour.on('complete', () => {
+        console.log('[RecruitmentTour] Application dialog tour completed');
+    });
+
+    tour.on('cancel', () => {
+        const currentStep = tour.getCurrentStep();
+        logTourSkipped('application_dialog', currentStep?.id);
+    });
+
+    // Log tour started when tour is about to start
+    const originalStart = tour.start.bind(tour);
+    tour.start = function () {
+        logTourStarted('application_dialog');
+        return originalStart();
+    };
 
     if (typeof window !== 'undefined') {
         window.recruitmentDialogTour = tour;
@@ -1627,27 +1942,38 @@ export const createApplicationDialogTour = (): Shepherd.Tour => {
 
 // ==================== TOUR TRIGGER FUNCTION ====================
 
-export const startRecruitmentTourIfTriggered = (): boolean => {
+export const startRecruitmentTourIfTriggered = (tourStepsFromAPI: any[] = []): boolean => {
     if (typeof window === 'undefined') return false;
 
     const triggerValue = sessionStorage.getItem('triggerPageTour');
     const tourCompleted = sessionStorage.getItem('recruitmentTourCompleted');
 
+    console.log('[RecruitmentTourSteps] triggerValue:', triggerValue);
+    console.log('[RecruitmentTourSteps] tourCompleted:', tourCompleted);
+    console.log('[RecruitmentTourSteps] tourStepsFromAPI:', tourStepsFromAPI);
+    console.log('[RecruitmentTourSteps] tourStepsFromAPI length:', tourStepsFromAPI?.length);
+
     if (triggerValue === 'recruitment-management' && !tourCompleted) {
         sessionStorage.removeItem('triggerPageTour');
         
+        console.log('[RecruitmentTourSteps] Creating main recruitment dashboard tour...');
+
+        // Log tour started
+        logTourStarted('recruitment_dashboard');
+
         // Start the main recruitment dashboard tour
-        const tour = createRecruitmentDashboardTour();
+        const tour = createRecruitmentDashboardTour(tourStepsFromAPI);
         tour.start();
         
         return true;
     }
     
+    console.log('[RecruitmentTourSteps] Tour NOT started - conditions not met');
     return false;
 };
 
 // Helper function to start tab-specific tour
-export const startTabTour = (tabName: 'all' | 'shortlisted' | 'pending' | 'rejected' | 'hired'): void => {
+export const startTabTour = (tabName: 'all' | 'shortlisted' | 'pending' | 'rejected' | 'hired', tourStepsFromAPI: any[] = []): void => {
     if (typeof window === 'undefined') return;
 
     const tourCompletedKey = `screening${tabName.charAt(0).toUpperCase() + tabName.slice(1)}TabTourCompleted`;
@@ -1656,28 +1982,28 @@ export const startTabTour = (tabName: 'all' | 'shortlisted' | 'pending' | 'rejec
     if (!completed) {
         switch (tabName) {
             case 'all':
-                createScreeningAllTabTour().start();
+                createScreeningAllTabTour(tourStepsFromAPI).start();
                 break;
             case 'shortlisted':
-                createScreeningShortlistedTabTour().start();
+                createScreeningShortlistedTabTour(tourStepsFromAPI).start();
                 break;
             case 'pending':
-                createScreeningPendingTabTour().start();
+                createScreeningPendingTabTour(tourStepsFromAPI).start();
                 break;
             case 'rejected':
-                createScreeningRejectedTabTour().start();
+                createScreeningRejectedTabTour(tourStepsFromAPI).start();
                 break;
             case 'hired':
-                createScreeningHiredTabTour().start();
+                createScreeningHiredTabTour(tourStepsFromAPI).start();
                 break;
         }
     }
 };
 
 // Helper function to start dialog tour
-export const startDialogTour = (): void => {
+export const startDialogTour = (tourStepsFromAPI: any[] = []): void => {
     if (typeof window === 'undefined') return;
-    createApplicationDialogTour().start();
+    createApplicationDialogTour(tourStepsFromAPI).start();
 };
 
 // Extend window interface for TypeScript

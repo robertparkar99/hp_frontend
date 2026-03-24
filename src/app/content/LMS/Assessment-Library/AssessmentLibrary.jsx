@@ -81,6 +81,9 @@ const AssessmentLibrary = () => {
     showAvailableOnly: false,
   });
 
+  // State for tour
+  const [showStartTourButton, setShowStartTourButton] = useState(false);
+
   // Get session data from localStorage
   useEffect(() => {
     const userData = localStorage.getItem('userData');
@@ -146,16 +149,51 @@ const AssessmentLibrary = () => {
 
     fetchAssessments();
   }, [sessionData]); // Depend on sessionData
-   // Start tour when triggered from sidebar
+  // Start tour when triggered from sidebar OR automatically for Assessment Library URL
   useEffect(() => {
-    if (AssessmentLibraryTour.shouldStartTour()) {
-      // Add a small delay to ensure all elements are rendered
-      const timer = setTimeout(() => {
-        AssessmentLibraryTour.startTour();
-      }, 1000);
-      return () => clearTimeout(timer);
+    // Debug: Log what's in sessionStorage
+    const triggerValue = sessionStorage.getItem('triggerPageTour');
+    const tourCompleted = sessionStorage.getItem('assessmentLibraryTourCompleted');
+    const currentUrl = window.location.pathname.toLowerCase();
+
+    // Check if this is Assessment Library URL
+    const isAssessmentLibraryUrl = currentUrl.includes('/assessment-library') ||
+      currentUrl.includes('assessment-library') ||
+      currentUrl.includes('/lms/assessment');
+
+    console.log('[AssessmentLibrary] Page loaded, checking tour trigger:', {
+      triggerValue,
+      tourCompleted,
+      isAssessmentLibraryUrl,
+      url: window.location.pathname
+    });
+
+    // If tour is NOT completed, try to start it
+    if (tourCompleted !== 'true') {
+      // Start if triggered from sidebar OR if we're on Assessment Library URL
+      if (triggerValue || isAssessmentLibraryUrl) {
+        console.log('[AssessmentLibrary] Auto-starting tour...');
+        // Add a delay to ensure all elements are rendered
+        const timer = setTimeout(() => {
+          AssessmentLibraryTour.startTour();
+        }, 1500);
+        return () => clearTimeout(timer);
+      } else {
+        // Show Start Tour button as fallback
+        console.log('[AssessmentLibrary] No trigger found, showing Start Tour button');
+        setShowStartTourButton(true);
+      }
+    } else {
+      console.log('[AssessmentLibrary] Tour already completed');
+      // Still show Start Tour button so user can restart
+      setShowStartTourButton(true);
     }
   }, []);
+
+  // Function to manually start tour
+  const handleStartTour = () => {
+    AssessmentLibraryTour.restartTour();
+  };
 
 
   // ✅ Filtering & sorting
@@ -327,6 +365,20 @@ const AssessmentLibrary = () => {
             </div>
 
             <div className="flex flex-wrap gap-2">
+              {/* Start Tour Button - shown as fallback */}
+              {/* {showStartTourButton && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleStartTour}
+                  className="flex items-center gap-2 text-blue-600 border-blue-600 hover:bg-blue-50"
+                  title="Start Tour"
+                >
+                  <Icon name="Map" size={16} />
+                  Start Tour
+                </Button>
+              )} */}
+
               {/* Import Questions Button */}
               {/* <Button
                 variant="outline"

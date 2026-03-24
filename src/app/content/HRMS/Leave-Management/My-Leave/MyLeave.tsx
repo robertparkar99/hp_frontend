@@ -143,8 +143,8 @@ const MyLeave = () => {
       sessionStorage.removeItem('triggerPageTour');
 
       // Start the tour after a short delay to ensure DOM is fully rendered
-      setTimeout(() => {
-        startMyLeaveTour();
+      setTimeout(async () => {
+        await startMyLeaveTour();
       }, 1000);
     }
   }, []);

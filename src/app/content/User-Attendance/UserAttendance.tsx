@@ -112,9 +112,9 @@ function App() {
       console.log('Triggering User Attendance tour via sidebar navigation');
 
       // Small delay to ensure DOM is ready
-      setTimeout(() => {
+      setTimeout(async () => {
         const tour = UserAttendanceTour.getInstance();
-        tour.start();
+        await tour.start();
 
         // Clear the trigger flags
         sessionStorage.removeItem('triggerUserAttendanceTour');

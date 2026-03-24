@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Play } from "lucide-react";
+import { logUserJourney } from "@/utils/journeyLogger";
 
 interface WelcomeModalProps {
   isOpen: boolean;
@@ -78,7 +79,15 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({
             </Button>
 
             <button
-              onClick={onClose}
+              onClick={() => {
+                // Log tour skip event when user chooses to explore on their own
+                logUserJourney({
+                  eventType: "tour_skipped",
+                  menuId: 5,
+                  accessLink: window.location.pathname,
+                });
+                onClose();
+              }}
               className="w-full text-xs text-gray-500 hover:text-gray-700 transition"
             >
               I’ll explore on my own
