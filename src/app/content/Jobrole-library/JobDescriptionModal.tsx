@@ -6,7 +6,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Button } from "@/components/ui/button";
 // import ViewSkill from "@/components/skillComponent/viewDialouge"; // ✅ import ViewSkill
 import { Description } from "@radix-ui/react-dialog";
-
+import ViewSkill from "@/components/skillComponent/viewDialouge";
 
 type JobRole = {
     id: number;
@@ -95,7 +95,16 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
     // State to show/hide skill radio buttons
     const [showSkillRadios, setShowSkillRadios] = useState(false);
 
-
+     const [dialogOpen, setDialogOpen] = useState({
+        view: false,
+        add: false,
+        edit: false,
+        settings: false,
+        permissions: false,
+        bulkImport: false,
+        import: false,
+      });
+  const [activeSkill, setActiveSkill] = useState<number>(0);
 
     const CompetencySection = ({
         title,
@@ -584,7 +593,11 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                                             />
                                                         )}
                                                         <div className="flex justify-between items-start mb-2">
-                                                            <h5 className="font-medium text-gray-800 text-base hover:text-blue-600">
+                                                            <h5 className="font-medium text-gray-800 text-base hover:text-blue-600" onClick={async () => {
+                                                                // console.log('clicked skill',skill);
+                                                                        setActiveSkill(parseInt(skill.skill_id || '0'))
+                                                                            setDialogOpen({ ...dialogOpen, view: true });
+                                                                }}>
                                                                 {skill.SkillName}
                                                             </h5>
                                                             {skill.proficiency_level && (
@@ -702,6 +715,17 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
           viewMode="kaab-only" // ✅ This will show only KAAB data with proficiency levels
         />
       )} */}
+      {dialogOpen.view && activeSkill && (
+                <ViewSkill
+                  skillId={activeSkill}
+                  formType="user"
+                  onClose={() => {
+                    setDialogOpen({ ...dialogOpen, view: false });
+                    setSelectedSkillId(null);
+                  }}
+                  onSuccess={() => setDialogOpen({ ...dialogOpen, add: false })}
+                />
+              )}
         </>
     );
 }
