@@ -5,6 +5,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { checkPermission } from "@/utils/permissions";
+import LevelResponsibility from "../Libraries/levelResponsibility";
 
 type Department = {
   id: number;
@@ -258,6 +259,12 @@ export default function JobroleTaxonomy() {
             </div>
           ))
         )}
+      </div>
+
+      {/* Level of Responsibility Section */}
+      <div className="mt-12">
+        <h2 className="text-xl font-bold mb-6">Level of Responsibility</h2>
+        <LevelResponsibility />
       </div>
     </div>
   );
