@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { UserProfile } from "./UserProfile";
 import GlobalFooter from "./GlobalFooter"; // Import GlobalFooter
 import { SidebarTourGuide } from "./SidebarTour";
+import { logUserJourney, getPageInfo, setCurrentPageMenuId } from "../../utils/journeyLogger";
 
 interface SidebarProps {
     mobileOpen: boolean;
@@ -132,6 +133,14 @@ const SubMenuItem = ({
             localStorage.removeItem("activeSubSubItem");
             // Open the sub dropdown
             setSubOpen(s => ({ ...s, [item.key]: true }));
+
+            // Log page visit journey event with menu_id
+            setCurrentPageMenuId(item.key);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: item.access_link,
+                menuId: parseInt(item.key), // Pass the menu ID
+            }).catch(console.error);
         } else if (item.page_type === "page" && item.access_link) {
             const normalizedLink = item.access_link.startsWith("/")
                 ? item.access_link
@@ -144,6 +153,14 @@ const SubMenuItem = ({
             localStorage.removeItem("activeSubSubItem");
             // Open the sub dropdown
             setSubOpen(s => ({ ...s, [item.key]: true }));
+
+            // Log page visit journey event with menu_id
+            setCurrentPageMenuId(item.key);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: normalizedLink,
+                menuId: parseInt(item.key), // Pass the menu ID
+            }).catch(console.error);
         } else if (hasSubItems) {
             onToggle();
             onSetActiveSection(sectionKey);
@@ -151,6 +168,22 @@ const SubMenuItem = ({
             localStorage.setItem("activeSection", sectionKey);
             localStorage.setItem("activeSubItem", item.key);
             localStorage.removeItem("activeSubSubItem");
+
+            // Log page visit journey event with menu_id even for dropdown toggle
+            setCurrentPageMenuId(item.key);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: '',
+                menuId: parseInt(item.key), // Pass the menu ID
+            }).catch(console.error);
+        } else {
+            // For items with no subItems and no valid page_type/access_link, still log with menu_id
+            setCurrentPageMenuId(item.key);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: '',
+                menuId: parseInt(item.key), // Pass the menu ID
+            }).catch(console.error);
         }
     };
 
@@ -166,6 +199,14 @@ const SubMenuItem = ({
             localStorage.setItem("activeSection", sectionKey);
             localStorage.setItem("activeSubItem", item.key);
             localStorage.setItem("activeSubSubItem", subItem.key);
+
+            // Log page visit journey event with menu_id
+            setCurrentPageMenuId(subItem.key);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: subItem.access_link,
+                menuId: subItem.key, // Pass the menu ID
+            }).catch(console.error);
         } else if (subItem.page_type === "page" && subItem.access_link) {
             const normalizedLink = subItem.access_link.startsWith("/")
                 ? subItem.access_link
@@ -177,6 +218,22 @@ const SubMenuItem = ({
             localStorage.setItem("activeSection", sectionKey);
             localStorage.setItem("activeSubItem", item.key);
             localStorage.setItem("activeSubSubItem", subItem.key);
+
+            // Log page visit journey event with menu_id
+            setCurrentPageMenuId(subItem.key);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: normalizedLink,
+                menuId: subItem.key, // Pass the menu ID
+            }).catch(console.error);
+        } else {
+            // For subItems with no valid page_type/access_link, still log with menu_id
+            setCurrentPageMenuId(subItem.key);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: '',
+                menuId: subItem.key, // Pass the menu ID
+            }).catch(console.error);
         }
     };
 
@@ -206,7 +263,15 @@ const SubMenuItem = ({
 `}
 
                     >
-                        <div className="flex items-center gap-[20px]">
+                        <div className="flex items-center gap-[20px]" onClick={() => {
+                            // console.log('item lele yaha se', parseInt(item.key));
+                            setCurrentPageMenuId(item?.key);
+                            logUserJourney({
+                                eventType: "page_visit",
+                                accessLink: '',
+                                menuId: parseInt(item?.key),
+                            }).catch(console.error);
+                        }}>
                             {item.icon}
                             {!isCollapsed && (
                                 <span
@@ -326,6 +391,14 @@ const Section = ({
             localStorage.removeItem("activeSubSubItem");
             // Open the dropdown
             setOpen(o => ({ ...o, [section.key]: true }));
+
+            // Log page visit journey event with menu_id
+            setCurrentPageMenuId(section.key);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: section.access_link,
+                menuId: parseInt(section.key), // Pass the menu ID
+            }).catch(console.error);
         } else if (section.page_type === "page" && section.access_link) {
             const normalizedLink = section.access_link.startsWith("/")
                 ? section.access_link
@@ -339,8 +412,23 @@ const Section = ({
             localStorage.removeItem("activeSubSubItem");
             // Open the dropdown
             setOpen(o => ({ ...o, [section.key]: true }));
+
+            // Log page visit journey event with menu_id
+            setCurrentPageMenuId(section.key);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: normalizedLink,
+                menuId: parseInt(section.key), // Pass the menu ID
+            }).catch(console.error);
         } else {
             onToggle();
+            // Log page visit journey event with menu_id even for toggle
+            setCurrentPageMenuId(section.key);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: '',
+                menuId: parseInt(section.key), // Pass the menu ID
+            }).catch(console.error);
         }
     };
 
@@ -402,7 +490,7 @@ const Section = ({
                             aria-expanded={open}
                         >
                             <div className="flex items-center gap-[20px]">
-                                {section.icon}
+                                    {section.icon} 
                                 {!isCollapsed && (
                                     <span
                                         className="text-[#686868] text-[12px] font-medium leading-[18px]"
@@ -603,6 +691,14 @@ const DashboardSection = ({
         localStorage.removeItem("activeSubSubItem");
         // Navigate to home page
         window.location.href = "/";
+
+        // Log page visit journey event with menu_id
+        setCurrentPageMenuId(DASHBOARD_KEY);
+        logUserJourney({
+            eventType: "page_visit",
+            accessLink: "/",
+            menuId: parseInt(DASHBOARD_KEY), // Pass the dashboard menu ID
+        }).catch(console.error);
     };
 
     return (
@@ -934,6 +1030,14 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         localStorage.setItem("activeSection", key);
         localStorage.removeItem("activeSubItem");
         localStorage.removeItem("activeSubSubItem");
+
+        // Log page visit journey event with menu_id for section toggle
+        setCurrentPageMenuId(key);
+        logUserJourney({
+            eventType: "page_visit",
+            accessLink: '',
+            menuId: parseInt(key), // Pass the menu ID
+        }).catch(console.error);
     };
 
     const handleSubToggle = (subKey: string) => {
@@ -949,6 +1053,14 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
             localStorage.removeItem("activeSubSubItem");
             // Ensure the section dropdown is open
             setOpen(o => ({ ...o, [section.key]: true }));
+
+            // Log page visit journey event with menu_id for sub toggle
+            setCurrentPageMenuId(subKey);
+            logUserJourney({
+                eventType: "page_visit",
+                accessLink: '',
+                menuId: parseInt(subKey), // Pass the menu ID
+            }).catch(console.error);
         }
     };
 

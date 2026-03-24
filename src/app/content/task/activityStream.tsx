@@ -22,6 +22,7 @@ import {
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 import { activityStreamTourSteps, tourStyles } from '@/lib/activityStreamTourSteps';
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger';
 import {
   isToday,
   isThisWeek,
@@ -67,6 +68,9 @@ const ActivityStream = () => {
   const [loading, setLoading] = useState(true);
   const [showTour, setShowTour] = useState(false);
 
+  // State for storing tour steps from API
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState<any[]>([]);
+
   // Check if tour should start (only when navigated from sidebar tour)
   useEffect(() => {
     const triggerTour = sessionStorage.getItem('triggerPageTour');
@@ -80,9 +84,45 @@ const ActivityStream = () => {
     }
   }, []);
 
+  // Map on_click to element IDs
+  const getAttachToConfig = (stepId: string) => {
+    const configs: Record<string, { element: string; on: 'top' | 'bottom' | 'left' | 'right' }> = {
+      'welcome': { element: '#tour-header', on: 'bottom' },
+      'stats-total': { element: '#tour-stats-total', on: 'bottom' },
+      'stats-pending': { element: '#tour-stats-pending', on: 'bottom' },
+      'stats-completed': { element: '#tour-stats-completed', on: 'bottom' },
+      'stats-inprogress': { element: '#tour-stats-inprogress', on: 'bottom' },
+      'filter-search': { element: '#tour-filter-search', on: 'right' },
+      'filter-status': { element: '#tour-filter-status', on: 'right' },
+      'tab-today': { element: '#tour-tab-today', on: 'bottom' },
+      'tab-upcoming': { element: '#tour-tab-upcoming', on: 'bottom' },
+      'tab-recent': { element: '#tour-tab-recent', on: 'bottom' },
+      'task-card': { element: '.space-y-4 .rounded-xl', on: 'top' },
+      'task-reply': { element: '.bg-gray-50.border-t', on: 'top' },
+    };
+    return configs[stepId] || { element: '#tour-header', on: 'bottom' };
+  };
+
   // Initialize Shepherd tour
   useEffect(() => {
     if (showTour) {
+      // Determine which steps to use: API data or fallback to hardcoded
+      const stepsToUse = tourStepsFromAPI.length > 0 ? tourStepsFromAPI : activityStreamTourSteps;
+      const isUsingAPI = tourStepsFromAPI.length > 0;
+
+      console.log('[ActivityStream] Using API data:', isUsingAPI, 'Steps count:', stepsToUse.length);
+
+      // Get page info for journey logging
+      const pageInfo = getPageInfo();
+
+      // Log tour start event
+      logUserJourney({
+        eventType: 'tour_started',
+        stepKey: null,
+        menuId: pageInfo.menuId,
+        accessLink: pageInfo.accessLink,
+      });
+
       const tour = new Shepherd.Tour({
         useModalOverlay: true,
         defaultStepOptions: {
@@ -94,14 +134,31 @@ const ActivityStream = () => {
         }
       });
 
-      // Add all steps from the tour steps file
-      activityStreamTourSteps.forEach((step) => {
-        const buttons = step.buttons.map((btn: any) => ({
+      // Add all steps from the tour steps file or API
+      stepsToUse.forEach((step: any) => {
+        const stepId = isUsingAPI ? step.on_click : step.id;
+        const attachTo = isUsingAPI ? getAttachToConfig(stepId) : step.attachTo;
+
+        // Handle buttons - API data doesn't have buttons, so use defaults
+        const stepButtons = isUsingAPI ? [
+          { text: 'Next', action: 'next' }
+        ] : step.buttons;
+
+        const buttons = stepButtons.map((btn: any) => ({
           text: btn.text,
           action: btn.action === 'finish' ? () => {
             if (typeof window !== 'undefined') {
               localStorage.setItem('activityStreamTourSeen', 'true');
               localStorage.setItem('activityStreamTourCompleted', 'true');
+
+              // Log tour complete event
+              const stepIndex = stepsToUse.findIndex((s: any) => isUsingAPI ? s.on_click === stepId : s.id === stepId);
+              logUserJourney({
+                eventType: 'tour_complete',
+                stepKey: stepId || `step_${stepIndex}`,
+                menuId: pageInfo.menuId,
+                accessLink: pageInfo.accessLink,
+              });
             }
             setShowTour(false);
             tour.complete();
@@ -109,11 +166,39 @@ const ActivityStream = () => {
         }));
 
         tour.addStep({
-          id: step.id,
-          title: step.title,
-          text: step.text,
-          attachTo: step.attachTo,
+          id: stepId,
+          title: isUsingAPI ? step.title : step.title,
+          text: isUsingAPI ? [step.description] : step.text,
+          attachTo,
           buttons
+        });
+      });
+
+      // Log tour step view event when steps are shown
+      tour.on('show', (e: any) => {
+        const step = e.step;
+        const stepId = step.id;
+        const stepIndex = stepsToUse.findIndex((s: any) => isUsingAPI ? s.on_click === stepId : s.id === stepId);
+        logUserJourney({
+          eventType: 'tour_step_view',
+          stepKey: stepId || `step_${stepIndex}`,
+          menuId: pageInfo.menuId,
+          accessLink: pageInfo.accessLink,
+        });
+      });
+
+      // Handle tour cancel (skipped)
+      tour.on('cancel', () => {
+        // Mark tour as completed when cancelled (user has seen it)
+        localStorage.setItem('activityStreamTourSeen', 'true');
+        localStorage.setItem('activityStreamTourCompleted', 'true');
+
+        // Log tour skipped event
+        logUserJourney({
+          eventType: 'tour_skipped',
+          stepKey: null,
+          menuId: pageInfo.menuId,
+          accessLink: pageInfo.accessLink,
         });
       });
 
@@ -128,7 +213,7 @@ const ActivityStream = () => {
         }
       };
     }
-  }, [showTour]);
+  }, [showTour, tourStepsFromAPI, getAttachToConfig]);
 
   // Start tour manually
   const startTour = () => {
@@ -157,6 +242,65 @@ const ActivityStream = () => {
       }
     }
   }, []);
+
+  // Fetch tour steps from API
+  useEffect(() => {
+    async function fetchTourSteps() {
+      if (!sessionData.url || !sessionData.token) return;
+
+      try {
+        // Get menuId and accessLink from page info
+        const pageInfo = getPageInfo();
+        console.log('[ActivityStream] Current page menuId:', pageInfo.menuId, 'accessLink:', pageInfo.accessLink);
+
+        // Fetch tour steps with proper authentication and filtering
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=Onboarding_tour_details&filters[menu_id]=${pageInfo.menuId}&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`
+        );
+
+        if (!res.ok) {
+          const errorRes = res.clone();
+          try {
+            const errorText = await errorRes.text();
+            console.error('[ActivityStream] Tour steps API error:', res.status, errorText);
+          } catch (e) {
+            console.error('[ActivityStream] Tour steps API error:', res.status);
+          }
+          throw new Error(`Failed to fetch tour steps: ${res.status}`);
+        }
+
+        const json = await res.json();
+        console.log('[ActivityStream] Tour steps API response:', json);
+
+        // Handle different response formats
+        let tourData = [];
+        if (Array.isArray(json)) {
+          tourData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+          tourData = json.data;
+        } else if (json.result && Array.isArray(json.result)) {
+          tourData = json.result;
+        }
+
+        console.log('[ActivityStream] Parsed tour data:', tourData);
+
+        // Filter by menu_id and access_link from getPageInfo
+        console.log('[ActivityStream] Filtering by menuId:', pageInfo.menuId, 'accessLink:', pageInfo.accessLink);
+
+        const filteredData = tourData.filter((step: any) =>
+          step.menu_id === pageInfo.menuId && step.access_link === pageInfo.accessLink
+        );
+
+        console.log('[ActivityStream] Filtered tour data:', filteredData);
+
+        setTourStepsFromAPI(filteredData.length > 0 ? filteredData : tourData);
+      } catch (error) {
+        console.error("[ActivityStream] Error fetching tour steps:", error);
+      }
+    }
+
+    fetchTourSteps();
+  }, [sessionData.url, sessionData.token, sessionData.subInstituteId]);
 
   useEffect(() => {
     if (sessionData.url && sessionData.token) {

@@ -146,7 +146,7 @@ useEffect(() => {
 
 
   // ✅ Get the correct employee value based on selection mode
-  const getDisplayEmployee = () => {
+  const getDisplayEmployee = (): Employee | Employee[] | null => {
     if (empMultiSelect) {
       return Array.isArray(selectedEmployee) ? selectedEmployee : [];
     } else {
@@ -155,6 +155,11 @@ useEffect(() => {
         ? selectedEmployee.length > 0 ? selectedEmployee[0] : null 
         : selectedEmployee as Employee | null;
     }
+  };
+
+  // ✅ Type guard to check if displayEmployee is a single Employee (not an array)
+  const isSingleEmployee = (emp: Employee | Employee[] | null): emp is Employee => {
+    return emp !== null && !Array.isArray(emp);
   };
 
   // ✅ Get the correct department value based on selection mode
@@ -204,7 +209,7 @@ useEffect(() => {
         }
 
         const formatted: Employee[] = results.map((emp: any) => ({
-          id: emp.id,
+          id: emp.id?.toString() || emp.user_id?.toString() || "",
           name: `${emp.first_name || ""} ${emp.middle_name || ""} ${
             emp.last_name || ""
           }`.trim(),
@@ -426,7 +431,7 @@ useEffect(() => {
               className="relative w-full bg-white border border-gray-300 rounded-lg pl-3 pr-10 py-3 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 hover:border-gray-400"
             >
               <div className="flex items-center flex-wrap gap-2">
-                {displayEmployee ? (
+                  {displayEmployee && isSingleEmployee(displayEmployee) ? (
                   <div className="flex items-center gap-2">
                     <img
                       src={displayEmployee.avatar}
@@ -462,7 +467,7 @@ useEffect(() => {
                     key={emp.id}
                     onClick={() => handleEmployeeSelect(emp)}
                     className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 ${
-                      displayEmployee && displayEmployee.id === emp.id
+                      isSingleEmployee(displayEmployee) && displayEmployee.id === emp.id
                         ? "bg-blue-100"
                         : ""
                     }`}

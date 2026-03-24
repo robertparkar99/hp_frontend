@@ -5,12 +5,19 @@ import Shepherd from "shepherd.js";
 import "shepherd.js/dist/css/shepherd.css";
 import { taskAssignmentTourSteps } from "@/lib/taskAssignmentTourSteps";
 import Icon from "@/components/AppIcon";
+import { logUserJourney, getPageInfo } from "@/utils/journeyLogger";
 
 const TaskAssignmentTour = ({ onComplete, onSwitchView }) => {
   const [isTourActive, setIsTourActive] = useState(false);
   const currentViewRef = useRef('progress');
   const tourInstanceRef = useRef(null);
   const isSwitchingViewRef = useRef(false);
+
+  // State for storing tour steps from API
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState([]);
+
+  // State for session data
+  const [sessionData, setSessionData] = useState(null);
 
   // View mapping based on step indices
   const stepViewMap = {
@@ -39,6 +46,114 @@ const TaskAssignmentTour = ({ onComplete, onSwitchView }) => {
     22: 'assignment', // Priority
     23: 'assignment', // Submit
     24: 'progress',   // Tour Complete
+  };
+
+  // Load session data from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      try {
+        const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+        setSessionData({
+          url: APP_URL,
+          token,
+          subInstituteId: String(sub_institute_id),
+        });
+      } catch (e) {
+        console.error("Invalid userData in localStorage", e);
+      }
+    }
+  }, []);
+
+  // Fetch tour steps from API
+  useEffect(() => {
+    async function fetchTourSteps() {
+      if (!sessionData) return;
+
+      try {
+        // Get menuId and accessLink from page info
+        const pageInfo = getPageInfo();
+        console.log('[TaskAssignmentTour] Current page menuId:', pageInfo.menuId, 'accessLink:', pageInfo.accessLink);
+
+        // Fetch tour steps with proper authentication and filtering
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=Onboarding_tour_details&filters[menu_id]=${pageInfo.menuId}&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`
+        );
+
+        if (!res.ok) {
+          const errorRes = res.clone();
+          try {
+            const errorText = await errorRes.text();
+            console.error('[TaskAssignmentTour] Tour steps API error:', res.status, errorText);
+          } catch (e) {
+            console.error('[TaskAssignmentTour] Tour steps API error:', res.status);
+          }
+          throw new Error(`Failed to fetch tour steps: ${res.status}`);
+        }
+
+        const json = await res.json();
+        console.log('[TaskAssignmentTour] Tour steps API response:', json);
+
+        // Handle different response formats
+        let tourData = [];
+        if (Array.isArray(json)) {
+          tourData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+          tourData = json.data;
+        } else if (json.result && Array.isArray(json.result)) {
+          tourData = json.result;
+        }
+
+        console.log('[TaskAssignmentTour] Parsed tour data:', tourData);
+
+        // Filter by menu_id and access_link from getPageInfo
+        console.log('[TaskAssignmentTour] Filtering by menuId:', pageInfo.menuId, 'accessLink:', pageInfo.accessLink);
+
+        const filteredData = tourData.filter((step) =>
+          step.menu_id === pageInfo.menuId && step.access_link === pageInfo.accessLink
+        );
+
+        console.log('[TaskAssignmentTour] Filtered tour data:', filteredData);
+
+        setTourStepsFromAPI(filteredData.length > 0 ? filteredData : tourData);
+      } catch (error) {
+        console.error("[TaskAssignmentTour] Error fetching tour steps:", error);
+      }
+    }
+
+    fetchTourSteps();
+  }, [sessionData]);
+
+  // Map on_click to element IDs
+  const getAttachToConfig = (stepId) => {
+    const configs = {
+      'task-assignment-welcome': { element: '#task-assignment-header', on: 'bottom' },
+      'task-assignment-tabs': { element: '#task-assignment-tabs', on: 'bottom' },
+      'task-dashboard-stats': { element: '#task-dashboard-stats', on: 'bottom' },
+      'task-filters': { element: '#task-filters', on: 'bottom' },
+      'task-data-table': { element: '#task-data-table', on: 'top' },
+      'task-table-actions': { element: '#task-table-actions', on: 'left' },
+      'task-export': { element: '#task-export', on: 'left' },
+      'switch-to-assignment': { element: '#tab-assignment', on: 'bottom' },
+      'new-assignment-header': { element: '#new-assignment-header', on: 'bottom' },
+      'assignment-department': { element: '#assignment-department', on: 'right' },
+      'assignment-jobrole': { element: '#assignment-jobrole', on: 'right' },
+      'assignment-employees': { element: '#assignment-employees', on: 'right' },
+      'assignment-task-title': { element: '#assignment-task-title', on: 'right' },
+      'assignment-ai-generation': { element: '#assignment-ai-gen', on: 'left' },
+      'assignment-description': { element: '#assignment-description', on: 'top' },
+      'assignment-repeat': { element: '#assignment-repeat', on: 'right' },
+      'assignment-skills': { element: '#assignment-skills', on: 'right' },
+      'assignment-observer': { element: '#assignment-observer', on: 'right' },
+      'assignment-kras': { element: '#assignment-kras', on: 'right' },
+      'assignment-kpis': { element: '#assignment-kpis', on: 'right' },
+      'assignment-monitoring': { element: '#assignment-monitoring', on: 'top' },
+      'assignment-attachment': { element: '#assignment-attachment', on: 'top' },
+      'assignment-priority': { element: '#assignment-priority', on: 'top' },
+      'assignment-submit': { element: '#assignment-submit', on: 'top' },
+      'tour-complete': { element: '#task-assignment-header', on: 'bottom' },
+    };
+    return configs[stepId] || { element: '#task-assignment-header', on: 'bottom' };
   };
 
   // Function to switch views with delay for rendering
@@ -80,6 +195,11 @@ const TaskAssignmentTour = ({ onComplete, onSwitchView }) => {
       return;
     }
 
+    // Wait for tour steps to be loaded before starting
+    if (tourStepsFromAPI.length === 0) {
+      return;
+    }
+
     // Start tour after a short delay to ensure DOM is ready
     const timer = setTimeout(() => {
       startTour();
@@ -91,10 +211,25 @@ const TaskAssignmentTour = ({ onComplete, onSwitchView }) => {
         tourInstanceRef.current.cancel();
       }
     };
-  }, []);
+  }, [tourStepsFromAPI]);
 
   const startTour = () => {
     setIsTourActive(true);
+
+    // Determine which steps to use: API data or fallback to hardcoded
+    const stepsToUse = tourStepsFromAPI.length > 0 ? tourStepsFromAPI : taskAssignmentTourSteps;
+    const isUsingAPI = tourStepsFromAPI.length > 0;
+    
+    console.log('[TaskAssignmentTour] Using API data:', isUsingAPI, 'Steps count:', stepsToUse.length);
+
+    // Log tour start event
+    const pageInfo = getPageInfo();
+    logUserJourney({
+      eventType: 'tour_started',
+      stepKey: null,
+      menuId: pageInfo.menuId,
+      accessLink: pageInfo.accessLink,
+    });
 
     const tour = new Shepherd.Tour({
       useModalOverlay: true,
@@ -230,6 +365,9 @@ const TaskAssignmentTour = ({ onComplete, onSwitchView }) => {
 
     // Button logic with view switching
     const getButtons = (index) => {
+      const currentStep = stepsToUse[index];
+      const stepId = isUsingAPI ? currentStep?.on_click : currentStep?.id;
+      
       const skip = {
         text: "Skip",
         action: async () => {
@@ -237,6 +375,15 @@ const TaskAssignmentTour = ({ onComplete, onSwitchView }) => {
           tour.cancel();
           setIsTourActive(false);
           localStorage.setItem("taskAssignmentTourCompleted", "true");
+
+          // Log tour skipped event
+          logUserJourney({
+            eventType: 'tour_skipped',
+            stepKey: stepId || `step_${index}`,
+            menuId: pageInfo.menuId,
+            accessLink: pageInfo.accessLink,
+          });
+
           onComplete?.();
         },
         classes: "shepherd-skip",
@@ -272,36 +419,85 @@ const TaskAssignmentTour = ({ onComplete, onSwitchView }) => {
           tour.complete();
           setIsTourActive(false);
           localStorage.setItem("taskAssignmentTourCompleted", "true");
+
+
+          // Log tour complete event
+          logUserJourney({
+            eventType: 'tour_complete',
+            stepKey: stepId || `step_${index}`,
+            menuId: pageInfo.menuId,
+            accessLink: pageInfo.accessLink,
+          });
           onComplete?.();
         },
         classes: "shepherd-finish",
       };
 
       if (index === 0) return [skip, next];
-      if (index === taskAssignmentTourSteps.length - 1) return [skip, back, finish];
+      if (index === stepsToUse.length - 1) return [skip, back, finish];
       return [skip, back, next];
     };
 
-    // Add steps to tour with view switching
-    taskAssignmentTourSteps.forEach((step, index) => {
-      tour.addStep({
-        ...step,
-        title: step.title || "Tour",
-        buttons: getButtons(index),
+    // Add steps to tour - use API data or fallback to hardcoded steps
+    if (isUsingAPI) {
+      // Map API data to tour steps format
+      stepsToUse.forEach((apiStep, index) => {
+        const attachTo = getAttachToConfig(apiStep.on_click);
+        const stepId = apiStep.on_click;
+        
+        tour.addStep({
+          id: stepId,
+          title: apiStep.title,
+          text: [apiStep.description],
+          attachTo,
+          beforeShowPromise: function() {
+            return new Promise(resolve => setTimeout(resolve, 300));
+          },
+          buttons: getButtons(index),
+          highlightClass: 'highlight',
+          scrollTo: { behavior: 'smooth', block: 'center' },
+          cancelIcon: { enabled: true },
+        });
       });
-    });
+    } else {
+      // Use hardcoded steps
+      stepsToUse.forEach((step, index) => {
+        tour.addStep({
+          ...step,
+          title: step.title || "Tour",
+          buttons: getButtons(index),
+        });
+      });
+    }
 
     // Handle step show event for view switching
     tour.on('show', async (event) => {
-      const stepIndex = taskAssignmentTourSteps.findIndex(s => s.id === event.step.id);
+      const stepId = event.step.id;
+      let stepIndex;
+      
+      if (isUsingAPI) {
+        stepIndex = stepsToUse.findIndex(s => s.on_click === stepId);
+      } else {
+        stepIndex = stepsToUse.findIndex(s => s.id === stepId);
+      }
+      
       if (stepIndex >= 0) {
         const targetView = stepViewMap[stepIndex];
         if (targetView && targetView !== currentViewRef.current && !isSwitchingViewRef.current) {
           await switchView(targetView);
         }
+
+        // Log tour step view event
+        const currentStep = stepsToUse[stepIndex];
+        const currentStepId = isUsingAPI ? currentStep?.on_click : currentStep?.id;
+        logUserJourney({
+          eventType: 'tour_step_view',
+          stepKey: currentStepId || `step_${stepIndex}`,
+          menuId: pageInfo.menuId,
+          accessLink: pageInfo.accessLink,
+        });
       }
     });
-
     // Start the tour
     tour.start();
 

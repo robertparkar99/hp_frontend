@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 
 import ShepherdTour from "../../Onboarding/Competency-Management/ShepherdTour";
-import { generateDetailTourSteps } from "../../../../lib/tourSteps";
+import { generateDetailTourSteps, fetchTourStepsFromAPI } from "../../../../lib/tourSteps";
 
 import {
   Eye,
@@ -111,6 +111,8 @@ export default function InvisibleLibraryPage({ showDetailTour }: InvisibleLibrar
 
   // Detail tour state
   const [showTour, setShowTour] = useState(false);
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState<any[]>([]);
+  const [isLoadingTourSteps, setIsLoadingTourSteps] = useState(true);
 
   const safeArray = (d: any) =>
     Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
@@ -132,6 +134,24 @@ export default function InvisibleLibraryPage({ showDetailTour }: InvisibleLibrar
       });
     }
   }, []);
+
+  // Fetch tour steps from API for detail tour
+  useEffect(() => {
+    const fetchTourSteps = async () => {
+      if (!sessionData.url) return;
+      
+      // Use menuId 37 as specified in the requirement
+      const menuId = 37;
+      console.log('[InvisibleLibrary] Fetching tour steps for detail tour, menuId:', menuId);
+      
+      const apiData = await fetchTourStepsFromAPI(menuId);
+      console.log('[InvisibleLibrary] Fetched tour steps for detail tour:', apiData);
+      setTourStepsFromAPI(apiData);
+      setIsLoadingTourSteps(false);
+    };
+
+    fetchTourSteps();
+  }, [sessionData]);
 
   /* ---------------- FETCH DATA FUNCTION ---------------- */
 
@@ -330,9 +350,9 @@ export default function InvisibleLibraryPage({ showDetailTour }: InvisibleLibrar
       </Dialog>
 
       {/* Detail Tour */}
-      {showTour && (
+      {showTour && !isLoadingTourSteps && (
         <ShepherdTour
-          steps={generateDetailTourSteps('Invisible')}
+          steps={generateDetailTourSteps('Invisible', tourStepsFromAPI)}
           onComplete={() => {
             setShowTour(false);
             if (typeof showDetailTour === 'object' && showDetailTour.onComplete) {

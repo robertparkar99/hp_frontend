@@ -283,8 +283,8 @@ const MyLearningDashboard: React.FC = () => {
   const coursesInProgress: Course[] = enrolledCourses.length > 0 ? enrolledCourses : inProgressCourses;
   const completedCourses: Course[] = [];
   const recommendedCourses = apiSubjects
-  .filter(sub => !inProgressCourses.some(c => c.id === sub.subject_id))
-  .map(mapApiToCourse);
+    .filter(sub => !inProgressCourses.some(c => c.id === sub.subject_id))
+    .map(mapApiToCourse);
 
   const handleEnroll = (course: Course) => {
     // Add to in progress and remove from recommended
@@ -354,7 +354,7 @@ const MyLearningDashboard: React.FC = () => {
         <div className="min-h-screen bg-background">
           {/* <Header /> */}
 
-          <main className="pt-16 pb-20 md:pb-8">
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8" id="tour-page-header">
               {/* <Breadcrumb /> */}
 
@@ -368,7 +368,7 @@ const MyLearningDashboard: React.FC = () => {
                 </div>
                 <div className="flex-shrink-0">
                   <Button variant="default" className="w-full sm:w-auto" id="tour-browse-courses">
-                    <Plus className="mr-2 h-4 w-4" /> 
+                    <Plus className="mr-2 h-4 w-4" />
                     <span className="hidden sm:inline">Browse Courses</span>
                     <span className="sm:hidden">Browse</span>
                   </Button>
@@ -376,7 +376,7 @@ const MyLearningDashboard: React.FC = () => {
               </div>
 
               {/* Progress Overview Cards */}
-              <div id="tour-progress-overview"  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div id="tour-progress-overview" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {overviewStats.map((stat, index) => (
                   <ProgressOverviewCard
                     key={index}
@@ -387,7 +387,7 @@ const MyLearningDashboard: React.FC = () => {
 
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
                 {/* Main Content Area */}
-                <div  id="tour-my-courses"className="lg:col-span-2 order-2 lg:order-1 space-y-6 lg:space-y-8">
+                <div id="tour-my-courses" className="lg:col-span-2 order-2 lg:order-1 space-y-6 lg:space-y-8">
                   {/* Course Tabs */}
                   <div className="bg-card border border-border rounded-2xl p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
@@ -462,23 +462,25 @@ const MyLearningDashboard: React.FC = () => {
                   </div>
 
                   {/* Quick Actions */}
-                  <QuickActions />
+                  <div id="tour-quick-actions">
+                    <QuickActions />
+                  </div>
                 </div>
 
                 {/* Left Sidebar */}
                 <div className="lg:col-span-1 space-y-6 order-3 lg:order-2">
                   <div id="tour-skill-progress">
-                    
-                  <SkillProgressTracker />
+
+                    <SkillProgressTracker />
                   </div>
- <div id="tour-learning-calendar">
-                  <LearningCalendar />
-                  
-</div>
+                  <div id="tour-learning-calendar" className="relative w-full">
+                    <LearningCalendar />
+
+                  </div>
                 </div>
 
                 {/* Right Sidebar */}
-                <div id="tour-learning-stats"  className="lg:col-span-1 order-4 lg:order-3">
+                <div id="tour-learning-stats" className="lg:col-span-1 order-4 lg:order-3">
                   <LearningStats />
                 </div>
               </div>

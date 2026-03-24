@@ -82,7 +82,9 @@ export default function HomePage() {
 
       // Start the tour after a delay to ensure DOM is ready
       setTimeout(() => {
-        startManagerHubTour();
+        startManagerHubTour().catch(error => {
+          console.error('[ManagerHub] Error starting tour:', error);
+        });
         setTourInitialized(true);
       }, 500);
     } else {

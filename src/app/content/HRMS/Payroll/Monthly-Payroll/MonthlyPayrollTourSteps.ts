@@ -310,8 +310,10 @@ export const MonthlyPayrollTourSteps: StepOptions[] = getMonthlyPayrollTourSteps
 
 // Function to create and configure the tour (async to fetch API data)
 export const createMonthlyPayrollTour = async (menuId?: number, accessLink?: string): Promise<Tour> => {
-  // Default menuId to 140 for Monthly Payroll
-  const menuIdToUse = menuId || 140;
+  // Get menuId dynamically from getPageInfo() - with fallback to session storage trigger
+  const pageInfo = getPageInfo();
+  const menuIdFromStorage = sessionStorage.getItem('triggerPageTourMenuId');
+  const menuIdToUse = menuId || (menuIdFromStorage ? parseInt(menuIdFromStorage) : pageInfo.menuId);
   
   // Fetch API data first
   console.log('[Monthly Payroll Tour] Fetching tour steps from API with menuId:', menuIdToUse);

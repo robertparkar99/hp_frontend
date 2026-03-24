@@ -1,5 +1,104 @@
-import Shepherd, { Tour, Step } from 'shepherd.js';
+import Shepherd, { Tour } from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger';
+
+// Type for tour step data from API
+export interface UserAttendanceTourStepData {
+  on_click?: string;
+  onClick?: string;
+  step_key?: string;
+  stepKey?: string;
+  id?: number | string;
+  title?: string;
+  Title?: string;
+  name?: string;
+  step_title?: string;
+  stepTitle?: string;
+  description?: string;
+  Description?: string;
+  text?: string;
+  Text?: string;
+  content?: string;
+  step_description?: string;
+}
+
+// Helper to get user data from localStorage
+const getUserData = (): { url: string; token: string; subInstituteId: string } | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+      return {
+        url: APP_URL,
+        token,
+        subInstituteId: String(sub_institute_id)
+      };
+    }
+  } catch (e) {
+    console.error('[UserAttendance Tour] Error getting userData:', e);
+  }
+  return null;
+};
+
+// Fetch tour steps from API
+const fetchUserAttendanceTourStepsFromAPI = async (menuId: number): Promise<UserAttendanceTourStepData[]> => {
+  const userData = getUserData();
+  if (!userData) {
+    console.log('[UserAttendance Tour] No userData available, using default tour steps');
+    return [];
+  }
+
+  try {
+    // Use localhost as base URL, with token and sub_institute_id from userData
+    const baseUrl = userData.url;
+    const apiUrl = `${baseUrl}/table_data?table=Onboarding_tour_details&filters[menu_id]=${menuId}&token=${userData.token}&sub_institute_id=${userData.subInstituteId}`;
+    console.log('[UserAttendance Tour] Fetching tour steps from API:', apiUrl);
+
+    const res = await fetch(apiUrl);
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch tour steps: ${res.status}`);
+    }
+
+    const json = await res.json();
+    console.log('[UserAttendance Tour] Raw API response:', json);
+
+    // Handle different response formats
+    let tourData: UserAttendanceTourStepData[] = [];
+
+    if (Array.isArray(json)) {
+      tourData = json;
+    } else if (json.data && Array.isArray(json.data)) {
+      tourData = json.data;
+    } else if (json.result && Array.isArray(json.result)) {
+      tourData = json.result;
+    } else if (json.response && Array.isArray(json.response)) {
+      tourData = json.response;
+    } else if (typeof json === 'object') {
+      for (const key of Object.keys(json)) {
+        if (Array.isArray(json[key])) {
+          tourData = json[key];
+          console.log(`[UserAttendance Tour] Found array data in response.${key}`);
+          break;
+        }
+      }
+    }
+
+    // Normalize field names
+    const normalizedTourData = tourData.map((step: any) => ({
+      on_click: step.on_click || step.onClick || step.step_key || step.stepKey || step.id,
+      title: step.title || step.Title || step.name || step.step_title || step.stepTitle || '',
+      description: step.description || step.Description || step.text || step.Text || step.content || step.step_description || ''
+    }));
+
+    console.log('[UserAttendance Tour] Parsed tour data:', normalizedTourData);
+    return normalizedTourData;
+  } catch (error) {
+    console.error('[UserAttendance Tour] Error fetching tour steps:', error);
+    return [];
+  }
+};
 
 // Tour step configuration interface
 export interface UserAttendanceTourStep {
@@ -115,13 +214,36 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(styleSheet);
 }
 
-// Create tour steps
-export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
+// Create tour steps - optionally with API data
+export const createUserAttendanceTourSteps = (apiTourData?: UserAttendanceTourStepData[]): UserAttendanceTourStep[] => {
+  // Create a Map from API data for easy lookup by step ID
+  const apiStepsMap = new Map<string, { title: string; description: string }>();
+
+  if (apiTourData && apiTourData.length > 0) {
+    console.log('[UserAttendance Tour] Creating apiStepsMap from API data:', apiTourData.length);
+    console.log('[UserAttendance Tour] API tour data:', apiStepsMap);
+
+    apiTourData.forEach((stepData) => {
+      const stepId = stepData.on_click || stepData.onClick || stepData.step_key || stepData.stepKey || String(stepData.id) || '';
+      const stepTitle = stepData.title || stepData.Title || stepData.name || stepData.step_title || stepData.stepTitle || '';
+      const stepDescription = stepData.description || stepData.Description || stepData.text || stepData.Text || stepData.content || stepData.step_description || '';
+
+      if (stepId) {
+        apiStepsMap.set(stepId, { title: stepTitle, description: stepDescription });
+      }
+    });
+
+    console.log('[UserAttendance Tour] apiStepsMap created:', Array.from(apiStepsMap.entries()));
+  }
+
+  // Default hardcoded steps with API overrides
+  console.log('[UserAttendance Tour] Using default tour steps with API overrides');
+
   return [
     {
       id: 'user-attendance-welcome',
-      title: '👋 Welcome to User Attendance',
-      text: 'This page allows you to manage and track user attendance records. Let me show you around the key features.',
+      title: apiStepsMap.get('user-attendance-welcome')?.title || '👋 Welcome to User Attendance',
+      text: apiStepsMap.get('user-attendance-welcome')?.description || 'This page allows you to manage and track user attendance records. Let me show you around the key features.',
       attachTo: {
         element: '#tour-user-attendance-header',
         on: 'bottom'
@@ -138,6 +260,15 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
         {
           text: 'Next',
           action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'user-attendance-welcome',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
             const tour = UserAttendanceTour.getInstance();
             tour?.next();
           }
@@ -146,8 +277,8 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
     },
     {
       id: 'user-attendance-employee-selector',
-      title: '👥 Employee Selection',
-      text: 'Select one or more employees to view their attendance records. You can filter by department or search for specific employees.',
+      title: apiStepsMap.get('user-attendance-employee-selector')?.title || '👥 Employee Selection',
+      text: apiStepsMap.get('user-attendance-employee-selector')?.description || 'Select one or more employees to view their attendance records. You can filter by department or search for specific employees.',
       attachTo: {
         element: '#tour-employee-selector',
         on: 'bottom'
@@ -164,6 +295,15 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
         {
           text: 'Next',
           action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'user-attendance-employee-selector',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
             const tour = UserAttendanceTour.getInstance();
             tour?.next();
           }
@@ -172,8 +312,8 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
     },
     {
       id: 'user-attendance-date-filters',
-      title: '📅 Date Range Filters',
-      text: 'Filter attendance records by selecting a date range. Choose "From Date" and "To Date" to narrow down the results.',
+      title: apiStepsMap.get('user-attendance-date-filters')?.title || '📅 Date Range Filters',
+      text: apiStepsMap.get('user-attendance-date-filters')?.description || 'Filter attendance records by selecting a date range. Choose "From Date" and "To Date" to narrow down the results.',
       attachTo: {
         element: '#tour-date-filters',
         on: 'bottom'
@@ -190,6 +330,15 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
         {
           text: 'Next',
           action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'user-attendance-date-filters',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
             const tour = UserAttendanceTour.getInstance();
             tour?.next();
           }
@@ -198,8 +347,8 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
     },
     {
       id: 'user-attendance-search',
-      title: '🔍 Search Button',
-      text: 'Click this button to apply your selected filters and search for attendance records matching your criteria.',
+      title: apiStepsMap.get('user-attendance-search')?.title || '🔍 Search Button',
+      text: apiStepsMap.get('user-attendance-search')?.description || 'Click this button to apply your selected filters and search for attendance records matching your criteria.',
       attachTo: {
         element: '#tour-search-button',
         on: 'bottom'
@@ -216,6 +365,15 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
         {
           text: 'Next',
           action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'user-attendance-search',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
             const tour = UserAttendanceTour.getInstance();
             tour?.next();
           }
@@ -224,8 +382,8 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
     },
     {
       id: 'user-attendance-add',
-      title: '➕ Add Attendance',
-      text: 'Click this button to add new attendance records manually. This opens a form where you can enter attendance details.',
+      title: apiStepsMap.get('user-attendance-add')?.title || '➕ Add Attendance',
+      text: apiStepsMap.get('user-attendance-add')?.description || 'Click this button to add new attendance records manually. This opens a form where you can enter attendance details.',
       attachTo: {
         element: '#tour-add-button',
         on: 'bottom'
@@ -242,6 +400,15 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
         {
           text: 'Next',
           action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'user-attendance-add',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
             const tour = UserAttendanceTour.getInstance();
             tour?.next();
           }
@@ -250,8 +417,8 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
     },
     {
       id: 'user-attendance-stats',
-      title: '📊 Attendance Statistics',
-      text: 'This section shows key statistics including total records, present days, absent days, and average working hours.',
+      title: apiStepsMap.get('user-attendance-stats')?.title || '📊 Attendance Statistics',
+      text: apiStepsMap.get('user-attendance-stats')?.description || 'This section shows key statistics including total records, present days, absent days, and average working hours.',
       attachTo: {
         element: '#tour-stats-cards',
         on: 'top'
@@ -268,6 +435,15 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
         {
           text: 'Next',
           action: () => {
+            // Log step complete before moving to next
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'user-attendance-stats',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
             const tour = UserAttendanceTour.getInstance();
             tour?.next();
           }
@@ -276,8 +452,8 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
     },
     {
       id: 'user-attendance-list',
-      title: '📋 Attendance Records',
-      text: 'This table displays all attendance records with details like date, punch-in/out times, total hours, and status. You can edit records directly from here.',
+      title: apiStepsMap.get('user-attendance-list')?.title || '📋 Attendance Records',
+      text: apiStepsMap.get('user-attendance-list')?.description || 'This table displays all attendance records with details like date, punch-in/out times, total hours, and status. You can edit records directly from here.',
       attachTo: {
         element: '#tour-attendance-list',
         on: 'top'
@@ -294,6 +470,15 @@ export const createUserAttendanceTourSteps = (): UserAttendanceTourStep[] => {
         {
           text: 'Finish Tour',
           action: () => {
+            // Log step complete before finishing
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+              eventType: 'tour_step_complete',
+              stepKey: 'user-attendance-list',
+              menuId: menuId,
+              accessLink: accessLink || '/User-Attendance',
+            }).catch(console.error);
+
             const tour = UserAttendanceTour.getInstance();
             if (tour) {
               tour.complete();
@@ -321,8 +506,8 @@ export class UserAttendanceTour {
     return UserAttendanceTour.instance;
   }
 
-  // Initialize and start the tour
-  public start(): void {
+  // Initialize and start the tour - fetches from API first, then falls back to default steps
+  public async start(): Promise<void> {
     // Check if tour is already active
     if (this.tour && this.tour.getCurrentStep()) {
       console.log('User Attendance tour is already running');
@@ -330,6 +515,22 @@ export class UserAttendanceTour {
     }
 
     console.log('Starting User Attendance tour');
+
+    // Get menuId for API call - use 101 as specified
+    const menuId = 101;
+
+    // Fetch tour steps from API
+    console.log('[UserAttendance Tour] Fetching tour steps from API with menuId:', menuId);
+    const apiTourData = await fetchUserAttendanceTourStepsFromAPI(menuId);
+
+    // Log tour started event
+    const { menuId: pageMenuId, accessLink } = getPageInfo();
+    logUserJourney({
+      eventType: 'tour_started',
+      stepKey: 'user-attendance-tour',
+      menuId: pageMenuId,
+      accessLink: accessLink || '/User-Attendance',
+    }).catch(console.error);
 
     this.tour = new Shepherd.Tour({
       defaultStepOptions: {
@@ -349,10 +550,10 @@ export class UserAttendanceTour {
       keyboardNavigation: true
     });
 
-    // Add steps to the tour
-    const steps = createUserAttendanceTourSteps();
+    // Add steps to the tour (with API data or default)
+    const steps = createUserAttendanceTourSteps(apiTourData);
     steps.forEach(step => {
-      this.tour!.addStep(step as unknown as Step);
+      this.tour!.addStep(step);
     });
 
     // Handle tour events
@@ -363,6 +564,16 @@ export class UserAttendanceTour {
         element.classList.add('tour-highlight-active');
       }
       this.currentStepIndex = this.tour?.steps.findIndex((s) => s.id === currentStep.id) || 0;
+
+      // Log tour step view journey event
+      const { menuId, accessLink } = getPageInfo();
+      const stepId = currentStep.id || `step_${this.currentStepIndex}`;
+      logUserJourney({
+        eventType: 'tour_step_view',
+        stepKey: stepId,
+        menuId: menuId,
+        accessLink: accessLink || '/User-Attendance',
+      }).catch(console.error);
     });
 
     this.tour.on('hide', (event) => {
@@ -374,11 +585,31 @@ export class UserAttendanceTour {
     });
 
     this.tour.on('cancel', () => {
+      // Log tour skipped journey event
+      const { menuId, accessLink } = getPageInfo();
+      const currentStep = this.tour?.getCurrentStep();
+      const stepId = currentStep?.id || 'user-attendance-tour';
+      logUserJourney({
+        eventType: 'tour_skipped',
+        stepKey: stepId,
+        menuId: menuId,
+        accessLink: accessLink || '/User-Attendance',
+      }).catch(console.error);
+
       this.cleanup();
       console.log('User Attendance tour cancelled');
     });
 
     this.tour.on('complete', () => {
+      // Log tour completed journey event
+      const { menuId, accessLink } = getPageInfo();
+      logUserJourney({
+        eventType: 'tour_complete',
+        stepKey: 'user-attendance-tour',
+        menuId: menuId,
+        accessLink: accessLink || '/User-Attendance',
+      }).catch(console.error);
+
       this.cleanup();
       console.log('User Attendance tour completed');
     });

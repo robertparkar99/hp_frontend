@@ -1,5 +1,90 @@
 import Shepherd, { Tour } from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger';
+
+// Interface for API tour step data
+interface DepartmentWiseReportTourStepData {
+    on_click: string;
+    title: string;
+    description: string;
+}
+
+// Helper to get user data from localStorage
+const getUserData = (): { url: string; token: string; subInstituteId: string } | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const userData = localStorage.getItem("userData");
+        if (userData) {
+            const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+            return {
+                url: APP_URL,
+                token,
+                subInstituteId: String(sub_institute_id)
+            };
+        }
+    } catch (e) {
+        console.error('[DepartmentWiseReport Tour] Error getting userData:', e);
+    }
+    return null;
+};
+
+// Fetch tour steps from API
+const fetchDepartmentWiseReportTourStepsFromAPI = async (menuId: number): Promise<DepartmentWiseReportTourStepData[]> => {
+    const userData = getUserData();
+    if (!userData) {
+        console.log('[DepartmentWiseReport Tour] No userData available, using default tour steps');
+        return [];
+    }
+
+    try {
+        const baseUrl = userData.url;
+        const apiUrl = `${baseUrl}/table_data?table=Onboarding_tour_details&filters[menu_id]=${menuId}&token=${userData.token}&sub_institute_id=${userData.subInstituteId}`;
+        console.log('[DepartmentWiseReport Tour] Fetching tour steps from API:', apiUrl);
+
+        const res = await fetch(apiUrl);
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch tour steps: ${res.status}`);
+        }
+
+        const json = await res.json();
+        console.log('[DepartmentWiseReport Tour] Raw API response:', json);
+
+        // Handle different response formats
+        let tourData: DepartmentWiseReportTourStepData[] = [];
+
+        if (Array.isArray(json)) {
+            tourData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+            tourData = json.data;
+        } else if (json.result && Array.isArray(json.result)) {
+            tourData = json.result;
+        } else if (json.response && Array.isArray(json.response)) {
+            tourData = json.response;
+        } else if (typeof json === 'object') {
+            for (const key of Object.keys(json)) {
+                if (Array.isArray(json[key])) {
+                    tourData = json[key];
+                    console.log(`[DepartmentWiseReport Tour] Found array data in response.${key}`);
+                    break;
+                }
+            }
+        }
+
+        // Normalize field names
+        const normalizedTourData = tourData.map((step: any) => ({
+            on_click: step.on_click || step.onClick || step.step_key || step.stepKey || step.id || '',
+            title: step.title || step.Title || step.name || step.step_title || step.stepTitle || '',
+            description: step.description || step.Description || step.text || step.Text || step.content || step.step_description || ''
+        }));
+
+        console.log('[DepartmentWiseReport Tour] Parsed tour data:', normalizedTourData);
+        return normalizedTourData;
+    } catch (error) {
+        console.error('[DepartmentWiseReport Tour] Error fetching tour steps:', error);
+        return [];
+    }
+};
 
 export interface TourStep {
     id: string;
@@ -48,6 +133,16 @@ export class DepartmentWiseReportTour {
         if (element) {
             element.style.animation = 'pulse 2s infinite';
         }
+
+        // Log tour step view event
+        const stepId = currentStep.id || `step_${stepIndex}`;
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_step_view',
+            stepKey: stepId,
+            menuId: menuId,
+            accessLink: accessLink || '/HRMS/DepartmentWiseReport',
+        });
     };
 
     // Handle step hide event
@@ -65,12 +160,30 @@ export class DepartmentWiseReportTour {
         this.clearTourState();
         localStorage.setItem('departmentWiseReportTourCompleted', 'true');
         this.showCompletionMessage();
+
+        // Log tour complete event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_complete',
+            stepKey: 'department-wise-report-tour',
+            menuId: menuId,
+            accessLink: accessLink || '/HRMS/DepartmentWiseReport',
+        });
     };
 
     // Handle tour cancellation
     private handleCancel = (): void => {
         this.isActive = false;
         this.clearTourState();
+
+        // Log tour skipped event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_skipped',
+            stepKey: 'department-wise-report-tour',
+            menuId: menuId,
+            accessLink: accessLink || '/HRMS/DepartmentWiseReport',
+        });
     };
 
     // Save tour state to localStorage
@@ -92,15 +205,49 @@ export class DepartmentWiseReportTour {
         }
     }
 
-    // Create tour steps
-    private createSteps(): TourStep[] {
+    // Helper method to log tour step completion
+    private logStepComplete = (stepId: string): (() => void) => {
+        return () => {
+            const { menuId, accessLink } = getPageInfo();
+            logUserJourney({
+                eventType: 'tour_step_complete',
+                stepKey: stepId,
+                menuId: menuId,
+                accessLink: accessLink || '/HRMS/DepartmentWiseReport',
+            });
+        };
+    };
+
+    // Create tour steps with optional API data override
+    private createSteps(apiTourData?: DepartmentWiseReportTourStepData[]): TourStep[] {
         const steps: TourStep[] = [];
+
+        // Create a Map from API data for easy lookup by step ID
+        const apiStepsMap = new Map<string, { title: string; description: string }>();
+
+        if (apiTourData && apiTourData.length > 0) {
+            console.log('[DepartmentWiseReport Tour] Creating apiStepsMap from API data:', apiTourData.length);
+
+            apiTourData.forEach((stepData) => {
+                const stepId = stepData.on_click || '';
+                const stepTitle = stepData.title || '';
+                const stepDescription = stepData.description || '';
+
+                if (stepId) {
+                    apiStepsMap.set(stepId, { title: stepTitle, description: stepDescription });
+                }
+            });
+
+            console.log('[DepartmentWiseReport Tour] apiStepsMap created:', Array.from(apiStepsMap.entries()));
+        }
+
+        console.log('[DepartmentWiseReport Tour] Using tour steps with API overrides');
 
         // Step 1: Welcome / Introduction
         steps.push({
             id: 'welcome',
-            title: '👋 Welcome to Department Wise Report!',
-            text: 'This page allows you to generate and view attendance reports organized by department. Let\'s explore the features together.',
+            title: apiStepsMap.get('welcome')?.title || '👋 Welcome to Department Wise Report!',
+            text: apiStepsMap.get('welcome')?.description || 'This page allows you to generate and view attendance reports organized by department. Let\'s explore the features together.',
             attachTo: {
                 element: '#tour-page-title',
                 on: 'bottom'
@@ -108,12 +255,18 @@ export class DepartmentWiseReportTour {
             buttons: [
                 {
                     text: 'Skip Tour',
-                    action: () => this.tour?.cancel(),
+                    action: () => {
+                        this.logStepComplete('welcome')();
+                        this.tour?.cancel();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Start Tour',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        this.logStepComplete('welcome')();
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -121,8 +274,8 @@ export class DepartmentWiseReportTour {
         // Step 2: From Date Picker
         steps.push({
             id: 'from-date',
-            title: '📅 From Date',
-            text: 'Select the starting date for your attendance report. This defines the beginning of the date range you want to analyze.',
+            title: apiStepsMap.get('from-date')?.title || '📅 From Date',
+            text: apiStepsMap.get('from-date')?.description || 'Select the starting date for your attendance report. This defines the beginning of the date range you want to analyze.',
             attachTo: {
                 element: '#tour-from-date',
                 on: 'bottom'
@@ -130,12 +283,18 @@ export class DepartmentWiseReportTour {
             buttons: [
                 {
                     text: 'Previous',
-                    action: () => this.tour?.back(),
+                    action: () => {
+                        this.logStepComplete('from-date')();
+                        this.tour?.back();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        this.logStepComplete('from-date')();
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -143,8 +302,8 @@ export class DepartmentWiseReportTour {
         // Step 3: To Date Picker
         steps.push({
             id: 'to-date',
-            title: '📅 To Date',
-            text: 'Select the ending date for your attendance report. This defines the end of the date range you want to analyze.',
+            title: apiStepsMap.get('to-date')?.title || '📅 To Date',
+            text: apiStepsMap.get('to-date')?.description || 'Select the ending date for your attendance report. This defines the end of the date range you want to analyze.',
             attachTo: {
                 element: '#tour-to-date',
                 on: 'bottom'
@@ -152,12 +311,18 @@ export class DepartmentWiseReportTour {
             buttons: [
                 {
                     text: 'Previous',
-                    action: () => this.tour?.back(),
+                    action: () => {
+                        this.logStepComplete('to-date')();
+                        this.tour?.back();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        this.logStepComplete('to-date')();
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -165,8 +330,8 @@ export class DepartmentWiseReportTour {
         // Step 4: Employee/Department Selector
         steps.push({
             id: 'employee-selector',
-            title: '👥 Employee & Department Filter',
-            text: 'Use this section to filter by departments and/or specific employees. You can select multiple departments and employees using the dropdown menus.',
+            title: apiStepsMap.get('employee-selector')?.title || '👥 Employee & Department Filter',
+            text: apiStepsMap.get('employee-selector')?.description || 'Use this section to filter by departments and/or specific employees. You can select multiple departments and employees using the dropdown menus.',
             attachTo: {
                 element: '#tour-employee-selector',
                 on: 'bottom'
@@ -174,12 +339,18 @@ export class DepartmentWiseReportTour {
             buttons: [
                 {
                     text: 'Previous',
-                    action: () => this.tour?.back(),
+                    action: () => {
+                        this.logStepComplete('employee-selector')();
+                        this.tour?.back();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        this.logStepComplete('employee-selector')();
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -187,8 +358,8 @@ export class DepartmentWiseReportTour {
         // Step 5: Search Button
         steps.push({
             id: 'search-button',
-            title: '🔍 Search Button',
-            text: 'Click this button to generate the attendance report based on your selected date range and filters. The data will be displayed in the table below.',
+            title: apiStepsMap.get('search-button')?.title || '🔍 Search Button',
+            text: apiStepsMap.get('search-button')?.description || 'Click this button to generate the attendance report based on your selected date range and filters. The data will be displayed in the table below.',
             attachTo: {
                 element: '#tour-search-button',
                 on: 'top'
@@ -196,12 +367,18 @@ export class DepartmentWiseReportTour {
             buttons: [
                 {
                     text: 'Previous',
-                    action: () => this.tour?.back(),
+                    action: () => {
+                        this.logStepComplete('search-button')();
+                        this.tour?.back();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        this.logStepComplete('search-button')();
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -209,8 +386,8 @@ export class DepartmentWiseReportTour {
         // Step 6: Export Buttons
         steps.push({
             id: 'export-buttons',
-            title: '📤 Export Options',
-            text: 'Once data is loaded, you can export it using these buttons: Print (🖨️), PDF export, or Excel export. This helps you share or save reports offline.',
+            title: apiStepsMap.get('export-buttons')?.title || '📤 Export Options',
+            text: apiStepsMap.get('export-buttons')?.description || 'Once data is loaded, you can export it using these buttons: Print (🖨️), PDF export, or Excel export. This helps you share or save reports offline.',
             attachTo: {
                 element: '#tour-export-buttons',
                 on: 'bottom'
@@ -218,12 +395,18 @@ export class DepartmentWiseReportTour {
             buttons: [
                 {
                     text: 'Previous',
-                    action: () => this.tour?.back(),
+                    action: () => {
+                        this.logStepComplete('export-buttons')();
+                        this.tour?.back();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Next',
-                    action: () => this.tour?.next()
+                    action: () => {
+                        this.logStepComplete('export-buttons')();
+                        this.tour?.next();
+                    }
                 }
             ]
         });
@@ -231,8 +414,8 @@ export class DepartmentWiseReportTour {
         // Step 7: Data Table
         steps.push({
             id: 'data-table',
-            title: '📊 Attendance Data Table',
-            text: 'This table displays the attendance data for all employees matching your filters. You can view columns like: Sr No., Department, Employee Name, Total Days, Week Off, Holiday, Total Working, Total Present, Absent Days, Half Days, and Late Comes. Click column headers to sort.',
+            title: apiStepsMap.get('data-table')?.title || '📊 Attendance Data Table',
+            text: apiStepsMap.get('data-table')?.description || 'This table displays the attendance data for all employees matching your filters. You can view columns like: Sr No., Department, Employee Name, Total Days, Week Off, Holiday, Total Working, Total Present, Absent Days, Half Days, and Late Comes. Click column headers to sort.',
             attachTo: {
                 element: '#tour-data-table',
                 on: 'top'
@@ -240,12 +423,18 @@ export class DepartmentWiseReportTour {
             buttons: [
                 {
                     text: 'Previous',
-                    action: () => this.tour?.back(),
+                    action: () => {
+                        this.logStepComplete('data-table')();
+                        this.tour?.back();
+                    },
                     classes: 'shepherd-button-secondary'
                 },
                 {
                     text: 'Finish Tour',
-                    action: () => this.tour?.complete()
+                    action: () => {
+                        this.logStepComplete('data-table')();
+                        this.tour?.complete();
+                    }
                 }
             ]
         });
@@ -254,7 +443,7 @@ export class DepartmentWiseReportTour {
     }
 
     // Start the tour
-    public startTour(): void {
+    public async startTour(): Promise<void> {
         // Check if tour was already completed
         if (localStorage.getItem('departmentWiseReportTourCompleted') === 'true') {
             console.log('Department Wise Report tour already completed');
@@ -265,6 +454,19 @@ export class DepartmentWiseReportTour {
         if (this.isActive) return;
 
         console.log('Starting Department Wise Report tour');
+
+        // Fetch tour steps from API (menu_id = 164 for Department Wise Report)
+        const apiTourData = await fetchDepartmentWiseReportTourStepsFromAPI(164);
+        console.log('[DepartmentWiseReport Tour] API tour data fetched:', apiTourData);
+
+        // Log tour started event
+        const { menuId, accessLink } = getPageInfo();
+        logUserJourney({
+            eventType: 'tour_started',
+            stepKey: 'department-wise-report-tour',
+            menuId: menuId,
+            accessLink: accessLink || '/HRMS/DepartmentWiseReport',
+        });
 
         this.tour = new Shepherd.Tour({
             defaultStepOptions: {
@@ -284,7 +486,7 @@ export class DepartmentWiseReportTour {
             keyboardNavigation: true
         });
 
-        const steps = this.createSteps();
+        const steps = this.createSteps(apiTourData);
         console.log('Tour steps created:', steps.length);
 
         // Add steps to tour
@@ -309,7 +511,7 @@ export class DepartmentWiseReportTour {
     }
 
     // Resume tour from saved step
-    public resumeTour(): void {
+    public async resumeTour(): Promise<void> {
         const savedPausedStep = parseInt(
             localStorage.getItem(DepartmentWiseReportTour.PAUSED_STEP_KEY) || '0',
             10
@@ -317,6 +519,9 @@ export class DepartmentWiseReportTour {
 
         if (savedPausedStep > 0 && !localStorage.getItem('departmentWiseReportTourCompleted')) {
             console.log('Resuming Department Wise Report tour from step:', savedPausedStep);
+
+            // Fetch tour steps from API
+            const apiTourData = await fetchDepartmentWiseReportTourStepsFromAPI(164);
 
             this.tour = new Shepherd.Tour({
                 defaultStepOptions: {
@@ -336,7 +541,7 @@ export class DepartmentWiseReportTour {
                 keyboardNavigation: true
             });
 
-            const steps = this.createSteps();
+            const steps = this.createSteps(apiTourData);
             steps.forEach(step => {
                 this.tour!.addStep(step);
             });

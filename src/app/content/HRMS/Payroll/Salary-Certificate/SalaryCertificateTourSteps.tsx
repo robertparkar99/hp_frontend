@@ -36,7 +36,7 @@ const getUserData = (): { url: string; token: string; subInstituteId: string } |
       };
     }
   } catch (e) {
-    console.error('[Salary Certificate Tour] Error getting userData:', e);
+    console.error('[SalaryCertificate Tour] Error getting userData:', e);
   }
   return null;
 };
@@ -45,14 +45,15 @@ const getUserData = (): { url: string; token: string; subInstituteId: string } |
 const fetchSalaryCertificateTourStepsFromAPI = async (menuId: number): Promise<SalaryCertificateTourStepData[]> => {
   const userData = getUserData();
   if (!userData) {
-    console.log('[Salary Certificate Tour] No userData available, using default tour steps');
+    console.log('[SalaryCertificate Tour] No userData available, using default tour steps');
     return [];
   }
 
   try {
+    // Use localhost as base URL as specified, with token and sub_institute_id from userData
     const baseUrl = userData.url;
     const apiUrl = `${baseUrl}/table_data?table=Onboarding_tour_details&filters[menu_id]=${menuId}&token=${userData.token}&sub_institute_id=${userData.subInstituteId}`;
-    console.log('[Salary Certificate Tour] Fetching tour steps from API:', apiUrl);
+    console.log('[SalaryCertificate Tour] Fetching tour steps from API:', apiUrl);
 
     const res = await fetch(apiUrl);
 
@@ -61,7 +62,7 @@ const fetchSalaryCertificateTourStepsFromAPI = async (menuId: number): Promise<S
     }
 
     const json = await res.json();
-    console.log('[Salary Certificate Tour] Raw API response:', json);
+    console.log('[SalaryCertificate Tour] Raw API response:', json);
 
     // Handle different response formats
     let tourData: SalaryCertificateTourStepData[] = [];
@@ -78,16 +79,16 @@ const fetchSalaryCertificateTourStepsFromAPI = async (menuId: number): Promise<S
       for (const key of Object.keys(json)) {
         if (Array.isArray(json[key])) {
           tourData = json[key];
-          console.log(`[Salary Certificate Tour] Found array data in response.${key}`);
+          console.log(`[SalaryCertificate Tour] Found array data in response.${key}`);
           break;
         }
       }
     }
 
-    console.log('[Salary Certificate Tour] Parsed tour data:', tourData);
+    console.log('[SalaryCertificate Tour] Parsed tour data:', tourData);
     return tourData;
   } catch (error) {
-    console.error('[Salary Certificate Tour] Error fetching tour steps:', error);
+    console.error('[SalaryCertificate Tour] Error fetching tour steps:', error);
     return [];
   }
 };
@@ -112,15 +113,27 @@ export interface SalaryCertificateTourStep {
   beforeShowPromise?: () => Promise<void>;
 }
 
-// Create tour steps - with API data override support
+// Export function to fetch API data and return steps
+// This can be called from the parent component to get tour steps with API data
+export const fetchAndCreateSalaryCertificateTourSteps = async (menuId: number = 110): Promise<SalaryCertificateTourStep[]> => {
+  // Fetch from API - using menuId 110 as specified
+  const apiTourData = await fetchSalaryCertificateTourStepsFromAPI(menuId);
+
+  // Log the API data to console
+  console.log('[SalaryCertificate Tour] API data fetched and logged:', apiTourData);
+
+  // Create steps with API data
+  return createSalaryCertificateTourSteps(apiTourData);
+};
+
 export const createSalaryCertificateTourSteps = (apiTourData?: SalaryCertificateTourStepData[]): SalaryCertificateTourStep[] => {
   // Create a Map from API data for easy lookup by step ID
   const apiStepsMap = new Map<string, { title: string; description: string }>();
 
   if (apiTourData && apiTourData.length > 0) {
-    console.log('[Salary Certificate Tour] Creating apiStepsMap from API data:', apiTourData.length);
+    console.log('[SalaryCertificate Tour] Creating apiStepsMap from API data:', apiTourData.length);
 
-    apiTourData.forEach((stepData: SalaryCertificateTourStepData) => {
+    apiTourData.forEach((stepData) => {
       const stepId = stepData.on_click || stepData.onClick || stepData.step_key || stepData.stepKey || String(stepData.id) || '';
       const stepTitle = stepData.title || stepData.Title || stepData.name || stepData.step_title || stepData.stepTitle || '';
       const stepDescription = stepData.description || stepData.Description || stepData.text || stepData.Text || stepData.content || stepData.step_description || '';
@@ -130,12 +143,10 @@ export const createSalaryCertificateTourSteps = (apiTourData?: SalaryCertificate
       }
     });
 
-    console.log('[Salary Certificate Tour] apiStepsMap created:', Array.from(apiStepsMap.entries()));
+    console.log('[SalaryCertificate Tour] apiStepsMap created:', Array.from(apiStepsMap.entries()));
   }
 
-  console.log('[Salary Certificate Tour] Using default tour steps with API overrides');
-
-  // Return the tour steps array with API overrides
+  // Return steps with API overrides (or fallback to defaults)
   return [
     {
       id: 'salary-certificate-welcome',
@@ -348,7 +359,7 @@ export class SalaryCertificateTour {
   private tour: Tour | null = null;
   private static readonly TOUR_COMPLETED_KEY = 'salaryCertificateTourCompleted';
 
-  // Start the tour (async to fetch API data)
+  // Start the tour - fetches from API first, then creates steps
   public async startTour(): Promise<void> {
     // Check if tour was already completed
     if (sessionStorage.getItem(SalaryCertificateTour.TOUR_COMPLETED_KEY) === 'true') {
@@ -361,15 +372,17 @@ export class SalaryCertificateTour {
     // Get current path for journey logging
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
     
-    // Get menuID for journey logging
+    // Get menuID for journey logging and API call - use getPageInfo() dynamically
     const pageInfo = getPageInfo();
     const menuIdFromStorage = sessionStorage.getItem('triggerPageTourMenuId');
     const finalMenuId = menuIdFromStorage ? parseInt(menuIdFromStorage) : pageInfo.menuId;
 
-    // Fetch tour steps from API
-    console.log('[Salary Certificate Tour] Fetching tour steps from API with menuId:', finalMenuId);
+    // Fetch tour steps from API using dynamic menuId from getPageInfo()
+    console.log('[SalaryCertificate Tour] Fetching tour steps from API with menuId:', finalMenuId);
     const apiTourData = await fetchSalaryCertificateTourStepsFromAPI(finalMenuId);
-    console.log('[Salary Certificate Tour] API tour data fetched:', apiTourData.length, 'steps');
+
+    // Log the API data to console
+    console.log('[SalaryCertificate Tour] API data fetched and logged:', apiTourData);
 
     this.tour = new Shepherd.Tour({
       defaultStepOptions: {
@@ -384,9 +397,8 @@ export class SalaryCertificateTour {
       keyboardNavigation: true
     });
 
-    // Add steps to tour with transformed buttons
+    // Add steps to tour with transformed buttons (using API data)
     const steps = createSalaryCertificateTourSteps(apiTourData);
-    console.log('[Salary Certificate Tour] Tour steps created:', steps.length);
     steps.forEach(step => {
       this.tour!.addStep({
         ...step,

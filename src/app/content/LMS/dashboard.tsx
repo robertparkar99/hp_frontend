@@ -13,10 +13,12 @@ import AddCourseDialog from './components/AddCourseDialog'
 import AiCourseDialog from './components/AiCourseDialog'
 import ViewDetail from '../LMS/ViewChepter/ViewDetail'
 import {
+  fetchAndCreateLearningCatalogSteps,
   createLearningCatalogSteps,
   learningCatalogTourOptions,
   injectLearningCatalogTourStyles
 } from './LearningCatalogTourSteps'
+import { logUserJourney, getPageInfo } from '@/utils/journeyLogger'
 
 type Course = {
     id: number
@@ -159,8 +161,8 @@ const LearningCatalog: React.FC = () => {
     }
   }, [])
 
-  // ✅ Initialize the Learning Catalog tour
-  const initializeTour = useCallback(() => {
+  // ✅ Initialize the Learning Catalog tour - now fetches from API
+  const initializeTour = useCallback(async () => {
     // Check if tour already exists
     if (tourInstanceRef.current) {
       console.log('Tour instance already exists')
@@ -176,14 +178,28 @@ const LearningCatalog: React.FC = () => {
     console.log('🎯 Initializing Learning Catalog tour')
     setIsTourActive(true)
 
+    // Get session data for journey logging
+    const userData = localStorage.getItem('userData');
+    const pageInfo = getPageInfo();
+    const menuIdFromStorage = sessionStorage.getItem('triggerPageTourMenuId');
+    const menuId = menuIdFromStorage ? parseInt(menuIdFromStorage) : pageInfo.menuId;
+    console.log('📊 Page info for journey logging:', { menuId });
+
+    // Log tour started
+    logUserJourney({
+      eventType: 'tour_started',
+      stepKey: 'learning-catalog-tour',
+      menuId: menuId,
+      accessLink: '/LMS/dashboard',
+    });
+
     // Create new tour instance
     const tour = new Shepherd.Tour({
       ...learningCatalogTourOptions,
-
     })
 
-    // Create and add steps
-    const steps = createLearningCatalogSteps(tour, () => {
+    // Fetch API data and create steps with API overrides
+    const steps = await fetchAndCreateLearningCatalogSteps(tour, menuId, undefined, () => {
       console.log('🎉 Learning Catalog tour completed')
       setIsTourActive(false)
     })
@@ -204,6 +220,13 @@ const LearningCatalog: React.FC = () => {
 
     tour.on('cancel', () => {
       console.log('Tour cancelled')
+      // Log tour skipped/cancelled
+      logUserJourney({
+        eventType: 'tour_skipped',
+        stepKey: 'learning-catalog-tour-cancelled',
+        menuId: menuId,
+        accessLink: '/LMS/dashboard',
+      });
       setIsTourActive(false)
       tourInstanceRef.current = null
     })

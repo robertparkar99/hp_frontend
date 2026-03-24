@@ -954,12 +954,12 @@ const SalaryStructure: React.FC = () => {
   // Initialize and start tour after component mounts
   useEffect(() => {
     // Delay to ensure DOM is rendered
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       if (shouldStartTour.current && !sessionStorage.getItem('salaryStructureTourCompleted')) {
         console.log('[SalaryStructure Tour] Starting tour...');
 
-        // Create tour instance
-        tourInstanceRef.current = createSalaryStructureTour();
+        // Create tour instance (async - fetches API data)
+        tourInstanceRef.current = await createSalaryStructureTour();
 
         // Start tour from first step
         tourInstanceRef.current.start();
