@@ -1361,11 +1361,11 @@ export default function Dashboard() {
       case "high":
         return "bg-orange-400";
       case "medium":
-        return "bg-blue-400";
+        return "bg-orange-400";
       case "low":
         return "bg-green-500";
       default:
-        return "bg-gray-400";
+        return "bg-gray-300";
     }
   };
 
@@ -1408,8 +1408,8 @@ export default function Dashboard() {
     const gapPercentage = (requiredEmp - totalEmp) / requiredEmp;
 
     if (gapPercentage >= 0.5) return "bg-red-500"; // Critical gap
-    if (gapPercentage >= 0.3) return "bg-orange-400"; // High gap
-    if (gapPercentage >= 0.1) return "bg-yellow-400"; // Medium gap
+    if (gapPercentage >= 0.3) return "bg-orange-400"; // Moderate Gap
+    if (gapPercentage >= 0.1) return "bg-orange-400"; // Moderate Gap (using same as above)
     return "bg-green-500"; // Healthy
   };
 
@@ -1881,16 +1881,16 @@ export default function Dashboard() {
                             const requiredEmp = skillData?.required_level || 0;
 
                             // Assign colors based on employee count compared to requirement
-                            let cellColor = "bg-gray-300"; // default color for missing data
+                            let cellColor = "bg-gray-300"; // default color for missing data / No Data
                             let displayValue = "";
                             if (totalEmp === 0) {
-                              cellColor = "bg-red-400"; // critical gap 
+                              cellColor = "bg-red-500"; // critical gap / Critical Gap
                             } else if (totalEmp === 1) {
-                              cellColor = "bg-orange-400"; // warning 
+                              cellColor = "bg-orange-400"; // warning / Moderate Gap
                             } else if (totalEmp === 2) {
-                              cellColor = "bg-green-500"; // good 
+                              cellColor = "bg-green-500"; // good / Healthy
                             } else {
-                              cellColor = "bg-blue-500"; // optional for >2 
+                              cellColor = "bg-green-500"; // More than required / Healthy
                             }
 
                             return (
