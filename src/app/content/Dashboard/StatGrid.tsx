@@ -896,7 +896,7 @@ export default function Dashboard() {
         // Fetch skill heatmap data from new API
         try {
           const heatmapRes = await fetch(
-            `http://127.0.0.1:8000/api/skill-heatmap?sub_institute_id=3`
+            `${sessionData.url}/api/skill-heatmap?sub_institute_id=${sessionData.subInstituteId}`
           );
           if (!heatmapRes.ok) throw new Error(`Heatmap API error: ${heatmapRes.status}`);
             
@@ -1466,7 +1466,7 @@ export default function Dashboard() {
         title: jobRoleName
       });
       
-      const res = await fetch(`http://127.0.0.1:8000/get-kaba?${params.toString()}`);
+      const res = await fetch(`${sessionData.url}/get-kaba?${params.toString()}`);
       const data = await res.json();
       
       setKabaData(prev => ({
@@ -1499,7 +1499,7 @@ export default function Dashboard() {
     try {
       // Call the drill-down API
       const drillRes = await fetch(
-        `http://127.0.0.1:8000/api/skill-heatmap/drill?sub_institute_id=3&department_id=${departmentId}&level=${level}`
+        `${sessionData.url}/api/skill-heatmap/drill?sub_institute_id=${sessionData.subInstituteId}&department_id=${departmentId}&level=${level}`
       );
       
       if (!drillRes.ok) throw new Error(`Drill-down API error: ${drillRes.status}`);
