@@ -1845,9 +1845,9 @@ export default function Dashboard() {
                   <span className="flex items-center gap-1">
                     <span className="w-3 h-3 rounded-sm bg-green-500" /> Healthy
                   </span>
-                  <span className="flex items-center gap-1">
+                  {/* <span className="flex items-center gap-1">
                     <span className="w-3 h-3 rounded-sm bg-gray-300" /> No Data
-                  </span>
+                  </span> */}
                 </div>
 
                 {/* Heatmap Table */}
