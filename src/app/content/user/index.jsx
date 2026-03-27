@@ -1,5 +1,3 @@
-
-
 'use client';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import QuickActionMenu from '../../../components/ui/QuickActionMenu';
@@ -13,6 +11,11 @@ import { Button } from '../../../components/ui/button';
 import dynamic from 'next/dynamic';
 import EmployeeDirectoryTour from './components/EmployeeDirectoryTour';
   const AddUserModal = dynamic(() => import('./AddUserModal'), {
+    ssr: false,
+    loading: () => <p>Loading...</p>
+  });
+
+  const BulkEmployeeUpload = dynamic(() => import('./BulkEmployeeUpload'), {
     ssr: false,
     loading: () => <p>Loading...</p>
   });
@@ -43,6 +46,7 @@ const EmployeeDirectory = () => {
   const [userLOR, setUserLOR] = useState([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [userProfiles, setUserProfiles] = useState([]);
   const [showTour, setShowTour] = useState(false);
 
@@ -364,15 +368,29 @@ const EmployeeDirectory = () => {
             </p>
           </div>
           {sessionData.user_profile_name !== 'Employee' && (
-            <Button
-                  id="add-employee-btn"
-              variant="outline"
-              size="sm"
-              className="justify-start"
-              onClick={() => setIsAddUserModalOpen(true)}
-            >
-              Add Employee
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                id="upload-employee-btn"
+                variant="outline"
+                size="sm"
+                className="justify-start"
+                onClick={() => setIsBulkUploadOpen(true)}
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Upload
+              </Button>
+              <Button
+                    id="add-employee-btn"
+                variant="outline"
+                size="sm"
+                className="justify-start"
+                onClick={() => setIsAddUserModalOpen(true)}
+              >
+                Add Employee
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -388,6 +406,23 @@ const EmployeeDirectory = () => {
           userDepartmentLists={userDepartmentLists}
           userProfiles={userProfiles}
           userLists={userLists}
+        />
+      )}
+
+      {/* Bulk Upload Modal */}
+      {isBulkUploadOpen && (
+        <BulkEmployeeUpload
+          isOpen={isBulkUploadOpen}
+          setIsOpen={setIsBulkUploadOpen}
+          sessionData={sessionData}
+          userJobroleLists={userJobroleLists}
+          userLOR={userLOR}
+          userDepartmentLists={userDepartmentLists}
+          userProfiles={userProfiles}
+          onUploadComplete={() => {
+            // Refresh employee list after successful upload
+            fetchEmployees();
+          }}
         />
       )}
 
