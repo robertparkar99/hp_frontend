@@ -12,7 +12,7 @@ import CreateAssessmentModal from "../../content/LMS/Assessment-Library/componen
 import { UserCircle, Search, AlertCircle } from "lucide-react";
 import Shepherd, { Tour } from "shepherd.js";
 import 'shepherd.js/dist/css/shepherd.css';
-import Loader from '../../../components/utils/loading'
+import Loader from '../../../components/utils/loading'  
 
 import {
   Dialog,
@@ -69,6 +69,35 @@ interface GapAnalysisData {
     image?: string;
     skillLevel?: string; // Add skill level
   }[];
+}
+
+// New interface for Drill-down API response
+interface DrillDownUser {
+  user_id: number;
+  name: string;
+  email: string;
+  mobile: string;
+  rated_level: number;
+}
+
+interface DrillDownSkill {
+  skill_id: number;
+  skill_title: string;
+  proficiency_level: string;
+  users_at_this_level: DrillDownUser[];
+}
+
+interface DrillDownJobRole {
+  jobrole_id: number;
+  jobrole: string;
+  skills: DrillDownSkill[];
+}
+
+interface DrillDownResponse {
+  department: string;
+  level: number;
+  total_count: number;
+  jobroles: DrillDownJobRole[];
 }
 
 interface MySkill {
@@ -229,7 +258,13 @@ export default function Dashboard() {
   const [selectedCandidateSkills, setSelectedCandidateSkills] = useState<string[]>([]);
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
   const [expandedEmployeeIndex, setExpandedEmployeeIndex] = useState<number | null>(null);
-  const [skillLevels, setSkillLevels] = useState([]);
+  const [skillLevels, setSkillLevels] = useState<any[]>([]);
+  const [drillDownData, setDrillDownData] = useState<DrillDownResponse | null>(null);
+  const [isDrillDownLoading, setIsDrillDownLoading] = useState(false);
+  
+  // State for KABA data
+  const [kabaData, setKabaData] = useState<Record<number, { knowledge: string[]; ability: string[]; attitude: string[]; behaviour: string[] }>>({});
+  const [loadingKaba, setLoadingKaba] = useState<Record<number, boolean>>({});
 
   const [orgData, setOrgData] = useState<any>(null);
   const [sisterConcerns, setSisterConcerns] = useState<any[]>([]);
@@ -857,8 +892,52 @@ export default function Dashboard() {
         fetchRatedSkills();
         setMyGrowth(data.myGrowth ?? []);
         setDepartments(data.departmentList || []);
-        setSkillHeatmap(data.skillHeatmap || {});
-        // setSkillLevels(data.SkillLevels || []);
+        
+        // Fetch skill heatmap data from new API
+        try {
+          const heatmapRes = await fetch(
+            `${sessionData.url}/api/skill-heatmap?sub_institute_id=${sessionData.subInstituteId}`
+          );
+          if (!heatmapRes.ok) throw new Error(`Heatmap API error: ${heatmapRes.status}`);
+            
+          const heatmapData = await heatmapRes.json();
+          console.log("Skill Heatmap API Response:", heatmapData);
+          
+          if (heatmapData.departments && Array.isArray(heatmapData.departments)) {
+            // Transform API data to match heatmap UI format
+            const depts = heatmapData.departments.map((dept: any) => ({
+              id: dept.department_id,
+              department: dept.department
+            }));
+            setDepartments(depts);
+            
+            // Set skill levels (1-6)
+            const levels = [1, 2, 3, 4, 5, 6].map(level => ({
+              proficiency_level: level.toString()
+            }));
+            setSkillLevels(levels);
+            setSkills(['1', '2', '3', '4', '5', '6']);
+            
+            // Transform heatmap data: { department: { level: count } }
+            const transformedHeatmap: any = {};
+            heatmapData.departments.forEach((dept: any) => {
+              transformedHeatmap[dept.department] = {};
+              if (dept.levels) {
+                Object.keys(dept.levels).forEach(level => {
+                  transformedHeatmap[dept.department][level] = {
+                    total_emp: dept.levels[level],
+                    required_level: 0
+                  };
+                });
+              }
+            });
+            setSkillHeatmap(transformedHeatmap);
+          }
+        } catch (heatmapErr) {
+          console.error("Error fetching skill heatmap:", heatmapErr);
+          // Fallback to original data if API fails
+          setSkillHeatmap(data.skillHeatmap || {});
+        }
 
 
         // Extract unique skills from skillHeatmap
@@ -1282,11 +1361,11 @@ export default function Dashboard() {
       case "high":
         return "bg-orange-400";
       case "medium":
-        return "bg-blue-400";
+        return "bg-orange-400";
       case "low":
         return "bg-green-500";
       default:
-        return "bg-gray-400";
+        return "bg-gray-300";
     }
   };
 
@@ -1329,8 +1408,8 @@ export default function Dashboard() {
     const gapPercentage = (requiredEmp - totalEmp) / requiredEmp;
 
     if (gapPercentage >= 0.5) return "bg-red-500"; // Critical gap
-    if (gapPercentage >= 0.3) return "bg-orange-400"; // High gap
-    if (gapPercentage >= 0.1) return "bg-yellow-400"; // Medium gap
+    if (gapPercentage >= 0.3) return "bg-orange-400"; // Moderate Gap
+    if (gapPercentage >= 0.1) return "bg-orange-400"; // Moderate Gap (using same as above)
     return "bg-green-500"; // Healthy
   };
 
@@ -1373,35 +1452,97 @@ export default function Dashboard() {
     setIsSkillsModalOpen(true);
   };
 
+  // Add this function to fetch KABA data for a job role
+  const fetchKabaData = async (jobRoleId: number, jobRoleName: string) => {
+    if (kabaData[jobRoleId]) return; // Already fetched
+    
+    setLoadingKaba(prev => ({ ...prev, [jobRoleId]: true }));
+    
+    try {
+      const params = new URLSearchParams({
+        sub_institute_id: '3',
+        type: 'jobrole',
+        type_id: String(jobRoleId),
+        title: jobRoleName
+      });
+      
+      const res = await fetch(`${sessionData.url}/get-kaba?${params.toString()}`);
+      const data = await res.json();
+      
+      setKabaData(prev => ({
+        ...prev,
+        [jobRoleId]: {
+          knowledge: Array.isArray(data?.knowledge) ? data.knowledge : [],
+          ability: Array.isArray(data?.ability) ? data.ability : [],
+          attitude: Array.isArray(data?.attitude) ? data.attitude : [],
+          behaviour: Array.isArray(data?.behaviour) ? data.behaviour : (Array.isArray(data?.behavior) ? data.behavior : [])
+        }
+      }));
+    } catch (error) {
+      console.error('Error fetching KABA data:', error);
+      setKabaData(prev => ({
+        ...prev,
+        [jobRoleId]: { knowledge: [], ability: [], attitude: [], behaviour: [] }
+      }));
+    } finally {
+      setLoadingKaba(prev => ({ ...prev, [jobRoleId]: false }));
+    }
+  };
+
   // Add this function to handle cell clicks
-  const handleCellClick = (department: string, skill: string, totalEmp: number, requiredEmp: number, skillData: any[]) => {
-    // Get levels from API data or use defaults
-    const skillLevels = skillData?.find((emp: any) => emp.skill_level)?.skill_level || skill;
-    // If your API has max_level field
-    const totalLevels = skillData?.find((emp: any) => emp.max_level)?.max_level || 3;
-    const currentLevel = parseInt(skillLevels.replace("Level ", ""))
-    const gap = (currentLevel) ? totalLevels - currentLevel : 0;
-
-
-    const gapData: GapAnalysisData = {
-      title: `${skill} in ${department}`,
-      totalLevels: totalLevels,
-      currentLevel: currentLevel,
-      gap: gap,
-      gapText: gap > 0 ? `${gap} more levels needed` : "Maximum level achieved",
-      upskillingCandidates: skillData?.map((employee: any) => ({
-        name: employee.user_name || "Unknown Employee",
-        role: employee.jobrole || "Unknown Role",
-        totalSkills: employee.total_skills || 0,
-        skillList: employee.skillList || "No skills listed",
-        image: employee.image ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}` : placeholderImage,
-        skillLevel: employee.skill_level || "Level 1" // Add skill level from API
-      })) || []
-    };
-
-
-    setSelectedGapAnalysis(gapData);
+  const handleCellClick = async (department: string, departmentId: number, level: string, totalEmp: number, requiredEmp: number, skillData: any[]) => {
+    // Open the dialog first to show loading state
     setIsGapAnalysisOpen(true);
+    setDrillDownData(null);
+    setIsDrillDownLoading(true);
+
+    try {
+      // Call the drill-down API
+      const drillRes = await fetch(
+        `${sessionData.url}/api/skill-heatmap/drill?sub_institute_id=${sessionData.subInstituteId}&department_id=${departmentId}&level=${level}`
+      );
+      
+      if (!drillRes.ok) throw new Error(`Drill-down API error: ${drillRes.status}`);
+      
+      const drillData = await drillRes.json();
+      console.log("Drill-down API Response:", drillData);
+      
+      setDrillDownData(drillData);
+      
+      // Fetch KABA data for each job role in the drill-down data
+      if (drillData.jobroles && drillData.jobroles.length > 0) {
+        for (const jr of drillData.jobroles) {
+          await fetchKabaData(jr.jobrole_id, jr.jobrole);
+        }
+      }
+    } catch (drillErr) {
+      console.error("Error fetching drill-down data:", drillErr);
+      // Fallback to old logic if API fails
+      const skillLevels = skillData?.find((emp: any) => emp.skill_level)?.skill_level || level;
+      const totalLevels = skillData?.find((emp: any) => emp.max_level)?.max_level || 3;
+      const currentLevel = parseInt(skillLevels.replace("Level ", ""))
+      const gap = (currentLevel) ? totalLevels - currentLevel : 0;
+
+      const gapData: GapAnalysisData = {
+        title: `${level} in ${department}`,
+        totalLevels: totalLevels,
+        currentLevel: currentLevel,
+        gap: gap,
+        gapText: gap > 0 ? `${gap} more levels needed` : "Maximum level achieved",
+        upskillingCandidates: skillData?.map((employee: any) => ({
+          name: employee.user_name || "Unknown Employee",
+          role: employee.jobrole || "Unknown Role",
+          totalSkills: employee.total_skills || 0,
+          skillList: employee.skillList || "No skills listed",
+          image: employee.image ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}` : placeholderImage,
+          skillLevel: employee.skill_level || "Level 1"
+        })) || []
+      };
+      
+      setSelectedGapAnalysis(gapData);
+    } finally {
+      setIsDrillDownLoading(false);
+    }
   };
 
   // Convert skill_level to percent
@@ -1704,9 +1845,9 @@ export default function Dashboard() {
                   <span className="flex items-center gap-1">
                     <span className="w-3 h-3 rounded-sm bg-green-500" /> Healthy
                   </span>
-                  <span className="flex items-center gap-1">
+                  {/* <span className="flex items-center gap-1">
                     <span className="w-3 h-3 rounded-sm bg-gray-300" /> No Data
-                  </span>
+                  </span> */}
                 </div>
 
                 {/* Heatmap Table */}
@@ -1740,16 +1881,16 @@ export default function Dashboard() {
                             const requiredEmp = skillData?.required_level || 0;
 
                             // Assign colors based on employee count compared to requirement
-                            let cellColor = "bg-gray-300"; // default color for missing data
+                            let cellColor = "bg-gray-300"; // default color for missing data / No Data
                             let displayValue = "";
                             if (totalEmp === 0) {
-                              cellColor = "bg-red-400"; // critical gap 
+                              cellColor = "bg-red-500"; // critical gap / Critical Gap
                             } else if (totalEmp === 1) {
-                              cellColor = "bg-orange-400"; // warning 
+                              cellColor = "bg-orange-400"; // warning / Moderate Gap
                             } else if (totalEmp === 2) {
-                              cellColor = "bg-green-500"; // good 
+                              cellColor = "bg-green-500"; // good / Healthy
                             } else {
-                              cellColor = "bg-blue-500"; // optional for >2 
+                              cellColor = "bg-green-500"; // More than required / Healthy
                             }
 
                             return (
@@ -1758,6 +1899,7 @@ export default function Dashboard() {
                                 className={`text-white text-center rounded-sm cursor-pointer transition-colors p-2 ${cellColor} hover:opacity-80`}
                                 onClick={() => handleCellClick(
                                   dept.department,
+                                  dept.id,
                                   skill,
                                   totalEmp,
                                   requiredEmp, // Pass the actual required level
@@ -1783,11 +1925,182 @@ export default function Dashboard() {
               <>
                 {/* Gap Analysis Dialog */}
                 <Dialog open={isGapAnalysisOpen} onOpenChange={setIsGapAnalysisOpen}>
-                  <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6 hide-scroll">
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6 hide-scroll">
                     <DialogHeader>
                       <DialogTitle>Gap Analysis</DialogTitle>
                     </DialogHeader>
-                    {selectedGapAnalysis && (
+                    
+                    {isDrillDownLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <span className="ml-3 text-gray-600">Loading...</span>
+                      </div>
+                    ) : drillDownData ? (
+                      /* New drill-down data from API */
+                      <div className="space-y-6">
+                        {/* Department and Level Info */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h2 className="text-xl font-semibold text-blue-900">
+                            {drillDownData.department} - Level {drillDownData.level}
+                          </h2>
+                          <p className="text-sm text-blue-700 mt-1">
+                            Total Users: {drillDownData.total_count}
+                          </p>
+                        </div>
+
+                        {/* Job Roles and Skills */}
+                        {drillDownData.jobroles && drillDownData.jobroles.map((jobRole, jobRoleIndex) => (
+                          <div key={jobRoleIndex} className="border rounded-lg overflow-hidden">
+                            {/* Job Role Header */}
+                            <div className="bg-gray-100 px-4 py-3 border-b">
+                              <h3 className="font-semibold text-lg text-gray-800">
+                                {jobRole.jobrole}
+                              </h3>
+                              {/* <p className="text-sm text-gray-600">Job Role ID: {jobRole.jobrole_id}</p> */}
+                            </div>
+
+                            {/* Skills for this Job Role */}
+                            <div className="p-4 space-y-4">
+                              {jobRole.skills && jobRole.skills.map((skill, skillIndex) => (
+                                <div key={skillIndex} className="border rounded-lg p-3">
+                                  {/* Skill Header */}
+                                  <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                      <h4 className="font-medium text-gray-900">{skill.skill_title}</h4>
+                                      {/* <p className="text-sm text-gray-600">Skill ID: {skill.skill_id}</p> */}
+                                    </div>
+                                    <div className="flex gap-4 text-sm">
+                                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
+                                        Expected: Level {skill.proficiency_level}
+                                      </span>
+                                      <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded">
+                                        Users: {skill.users_at_this_level?.length || 0}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Users at this level */}
+                                  {skill.users_at_this_level && skill.users_at_this_level.length > 0 && (
+                                    <div className="mt-3">
+                                      <h5 className="text-sm font-semibold text-gray-700 mb-2">Users:</h5>
+                                      <div className="space-y-2">
+                                        {skill.users_at_this_level.map((user, userIndex) => (
+                                          <div key={userIndex} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
+                                                {user.name.charAt(0)}
+                                              </div>
+                                              <div>
+                                                <p className="font-medium text-sm">{user.name}</p>
+                                                <p className="text-xs text-gray-500">{user.email}</p>
+                                              </div>
+                                            </div>
+                                            <div className="text-right">
+                                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                user.rated_level >= parseInt(skill.proficiency_level) 
+                                                  ? 'bg-green-100 text-green-800' 
+                                                  : 'bg-red-100 text-red-800'
+                                              }`}>
+                                                Actual: Level {user.rated_level}
+                                              </span>
+                                              {user.rated_level < parseInt(skill.proficiency_level) && (
+                                                <p className="text-xs text-red-600 mt-1">
+                                                  Gap: {parseInt(skill.proficiency_level) - user.rated_level}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* KABA Data Section - Displayed at End */}
+                            {kabaData[jobRole.jobrole_id] && (
+                              <div className="p-4 bg-blue-50 border-t">
+                                <h4 className="font-semibold text-blue-900 mb-3">KABA (Knowledge, Ability, Attitude, Behaviour)</h4>
+                                
+                                {/* Knowledge */}
+                                {kabaData[jobRole.jobrole_id].knowledge.length > 0 && (
+                                  <div className="mb-3">
+                                    <h5 className="text-sm font-medium text-blue-800">Knowledge:</h5>
+                                    <ul className="list-disc list-inside text-sm text-gray-700 mt-1">
+                                      {kabaData[jobRole.jobrole_id].knowledge.slice(0, 5).map((item: any, idx: number) => (
+                                        <li key={idx}>{typeof item === 'string' ? item : item.title}</li>
+                                      ))}
+                                      {kabaData[jobRole.jobrole_id].knowledge.length > 5 && (
+                                        <li className="text-gray-500">+{kabaData[jobRole.jobrole_id].knowledge.length - 5} more...</li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
+                                
+                                {/* Ability */}
+                                {kabaData[jobRole.jobrole_id].ability.length > 0 && (
+                                  <div className="mb-3">
+                                    <h5 className="text-sm font-medium text-green-800">Ability:</h5>
+                                    <ul className="list-disc list-inside text-sm text-gray-700 mt-1">
+                                      {kabaData[jobRole.jobrole_id].ability.slice(0, 5).map((item: any, idx: number) => (
+                                        <li key={idx}>{typeof item === 'string' ? item : item.title}</li>
+                                      ))}
+                                      {kabaData[jobRole.jobrole_id].ability.length > 5 && (
+                                        <li className="text-gray-500">+{kabaData[jobRole.jobrole_id].ability.length - 5} more...</li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
+                                
+                                {/* Attitude */}
+                                {kabaData[jobRole.jobrole_id].attitude.length > 0 && (
+                                  <div className="mb-3">
+                                    <h5 className="text-sm font-medium text-purple-800">Attitude:</h5>
+                                    <ul className="list-disc list-inside text-sm text-gray-700 mt-1">
+                                      {kabaData[jobRole.jobrole_id].attitude.slice(0, 5).map((item: any, idx: number) => (
+                                        <li key={idx}>{typeof item === 'string' ? item : item.title}</li>
+                                      ))}
+                                      {kabaData[jobRole.jobrole_id].attitude.length > 5 && (
+                                        <li className="text-gray-500">+{kabaData[jobRole.jobrole_id].attitude.length - 5} more...</li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
+                                
+                                {/* Behaviour */}
+                                {kabaData[jobRole.jobrole_id].behaviour.length > 0 && (
+                                  <div className="mb-3">
+                                    <h5 className="text-sm font-medium text-orange-800">Behaviour:</h5>
+                                    <ul className="list-disc list-inside text-sm text-gray-700 mt-1">
+                                      {kabaData[jobRole.jobrole_id].behaviour.slice(0, 5).map((item: any, idx: number) => (
+                                        <li key={idx}>{typeof item === 'string' ? item : item.title}</li>
+                                      ))}
+                                      {kabaData[jobRole.jobrole_id].behaviour.length > 5 && (
+                                        <li className="text-gray-500">+{kabaData[jobRole.jobrole_id].behaviour.length - 5} more...</li>
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
+                                
+                                {/* Loading state */}
+                                {loadingKaba[jobRole.jobrole_id] && (
+                                  <div className="flex items-center justify-center py-2">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                                    <span className="ml-2 text-sm text-gray-600">Loading KABA...</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {(!drillDownData.jobroles || drillDownData.jobroles.length === 0) && (
+                          <p className="text-gray-500 text-center py-4">No job roles found for this selection.</p>
+                        )}
+                      </div>
+                    ) : selectedGapAnalysis ? (
+                      /* Fallback to old format */
                       <div className="space-y-6">
                         {/* Header */}
                         <div>
@@ -1884,6 +2197,10 @@ export default function Dashboard() {
                             })}
                           </div>
                         </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No data available
                       </div>
                     )}
                   </DialogContent>
