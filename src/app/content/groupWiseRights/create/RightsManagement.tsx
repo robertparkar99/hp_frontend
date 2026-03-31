@@ -349,7 +349,7 @@ export function RightsManagement() {
   }, [permissions, originalPermissions, selectedRole]);
 
   return (
-    <div className="bg-background mt-5 scrollbar-hide">
+    <div className="bg-background p-5 mt-5 rounded-xl scrollbar-hide">
       <div className="text-2xl font-bold">Rights Management</div>
       <p className="text-muted-foreground">
         Manage user permissions and access rights for different roles.
