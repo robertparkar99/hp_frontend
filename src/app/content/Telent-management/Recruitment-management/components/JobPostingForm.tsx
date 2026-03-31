@@ -776,6 +776,9 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
 
 
 
+  // Webhook URL for sending job posting data
+  const WEBHOOK_URL = "https://n8n.triz.co.in/ff441ace-87f3-4cb5-9d26-838653929aa7";
+
   const analyzeJobDescription = async (jdText: string) => {
     const res = await fetch(`${sessionData.APP_URL}/api/gemini/analyze-jd`, {
       method: "POST",
@@ -793,6 +796,68 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
     }
 
     return await res.json();
+  };
+
+  // Function to send job posting data to webhook
+  const sendToWebhook = async (jobData: any, jdAnalysisResult: any) => {
+    try {
+      // Build query parameters with all fields directly
+      const params = new URLSearchParams();
+
+      // Add form fields directly as query parameters
+      params.append("title", formData.title);
+      params.append("department", formData.department);
+      params.append("location", formData.location);
+      params.append("employmentType", formData.employmentType);
+      params.append("experienceRequired", formData.experienceRequired);
+      params.append("skillsRequired", formData.skillsRequired);
+      params.append("educationRequirement", formData.educationRequirement);
+      params.append("certifications", formData.certifications);
+      params.append("jobDescription", formData.jobDescription);
+      params.append("salaryRangeMin", formData.salaryRangeMin);
+      params.append("salaryRangeMax", formData.salaryRangeMax);
+      params.append("numberOfPositions", formData.numberOfPositions);
+      params.append("applicationDeadline", formData.applicationDeadline);
+      params.append("urgency", formData.urgency);
+      params.append("benefits", formData.benefits);
+      params.append("status", formData.status);
+
+      // Add job posting result
+      params.append("jobPostingId", jobData?.id || "");
+      params.append("jobPostingCreatedAt", jobData?.created_at || "");
+
+      // Add JD analysis as stringified JSON
+      params.append("jdAnalysis", JSON.stringify(jdAnalysisResult || {}));
+
+      // Add timestamp
+      params.append("timestamp", new Date().toISOString());
+
+      console.log("📤 Sending data to webhook:", WEBHOOK_URL);
+      console.log("📦 Query params:", params.toString());
+
+      const webhookUrlWithParams = `${WEBHOOK_URL}?${params.toString()}`;
+
+      const res = await fetch(webhookUrlWithParams, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Webhook error response:", errorText);
+        throw new Error(`Webhook failed: ${res.status} - ${errorText}`);
+      }
+
+      const responseData = await res.json();
+      console.log("✅ Webhook response:", responseData);
+      return responseData;
+    } catch (error) {
+      console.error("❌ Error sending to webhook:", error);
+      // Don't throw - webhook failure shouldn't break the main flow
+      return null;
+    }
   };
 
 
@@ -860,6 +925,17 @@ const JobPostingForm = ({ open, onOpenChange, onSave, editingJob }: JobPostingFo
       }
 
       const result = await res.json();
+
+      // Send data to webhook after successful job posting creation
+      if (!editingJob) {
+        console.log("📡 Sending job posting data to webhook...");
+        const webhookResult = await sendToWebhook(result, jdAnalysisResult);
+        if (webhookResult) {
+          console.log("✅ Webhook called successfully:", webhookResult);
+        } else {
+          console.warn("⚠️ Webhook call completed but may have failed");
+        }
+      }
 
       toast({
         title: editingJob ? "Job Updated Successfully" : "Job Posted Successfully",
