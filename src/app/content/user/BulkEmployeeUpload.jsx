@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import * as XLSX from "xlsx";
 import {
   Dialog,
@@ -10,8 +10,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, Upload, Users, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { FileSpreadsheet, Upload, Users, Loader2, CheckCircle, XCircle, Download } from "lucide-react";
 
+ 
 // Excel column mapping for Employee data
 const EMPLOYEE_COLUMN_MAPPING = {
   // User identification
@@ -184,11 +185,14 @@ export default function BulkEmployeeUpload({
   onUploadComplete,
 }) {
   const [rawExcelData, setRawExcelData] = useState([]);
+  const [uploadedFile, setUploadedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [columnHeaders, setColumnHeaders] = useState([]);
   const [uploadResults, setUploadResults] = useState([]);
   const [isUploadComplete, setIsUploadComplete] = useState(false);
+  const [isTemplateDownloaded, setIsTemplateDownloaded] = useState(false);
+  const [isSampleCSVDownloaded, setIsSampleCSVDownloaded] = useState(false);
 
   // Map Excel data to expected employee format
   const mappedData = useMemo(() => {
@@ -207,17 +211,53 @@ export default function BulkEmployeeUpload({
         if (excelKey && row[excelKey] !== undefined && row[excelKey] !== null) {
           let value = row[excelKey];
 
-          // Normalize status
+          // Normalize status (0 = Inactive, 1 = Active)
           if (targetField === "status") {
             const normalizedValue = String(value).toLowerCase().trim();
-            if (normalizedValue.includes("active") || normalizedValue.includes("working")) {
-              value = "Active";
-            } else if (normalizedValue.includes("inactive") || normalizedValue.includes("left") || normalizedValue.includes("resigned")) {
+            if (normalizedValue === "0" || normalizedValue === "inactive") {
               value = "Inactive";
+            } else if (normalizedValue === "1" || normalizedValue === "active" || normalizedValue === "working") {
+              value = "Active";
             } else if (normalizedValue.includes("away")) {
               value = "Away";
             } else {
               value = "Active";
+            }
+          }
+
+          // Normalize is_admin (0 = false, 1 = true)
+          if (targetField === "is_admin") {
+            if (value === "0" || value === 0) {
+              value = "false";
+            } else if (value === "1" || value === 1) {
+              value = "true";
+            } else {
+              value = String(value).toLowerCase() === "true" ? "true" : "false";
+            }
+          }
+
+          // Normalize gender (Male -> M, Female -> F, Other -> O)
+          if (targetField === "gender") {
+            const normalizedGender = String(value).toLowerCase().trim();
+            if (normalizedGender === "male" || normalizedGender === "m") {
+              value = "M";
+            } else if (normalizedGender === "female" || normalizedGender === "f") {
+              value = "F";
+            } else if (normalizedGender === "other" || normalizedGender === "o") {
+              value = "O";
+            } else {
+              value = "M"; // Default to M if unknown
+            }
+          }
+
+          // Normalize day fields (monday, tuesday, etc.) - 0/1 to boolean
+          if (["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].includes(targetField)) {
+            if (value === "0" || value === 0) {
+              value = "false";
+            } else if (value === "1" || value === 1) {
+              value = "true";
+            } else {
+              value = String(value).toLowerCase() === "true" ? "true" : "false";
             }
           }
 
@@ -233,8 +273,14 @@ export default function BulkEmployeeUpload({
   }, [rawExcelData]);
 
   // Show all data - no filtering
+  // Filter out sample row (identified by sample username "john.doe")
   const validRows = useMemo(() => {
-    return mappedData;
+    return mappedData.filter(row => 
+      row.user_name !== "john.doe" && 
+      row.user_name !== "" && 
+      row.user_name !== null &&
+      row.user_name !== undefined
+    );
   }, [mappedData]);
 
   // =====================
@@ -282,6 +328,7 @@ export default function BulkEmployeeUpload({
         }
 
         setRawExcelData(rows);
+        setUploadedFile(file);
         setIsUploadComplete(false);
         setUploadResults([]);
         
@@ -299,80 +346,183 @@ export default function BulkEmployeeUpload({
   };
 
   // =====================
+  // SAMPLE CSV FILE DOWNLOAD HANDLER
+  // =====================
+
+  const handleDownloadSampleCSV = () => {
+    // All columns that should be in the sample CSV
+    const headers = [
+      'user_name', 'password', 'plain_password', 'name_suffix', 'first_name', 'middle_name', 'last_name',
+      'email', 'mobile', 'gender', 'birthdate', 'address', 'city', 'state', 'pincode',
+      'user_profile_id', 'join_year', 'joined_date', 'sub_institute_id', 'client_id',
+      'is_admin', 'status', 'department_id', 'employee_id', 'total_experience', 'allocated_standards',
+      'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+      'monday_in_date', 'monday_out_date', 'tuesday_in_date', 'tuesday_out_date',
+      'wednesday_in_date', 'wednesday_out_date', 'thursday_in_date', 'thursday_out_date',
+      'friday_in_date', 'friday_out_date', 'saturday_in_date', 'saturday_out_date',
+      'sunday_in_date', 'sunday_out_date'
+    ];
+
+    // Sample row data - sub_institute_id auto-filled with logged-in user's sub_institute_id
+    // Note: This sample data is for reference only and will not be uploaded to database
+    const sampleData = [
+      'john.doe', 'Pass123!', '', 'Mr', 'John', '', 'Doe',
+      'john.doe@example.com', '9876543210', 'M', '1990-01-15', '123 Main Street', 'Mumbai', 'Maharashtra', '400001',
+      '1', '2024', '2024-01-01', sessionData?.sub_institute_id || '', '',
+      '0', '1', '', '1', '5', '',
+      '1', '1', '1', '1', '1', '0', '0',
+      '09:00', '18:00', '09:00', '18:00',
+      '09:00', '18:00', '09:00', '18:00',
+      '09:00', '18:00', '', '',
+      '', ''
+    ];
+
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      sampleData.join(',')
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'sample_employee_data.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    console.log('Sample CSV file downloaded successfully');
+    setIsSampleCSVDownloaded(true);
+  };
+
+  // =====================
+  // TEMPLATE DOWNLOAD HANDLER
+  // =====================
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const apiUrl = `${sessionData.APP_URL}/api/export-department-jobroles/${sessionData.sub_institute_id}`;
+      console.log("Fetching template from API:", apiUrl);
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+      });
+
+      if (response.ok) {
+        // Get the blob from the response
+        const blob = await response.blob();;
+        
+        // Get filename from content-disposition header or use default
+        const contentDisposition = response.headers.get("content-disposition");
+        let filename = "employee_template.csv";
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename=(.+)/);
+          if (filenameMatch) {
+            filename = filenameMatch[1].replace(/[""]/g, "");
+          }
+        }
+
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setIsTemplateDownloaded(true);
+        console.log("Template downloaded successfully");
+      } else {
+        console.error("Failed to fetch template:", response.status);
+        alert("Failed to download template. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error fetching template:", error);
+      alert("Error downloading template: " + error.message);
+    }
+  };
+
+  // =====================
   // BULK UPLOAD API CALL
   // =====================
 
   const handleBulkUpload = async () => {
-    if (validRows.length === 0) {
-      alert("No valid employee data to upload.");
+    if (!uploadedFile) {
+      alert("No file selected. Please upload an Excel file first.");
       return;
     }
 
     setUploading(true);
-    setUploadProgress({ current: 0, total: validRows.length });
+    setUploadProgress({ current: 0, total: 100 });
     setUploadResults([]);
 
-    const results = [];
-
     try {
-      // Process each employee one by one
-      for (let i = 0; i < validRows.length; i++) {
-        const employee = validRows[i];
-        
-        try {
-          // Build the API URL
-          const apiUrl = `${sessionData.APP_URL}/user/add_user?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id || 1}&org_type=${encodeURIComponent(sessionData.org_type || 'Financial Services')}&user_id=${sessionData.user_id}&user_profile_name=${encodeURIComponent(sessionData.user_profile_name || 'Admin')}&syear=${sessionData.syear || '2025'}`;
+      // Create FormData with the Excel file
+      const formData = new FormData();
+      formData.append("file", uploadedFile);
 
-          const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              ...employee,
-              action: "add",
-            }),
-          });
-
-          if (response.ok) {
-            results.push({
-              rowIndex: i + 1,
-              name: employee.full_name,
-              success: true,
-            });
-          } else {
-            const errorData = await response.json();
-            results.push({
-              rowIndex: i + 1,
-              name: employee.full_name,
-              success: false,
-              error: errorData.message || "Failed to upload",
-            });
-          }
-        } catch (error) {
-          results.push({
-            rowIndex: i + 1,
-            name: employee.full_name,
-            success: false,
-            error: error.message || "Unknown error",
-          });
-        }
-
-        setUploadProgress({ current: i + 1, total: validRows.length });
-        setUploadResults([...results]);
-      }
-
-      setIsUploadComplete(true);
+      // Send the file to the import-users API
+      const apiUrl = `${sessionData.APP_URL}/api/import-users`;
       
-      // Call the completion callback
-      if (onUploadComplete) {
-        const successCount = results.filter(r => r.success).length;
-        onUploadComplete(successCount);
+      console.log("Sending file to API:", apiUrl);
+      console.log("File name:", uploadedFile.name);
+      console.log("File size:", uploadedFile.size);
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      console.log("Response status:", response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Upload successful:", result);
+        
+        setUploadProgress({ current: 100, total: 100 });
+        
+        // Set success result
+        setUploadResults([{
+          rowIndex: 1,
+          name: uploadedFile.name,
+          success: true,
+        }]);
+
+        setIsUploadComplete(true);
+        
+        // Call the completion callback
+        if (onUploadComplete) {
+          onUploadComplete(validRows.length);
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({ message: "Failed to upload file" }));
+        console.error("Upload failed:", errorData);
+        
+        setUploadResults([{
+          rowIndex: 1,
+          name: uploadedFile.name,
+          success: false,
+          error: errorData.message || "Failed to upload file",
+        }]);
+        
+        setIsUploadComplete(true);
       }
 
     } catch (error) {
-      console.error("Error uploading employees:", error);
-      alert("Error uploading employees. Please try again.");
+      console.error("Error uploading file:", error);
+      setUploadResults([{
+        rowIndex: 1,
+        name: uploadedFile.name,
+        success: false,
+        error: error.message || "Unknown error occurred",
+      }]);
+      setIsUploadComplete(true);
     } finally {
       setUploading(false);
       setUploadProgress(null);
@@ -381,9 +531,12 @@ export default function BulkEmployeeUpload({
 
   const handleClearData = () => {
     setRawExcelData([]);
+    setUploadedFile(null);
     setColumnHeaders([]);
     setUploadResults([]);
     setIsUploadComplete(false);
+    setIsTemplateDownloaded(false);
+    setIsSampleCSVDownloaded(false);
   };
 
   const handleClose = () => {
@@ -413,97 +566,68 @@ export default function BulkEmployeeUpload({
               </div>
 
               <p className="font-semibold text-lg mb-2 text-slate-700">
-                Upload Excel File
+                Upload CSV File
               </p>
-              <p className="text-sm text-slate-500 mb-4">
+              {/* <p className="text-sm text-slate-500 mb-4">
                 Each row = one employee record
-              </p>
+              </p> */}
 
-              {/* Hidden file input with custom button styling */}
-              <label className="cursor-pointer inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-all hover:shadow-lg hover:shadow-blue-200">
-                <Upload className="w-4 h-4" />
-                <span>Choose Excel File</span>
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleExcelUpload}
-                  className="hidden"
-                  disabled={uploading}
-                />
-              </label>
+              {/* Button Container with Step-wise Activation */}
+              <div className="flex flex-wrap justify-center gap-3 mb-4">
+                {/* Step 1: Download Template Button */}
+                <button
+                  onClick={handleDownloadTemplate}
+                  className={`inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-all hover:shadow-lg hover:shadow-green-200 ${
+                    isTemplateDownloaded ? 'opacity-60 cursor-not-allowed bg-green-400' : ''
+                  }`}
+                  disabled={isTemplateDownloaded}
+                >
+                  <Download className="w-4 h-4" />
+                  <span>{isTemplateDownloaded ? '✓ Step 1 Complete' : 'Step 1: Download Template'}</span>
+                </button>
+
+                {/* Step 2: Sample CSV File Button */}
+                <button
+                  onClick={handleDownloadSampleCSV}
+                  className={`inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-all hover:shadow-lg hover:shadow-purple-200 ${
+                    !isTemplateDownloaded || isSampleCSVDownloaded ? 'opacity-60 cursor-not-allowed bg-purple-400' : ''
+                  }`}
+                  disabled={!isTemplateDownloaded || isSampleCSVDownloaded}
+                >
+                  <Download className="w-4 h-4" />
+                  <span>{isSampleCSVDownloaded ? '✓ Step 2 Complete' : 'Step 2: Sample CSV File'}</span>
+                </button>
+
+                {/* Step 3: Choose CSV File */}
+                <label
+                  className={`cursor-pointer inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-all hover:shadow-lg hover:shadow-blue-200 ${
+                    !isSampleCSVDownloaded ? 'opacity-60 cursor-not-allowed bg-blue-400' : ''
+                  }`}
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Step 3: Choose CSV File</span>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleExcelUpload}
+                    className="hidden"
+                    disabled={uploading || !isSampleCSVDownloaded}
+                  />
+                </label>
+              </div>
 
               <p className="text-sm text-muted-foreground mt-2">
                 Each row = one employee record
               </p>
-
-              {/* Expected Columns Info */}
-              <div className="mt-4 p-4 bg-muted/30 rounded-lg text-left">
-                <p className="text-sm font-medium text-foreground mb-2">Expected Excel Columns:</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-muted-foreground">
-                  <span>•user_name *</span>
-                  <span>• password</span>
-                  <span>• name_suffix</span>
-                  <span>• first_name</span>
-                  <span>• middle_name</span>
-                  <span>• last_name</span>
-                  <span>• email</span>
-                  <span>• mobile</span>
-                  <span>• gender</span>
-                  <span>• birthdate</span>
-                  <span>• address</span>
-                  <span>• city</span>
-                  <span>• state</span>
-                  <span>• pincode</span>
-                  <span>• user_profile_id</span>
-                  <span>• join_year</span>
-                  <span>• plain_password</span>
-                  <span>• sub_institute_id</span>
-                  <span>• client_id</span>
-                  <span>• is_admin</span>
-                  <span>• status</span>
-                  <span>• allocated_standards</span>
-                  <span>• department_id</span>
-                  <span>• joined_date</span>
-                  <span>• employee_id</span>
-                  <span>• mondaye</span>
-                  <span>• tuesday</span>
-                  <span>• wednesday</span>
-                  <span>• thursday</span>
-                  <span>• friday</span>
-                  <span>• saturday</span>
-                  <span>• sunday</span>
-                  <span>• monday_in_date</span>
-                  <span>• monday_out_date</span>
-                  <span>• tuesday_in_date</span>
-                  <span>• tuesday_out_date</span>
-                  <span>• wednesday_in_date</span>
-                  <span>• wednesday_out_date</span>
-                  <span>• thursday_in_date</span>
-                  <span>• thursday_out_date</span>
-                  <span>• friday_in_date</span>
-                  <span>• friday_out_date</span>
-                  <span>• saturday_in_date</span>
-                  <span>• saturday_out_date</span>
-                  <span>• sunday_in_date</span>
-                  <span>• sunday_out_date</span>
-                  <span>• total_experience</span>
-              
-
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  * Full Name is required. Other fields are optional.
-                </p>
-              </div>
             </div>
           )}
-
           {/* Excel Data Preview */}
-          {rawExcelData.length > 0 && !isUploadComplete && (
+          {validRows.length > 0 && !isUploadComplete && (
             <div className="bg-muted/30 rounded-lg p-4 overflow-x-hidden">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="font-medium text-foreground">
-                    Rows detected: {rawExcelData.length}
+                    Rows detected: {validRows.length}
                   </p>
                   {uploading && uploadProgress && (
                     <p className="text-sm text-muted-foreground mt-1">
@@ -536,7 +660,7 @@ export default function BulkEmployeeUpload({
                 <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-border flex items-center justify-between sticky top-0 z-10">
                   <div className="flex items-center gap-3">
                     <div className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
-                      {rawExcelData.length} {rawExcelData.length === 1 ? 'Record' : 'Records'}
+                      {validRows.length} {validRows.length === 1 ? 'Record' : 'Records'}
                     </div>
                     <span className="text-sm text-muted-foreground">
                       Preview before upload
@@ -593,8 +717,8 @@ export default function BulkEmployeeUpload({
                       </tr>
                     </thead>
                     <tbody id="preview-table-body" className="divide-y divide-slate-100">
-                      {/* Display all rows from rawExcelData with dynamic columns */}
-                      {rawExcelData.map((row, index) => {
+                      {/* Display only valid rows (exclude sample data) */}
+                      {validRows.map((row, index) => {
                         const statusText = String(row.status || row.Status || 'active').toLowerCase();
                         const isActive = statusText.includes('active') || statusText.includes('working');
                         const isInactive = statusText.includes('inactive') || statusText.includes('left') || statusText.includes('resigned');
@@ -661,15 +785,17 @@ export default function BulkEmployeeUpload({
 
                 {/* Table Footer */}
                 <div className="px-4 py-2 bg-slate-50 border-t border-border flex items-center justify-between text-xs text-slate-500">
-                  <span>Showing {rawExcelData.length} entries</span>
+                  <span>Showing {validRows.length} entries</span>
                   <span>Scroll for more →</span>
                 </div>
               </div>
 
+                        
+
               {/* Upload Button */}
               <button
                 onClick={handleBulkUpload}
-                disabled={uploading || validRows.length === 0}
+                disabled={uploading || !uploadedFile}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center shadow-lg shadow-blue-200 hover:shadow-xl"
               >
                 {uploading ? (
@@ -680,7 +806,7 @@ export default function BulkEmployeeUpload({
                 ) : (
                   <>
                     <Upload className="w-5 h-5" />
-                    <span className="font-medium">Upload {validRows.length} Employees</span>
+                    <span className="font-medium">Upload Employees</span>
                   </>
                 )}
               </button>
@@ -765,3 +891,4 @@ export default function BulkEmployeeUpload({
     </Dialog>
   );
 }
+
