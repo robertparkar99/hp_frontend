@@ -1,5 +1,5 @@
 import Loader from '@/components/utils/loading';
-import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap } from 'lucide-react';
+import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -186,6 +186,23 @@ const agents: Agent[] = [
     outputs: ['Automated Content Generation', 'Multi-Channel Distribution', 'Content Analytics', 'Workflow Optimization'],
     cta: 'Explore Content Automation',
     ctaLink: '/content/AgenticAI/Automation'
+  },
+  {
+    id: 'newsletter-agent',
+    name: 'Newsletter Agent',
+    icon: Mail,
+    module: 'Agentic AI → Newsletter',
+    summary: 'Create and manage AI-powered newsletters with intelligent content generation and distribution',
+    function: 'The Newsletter Agent helps you create, manage, and distribute AI-powered newsletters. It assists with content generation, template selection, subscriber management, and automated delivery scheduling.',
+    workflow: [
+      'User selects newsletter type or template',
+      'Agent generates content based on user preferences',
+      'User reviews and edits the generated content',
+      'Agent schedules and distributes the newsletter'
+    ],
+    outputs: ['AI-Generated Newsletter Content', 'Customizable Templates', 'Subscriber Management', 'Automated Scheduling'],
+    cta: 'Launch Newsletter Agent',
+    ctaLink: '/content/AgenticAI/NewsLetter/'
   }
 ];
 

@@ -1,4 +1,4 @@
-
+        
 // 
 "use client"
 import { useState, useRef, useEffect } from 'react';
@@ -93,7 +93,7 @@ interface Message {
       skillGapCategory: string;
       skillGapEmoji: string;
       performanceLabel: string;
-      topPrioritySkills: Array<{ name: string; gap: number }>;
+      topPrioritySkills: Array<{ name: string; rated: number; expected: number; gap: number }>;
       totalSkills: number;
     };
   };
@@ -132,6 +132,8 @@ export default function ChatbotCopilot({
   const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 1 | -1 } | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
+  const [isPanelExpanded, setIsPanelExpanded] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const recognitionRef = useRef<any>(null);
   const originalInputRef = useRef<string>(''); // specific for keeping track of text before voice started
 
@@ -621,7 +623,14 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
 ---
 *Based on: ${totalSkills} skills*`;
         
-        // Create report data object for the component
+        // Create report data object for the component - transform topPrioritySkills to include rated and expected
+        const transformedTopPrioritySkills = topPrioritySkills.map((s: any) => ({
+          name: s.name,
+          rated: s.userRating,
+          expected: s.expectedProficiency,
+          gap: s.gap
+        }));
+        
         const reportData = {
           avgUserRating,
           avgExpectedProficiency,
@@ -631,7 +640,7 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
           skillGapCategory,
           skillGapEmoji,
           performanceLabel,
-          topPrioritySkills,
+          topPrioritySkills: transformedTopPrioritySkills,
           totalSkills
         };
         
@@ -774,7 +783,7 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
     const missingFields = messages.find(m => m.id === messageId)?.metadata?.missingFields || [];
 
     return (
-      <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm">
+      <div className="mt-3 p-3 sm:p-4 md:p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm">
         <h4 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
           <Bot className="w-4 h-4 text-blue-600" />
           Complete Competency Profile
@@ -1037,7 +1046,7 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
           {stepLabel}
         </h4>
 
-        <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {options.map((option: any, index: number) => (
             <button
               key={index}
@@ -1503,17 +1512,17 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
     };
 
     return (
-      <div className="mt-3 p-4 bg-gradient-to-br from-purple-50 to-indigo-100 rounded-xl border border-purple-200 shadow-sm">
-        <h4 className="text-sm font-semibold text-purple-900 mb-3 flex items-center gap-2">
-          <Bot className="w-4 h-4 text-purple-600" />
+      <div className="mt-3 p-3 sm:p-4 md:p-5 bg-gradient-to-br from-purple-50 to-indigo-100 rounded-xl border border-purple-200 shadow-sm">
+        <h4 className="text-sm sm:text-base font-semibold text-purple-900 mb-3 sm:mb-4 flex items-center gap-2">
+          <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
           Skill Rating
         </h4>
         
-        <p className="text-sm text-purple-800 mb-4">
+        <p className="text-sm sm:text-base text-purple-800 mb-4 sm:mb-5">
           Would you like to rate your skills? This will help us analyze your skill gap.
         </p>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <button
             onClick={() => handleRatingResponse('yes')}
             disabled={isLoading}
@@ -1644,35 +1653,35 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
     const allRated = options.length > 0 && options.every((opt: any) => localRatings[opt.name]);
 
     return (
-      <div className="mt-2 sm:mt-3 box-border">
-        <div className="p-2 sm:p-3 mr-4 bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl border border-indigo-200 shadow-sm">
+      <div className="mt-3 box-border">
+        <div className="p-4 bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl border border-indigo-200 shadow-sm">
                         
-          <h4 className="text-xs sm:text-sm font-semibold text-indigo-900 mb-2 sm:mb-3 flex items-center gap-2">
-            <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600" />
+          <h4 className="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+            <Bot className="w-4 h-4 text-indigo-600" />
             Please rate your skills
           </h4>
 
-          <div className="space-y-2 max-h-48 sm:max-h-56 overflow-y-auto">
+          <div className="space-y-2 sm:space-y-3 max-h-56 sm:max-h-72 md:max-h-80 lg:max-h-96 overflow-y-auto pr-1 sm:pr-2">
             {options.map((option: any, index: number) => {
               const expectedLevel = option.expectedProficiency || 3;
               const ratingOptions = Array.from({ length: expectedLevel }, (_, i) => i + 1);
               
               return (
-                <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 bg-white p-2 rounded-lg border border-indigo-100">
-                  <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                    <span className="text-xs sm:text-sm font-medium text-gray-800 truncate" title={option.name}>
+                <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 md:gap-4 bg-white p-2 sm:p-2.5 md:p-3 rounded-lg border border-indigo-100">
+                  <div className="flex flex-col gap-0.5 min-w-0 flex-1 w-full sm:max-w-[140px] md:max-w-[180px] lg:max-w-[240px]">
+                    <span className="text-xs font-medium text-gray-800 truncate" title={option.name}>
                       {option.name}
                     </span>
-                    <span className="text-[10px] sm:text-xs text-gray-500">
-                      Expected: {expectedLevel}
+                    <span className="text-xs text-gray-500">
+                      Lv: {expectedLevel}
                     </span>
                   </div>
-                  <div className="flex gap-1 justify-start sm:justify-end shrink-0">
+                  <div className="flex gap-1 sm:gap-1.5 shrink-0 w-full sm:w-auto justify-start sm:justify-end">
                     {ratingOptions.map((rating) => (
                       <button
                         key={rating}
                         onClick={() => handleRatingSelect(option.name, rating)}
-                        className={`w-6 h-6 sm:w-7 sm:h-7 text-[10px] sm:text-xs font-medium rounded transition-all ${
+                        className={`flex-1 sm:flex-none min-w-[32px] sm:min-w-[36px] md:min-w-[40px] w-8 sm:w-9 md:w-10 h-7 sm:h-8 md:h-9 text-xs sm:text-sm font-medium rounded transition-all ${
                           localRatings[option.name] === rating
                             ? 'bg-indigo-600 text-white'
                             : 'bg-gray-100 text-gray-600 hover:bg-indigo-100'
@@ -1690,11 +1699,11 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
           <button
             onClick={handleSubmitRatings}
             disabled={!allRated || isLoading}
-            className="w-full mt-2 sm:mt-3 px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-3 sm:mt-4 px-3 py-2 sm:px-4 sm:py-2.5 md:py-3 text-sm sm:text-base font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Submitting...
               </span>
             ) : (
@@ -1775,10 +1784,14 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
               staggerChildren: 0.1,
               delayChildren: 0.2
             }}
-            className="fixed right-0 flex flex-col bg-white shadow-2xl border-l border-gray-200
+            className={`fixed right-0 flex flex-col bg-white shadow-2xl border-l border-gray-200
                  top-16 sm:top-16 md:top-16 lg:top-16 xl:top-16 h-[calc(100vh-4rem)] 
-                 w-[360px] sm:w-[420px] md:w-[480px] lg:w-[520px] xl:w-[560px] max-w-[560px]
-                 mx-2 sm:mx-0 overflow-hidden"
+                 ${isFullscreen 
+                   ? 'w-screen max-w-screen left-0 border-l-0' 
+                   : isPanelExpanded 
+                     ? 'w-[90vw] max-w-[90vw]' 
+                     : 'w-[360px] sm:w-[420px] md:w-[480px] lg:w-[520px] xl:w-[560px] max-w-[560px]'}
+                 mx-2 sm:mx-0 overflow-hidden transition-all duration-300`}
           >
             {/* Header - Wrap in motion for stagger */}
             <motion.div
@@ -1801,6 +1814,22 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
                 </div>
 
                 <div className="flex items-center gap-1">
+                  
+                  <button
+                    onClick={() => setIsPanelExpanded(!isPanelExpanded)}
+                    className="p-2 hover:bg-white/20 rounded-full text-white/90 transition-colors"
+                    title={isPanelExpanded ? "Restore" : "Expand"}
+                  >
+                    {isPanelExpanded ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                      </svg>
+                    )}
+                  </button>
                   <button
                     onClick={() => setShowNewConversationModal(true)}
                     className="p-2 hover:bg-white/20 rounded-full text-white/90 transition-colors"
