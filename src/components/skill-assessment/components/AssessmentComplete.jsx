@@ -371,7 +371,7 @@ const AssessmentComplete = ({
 
       {/* Action Buttons */}
       <div className="flex justify-center">
-        <Button 
+        {/* <Button 
           variant="primary"
           iconName="Upload"
           onClick={handleSubmitAssessment}
@@ -381,7 +381,7 @@ const AssessmentComplete = ({
         >
           {isSubmitting ? "Submitting..." :
             submitSuccess ? "Submitted Successfully" : "Submit Assessment"}
-        </Button>
+        </Button> */}
       </div>
     </div>
   );
