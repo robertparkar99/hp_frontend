@@ -1254,7 +1254,7 @@ async function handleJobRoleCompetencyRequest(
       intent: 'JOB_ROLE_COMPETENCY',
       confidence: intent.confidence,
       entities: extractedEntities,
-      action: 'SHOW_GENKIT_FORM',
+      action: 'SHOW_CWFKT_INPUT',
       missingFields,
       recoverable: true,
       suggestion: 'Please provide the missing details to generate the competency profile.',

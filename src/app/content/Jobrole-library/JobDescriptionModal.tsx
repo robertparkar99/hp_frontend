@@ -146,58 +146,6 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
         );
     };
 
-    // Log JSON object when critical work function is selected
-    useEffect(() => {
-        if (selectedFunction && jobRole && sessionData.orgType) {
-            // Calculate tasksByFunction locally
-            const tasksByFunction = tasksData.reduce((acc, task) => {
-                const fn = task.critical_work_function || "Uncategorized";
-                if (!acc[fn]) acc[fn] = [];
-                acc[fn].push(task);
-                return acc;
-            }, {} as Record<string, Task[]>);
-
-            const tasksForFunction = tasksByFunction[selectedFunction] || [];
-            const keyTasks = tasksForFunction.map(task => task.taskName);
-
-            const jsonObject = {
-                industry: sessionData.orgType,
-                department: jobRole.department,
-                jobrole: jobRole.jobrole,
-                description: jobRole.description,
-                critical_work_function: selectedFunction,
-                key_tasks: keyTasks
-            };
-
-            console.log("Selected Critical Work Function Data:", JSON.stringify(jsonObject, null, 2));
-        }
-    }, [selectedFunction, jobRole, sessionData.orgType, tasksData]);
-
-    // Log JSON object when skill is selected
-    useEffect(() => {
-        if (selectedSkill && jobRole && sessionData.orgType) {
-            const selectedSkillData = skillsData.find(skill => skill.skill_id === selectedSkill);
-            if (selectedSkillData) {
-                const jsonObject = {
-                    industry: sessionData.orgType,
-                    department: jobRole.department,
-                    jobrole: jobRole.jobrole,
-                    description: jobRole.description,
-                    selected_skill: {
-                        skillName: selectedSkillData.SkillName,
-                        category: selectedSkillData.category,
-                        sub_category: selectedSkillData.sub_category,
-                        proficiency_level: selectedSkillData.proficiency_level,
-                        description: selectedSkillData.description,
-                        skill_id: selectedSkillData.skill_id
-                    }
-                };
-
-                console.log("Selected Skill Data:", JSON.stringify(jsonObject, null, 2));
-            }
-        }
-    }, [selectedSkill, jobRole, sessionData.orgType, skillsData]);
-
     // State to show/hide radio buttons
     const [showRadios, setShowRadios] = useState(false);
 
@@ -336,18 +284,6 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
 
     const mapKabaItems = (arr: KabaItem[]) => arr.map((i) => ({ id: i.id, category: i.category, sub_category: i.sub_category, title: i.title }));
 
-    // ✅ Handle skill click to open ViewSkill modal
-    // const handleSkillClick = (skillId: number) => {
-    //   setSelectedSkillId(skillId);
-    //   setIsViewSkillOpen(true);
-    // };
-
-    // // ✅ Close ViewSkill modal
-    // const handleCloseViewSkill = () => {
-    //   setIsViewSkillOpen(false);
-    //   setSelectedSkillId(null);
-    // };
-
     if (!isOpen || !jobRole) return null;
 
     // Group data
@@ -383,6 +319,53 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
         abilityItems,
         attitudeItems,
         behaviourItems,
+    };
+
+    // ✅ Generate Profile - includes ALL Skills, CWF, and Tasks
+    const handleGenerateProfile = () => {
+        // Build comprehensive profile with ALL Skills, CWF, and Tasks
+        // Group tasks by Critical Work Function
+        const tasksByFunctionGrouped = tasksData.reduce((acc, task) => {
+            const fn = task.critical_work_function || "Uncategorized";
+            if (!acc[fn]) acc[fn] = [];
+            acc[fn].push(task.taskName);
+            return acc;
+        }, {} as Record<string, string[]>);
+
+        // Build complete skills array
+        const allSkills = skillsData.map(s => ({
+            skillName: s.SkillName,
+            category: s.category,
+            sub_category: s.sub_category,
+            proficiency_level: s.proficiency_level,
+            description: s.description,
+            skill_id: s.skill_id
+        }));
+
+        const payload = {
+            industry: sessionData.orgType,
+            department: jobRole.department,
+            jobrole: jobRole.jobrole,
+            description: jobRole.description,
+            // Include ALL Skills
+            skills: allSkills,
+            // Include Critical Work Functions with Tasks mapped under each function
+            critical_work_functions: Object.entries(tasksByFunctionGrouped).map(([functionName, tasks]) => ({
+                function: functionName,
+                tasks: tasks
+            })),
+            knowledge: mapKabaItems(knowledgeItems),
+            ability: mapKabaItems(abilityItems),
+            attitude: mapKabaItems(attitudeItems),
+            behaviour: mapKabaItems(behaviourItems),
+        };
+
+        // ✅ CONSOLE LOG ON CONFIG CLICK
+        console.log("🟢 Generate Profile Payload (Skills + CWF + Tasks):",
+            JSON.stringify(payload, null, 2)
+        );
+
+        onConfig(payload);
     };
 
     return (
@@ -431,18 +414,6 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
 
                     {/* 🧩 Critical Work Functions */}
                     <Card className="mb-6">
-                        {/* <CardHeader className="flex flex-row items-center justify-between w-full px-4">
-                            <CardTitle className="text-lg font-bold">
-                                Critical Work Functions & Key Tasks
-                            </CardTitle>
-                            <Button onClick={() => console.log('Generate Assessment with AI clicked')} className="bg-blue-400 text-white hover:bg-blue-500">
-                                Generate Assessment with AI
-                            </Button>
-                            <Button onClick={() => setShowRadios(!showRadios)} className="bg-blue-400 text-white hover:bg-blue-500">
-                                {showRadios ? 'Hide Selection' : 'Build Course with AI'}
-                            </Button>
-                        </CardHeader> */}
-
                         <CardHeader className="flex flex-row items-center justify-between w-full px-4">
                             {/* Title */}
                             <CardTitle className="text-lg font-bold text-gray-900">
@@ -451,13 +422,13 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
 
                             {/* Action Buttons */}
                             <div className="flex items-center gap-3">
-                                {/* Generate Assessment with AI */}
-                                {/* <Button
-                                    onClick={() => onGenerateAssessment(allData)}
-                                    className="bg-green-400 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-400"
+                                {/* Generate Profile Button - Shows ALL Skills + CWF + Tasks */}
+                                <Button
+                                    onClick={handleGenerateProfile}
+                                    className="bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-400"
                                 >
-                                    Generate Assessment with AI
-                                </Button> */}
+                                    Generate Profile
+                                </Button>
 
                                 {/* Build Course with AI */}
                                 <Button
@@ -512,23 +483,34 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                                     <TableCell>
                                                         {selectedFunction === criticalFunction && (
                                                             <Button className="bg-green-400 text-white hover:bg-green-500" onClick={() => {
-                                                                const tasksByFunction = tasksData.reduce((acc, task) => {
+                                                                const tasksByFunctionGrouped = tasksData.reduce((acc, task) => {
                                                                     const fn = task.critical_work_function || "Uncategorized";
                                                                     if (!acc[fn]) acc[fn] = [];
-                                                                    acc[fn].push(task);
+                                                                    acc[fn].push(task.taskName);
                                                                     return acc;
-                                                                }, {} as Record<string, Task[]>);
+                                                                }, {} as Record<string, string[]>);
 
-                                                                const tasksForFunction = tasksByFunction[selectedFunction] || [];
-                                                                const keyTasks = tasksForFunction.map(task => task.taskName);
+                                                                const tasksForFunction = tasksByFunctionGrouped[selectedFunction] || [];
 
                                                                 const payload = {
                                                                     industry: sessionData.orgType,
                                                                     department: jobRole.department,
                                                                     jobrole: jobRole.jobrole,
                                                                     description: jobRole.description,
-                                                                    critical_work_function: selectedFunction,
-                                                                    key_tasks: keyTasks,
+                                                                    // Include ALL Skills
+                                                                    skills: skillsData.map(s => ({
+                                                                        skillName: s.SkillName,
+                                                                        category: s.category,
+                                                                        sub_category: s.sub_category,
+                                                                        proficiency_level: s.proficiency_level,
+                                                                        description: s.description,
+                                                                        skill_id: s.skill_id
+                                                                    })),
+                                                                    // Include Critical Work Functions with Tasks mapped under each function
+                                                                    critical_work_functions: Object.entries(tasksByFunctionGrouped).map(([functionName, taskList]) => ({
+                                                                        function: functionName,
+                                                                        tasks: taskList
+                                                                    })),
                                                                     knowledge: mapKabaItems(knowledgeItems),
                                                                     ability: mapKabaItems(abilityItems),
                                                                     attitude: mapKabaItems(attitudeItems),
@@ -536,7 +518,7 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                                                 };
 
                                                                 // ✅ CONSOLE LOG ON CONFIG CLICK
-                                                                console.log("🟢 Configuration Payload (Critical Work Function):",
+                                                                console.log("🟢 Configuration Payload (Profile with Skills + CWF + Tasks):",
                                                                     JSON.stringify(payload, null, 2)
                                                                 );
 
@@ -594,10 +576,9 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                                         )}
                                                         <div className="flex justify-between items-start mb-2">
                                                             <h5 className="font-medium text-gray-800 text-base hover:text-blue-600" onClick={async () => {
-                                                                // console.log('clicked skill',skill);
-                                                                        setActiveSkill(parseInt(skill.skill_id || '0'))
-                                                                            setDialogOpen({ ...dialogOpen, view: true });
-                                                                }}>
+                                                                setActiveSkill(parseInt(skill.skill_id || '0'))
+                                                                    setDialogOpen({ ...dialogOpen, view: true });
+                                                            }}>
                                                                 {skill.SkillName}
                                                             </h5>
                                                             {skill.proficiency_level && (
@@ -620,19 +601,37 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                                             <Button className="bg-green-400 text-white hover:bg-green-500 mt-2 w-full" onClick={(e) => {
                                                                 e.stopPropagation();
 
+                                                                // Build comprehensive profile with ALL Skills, CWF, and Tasks
+                                                                // Group tasks by Critical Work Function
+                                                                const tasksByFunctionGrouped = tasksData.reduce((acc, task) => {
+                                                                    const fn = task.critical_work_function || "Uncategorized";
+                                                                    if (!acc[fn]) acc[fn] = [];
+                                                                    acc[fn].push(task.taskName);
+                                                                    return acc;
+                                                                }, {} as Record<string, string[]>);
+
+                                                                // Build complete skills array
+                                                                const allSkills = skillsData.map(s => ({
+                                                                    skillName: s.SkillName,
+                                                                    category: s.category,
+                                                                    sub_category: s.sub_category,
+                                                                    proficiency_level: s.proficiency_level,
+                                                                    description: s.description,
+                                                                    skill_id: s.skill_id
+                                                                }));
+
                                                                 const payload = {
                                                                     industry: sessionData.orgType,
                                                                     department: jobRole.department,
                                                                     jobrole: jobRole.jobrole,
                                                                     description: jobRole.description,
-                                                                    selected_skill: {
-                                                                        skillName: skill.SkillName,
-                                                                        category: skill.category,
-                                                                        sub_category: skill.sub_category,
-                                                                        proficiency_level: skill.proficiency_level,
-                                                                        description: skill.description,
-                                                                        skill_id: skill.skill_id
-                                                                    },
+                                                                    // Include ALL Skills
+                                                                    skills: allSkills,
+                                                                    // Include Critical Work Functions with Tasks mapped under each function
+                                                                    critical_work_functions: Object.entries(tasksByFunctionGrouped).map(([functionName, tasks]) => ({
+                                                                        function: functionName,
+                                                                        tasks: tasks
+                                                                    })),
                                                                     knowledge: mapKabaItems(knowledgeItems),
                                                                     ability: mapKabaItems(abilityItems),
                                                                     attitude: mapKabaItems(attitudeItems),
@@ -640,13 +639,13 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                                                 };
 
                                                                 // ✅ CONSOLE LOG ON CONFIG CLICK
-                                                                console.log("🟢 Configuration Payload (Skill):",
+                                                                console.log("🟢 Configuration Payload (Profile with Skills + CWF + Tasks):",
                                                                     JSON.stringify(payload, null, 2)
                                                                 );
 
                                                                 onConfig(payload);
                                                             }}>
-                                                                Configuration
+                                                                Generate Profile
                                                             </Button>
                                                         )}
                                                     </div>
@@ -704,28 +703,18 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
             </div>
 
 
-            {/* // In your JobDescriptionModal.tsx, update the ViewSkill usage: */}
-
-            {/* {isViewSkillOpen && selectedSkillId && (
-        <ViewSkill
-          skillId={selectedSkillId}
-          formType="user"
-          onClose={handleCloseViewSkill}
-          onSuccess={() => { }}
-          viewMode="kaab-only" // ✅ This will show only KAAB data with proficiency levels
-        />
-      )} */}
-      {dialogOpen.view && activeSkill && (
+            {/* ViewSkill Modal */}
+            {dialogOpen.view && activeSkill && (
                 <ViewSkill
-                  skillId={activeSkill}
-                  formType="user"
-                  onClose={() => {
-                    setDialogOpen({ ...dialogOpen, view: false });
-                    setSelectedSkillId(null);
-                  }}
-                  onSuccess={() => setDialogOpen({ ...dialogOpen, add: false })}
+                    skillId={activeSkill}
+                    formType="user"
+                    onClose={() => {
+                        setDialogOpen({ ...dialogOpen, view: false });
+                        setSelectedSkillId(null);
+                    }}
+                    onSuccess={() => setDialogOpen({ ...dialogOpen, add: false })}
                 />
-              )}
+            )}
         </>
     );
 }

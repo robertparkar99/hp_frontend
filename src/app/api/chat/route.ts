@@ -74,7 +74,80 @@ export async function POST(request: Request) {
         const skillsPattern = /^(?:select\s+(?:my\s+)?)?(?:skills\s+for|jobrole\s+as)\s+(.+)$/i;
         const skillsMatch = query.match(skillsPattern);
         
-        if (departmentMatch && departmentMatch[1]) {
+        // NEW: Job Description Creation intent - show departments directly
+        const createJobDescPatterns = [
+            'create job description',
+            'add job role',
+            'new job description',
+            'create my job',
+            'add new job',
+            'enter job description',
+            'job description',
+            'i want to create job',
+            'create jd'
+        ];
+        const isCreateJobDescIntent = createJobDescPatterns.some(pattern => query.includes(pattern));
+        
+        // NEW: Handle CREATE_JOB_DESCRIPTION intent
+        if (isCreateJobDescIntent) {
+            console.log('[chat] Detected CREATE_JOB_DESCRIPTION intent');
+            try {
+                const subInstituteId = body.subInstituteId || '';
+                const deptUrl = `https://hp.triz.co.in/table_data?table=hrms_departments&filters[sub_institute_id]=${subInstituteId || '3'}&fields=id,department`;
+                const deptResponse = await fetch(deptUrl);
+                if (!deptResponse.ok) throw new Error('Failed to fetch departments');
+                const deptData = await deptResponse.json();
+                let deptList: any[] = [];
+                if (Array.isArray(deptData)) deptList = deptData;
+                else if (deptData.data) deptList = deptData.data;
+                else if (deptData.result) deptList = deptData.result;
+                const selectionOptions = deptList.map((d: any) => ({
+                    id: d.id,
+                    name: d.department || d.department_name || d.name || 'Unknown'
+                }));
+                // Get industry from session data (orgType)
+                const userDataStr = body.userData || '';
+                let industry = '';
+                try {
+                    const userData = JSON.parse(decodeURIComponent(userDataStr));
+                    industry = userData.org_type || '';
+                } catch (e) {
+                    console.log('[chat] Could not parse userData for industry');
+                }
+                result = {
+                    answer: `Your industry is set to ${industry || 'your organization'}. Please select your department.`,
+                    selectionOptions: selectionOptions,
+                    currentStep: 'select_department',
+                    nextStep: 'enter_jobrole',
+                    action: 'SHOW_DEPARTMENT_SELECTION',
+                    metadata: { industry: industry }
+                };
+            } catch (deptError) {
+                console.error('[chat] Error fetching departments:', deptError);
+                result = { answer: "Sorry, couldn't fetch departments.", error: String(deptError) };
+            }
+        } else if (selectedDeptMatch && selectedDeptMatch[1] && body.metadata?.currentStep === 'select_department') {
+            // User selected department from new flow
+            const selectedDepartment = selectedDeptMatch[1].trim();
+            result = {
+                answer: `You have selected ${selectedDepartment}. Please enter the job role for this department.`,
+                currentStep: 'enter_jobrole',
+                nextStep: 'enter_cwfkt',
+                action: 'SHOW_JOBROLE_INPUT',
+                metadata: { department: selectedDepartment }
+            };
+        } else if ((query.startsWith('job role:') || body.metadata?.currentStep === 'enter_jobrole') && !result) {
+            // User entered job role - now ask for CWFKT
+            let enteredJobRole = body.query || '';
+            if (query.startsWith('job role:')) enteredJobRole = query.replace('job role:', '').trim();
+            result = {
+                answer: `Got it. Now, please add Critical Work Functions and Tasks for the role ${enteredJobRole}.`,
+                currentStep: 'enter_cwfkt',
+                nextStep: 'complete',
+                action: 'SHOW_CWFKT_INPUT',
+                metadata: { jobRole: enteredJobRole }
+            };
+        } else if (departmentMatch && departmentMatch[1]) {
             // Extract industry name from the query
             const industry = departmentMatch[1].trim();
             console.log('[chat] Detected department selection pattern, industry:', industry);

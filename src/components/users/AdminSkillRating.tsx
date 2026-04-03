@@ -1297,7 +1297,7 @@ export default function Page({
                         className="border border-gray-300 rounded-lg p-3 sm:p-4 bg-gray-50 shadow-sm"
                       >
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-gray-800 text-sm sm:text-base">
+                          <h3 className="font-semibold text-gray-800 text-sm sm:text-base" ratedSKill={ratedSkill.id}>
                             {ratedSkill.title || ratedSkill.skill || "Untitled Skill"}
                           </h3>
                           <span className="font-medium text-gray-500 flex items-center space-x-1 text-[10px] sm:text-xs">
