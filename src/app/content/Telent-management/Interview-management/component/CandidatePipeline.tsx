@@ -24,28 +24,43 @@ export function CandidatePipeline() {
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
-      setSessionData(JSON.parse(userData));
+      const parsed = JSON.parse(userData);
+      console.log("Session Data:", parsed); // ✅ ADD THIS
+      setSessionData(parsed);
     }
   }, []);
 
   useEffect(() => {
+    if (!sessionData) return; // ✅ wait until sessionData is ready
+
     const fetchPipelineData = async () => {
-      if (!sessionData || !sessionData.APP_URL) return;
       try {
-        const response = await fetch(`${sessionData.APP_URL}/api/candidate-pipeline?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
-        const result = await response.json();
-        if (result.data) {
-          setPipelineData(result.data);
-        }
-      } catch (error) {
-        console.error('Error fetching pipeline data:', error);
-      } finally {
-        setLoading(false);
+      setLoading(true);
+
+      const response = await fetch(
+        `${sessionData.APP_URL}/api/candidate-pipeline?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`
+      );
+
+      const result = await response.json();
+
+      console.log("Pipeline API Response:", result); // ✅ debug
+
+      if (result.data) {
+        setPipelineData(result.data);
+      } else {
+        setPipelineData(null);
+      }
+
+    } catch (error) {
+      console.error("Error fetching pipeline data:", error);
+      setPipelineData(null);
+    } finally {
+        setLoading(false); // ✅ always stop loader
       }
     };
-    fetchPipelineData();
-  }, []);
 
+    fetchPipelineData();
+  }, [sessionData]); // ✅ VERY IMPORTANT
   if (loading) {
     return (
       <Card className="widget-card">
