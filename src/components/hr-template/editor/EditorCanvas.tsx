@@ -55,7 +55,7 @@ export const EditorCanvas = ({ children, activeTool }: { children: React.ReactNo
 
     return (
         <div
-            className="flex-1 overflow-y-auto bg-neutral-100 p-8 h-full flex justify-center"
+            className="w-full overflow-y-auto bg-neutral-100 p-8 h-full flex justify-center"
             onPointerMove={(e) => {
                 (window as any).__craft_mouse_x = e.clientX;
                 (window as any).__craft_mouse_y = e.clientY;
@@ -63,7 +63,7 @@ export const EditorCanvas = ({ children, activeTool }: { children: React.ReactNo
         >
             <div
                 id="editor-canvas"
-                className={`bg-white min-h-[1056px] w-full max-w-[816px] shadow-sm border border-neutral-200 p-6 relative flex flex-col [&>div]:flex-1 ${activeTool && (activeTool !== 'select' && !activeTool.startsWith('draw')) ? 'cursor-crosshair' : ''}`}
+                className={`bg-white min-h-[1056px] w-[816px] flex-shrink-0 shadow-sm border border-neutral-200 p-6 relative flex flex-col [&>div]:flex-1 ${activeTool && (activeTool !== 'select' && !activeTool.startsWith('draw')) ? 'cursor-crosshair' : ''}`}
                 onClick={handleCanvasClick}
             >
                 {children}
