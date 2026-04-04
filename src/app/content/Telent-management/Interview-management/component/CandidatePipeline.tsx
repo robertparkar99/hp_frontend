@@ -82,12 +82,12 @@ export function CandidatePipeline() {
   }
 
   // Calculate percentages based on the first stage count
-  const maxCount = pipelineData.pipeline[0]?.count || 1;
-  const stagesWithPercentage = pipelineData.pipeline.map((stage) => ({
+  const maxCount = pipelineData?.pipeline?.[0]?.count || 1;
+  const stagesWithPercentage = pipelineData?.pipeline?.map((stage) => ({
     ...stage,
     percentage: maxCount > 0 ? (stage.count / maxCount) * 100 : 0,
-    trend: stage.change.startsWith('+') ? 'up' : 'down',
-  }));
+    trend: stage.change?.startsWith('+') ? 'up' : 'down',
+  })) || [];
 
   return (
     <Card className="widget-card">
@@ -129,11 +129,11 @@ export function CandidatePipeline() {
         <div className="pt-4 border-t border-border">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Conversion Rate</span>
-            <span className="font-medium text-foreground">{pipelineData.conversion_rate}</span>
+            <span className="font-medium text-foreground">{pipelineData?.conversion_rate}</span>
           </div>
           <div className="flex justify-between text-sm mt-1">
             <span className="text-muted-foreground">Average Time to Hire</span>
-            <span className="font-medium text-foreground">{pipelineData.average_time_to_hire}</span>
+            <span className="font-medium text-foreground">{pipelineData?.average_time_to_hire}</span>
           </div>
         </div>
       </CardContent>
