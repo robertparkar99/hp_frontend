@@ -61,7 +61,7 @@ interface NewsletterAnalytics {
   created_at: string;
 }
 
-const API_BASE_URL = "https://karan-01-hpgooglecalendar.hf.space/api/newsletter";
+const API_BASE_URL = "https://hp.triz.co.in/api/newsletter";
 const DEFAULT_AGENT_ID = "11111111-1111-1111-1111-111111111111";
 
 export default function NewsLetter() {

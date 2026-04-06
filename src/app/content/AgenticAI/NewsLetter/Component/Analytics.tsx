@@ -27,7 +27,7 @@ interface AnalyticsPageProps {
   onStartOver: () => void;
 }
 
-const API_URL = "https://karan-01-hpgooglecalendar.hf.space/api/newsletter/analytics/11111111-1111-1111-1111-111111111111";
+const API_URL = "https://hp.triz.co.in/api/newsletter/analytics/11111111-1111-1111-1111-111111111111";
 
 export default function AnalyticsPage({ segment, onBack, onStartOver }: AnalyticsPageProps) {
   const [analyticsData, setAnalyticsData] = useState<NewsletterAnalytics[]>([]);

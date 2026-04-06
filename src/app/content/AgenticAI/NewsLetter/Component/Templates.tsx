@@ -146,6 +146,7 @@ const handleCreateTemplate = async () => {
     setCtaText(template.cta_text);
     setCtaLink(template.cta_link);
     setSuccessMessage("Template loaded!");
+    console.log("Selected Template ID:", template.id);
   };
 
   const handleContinue = () => {
