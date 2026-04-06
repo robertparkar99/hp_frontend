@@ -11,7 +11,7 @@ import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
 import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
 import { UserCircle, Search ,AlertCircle} from "lucide-react";
 import Shepherd, { Tour } from "shepherd.js";
-import 'shepherd.js/dist/css/shepherd.css';
+// import 'shepherd.js/dist/css/shepherd.css';
 import Loader from '../../../components/utils/loading'  
 
 import {
@@ -2729,8 +2729,8 @@ export default function Dashboard() {
             />
 
             {/* Assessment List */}
-            <div className="bg-white rounded-lg shadow h-64 sm:h-95 overflow-y-auto hide-scroll" id="tour-assessment-list">
-              {/* Header with + button */}
+            {/* <div className="bg-white rounded-lg shadow h-64 sm:h-95 overflow-y-auto hide-scroll" id="tour-assessment-list">
+
               <div className="sticky top-0 z-10 flex items-center justify-between mb-4 bg-white px-2 pt-2 pb-1 shadow-sm">
                 <h2 className="font-semibold">Assessment List</h2>
                 <button
@@ -2753,16 +2753,16 @@ export default function Dashboard() {
                   return (
                     <div key={index} className={`mb-4 border-l-2 pl-3 ${badgeColors[task.task_type]?.split(" ")[2] || "border-gray-300"
                       }`}>
-                      {/* Badge */}
+
                       <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeColors[task.task_type] || "text-gray-500 bg-gray-100 border-gray-300"
                         }`}>
                         {task.task_type}
                       </span>
 
-                      {/* Title */}
+
                       <p className="mt-2">{task.task_title}</p>
 
-                      {/* Profile */}
+
                       <div className="flex items-center gap-2 mt-2">
                         <img
                           src={
@@ -2796,7 +2796,7 @@ export default function Dashboard() {
               ) : (
                 <p className="text-gray-500 text-sm">No assessments available</p>
               )}
-            </div>
+            </div> */}
             <CreateAssessmentModal
               isOpen={openAssessmentModal}
               onClose={() => setOpenAssessmentModal(false)}

@@ -1,5 +1,5 @@
 import Loader from '@/components/utils/loading';
-import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap, Mail } from 'lucide-react';
+import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap, Mail, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -203,6 +203,23 @@ const agents: Agent[] = [
     outputs: ['AI-Generated Newsletter Content', 'Customizable Templates', 'Subscriber Management', 'Automated Scheduling'],
     cta: 'Launch Newsletter Agent',
     ctaLink: '/content/AgenticAI/NewsLetter/'
+  },
+  {
+    id: 'seo-agent',
+    name: 'SEO Agent',
+    icon: Search,
+    module: 'Marketing → SEO Optimization',
+    summary: 'Optimize website content and structure to improve search engine rankings and organic visibility',
+    function: 'The SEO Agent helps optimize website content for search engines by analyzing keywords, improving content structure, meta tags, and building SEO strategies to increase organic traffic and visibility.',
+    workflow: [
+      'User provides website URL or content to optimize',
+      'Agent analyzes current SEO performance and identifies gaps',
+      'Generates keyword recommendations and content suggestions',
+      'Provides actionable SEO improvements and rankings'
+    ],
+    outputs: ['Keyword Recommendations', 'Content Optimization Tips', 'SEO Score Analysis', 'Competitor Analysis'],
+    cta: 'Launch SEO Agent',
+    ctaLink: '/content/AgenticAI/SEOAgent/'
   }
 ];
 
