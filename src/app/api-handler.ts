@@ -66,6 +66,15 @@ interface ChatResponse {
   nextStep?: string;
   // Job Role Competency - Structured JSON Data
   competencyData?: GenkitCompetencyResponse;
+  courseRecommendations?: Array<{
+    courseName: string;
+    courseId: string | number;
+    courseDescription?: string;
+    courseLink?: string;
+    reasonForRecommendation?: string;
+    createdBy?: string;
+    similarUsers?: string[];
+  }>;
 }
 
 interface SuggestionRequest {
@@ -1403,11 +1412,35 @@ async function handleCourseRecommendationRequest(
     // let answer = 'Function called successfully';
     // await saveMessage(conversationId, 'bot', answer, 'Course_Recommendation');
     // // const recommendations = await courseRecommendationFlow({ userId, subInstituteId });
+    const formattedRecommendations = recommendations.map((course: any) => {
+      const createdByMatch = course.reasonForRecommendation?.match(/Created by: ([^\n]+)/);
+      const similarMatch = course.reasonForRecommendation?.match(/User with Similar Role: ([^\n]+)/);
+
+      return {
+        courseName: course.courseName,
+        courseId: course.courseId,
+        courseDescription: course.courseDescription,
+        courseLink: course.courseLink,
+        reasonForRecommendation: course.reasonForRecommendation,
+        createdBy: createdByMatch?.[1]?.trim() || 'N/A',
+        similarUsers: similarMatch?.[1]
+          ? similarMatch[1]
+              .split(',')
+              .map((name: string) => name.trim())
+              .filter(Boolean)
+          : []
+      };
+    });
+
     return {
-      answer,
+      answer: formattedRecommendations.length > 0
+        ? 'Here are some recommended courses for you.'
+        : answer,
       conversationId,
       intent: 'Course_Recommendation',
       confidence: intent.confidence,
+      action: formattedRecommendations.length > 0 ? 'SHOW_COURSE_RECOMMENDATIONS' : undefined,
+      courseRecommendations: formattedRecommendations,
     };
     
   } catch (error) {
@@ -1642,7 +1675,7 @@ async function callGenkitCompetencyAPI(payload: JobRoleCompetencyPayload): Promi
 
   try {
     // Determine base URL for server-side or client-side
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://hp.triz.co.in';
     const apiUrl = `/api/genkit-job-role`;
     
     // Use absolute URL for server-side, relative for client-side

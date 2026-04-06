@@ -1,7 +1,7 @@
 //
 "use client"
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff, ChevronDown, FileText, Target, Wrench, BookOpen, Zap, Heart, Smile, CheckCircle, Save, TrendingUp } from 'lucide-react';
+import { Send, Bot, User, Users, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff, ChevronDown, FileText, Target, Wrench, BookOpen, Zap, Heart, Smile, CheckCircle, Save, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { submitFeedback } from "@/lib1/feedback-service";
@@ -119,7 +119,65 @@ interface Message {
       department?: string;
       description?: string;
     };
+    courseRecommendations?: Array<{
+      courseName: string;
+      courseId: string | number;
+      courseDescription?: string;
+      courseLink?: string;
+      reasonForRecommendation?: string;
+      createdBy?: string;
+      similarUsers?: string[];
+    }>;
   };
+}
+
+function CourseRecommendationCards({
+  courses
+}: {
+  courses: Array<{
+    courseName: string;
+    courseId: string | number;
+    createdBy?: string;
+    similarUsers?: string[];
+  }>;
+}) {
+  return (
+    <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+      {courses.map((course) => (
+        <div
+          key={course.courseId}
+          className="rounded-2xl border border-blue-100 bg-gradient-to-br from-white via-blue-50/40 to-slate-50 p-4 shadow-sm"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-semibold leading-6 text-gray-900">
+                {course.courseName}
+              </h4>
+              <div className="mt-3 space-y-2 text-xs text-gray-600">
+                <div className="flex items-start gap-2">
+                  <User className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-blue-600" />
+                  <span>
+                    <span className="font-medium text-gray-700">Created By:</span>{' '}
+                    {course.createdBy || 'N/A'}
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Users className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-blue-600" />
+                  <span>
+                    <span className="font-medium text-gray-700">Similar Users:</span>{' '}
+                    {course.similarUsers?.length ? course.similarUsers.join(', ') : 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 interface ChatbotCopilotProps {
@@ -495,7 +553,8 @@ const [sessionData, setSessionData] = useState({
           currentStep: data.currentStep,
           nextStep: data.nextStep,
           // Job Role Competency - Structured JSON Data
-          competencyData: data.competencyData
+          competencyData: data.competencyData,
+          courseRecommendations: data.courseRecommendations
         }
       };
 
@@ -840,7 +899,8 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
           nextStep: data.nextStep,
           // Include job role info from API response metadata
           jobRole: data.metadata?.jobRole || data.jobRole,
-          jobRoleId: data.metadata?.jobRoleId || data.jobRoleId
+          jobRoleId: data.metadata?.jobRoleId || data.jobRoleId,
+          courseRecommendations: data.courseRecommendations
         }
       };
 
@@ -3482,6 +3542,14 @@ ${skillsList}
                     >
                       {message.type === 'bot' && message.metadata?.action === 'SHOW_SKILL_GAP_REPORT' && message.metadata?.skillGapReportData ? (
                         <SkillGapReport {...message.metadata.skillGapReportData} />
+                      ) : message.type === 'bot' && message.metadata?.action === 'SHOW_COURSE_RECOMMENDATIONS' && message.metadata?.courseRecommendations?.length ? (
+                        <div className="w-full min-w-0">
+                          <div className="flex items-center gap-2 text-sm font-medium text-blue-700">
+                            <TrendingUp className="h-4 w-4" />
+                            <span>{message.content}</span>
+                          </div>
+                          <CourseRecommendationCards courses={message.metadata.courseRecommendations} />
+                        </div>
                       ) : message.type === 'bot' && message.metadata?.action === 'SHOW_GENERATED_PROFILE' && message.metadata?.generatedProfile ? (
                         <span></span>
                       ) : (
