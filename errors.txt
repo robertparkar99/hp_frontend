@@ -1,0 +1,322 @@
+next.config.ts(5,3): error TS2353: Object literal may only specify known properties, and 'eslint' does not exist in type 'NextConfig'.
+src/app/content/Dashboard/EditProfile.tsx(149,12): error TS2740: Type '{}' is missing the following properties from type 'userDetailsprops': userDetails, userdepartment, userJobroleLists, userLOR, and 3 more.
+src/app/content/Dashboard/MainScreen.tsx(120,6): error TS2552: Cannot find name 'Loading'. Did you mean 'isLoading'?
+src/app/content/Libraries/levelResponsibilyTourstart.tsx(161,10): error TS2339: Property 'start' does not exist on type 'Promise<Tour>'.
+src/app/content/Libraries/levelResponsibilyTourstart.tsx(164,12): error TS2339: Property 'cancel' does not exist on type 'Promise<Tour>'.
+src/app/content/Libraries/skillLibrary.tsx(105,8): error TS2739: Type '{ tabs: string[]; activeTab: string; onTabChange: Dispatch<SetStateAction<string>>; }' is missing the following properties from type 'TabsMenuProps': openPage, onOpenPage
+src/app/content/Libraries/skillLibrary.tsx(182,15): error TS2322: Type '{ skillId: number; onClose: () => void; onSuccess: () => void; }' is not assignable to type 'IntrinsicAttributes & AddDialogProps'.
+  Property 'skillId' does not exist on type 'IntrinsicAttributes & AddDialogProps'.
+src/app/content/Libraries/skillLibrary1.tsx(251,29): error TS2719: Type 'SkillTree' is not assignable to type 'SkillTree'. Two different types with this name exist, but they are unrelated.
+  'string' index signatures are incompatible.
+    Type '{ [subCategory: string]: SkillItem[]; }' is not assignable to type '{ [subCategory: string]: Skill[]; }'.
+      'string' index signatures are incompatible.
+        Type 'SkillItem[]' is not assignable to type 'Skill[]'.
+          Type 'SkillItem' is not assignable to type 'Skill'.
+            Types of property 'description' are incompatible.
+              Type 'string | undefined' is not assignable to type 'string'.
+                Type 'undefined' is not assignable to type 'string'.
+src/app/content/Libraries/skillLibrary1.tsx(269,20): error TS2322: Type '{ skillId: number; onClose: () => void; onSuccess: () => void; }' is not assignable to type 'IntrinsicAttributes & AddDialogProps'.
+  Property 'skillId' does not exist on type 'IntrinsicAttributes & AddDialogProps'.
+src/app/content/Libraries/skillLibraryV1.tsx(272,8): error TS2741: Property 'sessionData' is missing in type '{ skill: Skill | undefined; isOpen: boolean; onClose: () => void; mode: "view" | "create"; }' but required in type 'SkillModalProps'.
+src/app/content/organization-profile-management/components/AuditTrail.jsx(2,20): error TS1149: File name 'd:/hp_frontend/src/components/ui/Select.tsx' differs from already included file name 'd:/hp_frontend/src/components/ui/select.tsx' only in casing.
+  The file is in the program because:
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/employee/AddUserModal.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/components/AddCourseDialog.jsx'
+    Imported via '../../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/LMS/Assessment-Library/components/CreateAssessmentModal.jsx'
+    Imported via '../ui/Select' from file 'd:/hp_frontend/src/components/searchfileds/SearchFilters.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/PayrollTypeDialog.jsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/AgenticAI/AgentDashboard/Component/Dashboard.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/AgenticAI/CreateAgent/Component/CreateAgent.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/AgenticAI/MarketingStrategy/Component/MarketingStrategy.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Attitude-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Behaviour-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Compentency-Dashboard/Alignment-Standardization.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Compentency-Dashboard/stakeholder-lenses.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/SystemConfiguration.jsx'
+    Imported via '../../../../components/ui/Select' from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/AuditTrail.jsx'
+    Imported via '../../../../components/ui/Select' from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/AuditTrail.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/DisciplinaryManagement.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/EmployeeDirectoryReport/components/dashboard/FilterBar.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/EmployeeSkillCoverage/components/FilterPanel.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/HRIT_Dashboard/DashboardHeader.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/ApplyLeave/applyleave.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Holiday-Master/HolidayMaster.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Leave-Allocation/LeaveAllocation.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Leave-Type/LeaveType.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/My-Leave/MyLeave.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Monthly-Payroll/MonthlyPayroll.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Payroll-Deduction/PayrollDeduction.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Salary-Certificate/Salary-Certificate.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Jobrole-library/jobroleLibrary.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Knowledge_library/page.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/LMS/components/SearchToolbar.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/AddQuestionDialog.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/EditQuestionDialog.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/index.jsx'
+    Imported via "@/components/ui/Select" from file 'd:/hp_frontend/src/components/jobroleComponentV1/components/JobRoleForm.tsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/components/skillComponent/skillComponentV1/components/SkillFilters.jsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/skillComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/ability-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Libraries/Jobrole-task-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/skill-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/OrganizationReport/components/FilterBar.tsx'
+    Imported via '../../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/Reports/employee/components/PaginationControls.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Talent-Acquisition-Dashboard/GlobalFilters.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Talent-onboarding-Dashbaord/GlobalFilters.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Interview-management/component/ScheduleInterview.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Interview-management/component/InterviewPanels.tsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/user/components/SearchAndFilters.jsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/user/components/PaginationControls.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/user/AddUserModal.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/JobPortal/CandidatePortal.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Offer-management/OfferDashboard.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Recruitment-management/components/JobPostingForm.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/components/taskComponent/TaskCard.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/task/activityStream.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/task/taskManagement.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/AbilityComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/AttitudeComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/BehaviourComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/KnowledgeComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/components/taskComponent/TaskActivityStream.tsx'
+    Matched by include pattern '**/*.tsx' in 'd:/hp_frontend/tsconfig.json'
+src/app/content/organization-profile-management/components/AuditTrail.jsx(3,20): error TS1149: File name 'd:/hp_frontend/src/components/ui/Select.tsx' differs from already included file name 'd:/hp_frontend/src/components/ui/select.tsx' only in casing.
+  The file is in the program because:
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/employee/AddUserModal.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/components/AddCourseDialog.jsx'
+    Imported via '../../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/LMS/Assessment-Library/components/CreateAssessmentModal.jsx'
+    Imported via '../ui/Select' from file 'd:/hp_frontend/src/components/searchfileds/SearchFilters.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/PayrollTypeDialog.jsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/AgenticAI/AgentDashboard/Component/Dashboard.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/AgenticAI/CreateAgent/Component/CreateAgent.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/AgenticAI/MarketingStrategy/Component/MarketingStrategy.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Attitude-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Behaviour-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Compentency-Dashboard/Alignment-Standardization.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Compentency-Dashboard/stakeholder-lenses.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/SystemConfiguration.jsx'
+    Imported via '../../../../components/ui/Select' from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/AuditTrail.jsx'
+    Imported via '../../../../components/ui/Select' from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/AuditTrail.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/DisciplinaryManagement.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/EmployeeDirectoryReport/components/dashboard/FilterBar.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/EmployeeSkillCoverage/components/FilterPanel.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/HRIT_Dashboard/DashboardHeader.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/ApplyLeave/applyleave.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Holiday-Master/HolidayMaster.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Leave-Allocation/LeaveAllocation.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Leave-Type/LeaveType.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/My-Leave/MyLeave.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Monthly-Payroll/MonthlyPayroll.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Payroll-Deduction/PayrollDeduction.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Salary-Certificate/Salary-Certificate.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Jobrole-library/jobroleLibrary.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Knowledge_library/page.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/LMS/components/SearchToolbar.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/AddQuestionDialog.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/EditQuestionDialog.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/index.jsx'
+    Imported via "@/components/ui/Select" from file 'd:/hp_frontend/src/components/jobroleComponentV1/components/JobRoleForm.tsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/components/skillComponent/skillComponentV1/components/SkillFilters.jsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/skillComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/ability-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Libraries/Jobrole-task-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/skill-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/OrganizationReport/components/FilterBar.tsx'
+    Imported via '../../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/Reports/employee/components/PaginationControls.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Talent-Acquisition-Dashboard/GlobalFilters.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Talent-onboarding-Dashbaord/GlobalFilters.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Interview-management/component/ScheduleInterview.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Interview-management/component/InterviewPanels.tsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/user/components/SearchAndFilters.jsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/user/components/PaginationControls.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/user/AddUserModal.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/JobPortal/CandidatePortal.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Offer-management/OfferDashboard.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Recruitment-management/components/JobPostingForm.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/components/taskComponent/TaskCard.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/task/activityStream.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/task/taskManagement.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/AbilityComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/AttitudeComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/BehaviourComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/KnowledgeComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/components/taskComponent/TaskActivityStream.tsx'
+    Matched by include pattern '**/*.tsx' in 'd:/hp_frontend/tsconfig.json'
+src/app/content/Reports/employee/userList.tsx(111,8): error TS2741: Property 'userDepartmentLists' is missing in type '{ isOpen: boolean; setIsOpen: Dispatch<SetStateAction<boolean>>; sessionData: { url: string; subInstituteId: string; userId: string; token: string; }; userJobroleLists: any[]; userLOR: any[]; userLists: any[]; }' but required in type '{ isOpen: any; setIsOpen: any; sessionData: any; userJobroleLists: any; userDepartmentLists: any; userLOR: any; userProfiles?: never[] | undefined; userLists: any; }'.
+src/app/content/Telent-management/Employe-Onboarding/components/ProgressCard.tsx(42,38): error TS2322: Type '{ value: number; variant: "warning" | "success" | "default"; }' is not assignable to type 'IntrinsicAttributes & Omit<ProgressProps & RefAttributes<HTMLDivElement>, "ref"> & RefAttributes<HTMLDivElement>'.
+  Property 'variant' does not exist on type 'IntrinsicAttributes & Omit<ProgressProps & RefAttributes<HTMLDivElement>, "ref"> & RefAttributes<HTMLDivElement>'.
+src/app/content/Telent-management/Succession-Planning&Performance-Management/components/Appraisals.tsx(224,29): error TS2322: Type '"success"' is not assignable to type '"link" | "default" | "destructive" | "outline" | "secondary" | "ghost" | null | undefined'.
+src/app/content/Telent-management/Succession-Planning&Performance-Management/components/RoleSelection.tsx(69,21): error TS2322: Type '"gradient"' is not assignable to type '"link" | "default" | "destructive" | "outline" | "secondary" | "ghost" | null | undefined'.
+src/app/content/Telent-management/Succession-Planning&Performance-Management/components/Succession.tsx(110,25): error TS2322: Type '"gradient"' is not assignable to type '"link" | "default" | "destructive" | "outline" | "secondary" | "ghost" | null | undefined'.
+src/app/content/User-Attendance/components/AttendanceList.tsx(386,5): error TS2322: Type '(row: AttendanceRecord, index: number) => number' is not assignable to type 'Selector<AttendanceRecord>'.
+  Types of parameters 'index' and 'rowIndex' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/app/content/user/userList.tsx(111,8): error TS2741: Property 'userDepartmentLists' is missing in type '{ isOpen: boolean; setIsOpen: Dispatch<SetStateAction<boolean>>; sessionData: { url: string; subInstituteId: string; userId: string; token: string; }; userJobroleLists: any[]; userLOR: any[]; userLists: any[]; }' but required in type '{ isOpen: any; setIsOpen: any; sessionData: any; userJobroleLists: any; userDepartmentLists: any; userLOR: any; userProfiles?: never[] | undefined; userLists: any; }'.
+src/app/content/user/usersTabs.tsx(339,20): error TS2741: Property 'setUserRatedSkills' is missing in type '{ skills: any[]; clickedUser: any; userRatedSkills: any[]; userJobroleSkills: any[]; userDetails: any; }' but required in type 'JobroleSkilladd1Props'.
+src/components/jobroleComponent/editDialouge.tsx(135,19): error TS2739: Type '{ editData: any; }' is missing the following properties from type 'Props': selectedDept, selectedJobrole, selectedFunction
+src/components/jobroleComponent2/viewDialouge.tsx(249,19): error TS2322: Type '{ skillId: number; onClose: () => void; onSuccess: () => void; }' is not assignable to type 'IntrinsicAttributes & EditDialogProps'.
+  Property 'skillId' does not exist on type 'IntrinsicAttributes & EditDialogProps'.
+src/components/jobroleComponentV1/components/JobRoleForm.tsx(6,24): error TS1149: File name 'd:/hp_frontend/src/components/ui/Select.tsx' differs from already included file name 'd:/hp_frontend/src/components/ui/select.tsx' only in casing.
+  The file is in the program because:
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/employee/AddUserModal.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/components/AddCourseDialog.jsx'
+    Imported via '../../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/LMS/Assessment-Library/components/CreateAssessmentModal.jsx'
+    Imported via '../ui/Select' from file 'd:/hp_frontend/src/components/searchfileds/SearchFilters.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/PayrollTypeDialog.jsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/AgenticAI/AgentDashboard/Component/Dashboard.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/AgenticAI/CreateAgent/Component/CreateAgent.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/AgenticAI/MarketingStrategy/Component/MarketingStrategy.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Attitude-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Behaviour-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Compentency-Dashboard/Alignment-Standardization.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Compentency-Dashboard/stakeholder-lenses.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/SystemConfiguration.jsx'
+    Imported via '../../../../components/ui/Select' from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/AuditTrail.jsx'
+    Imported via '../../../../components/ui/Select' from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/AuditTrail.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/DisciplinaryManagement.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/EmployeeDirectoryReport/components/dashboard/FilterBar.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/EmployeeSkillCoverage/components/FilterPanel.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/HRIT_Dashboard/DashboardHeader.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/ApplyLeave/applyleave.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Holiday-Master/HolidayMaster.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Leave-Allocation/LeaveAllocation.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Leave-Type/LeaveType.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/My-Leave/MyLeave.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Monthly-Payroll/MonthlyPayroll.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Payroll-Deduction/PayrollDeduction.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Salary-Certificate/Salary-Certificate.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Jobrole-library/jobroleLibrary.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Knowledge_library/page.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/LMS/components/SearchToolbar.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/AddQuestionDialog.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/EditQuestionDialog.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/index.jsx'
+    Imported via "@/components/ui/Select" from file 'd:/hp_frontend/src/components/jobroleComponentV1/components/JobRoleForm.tsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/components/skillComponent/skillComponentV1/components/SkillFilters.jsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/skillComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/ability-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Libraries/Jobrole-task-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/skill-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/OrganizationReport/components/FilterBar.tsx'
+    Imported via '../../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/Reports/employee/components/PaginationControls.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Talent-Acquisition-Dashboard/GlobalFilters.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Talent-onboarding-Dashbaord/GlobalFilters.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Interview-management/component/ScheduleInterview.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Interview-management/component/InterviewPanels.tsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/user/components/SearchAndFilters.jsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/user/components/PaginationControls.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/user/AddUserModal.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/JobPortal/CandidatePortal.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Offer-management/OfferDashboard.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Recruitment-management/components/JobPostingForm.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/components/taskComponent/TaskCard.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/task/activityStream.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/task/taskManagement.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/AbilityComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/AttitudeComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/BehaviourComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/KnowledgeComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/components/taskComponent/TaskActivityStream.tsx'
+    Matched by include pattern '**/*.tsx' in 'd:/hp_frontend/tsconfig.json'
+src/components/page.tsx(1,28): error TS2307: Cannot find module '@' or its corresponding type declarations.
+src/components/searchfileds/SearchFilters.jsx(5,20): error TS1149: File name 'd:/hp_frontend/src/components/ui/Select.tsx' differs from already included file name 'd:/hp_frontend/src/components/ui/select.tsx' only in casing.
+  The file is in the program because:
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/employee/AddUserModal.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/components/AddCourseDialog.jsx'
+    Imported via '../../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/LMS/Assessment-Library/components/CreateAssessmentModal.jsx'
+    Imported via '../ui/Select' from file 'd:/hp_frontend/src/components/searchfileds/SearchFilters.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/PayrollTypeDialog.jsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/AgenticAI/AgentDashboard/Component/Dashboard.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/AgenticAI/CreateAgent/Component/CreateAgent.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/AgenticAI/MarketingStrategy/Component/MarketingStrategy.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Attitude-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Behaviour-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Compentency-Dashboard/Alignment-Standardization.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Compentency-Dashboard/stakeholder-lenses.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/SystemConfiguration.jsx'
+    Imported via '../../../../components/ui/Select' from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/AuditTrail.jsx'
+    Imported via '../../../../components/ui/Select' from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/AuditTrail.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/organization-profile-management/components/DisciplinaryManagement.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/EmployeeDirectoryReport/components/dashboard/FilterBar.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/EmployeeSkillCoverage/components/FilterPanel.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/HRIT_Dashboard/DashboardHeader.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/ApplyLeave/applyleave.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Holiday-Master/HolidayMaster.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Leave-Allocation/LeaveAllocation.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/Leave-Type/LeaveType.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Leave-Management/My-Leave/MyLeave.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Monthly-Payroll/MonthlyPayroll.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Payroll-Deduction/PayrollDeduction.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/HRMS/Payroll/Salary-Certificate/Salary-Certificate.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Jobrole-library/jobroleLibrary.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Knowledge_library/page.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/LMS/components/SearchToolbar.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/AddQuestionDialog.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/EditQuestionDialog.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/LMS/questionBank/index.jsx'
+    Imported via "@/components/ui/Select" from file 'd:/hp_frontend/src/components/jobroleComponentV1/components/JobRoleForm.tsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/components/skillComponent/skillComponentV1/components/SkillFilters.jsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/skillComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/ability-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Libraries/Jobrole-task-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/skill-library/page.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Reports/OrganizationReport/components/FilterBar.tsx'
+    Imported via '../../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/Reports/employee/components/PaginationControls.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Talent-Acquisition-Dashboard/GlobalFilters.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Talent-onboarding-Dashbaord/GlobalFilters.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Interview-management/component/ScheduleInterview.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Interview-management/component/InterviewPanels.tsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/user/components/SearchAndFilters.jsx'
+    Imported via '../../../../components/ui/select' from file 'd:/hp_frontend/src/app/content/user/components/PaginationControls.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/user/AddUserModal.jsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/JobPortal/CandidatePortal.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Offer-management/OfferDashboard.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/Telent-management/Recruitment-management/components/JobPostingForm.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/components/taskComponent/TaskCard.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/app/content/task/activityStream.tsx'
+    Imported via "@/components/ui/select" from file 'd:/hp_frontend/src/app/content/task/taskManagement.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/AbilityComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/AttitudeComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/BehaviourComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '../../../ui/select' from file 'd:/hp_frontend/src/components/KnowledgeComponent/skillComponentV1/components/SkillModal.tsx'
+    Imported via '@/components/ui/select' from file 'd:/hp_frontend/src/components/taskComponent/TaskActivityStream.tsx'
+    Matched by include pattern '**/*.tsx' in 'd:/hp_frontend/tsconfig.json'
+src/components/SideMenu/ChatbotCopilot.tsx(853,11): error TS2353: Object literal may only specify known properties, and 'cwfktData' does not exist in type '{ sql?: string | undefined; tablesUsed?: string[] | undefined; insights?: string | undefined; canEscalate?: boolean | undefined; intent?: string | undefined; action?: string | undefined; ... 9 more ...; skillGapReportData?: { ...; } | undefined; }'.
+src/components/SideMenu/ChatbotCopilot.tsx(879,24): error TS2304: Cannot find name 'addingTask'.
+src/components/SideMenu/ChatbotCopilot.tsx(880,68): error TS2304: Cannot find name 'setAddingTask'.
+src/components/SideMenu/ChatbotCopilot.tsx(897,11): error TS2304: Cannot find name 'addingTask'.
+src/components/SideMenu/LeftSideMenu.tsx(317,24): error TS2322: Type '{ UserProfileProp: { url: string; token: string; orgType: string; subInstituteId: string; userId: string; userProfile: string; userimage: string; firstName: string; lastName: string; }; onClick: () => void; }' is not assignable to type 'IntrinsicAttributes & UserProfileProps'.
+  Property 'UserProfileProp' does not exist on type 'IntrinsicAttributes & UserProfileProps'.
+src/components/skillComponent/addTreeView.tsx(364,20): error TS2322: Type '{ skillId: number | null; onClose: () => void; onSuccess: () => void; }' is not assignable to type 'IntrinsicAttributes & AddDialogProps'.
+  Property 'skillId' does not exist on type 'IntrinsicAttributes & AddDialogProps'.
+src/components/skillComponent/tableView.tsx(155,28): error TS2322: Type '{ skillId: null; onClose: () => void; onSuccess: () => void; }' is not assignable to type 'IntrinsicAttributes & AddDialogProps'.
+  Property 'skillId' does not exist on type 'IntrinsicAttributes & AddDialogProps'.
+src/components/skillComponent/treeView.tsx(196,20): error TS2322: Type '{ skillId: number; onClose: () => void; onSuccess: () => void; }' is not assignable to type 'IntrinsicAttributes & AddDialogProps'.
+  Property 'skillId' does not exist on type 'IntrinsicAttributes & AddDialogProps'.
+src/components/ui/calendar.tsx(55,9): error TS2353: Object literal may only specify known properties, and 'IconLeft' does not exist in type 'Partial<CustomComponents>'.
+src/components/ui/carousel.tsx(4,8): error TS2307: Cannot find module 'embla-carousel-react' or its corresponding type declarations.
+src/components/ui/chart.tsx(117,7): error TS2339: Property 'payload' does not exist on type 'Omit<Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; includeHidden?: boolean | undefined; ... 17 more ...; axisId?: AxisId | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }, "ref">'.
+src/components/ui/chart.tsx(122,7): error TS2339: Property 'label' does not exist on type 'Omit<Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; includeHidden?: boolean | undefined; ... 17 more ...; axisId?: AxisId | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }, "ref">'.
+src/components/ui/chart.tsx(186,25): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/ui/chart.tsx(186,31): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/ui/chart.tsx(262,41): error TS2344: Type '"payload" | "verticalAlign"' does not satisfy the constraint '"string" | "display" | "filter" | "fill" | "values" | "key" | "role" | "d" | "k" | "r" | "x" | "y" | "z" | "type" | "name" | "children" | "min" | "max" | "id" | "content" | "path" | ... 425 more ... | "portal"'.
+  Type '"payload"' is not assignable to type '"string" | "display" | "filter" | "fill" | "values" | "key" | "role" | "d" | "k" | "r" | "x" | "y" | "z" | "type" | "name" | "children" | "min" | "max" | "id" | "content" | "path" | ... 425 more ... | "portal"'.
+src/components/ui/chart.tsx(273,19): error TS2339: Property 'length' does not exist on type '{}'.
+src/components/ui/chart.tsx(286,18): error TS2339: Property 'map' does not exist on type '{}'.
+src/components/ui/chart.tsx(286,23): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/ui/drawer.tsx(2,43): error TS2307: Cannot find module 'vaul' or its corresponding type declarations.
+src/components/ui/form.tsx(11,8): error TS2307: Cannot find module 'react-hook-form' or its corresponding type declarations.
+src/components/ui/input-otp.tsx(2,43): error TS2307: Cannot find module 'input-otp' or its corresponding type declarations.
+src/components/ui/input-otp.tsx(36,44): error TS18046: 'inputOTPContext' is of type 'unknown'.
+src/components/ui/resizable.tsx(2,37): error TS2307: Cannot find module 'react-resizable-panels' or its corresponding type declarations.
+src/components/ui/sonner.tsx(1,26): error TS2307: Cannot find module 'next-themes' or its corresponding type declarations.
+src/components/ui/sonner.tsx(2,35): error TS2307: Cannot find module 'sonner' or its corresponding type declarations.
+src/components/users/SkillGapReport.tsx(53,15): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/components/users/SkillGapReport.tsx(54,15): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/components/users/SkillGapReport.tsx(62,15): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/components/users/SkillGapReport.tsx(63,15): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/components/users/skillRatingOld.tsx(509,9): error TS2322: Type '{ skills: Skill[]; userRatedSkills: any[]; SkillLevels: ProficiencyLevel[]; userJobroleSkills: any; }' is not assignable to type 'IntrinsicAttributes & JobroleSkilladd1Props'.
+  Property 'skills' does not exist on type 'IntrinsicAttributes & JobroleSkilladd1Props'.
+src/components/users/skillRatingOld.tsx(552,15): error TS2322: Type '{ skills: Skill[]; userRatedSkills: any[]; SkillLevels: ProficiencyLevel[]; userJobroleSkills: any; }' is not assignable to type 'IntrinsicAttributes & JobroleSkilladd1Props'.
+  Property 'skills' does not exist on type 'IntrinsicAttributes & JobroleSkilladd1Props'.

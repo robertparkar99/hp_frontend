@@ -115,6 +115,10 @@ const intentPatterns: Record<QueryIntent, string[]> = {
 // ================= ENTITY EXTRACTION =================
 
 export function extractEntities(query: string): ExtractedEntities {
+  if (!query || typeof query !== 'string') {
+    return {};
+  }
+
   const entities: ExtractedEntities = {};
   const lowerQuery = query.toLowerCase();
 
@@ -183,6 +187,14 @@ export function classifyIntent(
   query: string,
   conversationHistory?: Array<{ role: string; content: string }>
 ): IntentClassificationResult {
+  if (!query || typeof query !== 'string') {
+    return {
+      intent: 'unclear',
+      confidence: 0.1,
+      reasoning: 'No query provided or query is not a valid string'
+    };
+  }
+
   const lowerQuery = query.toLowerCase();
 
   // First check for JOB_ROLE_COMPETENCY patterns (high specificity)

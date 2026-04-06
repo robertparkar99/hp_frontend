@@ -26,6 +26,14 @@ const suspiciousKeywords = [
 ];
 
 export function sanitizeQuery(query: string): SanitizationResult {
+  if (!query || typeof query !== 'string') {
+    return {
+      isClean: true,
+      threats: [],
+      cleanedQuery: ''
+    };
+  }
+
   const threats: string[] = [];
   let cleanedQuery = query;
 

@@ -1,4 +1,3 @@
-
 import { classifyIntent, shouldRouteToAction, shouldUseFallback,extractEntities } from "@/lib1/intent-classifier";
 import { sanitizeQuery, validateQuerySafety } from "@/lib1/sanitizer";
 import { parseError, formatErrorResponse, shouldRetry } from "@/lib1/error-handler";
@@ -65,6 +64,17 @@ interface ChatResponse {
   stepLabel?: string;
   currentStep?: string;
   nextStep?: string;
+  // Job Role Competency - Structured JSON Data
+  competencyData?: GenkitCompetencyResponse;
+  courseRecommendations?: Array<{
+    courseName: string;
+    courseId: string | number;
+    courseDescription?: string;
+    courseLink?: string;
+    reasonForRecommendation?: string;
+    createdBy?: string;
+    similarUsers?: string[];
+  }>;
 }
 
 interface SuggestionRequest {
@@ -155,7 +165,7 @@ interface IntentClassificationResult {
 }
 
 interface GenkitCompetencyResponse {
-  CWFKT: Array<{
+  cwf_items: Array<{
     critical_work_function: string;
     key_tasks: string[];
   }>;
@@ -164,22 +174,25 @@ interface GenkitCompetencyResponse {
     description: string;
     category: string;
     sub_category: string;
-    proficiency_level: number;
+    level: number;
   }>;
   knowledge: Array<{
     title: string;
+    description?: string;
     category: string;
     sub_category: string;
     level: number;
   }>;
   ability: Array<{
     title: string;
+    description?: string;
     category: string;
     sub_category: string;
     level: number;
   }>;
   attitude: Array<{
     title: string;
+    description?: string;
     category: string;
     sub_category: string;
     level: number;
@@ -190,6 +203,8 @@ interface GenkitCompetencyResponse {
     sub_category: string;
     level: number;
   }>;
+  department?: string;
+  description?: string;
 }
 
 let debugModeEnabled = false;
@@ -886,6 +901,16 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
     enableDebugMode();
   }
 
+  // Validate query before proceeding
+  if (!request.query || typeof request.query !== 'string') {
+    return {
+      answer: 'Please provide a valid query.',
+      intent: 'unclear',
+      confidence: 0.1,
+      error: 'Invalid query - missing or not a string'
+    };
+  }
+
   const conversationId = await ensureConversation(request);
   const intent = classifyIntent(request.query, request.conversationHistory);
   const entities = extractEntities(request.query);
@@ -1254,7 +1279,7 @@ async function handleJobRoleCompetencyRequest(
       intent: 'JOB_ROLE_COMPETENCY',
       confidence: intent.confidence,
       entities: extractedEntities,
-      action: 'SHOW_GENKIT_FORM',
+      action: 'SHOW_CWFKT_INPUT',
       missingFields,
       recoverable: true,
       suggestion: 'Please provide the missing details to generate the competency profile.',
@@ -1265,7 +1290,7 @@ async function handleJobRoleCompetencyRequest(
   try {
     const competencyData = await callGenkitCompetencyAPI(payload);
 
-    // Generate human-readable response
+    // Generate human-readable response (for fallback/display)
     const answer = formatCompetencyResponse(competencyData, payload.jobRole);
 
     // Generate contextual follow-ups (Phase 6)
@@ -1291,6 +1316,8 @@ async function handleJobRoleCompetencyRequest(
       action: 'SHOW_GENKIT_RESPONSE',
       suggestion: followUps.join(' OR '),
       canEscalate: true,
+      // Include structured JSON data for UI rendering
+      competencyData,
     };
   } catch (error) {
     const errorMessage = `Failed to generate competency profile: ${(error as Error).message}`;
@@ -1385,11 +1412,35 @@ async function handleCourseRecommendationRequest(
     // let answer = 'Function called successfully';
     // await saveMessage(conversationId, 'bot', answer, 'Course_Recommendation');
     // // const recommendations = await courseRecommendationFlow({ userId, subInstituteId });
+    const formattedRecommendations = recommendations.map((course: any) => {
+      const createdByMatch = course.reasonForRecommendation?.match(/Created by: ([^\n]+)/);
+      const similarMatch = course.reasonForRecommendation?.match(/User with Similar Role: ([^\n]+)/);
+
+      return {
+        courseName: course.courseName,
+        courseId: course.courseId,
+        courseDescription: course.courseDescription,
+        courseLink: course.courseLink,
+        reasonForRecommendation: course.reasonForRecommendation,
+        createdBy: createdByMatch?.[1]?.trim() || 'N/A',
+        similarUsers: similarMatch?.[1]
+          ? similarMatch[1]
+              .split(',')
+              .map((name: string) => name.trim())
+              .filter(Boolean)
+          : []
+      };
+    });
+
     return {
-      answer,
+      answer: formattedRecommendations.length > 0
+        ? 'Here are some recommended courses for you.'
+        : answer,
       conversationId,
       intent: 'Course_Recommendation',
       confidence: intent.confidence,
+      action: formattedRecommendations.length > 0 ? 'SHOW_COURSE_RECOMMENDATIONS' : undefined,
+      courseRecommendations: formattedRecommendations,
     };
     
   } catch (error) {
@@ -1624,7 +1675,7 @@ async function callGenkitCompetencyAPI(payload: JobRoleCompetencyPayload): Promi
 
   try {
     // Determine base URL for server-side or client-side
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://hp.triz.co.in';
     const apiUrl = `/api/genkit-job-role`;
     
     // Use absolute URL for server-side, relative for client-side
@@ -1670,9 +1721,9 @@ function formatCompetencyResponse(data: GenkitCompetencyResponse, jobRole: strin
   let response = `## Competency Framework for ${jobRole}\n\n`;
 
   // Critical Work Functions and Key Tasks
-  if (data.CWFKT && data.CWFKT.length > 0) {
+  if (data.cwf_items && data.cwf_items.length > 0) {
     response += `### 🔑 Critical Work Functions & Key Tasks\n\n`;
-    data.CWFKT.forEach(cwfkt => {
+    data.cwf_items.forEach(cwfkt => {
       response += `**${cwfkt.critical_work_function}**\n`;
       cwfkt.key_tasks.forEach(task => {
         response += `- ${task}\n`;
@@ -1686,7 +1737,7 @@ function formatCompetencyResponse(data: GenkitCompetencyResponse, jobRole: strin
     response += `### 💡 Skills (Proficiency Levels 1-6)\n\n`;
     data.skills.forEach(skill => {
       response += `- **${skill.title}** (${skill.category} → ${skill.sub_category})\n`;
-      response += `  Level ${skill.proficiency_level}: ${skill.description}\n\n`;
+      response += `  Level ${skill.level}: ${skill.description || 'N/A'}\n\n`;
     });
   }
 
@@ -1831,7 +1882,6 @@ async function handleCreateJobDescriptionAction(
     };
   }
 }
-
 const JDprompt = (
   Department: string,
   JobRole: string,
@@ -2163,6 +2213,7 @@ export async function handleCreateJobDescription({ industry,
     throw error;  // Re-throw for upstream handling
   }
 }
+
 
 export async function handleEscalation(
   conversationId: string,
