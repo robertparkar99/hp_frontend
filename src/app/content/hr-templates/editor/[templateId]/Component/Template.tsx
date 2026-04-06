@@ -18,10 +18,12 @@ import { DrawingBlock } from "../../../../../../components/hr-template/blocks/Dr
 import { LineBlock } from "../../../../../../components/hr-template/blocks/LineBlock";
 import { FloatingToolbar, WhiteboardTool } from "../../../../../../components/hr-template/editor/FloatingToolbar";
 import { JsonPreviewPanel } from "../../../../../../components/hr-template/editor/JsonPreviewPanel";
-import { TemplateService } from "../../../../../../core/services/TemplateService";
-import { LocalStorageAdapter } from "../../../../../../infrastructure/adapters/LocalStorageAdapter";
 
-const templateService = new TemplateService(new LocalStorageAdapter());
+interface SessionData {
+    url?: string;
+    token?: string;
+    sub_institute_id?: string;
+}
 
 export default function EditorPage({ params }: { params: Promise<{ templateId: string }> }) {
     const unwrappedParams = React.use(params);
@@ -31,9 +33,17 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
     const [toolboxTab, setToolboxTab] = useState<string | null>(null);
     const [activeTool, setActiveTool] = useState<WhiteboardTool>('select');
     const [isFloatingToolbarVisible, setIsFloatingToolbarVisible] = useState(true);
+    const [sessionData, setSessionData] = useState<SessionData>({});
 
     useEffect(() => {
         setMounted(true);
+        if (typeof window !== "undefined") {
+            const userData = localStorage.getItem("userData");
+            if (userData) {
+                const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+                setSessionData({ url: APP_URL, token, sub_institute_id });
+            }
+        }
     }, []);
 
     if (!mounted) {
@@ -64,7 +74,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
                             />
                         )}
                         <EditorCanvas activeTool={activeTool}>
-                            <FrameLoader templateId={templateId} />
+                            <FrameLoader templateId={templateId} sessionData={sessionData} />
                         </EditorCanvas>
 
                         <SettingsPanel />
@@ -77,7 +87,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
     );
 }
 
-function FrameLoader({ templateId }: { templateId: string }) {
+function FrameLoader({ templateId, sessionData }: { templateId: string; sessionData: SessionData }) {
     const { actions } = useEditor();
     const [loaded, setLoaded] = useState(false);
 
@@ -87,20 +97,35 @@ function FrameLoader({ templateId }: { templateId: string }) {
 
         (async () => {
             try {
-                const template = await templateService.getTemplate(templateId);
-                const hasExistingData = template && template.schema && template.schema !== "{}" && template.schema !== '""' && template.schema.length > 2;
+                if (!sessionData.url || !sessionData.token) {
+                    setLoaded(true);
+                    return;
+                }
 
-                if (hasExistingData && isMounted) {
-                    // Use setTimeout to defer deserialization until after mount
-                    timeoutId = setTimeout(() => {
-                        if (isMounted) {
-                            try {
-                                actions.deserialize(template.schema);
-                            } catch (err) {
-                                console.error("Failed to deserialize template:", err);
-                            }
+                const response = await fetch(
+                    `${sessionData.url}/api/templates/${templateId}`,
+                    {
+                        headers: {
+                            "Authorization": `Bearer ${sessionData.token}`
                         }
-                    }, 100);
+                    }
+                );
+
+                if (response.ok && isMounted) {
+                    const template = await response.json();
+                    const content = template.content;
+
+                    if (content && content !== "{}" && content !== '""' && content.length > 2) {
+                        timeoutId = setTimeout(() => {
+                            if (isMounted) {
+                                try {
+                                    actions.deserialize(content);
+                                } catch (err) {
+                                    console.error("Failed to deserialize template:", err);
+                                }
+                            }
+                        }, 100);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to load schema", err);
@@ -113,7 +138,7 @@ function FrameLoader({ templateId }: { templateId: string }) {
             isMounted = false;
             if (timeoutId) clearTimeout(timeoutId);
         };
-    }, [templateId, actions]);
+    }, [templateId, sessionData, actions]);
 
     if (!loaded) return <div className="p-8 text-center text-muted-foreground flex justify-center items-center h-full">Loading workspace...</div>;
 

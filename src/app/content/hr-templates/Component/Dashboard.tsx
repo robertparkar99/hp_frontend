@@ -4,46 +4,76 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, FileText, Trash2, Edit } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
-import { TemplateService } from "../../../../core/services/TemplateService";
-import { LocalStorageAdapter } from "../../../../infrastructure/adapters/LocalStorageAdapter";
-import { Template } from "../../../../core/models/Template";
 import { v4 as uuidv4 } from "uuid";
 
-const templateService = new TemplateService(new LocalStorageAdapter());
+interface SessionData {
+    url?: string;
+    token?: string;
+    sub_institute_id?: string;
+}
+
+interface ApiTemplate {
+    id: number;
+    name: string;
+    content: string;
+    status: string;
+    sub_institute_id: number;
+}
 
 export default function DashboardTemplatesPage() {
     const router = useRouter();
-    const [templates, setTemplates] = useState<Template[]>([]);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editValue, setEditValue] = useState("");
+    const [templates, setTemplates] = useState<ApiTemplate[]>([]);
+    const [sessionData, setSessionData] = useState<SessionData>({});
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const userData = localStorage.getItem("userData");
+            if (userData) {
+                const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+                setSessionData({ url: APP_URL, token, sub_institute_id });
+            }
+        }
+    }, []);
 
     const loadTemplates = async () => {
-        const data = await templateService.getAllTemplates();
-        setTemplates(data);
+        try {
+            const response = await fetch(
+                `${sessionData.url}/api/templates?sub_institute_id=${sessionData.sub_institute_id}`,
+                {
+                    headers: {
+                        "Authorization": `Bearer ${sessionData.token}`
+                    }
+                }
+            );
+            if (response.ok) {
+                const data = await response.json();
+                setTemplates(data);
+            }
+        } catch (error) {
+            console.error("Failed to load templates:", error);
+        }
     };
 
     useEffect(() => {
-        loadTemplates();
-    }, []);
+        if (sessionData.url && sessionData.token) {
+            loadTemplates();
+        }
+    }, [sessionData]);
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: number) => {
         if (confirm("Are you sure you want to delete this template?")) {
-            await templateService.deleteTemplate(id);
-            loadTemplates();
+            try {
+                await fetch(`${sessionData.url}/api/templates/${id}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${sessionData.token}`
+                    }
+                });
+                loadTemplates();
+            } catch (error) {
+                console.error("Failed to delete template:", error);
+            }
         }
-    };
-
-    const handleRename = async (id: string) => {
-        if (editValue.trim()) {
-            await templateService.updateTemplate(id, { name: editValue.trim() });
-            setEditingId(null);
-            loadTemplates();
-        }
-    };
-
-    const startEditing = (template: Template) => {
-        setEditingId(template.id);
-        setEditValue(template.name);
     };
 
     return (
@@ -78,41 +108,8 @@ export default function DashboardTemplatesPage() {
                     {templates.map((template) => (
                         <div key={template.id} className="bg-white border rounded-lg hover:shadow-md transition-shadow overflow-hidden">
                             <div className="p-6">
-                                {editingId === template.id ? (
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            value={editValue}
-                                            onChange={(e) => setEditValue(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') handleRename(template.id);
-                                                if (e.key === 'Escape') setEditingId(null);
-                                            }}
-                                            className="flex-1 px-2 py-1 text-sm border border-sky-500 rounded outline-none"
-                                            autoFocus
-                                        />
-                                        <button
-                                            onClick={() => handleRename(template.id)}
-                                            className="px-2 py-1 text-xs bg-sky-500 text-white rounded hover:bg-sky-600"
-                                        >
-                                            Save
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-medium text-lg truncate mb-1 flex-1" title={template.name}>{template.name}</h3>
-                                            <button
-                                                onClick={() => startEditing(template)}
-                                                className="text-muted-foreground hover:text-foreground p-1"
-                                                title="Rename"
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                        <span className="text-xs text-muted-foreground">ID: {template.id.split("-")[0]}</span>
-                                    </>
-                                )}
+                                <h3 className="font-medium text-lg truncate mb-1" title={template.name}>{template.name}</h3>
+                                <span className="text-xs text-muted-foreground">ID: {template.id}</span>
 
                                 <div className="flex space-x-2 mt-4">
                                     <Link

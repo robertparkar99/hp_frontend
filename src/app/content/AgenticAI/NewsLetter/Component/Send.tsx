@@ -35,6 +35,7 @@ interface NewsletterTemplate {
   cta_text: string;
   cta_link: string;
   segment: string;
+  template_id?: string;
 }
 
 interface Newsletter {
@@ -51,13 +52,23 @@ interface SendPageProps {
   showFullPage?: boolean;
   onNext: () => void;
   onBack: () => void;
+  templateId?: string;
+}
+interface SessionData {
+  url?: string;
+  token?: string;
+  sub_institute_id?: string;
+  org_type?: string;
+  user_id?: string;
 }
 
 const API_BASE_URL = "https://karan-01-hpgooglecalendar.hf.space/api/newsletter";
+// const LOCAL_API_URL = "http://127.0.0.1:8000/api/newsletter";
 const newsletter_agent_id = "11111111-1111-1111-1111-111111111111";
 
-export default function SendPage({ segment, newsletter, template, showFullPage = false, onNext, onBack }: SendPageProps) {
+export default function SendPage({ segment, newsletter, template, showFullPage = false, onNext, onBack, templateId }: SendPageProps) {
   const router = useRouter();
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(templateId || template?.id || "");
   const [sendImmediately, setSendImmediately] = useState(true);
   const [scheduledTime, setScheduledTime] = useState("");
   const [subjectOverride, setSubjectOverride] = useState("");
@@ -69,6 +80,18 @@ export default function SendPage({ segment, newsletter, template, showFullPage =
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [sendHistory, setSendHistory] = useState<SendRecord[]>([]);
   const [selectedHistory, setSelectedHistory] = useState<SendRecord | null>(null);
+  const [sessionData, setSessionData] = useState<SessionData>({});
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        const { APP_URL, token, sub_institute_id, org_type, user_id } =
+          JSON.parse(userData);
+        setSessionData({ url: APP_URL, token, sub_institute_id, org_type, user_id });
+      }
+    }
+  }, []);
 
   const fetchSendHistory = async () => {
     try {
@@ -82,94 +105,123 @@ export default function SendPage({ segment, newsletter, template, showFullPage =
 
   useEffect(() => {
     fetchSendHistory();
-  }, []);
+    const id = selectedTemplateId || template?.id || templateId || "";
+    console.log("Selected Template ID:", id);
+  }, [selectedTemplateId, template?.id, templateId]);
 
-const handleSend = async () => {
-  if (!segment) {
-    setErrorMessage("Segment is required");
-    return;
-  }
-
-  if (!sendImmediately && !scheduledTime) {
-    setErrorMessage("Please select a scheduled time");
-    return;
-  }
-
-  if (testMode && !testEmails.trim()) {
-    setErrorMessage("Please enter test emails");
-    return;
-  }
-
-  // ✅ 🔥 ADD HERE (real emails validation)
-if (!testMode && !emails.trim()) {
-  setErrorMessage("Please enter emails");
-  return;
-}
-
-  setErrorMessage("");
-  setSuccessMessage("");
-  setIsProcessing(true);
-
-  try {
-    let scheduledTimeISO = null;
-
-    if (!sendImmediately && scheduledTime) {
-      scheduledTimeISO = new Date(scheduledTime).toISOString();
+  const handleSend = async () => {
+    if (!segment) {
+      setErrorMessage("Segment is required");
+      return;
     }
 
-    // ✅ FIXED email parsing
-const parsedTestEmails = testEmails
-  .split(",")
-  .map(e => e.trim())
-  .filter(e => e !== "");
-
-const parsedEmails = emails
-  .split(",")
-  .map(e => e.trim())
-  .filter(e => e !== "");
-    // ✅ CORRECT PAYLOAD
- const payload = {
-  newsletter_agent_id: newsletter_agent_id,
-  segment: segment,
-  subject_override: subjectOverride || null,
-  send_immediately: sendImmediately,
-  scheduled_time: scheduledTimeISO,
-  test_mode: testMode,
-
-  // ✅ correct mapping
-  emails: testMode ? [] : parsedEmails,
-  test_emails: testMode ? parsedTestEmails : [],
-};
-
-    console.log("SEND PAYLOAD:", payload);
-
-    const res = await fetch(`${API_BASE_URL}/send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      setSuccessMessage(testMode ? "Test sent!" : "Newsletter sent!");
-      fetchSendHistory();
-    } else {
-      setErrorMessage(
-        data?.detail?.[0]?.msg ||
-        data?.message ||
-        "Failed to send"
-      );
+    if (!sendImmediately && !scheduledTime) {
+      setErrorMessage("Please select a scheduled time");
+      return;
     }
 
-  } catch (e: any) {
-    setErrorMessage(e.message);
-  }
+    if (testMode && !testEmails.trim()) {
+      setErrorMessage("Please enter test emails");
+      return;
+    }
 
-  setIsProcessing(false);
-};
+    // ✅ 🔥 ADD HERE (real emails validation)
+    if (!testMode && !emails.trim()) {
+      setErrorMessage("Please enter emails");
+      return;
+    }
+
+    setErrorMessage("");
+    setSuccessMessage("");
+    setIsProcessing(true);
+
+    try {
+      let scheduledTimeISO = null;
+
+      if (!sendImmediately && scheduledTime) {
+        scheduledTimeISO = new Date(scheduledTime).toISOString();
+      }
+
+      const parsedTestEmails = testEmails
+        .split(",")
+        .map(e => e.trim())
+        .filter(e => e !== "");
+
+      const parsedEmails = emails
+        .split(",")
+        .map(e => e.trim())
+        .filter(e => e !== "");
+
+      const payload = {
+        newsletter_agent_id: newsletter_agent_id,
+        segment: segment,
+        subject_override: subjectOverride || null,
+        send_immediately: sendImmediately,
+        scheduled_time: scheduledTimeISO,
+        test_mode: testMode,
+        template_id: selectedTemplateId || template?.id || templateId || "",
+        body: template?.body || "",
+        cta_text: template?.cta_text || "",
+        cta_link: template?.cta_link || "",
+        emails: testMode ? [] : parsedEmails,
+        test_emails: testMode ? parsedTestEmails : [],
+      };
+
+      console.log("SEND PAYLOAD:", payload);
+
+      // // ✅ 1st API (LOCAL API - send email)
+      const localRes = await fetch(`${API_BASE_URL}/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const localData = await localRes.json();
+      console.log("LOCAL API RESPONSE:", localData);
+
+      if (!localRes.ok) {
+        setErrorMessage(
+          localData?.detail?.[0]?.msg ||
+          localData?.message ||
+          "Failed to send via local API"
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      // ✅ 2nd API (REMOTE API - store data)
+      const res = await fetch(`${sessionData.url}/api/newsletter/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      console.log("REMOTE API RESPONSE :", res);
+
+      const data = await res.json();
+      console.log("REMOTE API RESPONSE DATA:", data);
+
+      // ✅ SUCCESS CONDITION (local API must succeed, remote API optional)
+      if (data.ok) {
+        setSuccessMessage(testMode ? "Test sent!" : "Newsletter sent!");
+        fetchSendHistory();
+      } else {
+        setErrorMessage(
+          data?.detail?.[0]?.msg ||
+          data?.message ||
+          "Failed to send"
+        );
+      }
+
+    } catch (e: any) {
+      setErrorMessage(e.message);
+    }
+
+    setIsProcessing(false);
+  };
   const handleSelectHistory = (record: SendRecord) => {
     setSelectedHistory(record);
   };
@@ -211,6 +263,10 @@ const parsedEmails = emails
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
+                <Label className="text-sm">Template ID</Label>
+                <Input value={selectedTemplateId || template?.id || templateId || ""} disabled className="mt-1 bg-slate-50" />
+              </div>
+              <div>
                 <Label className="text-sm">Segment</Label>
                 <Input value={segment} disabled className="mt-1 bg-slate-50" />
               </div>
@@ -223,7 +279,7 @@ const parsedEmails = emails
                   className="mt-1"
                 />
               </div>
-              
+
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 text-sm">
                   <input
@@ -258,27 +314,27 @@ const parsedEmails = emails
                 </div>
               )}
 
-            {testMode ? (
-  <div>
-    <Label className="text-sm">Test Emails</Label>
-    <Input
-      placeholder="test1@gmail.com, test2@gmail.com"
-      value={testEmails}
-      onChange={(e) => setTestEmails(e.target.value)}
-      className="mt-1"
-    />
-  </div>
-) : (
-  <div>
-    <Label className="text-sm">Emails</Label>
-    <Input
-      placeholder="user1@gmail.com, user2@gmail.com"
-      value={emails}
-      onChange={(e) => setEmails(e.target.value)}
-      className="mt-1"
-    />
-  </div>
-)}
+              {testMode ? (
+                <div>
+                  <Label className="text-sm">Test Emails</Label>
+                  <Input
+                    placeholder="test1@gmail.com, test2@gmail.com"
+                    value={testEmails}
+                    onChange={(e) => setTestEmails(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <Label className="text-sm">Emails</Label>
+                  <Input
+                    placeholder="user1@gmail.com, user2@gmail.com"
+                    value={emails}
+                    onChange={(e) => setEmails(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              )}
 
               <Button
                 onClick={handleSend}
@@ -324,11 +380,10 @@ const parsedEmails = emails
                   <div
                     key={s.id}
                     onClick={() => handleSelectHistory(s)}
-                    className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                      selectedHistory?.id === s.id
+                    className={`p-3 border rounded-lg cursor-pointer transition-all ${selectedHistory?.id === s.id
                         ? "border-slate-400 bg-slate-50"
                         : "border-slate-200 hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium text-sm">{s.segment}</h3>
@@ -360,12 +415,12 @@ const parsedEmails = emails
               </div>
               <div>
                 <Label className="text-slate-500">Template</Label>
-  <div>
-  <Label className="text-slate-500">Template</Label>
-  <p className="font-medium">
-    {template?.template_name || "-"}
-  </p>
-</div>
+                <div>
+                  <Label className="text-slate-500">Template</Label>
+                  <p className="font-medium">
+                    {template?.template_name || "-"}
+                  </p>
+                </div>
               </div>
               <div>
                 <Label className="text-slate-500">Subject</Label>
