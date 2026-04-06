@@ -1,32 +1,47 @@
 import { z } from 'genkit';
 
-// --- 1. SKILL ITEM (Simplified) ---
+// --- 1. SKILL ITEM (With full details) ---
 const SkillItemSchema = z.object({
   title: z.string(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  sub_category: z.string().optional(),
   level: z.number().int().min(1).max(6),
 });
 
-// --- 2. KNOWLEDGE ITEM (Simplified) ---
+// --- 2. KNOWLEDGE ITEM (Enhanced - Like Skills) ---
 const KnowledgeItemSchema = z.object({
   title: z.string(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  sub_category: z.string().optional(),
   level: z.number().int().min(1).max(5),
 });
 
-// --- 3. ABILITY ITEM (Simplified) ---
+// --- 3. ABILITY ITEM (Enhanced - Like Skills) ---
 const AbilityItemSchema = z.object({
   title: z.string(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  sub_category: z.string().optional(),
   level: z.number().int().min(1).max(5),
 });
 
-// --- 4. ATTITUDE ITEM (Simplified) ---
+// --- 4. ATTITUDE ITEM (Enhanced - Like Skills) ---
 const AttitudeItemSchema = z.object({
   title: z.string(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  sub_category: z.string().optional(),
   level: z.number().int().min(1).max(5),
 });
 
-// --- 5. BEHAVIOR ITEM (Simplified) ---
+// --- 5. BEHAVIOR ITEM (Enhanced - Like Skills) ---
 const BehaviorItemSchema = z.object({
   title: z.string(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  sub_category: z.string().optional(),
   level: z.number().int().min(1).max(5),
 });
 
@@ -51,13 +66,13 @@ export const SimpleJobRoleCompetencySchema = z.object({
   department: z.string(),
   description: z.string(),
 
-  // Reduced array sizes to control schema complexity
-  skills: z.array(SkillItemSchema).max(3),
-  knowledge: z.array(KnowledgeItemSchema).max(3),
-  ability: z.array(AbilityItemSchema).max(3),
-  attitude: z.array(AttitudeItemSchema).max(3),
-  behavior: z.array(BehaviorItemSchema).max(3),
+  // Increased array sizes to generate comprehensive competency profiles
+  skills: z.array(SkillItemSchema).max(10),
+  knowledge: z.array(KnowledgeItemSchema).max(5),
+  ability: z.array(AbilityItemSchema).max(5),
+  attitude: z.array(AttitudeItemSchema).max(5),
+  behavior: z.array(BehaviorItemSchema).max(5),
 
-  // CWF sections, limited count
-  cwf_items: z.array(CWFTItemSchema).max(3),
+  // CWF sections, increased count for more comprehensive coverage
+  cwf_items: z.array(CWFTItemSchema).max(5),
 });

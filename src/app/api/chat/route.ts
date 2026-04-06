@@ -53,26 +53,26 @@ export async function POST(request: Request) {
         let jobRoleId: string | null = null;
 
         // Check if this is a "Select my department as X" or "Select my department in X industry" pattern
-        const query = body.query?.toLowerCase() || '';
+        const rawQuery = body.query || '';
         const departmentPattern = /^select my department\s+(?:as\s+|in\s+)?(.+?)(?:\s+industry)?$/i;
-        const departmentMatch = query.match(departmentPattern);
+        const departmentMatch = rawQuery.match(departmentPattern);
         
         // Check if this is a "Selected Industry as X" pattern (new format from frontend)
         const selectedIndustryPattern = /^selected industry\s+as\s+(.+)$/i;
-        const selectedIndustryMatch = query.match(selectedIndustryPattern);
+        const selectedIndustryMatch = rawQuery.match(selectedIndustryPattern);
         
         // Check if user selected a department (e.g., "selected department: design" or "department: design")
         const selectedDeptPattern = /^(?:selected )?department[:\s]+(.+)$/i;
-        const selectedDeptMatch = query.match(selectedDeptPattern);
+        const selectedDeptMatch = rawQuery.match(selectedDeptPattern);
         
         // Check if this is a "Select my job role as X" or "Select my job role in X department" pattern
         const jobRolePattern = /^select (?:my )?job role\s+(?:as\s+|in\s+)?(.+?)(?:\s+department)?$/i;
-        const jobRoleMatch = query.match(jobRolePattern);
+        const jobRoleMatch = rawQuery.match(jobRolePattern);
         
         // Check if this is a "Select my skills for X" or "select my jobrole as X" pattern
         // This directly calls the skills API after job role is selected
         const skillsPattern = /^(?:select\s+(?:my\s+)?)?(?:skills\s+for|jobrole\s+as)\s+(.+)$/i;
-        const skillsMatch = query.match(skillsPattern);
+        const skillsMatch = rawQuery.match(skillsPattern);
         
         if (departmentMatch && departmentMatch[1]) {
             // Extract industry name from the query
@@ -353,9 +353,11 @@ export async function POST(request: Request) {
                         }
                         
                         // Find the job role with matching name
-                        const matchedJobRole = jobRolesArray.find((jr: any) => 
-                            jr.jobrole === jobRole || jr.jobRole === jobRole || jr.job_role === jobRole
-                        );
+                        const normalizedJobRole = jobRole.toLowerCase();
+                        const matchedJobRole = jobRolesArray.find((jr: any) => {
+                            const candidate = (jr.jobrole || jr.jobRole || jr.job_role || '').toLowerCase();
+                            return candidate === normalizedJobRole;
+                        });
                         
                         if (matchedJobRole && matchedJobRole.id) {
                             jobRoleId = String(matchedJobRole.id);
@@ -373,7 +375,7 @@ export async function POST(request: Request) {
                 const skillsResponse = await fetch(new URL('/api/get-skills-by-job-role', request.url).toString(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ jobRole, sub_institute_id: subInstituteId })
+                    body: JSON.stringify({ jobRole, jobRoleId, sub_institute_id: subInstituteId })
                 });
                 
                 if (!skillsResponse.ok) {
