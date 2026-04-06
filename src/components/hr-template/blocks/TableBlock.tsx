@@ -1,10 +1,9 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { useNode, Element } from "@craftjs/core";
+import { useNode } from "@craftjs/core";
 import { PositionControl } from "../editor/settings/PositionControl";
 import { ColorPicker } from "../editor/settings/ColorPicker";
 import { OverlayWrapper } from "../editor/settings/OverlayWrapper";
-import { ContainerBlock } from "./ContainerBlock";
 import { TextBlock } from "./TextBlock";
 
 export const TableBlock = ({
@@ -26,7 +25,17 @@ export const TableBlock = ({
     const { connectors: { connect }, actions: { setProp } } = useNode();
     const tableRef = useRef<HTMLDivElement>(null);
     const [editingCell, setEditingCell] = useState<string | null>(null);
-    const [cellText, setCellText] = useState<Record<string, string>>({});
+    const { props: nodeProps } = useNode((node) => ({
+        props: node.data.props,
+    }));
+    const [cellText, setCellText] = useState<Record<string, string>>(() => nodeProps?.cellText || {});
+
+    // Sync cellText state when props change (e.g., after load)
+    useEffect(() => {
+        if (nodeProps?.cellText && JSON.stringify(nodeProps.cellText) !== JSON.stringify(cellText)) {
+            setCellText(nodeProps.cellText);
+        }
+    }, [nodeProps?.cellText]);
 
     // Provide default sizes if none exist
     const [colWidths, setColWidths] = useState<number[]>(initialColWidths || Array(cols).fill(120));
@@ -87,7 +96,7 @@ export const TableBlock = ({
         <OverlayWrapper isOverlay={isOverlay} x={x} y={y} width={totalWidth} height={totalHeight} rotation={rotation} zIndex={zIndex}>
             <div
                 ref={tableRef}
-                className="relative bg-white shadow-sm font-sans text-sm"
+                className="relative bg-white shadow-sm font-sans text-sm flex flex-col"
                 style={{
                     backgroundColor: fill,
                     borderTop: `${strokeWidth}px solid ${stroke}`,
@@ -98,7 +107,7 @@ export const TableBlock = ({
             >
                 {/* Cells Render */}
                 {rowHeights.map((rH, rId) => (
-                    <div key={`row-${rId}`} className="flex" style={{ height: rH }}>
+                    <div key={`row-${rId}`} className="flex flex-row flex-none" style={{ height: rH, flexShrink: 0 }}>
                         {colWidths.map((cW, cId) => {
                             const cellId = `cell-${rId}-${cId}`;
                             const isEditing = editingCell === cellId;
@@ -107,7 +116,7 @@ export const TableBlock = ({
                             return (
                             <div
                                     key={cellId}
-                                className="relative flex items-center justify-center p-2"
+                                    className="relative flex flex-row flex-shrink-0 items-center justify-center p-2"
                                 style={{
                                     width: cW,
                                     borderRight: `${strokeWidth}px solid ${stroke}`,
@@ -150,12 +159,9 @@ export const TableBlock = ({
                                             placeholder="Type..."
                                         />
                                     ) : (
-                                        <>
                                             <span className={`text-sm text-neutral-700 ${currentText ? '' : 'text-neutral-400 italic'}`}>
                                                 {currentText || 'Click to edit'}
                                             </span>
-                                            <Element id={cellId} is={ContainerBlock} canvas width="100%" height="100%" />
-                                        </>
                                     )}
 
                                 {/* Column Resize Handle (Right edge) */}

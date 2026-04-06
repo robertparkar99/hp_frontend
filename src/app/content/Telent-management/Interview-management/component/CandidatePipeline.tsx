@@ -24,28 +24,43 @@ export function CandidatePipeline() {
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
-      setSessionData(JSON.parse(userData));
+      const parsed = JSON.parse(userData);
+      console.log("Session Data:", parsed); // ✅ ADD THIS
+      setSessionData(parsed);
     }
   }, []);
 
   useEffect(() => {
+    if (!sessionData) return; // ✅ wait until sessionData is ready
+
     const fetchPipelineData = async () => {
-      if (!sessionData || !sessionData.APP_URL) return;
       try {
-        const response = await fetch(`${sessionData.APP_URL}/api/candidate-pipeline?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`);
-        const result = await response.json();
-        if (result.data) {
-          setPipelineData(result.data);
-        }
-      } catch (error) {
-        console.error('Error fetching pipeline data:', error);
-      } finally {
-        setLoading(false);
+      setLoading(true);
+
+      const response = await fetch(
+        `${sessionData.APP_URL}/api/candidate-pipeline?sub_institute_id=${sessionData.sub_institute_id}&type=API&token=${sessionData.token}`
+      );
+
+      const result = await response.json();
+
+      console.log("Pipeline API Response:", result); // ✅ debug
+
+      if (result.data) {
+        setPipelineData(result.data);
+      } else {
+        setPipelineData(null);
+      }
+
+    } catch (error) {
+      console.error("Error fetching pipeline data:", error);
+      setPipelineData(null);
+    } finally {
+        setLoading(false); // ✅ always stop loader
       }
     };
-    fetchPipelineData();
-  }, []);
 
+    fetchPipelineData();
+  }, [sessionData]); // ✅ VERY IMPORTANT
   if (loading) {
     return (
       <Card className="widget-card">
@@ -67,12 +82,12 @@ export function CandidatePipeline() {
   }
 
   // Calculate percentages based on the first stage count
-  const maxCount = pipelineData.pipeline[0]?.count || 1;
-  const stagesWithPercentage = pipelineData.pipeline.map((stage) => ({
+  const maxCount = pipelineData?.pipeline?.[0]?.count || 1;
+  const stagesWithPercentage = pipelineData?.pipeline?.map((stage) => ({
     ...stage,
     percentage: maxCount > 0 ? (stage.count / maxCount) * 100 : 0,
-    trend: stage.change.startsWith('+') ? 'up' : 'down',
-  }));
+    trend: stage.change?.startsWith('+') ? 'up' : 'down',
+  })) || [];
 
   return (
     <Card className="widget-card">
@@ -114,11 +129,11 @@ export function CandidatePipeline() {
         <div className="pt-4 border-t border-border">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Conversion Rate</span>
-            <span className="font-medium text-foreground">{pipelineData.conversion_rate}</span>
+            <span className="font-medium text-foreground">{pipelineData?.conversion_rate}</span>
           </div>
           <div className="flex justify-between text-sm mt-1">
             <span className="text-muted-foreground">Average Time to Hire</span>
-            <span className="font-medium text-foreground">{pipelineData.average_time_to_hire}</span>
+            <span className="font-medium text-foreground">{pipelineData?.average_time_to_hire}</span>
           </div>
         </div>
       </CardContent>
