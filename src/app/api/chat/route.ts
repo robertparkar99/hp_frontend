@@ -53,101 +53,28 @@ export async function POST(request: Request) {
         let jobRoleId: string | null = null;
 
         // Check if this is a "Select my department as X" or "Select my department in X industry" pattern
-        const query = body.query?.toLowerCase() || '';
+        const rawQuery = body.query || '';
         const departmentPattern = /^select my department\s+(?:as\s+|in\s+)?(.+?)(?:\s+industry)?$/i;
-        const departmentMatch = query.match(departmentPattern);
+        const departmentMatch = rawQuery.match(departmentPattern);
         
         // Check if this is a "Selected Industry as X" pattern (new format from frontend)
         const selectedIndustryPattern = /^selected industry\s+as\s+(.+)$/i;
-        const selectedIndustryMatch = query.match(selectedIndustryPattern);
+        const selectedIndustryMatch = rawQuery.match(selectedIndustryPattern);
         
         // Check if user selected a department (e.g., "selected department: design" or "department: design")
         const selectedDeptPattern = /^(?:selected )?department[:\s]+(.+)$/i;
-        const selectedDeptMatch = query.match(selectedDeptPattern);
+        const selectedDeptMatch = rawQuery.match(selectedDeptPattern);
         
         // Check if this is a "Select my job role as X" or "Select my job role in X department" pattern
         const jobRolePattern = /^select (?:my )?job role\s+(?:as\s+|in\s+)?(.+?)(?:\s+department)?$/i;
-        const jobRoleMatch = query.match(jobRolePattern);
+        const jobRoleMatch = rawQuery.match(jobRolePattern);
         
         // Check if this is a "Select my skills for X" or "select my jobrole as X" pattern
         // This directly calls the skills API after job role is selected
         const skillsPattern = /^(?:select\s+(?:my\s+)?)?(?:skills\s+for|jobrole\s+as)\s+(.+)$/i;
-        const skillsMatch = query.match(skillsPattern);
+        const skillsMatch = rawQuery.match(skillsPattern);
         
-        // NEW: Job Description Creation intent - show departments directly
-        const createJobDescPatterns = [
-            'create job description',
-            'add job role',
-            'new job description',
-            'create my job',
-            'add new job',
-            'enter job description',
-            'job description',
-            'i want to create job',
-            'create jd'
-        ];
-        const isCreateJobDescIntent = createJobDescPatterns.some(pattern => query.includes(pattern));
-        
-        // NEW: Handle CREATE_JOB_DESCRIPTION intent
-        if (isCreateJobDescIntent) {
-            console.log('[chat] Detected CREATE_JOB_DESCRIPTION intent');
-            try {
-                const subInstituteId = body.subInstituteId || '';
-                const deptUrl = `https://hp.triz.co.in/table_data?table=hrms_departments&filters[sub_institute_id]=${subInstituteId || '3'}&fields=id,department`;
-                const deptResponse = await fetch(deptUrl);
-                if (!deptResponse.ok) throw new Error('Failed to fetch departments');
-                const deptData = await deptResponse.json();
-                let deptList: any[] = [];
-                if (Array.isArray(deptData)) deptList = deptData;
-                else if (deptData.data) deptList = deptData.data;
-                else if (deptData.result) deptList = deptData.result;
-                const selectionOptions = deptList.map((d: any) => ({
-                    id: d.id,
-                    name: d.department || d.department_name || d.name || 'Unknown'
-                }));
-                // Get industry from session data (orgType)
-                const userDataStr = body.userData || '';
-                let industry = '';
-                try {
-                    const userData = JSON.parse(decodeURIComponent(userDataStr));
-                    industry = userData.org_type || '';
-                } catch (e) {
-                    console.log('[chat] Could not parse userData for industry');
-                }
-                result = {
-                    answer: `Your industry is set to ${industry || 'your organization'}. Please select your department.`,
-                    selectionOptions: selectionOptions,
-                    currentStep: 'select_department',
-                    nextStep: 'enter_jobrole',
-                    action: 'SHOW_DEPARTMENT_SELECTION',
-                    metadata: { industry: industry }
-                };
-            } catch (deptError) {
-                console.error('[chat] Error fetching departments:', deptError);
-                result = { answer: "Sorry, couldn't fetch departments.", error: String(deptError) };
-            }
-        } else if (selectedDeptMatch && selectedDeptMatch[1] && body.metadata?.currentStep === 'select_department') {
-            // User selected department from new flow
-            const selectedDepartment = selectedDeptMatch[1].trim();
-            result = {
-                answer: `You have selected ${selectedDepartment}. Please enter the job role for this department.`,
-                currentStep: 'enter_jobrole',
-                nextStep: 'enter_cwfkt',
-                action: 'SHOW_JOBROLE_INPUT',
-                metadata: { department: selectedDepartment }
-            };
-        } else if ((query.startsWith('job role:') || body.metadata?.currentStep === 'enter_jobrole') && !result) {
-            // User entered job role - now ask for CWFKT
-            let enteredJobRole = body.query || '';
-            if (query.startsWith('job role:')) enteredJobRole = query.replace('job role:', '').trim();
-            result = {
-                answer: `Got it. Now, please add Critical Work Functions and Tasks for the role ${enteredJobRole}.`,
-                currentStep: 'enter_cwfkt',
-                nextStep: 'complete',
-                action: 'SHOW_CWFKT_INPUT',
-                metadata: { jobRole: enteredJobRole }
-            };
-        } else if (departmentMatch && departmentMatch[1]) {
+        if (departmentMatch && departmentMatch[1]) {
             // Extract industry name from the query
             const industry = departmentMatch[1].trim();
             console.log('[chat] Detected department selection pattern, industry:', industry);
@@ -426,9 +353,11 @@ export async function POST(request: Request) {
                         }
                         
                         // Find the job role with matching name
-                        const matchedJobRole = jobRolesArray.find((jr: any) => 
-                            jr.jobrole === jobRole || jr.jobRole === jobRole || jr.job_role === jobRole
-                        );
+                        const normalizedJobRole = jobRole.toLowerCase();
+                        const matchedJobRole = jobRolesArray.find((jr: any) => {
+                            const candidate = (jr.jobrole || jr.jobRole || jr.job_role || '').toLowerCase();
+                            return candidate === normalizedJobRole;
+                        });
                         
                         if (matchedJobRole && matchedJobRole.id) {
                             jobRoleId = String(matchedJobRole.id);
@@ -446,7 +375,7 @@ export async function POST(request: Request) {
                 const skillsResponse = await fetch(new URL('/api/get-skills-by-job-role', request.url).toString(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ jobRole, sub_institute_id: subInstituteId })
+                    body: JSON.stringify({ jobRole, jobRoleId, sub_institute_id: subInstituteId })
                 });
                 
                 if (!skillsResponse.ok) {

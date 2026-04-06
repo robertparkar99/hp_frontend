@@ -280,7 +280,7 @@ Description: ${input.description || 'Not specified'}
 
 === OUTPUT FORMAT ===
 
-Return a valid JSON object that strictly follows this simplified structure:
+Return a valid JSON object that strictly follows this structure:
 
 {
   "department": "string",
@@ -288,31 +288,46 @@ Return a valid JSON object that strictly follows this simplified structure:
   "skills": [
     {
       "title": "string",
-      "level": number (1‑6)
+      "description": "string (detailed description of the skill)",
+      "category": "One of: Cognitive & Thinking Skills, Compliance & Regulatory Skills, Critical Core Skills, Digital & Data Skills, Functional Skills, Leadership & Management Skills, Soft Skills, Technical Skills",
+      "sub_category": "Specific sub-category based on the main category",
+      "level": number (1-6)
     }
   ],
   "knowledge": [
     {
       "title": "string",
-      "level": number (1‑5)
+      "description": "string (detailed description of the knowledge)",
+      "category": "One of: Conceptual Knowledge, Metacognitive Knowledge, Procedural Knowledge, Factual Knowledge",
+      "sub_category": "Specific sub-category based on the main category",
+      "level": number (1-5)
     }
   ],
   "ability": [
     {
       "title": "string",
-      "level": number (1‑5)
+      "description": "string (detailed description of the ability)",
+      "category": "One of: Cognitive Abilities, Psychomotor Abilities, Physical Abilities, Sensory Abilities, Social/Interpersonal Abilities",
+      "sub_category": "Specific sub-category based on the main category",
+      "level": number (1-5)
     }
   ],
   "attitude": [
     {
       "title": "string",
-      "level": number (1‑5)
+      "description": "string (detailed description of the attitude)",
+      "category": "One of: Adaptability/Flexibility, Accountability/Responsibility, Openness to Feedback, Commitment to Quality/Quality Focus, Integrity/Honesty/Ethics, Growth Mindset/Growth Orientation, Initiative/Proactiveness/Proactivity",
+      "sub_category": "Specific sub-category based on the main category",
+      "level": number (1-5)
     }
   ],
   "behavior": [
     {
       "title": "string",
-      "level": number (1‑5)
+      "description": "string (detailed description of the behavior)",
+      "category": "One of: Stakeholder Focus, Commitment to Quality/Quality Focus, Communication, Safety-Consciousness/Process Adherence, Cognitive Agility, Accountability in Execution, Problem-Solving in Action, Collaboration/Teamwork, Efficiency Drive, Risk Vigilance, Digital Fluency",
+      "sub_category": "Specific sub-category based on the main category",
+      "level": number (1-5)
     }
   ],
   "cwf_items": [
@@ -332,8 +347,10 @@ Ensure the output follows:
 Before returning the JSON:
 1. All level values are within the specified ranges.
 2. There are no duplicate entries in any array.
-3. Each “critical_work_function” has associated “key_tasks”.
-4. The generated arrays should be tractable in size (no more than 3 items per array).
+3. Each "critical_work_function" has associated "key_tasks".
+4. The generated arrays should be comprehensive (5-10 skills, 3-5 for other categories).
+5. Each skill must include category, sub_category, and description for completeness.
+6. Each knowledge, ability, attitude, and behavior must include category, sub_category, and description for completeness.
 
 ${input.chatHistory && Array.isArray(input.chatHistory) && input.chatHistory.length > 0
       ? `

@@ -1,7 +1,7 @@
 
 "use client"
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff } from 'lucide-react';
+import { Send, Bot, User, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff, ChevronDown, FileText, Target, Wrench, BookOpen, Zap, Heart, Smile, CheckCircle, Save, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { submitFeedback } from "@/lib1/feedback-service";
@@ -72,9 +72,18 @@ interface Message {
       industry?: string;
       jobRole?: string;
       department?: string;
+      departmentId?: number | null;
     };
     // Skill Gap Analysis metadata
-    selectionOptions?: Array<{ id: number; name: string; expectedProficiency?: number }>;
+    selectionOptions?: Array<{ 
+      id: number; 
+      name: string; 
+      expectedProficiency?: number;
+      category?: string;
+      subCategory?: string;
+      description?: string;
+      proficiencyLevel?: number;
+    }>;
     stepLabel?: string;
     currentStep?: 'industry' | 'department' | 'jobRole' | 'tasks' | 'skills' | 'rating_prompt' | 'skill_rating' | 'complete';
     nextStep?: string;
@@ -99,6 +108,17 @@ interface Message {
     cwfktData?: Array<{ id: number; function: string; tasks: string[] }>;
     // Generated Profile data for display
     generatedProfile?: any;
+    // Structured competency data from LLM (Job Role Competency)
+    competencyData?: {
+      cwf_items?: Array<{ critical_work_function: string; key_tasks: string[] }>;
+      skills?: Array<{ title: string; description?: string; category: string; sub_category: string; level: number }>;
+      knowledge?: Array<{ title: string; description?: string; category: string; sub_category: string; level: number }>;
+      ability?: Array<{ title: string; description?: string; category: string; sub_category: string; level: number }>;
+      attitude?: Array<{ title: string; description?: string; category: string; sub_category: string; level: number }>;
+      behavior?: Array<{ title: string; description?: string; category: string; sub_category: string; level: number }>;
+      department?: string;
+      description?: string;
+    };
   };
 }
 
@@ -257,28 +277,41 @@ const [sessionData, setSessionData] = useState({
     currentStep: 'industry' | 'department' | 'jobRole' | 'tasks' | 'skills' | 'rating_prompt' | 'skill_rating' | 'complete' | null;
     industry: string;
     department: string;
+    departmentId: number | null; // Department ID from departments API
     jobRole: string;         // Job role name (e.g., "Content Strategist")
     jobRoleId: number | null; // Job role ID from get-job-roles API (e.g., 3172)
-    options: Array<{ id: number; name: string; expectedProficiency?: number }>;
+    options: Array<{ 
+      id: number; 
+      name: string; 
+      expectedProficiency?: number;
+      proficiencyLevel?: number;
+      category?: string;
+      subCategory?: string;
+      description?: string;
+    }>;
     selectedValue: string;
     skillRatings: Record<string, number>; // User's ratings for each skill
     ratingsSubmitted: boolean; // Track if ratings have been submitted
+    expandedSkill: string | null; // Track which skill is expanded for details
   }>({
     active: false,
     currentStep: null,
     industry: '',
     department: '',
+    departmentId: null,
     jobRole: '',
     jobRoleId: null,
     options: [],
     selectedValue: '',
     skillRatings: {},
-    ratingsSubmitted: false
+    ratingsSubmitted: false,
+    expandedSkill: null
   });
 
   // Phase 5: Job Description Form State (moved from CWFKTInput to preserve data across re-renders)
   const [jdFormData, setJdFormData] = useState<{
     selectedDepartment: string;
+    selectedDepartmentId: number | null;
     jobRoleText: string;
     cwfList: Array<{id: number; function: string; tasks: string}>;
     generatedProfile: any;
@@ -290,6 +323,7 @@ const [sessionData, setSessionData] = useState({
     saveSuccess: boolean;
   }>({
     selectedDepartment: '',
+    selectedDepartmentId: null,
     jobRoleText: '',
     cwfList: [],
     generatedProfile: null,
@@ -459,7 +493,9 @@ const [sessionData, setSessionData] = useState({
           selectionOptions: data.selectionOptions,
           stepLabel: data.stepLabel,
           currentStep: data.currentStep,
-          nextStep: data.nextStep
+          nextStep: data.nextStep,
+          // Job Role Competency - Structured JSON Data
+          competencyData: data.competencyData
         }
       };
 
@@ -564,8 +600,9 @@ const [sessionData, setSessionData] = useState({
       return;
     }
 
-    // Check if user typed "yes" to generate skill gap report (can be from localStorage or current session)
-    if (userInput.toLowerCase() === 'yes') {
+    // Check if user typed "yes" or "proceed" to generate skill gap report
+    const normalizedInput = userInput.toLowerCase();
+    if (normalizedInput === 'yes' || normalizedInput === 'proceed') {
       console.log('[ChatbotCopilot] User wants to generate skill gap report');
       
       try {
@@ -940,6 +977,9 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
     const [selectedDepartment, setSelectedDepartment] = useState<string>(() => {
       return jdFormData?.selectedDepartment || '';
     });
+    const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(() => {
+      return jdFormData?.selectedDepartmentId || null;
+    });
     const [jobRoleText, setJobRoleText] = useState<string>(() => {
       return jdFormData?.jobRoleText || jobRoleFromAPI || '';
     });
@@ -969,6 +1009,7 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
     useEffect(() => {
       if (jdFormData) {
         if (jdFormData.selectedDepartment) setSelectedDepartment(jdFormData.selectedDepartment);
+        if (jdFormData.selectedDepartmentId !== undefined && jdFormData.selectedDepartmentId !== null) setSelectedDepartmentId(jdFormData.selectedDepartmentId);
         if (jdFormData.jobRoleText) setJobRoleText(jdFormData.jobRoleText);
         if (jdFormData.cwfList && jdFormData.cwfList.length > 0) setCwfList(jdFormData.cwfList);
         if (jdFormData.generatedProfile) setGeneratedProfile(jdFormData.generatedProfile);
@@ -988,7 +1029,8 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
 
     setIsLoadingDepartments(true);
     try {
-      const apiUrl = `https://hp.triz.co.in/table_data?table=s_industries&filters[industries]=${encodeURIComponent(sessionData.orgType)}&group_by=department`;
+      // JD Flow: Use hrms_departments API with sub_institute_id=3 and parent_id != 0 filter
+      const apiUrl = `https://hp.triz.co.in/table_data?table=hrms_departments&filters[sub_institute_id]=3&filters[groupby]=department&filters[parent_id]!=0`;
       
       console.log('[CWFKTInput] Fetching departments from:', apiUrl);
 
@@ -1005,18 +1047,18 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
 
       if (Array.isArray(data)) {
         departmentsArray = data
-          .map((dept: any, index: number) => ({
-            id: index + 1,
-            name: dept.department || dept.name || dept.department_name || ''
+          .map((dept: any) => ({
+            id: dept.id || 0,
+            name: dept.department || dept.name || ''
           }))
-          .filter((d: any) => d.name);
+          .filter((d: any) => d.name && d.id);
       } else if (data.data && Array.isArray(data.data)) {
         departmentsArray = data.data
-          .map((dept: any, index: number) => ({
-            id: index + 1,
-            name: dept.department || dept.name || dept.department_name || ''
+          .map((dept: any) => ({
+            id: dept.id || 0,
+            name: dept.department || dept.name || ''
           }))
-          .filter((d: any) => d.name);
+          .filter((d: any) => d.name && d.id);
       }
 
       console.log('[CWFKTInput] Transformed departments:', departmentsArray);
@@ -1067,8 +1109,8 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
         return;
       }
       
-      // Filter out empty CWFs
-      const validCWFList = cwfList.filter(c => c.function.trim());
+      // Filter out empty CWFs (with null checks)
+      let validCWFList = cwfList.filter(c => c.function && c.function.trim());
       
       if (validCWFList.length === 0) {
         alert('Please add at least one Critical Work Function');
@@ -1090,204 +1132,139 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
           token: token ? 'present' : 'missing'
         });
         
-        // ================ FETCH SKILLS ================
-        console.log('[CWFKTInput] Fetching skills...');
+        // ================ GENERATE COMPETENCY PROFILE VIA LLM (GENKIT) ================
+        // This includes Skills + KAAB (Knowledge, Ability, Attitude, Behaviour) - all from LLM
+        console.log('[CWFKTInput] Generating competency profile (Skills + KAAB) via LLM...');
         
-        // Method 1: Try internal API proxy first (more reliable)
-        let skillsData: any[] = [];
-        
-        try {
-          // Use internal API proxy for skills
-          const skillsResponse = await fetch('/api/get-skills-by-job-role', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              jobRole: jobRoleText, 
-              sub_institute_id: subInstituteId 
-            })
-          });
-          
-          if (skillsResponse.ok) {
-            const skillsJson = await skillsResponse.json();
-            console.log('[CWFKTInput] Internal skills API response:', skillsJson);
-            
-            if (skillsJson.data && Array.isArray(skillsJson.data)) {
-              skillsData = skillsJson.data.map((s: any) => ({
-                skillName: s.skill || s.name || s.skillTitle || s.SkillName || s.skill_name || '',
-                category: s.category || '',
-                subCategory: s.sub_category || s.subCategory || '',
-                proficiencyLevel: s.proficiency_level || s.proficiencyLevel || ''
-              })).filter((s: any) => s.skillName);
-              console.log('[CWFKTInput] Skills from internal API:', skillsData);
-            }
-          } else {
-            console.log('[CWFKTInput] Internal skills API failed with status:', skillsResponse.status, '- trying external');
-          }
-        } catch (internalError) {
-          console.log('[CWFKTInput] Internal skills API error:', internalError);
-        }
-        
-        // Method 2: If no data from internal, try external HP API
-        if (skillsData.length === 0) {
-          try {
-            const externalSkillsUrl = `https://hp.triz.co.in/jobrole_library/create?type=API&token=${token}&sub_institute_id=${subInstituteId}&org_type=${encodeURIComponent(selectedIndustry)}&jobrole=${encodeURIComponent(jobRoleText)}&formType=skills`;
-            console.log('[CWFKTInput] Fetching external skills from:', externalSkillsUrl);
-            
-            const extSkillsResponse = await fetch(externalSkillsUrl);
-            if (extSkillsResponse.ok) {
-              const extSkillsJson = await extSkillsResponse.json();
-              console.log('[CWFKTInput] External skills API response:', extSkillsJson);
-              
-              // Check for userskillData (singular) first, then other possible formats
-              const rawSkills = extSkillsJson?.userskillData || extSkillsJson?.data || extSkillsJson?.skills || [];
-              const skillsArray = Array.isArray(rawSkills) ? rawSkills : (rawSkills ? [rawSkills] : []);
-              
-              if (skillsArray.length > 0) {
-                skillsData = skillsArray.map((s: any) => ({
-                  skillName: s.skillTitle?.title || s.skillTitle?.name || s.skillTitle || s.skill_name || s.SkillName || s.skill || s.name || '',
-                  category: s.category || '',
-                  subCategory: s.sub_category || s.subCategory || '',
-                  proficiencyLevel: s.proficiency_level || s.proficiencyLevel || ''
-                })).filter((s: any) => s.skillName);
-                console.log('[CWFKTInput] Skills from external API:', skillsData);
-              }
-            }
-          } catch (extError) {
-            console.log('[CWFKTInput] External skills API error:', extError);
-          }
-        }
-        
-        // ================ FETCH KAAB DATA ================
-        console.log('[CWFKTInput] Fetching KAAB data...');
-        
-        let kabaData: any = { knowledge: [], ability: [], attitude: [], behaviour: [] };
-        let skillsFromKaba: any[] = [];
-        
-        // Try to get job role ID first
-        let jobRoleId: number | null = null;
-        try {
-          // Try internal API first
-          const jrResponse = await fetch('/api/get-job-roles', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              industry: selectedIndustry, 
-              department: selectedDepartment, 
-              sub_institute_id: subInstituteId 
-            })
-          });
-          
-          if (jrResponse.ok) {
-            const jrJson = await jrResponse.json();
-            if (jrJson.data && Array.isArray(jrJson.data)) {
-              const matched = jrJson.data.find((jr: any) => 
-                (jr.name || jr.jobrole || jr.job_role || '').toLowerCase() === jobRoleText.toLowerCase()
-              );
-              if (matched && matched.id) {
-                jobRoleId = matched.id;
-                console.log('[CWFKTInput] Found job role ID from internal API:', jobRoleId);
-              }
-            }
-          }
-        } catch (e) {
-          console.log('[CWFKTInput] Internal job role lookup error:', e);
-        }
-        
-        // Fallback: try external API for job role ID
-        if (!jobRoleId) {
-          try {
-            const extJrUrl = `https://hp.triz.co.in/table_data?table=s_user_jobrole&filters[sub_institute_id]=${subInstituteId}&filters[jobrole]=${encodeURIComponent(jobRoleText)}&filters[industries]=${encodeURIComponent(selectedIndustry)}&limit=1`;
-            console.log('[CWFKTInput] Looking for job role ID at:', extJrUrl);
-            const jrResponse = await fetch(extJrUrl);
-            if (jrResponse.ok) {
-              const jrData = await jrResponse.json();
-              const jrList = Array.isArray(jrData) ? jrData : (jrData.data || []);
-              if (jrList.length > 0 && jrList[0].id) {
-                jobRoleId = jrList[0].id;
-                console.log('[CWFKTInput] Found job role ID from external API:', jobRoleId);
-              }
-            }
-          } catch (e) {
-            console.log('[CWFKTInput] External job role ID lookup error:', e);
-          }
-        }
-        
-        // Directly call external get-kaba API (the correct endpoint)
-        try {
-          let getKabaUrl = `https://hp.triz.co.in/get-kaba?sub_institute_id=${subInstituteId}&type=jobrole&title=${encodeURIComponent(jobRoleText)}`;
-          if (jobRoleId) {
-            getKabaUrl = `https://hp.triz.co.in/get-kaba?sub_institute_id=${subInstituteId}&type=jobrole&type_id=${jobRoleId}&title=${encodeURIComponent(jobRoleText)}`;
-          }
-          console.log('[CWFKTInput] Fetching KABA from:', getKabaUrl);
-          
-          const kabaResponse = await fetch(getKabaUrl);
-          if (kabaResponse.ok) {
-            const kabaJson = await kabaResponse.json();
-            console.log('[CWFKTInput] External KABA API response:', kabaJson);
-            
-            // Handle various response formats - check different possible structures
-            const kabaDataRaw = kabaJson?.data || kabaJson;
-            
-            kabaData = {
-              knowledge: Array.isArray(kabaDataRaw?.knowledge) ? kabaDataRaw.knowledge : 
-                        Array.isArray(kabaDataRaw?.Knowledge) ? kabaDataRaw.Knowledge : [],
-              ability: Array.isArray(kabaDataRaw?.ability) ? kabaDataRaw.ability : 
-                       Array.isArray(kabaDataRaw?.Ability) ? kabaDataRaw.Ability : [],
-              attitude: Array.isArray(kabaDataRaw?.attitude) ? kabaDataRaw.attitude : 
-                        Array.isArray(kabaDataRaw?.Attitude) ? kabaDataRaw.Attitude : [],
-              behaviour: Array.isArray(kabaDataRaw?.behaviour) ? kabaDataRaw.behaviour : 
-                         Array.isArray(kabaDataRaw?.behavior) ? kabaDataRaw.behavior :
-                         Array.isArray(kabaDataRaw?.Behaviour) ? kabaDataRaw.Behaviour : []
-            };
-            
-            // Also extract skills from KABA if available (can be in different formats)
-            const skillsFromKabaRaw = kabaJson?.skill || kabaJson?.skills || kabaDataRaw?.skill || [];
-            const kabaSkillsArray = Array.isArray(skillsFromKabaRaw) ? skillsFromKabaRaw : (skillsFromKabaRaw ? [skillsFromKabaRaw] : []);
-            
-            if (kabaSkillsArray.length > 0) {
-              skillsFromKaba = kabaSkillsArray.map((s: any) => ({
-                skillName: s.title || s.name || s.skillName || s.skill || '',
-                category: s.category || '',
-                subCategory: s.sub_category || s.subCategory || '',
-                proficiencyLevel: s.proficiency_level || s.proficiencyLevel || ''
-              })).filter((s: any) => s.skillName);
-              console.log('[CWFKTInput] Skills from KABA:', skillsFromKaba);
-            }
-          }
-        } catch (kabaError) {
-          console.log('[CWFKTInput] External KABA fetch error:', kabaError);
-        }
-        
-        console.log('[CWFKTInput] Final KAAB data:', kabaData);
-        console.log('[CWFKTInput] Final skills from KABA:', skillsFromKaba);
-        
-        // ================ BUILD PROFILE DATA ================
-        // Use skills from primary source, fallback to KABA skills
-        const finalSkills = skillsData.length > 0 ? skillsData : (skillsFromKaba.length > 0 ? skillsFromKaba : []);
-        
-        // Build the complete profile data
-        const profileData = {
-          industry: selectedIndustry,
-          department: selectedDepartment,
-          jobRole: jobRoleText,
-          // Critical Work Functions & Tasks
-          criticalWorkFunctions: validCWFList.map((c, index) => ({
-            id: index + 1,
-            function: c.function,
-            tasks: c.tasks.split('\n').filter(t => t.trim()).map(t => t.trim())
-          })),
-          // Skills from API (or fallback to kaba skills)
-          skills: finalSkills,
-          // KAAB data from API
-          knowledge: kabaData.knowledge,
-          ability: kabaData.ability,
-          attitude: kabaData.attitude,
-          behaviour: kabaData.behaviour
+        let competencyData: any = {
+          skills: [],
+          knowledge: [],
+          ability: [],
+          attitude: [],
+          behavior: []
         };
         
-        console.log('[CWFKTInput] Generated Profile Data:', JSON.stringify(profileData, null, 2));
+        try {
+          // Create structured payload matching dummy JSON format - send CWF tasks to LLM for context
+          const payload = {
+            industry: selectedIndustry,
+            department: selectedDepartment,
+            department_id: selectedDepartmentId, // Include department ID
+            jobRole: jobRoleText,
+            cwf_items: validCWFList.map(c => ({
+              critical_work_function: c.function,
+              tasks: (c.tasks || '').split('\n').filter(t => t.trim()).map(t => t.trim())
+            })),
+            description: `Competency framework for a ${jobRoleText} professional in the ${selectedIndustry} industry, focusing on ${validCWFList.map(c => c.function).join(', ')}.`
+          };
+
+          console.log('[CWFKTInput] 📤 Sending structured payload to Genkit API:', JSON.stringify(payload, null, 2));
+
+          // Call Genkit API to generate complete competency profile with all details
+          const genkitResponse = await fetch('/api/genkit-job-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          if (genkitResponse.ok) {
+            const genkitResult = await genkitResponse.json();
+            console.log('[CWFKTInput] 📥 Genkit response received:', JSON.stringify(genkitResult, null, 2));
+            
+            // Extract Skills from Genkit response - map to exact format matching dummy JSON
+            if (genkitResult.skills && Array.isArray(genkitResult.skills)) {
+              competencyData.skills = genkitResult.skills.map((s: any) => ({
+                title: s.title || s.name || '',
+                category: s.category || 'Technical',
+                sub_category: s.sub_category || s.subCategory || 'Job Role-Specific',
+                description: s.description || `Proficiency level ${s.level || 3} for ${s.title || 'this skill'}`,
+                proficiency_level: s.level || s.proficiency_level || 3
+              })).filter((s: any) => s.title);
+            }
+            
+            // Extract Knowledge from Genkit response - exact format matching dummy JSON
+            if (genkitResult.knowledge && Array.isArray(genkitResult.knowledge)) {
+              competencyData.knowledge = genkitResult.knowledge.map((k: any) => ({
+                title: k.title || k.name || '',
+                description: k.description || '',
+                category: k.category || 'Domain',
+                sub_category: k.sub_category || k.subCategory || '',
+                proficiency_level: k.level || 3
+              })).filter((k: any) => k.title);
+            }
+            
+            // Extract Ability from Genkit response - exact format matching dummy JSON
+            if (genkitResult.ability && Array.isArray(genkitResult.ability)) {
+              competencyData.ability = genkitResult.ability.map((a: any) => ({
+                title: a.title || a.name || '',
+                description: a.description || '',
+                category: a.category || 'Cognitive',
+                sub_category: a.sub_category || a.subCategory || '',
+                proficiency_level: a.level || 3
+              })).filter((a: any) => a.title);
+            }
+            
+            // Extract Attitude from Genkit response - exact format matching dummy JSON
+            if (genkitResult.attitude && Array.isArray(genkitResult.attitude)) {
+              competencyData.attitude = genkitResult.attitude.map((a: any) => ({
+                title: a.title || a.name || '',
+                description: a.description || '',
+                category: a.category || 'Behavioral',
+                sub_category: a.sub_category || a.subCategory || '',
+                proficiency_level: a.level || 3
+              })).filter((a: any) => a.title);
+            }
+            
+            // Extract Behavior from Genkit response - exact format matching dummy JSON
+            if (genkitResult.behavior && Array.isArray(genkitResult.behavior)) {
+              competencyData.behavior = genkitResult.behavior.map((b: any) => ({
+                title: b.title || b.name || '',
+                description: b.description || '',
+                category: b.category || 'Operational',
+                sub_category: b.sub_category || b.subCategory || '',
+                proficiency_level: b.level || 3
+              })).filter((b: any) => b.title);
+            }
+            
+            console.log('[CWFKTInput] ✅ Skills from Genkit:', competencyData.skills.length);
+            console.log('[CWFKTInput] ✅ Knowledge from Genkit:', competencyData.knowledge.length);
+            console.log('[CWFKTInput] ✅ Ability from Genkit:', competencyData.ability.length);
+            console.log('[CWFKTInput] ✅ Attitude from Genkit:', competencyData.attitude.length);
+            console.log('[CWFKTInput] ✅ Behavior from Genkit:', competencyData.behavior.length);
+            
+            // ALWAYS use user's input CWF - do not replace with LLM-generated data
+            // Transform user's CWF to the required format
+            validCWFList = validCWFList.map((c: any) => ({
+              critical_work_function: c.function,
+              tasks: (c.tasks || '').split('\n').filter((t: string) => t.trim()).map((t: string) => t.trim())
+            }));
+            
+          } else {
+            console.log('[CWFKTInput] Genkit API failed with status:', genkitResponse.status);
+          }
+        } catch (genkitError) {
+          console.log('[CWFKTInput] Genkit API error:', genkitError);
+        }
         
-        console.log('[CWFKTInput] Generated Profile Data:', JSON.stringify(profileData, null, 2));
+        // Build the complete profile data in EXACT format matching dummy JSON
+        const profileData = {
+          job_role_name: jobRoleText,
+          department: selectedDepartment,
+          department_id: selectedDepartmentId, // Include department ID
+          industry: selectedIndustry,
+          description: `Competency framework for a ${jobRoleText} professional in the ${selectedDepartment} department of the ${selectedIndustry} industry, focusing on essential skills, knowledge, abilities, attitudes, and behaviors required for the role.`,
+          cwf_items: validCWFList.map((c: any, index: number) => ({
+            critical_work_function: c.critical_work_function || '',
+            tasks: Array.isArray(c.tasks) ? c.tasks : []
+          })),
+          skills: competencyData.skills,
+          knowledge: competencyData.knowledge,
+          ability: competencyData.ability,
+          attitude: competencyData.attitude,
+          behavior: competencyData.behavior
+        };
+        
+        console.log('[CWFKTInput] 📋 Generated Profile Data (Structured JSON):', JSON.stringify(profileData, null, 2));
         
         // Store for save functionality
         setGeneratedProfile(profileData);
@@ -1297,6 +1274,7 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
           setJdFormData((prev: any) => ({
             ...prev,
             selectedDepartment,
+            selectedDepartmentId,
             jobRoleText,
             cwfList: validCWFList,
             generatedProfile: profileData,
@@ -1308,47 +1286,32 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
         setStepsCompleted((prev: any) => ({ ...prev, cwfkt: true }));
         setCurrentFlowStep('generated');
         
-        // Create a structured summary message - use finalSkills for display
-        const displaySkills = skillsData.length > 0 ? skillsData : (skillsFromKaba.length > 0 ? skillsFromKaba : []);
+        // Create a structured summary message - use profileData for display
+        const displaySkills = profileData.skills || [];
         const skillsList = displaySkills.length > 0 
           ? displaySkills.map((s: any, i: number) => `   ${i + 1}. ${s.skillName}${s.category ? ` (${s.category})` : ''}`).join('\n')
           : '   No skills data available';
         
         const kabaList = `
 **Knowledge:**
-${kabaData.knowledge.length > 0 ? kabaData.knowledge.map((k: any, i: number) => `   ${i + 1}. ${k.title || k.name || ''}`).join('\n') : '   No knowledge items found'}
+${profileData.knowledge && profileData.knowledge.length > 0 ? profileData.knowledge.map((k: any, i: number) => `   ${i + 1}. ${k.title || k.name || ''}`).join('\n') : '   No knowledge items found'}
 
 **Ability:**
-${kabaData.ability.length > 0 ? kabaData.ability.map((a: any, i: number) => `   ${i + 1}. ${a.title || a.name || ''}`).join('\n') : '   No ability items found'}
+${profileData.ability && profileData.ability.length > 0 ? profileData.ability.map((a: any, i: number) => `   ${i + 1}. ${a.title || a.name || ''}`).join('\n') : '   No ability items found'}
 
 **Attitude:**
-${kabaData.attitude.length > 0 ? kabaData.attitude.map((a: any, i: number) => `   ${i + 1}. ${a.title || a.name || ''}`).join('\n') : '   No attitude items found'}
+${profileData.attitude && profileData.attitude.length > 0 ? profileData.attitude.map((a: any, i: number) => `   ${i + 1}. ${a.title || a.name || ''}`).join('\n') : '   No attitude items found'}
 
 **Behaviour:**
-${kabaData.behaviour.length > 0 ? kabaData.behaviour.map((b: any, i: number) => `   ${i + 1}. ${b.title || b.name || ''}`).join('\n') : '   No behaviour items found'}`;
+${profileData.behaviour && profileData.behaviour.length > 0 ? profileData.behaviour.map((b: any, i: number) => `   ${i + 1}. ${b.title || b.name || ''}`).join('\n') : '   No behaviour items found'}`;
         
-        // Create Job Description based on Industry, Department, Job Role and Critical Work Functions
-        const jobDescription = `The ${jobRoleText} role in the ${selectedDepartment} department of the ${selectedIndustry} industry is responsible for:\n${validCWFList.map((c, index) => `\n• ${c.function}: ${c.tasks.split('\n').filter(t => t.trim()).slice(0, 2).join(', ')}`).join('\n')}`;
-        
-        const summaryContent = `📋 **Job Description Generated** ✅
-
----
-
-**Industry:** ${selectedIndustry}
-**Department:** ${selectedDepartment}
-**Job Role:** ${jobRoleText}
-
----
-
-**📝 Job Description:**
-The ${jobRoleText} role in the ${selectedDepartment} department of the ${selectedIndustry} industry is responsible for handling clinical procedures, patient care, and healthcare delivery. Staff Nurses provide direct patient care, assist physicians, and ensure compliance with hospital protocols and procedures.
-
----
+// Create Job Description based on Industry, Department, Job Role and Critical Work Functions
+      const jobDescription = `The ${jobRoleText} role in the ${selectedDepartment} department of the ${selectedIndustry} industry is responsible for handling clinical procedures, patient care, and healthcare delivery. Staff Nurses provide direct patient care, assist physicians, and ensure compliance with hospital protocols and procedures.
 
 **📌 Critical Work Functions & Tasks:**
-${validCWFList.map((c, index) => `
-${index + 1}. **${c.function}**
-${c.tasks.split('\n').filter(t => t.trim()).map((t, i) => `   • ${t.trim()}`).join('\n')}`).join('\n')}
+${validCWFList.map((c: any, index) => `
+${index + 1}. **${c.critical_work_function || c.function || ''}**
+${(c.tasks || []).map((t: string, i: number) => `   • ${t}`).join('\n')}`).join('\n')}
 
 ---
 
@@ -1368,12 +1331,12 @@ ${skillsList}
         const botMessage: Message = {
           id: Date.now().toString(),
           type: 'bot',
-          content: summaryContent,
+          content: jobDescription,
           timestamp: new Date(),
           metadata: {
             currentStep: 'complete' as const,
             action: 'SHOW_GENERATED_PROFILE',
-            cwfktData: validCWFList.map((c, i) => ({ id: i + 1, function: c.function, tasks: c.tasks.split('\n').filter(t => t.trim()) })),
+            cwfktData: validCWFList.map((c: any, i: number) => ({ id: i + 1, function: c.critical_work_function, tasks: Array.isArray(c.tasks) ? c.tasks : (c.tasks || '').split('\n').filter((t: string) => t && t.length > 0) })),
             generatedProfile: profileData
           }
         };
@@ -1399,35 +1362,40 @@ ${skillsList}
       
       try {
         const subInstituteId = sessionData?.subInstituteId || '1';
+        const userId = sessionData?.userId || '1';
         
-        // Save to database via API - Using the HP API endpoint for job role creation
-        const saveUrl = 'https://hp.triz.co.in/table_data/insert';
-        const saveData = {
-          table: 's_user_jobrole',
-          data: {
-            industries: generatedProfile.industry,
-            department: generatedProfile.department,
-            jobrole: generatedProfile.jobRole,
-            sub_institute_id: subInstituteId,
-            status: 'active',
-            created_at: new Date().toISOString()
-          }
+        const savePayload = {
+          sub_institute_id: parseInt(subInstituteId, 10) || 1,
+          user_id: parseInt(userId, 10) || 1,
+          job_role_name: generatedProfile.job_role_name || generatedProfile.jobRole || '',
+          department: generatedProfile.department || '',
+          industry: generatedProfile.industry || '',
+          description: generatedProfile.description || '',
+          cwf_items: generatedProfile.cwf_items || [],
+          skills: generatedProfile.skills || [],
+          knowledge: generatedProfile.knowledge || [],
+          ability: generatedProfile.ability || [],
+          attitude: generatedProfile.attitude || [],
+          behavior: generatedProfile.behavior || generatedProfile.behaviour || []
         };
         
-        console.log('[CWFKTInput] Saving JD to database:', JSON.stringify(saveData, null, 2));
+        console.log('[CWFKTInput] 📤 Calling API: http://127.0.0.1:8000/api/gemini/save-jd');
+        console.log('[CWFKTInput] 📤 Full Payload:', JSON.stringify(savePayload, null, 2));
         
-        const saveResponse = await fetch(saveUrl, {
+        const saveResponse = await fetch('http://127.0.0.1:8000/api/gemini/save-jd', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(saveData)
+          body: JSON.stringify(savePayload)
         });
         
         if (saveResponse.ok) {
+          const responseData = await saveResponse.json();
+          console.log('[CWFKTInput] 📥 API Response:', JSON.stringify(responseData, null, 2));
           setSaveSuccess(true);
-          // Clear parent state after successful save
           if (setJdFormData) {
             setJdFormData({
               selectedDepartment: '',
+              selectedDepartmentId: null,
               jobRoleText: '',
               cwfList: [],
               generatedProfile: null,
@@ -1469,15 +1437,22 @@ ${skillsList}
     };
     
     // Handle department selection - move to next step
-    const handleDepartmentSelect = (dept: string) => {
-      setSelectedDepartment(dept);
+    const handleDepartmentSelect = (deptValue: string) => {
+      // Parse department name and ID from value (format: "name|id" or just "name")
+      const parts = deptValue.split('|');
+      const deptName = parts[0];
+      const deptId = parts[1] ? parseInt(parts[1], 10) : null;
+      
+      setSelectedDepartment(deptName);
+      setSelectedDepartmentId(deptId);
       setCurrentFlowStep('jobrole');
       setStepsCompleted((prev: any) => ({ ...prev, department: true }));
       // Sync with parent state
       if (setJdFormData) {
         setJdFormData((prev: any) => ({
           ...prev,
-          selectedDepartment: dept,
+          selectedDepartment: deptName,
+          selectedDepartmentId: deptId,
           stepsCompleted: { ...prev?.stepsCompleted || {}, department: true }
         }));
       }
@@ -1527,7 +1502,7 @@ ${skillsList}
         <div className="mb-2">
           <label className="block text-xs font-medium text-gray-600 mb-1">Select Department</label>
           <select
-            value={selectedDepartment}
+            value={selectedDepartmentId ? `${selectedDepartment}|${selectedDepartmentId}` : selectedDepartment}
             onChange={(e) => handleDepartmentSelect(e.target.value)}
             disabled={isLoadingDepartments}
             className="w-full px-3 py-2 text-sm border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all"
@@ -1537,7 +1512,7 @@ ${skillsList}
               <option value="" disabled>Loading...</option>
             ) : departmentOptions.length > 0 ? (
               departmentOptions.map((dept) => (
-                <option key={dept.id} value={dept.name}>{dept.name}</option>
+                <option key={dept.id} value={`${dept.name}|${dept.id}`}>{dept.name}</option>
               ))
             ) : (
               <option value="" disabled>No departments found</option>
@@ -1665,7 +1640,7 @@ ${skillsList}
     
     // Render Step 4: Generate Profile Button
     const renderStep4Generate = () => {
-      const validCWFList = cwfList.filter(c => c.function.trim());
+      const validCWFList = cwfList.filter(c => c.function && c.function.trim());
       
       return (
         <div className="p-4 bg-white rounded-xl border border-green-200 shadow-sm mb-3">
@@ -1714,7 +1689,7 @@ ${skillsList}
       <div className="mt-3 p-2">
         {/* Step Indicator Header */}
         <div className="mb-4 px-2">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
             <div className="flex items-center gap-2">
               <Bot className="w-4 h-4 text-indigo-600" />
               <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Job Description Creation</span>
@@ -1734,11 +1709,11 @@ ${skillsList}
         {/* Step 2: Job Role - Shown after department selected (always visible once selected) */}
         {(stepsCompleted.department || selectedDepartment) && renderStep2JobRole()}
         
-        {/* Step 3: CWF & Tasks - Shown after job role entered (always visible once entered) */}
-        {(stepsCompleted.jobrole || jobRoleText) && renderStep3CWF()}
+        {/* Step 3: CWF & Tasks - Shown after job role Continue button is clicked */}
+        {stepsCompleted.jobrole && renderStep3CWF()}
         
         {/* Step 4: Generate - Shown when CWFs are added (always visible once CWFs exist) */}
-        {(cwfList.filter(c => c.function.trim()).length > 0 || generatedProfile) && renderStep4Generate()}
+        {(cwfList.filter(c => c && c.function && c.function.trim()).length > 0 || generatedProfile) && renderStep4Generate()}
         
         {/* Save JD Button - shows after profile is generated */}
         {/* {generatedProfile && (
@@ -1764,36 +1739,60 @@ ${skillsList}
     );
   };
 
-  // Phase 3: Generated Profile UI - Modern Card-Based Layout
+  // Phase 3: Generated Profile UI - Modern Card-Based Layout with Collapsible Sections
   const GeneratedProfileUI = ({ profileData, onSave }: { profileData: any; onSave?: () => void }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
-    
+    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+      cwf: true,
+      skills: true,
+      knowledge: true,
+      ability: true,
+      attitude: true,
+      behaviour: true
+    });
+
+    const toggleSection = (section: string) => {
+      setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+    };
+
     const handleSave = async () => {
       setIsSaving(true);
+      
       try {
         const subInstituteId = sessionData?.subInstituteId || '1';
-        const saveUrl = 'https://hp.triz.co.in/table_data/insert';
-        const saveData = {
-          table: 's_user_jobrole',
-          data: {
-            industries: profileData.industry,
-            department: profileData.department,
-            jobrole: profileData.jobRole,
-            sub_institute_id: subInstituteId,
-            status: 'active',
-            created_at: new Date().toISOString()
-          }
+        const userId = sessionData?.userId || '1';
+        
+        const savePayload = {
+          sub_institute_id: parseInt(subInstituteId, 10) || 1,
+          user_id: parseInt(userId, 10) || 1,
+          job_role_name: profileData.job_role_name || profileData.jobRole || '',
+          department: profileData.department || '',
+          industry: profileData.industry || '',
+          description: profileData.description || '',
+          cwf_items: profileData.cwf_items || [],
+          skills: profileData.skills || [],
+          knowledge: profileData.knowledge || [],
+          ability: profileData.ability || [],
+          attitude: profileData.attitude || [],
+          behavior: profileData.behavior || profileData.behaviour || []
         };
         
-        const saveResponse = await fetch(saveUrl, {
+        console.log('💾 [Save JD] 📤 Calling API: http://127.0.0.1:8000/api/gemini/save-jd');
+        console.log('💾 [Save JD] 📤 Full Payload:', JSON.stringify(savePayload, null, 2));
+        
+        const saveResponse = await fetch('http://127.0.0.1:8000/api/gemini/save-jd', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(saveData)
+          body: JSON.stringify(savePayload)
         });
         
         if (saveResponse.ok) {
+          const responseData = await saveResponse.json();
+          console.log('💾 [Save JD] 📥 API Response:', JSON.stringify(responseData, null, 2));
           setSaveSuccess(true);
+        } else {
+          throw new Error('Failed to save JD');
         }
       } catch (error) {
         console.error('Error saving JD:', error);
@@ -1815,178 +1814,353 @@ ${skillsList}
     );
     
     return (
-      <div className="space-y-4">
+      <div className="mt-3 space-y-4">
         {/* Header Card - Industry, Department, Job Role */}
-        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg p-4 text-white">
-          <div className="flex items-center gap-2 mb-1">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span className="text-xs font-medium opacity-90">Job Description Generated</span>
+        <div className="bg-gradient-to-r from-indigo-500 via-blue-500 to-cyan-500 rounded-xl p-4 shadow-lg">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-white font-semibold text-sm">Job Description Generated</h3>
           </div>
-          <h2 className="text-xl font-bold mb-3">{profileData.jobRole}</h2>
-          <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">{profileData.department}</span>
-            <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">{profileData.industry}</span>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+            <h2 className="text-white font-bold text-lg mb-2">{profileData.job_role_name}</h2>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-3 py-1 bg-white/20 rounded-full text-white text-xs font-medium">
+                {profileData.industry}
+              </span>
+              <span className="px-3 py-1 bg-white/20 rounded-full text-white text-xs font-medium">
+                {profileData.department}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Job Description Card */}
-        <SectionCard 
-          title="Job Description" 
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
-          color="from-blue-500 to-blue-600"
-        >
-          <p className="text-sm text-gray-700 leading-relaxed">
-            The {profileData.jobRole} role in the {profileData.department} department of the {profileData.industry} industry is responsible for handling clinical procedures, patient care, and healthcare delivery. Staff Nurses provide direct patient care, assist physicians, and ensure compliance with hospital protocols and procedures.
-          </p>
-        </SectionCard>
-
-        {/* Critical Work Functions & Tasks Card */}
-        <SectionCard 
-          title="Critical Work Functions & Tasks" 
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>}
-          color="from-orange-500 to-orange-600"
-        >
-          <div className="space-y-3">
-            {profileData.criticalWorkFunctions && profileData.criticalWorkFunctions.length > 0 ? (
-              profileData.criticalWorkFunctions.map((cwf: any, i: number) => (
-                <div key={i} className="p-3 bg-orange-50 rounded-lg border border-orange-100">
-                  <h4 className="text-sm font-semibold text-orange-800 mb-2">{i + 1}. {cwf.function}</h4>
-                  <ul className="space-y-1">
-                    {cwf.tasks && cwf.tasks.map((task: string, j: number) => (
-                      <li key={j} className="text-xs text-gray-600 flex items-start gap-2">
-                        <span className="text-orange-400 mt-0.5">•</span>
-                        <span>{task}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-gray-500">No critical work functions added</p>
-            )}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-blue-600" />
+            <h4 className="text-sm font-semibold text-gray-800">Job Description</h4>
           </div>
-        </SectionCard>
-
-        {/* Skills Card */}
-        <SectionCard 
-          title="Skills" 
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>}
-          color="from-green-500 to-green-600"
-        >
-          <div className="flex flex-wrap gap-2">
-            {profileData.skills && profileData.skills.length > 0 ? (
-              <>
-                {profileData.skills.slice(0, 10).map((skill: any, i: number) => (
-                  <span key={i} className="px-3 py-1.5 text-xs font-medium bg-green-50 text-green-700 rounded-lg border border-green-200">
-                    {skill.skillName}
-                    {skill.category && <span className="ml-1 text-green-500/70">({skill.category})</span>}
-                  </span>
-                ))}
-                {profileData.skills.length > 10 && (
-                  <span className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-lg">
-                    +{profileData.skills.length - 10} more skills
-                  </span>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-gray-500">No skills data available</p>
-            )}
+          <div className="p-4">
+            <p className="text-sm text-gray-600 leading-relaxed">
+              {profileData.description}
+            </p>
           </div>
-        </SectionCard>
+        </div>
 
-        {/* KAAB Card */}
-        <SectionCard 
-          title="KAAB (Knowledge, Ability, Attitude, Behaviour)" 
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
-          color="from-purple-500 to-purple-600"
-        >
-          <div className="grid grid-cols-2 gap-3">
-            {/* Knowledge */}
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <h4 className="text-xs font-semibold text-purple-700 mb-2">Knowledge</h4>
-              <ul className="space-y-1">
+        {/* Critical Work Functions & Tasks Card - Collapsible */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div 
+            className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between cursor-pointer"
+            onClick={() => toggleSection('cwf')}
+          >
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-purple-600" />
+              <h4 className="text-sm font-semibold text-gray-800">Critical Work Functions & Tasks</h4>
+              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
+                {profileData.cwf_items?.length || 0}
+              </span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedSections.cwf ? 'rotate-180' : ''}`} />
+          </div>
+          
+          {expandedSections.cwf && (
+            <div className="p-4 space-y-3">
+              {profileData.cwf_items && profileData.cwf_items.length > 0 ? (
+                profileData.cwf_items.map((cwf: any, i: number) => (
+                  <div key={i} className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-3 border border-purple-100">
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="text-sm font-semibold text-gray-800 mb-1">{cwf.critical_work_function}</h5>
+                        {cwf.tasks && cwf.tasks.length > 0 && (
+                          <ul className="text-xs text-gray-600 space-y-1">
+                            {cwf.tasks.map((task: string, j: number) => (
+                              <li key={j} className="flex items-start gap-2">
+                                <span className="text-purple-400 mt-0.5">•</span>
+                                <span>{task}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-2">No critical work functions added</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Skills Card - Collapsible */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div 
+            className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between cursor-pointer"
+            onClick={() => toggleSection('skills')}
+          >
+            <div className="flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-green-600" />
+              <h4 className="text-sm font-semibold text-gray-800">Skills</h4>
+              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                {profileData.skills?.length || 0}
+              </span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedSections.skills ? 'rotate-180' : ''}`} />
+          </div>
+          
+          {expandedSections.skills && (
+            <div className="p-4 space-y-3">
+              {profileData.skills && profileData.skills.length > 0 ? (
+                profileData.skills.map((skill: any, i: number) => (
+                  <div key={i} className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                    <div className="flex items-start justify-between mb-2">
+                      <h5 className={`text-sm font-semibold text-green-800`}>{skill.title}</h5>
+                      {skill.proficiency_level && (
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded">
+                          Level {skill.proficiency_level}
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      {skill.category && (
+                        <p className="text-xs text-gray-600">
+                          <span className="font-medium">Category:</span> {skill.category}
+                          {skill.sub_category && <span className="text-gray-400">Sub Category: {skill.sub_category}</span>}
+                        </p>
+                      )}
+                      {skill.description && (
+                        <p className="text-xs text-gray-500">Description: {skill.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-2">No skills data available</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* KAAB Cards - Grid of Collapsible Sections */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Knowledge */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div 
+              className="bg-amber-50 px-3 py-2 border-b border-gray-200 flex items-center justify-between cursor-pointer"
+              onClick={() => toggleSection('knowledge')}
+            >
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-3.5 h-3.5 text-amber-600" />
+                <h4 className="text-xs font-semibold text-gray-800">Knowledge</h4>
+              </div>
+              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${expandedSections.knowledge ? 'rotate-180' : ''}`} />
+            </div>
+            {expandedSections.knowledge && (
+              <div className="p-3 space-y-2">
                 {profileData.knowledge && profileData.knowledge.length > 0 ? (
-                  profileData.knowledge.slice(0, 3).map((item: any, i: number) => (
-                    <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
-                      <span className="text-purple-400">•</span>
-                      <span>{item.title || item.name || ''}</span>
-                    </li>
+                  profileData.knowledge.map((item: any, i: number) => (
+                    <div key={i} className="p-2 bg-amber-50 rounded-lg border border-amber-100">
+                      <div className="flex items-start justify-between mb-1">
+                        <h5 className="text-xs font-semibold text-amber-800">{item.title || item.name || ''}</h5>
+                        {(item.proficiency_level || item.level) && (
+                          <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">
+                            Level {item.proficiency_level || item.level}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-0.5">
+                        {item.category && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium">Category:</span> {item.category}
+                          </p>
+                        )}
+                        {item.sub_category && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium">Sub Category:</span> {item.sub_category}
+                          </p>
+                        )}
+                        {item.description && (
+                          <p className="text-xs text-gray-500">{item.description}</p>
+                        )}
+                      </div>
+                    </div>
                   ))
                 ) : (
-                  <li className="text-xs text-gray-400">No knowledge items</li>
+                  <p className="text-xs text-gray-400">No knowledge items</p>
                 )}
-              </ul>
-            </div>
-            
-            {/* Ability */}
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <h4 className="text-xs font-semibold text-blue-700 mb-2">Ability</h4>
-              <ul className="space-y-1">
-                {profileData.ability && profileData.ability.length > 0 ? (
-                  profileData.ability.slice(0, 3).map((item: any, i: number) => (
-                    <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
-                      <span className="text-blue-400">•</span>
-                      <span>{item.title || item.name || ''}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-xs text-gray-400">No ability items</li>
-                )}
-              </ul>
-            </div>
-            
-            {/* Attitude */}
-            <div className="p-3 bg-green-50 rounded-lg">
-              <h4 className="text-xs font-semibold text-green-700 mb-2">Attitude</h4>
-              <ul className="space-y-1">
-                {profileData.attitude && profileData.attitude.length > 0 ? (
-                  profileData.attitude.slice(0, 3).map((item: any, i: number) => (
-                    <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
-                      <span className="text-green-400">•</span>
-                      <span>{item.title || item.name || ''}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-xs text-gray-400">No attitude items</li>
-                )}
-              </ul>
-            </div>
-            
-            {/* Behaviour */}
-            <div className="p-3 bg-orange-50 rounded-lg">
-              <h4 className="text-xs font-semibold text-orange-700 mb-2">Behaviour</h4>
-              <ul className="space-y-1">
-                {profileData.behaviour && profileData.behaviour.length > 0 ? (
-                  profileData.behaviour.slice(0, 3).map((item: any, i: number) => (
-                    <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
-                      <span className="text-orange-400">•</span>
-                      <span>{item.title || item.name || ''}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-xs text-gray-400">No behaviour items</li>
-                )}
-              </ul>
-            </div>
+              </div>
+            )}
           </div>
-        </SectionCard>
+
+          {/* Ability */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div 
+              className="bg-blue-50 px-3 py-2 border-b border-gray-200 flex items-center justify-between cursor-pointer"
+              onClick={() => toggleSection('ability')}
+            >
+              <div className="flex items-center gap-2">
+                <Zap className="w-3.5 h-3.5 text-blue-600" />
+                <h4 className="text-xs font-semibold text-gray-800">Ability</h4>
+              </div>
+              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${expandedSections.ability ? 'rotate-180' : ''}`} />
+            </div>
+            {expandedSections.ability && (
+              <div className="p-3 space-y-2">
+                {profileData.ability && profileData.ability.length > 0 ? (
+                  profileData.ability.map((item: any, i: number) => (
+                    <div key={i} className="p-2 bg-blue-50 rounded-lg border border-blue-100">
+                      <div className="flex items-start justify-between mb-1">
+                        <h5 className="text-xs font-semibold text-blue-800">{item.title || item.name || ''}</h5>
+                        {(item.proficiency_level || item.level) && (
+                          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                            Level {item.proficiency_level || item.level}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-0.5">
+                        {item.category && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium">Category:</span> {item.category}
+                          </p>
+                        )}
+                        {item.sub_category && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium">Sub Category:</span> {item.sub_category}
+                          </p>
+                        )}
+                        {item.description && (
+                          <p className="text-xs text-gray-500">{item.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-400">No ability items</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Attitude */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div 
+              className="bg-rose-50 px-3 py-2 border-b border-gray-200 flex items-center justify-between cursor-pointer"
+              onClick={() => toggleSection('attitude')}
+            >
+              <div className="flex items-center gap-2">
+                <Heart className="w-3.5 h-3.5 text-rose-600" />
+                <h4 className="text-xs font-semibold text-gray-800">Attitude</h4>
+              </div>
+              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${expandedSections.attitude ? 'rotate-180' : ''}`} />
+            </div>
+            {expandedSections.attitude && (
+              <div className="p-3 space-y-2">
+                {profileData.attitude && profileData.attitude.length > 0 ? (
+                  profileData.attitude.map((item: any, i: number) => (
+                    <div key={i} className="p-2 bg-rose-50 rounded-lg border border-rose-100">
+                      <div className="flex items-start justify-between mb-1">
+                        <h5 className="text-xs font-semibold text-rose-800">{item.title || item.name || ''}</h5>
+                        {(item.proficiency_level || item.level) && (
+                          <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-xs font-medium rounded">
+                            Level {item.proficiency_level || item.level}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-0.5">
+                        {item.category && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium">Category:</span> {item.category}
+                          </p>
+                        )}
+                        {item.sub_category && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium">Sub Category:</span> {item.sub_category}
+                          </p>
+                        )}
+                        {item.description && (
+                          <p className="text-xs text-gray-500">{item.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-400">No attitude items</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Behaviour */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div 
+              className="bg-violet-50 px-3 py-2 border-b border-gray-200 flex items-center justify-between cursor-pointer"
+              onClick={() => toggleSection('behaviour')}
+            >
+              <div className="flex items-center gap-2">
+                <Smile className="w-3.5 h-3.5 text-violet-600" />
+                <h4 className="text-xs font-semibold text-gray-800">Behaviour</h4>
+              </div>
+              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${expandedSections.behaviour ? 'rotate-180' : ''}`} />
+            </div>
+            {expandedSections.behaviour && (
+              <div className="p-3 space-y-2">
+                {profileData.behavior && profileData.behavior.length > 0 ? (
+                  profileData.behavior.map((item: any, i: number) => (
+                    <div key={i} className="p-2 bg-violet-50 rounded-lg border border-violet-100">
+                      <div className="flex items-start justify-between mb-1">
+                        <h5 className="text-xs font-semibold text-violet-800">{item.title || item.name || ''}</h5>
+                        {(item.proficiency_level || item.level) && (
+                          <span className="px-1.5 py-0.5 bg-violet-100 text-violet-700 text-xs font-medium rounded">
+                            Level {item.proficiency_level || item.level}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-0.5">
+                        {item.category && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium">Category:</span> {item.category}
+                          </p>
+                        )}
+                        {item.sub_category && (
+                          <p className="text-xs text-gray-600">
+                            <span className="font-medium">Sub Category:</span> {item.sub_category}
+                          </p>
+                        )}
+                        {item.description && (
+                          <p className="text-xs text-gray-500">{item.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-400">No behaviour items</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Save JD Button */}
         <button
           onClick={handleSave}
           disabled={isSaving || saveSuccess}
-          className={`w-full px-4 py-3 text-sm font-semibold text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg ${
-            saveSuccess ? 'bg-green-500 hover:bg-green-600' : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+          className={`w-full px-4 py-3 text-sm font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg ${
+            saveSuccess 
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700' 
+              : 'bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-xl'
           }`}
         >
           {isSaving ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
           ) : saveSuccess ? (
-            <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Saved Successfully</>
+            <><CheckCircle className="w-4 h-4" /> Saved Successfully</>
           ) : (
-            <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5m4 0h2m-2 0v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7m14 0a2 2 0 012 2v10a2 2 0 01-2 2H9a2 2 0 01-2-2V9a2 2 0 012-2h2m2 0h2m-2 0V5a2 2 0 012-2h2a2 2 0 012 2v2" /></svg> Save Job Description</>
+            <><Save className="w-4 h-4" /> Save Job Description</>
           )}
         </button>
       </div>
@@ -2058,7 +2232,7 @@ ${skillsList}
           )}
         </div>
 
-        <div className="flex gap-2 mt-4">
+       <div className="flex flex-wrap gap-2">
           <button
             onClick={() => handleFormSubmit(messageId)}
             disabled={isLoading || pendingFormMessageId !== null}
@@ -2091,6 +2265,7 @@ ${skillsList}
     const options = message?.metadata?.selectionOptions || [];
     const stepLabel = message?.metadata?.stepLabel || 'Select an option';
     const currentStep = message?.metadata?.currentStep;
+    const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
     
     console.log('[SkillGapSelection] Rendering - messageId:', messageId);
     console.log('[SkillGapSelection] options:', options);
@@ -2114,6 +2289,7 @@ ${skillsList}
           break;
         case 'department':
           updatedState.department = selectedOption.name;
+          updatedState.departmentId = selectedOption.id; // Store department ID
           updatedState.currentStep = 'jobRole';
           nextStep = 'jobRole';
           break;
@@ -2146,14 +2322,69 @@ ${skillsList}
         return;
       }
       
-      // For department step: just set input text (with job role prompt), user presses Enter to get job role input
-      // This matches the requirement: "Instead of showing the bot message inside a box, it should appear in the text area"
+      // For department step: call API to get job roles for the selected department
       if (currentStep === 'department') {
-        setInput(`You selected ${selectedOption.name}. Please enter the job role for this department.`);
+        // Update state with department info
+        setSkillGapFlow(updatedState);
+        setIsLoading(true);
+        
+        // Call API to get job roles for the selected department
+        try {
+          const apiEndpoint = '/api/skill-gap-analysis';
+          const requestBody = {
+            currentStep: 'jobRole',
+            industry: updatedState.industry,
+            department: selectedOption.name,
+            departmentId: updatedState.departmentId
+          };
+          
+          console.log('[SkillGapSelection] Calling job roles API for department:', requestBody);
+          
+          fetch(apiEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log('[SkillGapSelection] Job roles API response:', data);
+            
+            const botMessage: Message = {
+              id: Date.now().toString(),
+              type: 'bot',
+              content: `You selected ${selectedOption.name} department. Now select your job role:`,
+              timestamp: new Date(),
+              metadata: {
+                action: 'SHOW_SKILL_GAP_OPTIONS',
+                selectionOptions: data.data || [],
+                stepLabel: `Job Roles in ${selectedOption.name}`,
+                currentStep: 'jobRole',
+                nextStep: 'jobRole',
+                entities: {
+                  industry: updatedState.industry,
+                  department: selectedOption.name,
+                  departmentId: updatedState.departmentId
+                }
+              }
+            };
+            
+            setMessages(prev => [...prev, botMessage]);
+          })
+          .catch(err => {
+            console.error('[SkillGapSelection] Error fetching job roles:', err);
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+        } catch (error) {
+          console.error('[SkillGapSelection] Error:', error);
+          setIsLoading(false);
+        }
         return;
       }
       
-      // Call the appropriate API based on current step (for non-industry steps)
+      // For other steps (jobRole, skills, tasks), call the API
+      // Call the appropriate API based on current step
       try {
         setIsLoading(true);
         
@@ -2164,12 +2395,11 @@ ${skillsList}
         };
         
         // Add the appropriate data based on current step
-        if (currentStep === 'department') {
-          requestBody.industry = updatedState.industry;
-          requestBody.department = selectedOption.name;
-        } else if (currentStep === 'jobRole') {
+        // Skip for department - already handled above with async fetch
+        if (currentStep === 'jobRole') {
           requestBody.industry = updatedState.industry;
           requestBody.department = updatedState.department;
+          requestBody.departmentId = updatedState.departmentId; // Include department ID
           requestBody.jobRole = selectedOption.name;
         } else if (currentStep === 'skills') {
           requestBody.currentStep = 'skills';
@@ -2228,6 +2458,7 @@ ${skillsList}
           content: contentMessage,
           timestamp: new Date(),
           metadata: {
+            action: 'SHOW_SKILL_GAP_OPTIONS',
             selectionOptions: data.data || [],
             stepLabel: stepLabelText,
             currentStep: data.nextStep,
@@ -2268,53 +2499,168 @@ ${skillsList}
           {stepLabel}
         </h4>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {options.map((option: any, index: number) => (
-            <button
-              key={index}
-              onClick={async (e) => {
-                // Prevent any default form behavior
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const selectedName = option.name;
-                console.log('[SkillGapSelection] Button clicked - option:', selectedName, 'currentStep:', currentStep);
-                
-                // CRITICAL FIX: Only handle industry and department steps here
-                // REMOVED: Job role step - flow is now Industry → Department only
-                // REMOVED: Auto-fetching departments on industry selection
-                // Now user must explicitly ask for department list by sending a message
-                if (currentStep === 'industry') {
-                  console.log('[SkillGapSelection] Handling INDUSTRY selection');
-                  // Just set the input text - user must send the message to get departments
-                  setInput(`Selected Industry as ${selectedName}`);
+        {currentStep === 'skills' ? (
+          <div className="space-y-3">
+            {options.map((option: any, index: number) => {
+              const isExpanded = expandedSkill === option.name;
+              const skillCategory = option.category || option.Category || option.skill_category || '';
+              const skillSubCategory = option.subCategory || option.sub_category || option.subCategoryName || '';
+              const skillDescription = option.description || option.Description || option.skill_description || '';
+              return (
+                <div 
+                  key={index} 
+                  className="p-3 bg-white rounded-lg border border-green-200 hover:border-green-400 transition-all shadow-sm cursor-pointer"
+                  onClick={() => setExpandedSkill(isExpanded ? null : option.name)}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h5 className="text-sm font-semibold text-green-800">{option.name}</h5>
+                    {(option.proficiencyLevel || option.proficiency_level) && (
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded">
+                        Level {option.proficiencyLevel || option.proficiency_level}
+                      </span>
+                    )}
+                  </div>
+                  {isExpanded && (
+                    <div className="space-y-1 mt-2 pt-2 border-t border-green-100">
+                      {skillCategory && (
+                        <p className="text-xs text-gray-600">
+                          <span className="font-medium">Category:</span> {skillCategory}
+                        </p>
+                      )}
+                      {skillSubCategory && (
+                        <p className="text-xs text-gray-600">
+                          <span className="font-medium">Sub-category:</span> {skillSubCategory}
+                        </p>
+                      )}
+                      {skillDescription && (
+                        <p className="text-xs text-gray-500">{skillDescription}</p>
+                      )}
+                      {(option.expectedProficiency || option.expected_proficiency) && (
+                        <p className="text-xs text-green-600">
+                          <span className="font-medium">Expected Proficiency:</span> {option.expectedProficiency || option.expected_proficiency}/6
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {!isExpanded && (
+                    <p className="text-xs text-gray-400 italic">Click to see details</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {options.map((option: any, index: number) => (
+              <button
+                key={index}
+                onClick={async (e) => {
+                  // Prevent any default form behavior
+                  e.preventDefault();
+                  e.stopPropagation();
                   
-                  // SECURITY FIX: Explicitly do NOT call any APIs here
-                  // User must press Enter to send the message and trigger department list
-                } else if (currentStep === 'department') {
-                  console.log('[SkillGapSelection] Department selected - prompting for job role');
+                  const selectedName = option.name;
+                  console.log('[SkillGapSelection] Button clicked - option:', selectedName, 'currentStep:', currentStep);
                   
-                  // Put the message in the input field for user to send
-                  setInput(`You selected ${selectedName}. Please enter the job role for this department.`);
-                } else if (currentStep === 'skills') {
-                  // When user selects a skill, trigger the rating prompt flow
-                  console.log('[SkillGapSelection] Skills selected - triggering rating prompt');
-                  // Update state and call API
-                  handleSelect({ id: option.id, name: option.name });
-                } else if (currentStep === 'rating_prompt') {
-                  // Rating prompt is handled by RatingPrompt component, not here
-                  console.log('[SkillGapSelection] Rating prompt - handled by RatingPrompt component');
-                } else {
-                  // For other steps, just put text in input box
-                  setInput(`Select my ${currentStep} as ${selectedName}`);
-                }
-              }}
-              className="w-full px-4 py-3 text-left text-sm bg-white border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-400 transition-all shadow-sm"
-            >
-              <span className="font-medium text-green-800">{option.name}</span>
-            </button>
-          ))}
-        </div>
+                  // CRITICAL FIX: Only handle industry and department steps here
+                  // REMOVED: Job role step - flow is now Industry → Department only
+                  // REMOVED: Auto-fetching departments on industry selection
+                  // Now user must explicitly ask for department list by sending a message
+                  if (currentStep === 'industry') {
+                    console.log('[SkillGapSelection] Handling INDUSTRY selection');
+                    setSkillGapFlow(prev => ({
+                      ...prev,
+                      industry: selectedName,
+                      currentStep: 'department',
+                      selectedValue: selectedName
+                    }));
+                    // Just set the input text - user must send the message to get departments
+                    setInput(`Selected Industry as ${selectedName}`);
+                    
+                    // SECURITY FIX: Explicitly do NOT call any APIs here
+                    // User must press Enter to send the message and trigger department list
+                  } else if (currentStep === 'department') {
+                    console.log('[SkillGapSelection] Department selected - fetching job roles');
+                    
+                    // Update skill gap flow state
+                    const updatedState = {
+                      ...skillGapFlow,
+                      department: selectedName,
+                      departmentId: option.id,
+                      currentStep: 'jobRole' as const,
+                      selectedValue: selectedName
+                    };
+                    setSkillGapFlow(updatedState);
+                    
+                    // Call API to get job roles for the selected department
+                    setIsLoading(true);
+                    
+                    const apiEndpoint = '/api/skill-gap-analysis';
+                    const requestBody = {
+                      currentStep: 'jobRole',
+                      industry: skillGapFlow.industry,
+                      department: selectedName,
+                      departmentId: option.id
+                    };
+                    
+                    console.log('[SkillGapSelection] Calling job roles API:', requestBody);
+                    
+                    fetch(apiEndpoint, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(requestBody)
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                      console.log('[SkillGapSelection] Job roles API response:', data);
+                      
+                      const botMessage: Message = {
+                        id: Date.now().toString(),
+                        type: 'bot',
+                        content: `You selected ${selectedName} department. Now select your job role:`,
+                        timestamp: new Date(),
+                        metadata: {
+                          action: 'SHOW_SKILL_GAP_OPTIONS',
+                          selectionOptions: data.data || [],
+                          stepLabel: `Job Roles in ${selectedName}`,
+                          currentStep: 'jobRole',
+                          nextStep: 'jobRole',
+                          entities: {
+                            industry: skillGapFlow.industry,
+                            department: selectedName,
+                            departmentId: option.id
+                          }
+                        }
+                      };
+                      
+                      setMessages(prev => [...prev, botMessage]);
+                    })
+                    .catch(err => {
+                      console.error('[SkillGapSelection] Error fetching job roles:', err);
+                    })
+                    .finally(() => {
+                      setIsLoading(false);
+                    });
+                  } else if (currentStep === 'skills') {
+                    // When user selects a skill, trigger the rating prompt flow
+                    console.log('[SkillGapSelection] Skills selected - triggering rating prompt');
+                    // Update state and call API
+                    handleSelect({ id: option.id, name: option.name });
+                  } else if (currentStep === 'rating_prompt') {
+                    // Rating prompt is handled by RatingPrompt component, not here
+                    console.log('[SkillGapSelection] Rating prompt - handled by RatingPrompt component');
+                  } else {
+                    // For other steps, just put text in input box
+                    setInput(`Select my ${currentStep} as ${selectedName}`);
+                  }
+                }}
+                className="w-full px-4 py-3 text-left text-sm bg-white border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-400 transition-all shadow-sm"
+              >
+                <span className="font-medium text-green-800">{option.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Show rating prompt inline after skills list when currentStep is 'skills' AND no rating_prompt message exists yet */}
         {currentStep === 'skills' && !messages.some(m => m.metadata?.currentStep === 'rating_prompt') && (
@@ -2447,9 +2793,10 @@ ${skillsList}
                       id: skill.id,
                       name: skill.title,
                       expectedProficiency: parseInt(skill.proficiency_level) || 3,
-                      description: skill.description,
-                      category: skill.category,
-                      subCategory: skill.sub_category
+                      proficiencyLevel: parseInt(skill.proficiency_level) || 3,
+                      description: skill.description || '',
+                      category: skill.category || '',
+                      subCategory: skill.sub_category || ''
                     }));
 
                     console.log('[SkillGapSelection] Transformed skills:', transformedSkills);
@@ -2671,9 +3018,10 @@ ${skillsList}
           id: skill.id,
           name: skill.title,
           expectedProficiency: parseInt(skill.proficiency_level) || 3,
-          description: skill.description,
-          category: skill.category,
-          subCategory: skill.sub_category
+          proficiencyLevel: parseInt(skill.proficiency_level) || 3,
+          description: skill.description || '',
+          category: skill.category || '',
+          subCategory: skill.sub_category || ''
         }));
         
         console.log('[RatingPrompt] Transformed skills:', transformedSkills);
@@ -2764,6 +3112,7 @@ ${skillsList}
     
     // Use local state to track ratings for each skill
     const [localRatings, setLocalRatings] = useState<Record<string, number>>({});
+    const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
     
     console.log('[SkillRating] Rendering - messageId:', messageId);
     console.log('[SkillRating] options:', options);
@@ -2861,35 +3210,35 @@ ${skillsList}
     const allRated = options.length > 0 && options.every((opt: any) => localRatings[opt.name]);
 
     return (
-      <div className="mt-3 box-border">
-        <div className="p-4 bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl border border-indigo-200 shadow-sm">
+      <div className="mt-3 box-border w-full max-w-full">
+        <div className="w-full max-w-full overflow-hidden p-4 bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl border border-indigo-200 shadow-sm">
                         
           <h4 className="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
             <Bot className="w-4 h-4 text-indigo-600" />
             Please rate your skills
           </h4>
 
-          <div className="space-y-2 sm:space-y-3 max-h-56 sm:max-h-72 md:max-h-80 lg:max-h-96 overflow-y-auto pr-1 sm:pr-2">
+          <div className="space-y-2 sm:space-y-3 max-h-56 sm:max-h-72 md:max-h-80 lg:max-h-96 max-w-full overflow-x-hidden overflow-y-auto pr-1 sm:pr-2">
             {options.map((option: any, index: number) => {
               const expectedLevel = option.expectedProficiency || 3;
               const ratingOptions = Array.from({ length: expectedLevel }, (_, i) => i + 1);
               
               return (
-                <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 md:gap-4 bg-white p-2 sm:p-2.5 md:p-3 rounded-lg border border-indigo-100">
-                  <div className="flex flex-col gap-0.5 min-w-0 flex-1 w-full sm:max-w-[140px] md:max-w-[180px] lg:max-w-[240px]">
-                    <span className="text-xs font-medium text-gray-800 truncate" title={option.name}>
+                <div key={index} className="flex flex-col items-start justify-between gap-2 sm:gap-3 md:gap-4 bg-white p-2 sm:p-2.5 md:p-3 rounded-lg border border-indigo-100">
+                  <div className="flex flex-col gap-0.5 min-w-0 w-full">
+                    <span className="text-xs font-medium text-gray-800 break-words" title={option.name}>
                       {option.name}
                     </span>
                     <span className="text-xs text-gray-500">
-                      Lv: {expectedLevel}
+                      Level: {expectedLevel}
                     </span>
                   </div>
-                  <div className="flex gap-1 sm:gap-1.5 shrink-0 w-full sm:w-auto justify-start sm:justify-end">
+                  <div className="flex flex-wrap gap-1 sm:gap-1.5 w-full">
                     {ratingOptions.map((rating) => (
                       <button
                         key={rating}
                         onClick={() => handleRatingSelect(option.name, rating)}
-                        className={`flex-1 sm:flex-none min-w-[32px] sm:min-w-[36px] md:min-w-[40px] w-8 sm:w-9 md:w-10 h-7 sm:h-8 md:h-9 text-xs sm:text-sm font-medium rounded transition-all ${
+                        className={`flex-1 sm:flex-none min-w-[32px] sm:min-w-[36px] md:min-w-[40px] h-7 sm:h-8 md:h-9 px-2 text-xs sm:text-sm font-medium rounded transition-all ${
                           localRatings[option.name] === rating
                             ? 'bg-indigo-600 text-white'
                             : 'bg-gray-100 text-gray-600 hover:bg-indigo-100'
@@ -3101,7 +3450,7 @@ ${skillsList}
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex gap-3 ${message.type === "user" ? "flex-row-reverse" : "flex-row"
+                  className={`flex min-w-0 gap-3 ${message.type === "user" ? "flex-row-reverse" : "flex-row"
                     }`}
                 >
                   {/* Avatar */}
@@ -3120,15 +3469,15 @@ ${skillsList}
 
                   {/* Message Content */}
                   <div
-                    className={`flex flex-col gap-1 max-w-[75%] sm:max-w-[80%] md:max-w-[85%] ${message.type === "user"
-                      ? "items-end"
-                      : "items-start"
+                    className={`flex min-w-0 flex-col gap-1 ${message.type === "user"
+                      ? "items-end max-w-[75%] sm:max-w-[80%] md:max-w-[85%]"
+                      : "flex-1 items-start max-w-full"
                       }`}
                   >
                     <div
-                      className={`px-4 py-3 text-sm shadow-sm ${message.type === "user"
+                      className={`max-w-full px-4 py-3 text-sm shadow-sm ${message.type === "user"
                         ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
-                        : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm"
+                        : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm break-words"
                       }`}
                     >
                       {message.type === 'bot' && message.metadata?.action === 'SHOW_SKILL_GAP_REPORT' && message.metadata?.skillGapReportData ? (
@@ -3238,7 +3587,7 @@ ${skillsList}
 
                     {/* NEW: Generated Profile with Save JD Button */}
                     {message.type === 'bot' && message.metadata?.action === 'SHOW_GENERATED_PROFILE' && message.metadata?.generatedProfile && (
-                      <div className="mt-3">
+                     <div className="mt-3 max-h-[60vh] overflow-y-auto overflow-x-hidden pr-1">
                         <GeneratedProfileUI 
                           profileData={message.metadata.generatedProfile} 
                           onSave={() => {}}
