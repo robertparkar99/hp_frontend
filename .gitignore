@@ -6,6 +6,7 @@
 /apps/ai/.genkit/traces
 /apps/ai/.genkit/traces_idx
 /folder/.genkit
+/apps/ai/.genkit/runtimes
 /.pnp
 .pnp.*
 .yarn/*
