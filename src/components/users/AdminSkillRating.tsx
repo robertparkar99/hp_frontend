@@ -441,14 +441,9 @@ export default function Page({
 
   // Fetch all skills from first API
   const fetchAllSkills = async () => {
-    if (!sessionData.APP_URL) {
-      console.warn("Session URL not available");
-      return [];
-    }
     try {
-      const base = sessionData.APP_URL;
       const response = await fetch(
-        `${base}/get-kaba?sub_institute_id=${sessionData.sub_institute_id}&type=${type}&type_id=${type_id}&title=${encodeURIComponent(title)}`
+        `${sessionData.APP_URL}/get-kaba?sub_institute_id=${sessionData.sub_institute_id}&type=${type}&type_id=${type_id}`
       );
       
       if (response.ok) {
@@ -465,7 +460,7 @@ export default function Page({
           knowledge: skill.knowledge || [],
           behaviour: skill.behaviour || [],
           attitude: skill.attitude || [],
-          proficiency_level: skill.proficiency_level ?? "Level 5",
+          proficiency_level: skill.proficiency_level ?? "5",
           skill: skill.title || "",
           skill_id: skill.id || 0,
           sub_category: skill.sub_category || "",
@@ -481,7 +476,7 @@ export default function Page({
           title: item.knowledge || item.title || "",
           knowledge: item.knowledge || item.title || "",
           description: item.description || "",
-          proficiency_level: item.proficiency_level || "Level 5"
+          proficiency_level: item.proficiency_level || "5"
         }));
         
         const abilityItems: KAABItem[] = (data.ability || []).map((item: any) => ({
@@ -490,7 +485,7 @@ export default function Page({
           title: item.ability || item.title || "",
           ability: item.ability || item.title || "",
           description: item.description || "",
-          proficiency_level: item.proficiency_level || "Level 5"
+          proficiency_level: item.proficiency_level || "5"
         }));
         
         const attitudeItems: KAABItem[] = (data.attitude || []).map((item: any) => ({
@@ -499,7 +494,7 @@ export default function Page({
           title: item.attitude || item.title || "",
           attitude: item.attitude || item.title || "",
           description: item.description || "",
-          proficiency_level: item.proficiency_level || "Level 5"
+          proficiency_level: item.proficiency_level || "5"
         }));
         
         const behaviourItems: KAABItem[] = (data.behaviour || data.behavior || []).map((item: any) => ({
@@ -508,7 +503,7 @@ export default function Page({
           title: item.behaviour || item.behavior || item.title || "",
           behaviour: item.behaviour || item.behavior || item.title || "",
           description: item.description || "",
-          proficiency_level: item.proficiency_level || "Level 5"
+          proficiency_level: item.proficiency_level || "5"
         }));
         
         setKaabData({
@@ -1133,7 +1128,7 @@ export default function Page({
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-green-700 mb-2">All Skills & KAAB Rated!</h3>
                   <p className="text-gray-600 text-center text-sm sm:text-base max-w-md px-4">
-                    Great job! You've successfully rated all your skills and KAAB items.
+                    Great job! You&apos;ve successfully rated all your skills and KAAB items.
                     Your development plan will now be more personalized and effective.
                   </p>
                 </div>
@@ -1337,10 +1332,10 @@ export default function Page({
                           {ratedSkill.sub_category || "Uncategorized"}
                         </p>
 
-                        <div className="w-full bg-gray-300 rounded h-2 mt-2">
+                        <div className="w-full bg-gray-300 rounded h-2 mt-2 overflow-hidden">
                           <div
                             className="bg-blue-600 h-2 rounded"
-                            style={{ width: `${completionPercentage}%` }}
+                            style={{ width: `${Math.max(0, Math.min(100, completionPercentage))}%` }}
                           ></div>
                         </div>
 
@@ -1352,15 +1347,15 @@ export default function Page({
                         <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-xs items-center">
                           {/* Self Rating */}
                           <div className="flex items-center space-x-1 sm:space-x-2">
-                            {renderCircles(selfRating, Number(totalLevels))}
-                            <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}/{totalLevels}</span>
+                            {renderCircles(selfRating, Math.max(0, Math.ceil(selfRating)))}
+                            <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}</span>
                           </div>
 
                           {/* Expected Rating */}
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center space-x-1 sm:space-x-2">
                               {renderCircles(expected, Number(totalLevels))}
-                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}/{totalLevels}</span>
+                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}</span>
                             </div>
 
                             <span
@@ -1437,10 +1432,10 @@ export default function Page({
                             </span>
                           </div>
 
-                          <div className="w-full bg-gray-300 rounded h-2 mt-2">
+                          <div className="w-full bg-gray-300 rounded h-2 mt-2 overflow-hidden">
                             <div
                               className={`h-2 rounded ${colors.bg.split('-')[1] === 'blue' ? 'bg-blue-600' : colors.bg.split('-')[1] === 'green' ? 'bg-green-600' : colors.bg.split('-')[1] === 'orange' ? 'bg-orange-500' : 'bg-purple-500'}`}
-                              style={{ width: `${completionPercentage}%` }}
+                              style={{ width: `${Math.max(0, Math.min(100, completionPercentage))}%` }}
                             ></div>
                           </div>
 
@@ -1452,15 +1447,15 @@ export default function Page({
                           <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-xs items-center">
                             {/* Self Rating */}
                             <div className="flex items-center space-x-1 sm:space-x-2">
-                              {renderCircles(selfRating, 5)}
-                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}/5</span>
+                              {renderCircles(selfRating, Math.max(0, Math.ceil(selfRating)))}
+                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}</span>
                             </div>
 
                             {/* Expected Rating */}
                             <div className="flex items-center justify-between w-full">
                               <div className="flex items-center space-x-1 sm:space-x-2">
                                 {renderCircles(expected, 5)}
-                                <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}/5</span>
+                                <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}</span>
                               </div>
 
                               <span
