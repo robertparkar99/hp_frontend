@@ -18,30 +18,15 @@ export const DrawingOverlay = React.memo(({ activeTool }: { activeTool: Whiteboa
     const selectedNodeId = useEditor((state) => state.events.selected);
 
     const addNodeToRoot = (nodeToCreate: any) => {
-        // Determine the parent node - if a container is selected, add to it; otherwise add to ROOT
-        // Default to ROOT if we can't determine the selected node
         let parentId = "ROOT";
         if (selectedNodeId && selectedNodeId.size > 0) {
             const firstSelectedId = Array.from(selectedNodeId)[0] as string;
             const selectedNode = query.node(firstSelectedId).get();
-            if (selectedNode && selectedNode.data) {
-                const nodeData = selectedNode.data;
-                const nodeName = nodeData?.name;
-                if (nodeName === 'Container' || nodeName === 'Grid' || nodeName === 'Frame') {
-                    parentId = firstSelectedId;
-                }
+            if (selectedNode && selectedNode.data?.isCanvas) {
+                parentId = firstSelectedId;
             }
         }
-
-        console.log('addNodeToRoot: Adding node with parentId:', parentId);
         actions.addNodeTree(nodeToCreate, parentId);
-        console.log('addNodeToRoot: Node added successfully');
-
-        // Debug: Check if the node was actually added
-        const allNodes = query.getNodes();
-        console.log('addNodeToRoot: Total nodes in editor:', Object.keys(allNodes).length);
-        console.log('addNodeToRoot: Node IDs:', Object.keys(allNodes));
-
         return true;
     };
 
@@ -56,8 +41,9 @@ export const DrawingOverlay = React.memo(({ activeTool }: { activeTool: Whiteboa
         if (!activeTool.startsWith('draw') && !activeTool.startsWith('line_')) return;
         setIsDrawing(true);
         const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const zoom = (window as any).__craft_zoom || 1;
+        const x = (e.clientX - rect.left) / zoom;
+        const y = (e.clientY - rect.top) / zoom;
         setCurrentPath([{ x, y }]);
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
     };
@@ -65,8 +51,9 @@ export const DrawingOverlay = React.memo(({ activeTool }: { activeTool: Whiteboa
     const handlePointerMove = (e: React.PointerEvent) => {
         if (!isDrawing) return;
         const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const zoom = (window as any).__craft_zoom || 1;
+        const x = (e.clientX - rect.left) / zoom;
+        const y = (e.clientY - rect.top) / zoom;
         setCurrentPath(prev => [...prev, { x, y }]);
     };
 
@@ -100,7 +87,6 @@ export const DrawingOverlay = React.memo(({ activeTool }: { activeTool: Whiteboa
             const safeX = Math.max(0, startNode.x);
             const safeY = Math.max(0, startNode.y - 30);
             const nodeWidth = Math.max(20, distance); // Prevent 0-width collapse
-            console.log('Creating line node:', { lineType, safeX, safeY, width: nodeWidth, angle });
             const nodeToCreate = query.parseReactElement(
                 <LineBlock
                     lineType={lineType}

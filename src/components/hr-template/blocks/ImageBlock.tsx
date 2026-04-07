@@ -200,8 +200,8 @@ ImageBlock.craft = {
         borderRadius: "0px",
         frameShape: "none",
         isOverlay: true,
-        x: -9999,
-        y: -9999,
+        x: 50,
+        y: 50,
         zIndex: 10,
         width: "200px",  // Force default aspect ratio footprint for proper drops
         height: "200px",

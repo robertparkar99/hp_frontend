@@ -1,5 +1,5 @@
 'use client';
-
+//comment comit add
 import React from 'react';
 // import PayrollTypeTable from '../content/HRMS/Payroll/PayrollTypeTable';
 // import PayrollTypeTable from '../content/HRMS/PayRoll/PayrollTypeTable';

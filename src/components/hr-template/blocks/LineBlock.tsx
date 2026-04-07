@@ -21,8 +21,6 @@ export const LineBlock = ({
     height,
 }: any) => {
     const { connectors: { connect }, id } = useNode();
-    
-    console.log('LineBlock rendering:', { id, x, y, width, height, lineType });
 
     const getPath = () => {
         if (lineType === 'straight') {

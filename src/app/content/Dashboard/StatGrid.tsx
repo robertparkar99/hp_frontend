@@ -9,7 +9,7 @@ import icon from '@/components/AppIcon';
 import AddUserModal from "@/app/content/Reports/employee/AddUserModal";
 import AddCourseDialog from "@/app/content/LMS/components/AddCourseDialog";
 import CreateAssessmentModal from "../../content/LMS/Assessment-Library/components/CreateAssessmentModal";
-import { UserCircle, Search ,AlertCircle} from "lucide-react";
+import { UserCircle, Search, AlertCircle } from "lucide-react";
 import Shepherd, { Tour } from "shepherd.js";
 // import 'shepherd.js/dist/css/shepherd.css';
 import Loader from '../../../components/utils/loading'  
@@ -368,12 +368,12 @@ export default function Dashboard() {
   const [maxLevel, setMaxLevel] = useState<number>(0);
   const [courses, setCourses] = useState<any[]>([]);
   const [assessments, setAssessments] = useState<any[]>([]);
-  
+
   // Task Progress Card State
   const [taskProgressData, setTaskProgressData] = useState<TaskProgressResponse | null>(null);
   const [taskProgressLoading, setTaskProgressLoading] = useState<boolean>(true);
   const [taskProgressError, setTaskProgressError] = useState<string | null>(null);
-  
+
   // Tooltip state for chart hover
   const [tooltipData, setTooltipData] = useState<{
     visible: boolean;
@@ -385,7 +385,7 @@ export default function Dashboard() {
     inProgress: number;
     total: number;
   } | null>(null);
-// Tour instance ref
+  // Tour instance ref
   const tourRef = useRef<Tour | null>(null);
 
   const attrArray = [
@@ -745,7 +745,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (todayTasks.length > 0) {
       const pendingCount = todayTasks.filter((task: Task) => task.status === "Pending" || task.status === "PENDING").length;
-      
+
       if (pendingCount > 0) {
         toast({
           title: "Today's Pending Tasks",
@@ -762,23 +762,23 @@ export default function Dashboard() {
     try {
       setTaskProgressLoading(true);
       const apiUrl = `${sessionData.url}/api/tasks/counts?token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`;
-      
+
       const response = await fetch(apiUrl);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data: TaskProgressResponse = await response.json();
       setTaskProgressData(data);
-      
+
       // Get today's date in consistent format (use local date to avoid UTC issues)
       const today = new Date();
       const todayStr = today.toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
-      
+
       // Calculate today's pending tasks only
       let todayPendingCount = 0;
-      
+
       // Count from daily date_wise_counts for today
       if (data.data?.daily?.date_wise_counts) {
         const todayData = data.data.daily.date_wise_counts.find((d: any) => {
@@ -789,7 +789,7 @@ export default function Dashboard() {
           todayPendingCount += todayData.Pending || 0;
         }
       }
-      
+
       // Also check weekly date_wise_counts for today
       if (data.data?.weekly?.date_wise_counts) {
         const todayData = data.data.weekly.date_wise_counts.find((d: any) => {
@@ -800,13 +800,13 @@ export default function Dashboard() {
           todayPendingCount += todayData.Pending || 0;
         }
       }
-      
+
       localStorage.setItem('pendingTasksCount', todayPendingCount.toString());
       console.log('StatGrid dispatching taskCountUpdated:', todayPendingCount);
-      
+
       // Dispatch event to notify other components
       window.dispatchEvent(new CustomEvent('taskCountUpdated', { detail: { count: todayPendingCount } }));
-      
+
       setTaskProgressError(null);
     } catch (err) {
       console.error("Error fetching task progress data:", err);
@@ -854,16 +854,16 @@ export default function Dashboard() {
         dailyData.push({ label: 'Pending', value: statusCounts.PENDING, status: 'PENDING' });
         setDailyChartData(dailyData);
         setWidgetOptions(data.widget ?? []);
-        
+
         // Fetch saved skill ratings and filter mySkills to only show rated skills
         const fetchRatedSkills = async () => {
           try {
             const currentJobroleId = currentUser?.jobrole_id || data.employeeList?.find((emp: any) => emp.id == sessionData.userId)?.jobrole_id;
-            
+
             const ratingsRes = await fetch(
               `${sessionData.url}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[user_id]=${sessionData.userId}&filters[jobrole_id]=${currentJobroleId}`
             );
-            
+
             let ratedSkillIds: string[] = [];
             if (ratingsRes.ok) {
               const ratingsData = await ratingsRes.json();
@@ -872,23 +872,23 @@ export default function Dashboard() {
                 ratedSkillIds = Object.keys(skillIdsObj);
               }
             }
-            
+
             // Filter mySkills to only include rated skills
             const allSkills = data.mySKill ?? [];
-            const ratedSkills = ratedSkillIds.length > 0 
+            const ratedSkills = ratedSkillIds.length > 0
               ? allSkills.filter((skill: any) => {
-                  const skillId = skill.skill_id?.toString() || skill.jobrole_skill_id?.toString();
-                  return ratedSkillIds.includes(skillId);
-                })
+                const skillId = skill.skill_id?.toString() || skill.jobrole_skill_id?.toString();
+                return ratedSkillIds.includes(skillId);
+              })
               : allSkills;
-            
+
             setMySkills(ratedSkills);
           } catch (err) {
             console.error("Error fetching rated skills:", err);
             setMySkills(data.mySKill ?? []);
           }
         };
-        
+
         fetchRatedSkills();
         setMyGrowth(data.myGrowth ?? []);
         setDepartments(data.departmentList || []);
@@ -968,12 +968,12 @@ export default function Dashboard() {
         // Fetch suggested courses from new API
         try {
           const courseApiUrl = `${sessionData.url}/getSuggestedCoursesByUser?user_id=${sessionData.userId}&sub_institute_id=${sessionData.subInstituteId}`;
-          
+
           const courseRes = await fetch(courseApiUrl);
           if (!courseRes.ok) throw new Error(`Course API error: ${courseRes.status}`);
-          
+
           const courseData: SuggestedCourseResponse = await courseRes.json();
-          
+
           // Map the new API response to the courses state
           const mappedCourses: any[] = courseData.data?.map((item: SuggestedCourse) => ({
             id: item.id,
@@ -991,7 +991,7 @@ export default function Dashboard() {
             created_at: item.created_at,
             updated_at: item.updated_at
           })) || [];
-          
+
           setCourses(mappedCourses);
         } catch (err) {
           console.error("Error fetching suggested courses:", err);
@@ -1211,7 +1211,7 @@ export default function Dashboard() {
           <span>{Math.round(maxValue * 0.25)}</span>
           <span>0</span>
         </div>
-        
+
         {/* Chart area */}
         <div className="ml-10 h-48 flex items-end gap-3">
           {data.map((item, i) => {
@@ -1219,7 +1219,7 @@ export default function Dashboard() {
             const inProgress = item.IN_PROGRESS ?? item["In Progress"] ?? 0;
             const pending = item.PENDING ?? item.Pending ?? 0;
             const total = item.total;
-            
+
             // Calculate heights for stacked bar
             // Bar height represents the total count
             const barHeight = total > 0 ? (total / maxValue) * chartHeight : 0;
@@ -1227,10 +1227,10 @@ export default function Dashboard() {
             const completedHeight = total > 0 ? (completed / total) * barHeight : 0;
             const inProgressHeight = total > 0 ? (inProgress / total) * barHeight : 0;
             const pendingHeight = total > 0 ? (pending / total) * barHeight : 0;
-            
+
             return (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="flex flex-col items-center flex-1 cursor-pointer group"
                 onMouseEnter={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
@@ -1250,19 +1250,19 @@ export default function Dashboard() {
                 {/* Stacked bar container */}
                 <div className="w-8 h-40 flex flex-col justify-end rounded-t overflow-hidden">
                   {/* Pending bar (bottom) */}
-                  <div 
+                  <div
                     className="w-full bg-yellow-400 transition-all duration-200 group-hover:bg-yellow-500"
                     style={{ height: `${pendingHeight}px` }}
                     title={`Pending: ${pending}`}
                   />
                   {/* In Progress bar (middle) */}
-                  <div 
+                  <div
                     className="w-full bg-blue-500 transition-all duration-200 group-hover:bg-blue-600"
                     style={{ height: `${inProgressHeight}px` }}
                     title={`In Progress: ${inProgress}`}
                   />
                   {/* Completed bar (top) */}
-                  <div 
+                  <div
                     className="w-full bg-green-500 transition-all duration-200 group-hover:bg-green-600"
                     style={{ height: `${completedHeight}px` }}
                     title={`Completed: ${completed}`}
@@ -1296,22 +1296,22 @@ export default function Dashboard() {
     return (
       <div className="w-full flex rounded overflow-hidden" style={{ height: '100%', minHeight: '4px' }}>
         {completedPercent > 0 && (
-          <div 
-            className="bg-green-500 transition-colors" 
+          <div
+            className="bg-green-500 transition-colors"
             style={{ width: `${completedPercent}%` }}
             title={`Completed: ${Completed}`}
           />
         )}
         {inProgressPercent > 0 && (
-          <div 
-            className="bg-blue-500 transition-colors" 
+          <div
+            className="bg-blue-500 transition-colors"
             style={{ width: `${inProgressPercent}%` }}
             title={`In Progress: ${InProgress}`}
           />
         )}
         {pendingPercent > 0 && (
-          <div 
-            className="bg-yellow-400 transition-colors" 
+          <div
+            className="bg-yellow-400 transition-colors"
             style={{ width: `${pendingPercent}%` }}
             title={`Pending: ${Pending}`}
           />
@@ -1561,7 +1561,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-        <Loader />
+      <Loader />
     );
   }
   const currentPercent =
@@ -1644,7 +1644,7 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <div className="flex items-center justify-center gap-2 mb-4">
                     <h2 className="font-semibold text-center">Task Progress</h2>
-                    <button 
+                    <button
                       onClick={() => {
                         const userData = localStorage.getItem("userData");
                         if (userData) {
@@ -1670,7 +1670,7 @@ export default function Dashboard() {
                       </svg> */}
                     </button>
                   </div>
-                  
+
                   {taskProgressLoading ? (
                     <div className="flex items-center justify-center h-48">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -1687,7 +1687,7 @@ export default function Dashboard() {
                         <TabsTrigger value="weekly">Weekly</TabsTrigger>
                         <TabsTrigger value="monthly">Monthly</TabsTrigger>
                       </TabsList>
-                      
+
                       {/* Daily */}
                       <TabsContent value="daily">
                         {taskProgressData.data.daily.date_wise_counts.length > 0 ? (
@@ -1703,8 +1703,8 @@ export default function Dashboard() {
                             <div className="ml-6 h-48 flex justify-between items-end gap-2">
                               {taskProgressData.data.daily.date_wise_counts.map((item, i) => {
                                 return (
-                                  <div 
-                                    key={i} 
+                                  <div
+                                    key={i}
                                     className="flex flex-col items-center flex-1 cursor-pointer"
                                     onMouseEnter={(e) => {
                                       const rect = e.currentTarget.getBoundingClientRect();
@@ -1729,54 +1729,54 @@ export default function Dashboard() {
                                 );
                               })}
                             </div>
-                            
-                         {tooltipData && tooltipData.visible && (
-  <div
-   className="fixed z-50 w-52 rounded-lg bg-white text-gray-800 text-xs shadow-lg border border-gray-200 p-3 pointer-events-none transition-opacity duration-150"
 
-    style={{
-      left: tooltipData.x,
-      top: tooltipData.y - 10,
-      transform: "translateX(-50%) translateY(-100%)",
-    }}
-  >
-    {/* Date */}
-    <div className="text-sm font-semibold text-center mb-2 text-gray-700">
-      {tooltipData.date}
-    </div>
+                            {tooltipData && tooltipData.visible && (
+                              <div
+                                className="fixed z-50 w-52 rounded-lg bg-white text-gray-800 text-xs shadow-lg border border-gray-200 p-3 pointer-events-none transition-opacity duration-150"
 
-    {/* Status rows */}
-    <div className="space-y-1">
-      <div className="flex justify-between">
-        <span className="text-green-500">Completed</span>
-        <span className="font-medium">{tooltipData.completed}</span>
-      </div>
+                                style={{
+                                  left: tooltipData.x,
+                                  top: tooltipData.y - 10,
+                                  transform: "translateX(-50%) translateY(-100%)",
+                                }}
+                              >
+                                {/* Date */}
+                                <div className="text-sm font-semibold text-center mb-2 text-gray-700">
+                                  {tooltipData.date}
+                                </div>
 
-      <div className="flex justify-between">
-        <span className="text-blue-500">In Progress</span>
-        <span className="font-medium">{tooltipData.inProgress}</span>
-      </div>
+                                {/* Status rows */}
+                                <div className="space-y-1">
+                                  <div className="flex justify-between">
+                                    <span className="text-green-500">Completed</span>
+                                    <span className="font-medium">{tooltipData.completed}</span>
+                                  </div>
 
-      <div className="flex justify-between">
-        <span className="text-yellow-400">Pending</span>
-        <span className="font-medium">{tooltipData.pending}</span>
-      </div>
-    </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-blue-500">In Progress</span>
+                                    <span className="font-medium">{tooltipData.inProgress}</span>
+                                  </div>
 
-    {/* Total */}
-    <div className="mt-2 pt-2 border-t border-gray-200 flex justify-between font-semibold text-gray-700">
-      <span>Total</span>
-      <span>{tooltipData.total}</span>
-    </div>
-  </div>
-)}
+                                  <div className="flex justify-between">
+                                    <span className="text-yellow-400">Pending</span>
+                                    <span className="font-medium">{tooltipData.pending}</span>
+                                  </div>
+                                </div>
+
+                                {/* Total */}
+                                <div className="mt-2 pt-2 border-t border-gray-200 flex justify-between font-semibold text-gray-700">
+                                  <span>Total</span>
+                                  <span>{tooltipData.total}</span>
+                                </div>
+                              </div>
+                            )}
 
                           </div>
                         ) : (
                           <p className="text-center text-gray-500 py-8">No daily data</p>
                         )}
                       </TabsContent>
-                      
+
                       {/* Weekly */}
                       <TabsContent value="weekly">
                         {taskProgressData.data.weekly.date_wise_counts.length > 0 ? (
@@ -1787,7 +1787,7 @@ export default function Dashboard() {
                           <p className="text-center text-gray-500 py-8">No weekly data</p>
                         )}
                       </TabsContent>
-                      
+
                       {/* Monthly */}
                       <TabsContent value="monthly">
                         {taskProgressData.data.monthly.month_wise_counts.length > 0 ? (
@@ -2419,108 +2419,108 @@ export default function Dashboard() {
           )}
           {/* Employee Table - Full width row */}
           <div className="col-span-full md:col-span-9 bg-white rounded-xl shadow min-h-[24rem] h-96 md:h-[28rem] overflow-x-auto md:overflow-x-visible overflow-y-auto hide-scroll mb-15 " id="tour-employee-table">
-              {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
+            {/* <h2 className="font-semibold text-lg p-4 border-b">Employee List</h2> */}
 
-              {/* Table Headers with Search Fields */}
-              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
-                {/* Employee Column with Search */}
-                <div className="flex flex-col">
-                  <span className="flex items-center mb-1">Employee</span>
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="w-full py-1 text-xs"
-                    onChange={(e) => handleColumnFilter("full_name", e.target.value)}
-                  />
-                </div>
-                {/* Department Column with Search */}
-                <div className="flex flex-col">
-                  <span className="flex items-center mb-1">Department</span>
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="w-full py-1 text-xs"
-                    onChange={(e) => handleColumnFilter("department_name", e.target.value)}
-                  />
-                </div>
-
-                {/* Role Column with Search */}
-                <div className="flex flex-col">
-                  <span className="flex items-center mb-1">Job Role</span>
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="w-full py-1 text-xs"
-                    onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
-                  />
-                </div>
-
-                {/* profile Column with Search */}
-                <div className="flex flex-col">
-                  <span className="flex items-center mb-1">profile</span>
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="w-full py-1 text-xs"
-                    onChange={(e) => handleColumnFilter("profile_name", e.target.value)}
-                  />
-                </div>
-
-
-                {/* Status Column with Search */}
-                <div className="flex flex-col">
-                  <span className="flex items-center mb-1">Status</span>
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="w-full py-1 text-xs"
-                    onChange={(e) => handleColumnFilter("status", e.target.value)}
-                  />
-                </div>
+            {/* Table Headers with Search Fields */}
+            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] bg-blue-100 px-4 py-2 font-medium text-sm gap-2">
+              {/* Employee Column with Search */}
+              <div className="flex flex-col">
+                <span className="flex items-center mb-1">Employee</span>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-full py-1 text-xs"
+                  onChange={(e) => handleColumnFilter("full_name", e.target.value)}
+                />
+              </div>
+              {/* Department Column with Search */}
+              <div className="flex flex-col">
+                <span className="flex items-center mb-1">Department</span>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-full py-1 text-xs"
+                  onChange={(e) => handleColumnFilter("department_name", e.target.value)}
+                />
               </div>
 
-              {/* Employee Rows */}
-              {filteredEmployees.map((emp) => (
-                <div
-                  key={emp.id}
-                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <img
-                      src={
-                        emp.image && emp.image !== ""
-                          ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${emp.image}`
-                          : placeholderImage
-                      }
-                      alt={emp.full_name || "profile"}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = placeholderImage;
-                      }}
-                    />
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{emp.full_name}</p>
-                      <p className="text-gray-500 text-xs truncate">{emp.email}</p>
-                    </div>
-                  </div>
+              {/* Role Column with Search */}
+              <div className="flex flex-col">
+                <span className="flex items-center mb-1">Job Role</span>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-full py-1 text-xs"
+                  onChange={(e) => handleColumnFilter("jobrole", e.target.value)}
+                />
+              </div>
 
-                  {/* <span className="truncate">{emp.mobile || "-"}</span> */}
-                  <span className="truncate">{emp.department_name}</span>
-                  <span className="truncate">{emp.jobrole}</span>
-                  <span className="truncate">{emp.profile_name}</span>
+              {/* profile Column with Search */}
+              <div className="flex flex-col">
+                <span className="flex items-center mb-1">profile</span>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-full py-1 text-xs"
+                  onChange={(e) => handleColumnFilter("profile_name", e.target.value)}
+                />
+              </div>
 
-                  <span
-                    className={`px-2 py-1 rounded-md w-fit text-xs ${emp.status === "Active"
-                      ? "text-green-600 bg-green-100"
-                      : "text-red-600 bg-red-100"
-                      }`}
-                  >
-                    {emp.status}
-                  </span>
-                </div>
-              ))}
+
+              {/* Status Column with Search */}
+              <div className="flex flex-col">
+                <span className="flex items-center mb-1">Status</span>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-full py-1 text-xs"
+                  onChange={(e) => handleColumnFilter("status", e.target.value)}
+                />
+              </div>
             </div>
-        
+
+            {/* Employee Rows */}
+            {filteredEmployees.map((emp) => (
+              <div
+                key={emp.id}
+                className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center px-4 py-3 border-t text-sm gap-2 hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <img
+                    src={
+                      emp.image && emp.image !== ""
+                        ? `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${emp.image}`
+                        : placeholderImage
+                    }
+                    alt={emp.full_name || "profile"}
+                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = placeholderImage;
+                    }}
+                  />
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{emp.full_name}</p>
+                    <p className="text-gray-500 text-xs truncate">{emp.email}</p>
+                  </div>
+                </div>
+
+                {/* <span className="truncate">{emp.mobile || "-"}</span> */}
+                <span className="truncate">{emp.department_name}</span>
+                <span className="truncate">{emp.jobrole}</span>
+                <span className="truncate">{emp.profile_name}</span>
+
+                <span
+                  className={`px-2 py-1 rounded-md w-fit text-xs ${emp.status === "Active"
+                    ? "text-green-600 bg-green-100"
+                    : "text-red-600 bg-red-100"
+                    }`}
+                >
+                  {emp.status}
+                </span>
+              </div>
+            ))}
+          </div>
+
         </div>
 
         {/* Right Section - Adjust column span based on sidebar state */}
@@ -2721,7 +2721,7 @@ export default function Dashboard() {
                 <p className="text-gray-500 text-sm">No courses available</p>
               )}
             </div>
-               <AddCourseDialog
+            <AddCourseDialog
               open={openDialog}
               onOpenChange={setOpenDialog}
               onSave={() => { /* implement save logic if needed */ }}

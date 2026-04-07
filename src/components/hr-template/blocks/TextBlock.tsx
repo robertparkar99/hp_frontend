@@ -410,8 +410,8 @@ TextBlock.craft = {
     props: {
         html: "<p>Type your text here...</p>",
         isOverlay: true,
-        x: -9999,
-        y: -9999,
+        x: 50,
+        y: 50,
         zIndex: 20,
         width: "100%",
         height: "auto",
