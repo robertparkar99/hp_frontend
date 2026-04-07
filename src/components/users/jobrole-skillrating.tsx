@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 import {
   Dialog,
@@ -25,7 +25,7 @@ interface SkillItem {
   id: string;
   title: string;
   description: string;
-  proficiency_level: number;
+  rating_levels?: any[];
 }
 
 interface ProficiencyLevel {
@@ -60,7 +60,6 @@ interface RatingRecord {
 export default function JobroleSkillRatingDesign({
   subInstituteId,
   jobroleId,
-  jobroleTitle,
   clickedUser,
 }: JobroleSkillRatingDesignProps) {
   // State for all categories
@@ -153,8 +152,6 @@ export default function JobroleSkillRatingDesign({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const storageKey = sessionData.userId && jobroleId ? `jobrole_skill_ratings_${sessionData.userId}_${jobroleId}` : null;
-
   // Helper functions
   const showInfo = (
     title: string,
@@ -169,7 +166,7 @@ export default function JobroleSkillRatingDesign({
 
   const normalizeItem = (item: any, index: number, type: string): SkillItem => {
     if (typeof item === 'string') {
-      return { id: `${type}_${index}`, title: item, description: '', proficiency_level: 5 };
+      return { id: `${type}_${index}`, title: item, description: '', rating_levels: [] };
     } else {
       let resolvedId: string | number | undefined = item.id;
       if (type === 'skill') resolvedId = item.skill_id ?? item.id;
@@ -182,9 +179,51 @@ export default function JobroleSkillRatingDesign({
         id: (resolvedId !== undefined && resolvedId !== null) ? String(resolvedId) : `${type}_${index}`,
         title: item.title || item.skill || item.knowledge || item.ability || item.attitude || item.behaviour || item,
         description: item.description || '',
-        proficiency_level: item.proficiency_level || 5
+        rating_levels: Array.isArray(item.rating_levels) ? item.rating_levels : []
       };
     }
+  };
+
+  const buildProficiencyLevels = (item: SkillItem | null): ProficiencyLevel[] => {
+    if (!item) return [];
+
+    const rawLevels = Array.isArray(item.rating_levels) ? item.rating_levels : [];
+
+    if (rawLevels.length > 0) {
+      return rawLevels
+        .map((level: any, index: number) => {
+          const levelValue = level?.level ?? level?.proficiency_level;
+          const levelNumber = typeof levelValue === "string"
+            ? levelValue.match(/\d+/)?.[0]
+            : String(levelValue ?? "");
+
+          return {
+            id: String(level.id ?? `${item.id}_level_${levelNumber || index + 1}`),
+            proficiency_level: String(levelValue ?? `Level ${index + 1}`),
+            description: level.description || level.indicators || `Proficiency Level ${index + 1}`,
+            type_description: `Level ${levelNumber || index + 1}`,
+            descriptor: level.descriptor || "",
+            indicators: level.indicators || level.description || ""
+          };
+        })
+        .sort((a, b) => {
+          const aLevel = parseInt(a.proficiency_level.match(/\d+/)?.[0] || "0", 10);
+          const bLevel = parseInt(b.proficiency_level.match(/\d+/)?.[0] || "0", 10);
+          return aLevel - bLevel;
+        });
+    }
+
+    const fallbackLevels: ProficiencyLevel[] = [];
+    for (let i = 1; i <= 6; i++) {
+      fallbackLevels.push({
+        id: `${item.id}_level_${i}`,
+        proficiency_level: `Level ${i}`,
+        description: `Proficiency Level ${i}`,
+        type_description: `Level ${i}`
+      });
+    }
+
+    return fallbackLevels;
   };
 
   // Extract numeric ID from item ID
@@ -212,7 +251,7 @@ export default function JobroleSkillRatingDesign({
   }, []);
 
   // Load saved ratings from API
-  const loadSavedRatings = async (): Promise<SavedRatings | null> => {
+  const loadSavedRatings = useCallback(async (): Promise<SavedRatings | null> => {
     if (!sessionData.url || !sessionData.userId) return null;
 
     try {
@@ -243,10 +282,10 @@ export default function JobroleSkillRatingDesign({
       console.error("Error loading saved ratings:", err);
     }
     return null;
-  };
+  }, [clickedUser, jobroleId, sessionData.url, sessionData.userId, subInstituteId]);
 
-  // Apply saved ratings to level selections
-  const applySavedRatings = (ratings: SavedRatings) => {
+  // Map saved ratings for both change tracking and visual selection
+  const applySavedRatings = useCallback((ratings: SavedRatings) => {
     const newLevelSelections: Record<CategoryType, Record<string, ProficiencyLevel>> = {
       skill: {},
       knowledge: {},
@@ -277,8 +316,8 @@ export default function JobroleSkillRatingDesign({
           });
           
           if (item) {
-            // Find matching proficiency level
-            const levels = proficiencyLevels[cat];
+            // Find matching proficiency level from the item's own rating levels
+            const levels = buildProficiencyLevels(item);
             if (levels.length > 0) {
               const level = levels.find(l => {
                 const levelNum = l.proficiency_level?.match(/\d+/)?.[0];
@@ -297,18 +336,18 @@ export default function JobroleSkillRatingDesign({
     setLevelSelections(newLevelSelections);
     setInitialLevelSelections(newLevelSelections);
     return newLevelSelections;
-  };
+  }, [categories]);
 
   // Fetch KAAB data and load saved ratings
   useEffect(() => {
-    if (!sessionData.url || !subInstituteId || !jobroleId || !jobroleTitle) return;
+    if (!sessionData.url || !subInstituteId || !jobroleId) return;
 
     const fetchData = async () => {
       setIsLoading(true);
       try {
         // Fetch KAAB data
         const response = await fetch(
-          `${sessionData.url}/get-kaba?sub_institute_id=${subInstituteId}&type=jobrole&type_id=${jobroleId}&title=${encodeURIComponent(jobroleTitle)}`
+          `${sessionData.url}/get-kaba?sub_institute_id=${subInstituteId}&type=jobrole&type_id=${jobroleId}`
         );
         
         if (response.ok) {
@@ -323,6 +362,13 @@ export default function JobroleSkillRatingDesign({
           };
 
           setCategories(newCategories);
+          setSelectedLevels({
+            skill: null,
+            knowledge: null,
+            ability: null,
+            attitude: null,
+            behaviour: null
+          });
           
           if (newCategories.skill.length) {
             setSelectedItems(prev => ({ ...prev, skill: newCategories.skill[0] }));
@@ -330,11 +376,7 @@ export default function JobroleSkillRatingDesign({
           }
 
           // Load saved ratings after fetching KAAB data
-          const ratings = await loadSavedRatings();
-          if (ratings) {
-            // We need proficiency levels first to apply ratings properly
-            // This will be handled in the proficiency levels useEffect
-          }
+          await loadSavedRatings();
         } else {
           console.error("KAAB API failed:", response.status);
         }
@@ -346,136 +388,34 @@ export default function JobroleSkillRatingDesign({
     };
 
     fetchData();
-  }, [sessionData.url, subInstituteId, jobroleId, jobroleTitle]);
+  }, [sessionData.url, subInstituteId, jobroleId, loadSavedRatings]);
 
-  // Fetch proficiency levels and apply saved ratings
+  // Load proficiency levels for the selected item from the get-kaba response
   useEffect(() => {
-    if (!sessionData.url || !expandedTab || !selectedItems[expandedTab]) return;
+    if (!expandedTab || !selectedItems[expandedTab]) return;
 
-    const fetchProficiencyLevels = async (category: CategoryType) => {
-      try {
-        let endpoint = '';
-        switch(category) {
-          case 'skill': endpoint = 's_proficiency_levels'; break;
-          case 'knowledge': endpoint = 's_proficiency_knowledge'; break;
-          case 'ability': endpoint = 's_proficiency_ability'; break;
-          case 'attitude': endpoint = 's_proficiency_attitude'; break;
-          case 'behaviour': endpoint = 's_proficiency_behaviour'; break;
-        }
+    const currentItem = selectedItems[expandedTab];
+    const generatedLevels = buildProficiencyLevels(currentItem);
 
-        const response = await fetch(
-          `${sessionData.url}/table_data?filters[sub_institute_id]=${subInstituteId}&table=${endpoint}`
-        );
+    setProficiencyLevels(prev => ({ ...prev, [expandedTab]: generatedLevels }));
 
-        if (response.ok) {
-          const data = await response.json();
-          processProficiencyLevels(category, data);
-        } else {
-          console.error(`${category} Proficiency API failed:`, response.status);
-        }
-      } catch (err) {
-        console.error(`Error fetching ${category} proficiency levels:`, err);
-      }
-    };
+    const itemId = currentItem.id;
+    const resolvedLevel = levelSelections[expandedTab][itemId] || null;
 
-    const processProficiencyLevels = (category: CategoryType, apiData: any[]) => {
-      const currentItem = selectedItems[category];
-      if (!currentItem) return;
+    setSelectedLevels(prev => ({
+      ...prev,
+      [expandedTab]: resolvedLevel
+    }));
+  }, [expandedTab, selectedItems, levelSelections]);
 
-      // Extract max proficiency level from item
-      let maxLevel = 5;
-      if (currentItem.proficiency_level) {
-        const match = currentItem.proficiency_level.toString().match(/\d+/);
-        if (match) {
-          maxLevel = Math.min(parseInt(match[0], 10), 5);
-        }
-      }
-
-      // Generate levels array
-      const generatedLevels: ProficiencyLevel[] = [];
-      for (let i = 1; i <= maxLevel; i++) {
-        const apiLevel = apiData.find(level => {
-          const levelValue = level?.level ?? level?.proficiency_level;
-          const levelNumber = typeof levelValue === 'string' ? levelValue.match(/\d+/)?.[0] : String(levelValue);
-          return levelNumber && parseInt(levelNumber, 10) === i;
-        });
-
-        generatedLevels.push(
-          apiLevel ? {
-            id: apiLevel.id || `level_${i}`,
-           // Handle both 'level' and 'proficiency_level' from API
-            proficiency_level: apiLevel.level || apiLevel.proficiency_level || `Level ${i}`,
-            // Use 'description' if available, otherwise use 'level' as description
-            description: apiLevel.description || apiLevel.level || `Proficiency Level ${i}`,
-            // Use 'level' as type_description if type_description is not available
-            type_description: apiLevel.type_description || apiLevel.level,
-            descriptor: apiLevel.descriptor,
-            indicators: apiLevel.indicators
-          } : {
-            id: `level_${i}`,
-            proficiency_level: `Level ${i}`,
-            description: `Proficiency Level ${i}`,
-            type_description: `Type description for Level ${i}`
-          }
-        );
-      }
-
-      setProficiencyLevels(prev => ({ ...prev, [category]: generatedLevels }));
-
-      // Set selected level - check saved ratings first
-      const itemId = currentItem.id;
-      const numericId = extractNumericId(itemId);
-      
-      let savedLevel: ProficiencyLevel | null = null;
-      
-      // Check API saved ratings
-      if (numericId && savedRatings[`${category}_ids` as keyof SavedRatings]) {
-        const savedRatingData = savedRatings[`${category}_ids` as keyof SavedRatings] as Record<string, string> | null;
-        if (savedRatingData && savedRatingData[numericId.toString()]) {
-          const levelValue = savedRatingData[numericId.toString()];
-          savedLevel = generatedLevels.find(l => {
-            const levelNum = l.proficiency_level?.match(/\d+/)?.[0];
-            return levelNum === levelValue;
-          }) || null;
-        }
-      }
-      
-      // Check current selections as fallback
-      if (!savedLevel) {
-        savedLevel = levelSelections[category][itemId] || null;
-      }
-      
-      setSelectedLevels(prev => ({ 
-        ...prev, 
-        [category]: savedLevel || generatedLevels[0] || null 
-      }));
-    };
-
-    fetchProficiencyLevels(expandedTab);
-  }, [sessionData.url, expandedTab, selectedItems, subInstituteId, savedRatings]);
-
-  // Apply saved ratings when proficiency levels are available
+  // Apply saved ratings after category data is loaded
   useEffect(() => {
-    const applySavedRatingsIfPossible = () => {
-      // Check if we have all proficiency levels loaded
-      const hasAllLevels = Object.values(proficiencyLevels).every(levels => levels.length > 0);
-      
-      if (hasAllLevels && Object.keys(savedRatings.skill_ids || {}).length > 0) {
-        const newSelections = applySavedRatings(savedRatings);
-        
-        // Update selected level for current item if applicable
-        if (expandedTab && selectedItems[expandedTab]) {
-          const currentItem = selectedItems[expandedTab];
-          const savedLevel = newSelections[expandedTab][currentItem.id];
-          if (savedLevel) {
-            setSelectedLevels(prev => ({ ...prev, [expandedTab]: savedLevel }));
-          }
-        }
-      }
-    };
+    const hasAnySavedRatings = Object.values(savedRatings).some(value => Object.keys(value || {}).length > 0);
 
-    applySavedRatingsIfPossible();
-  }, [proficiencyLevels, savedRatings, expandedTab, selectedItems]);
+    if (hasAnySavedRatings) {
+      applySavedRatings(savedRatings);
+    }
+  }, [categories, savedRatings, applySavedRatings]);
 
   // Update hasChanges when levelSelections change
   useEffect(() => {
@@ -519,7 +459,7 @@ export default function JobroleSkillRatingDesign({
     const currentItems = categories[expandedTab];
     const currentIndex = currentIndexes[expandedTab];
     
-    let newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+    const newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
     
     // Boundary checks
     if (newIndex < 0 || newIndex >= currentItems.length) return;
@@ -563,20 +503,6 @@ export default function JobroleSkillRatingDesign({
     
     const savedCategoryRatings = savedRatings[`${category}_ids` as keyof SavedRatings] as Record<string, string> | null;
     return savedCategoryRatings ? savedCategoryRatings[numericId.toString()] || null : null;
-  };
-
-  // Get current item's saved rating level
-  const getCurrentItemSavedLevel = (): ProficiencyLevel | null => {
-    if (!expandedTab || !selectedItems[expandedTab]) return null;
-    
-    const savedRatingValue = getItemSavedRating(expandedTab, selectedItems[expandedTab]!.id);
-    if (!savedRatingValue) return null;
-    
-    const levels = proficiencyLevels[expandedTab];
-    return levels.find(l => {
-      const levelNum = l.proficiency_level?.match(/\d+/)?.[0];
-      return levelNum === savedRatingValue;
-    }) || null;
   };
 
   // Bulk validation and save
@@ -782,23 +708,8 @@ export default function JobroleSkillRatingDesign({
       // Reload saved ratings from API
       const updatedRatings = await loadSavedRatings();
       if (updatedRatings) {
-        // Re-apply saved ratings
+        // Re-apply saved ratings so the saved selection remains highlighted
         applySavedRatings(updatedRatings);
-        
-        // Update selected level for current item
-        if (expandedTab && selectedItems[expandedTab]) {
-          const savedLevelValue = getItemSavedRating(expandedTab, selectedItems[expandedTab]!.id);
-          if (savedLevelValue) {
-            const levels = proficiencyLevels[expandedTab];
-            const savedLevel = levels.find(l => {
-              const levelNum = l.proficiency_level?.match(/\d+/)?.[0];
-              return levelNum === savedLevelValue;
-            });
-            if (savedLevel) {
-              setSelectedLevels(prev => ({ ...prev, [expandedTab]: savedLevel }));
-            }
-          }
-        }
       }
       
       setHasChanges(false);
@@ -1003,8 +914,6 @@ export default function JobroleSkillRatingDesign({
                 {currentLevels.map((level, index) => {
                   const levelNumber = level?.proficiency_level?.match(/\d+/)?.[0] ?? "1";
                   const isSelected = currentSelectedLevel?.id === level.id;
-                  const isSavedLevel = hasSavedRating && 
-                    levelNumber === getItemSavedRating(currentCategory, currentItem.id);
 
                   return (
                     <button
@@ -1016,13 +925,9 @@ export default function JobroleSkillRatingDesign({
                         ${index === 0 ? "rounded-l-full" : ""}
                         ${index === currentLevels.length - 1 ? "rounded-r-full" : ""}
                         ${isSelected ? `border-2 ${borderColors[index]} z-10` : "border border-transparent"}
-                        ${isSavedLevel ? 'ring-2 ring-blue-300' : ''}
                       `}
                     >
                       {levelNumber}
-                      {isSavedLevel && !isSelected && (
-                        <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div>
-                      )}
                     </button>
                   );
                 })}
