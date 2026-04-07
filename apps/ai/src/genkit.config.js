@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
 const apiKey = process.env.GEMINI_API_KEY;
-console.log("API key : ",process.env.GEMINI_API_KEY);
+console.log("API key : ",process.env.GEMINI_API_KEY); //by AJ
 if (!process.env.GEMINI_API_KEY) {
   console.error('Error: GEMINI_API_KEY environment variable not found.');
   process.exit(1);
