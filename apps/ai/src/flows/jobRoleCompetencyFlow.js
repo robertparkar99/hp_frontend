@@ -94,6 +94,7 @@ import {
 
 import { seniorExpertPrompt } from '../prompts/seniorExpertPrompt.js';
 import { gemini25FlashModel } from '../genkit.config.js';
+import { googleAIPlugin } from '../genkit.config.js';
 
 /**
  * jobRoleCompetencyFlow
@@ -121,7 +122,7 @@ export const jobRoleCompetencyFlow = (gk) =>
       // 1) Build expert prompt with the job context
       //    — includes department, jobRole (optional),
       //      description, and any other guidance.
-      // ---------------------------------------------
+      // --------------------------------------------- Key updated by AJ
       const prompt = seniorExpertPrompt(input, null);
 
       // ---------------------------------------------
