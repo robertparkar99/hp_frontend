@@ -1,10 +1,11 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useEditor } from "@craftjs/core";
-import { Copy, Check, Code, ChevronRight, RotateCcw, CheckCircle } from "lucide-react";
+import { Copy, Check, Code, X, RotateCcw, CheckCircle } from "lucide-react";
 import { Button } from "../../ui/button";
+import { normalizeTemplateDocument } from "./utils/documentModel";
 
-export const JsonPreviewPanel = () => {
+export const JsonPreviewPanel = ({ onClose }: { onClose?: () => void }) => {
     // Use useEditor without selector - this gives stable query/actions references
     // without subscribing to any state changes that could cause re-renders
     const { query, actions } = useEditor();
@@ -13,7 +14,6 @@ export const JsonPreviewPanel = () => {
     const [editedJson, setEditedJson] = useState<string>("");
     const [isEditing, setIsEditing] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [isExpanded, setIsExpanded] = useState(true);
     const [applyStatus, setApplyStatus] = useState<"idle" | "success" | "error">("idle");
     const [parseError, setParseError] = useState<string>("");
     const [viewMode, setViewMode] = useState<"json" | "tree">("tree");
@@ -90,9 +90,7 @@ export const JsonPreviewPanel = () => {
         }
     };
 
-    const toggleExpand = () => {
-        setIsExpanded(!isExpanded);
-    };
+
 
     const handleEditToggle = () => {
         if (isEditing) {
@@ -141,7 +139,8 @@ export const JsonPreviewPanel = () => {
                     }
                 }
             }
-            actions.deserialize(editedJson);
+            const normalizedJson = normalizeTemplateDocument(editedJson);
+            actions.deserialize(normalizedJson);
             setApplyStatus("success");
             setTimeout(() => setApplyStatus("idle"), 2000);
         } catch (err: any) {
@@ -290,24 +289,8 @@ export const JsonPreviewPanel = () => {
         });
     };
 
-    if (!isExpanded) {
-        return (
-            <div className="w-[40px] border-l border-border bg-white flex flex-col items-center py-2">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={toggleExpand}
-                    className="h-8 w-8 p-0"
-                    title="Show JSON"
-                >
-                    <Code className="w-4 h-4 text-neutral-500" />
-                </Button>
-            </div>
-        );
-    }
-
     return (
-        <div className="w-[350px] border-l border-border bg-white flex flex-col h-full">
+        <div className="w-full h-full bg-white flex flex-col relative z-20 shrink-0">
             {/* Header */}
             <div className="px-3 py-2 flex items-center justify-between bg-neutral-50 border-b">
                 <div className="flex items-center gap-2">
@@ -332,15 +315,17 @@ export const JsonPreviewPanel = () => {
                             )}
                         </Button>
                     )}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={toggleExpand}
-                        className="h-6 w-6 p-0"
-                        title="Hide JSON"
-                    >
-                        <ChevronRight className="w-3 h-3 text-neutral-500" />
-                    </Button>
+                    {onClose && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onClose}
+                            className="h-6 w-6 p-0"
+                            title="Close"
+                        >
+                            <X className="w-4 h-4 text-neutral-500" />
+                        </Button>
+                    )}
                 </div>
             </div>
 

@@ -4,7 +4,7 @@ import { useEditor } from "@craftjs/core";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { LayersPanel } from "./LayersPanel";
 
-export const SettingsPanel = () => {
+export const SettingsPanel = ({ onClose }: { onClose?: () => void }) => {
     const { selected, isEnabled } = useEditor((state, query) => {
         const currentNodeId = query.getEvent("selected").first();
         let selected;
@@ -91,15 +91,20 @@ export const SettingsPanel = () => {
     });
 
     return (
-        <div className="w-80 bg-white/95 backdrop-blur-xl border-l border-sky-100/60 shadow-[-20px_0_40px_-20px_rgba(0,0,0,0.05)] flex flex-col h-full relative z-20">
-            <div className="p-4 border-b border-sky-100/60 bg-white/50">
+        <div className="w-full flex flex-col h-full relative z-20">
+            <div className="p-4 border-b border-sky-100/60 bg-white/50 flex flex-row items-center justify-between shrink-0">
                 <h3 className="font-bold text-sm text-neutral-800 uppercase tracking-tight">
                     Settings
                 </h3>
+                {onClose && (
+                    <button onClick={onClose} className="p-1 rounded-md hover:bg-neutral-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                )}
             </div>
             <div className="flex-1 overflow-y-auto w-full">
                 {selected ? (
-                    <Tabs defaultValue="content" className="w-full">
+                    <Tabs defaultValue="design" className="w-full">
                         <TabsList className="w-full grid justify-start grid-flow-col auto-cols-auto rounded-none border-b border-sky-100 h-10 px-0 bg-sky-50/50 overflow-x-auto shadow-inner">
                             <TabsTrigger value="content" className="rounded-none px-4 data-[state=active]:bg-white/80 data-[state=active]:border-b-2 data-[state=active]:border-sky-500 data-[state=active]:text-sky-600 pb-2 pt-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:text-sky-500 transition-colors">Content</TabsTrigger>
                             <TabsTrigger value="design" className="rounded-none px-4 data-[state=active]:bg-white/80 data-[state=active]:border-b-2 data-[state=active]:border-sky-500 data-[state=active]:text-sky-600 pb-2 pt-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:text-sky-500 transition-colors">Design</TabsTrigger>
