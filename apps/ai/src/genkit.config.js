@@ -16,4 +16,4 @@ if (!apiKey) {
 export const googleAIPlugin = googleAI({
   apiKey,
 });
-export const gemini25FlashModel = 'gemini-1.5-flash';
+export const gemini25FlashModel = 'googleai/gemini-2.5-flash';
