@@ -3,12 +3,13 @@ import React, { useState, useEffect } from "react";
 import { useEditor } from "@craftjs/core";
 import { useRouter } from "next/navigation";
 import { Button } from "../../ui/button";
-import { Save, Download, Trash2, FilePlus, ArrowLeft } from "lucide-react";
-import { TemplateService } from "../../../core/services/TemplateService";
-// import { LocalStorageAdapter } from "../../infrastructure/adapters/LocalStorageAdapter";
-import { LocalStorageAdapter } from "../../../infrastructure/adapters/LocalStorageAdapter";
+import { Save, Download, Trash2, FilePlus, ArrowLeft, Loader2, ChevronDown, FileText, Image as ImageIcon } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-
+import html2canvas from "html2canvas-pro";
+import jsPDF from "jspdf";
+import { createEmptyDocument } from "./utils/documentModel";
+import { toast } from "../../ui/use-toast";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../../ui/dropdown-menu";
 
 interface SessionData {
     url?: string;
@@ -17,8 +18,6 @@ interface SessionData {
     org_type?: string;
 }
 
-// We instantiate the service with the local storage adapter as per clean architecture requirements
-const templateService = new TemplateService(new LocalStorageAdapter());
 
 export const Topbar = ({ templateId }: { templateId?: string }) => {
     const router = useRouter();
@@ -29,6 +28,7 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
     const [showNameDialog, setShowNameDialog] = useState(false);
     const [tempName, setTempName] = useState("");
     const [isEditing, setIsEditing] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -64,7 +64,7 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
 
     const handleSaveConfirm = async () => {
         if (!tempName.trim()) {
-            alert("Please enter a template name");
+            toast({ title: "Error", description: "Please enter a template name", variant: "destructive" });
             return;
         }
 
@@ -92,15 +92,18 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
                 setTemplateName(tempName);
                 setCurrentId(String(data.id));
                 setIsEditing(true);
-                alert("Template saved to database!");
+                toast({ title: "Success", description: "Template saved to database!" });
+                
+                // Replace URL so we are now securely anchored to the database template ID
+                router.replace(`/content/hr-templates/editor/${data.id}`);
             } else {
                 const error = await response.text();
                 console.error("Failed to save template:", error);
-                alert("Failed to save template to database.");
+                toast({ title: "Error", description: "Failed to save template to database.", variant: "destructive" });
             }
         } catch (error) {
             console.error("Error saving template to database:", error);
-            alert("Failed to save template to database.");
+            toast({ title: "Error", description: "Failed to save template to database.", variant: "destructive" });
         }
 
         setShowNameDialog(false);
@@ -126,56 +129,119 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
             if (response.ok) {
                 const data = await response.json();
                 console.log("Template updated in database:", data);
-                alert("Template updated!");
+                toast({ title: "Success", description: "Template updated successfully!" });
             } else {
                 const error = await response.text();
                 console.error("Failed to update template:", error);
-                alert("Failed to update template in database.");
+                toast({ title: "Error", description: "Failed to update template.", variant: "destructive" });
             }
         } catch (error) {
             console.error("Error updating template in database:", error);
-            alert("Failed to update template in database.");
-        }
-    };
-
-    const handleLoad = async () => {
-        const template = await templateService.getTemplate(currentId);
-        if (template && template.schema) {
-            actions.deserialize(template.schema);
-            setTemplateName(template.name || "Untitled Template");
-
-            // Set the template name as custom name on the root node if it exists
-            if (template.name && template.name !== "Untitled Template") {
-                try {
-                    const rootNode = query.node("ROOT").get();
-                    if (rootNode) {
-                        actions.setProp("ROOT", (props: any) => {
-                            props.customName = template.name;
-                        });
-                    }
-                } catch (e) {
-                    // Ignore - root node might not exist
-                }
-            }
-        } else {
-            alert("No template found with this ID.");
+            toast({ title: "Error", description: "Failed to update template.", variant: "destructive" });
         }
     };
 
     const handleDelete = async () => {
-        await templateService.deleteTemplate(currentId);
-        alert("Template deleted!");
-        // clear editor
-        actions.deserialize("{}");
+        if (!confirm("Are you sure you want to delete this template?")) return;
+        
+        try {
+            const response = await fetch(`${sessionData.url}/api/templates/${currentId}`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${sessionData.token}`
+                }
+            });
+            if (response.ok) {
+                toast({ title: "Success", description: "Template deleted!" });
+                // clear editor
+                actions.deserialize(createEmptyDocument());
+                setIsEditing(false);
+                setCurrentId(uuidv4());
+                router.replace("/content/hr-templates/editor/new");
+            } else {
+                toast({ title: "Error", description: "Failed to delete template from database.", variant: "destructive" });
+            }
+        } catch (error) {
+            console.error("Error deleting template:", error);
+            toast({ title: "Error", description: "Failed to delete template.", variant: "destructive" });
+        }
     };
 
     const handleNew = () => {
         setCurrentId(uuidv4());
-        actions.deserialize("{}"); // Load empty
+        setIsEditing(false);
+        setTemplateName("Untitled Template");
+        actions.deserialize(createEmptyDocument()); // Load empty canvas
+        router.push("/content/hr-templates/editor/new");
     };
 
     const handleBack = () => {
         router.push("/content/hr-templates");
+    };
+
+    const handleExport = async (format: "pdf" | "png" | "jpg" | "docx") => {
+        const element = document.getElementById("editor-canvas");
+        if (!element) return;
+        
+        setIsExporting(true);
+        // Clear selection to remove blue focus bounding boxes from final export
+        actions.selectNode();
+        
+        setTimeout(async () => {
+            try {
+                // Store inline styles to restore after export
+                const originalTransform = element.style.transform;
+                const originalTransition = element.style.transition;
+                
+                // Force scale 1 (100%) immediately so capture isn't pixelated or scaled down
+                element.style.transition = 'none';
+                element.style.transform = 'scale(1)';
+                
+                // Wait briefly for DOM to paint un-scaled state
+                await new Promise(r => setTimeout(r, 50));
+                
+                const canvas = await html2canvas(element, {
+                    scale: 3, // HD capture
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    backgroundColor: "#ffffff"
+                });
+                
+                // Automatically restore layout so user perceives minimal flicker
+                element.style.transform = originalTransform;
+                element.style.transition = originalTransition;
+                
+                const safeName = templateName.replace(/[^a-z0-9]/gi, '_').toLowerCase() || "template";
+
+                if (format === "pdf") {
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                    const pdf = new jsPDF("p", "mm", "a4");
+                    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                    pdf.save(`${safeName}.pdf`);
+                } 
+                else if (format === "png") {
+                    const imgData = canvas.toDataURL('image/png');
+                    const a = document.createElement('a');
+                    a.href = imgData;
+                    a.download = `${safeName}.png`;
+                    a.click();
+                }
+                else if (format === "jpg") {
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const a = document.createElement('a');
+                    a.href = imgData;
+                    a.download = `${safeName}.jpg`;
+                    a.click();
+                }
+                toast({ title: "Success", description: `Exported as ${format.toUpperCase()} successfully!` });
+            } catch (error) {
+                console.error("Export error:", error);
+                toast({ title: "Error", description: `Failed to export ${format.toUpperCase()}! Check console.`, variant: "destructive" });
+            } finally {
+                setIsExporting(false);
+            }
+        }, 150); // Give react state selection clearing brief moment to flush
     };
 
     return (
@@ -203,6 +269,25 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
                         <Trash2 className="w-4 h-4 mr-2" /> Delete
                     </Button>
                 )}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" disabled={isExporting} className="bg-white border-neutral-200 hover:bg-neutral-50 shadow-sm rounded-lg transition-all duration-200 hover:border-neutral-300">
+                            {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-neutral-500" /> : <Download className="w-4 h-4 mr-2 text-neutral-600" />} 
+                            Export <ChevronDown className="w-3 h-3 ml-1 text-neutral-400" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40 z-[100]">
+                        <DropdownMenuItem onClick={() => handleExport('pdf')} className="cursor-pointer text-xs font-medium">
+                            <FileText className="w-4 h-4 mr-2 text-red-500" /> Export PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('png')} className="cursor-pointer text-xs font-medium">
+                            <ImageIcon className="w-4 h-4 mr-2 text-green-500" /> Export PNG
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('jpg')} className="cursor-pointer text-xs font-medium">
+                            <ImageIcon className="w-4 h-4 mr-2 text-orange-500" /> Export JPG
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <Button size="sm" onClick={isEditing ? handleUpdate : handleSaveClick} className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-[0_4px_14px_0_rgba(14,165,233,0.39)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.23)] hover:-translate-y-[1px] rounded-lg transition-all duration-200 border-0">
                     {isEditing ? <><Save className="w-4 h-4 mr-2" /> save </> : <><Save className="w-4 h-4 mr-2" /> Save</>}
                 </Button>

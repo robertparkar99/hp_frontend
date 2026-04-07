@@ -127,38 +127,100 @@ export function useOverlayTransform({
     }, [getMaxZIndex, applyTransform]);
 
     // ==== MOVE ====
+    // Deferred drag: on pointerdown we only record the start position.
+    // We do NOT stopPropagation or setPointerCapture yet, so Craft.js
+    // can still receive the click for node selection.
+    // Only once the user drags past a 5px threshold do we commit to "move" mode.
+    const DRAG_THRESHOLD = 5;
+    const pendingMove = useRef<{ startX: number; startY: number; pointerId: number; target: HTMLElement } | null>(null);
+
     const handleMoveStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         if (!domRef.current) return;
         const target = e.target as HTMLElement;
         const isMoveHandle = !!target.closest(".move-handle");
-
-        // CANVA RULE: Only the explicit floating move icon triggers drag! 
-        // Clicking the main element body should only select it (letting Craft.js or Tiptap handle the event natively).
+        
+        // Disable body-drag if actively editing text or selecting inside an input
         if (!isMoveHandle) {
+            if (
+                target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement ||
+                target.isContentEditable ||
+                target.closest('[contenteditable="true"]')
+            ) {
+                return;
+            }
+        }
+
+        // For explicit move-handles, start move immediately
+        if (isMoveHandle) {
+            e.stopPropagation();
+            target.setPointerCapture(e.pointerId);
+            isInteracting.current = "move";
+            interactionStartPos.current = { x: e.clientX, y: e.clientY };
+            state.current.scaleMultiplier = 1;
+            originalState.current = { ...state.current };
+            setElevatedZIndex();
+            document.body.style.userSelect = "none";
             return;
         }
 
-        e.stopPropagation();
-        target.setPointerCapture(e.pointerId);
-
-        isInteracting.current = "move";
-        interactionStartPos.current = { x: e.clientX, y: e.clientY };
-        state.current.scaleMultiplier = 1;
-        originalState.current = { ...state.current };
-        setElevatedZIndex();
-
-        document.body.style.userSelect = "none";
+        // For body clicks, defer — just record the start position
+        pendingMove.current = { startX: e.clientX, startY: e.clientY, pointerId: e.pointerId, target };
     }, [setElevatedZIndex]);
 
     const handleMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+        // Check if we have a pending move that needs to be promoted to a real drag
+        if (pendingMove.current && isInteracting.current !== "move") {
+            const dx = e.clientX - pendingMove.current.startX;
+            const dy = e.clientY - pendingMove.current.startY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance >= DRAG_THRESHOLD) {
+                // Promote to real move interaction
+                const pending = pendingMove.current;
+                pendingMove.current = null;
+
+                try {
+                    pending.target.setPointerCapture(pending.pointerId);
+                } catch (_) { /* element may have been replaced by React */ }
+
+                isInteracting.current = "move";
+                interactionStartPos.current = { x: pending.startX, y: pending.startY };
+                state.current.scaleMultiplier = 1;
+                originalState.current = { ...state.current };
+                setElevatedZIndex();
+                document.body.style.userSelect = "none";
+            } else {
+                return; // Haven't reached threshold yet
+            }
+        }
+
         if (isInteracting.current !== "move" || !domRef.current) return;
         e.stopPropagation();
 
-        const dx = e.clientX - interactionStartPos.current.x;
-        const dy = e.clientY - interactionStartPos.current.y;
+        const zoom = (window as any).__craft_zoom || 1;
+        const dx = (e.clientX - interactionStartPos.current.x) / zoom;
+        const dy = (e.clientY - interactionStartPos.current.y) / zoom;
 
-        state.current.x = originalState.current.x + dx;
-        state.current.y = originalState.current.y + dy;
+        let tempX = Number(originalState.current.x) + dx;
+        let tempY = Number(originalState.current.y) + dy;
+        
+        if (isNaN(tempX)) tempX = 0;
+        if (isNaN(tempY)) tempY = 0;
+
+        const A4_WIDTH = 794;
+        const A4_HEIGHT = 1123;
+        const elemWidth = Number(typeof state.current.width === 'number' ? state.current.width : domRef.current.offsetWidth) || 100;
+        const elemHeight = Number(typeof state.current.height === 'number' ? state.current.height : domRef.current.offsetHeight) || 100;
+
+        const maxAllowedX = Math.max(0, A4_WIDTH - elemWidth);
+        const maxAllowedY = Math.max(0, A4_HEIGHT - elemHeight);
+
+        tempX = Math.max(0, Math.min(tempX, maxAllowedX));
+        tempY = Math.max(0, Math.min(tempY, maxAllowedY));
+
+        state.current.x = tempX;
+        state.current.y = tempY;
 
         if (rAF.current === null) {
             rAF.current = requestAnimationFrame(() => {
@@ -166,7 +228,7 @@ export function useOverlayTransform({
                 rAF.current = null;
             });
         }
-    }, [applyTransform]);
+    }, [applyTransform, setElevatedZIndex]);
 
     // ==== RESIZE ====
     const handleResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -193,8 +255,9 @@ export function useOverlayTransform({
         if (isInteracting.current !== "resize" || !domRef.current) return;
         e.stopPropagation();
 
-        const rawDx = e.clientX - interactionStartPos.current.x;
-        const rawDy = e.clientY - interactionStartPos.current.y;
+        const zoom = (window as any).__craft_zoom || 1;
+        const rawDx = (e.clientX - interactionStartPos.current.x) / zoom;
+        const rawDy = (e.clientY - interactionStartPos.current.y) / zoom;
 
         const { mx, my, ax, ay } = dirMultipliers[interactionDirection.current];
         const localDelta = rotateVector(rawDx, rawDy, -originalState.current.rotation);
@@ -232,21 +295,48 @@ export function useOverlayTransform({
             dH = MIN_SIZE - baseDimensions.current.height;
         }
 
-        const newW = baseDimensions.current.width + dW;
-        const newH = baseDimensions.current.height + dH;
+        const newW = Number(baseDimensions.current.width) + dW;
+        const newH = Number(baseDimensions.current.height) + dH;
 
         const { x: newX, y: newY } = computeAnchoredPosition(
-            originalState.current.x, originalState.current.y,
-            baseDimensions.current.width, baseDimensions.current.height,
+            Number(originalState.current.x), Number(originalState.current.y),
+            Number(baseDimensions.current.width), Number(baseDimensions.current.height),
             newW, newH,
-            originalState.current.rotation,
+            Number(originalState.current.rotation),
             ax, ay
         );
 
-        state.current.width = newW;
-        state.current.height = newH;
-        state.current.x = newX;
-        state.current.y = newY;
+        const A4_WIDTH = 794;
+        const A4_HEIGHT = 1123;
+
+        // Structural bounds clamping for Resize
+        let clampedW = newW;
+        let clampedH = newH;
+        let clampedX = newX;
+        let clampedY = newY;
+
+        // Prevent pushing left/top out of bounds
+        if (clampedX < 0) {
+            clampedW += clampedX; // shrink width by overflow amount
+            clampedX = 0;
+        }
+        if (clampedY < 0) {
+            clampedH += clampedY; // shrink height by overflow amount
+            clampedY = 0;
+        }
+
+        // Prevent pushing right/bottom out of bounds
+        if (clampedX + clampedW > A4_WIDTH) {
+            clampedW = A4_WIDTH - clampedX;
+        }
+        if (clampedY + clampedH > A4_HEIGHT) {
+            clampedH = A4_HEIGHT - clampedY;
+        }
+
+        state.current.width = Math.max(MIN_SIZE, clampedW);
+        state.current.height = Math.max(MIN_SIZE, clampedH);
+        state.current.x = clampedX;
+        state.current.y = clampedY;
 
         if (rAF.current === null) {
             rAF.current = requestAnimationFrame(() => {
@@ -297,10 +387,13 @@ export function useOverlayTransform({
 
     // ==== END ====
     const handleEnd = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+        // Clear any pending move that never promoted to a real drag
+        pendingMove.current = null;
+
         if (!isInteracting.current || !domRef.current) return;
         e.stopPropagation();
         const target = e.target as HTMLElement;
-        target.releasePointerCapture(e.pointerId);
+        try { target.releasePointerCapture(e.pointerId); } catch (_) { /* already released */ }
 
         document.body.style.userSelect = "";
 

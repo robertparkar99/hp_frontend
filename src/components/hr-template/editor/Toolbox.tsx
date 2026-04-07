@@ -1,19 +1,54 @@
 "use client";
 import React, { useState } from "react";
-import { useEditor } from "@craftjs/core";
-import { Type, UploadCloud, Shapes, Square, X, Circle, Triangle, Star, Hexagon, Frame, Wrench, LayoutGrid, Table } from "lucide-react";
+import { useEditor, Element } from "@craftjs/core";
+import { Type, UploadCloud, Shapes, Square, X, Circle, Triangle, Star, Hexagon, Frame, Wrench, LayoutGrid, Table, Settings, Code } from "lucide-react";
 
 import { TextBlock } from "../blocks/TextBlock";
 import { ImageBlock } from "../blocks/ImageBlock";
 import { ContainerBlock } from "../blocks/ContainerBlock";
 import { ShapeBlock } from "../blocks/ShapeBlock";
 import { TableBlock } from "../blocks/TableBlock";
+import { createStarterTableContent } from "../blocks/tableUtils";
+import { SettingsPanel } from "./SettingsPanel";
+import { JsonPreviewPanel } from "./JsonPreviewPanel";
 
 export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, toggleFloatingToolbar }: { activeTab: string | null, setActiveTab: (tab: string | null) => void, isFloatingToolbarVisible?: boolean, toggleFloatingToolbar?: () => void }) => {
     const { connectors, actions, query } = useEditor();
-    const selectedNodeId = useEditor((state) => state.events.selected);
+    
+    const { activeSelectionId } = useEditor((state) => ({
+        activeSelectionId: state.events.selected.size > 0 ? Array.from(state.events.selected)[0] as string : null
+    }));
+
     const [uploadedImages, setUploadedImages] = useState<string[]>([]);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const previousSelectedRef = React.useRef<string | null>(null);
+
+    React.useEffect(() => {
+        if (!activeSelectionId) {
+            previousSelectedRef.current = null;
+            return;
+        }
+
+        // Only trigger if the selection has actually changed to a NEW node
+        if (activeSelectionId !== previousSelectedRef.current) {
+            previousSelectedRef.current = activeSelectionId;
+            
+            const selectedNode = query.node(activeSelectionId).get();
+            if (selectedNode && selectedNode.data) {
+                const nodeName = selectedNode.data.name;
+                console.log("Toolbox Auto-Open: Selected node changed to:", nodeName);
+                // Auto-open settings (design) panel when content elements are selected
+                const autoOpenSettingsNodes = [
+                    'TextBlock', 'ImageBlock', 'ShapeBlock', 'DrawingBlock', 
+                    'ButtonBlock', 'DividerBlock', 'LineBlock', 'TableBlock'
+                ];
+                
+                if (autoOpenSettingsNodes.includes(nodeName)) {
+                    setActiveTab('settings');
+                }
+            }
+        }
+    }, [activeSelectionId, query, setActiveTab]);
 
     // Track instance numbers for each shape type using ref to persist across re-renders
     const shapeCountersRef = React.useRef<Record<string, number>>({});
@@ -28,17 +63,11 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
 
     // Helper function to determine parent ID based on selection
     const getParentId = (): string => {
-        if (selectedNodeId && selectedNodeId.size > 0) {
-            const firstSelectedId = Array.from(selectedNodeId)[0] as string;
-            const selectedNode = query.node(firstSelectedId).get();
-            if (selectedNode) {
-                const nodeData = selectedNode.data;
-                if (nodeData) {
-                    const nodeName = nodeData.name;
-                    // Check if it's a container-like element that can accept children
-                    if (nodeName === 'Container' || nodeName === 'Grid' || nodeName === 'Frame') {
-                        return firstSelectedId;
-                    }
+        if (activeSelectionId) {
+            const selectedNode = query.node(activeSelectionId).get();
+            if (selectedNode && selectedNode.data) {
+                if (selectedNode.data.isCanvas) {
+                    return activeSelectionId;
                 }
             }
         }
@@ -102,21 +131,42 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                     <span className={`text-[10px] font-bold tracking-wide transition-colors ${isFloatingToolbarVisible ? 'text-sky-600' : 'text-slate-500 group-hover:text-sky-500'}`}>Tools</span>
                 </div>
 
+                <div
+                    onClick={() => toggleTab('settings')}
+                    className={`flex flex-col items-center justify-center w-16 h-16 cursor-pointer rounded-2xl transition-all duration-200 group ${activeTab === 'settings' ? 'bg-sky-50 shadow-inner border border-sky-200/50' : 'hover:bg-sky-50/50 border border-transparent'}`}
+                >
+                    <Settings className={`w-6 h-6 mb-1 transition-transform duration-200 ${activeTab === 'settings' ? 'scale-110 text-sky-600 drop-shadow-md' : 'text-slate-500 group-hover:scale-110 group-hover:text-sky-500'}`} strokeWidth={1.5} />
+                    <span className={`text-[10px] font-bold tracking-wide transition-colors ${activeTab === 'settings' ? 'text-sky-600' : 'text-slate-500 group-hover:text-sky-500'}`}>Settings</span>
+                </div>
+
+                <div
+                    onClick={() => toggleTab('json')}
+                    className={`flex flex-col items-center justify-center w-16 h-16 cursor-pointer rounded-2xl transition-all duration-200 group ${activeTab === 'json' ? 'bg-sky-50 shadow-inner border border-sky-200/50' : 'hover:bg-sky-50/50 border border-transparent'}`}
+                >
+                    <Code className={`w-6 h-6 mb-1 transition-transform duration-200 ${activeTab === 'json' ? 'scale-110 text-sky-600 drop-shadow-md' : 'text-slate-500 group-hover:scale-110 group-hover:text-sky-500'}`} strokeWidth={1.5} />
+                    <span className={`text-[10px] font-bold tracking-wide transition-colors ${activeTab === 'json' ? 'text-sky-600' : 'text-slate-500 group-hover:text-sky-500'}`}>Code</span>
+                </div>
+
             </div>
 
             {/* Slide Out Panel */}
-            <div className={`absolute top-0 left-20 h-full bg-white/95 backdrop-blur-3xl border-r border-sky-100/60 shadow-[30px_0_60px_-15px_rgba(0,0,0,0.1)] z-10 w-72 transition-transform duration-300 ease-in-out flex flex-col ${activeTab ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`absolute top-0 left-20 h-full bg-white/95 backdrop-blur-3xl border-r border-sky-100/60 shadow-[30px_0_60px_-15px_rgba(0,0,0,0.1)] z-10 transition-all duration-300 ease-in-out flex flex-col ${activeTab ? 'translate-x-0' : '-translate-x-full'} ${activeTab === 'json' ? 'w-[350px]' : activeTab === 'settings' ? 'w-80' : 'w-72'}`}>
 
                 {/* Panel Header */}
-                <div className="flex items-center justify-between p-4 border-b border-sky-100/60 bg-white/50">
-                    <h3 className="font-bold text-neutral-800 capitalize tracking-tight">{activeTab || ''}</h3>
-                    <button onClick={() => setActiveTab(null)} className="p-1.5 rounded-xl text-neutral-400 hover:text-sky-600 hover:bg-sky-50 transition-colors">
-                        <X className="w-4 h-4" />
-                    </button>
-                </div>
+                {(activeTab !== 'settings' && activeTab !== 'json') && (
+                    <div className="flex items-center justify-between p-4 border-b border-sky-100/60 bg-white/50">
+                        <h3 className="font-bold text-neutral-800 capitalize tracking-tight">{activeTab || ''}</h3>
+                        <button onClick={() => setActiveTab(null)} className="p-1.5 rounded-xl text-neutral-400 hover:text-sky-600 hover:bg-sky-50 transition-colors">
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
 
-                {/* Panel Content Scrollable Area */}
-                <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+                {activeTab === 'settings' && <SettingsPanel onClose={() => setActiveTab(null)} />}
+                {activeTab === 'json' && <JsonPreviewPanel onClose={() => setActiveTab(null)} />}
+
+                {(activeTab !== 'settings' && activeTab !== 'json') && (
+                    <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
 
                     {/* TEXT TAB CONTENT */}
                     {activeTab === 'text' && (
@@ -530,90 +580,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
 
                     {/* TABLES TAB CONTENT */}
                     {activeTab === 'tables' && (
-                        <>
-                            <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-2">Tables</div>
-                            
-                            <div
-                                onClick={() => {
-                                    const nodeTree = query.parseReactElement(<TableBlock rows={3} cols={3} />).toNodeTree();
-                                    actions.addNodeTree(nodeTree, getParentId());
-                                }}
-                                className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl p-3 flex items-center justify-center text-sm font-semibold cursor-pointer shadow-[0_4px_14px_0_rgba(14,165,233,0.39)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.23)] hover:-translate-y-[1px] transition-all mb-4"
-                            >
-                                <Table className="w-4 h-4 mr-2" /> Add a Table
-                            </div>
-
-                            <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-2 mt-4">Quick Add</div>
-                            
-                            <div className="grid grid-cols-3 gap-2">
-                                <div
-                                    onClick={() => {
-                                        const nodeTree = query.parseReactElement(<TableBlock rows={2} cols={2} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
-                                    className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-pointer hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex flex-col items-center justify-center p-2"
-                                    title="2x2 Table"
-                                >
-                                    <Table className="w-8 h-8 text-sky-500" />
-                                    <span className="text-[10px] text-sky-600 mt-1">2×2</span>
-                                </div>
-                                <div
-                                    onClick={() => {
-                                        const nodeTree = query.parseReactElement(<TableBlock rows={3} cols={3} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
-                                    className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-pointer hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex flex-col items-center justify-center p-2"
-                                    title="3x3 Table"
-                                >
-                                    <Table className="w-8 h-8 text-sky-500" />
-                                    <span className="text-[10px] text-sky-600 mt-1">3×3</span>
-                                </div>
-                                <div
-                                    onClick={() => {
-                                        const nodeTree = query.parseReactElement(<TableBlock rows={4} cols={4} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
-                                    className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-pointer hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex flex-col items-center justify-center p-2"
-                                    title="4x4 Table"
-                                >
-                                    <Table className="w-8 h-8 text-sky-500" />
-                                    <span className="text-[10px] text-sky-600 mt-1">4×4</span>
-                                </div>
-                                <div
-                                    onClick={() => {
-                                        const nodeTree = query.parseReactElement(<TableBlock rows={2} cols={3} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
-                                    className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-pointer hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex flex-col items-center justify-center p-2"
-                                    title="2x3 Table"
-                                >
-                                    <Table className="w-8 h-8 text-sky-500" />
-                                    <span className="text-[10px] text-sky-600 mt-1">2×3</span>
-                                </div>
-                                <div
-                                    onClick={() => {
-                                        const nodeTree = query.parseReactElement(<TableBlock rows={3} cols={4} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
-                                    className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-pointer hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex flex-col items-center justify-center p-2"
-                                    title="3x4 Table"
-                                >
-                                    <Table className="w-8 h-8 text-sky-500" />
-                                    <span className="text-[10px] text-sky-600 mt-1">3×4</span>
-                                </div>
-                                <div
-                                    onClick={() => {
-                                        const nodeTree = query.parseReactElement(<TableBlock rows={5} cols={5} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
-                                    className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-pointer hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex flex-col items-center justify-center p-2"
-                                    title="5x5 Table"
-                                >
-                                    <Table className="w-8 h-8 text-sky-500" />
-                                    <span className="text-[10px] text-sky-600 mt-1">5×5</span>
-                                </div>
-                            </div>
-                        </>
+                        <TableTabContent query={query} actions={actions} getParentId={getParentId} />
                     )}
 
                     {/* FRAMES TAB CONTENT */}
@@ -792,9 +759,9 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
 
                             <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-2 mt-6">Container</div>
                             <div
-                                ref={(ref) => { if (ref) connectors.create(ref, <ContainerBlock />); }}
+                                ref={(ref) => { if (ref) connectors.create(ref, <Element canvas is={ContainerBlock} isOverlay={false} />); }}
                                 onClick={() => {
-                                    const nodeTree = query.parseReactElement(<ContainerBlock />).toNodeTree();
+                                    const nodeTree = query.parseReactElement(<Element canvas is={ContainerBlock} isOverlay={false} />).toNodeTree();
                                     actions.addNodeTree(nodeTree, getParentId());
                                 }}
                                 className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl p-4 flex items-center justify-center text-sm font-semibold cursor-pointer shadow-[0_4px_14px_0_rgba(14,165,233,0.39)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.23)] hover:-translate-y-[1px] transition-all mb-4"
@@ -805,7 +772,93 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                     )}
 
                 </div>
+                )}
             </div>
         </div>
     );
 };
+
+// ─── Custom Table Tab Content ────────────────────────────────────────
+
+function TableTabContent({ query, actions, getParentId }: any) {
+    const [customRows, setCustomRows] = React.useState(3);
+    const [customCols, setCustomCols] = React.useState(3);
+
+    const addTable = (r: number, c: number) => {
+        const nodeTree = query.parseReactElement(
+            <TableBlock rows={r} cols={c} content={createStarterTableContent(r, c)} x={80} y={80} />
+        ).toNodeTree();
+        actions.addNodeTree(nodeTree, getParentId());
+    };
+
+    const presets = [
+        { r: 2, c: 2, label: "2×2" },
+        { r: 3, c: 3, label: "3×3" },
+        { r: 4, c: 4, label: "4×4" },
+        { r: 2, c: 3, label: "2×3" },
+        { r: 3, c: 4, label: "3×4" },
+        { r: 5, c: 5, label: "5×5" },
+    ];
+
+    return (
+        <>
+            <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-2">Tables</div>
+
+            <div
+                onClick={() => addTable(3, 3)}
+                className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl p-3 flex items-center justify-center text-sm font-semibold cursor-pointer shadow-[0_4px_14px_0_rgba(14,165,233,0.39)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.23)] hover:-translate-y-[1px] transition-all mb-4"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 3v18"/><path d="M3 12h18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+                Add a Table
+            </div>
+
+            <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-2 mt-2">Quick Add</div>
+
+            <div className="grid grid-cols-3 gap-2">
+                {presets.map(p => (
+                    <div
+                        key={p.label}
+                        onClick={() => addTable(p.r, p.c)}
+                        className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-pointer hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex flex-col items-center justify-center p-2"
+                        title={`${p.label} Table`}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-sky-500"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+                        <span className="text-[10px] text-sky-600 mt-1">{p.label}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-2 mt-4">Custom Table</div>
+
+            <div className="bg-gradient-to-br from-slate-50 to-sky-50/20 border border-sky-100/50 rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                        <label className="text-[10px] text-neutral-500 block mb-0.5">Rows</label>
+                        <input
+                            type="number" min={1} max={20}
+                            value={customRows}
+                            onChange={(e) => setCustomRows(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                            className="w-full border border-sky-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:border-sky-400"
+                        />
+                    </div>
+                    <span className="text-neutral-300 text-lg mt-3">×</span>
+                    <div className="flex-1">
+                        <label className="text-[10px] text-neutral-500 block mb-0.5">Cols</label>
+                        <input
+                            type="number" min={1} max={20}
+                            value={customCols}
+                            onChange={(e) => setCustomCols(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                            className="w-full border border-sky-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:border-sky-400"
+                        />
+                    </div>
+                </div>
+                <button
+                    onClick={() => addTable(customRows, customCols)}
+                    className="w-full bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold py-2 rounded-lg transition-colors shadow-sm"
+                >
+                    Insert {customRows}×{customCols} Table
+                </button>
+            </div>
+        </>
+    );
+}

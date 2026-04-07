@@ -16,9 +16,10 @@ interface TransformControlsProps {
     };
     children: React.ReactNode;
     selected?: boolean;
+    noResize?: boolean;
 }
 
-export const TransformControls = ({ controls, handlers, children, selected }: TransformControlsProps) => {
+export const TransformControls = ({ controls, handlers, children, selected, noResize = false }: TransformControlsProps) => {
     return (
         <div className={`relative w-full h-full group/transform`}>
             {children}
@@ -65,18 +66,21 @@ export const TransformControls = ({ controls, handlers, children, selected }: Tr
                 {/* Purple Outline */}
                 <div className="absolute inset-0 border-[1.5px] border-[#8b3dff]"></div>
 
-                {/* Corner Resize Handles */}
-                <div data-dir="nw" className="absolute -top-[6px] -left-[6px] w-[12px] h-[12px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-nwse-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
-                <div data-dir="ne" className="absolute -top-[6px] -right-[6px] w-[12px] h-[12px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-nesw-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
-                <div data-dir="sw" className="absolute -bottom-[6px] -left-[6px] w-[12px] h-[12px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-nesw-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
-                <div data-dir="se" className="absolute -bottom-[6px] -right-[6px] w-[12px] h-[12px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-nwse-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
-
-                {/* Edge Resize Handles (Pills) */}
-                <div data-dir="n" className="absolute -top-[4px] left-1/2 -translate-x-1/2 w-[24px] h-[8px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-ns-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
-                <div data-dir="s" className="absolute -bottom-[4px] left-1/2 -translate-x-1/2 w-[24px] h-[8px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-ns-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
-                <div data-dir="w" className="absolute top-1/2 -translate-y-1/2 -left-[4px] w-[8px] h-[24px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-ew-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
-                <div data-dir="e" className="absolute top-1/2 -translate-y-1/2 -right-[4px] w-[8px] h-[24px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-ew-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
+                {/* Corner & Edge Resize Handles — hidden when noResize is true (e.g. for Tables) */}
+                {!noResize && (
+                    <>
+                        <div data-dir="nw" className="absolute -top-[6px] -left-[6px] w-[12px] h-[12px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-nwse-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
+                        <div data-dir="ne" className="absolute -top-[6px] -right-[6px] w-[12px] h-[12px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-nesw-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
+                        <div data-dir="sw" className="absolute -bottom-[6px] -left-[6px] w-[12px] h-[12px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-nesw-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
+                        <div data-dir="se" className="absolute -bottom-[6px] -right-[6px] w-[12px] h-[12px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-nwse-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
+                        <div data-dir="n" className="absolute -top-[4px] left-1/2 -translate-x-1/2 w-[24px] h-[8px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-ns-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
+                        <div data-dir="s" className="absolute -bottom-[4px] left-1/2 -translate-x-1/2 w-[24px] h-[8px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-ns-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
+                        <div data-dir="w" className="absolute top-1/2 -translate-y-1/2 -left-[4px] w-[8px] h-[24px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-ew-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
+                        <div data-dir="e" className="absolute top-1/2 -translate-y-1/2 -right-[4px] w-[8px] h-[24px] bg-white border-[1.5px] border-[#8b3dff] rounded-full cursor-ew-resize shadow-sm transform-handle pointer-events-auto" onPointerDown={controls.onResizeStart} onPointerMove={controls.onResizeMove} onPointerUp={handlers.onPointerUp} onPointerCancel={handlers.onPointerCancel} />
+                    </>
+                )}
             </div>
         </div>
     );
 };
+

@@ -13,6 +13,7 @@ interface OverlayWrapperProps {
     zIndex?: number;
     isOverlay?: boolean;
     isText?: boolean;
+    noResize?: boolean;
     children: React.ReactNode;
 }
 
@@ -25,6 +26,7 @@ export const OverlayWrapper = ({
     zIndex = 10,
     isOverlay = false,
     isText = false,
+    noResize = false,
     children,
 }: OverlayWrapperProps) => {
     const {
@@ -92,11 +94,11 @@ export const OverlayWrapper = ({
 
     // 60FPS Hardware Transform Engine
     const { domRef, handlers, controls } = useOverlayTransform({
-        initialX: x === -9999 ? 50 : x, // Initial drop fallback
-        initialY: y === -9999 ? 50 : y,
+        initialX: typeof x === 'string' ? parseFloat(x) || 0 : x,
+        initialY: typeof y === 'string' ? parseFloat(y) || 0 : y,
         initialWidth: width,
         initialHeight: height,
-        initialRotation: rotation,
+        initialRotation: typeof rotation === 'string' ? parseFloat(rotation) || 0 : rotation,
         initialZIndex: zIndex,
         getMaxZIndex: () => {
             const nodes = query.getNodes();
@@ -181,6 +183,7 @@ export const OverlayWrapper = ({
                     }}
                     handlers={handlers}
                     selected={selected}
+                    noResize={noResize}
                 >
                     <div className="w-full h-full">
                         {children}

@@ -3,6 +3,7 @@ import React, { useState, useCallback } from "react";
 import { useEditor } from "@craftjs/core";
 import { Trash2, ChevronRight, ChevronDown, Code, Copy, Check, RotateCcw, CheckCircle } from "lucide-react";
 import { Button } from "../../ui/button";
+import { normalizeTemplateDocument } from "./utils/documentModel";
 
 export const LayersPanel = () => {
     const { nodes, actions, query } = useEditor((state) => ({
@@ -75,7 +76,8 @@ export const LayersPanel = () => {
     const handleApply = () => {
         try {
             JSON.parse(editedJson);
-            actions.deserialize(editedJson);
+            const normalizedJson = normalizeTemplateDocument(editedJson);
+            actions.deserialize(normalizedJson);
             setApplyStatus("success");
             setTimeout(() => setApplyStatus("idle"), 2000);
         } catch (err) {
