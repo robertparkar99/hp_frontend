@@ -8,6 +8,7 @@ if (process.env.NODE_ENV !== 'production') {
 const apiKey = process.env.GEMINI_API_KEY;
 
 console.log("API key exists:", !!apiKey);
+console.log("API key:", apiKey);
 
 if (!apiKey) {
   throw new Error('Missing GEMINI_API_KEY');
