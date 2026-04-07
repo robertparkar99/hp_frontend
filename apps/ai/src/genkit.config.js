@@ -1,15 +1,19 @@
 import { googleAI } from '@genkit-ai/google-genai'; 
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.local' });
-
-const apiKey = process.env.GEMINI_API_KEY;
-console.log("API key : ",process.env.GEMINI_API_KEY); //by AJ
-if (!process.env.GEMINI_API_KEY) {
-  console.error('Error: GEMINI_API_KEY environment variable not found.');
-  process.exit(1);
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: '.env.local' });
 }
 
-// Export the plugin and the model
-export const googleAIPlugin = googleAI({ apiKey: process.env.GEMINI_API_KEY });
+const apiKey = process.env.GEMINI_API_KEY;
+
+console.log("API key exists:", !!apiKey);
+
+if (!apiKey) {
+  throw new Error('Missing GEMINI_API_KEY');
+}
+
+export const googleAIPlugin = googleAI({
+  apiKey,
+});
 export const gemini25FlashModel = 'googleai/gemini-2.5-flash';
