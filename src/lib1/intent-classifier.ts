@@ -70,12 +70,26 @@ const intentPatterns: Record<QueryIntent, string[]> = {
     'recommend course',
     'course recommendation',
     'suggest course',
+    'suggest me a course',
+    'suggest a course',
+    'recommend me a course',
+    'recommend a course',
     'course suggestion',
     'course suggest',  // Added: "course suggest" pattern
+    'recommended course',
+    'recommended courses',
+    'best course',
+    'best courses',
+    'which course',
+    'what course',
+    'what courses',
+    'course for me',
+    'courses for me',
     'recommend learning path',
     'learning path recommendation',
     'suggest learning path',
-    'learning path suggestion'
+    'learning path suggestion',
+    'learning path for me'
   ],
 
   SKILL_GAP_ANALYSIS: [
@@ -121,6 +135,7 @@ export function extractEntities(query: string): ExtractedEntities {
 
   const entities: ExtractedEntities = {};
   const lowerQuery = query.toLowerCase();
+  const normalizedQuery = lowerQuery.replace(/[^\w\s]/g, ' ');
 
   // Extract job role
   const jobRolePatterns = [
@@ -196,6 +211,7 @@ export function classifyIntent(
   }
 
   const lowerQuery = query.toLowerCase();
+  const normalizedQuery = lowerQuery.replace(/[^\w\s]/g, ' ');
 
   // First check for JOB_ROLE_COMPETENCY patterns (high specificity)
   const competencyPatterns = intentPatterns.JOB_ROLE_COMPETENCY.map(p => p.toLowerCase());
@@ -241,16 +257,24 @@ export function classifyIntent(
     lowerQuery.includes(pattern)
   ).length;
 
-  if (courseMatches > 0) {
+  const hasCourseKeyword = /(course|courses|learning path)/i.test(normalizedQuery);
+  const hasRecommendationKeyword = /(recommend|recommended|suggest|suggestion|best|which|what)/i.test(normalizedQuery);
+
+  if (courseMatches > 0 || (hasCourseKeyword && hasRecommendationKeyword)) {
     const entities = extractEntities(query);
 
     let confidence = 0.5 + courseMatches * 0.15;
+    if (courseMatches === 0 && hasCourseKeyword && hasRecommendationKeyword) {
+      confidence = 0.65;
+    }
     confidence = Math.min(confidence, 0.98);
 
     return {
       intent: 'Course_Recommendation',
       confidence,
-      reasoning: `Detected ${courseMatches} course recommendation pattern(s)`,
+      reasoning: courseMatches > 0
+        ? `Detected ${courseMatches} course recommendation pattern(s)`
+        : 'Detected course-related recommendation language',
       entities
     };
   }

@@ -1,7 +1,7 @@
 //
 "use client"
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Users, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff, ChevronDown, FileText, Target, Wrench, BookOpen, Zap, Heart, Smile, CheckCircle, Save, TrendingUp } from 'lucide-react';
+import { Send, Bot, User, Users, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff, ChevronDown, FileText, Target, Wrench, BookOpen, Zap, Heart, Smile, CheckCircle, Save, TrendingUp, Mail, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { submitFeedback } from "@/lib1/feedback-service";
@@ -180,6 +180,175 @@ function CourseRecommendationCards({
   );
 }
 
+interface MockEmployeeRecord {
+  name: string;
+  role: string;
+  email: string;
+  occupation: string;
+}
+
+function getRecordInitials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('');
+}
+
+function getEmailDomain(email: string) {
+  return email.split('@')[1] || 'unknown';
+}
+
+function parseMockEmployeeRecords(content: string): MockEmployeeRecord[] {
+  if (!content || typeof content !== 'string') return [];
+
+  const normalizedContent = content.replace(/\r/g, '').trim();
+  const blocks = normalizedContent
+    .split(/\n\s*\n+/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
+  const parsedFromBlocks = blocks
+    .map((block) => {
+      const name = block.match(/name\s*:\s*(.+)/i)?.[1]?.trim() || '';
+      const role = block.match(/role\s*:\s*(.+)/i)?.[1]?.trim() || '';
+      const email = block.match(/email\s*:\s*(.+)/i)?.[1]?.trim() || '';
+      const occupation = block.match(/occupation\s*:\s*(.+)/i)?.[1]?.trim() || '';
+
+      if (!name || !role || !email || !occupation) {
+        return null;
+      }
+
+      return { name, role, email, occupation };
+    })
+    .filter((record): record is MockEmployeeRecord => Boolean(record));
+
+  if (parsedFromBlocks.length > 0) {
+    return parsedFromBlocks;
+  }
+
+  const lineMatches = [...normalizedContent.matchAll(/name\s*:\s*(.+?)\s*(?:\n|$).*?role\s*:\s*(.+?)\s*(?:\n|$).*?email\s*:\s*(.+?)\s*(?:\n|$).*?occupation\s*:\s*(.+?)\s*(?:\n|$)/gis)];
+
+  return lineMatches.map((match) => ({
+    name: match[1].trim(),
+    role: match[2].trim(),
+    email: match[3].trim(),
+    occupation: match[4].trim()
+  }));
+}
+
+function MockQueryResultCards({ records }: { records: MockEmployeeRecord[] }) {
+  const totalRecords = records.length;
+  const uniqueRoles = new Set(records.map((record) => record.role.trim()).filter(Boolean)).size;
+
+  return (
+    <div className="w-full min-w-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,250,252,0.96))] shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+      <div className="relative overflow-hidden px-4 py-4 sm:px-5">
+        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_40%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.14),transparent_35%)]" />
+
+        <div className="relative flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-[0_12px_24px_-16px_rgba(37,99,235,0.9)]">
+              <Zap className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-600">
+                Query Output
+              </p>
+              <h3 className="mt-1 text-sm font-semibold tracking-tight text-slate-900">
+                Mock Query Results
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">
+                Clean structured employee response
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="rounded-2xl bg-slate-900 px-4 py-2 text-right text-white shadow-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+                Total
+              </p>
+              <p className="mt-1 text-lg font-semibold leading-none">
+                {totalRecords}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2 text-right text-blue-700">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-500">
+                Roles
+              </p>
+              <p className="mt-1 text-lg font-semibold leading-none">
+                {uniqueRoles}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-4 border-t border-slate-200 sm:mx-5" />
+
+      <div className="space-y-3 p-4 sm:p-5">
+        {records.map((record, index) => (
+          <div
+            key={`${record.email}-${index}`}
+            className="group rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_10px_25px_-22px_rgba(15,23,42,0.45)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_18px_35px_-24px_rgba(37,99,235,0.28)]"
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,rgba(15,23,42,1),rgba(37,99,235,0.85))] text-sm font-semibold uppercase text-white shadow-[0_14px_24px_-18px_rgba(15,23,42,0.9)]">
+                {getRecordInitials(record.name)}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="text-sm font-semibold text-slate-900">
+                        {record.name}
+                      </h4>
+                      <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700">
+                        {record.role}
+                      </span>
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+                        {getEmailDomain(record.email)}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(180px,0.8fr)]">
+                      <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          Email
+                        </p>
+                        <p className="mt-2 break-all text-sm text-slate-800">{record.email}</p>
+                      </div>
+
+                      <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          Occupation
+                        </p>
+                        <p className="mt-2 text-sm text-slate-800">{record.occupation}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,1),rgba(241,245,249,0.9))] px-3 py-2 text-right">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      Entry
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-700">
+                      #{index + 1}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface ChatbotCopilotProps {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   userId?: string;
@@ -192,6 +361,51 @@ export default function ChatbotCopilot({
   apiEndpoint = '/api/chat',
   userId,
 }: ChatbotCopilotProps) {
+  const hasStructuredBotLayout = (message: Message) => {
+    if (message.type !== 'bot') {
+      return false;
+    }
+
+    const mockEmployeeRecords = parseMockEmployeeRecords(message.content);
+
+    return Boolean(
+      mockEmployeeRecords.length > 0 ||
+      (message.metadata?.action === 'SHOW_SKILL_GAP_REPORT' && message.metadata?.skillGapReportData) ||
+      (message.metadata?.action === 'SHOW_COURSE_RECOMMENDATIONS' && message.metadata?.courseRecommendations?.length) ||
+      (message.metadata?.action === 'SHOW_GENERATED_PROFILE' && message.metadata?.generatedProfile)
+    );
+  };
+
+  const renderBotMessageContent = (message: Message) => {
+    const mockEmployeeRecords = parseMockEmployeeRecords(message.content);
+
+    if (message.metadata?.action === 'SHOW_SKILL_GAP_REPORT' && message.metadata?.skillGapReportData) {
+      return <SkillGapReport {...message.metadata.skillGapReportData} />;
+    }
+
+    if (message.metadata?.action === 'SHOW_COURSE_RECOMMENDATIONS' && message.metadata?.courseRecommendations?.length) {
+      return (
+        <div className="w-full min-w-0">
+          <div className="flex items-center gap-2 text-sm font-medium text-blue-700">
+            <TrendingUp className="h-4 w-4" />
+            <span>{message.content}</span>
+          </div>
+          <CourseRecommendationCards courses={message.metadata.courseRecommendations} />
+        </div>
+      );
+    }
+
+    if (message.metadata?.action === 'SHOW_GENERATED_PROFILE' && message.metadata?.generatedProfile) {
+      return <span></span>;
+    }
+
+    if (mockEmployeeRecords.length > 0) {
+      return <MockQueryResultCards records={mockEmployeeRecords} />;
+    }
+
+    return message.content;
+  };
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -3507,7 +3721,10 @@ ${skillsList}
                 </div>
               )}
 
-              {messages.map((message) => (
+              {messages.map((message) => {
+                const isStructuredBotMessage = hasStructuredBotLayout(message);
+
+                return (
                 <div
                   key={message.id}
                   className={`flex min-w-0 gap-3 ${message.type === "user" ? "flex-row-reverse" : "flex-row"
@@ -3535,26 +3752,14 @@ ${skillsList}
                       }`}
                   >
                     <div
-                      className={`max-w-full px-4 py-3 text-sm shadow-sm ${message.type === "user"
-                        ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
-                        : "bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-tl-sm break-words"
+                      className={`max-w-full text-sm ${message.type === "user"
+                        ? "rounded-2xl rounded-tr-sm bg-blue-600 px-4 py-3 text-white shadow-sm"
+                        : isStructuredBotMessage
+                          ? "w-full bg-transparent p-0 text-gray-800 shadow-none"
+                          : "break-words whitespace-pre-wrap rounded-2xl rounded-tl-sm border border-gray-100 bg-white px-4 py-3 text-gray-800 shadow-sm"
                       }`}
                     >
-                      {message.type === 'bot' && message.metadata?.action === 'SHOW_SKILL_GAP_REPORT' && message.metadata?.skillGapReportData ? (
-                        <SkillGapReport {...message.metadata.skillGapReportData} />
-                      ) : message.type === 'bot' && message.metadata?.action === 'SHOW_COURSE_RECOMMENDATIONS' && message.metadata?.courseRecommendations?.length ? (
-                        <div className="w-full min-w-0">
-                          <div className="flex items-center gap-2 text-sm font-medium text-blue-700">
-                            <TrendingUp className="h-4 w-4" />
-                            <span>{message.content}</span>
-                          </div>
-                          <CourseRecommendationCards courses={message.metadata.courseRecommendations} />
-                        </div>
-                      ) : message.type === 'bot' && message.metadata?.action === 'SHOW_GENERATED_PROFILE' && message.metadata?.generatedProfile ? (
-                        <span></span>
-                      ) : (
-                        message.content
-                      )}
+                      {message.type === 'bot' ? renderBotMessageContent(message) : message.content}
                     </div>
 
                     {/* Metadata */}
@@ -3692,7 +3897,8 @@ ${skillsList}
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
 
               {/* Loading Indicator */}
               {isLoading && (
