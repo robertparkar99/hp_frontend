@@ -423,12 +423,12 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                             {/* Action Buttons */}
                             <div className="flex items-center gap-3">
                                 {/* Generate Profile Button - Shows ALL Skills + CWF + Tasks */}
-                                <Button
+                                {/* <Button
                                     onClick={handleGenerateProfile}
                                     className="bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-400"
                                 >
                                     Generate Profile
-                                </Button>
+                                </Button> */}
 
                                 {/* Build Course with AI */}
                                 <Button
