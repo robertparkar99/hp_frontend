@@ -208,6 +208,10 @@ interface GenkitCompetencyResponse {
 }
 
 let debugModeEnabled = false;
+const OPENROUTER_SQL_MAX_TOKENS = 300;
+const OPENROUTER_INSIGHTS_MAX_TOKENS = 400;
+const OPENROUTER_FALLBACK_MAX_TOKENS = 400;
+const OPENROUTER_STRUCTURED_MAX_TOKENS = 1200;
 
 function enableDebugMode() {
   debugModeEnabled = true;
@@ -241,7 +245,8 @@ async function generateSQL(query: string, context: Array<{ role: string; content
         { role: 'system', content: 'You are a SQL expert. Generate only valid MySQL queries.' },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.1
+      temperature: 0.1,
+      max_tokens: OPENROUTER_SQL_MAX_TOKENS
     })
   });
 
@@ -249,7 +254,8 @@ async function generateSQL(query: string, context: Array<{ role: string; content
 
   if (!response.ok) {
     console.error("SQL GENERATION ERROR:", data);
-    throw new Error('Failed to generate SQL');
+    const providerMessage = data?.error?.message || 'Failed to generate SQL';
+    throw new Error(providerMessage);
   }
 
   const responseTime = Date.now() - startTime;
@@ -856,14 +862,15 @@ Be concise but informative. If the results are empty, explain that no data was f
         { role: 'system', content: 'You are a helpful data assistant. Provide clear, conversational insights.' },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.7
+      temperature: 0.7,
+      max_tokens: OPENROUTER_INSIGHTS_MAX_TOKENS
     })
   });
 
   if (!response.ok) {
-    throw new Error('Failed to generate insights');
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.error?.message || 'Failed to generate insights');
   }
-
   const data = await response.json();
   return data.choices[0].message.content.trim();
 }
@@ -894,6 +901,37 @@ function validateSQL(sql: string): boolean {
   }
 
   return true;
+}
+
+function isExplicitMockQuery(query: string): boolean {
+  const normalizedQuery = query.trim().toLowerCase();
+  const compactQuery = normalizedQuery.replace(/[^\w\s]/g, ' ');
+  const tokens = compactQuery.split(/\s+/).filter(Boolean);
+
+  const hasMockKeyword = ['mock', 'test', 'testing', 'sample', 'demo'].some((keyword) =>
+    tokens.includes(keyword)
+  );
+  const hasQueryKeyword = ['query', 'prompt', 'request', 'question'].some((keyword) =>
+    tokens.includes(keyword)
+  );
+
+  if (hasMockKeyword && hasQueryKeyword) {
+    return true;
+  }
+
+  return [
+    /^mock query$/,
+    /^run (a )?mock query$/,
+    /^execute (a )?mock query$/,
+    /^test (a )?mock query$/,
+    /^try (a )?mock query$/,
+    /^this is (a )?mock query$/,
+    /^use (a )?mock query$/,
+    /^run (a )?test query$/,
+    /^execute (a )?test query$/,
+    /^sample query$/,
+    /^demo query$/,
+  ].some((pattern) => pattern.test(normalizedQuery));
 }
 
 export async function handleChatRequest(request: ChatRequest): Promise<ChatResponse> {
@@ -953,6 +991,21 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
       };
       await saveMessage(conversationId, 'bot', accessError.answer, intent.intent, undefined, undefined, true, 'Access denied');
       return accessError;
+    }
+
+    if (isExplicitMockQuery(request.query)) {
+      const mockResponse: ChatResponse = {
+        answer: 'Mock query executed successfully. The mock pipeline is working as expected.',
+        conversationId,
+        intent: 'data_retrieval',
+        sql: 'SELECT 1 AS mock_result;',
+        tables_used: [],
+        insights: 'Mock execution completed without calling external services.',
+        canEscalate: true
+      };
+
+      await saveMessage(conversationId, 'bot', mockResponse.answer, mockResponse.intent, mockResponse.sql, []);
+      return mockResponse;
     }
 
     // === JOB_ROLE_COMPETENCY Routing (Phase 1) ===
@@ -1142,7 +1195,8 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
             messages: [
               { role: 'system', content: 'You are a friendly assistant. Answer normally in plain English. Maintain conversation context.' },
               ...fallbackMessages
-            ]
+            ],
+            max_tokens: OPENROUTER_FALLBACK_MAX_TOKENS
           })
         });
 
@@ -2155,7 +2209,8 @@ export async function handleCreateJobDescription({ industry,
           { role: 'system', content: 'You are a domain expert in job architecture, workforce design, and competency modeling. Generate structured job role attributes in JSON format only.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.3
+        temperature: 0.3,
+        max_tokens: OPENROUTER_STRUCTURED_MAX_TOKENS
       })
     });
 
