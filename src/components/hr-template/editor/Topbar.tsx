@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useEditor } from "@craftjs/core";
 import { useRouter } from "next/navigation";
 import { Button } from "../../ui/button";
-import { Save, Download, Trash2, FilePlus, ArrowLeft, Loader2, ChevronDown, FileText, Image as ImageIcon } from "lucide-react";
+import { Save, Download, Trash2, FilePlus, ArrowLeft, Loader2, ChevronDown, FileText, Image as ImageIcon, Undo2, Redo2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
@@ -29,6 +29,81 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
     const [tempName, setTempName] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+
+    // ── Reactive canvas-level undo/redo ──
+    // Sync with Craft.js history on every state change (zero polling, instant response)
+    const [canUndo, setCanUndo] = useState(false);
+    const [canRedo, setCanRedo] = useState(false);
+
+    const refreshHistory = React.useCallback(() => {
+        try {
+            setCanUndo(query.history.canUndo());
+            setCanRedo(query.history.canRedo());
+        } catch { /* query not ready */ }
+    }, [query]);
+
+    // Re-check history state on every Craft.js state mutation
+    useEffect(() => {
+        const interval = setInterval(refreshHistory, 250);
+        // Also run immediately on mount
+        refreshHistory();
+        return () => clearInterval(interval);
+    }, [refreshHistory]);
+
+    const handleUndo = React.useCallback(() => {
+        try {
+            actions.history.undo();
+            // Instant UI refresh — don't wait for the next poll cycle
+            requestAnimationFrame(() => {
+                try {
+                    setCanUndo(query.history.canUndo());
+                    setCanRedo(query.history.canRedo());
+                } catch {}
+            });
+        } catch { /* nothing to undo */ }
+    }, [actions, query]);
+
+    const handleRedo = React.useCallback(() => {
+        try {
+            actions.history.redo();
+            requestAnimationFrame(() => {
+                try {
+                    setCanUndo(query.history.canUndo());
+                    setCanRedo(query.history.canRedo());
+                } catch {}
+            });
+        } catch { /* nothing to redo */ }
+    }, [actions, query]);
+
+    // ── Focus-aware keyboard shortcuts ──
+    // When inside contentEditable (Tiptap), Ctrl+Z is handled natively by Tiptap's
+    // History extension — we never interfere. When focus is anywhere else on the
+    // page, Ctrl+Z triggers Craft.js canvas undo.
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            // Let text editors, inputs, textareas handle their own undo/redo
+            if (
+                target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement ||
+                target.isContentEditable ||
+                target.closest?.('[contenteditable="true"]')
+            ) return;
+
+            const isMod = e.ctrlKey || e.metaKey;
+            if (!isMod) return;
+
+            if (e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                handleUndo();
+            } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+                e.preventDefault();
+                handleRedo();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [handleUndo, handleRedo]);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -257,6 +332,32 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
                 </Button>
                 <div className="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-500 to-blue-600 drop-shadow-sm">
                     HR Template Editor
+                </div>
+                {/* ── Undo / Redo ── */}
+                <div className="flex items-center gap-0.5 ml-3 border-l border-neutral-200/70 pl-3">
+                    <button
+                        onClick={handleUndo}
+                        disabled={!canUndo}
+                        className={`relative group h-8 w-8 flex items-center justify-center rounded-lg transition-all duration-150 ${canUndo ? 'hover:bg-sky-50 hover:text-sky-600 active:scale-95 text-neutral-500 cursor-pointer' : 'text-neutral-300 cursor-not-allowed'}`}
+                        title="Undo (Ctrl+Z)"
+                    >
+                        <Undo2 className="w-4 h-4" />
+                        {/* Tooltip */}
+                        <span className="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-neutral-800 px-2 py-1 text-[10px] font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+                            Undo <kbd className="ml-1 px-1 py-0.5 rounded bg-neutral-700 text-[9px]">Ctrl+Z</kbd>
+                        </span>
+                    </button>
+                    <button
+                        onClick={handleRedo}
+                        disabled={!canRedo}
+                        className={`relative group h-8 w-8 flex items-center justify-center rounded-lg transition-all duration-150 ${canRedo ? 'hover:bg-sky-50 hover:text-sky-600 active:scale-95 text-neutral-500 cursor-pointer' : 'text-neutral-300 cursor-not-allowed'}`}
+                        title="Redo (Ctrl+Shift+Z)"
+                    >
+                        <Redo2 className="w-4 h-4" />
+                        <span className="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-neutral-800 px-2 py-1 text-[10px] font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+                            Redo <kbd className="ml-1 px-1 py-0.5 rounded bg-neutral-700 text-[9px]">Ctrl+Y</kbd>
+                        </span>
+                    </button>
                 </div>
             </div>
             <div className="flex items-center space-x-2">

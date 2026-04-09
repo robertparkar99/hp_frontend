@@ -74,6 +74,38 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
         return "ROOT";
     };
 
+    // ── Canva-like insertion point ──
+    // Returns the last canvas click position (page coordinates).
+    // If no recent click exists (>30s old or never clicked), falls back to
+    // a reasonable center-ish position on the visible A4 page.
+    const getInsertionPoint = (): { x: number; y: number } => {
+        const lastClick = (window as any).__craft_last_click;
+        if (lastClick && (Date.now() - lastClick.timestamp) < 30000) {
+            // Clear the stored click so next insert doesn't reuse a stale position
+            // Instead, offset slightly so consecutive inserts cascade
+            const point = { x: lastClick.x, y: lastClick.y };
+            // Nudge the stored position so rapid consecutive inserts cascade visually
+            (window as any).__craft_last_click = {
+                x: Math.min(lastClick.x + 20, 700),
+                y: Math.min(lastClick.y + 20, 1050),
+                timestamp: lastClick.timestamp,
+            };
+            return point;
+        }
+        // Safe fallback: center of the A4 page (794x1123)
+        return { x: 200, y: 200 };
+    };
+
+    // Helper to insert a shape block at the insertion point
+    const addShapeBlock = (shapeType: string) => {
+        const pt = getInsertionPoint();
+        const instanceNum = getShapeInstanceNumber(shapeType);
+        const nodeTree = query.parseReactElement(
+            <ShapeBlock shapeType={shapeType} instanceNumber={instanceNum} x={pt.x} y={pt.y} />
+        ).toNodeTree();
+        actions.addNodeTree(nodeTree, getParentId());
+    };
+
     const toggleTab = (tab: string) => {
         setActiveTab(activeTab === tab ? null : tab);
     };
@@ -175,10 +207,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                 ref={(ref) => {
                                     if (ref) connectors.create(ref, <TextBlock />);
                                 }}
-                                onClick={() => {
-                                    const nodeTree = query.parseReactElement(<TextBlock html="<p>Type your text here</p>" fontSize={16} width={300} />).toNodeTree();
-                                    actions.addNodeTree(nodeTree, getParentId());
-                                }}
+                                onClick={() => { const pt = getInsertionPoint(); const nodeTree = query.parseReactElement(<TextBlock html="<p>Type your text here</p>" fontSize={16} width={300} x={pt.x} y={pt.y} />).toNodeTree(); actions.addNodeTree(nodeTree, getParentId()); }}
                                 className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl p-3 flex items-center justify-center text-sm font-semibold cursor-pointer shadow-[0_4px_14px_0_rgba(14,165,233,0.39)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.23)] hover:-translate-y-[1px] transition-all mb-4"
                             >
                                 <Type className="w-4 h-4 mr-2" /> Add a text box
@@ -284,11 +313,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="square" instanceNumber={getShapeInstanceNumber('square')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('square');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="square" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('square')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center p-2"
                                     title="Square"
                                 >
@@ -298,11 +323,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="rounded-square" instanceNumber={getShapeInstanceNumber('rounded-square')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('rounded-square');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="rounded-square" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('rounded-square')}
                                     className="aspect-[1] bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-2xl flex items-center justify-center p-2 cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all group"
                                     title="Rounded Square"
                                 >
@@ -312,11 +333,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="circle" instanceNumber={getShapeInstanceNumber('circle')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('circle');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="circle" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('circle')}
                                     className="aspect-[1] bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-full flex items-center justify-center p-2 cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all group"
                                     title="Circle"
                                 >
@@ -326,11 +343,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="triangle" instanceNumber={getShapeInstanceNumber('triangle')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('triangle');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="triangle" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('triangle')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Triangle"
                                 >
@@ -340,11 +353,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="star" instanceNumber={getShapeInstanceNumber('star')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('star');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="star" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('star')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Star"
                                 >
@@ -354,11 +363,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="hexagon" instanceNumber={getShapeInstanceNumber('hexagon')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('hexagon');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="hexagon" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('hexagon')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Hexagon"
                                 >
@@ -368,11 +373,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="diamond" instanceNumber={getShapeInstanceNumber('diamond')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('diamond');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="diamond" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('diamond')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Diamond"
                                 >
@@ -382,11 +383,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="pentagon" instanceNumber={getShapeInstanceNumber('pentagon')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('pentagon');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="pentagon" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('pentagon')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Pentagon"
                                 >
@@ -396,11 +393,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="octagon" instanceNumber={getShapeInstanceNumber('octagon')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('octagon');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="octagon" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('octagon')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Octagon"
                                 >
@@ -410,11 +403,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="cross" instanceNumber={getShapeInstanceNumber('cross')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('cross');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="cross" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('cross')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Cross"
                                 >
@@ -424,11 +413,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="arrow" instanceNumber={getShapeInstanceNumber('arrow')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('arrow');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="arrow" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('arrow')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Arrow"
                                 >
@@ -438,11 +423,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="parallelogram" instanceNumber={getShapeInstanceNumber('parallelogram')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('parallelogram');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="parallelogram" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('parallelogram')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Parallelogram"
                                 >
@@ -452,11 +433,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="trapezoid" instanceNumber={getShapeInstanceNumber('trapezoid')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('trapezoid');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="trapezoid" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('trapezoid')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Trapezoid"
                                 >
@@ -466,11 +443,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="right-triangle" instanceNumber={getShapeInstanceNumber('right-triangle')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('right-triangle');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="right-triangle" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('right-triangle')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Right Triangle"
                                 >
@@ -480,11 +453,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="chevron" instanceNumber={getShapeInstanceNumber('chevron')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('chevron');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="chevron" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('chevron')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Chevron"
                                 >
@@ -494,11 +463,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="ribbon" instanceNumber={getShapeInstanceNumber('ribbon')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('ribbon');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="ribbon" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('ribbon')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Ribbon"
                                 >
@@ -508,11 +473,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="message" instanceNumber={getShapeInstanceNumber('message')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('message');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="message" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('message')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Message"
                                 >
@@ -522,11 +483,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="tag" instanceNumber={getShapeInstanceNumber('tag')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('tag');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="tag" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('tag')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Tag"
                                 >
@@ -536,11 +493,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="shield" instanceNumber={getShapeInstanceNumber('shield')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('shield');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="shield" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('shield')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Shield"
                                 >
@@ -550,11 +503,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="stairs" instanceNumber={getShapeInstanceNumber('stairs')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('stairs');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="stairs" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('stairs')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Stairs"
                                 >
@@ -564,11 +513,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                                     ref={(ref) => {
                                         if (ref) connectors.create(ref, <ShapeBlock shapeType="beveled" instanceNumber={getShapeInstanceNumber('beveled')} />);
                                     }}
-                                    onClick={() => {
-                                        const instanceNum = getShapeInstanceNumber('beveled');
-                                        const nodeTree = query.parseReactElement(<ShapeBlock shapeType="beveled" instanceNumber={instanceNum} />).toNodeTree();
-                                        actions.addNodeTree(nodeTree, getParentId());
-                                    }}
+                                    onClick={() => addShapeBlock('beveled')}
                                     className="aspect-square bg-gradient-to-br from-slate-50 to-sky-50/30 border border-sky-100/50 rounded-xl cursor-move hover:bg-sky-50 hover:border-sky-300 hover:shadow-md transition-all flex items-center justify-center"
                                     title="Beveled"
                                 >
@@ -760,10 +705,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
                             <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-2 mt-6">Container</div>
                             <div
                                 ref={(ref) => { if (ref) connectors.create(ref, <Element canvas is={ContainerBlock} isOverlay={false} />); }}
-                                onClick={() => {
-                                    const nodeTree = query.parseReactElement(<Element canvas is={ContainerBlock} isOverlay={false} />).toNodeTree();
-                                    actions.addNodeTree(nodeTree, getParentId());
-                                }}
+                                onClick={() => { const pt = getInsertionPoint(); const nodeTree = query.parseReactElement(<Element canvas is={ContainerBlock} isOverlay={false} x={pt.x} y={pt.y} />).toNodeTree(); actions.addNodeTree(nodeTree, getParentId()); }}
                                 className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl p-4 flex items-center justify-center text-sm font-semibold cursor-pointer shadow-[0_4px_14px_0_rgba(14,165,233,0.39)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.23)] hover:-translate-y-[1px] transition-all mb-4"
                             >
                                 <LayoutGrid className="w-4 h-4 mr-2" /> Add a Container
@@ -785,8 +727,14 @@ function TableTabContent({ query, actions, getParentId }: any) {
     const [customCols, setCustomCols] = React.useState(3);
 
     const addTable = (r: number, c: number) => {
+        const lastClick = (window as any).__craft_last_click;
+        let pt = { x: 200, y: 200 };
+        if (lastClick && (Date.now() - lastClick.timestamp) < 30000) {
+            pt = { x: lastClick.x, y: lastClick.y };
+            (window as any).__craft_last_click = { x: Math.min(lastClick.x + 20, 700), y: Math.min(lastClick.y + 20, 1050), timestamp: lastClick.timestamp };
+        }
         const nodeTree = query.parseReactElement(
-            <TableBlock rows={r} cols={c} content={createStarterTableContent(r, c)} x={80} y={80} />
+            <TableBlock rows={r} cols={c} content={createStarterTableContent(r, c)} x={pt.x} y={pt.y} />
         ).toNodeTree();
         actions.addNodeTree(nodeTree, getParentId());
     };
