@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StatusBadge from '../../AgentDashboard/Component/StatusBadge';
 import { ArrowLeft, Settings, Play, Pause, Zap } from 'lucide-react';
 import dynamic from 'next/dynamic';
-
+// commit change
 const KnowledgeToolForm = dynamic(() => import('./ToolForms').then(mod => mod.KnowledgeToolForm));
 const EmailToolForm = dynamic(() => import('./ToolForms').then(mod => mod.EmailToolForm));
 const VisualizationToolForm = dynamic(() => import('./ToolForms').then(mod => mod.VisualizationToolForm));
