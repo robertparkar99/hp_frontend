@@ -151,7 +151,22 @@ export const EditorCanvas = ({ children, activeTool }: { children: React.ReactNo
                         id="editor-canvas"
                         className={`absolute top-0 left-0 w-[794px] h-[1123px] flex-shrink-0 origin-top-left ${activeTool && (activeTool !== 'select' && !activeTool.startsWith('draw')) ? 'cursor-crosshair' : ''}`}
                         style={{ transform: `scale(${zoom})`, transition: 'transform 0.15s ease-out' }}
-                        onClick={handleCanvasClick}
+                        onClick={(e) => {
+                            // Store last click position in page coordinates (zoom-normalized)
+                            const canvasEl = document.getElementById('editor-canvas');
+                            if (canvasEl) {
+                                const rect = canvasEl.getBoundingClientRect();
+                                const pageX = (e.clientX - rect.left) / zoom;
+                                const pageY = (e.clientY - rect.top) / zoom;
+                                // Clamp to A4 bounds with a small margin
+                                (window as any).__craft_last_click = {
+                                    x: Math.max(10, Math.min(pageX, 744)),
+                                    y: Math.max(10, Math.min(pageY, 1073)),
+                                    timestamp: Date.now(),
+                                };
+                            }
+                            handleCanvasClick(e);
+                        }}
                     >
                         {children}
                         {activeTool && <DrawingOverlay activeTool={activeTool} />}

@@ -118,6 +118,11 @@ export function useOverlayTransform({
     const interactionDirection = useRef<string>("se");
     const initialRotationAngle = useRef<number>(0);
     const rAF = useRef<number | null>(null);
+    const notifyDragStart = useCallback(() => {
+        if (domRef.current) {
+            domRef.current.dispatchEvent(new CustomEvent('craft-drag-start', { bubbles: true }));
+        }
+    }, []);
 
     const setElevatedZIndex = useCallback(() => {
         if (getMaxZIndex) {
@@ -160,6 +165,7 @@ export function useOverlayTransform({
             state.current.scaleMultiplier = 1;
             originalState.current = { ...state.current };
             setElevatedZIndex();
+            notifyDragStart();
             document.body.style.userSelect = "none";
             return;
         }
@@ -189,6 +195,7 @@ export function useOverlayTransform({
                 state.current.scaleMultiplier = 1;
                 originalState.current = { ...state.current };
                 setElevatedZIndex();
+                notifyDragStart();
                 document.body.style.userSelect = "none";
             } else {
                 return; // Haven't reached threshold yet
