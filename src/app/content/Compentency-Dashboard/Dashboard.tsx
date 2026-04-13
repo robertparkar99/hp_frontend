@@ -10,6 +10,20 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { TrendingUp, Users, Calendar, Target, ChevronDown, TrendingDown, Minus, Filter, Briefcase } from "lucide-react";
 import { initializeTour, isTourCompleted, resetTour, useTourStepsFromAPI } from "./CompetencyDashboardTour";
 
+const getSessionData = () => {
+  if (typeof window === 'undefined') return { url: '', subInstituteId: '', userId: '' };
+  const userData = localStorage.getItem('userData');
+  if (userData) {
+    const parsed = JSON.parse(userData);
+    return {
+      url: parsed.APP_URL || '',
+      subInstituteId: parsed.sub_institute_id || '',
+      userId: parsed.user_id || '',
+    };
+  }
+  return { url: '', subInstituteId: '', userId: '' };
+};
+
 // UI Components (simplified versions for single file)
 const Badge = ({ className, variant, children, ...props }: any) => (
   <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${className}`} {...props}>
@@ -75,59 +89,9 @@ const SelectItem = ({ children, ...props }: any) => (
 // Navigation tabs
 const NAVIGATION_TABS = [
   { id: "balance-equity", name: "Role–Task–Skill Balance & Equity" },
-  { id: "stakeholder-lenses", name: "Stakeholder-Specific Lenses" },
+  // { id: "stakeholder-lenses", name: "Stakeholder-Specific Lenses" },
 ];
 
-// Radar chart data from the image
-const RADAR_METRICS = [
-  { name: "Task Mapping", current: 85, target: 95 },
-  { name: "Future Readiness", current: 74, target: 90, delta: -16 },
-  { name: "External Alignment", current: 89, target: 90, delta: 91 },
-  { name: "Skill Coverage", current: 74, target: 85, delta: -18 },
-  { name: "Behavior Mapping", current: 45, target: 70 },
-  { name: "Risk Assessment", current: 68, target: 80 },
-];
-
-const ROLES = [
-  { id: "operations-manager", name: "Operations Manager", department: "operations", x: 50, y: 50, size: 1.3 },
-  { id: "financial-analyst", name: "Financial Analyst", department: "finance", x: 65, y: 30, size: 1.0 },
-  { id: "business-analyst", name: "Business Analyst", department: "product", x: 35, y: 35, size: 1.0 },
-  { id: "finance-manager", name: "Finance Manager", department: "finance", x: 70, y: 45, size: 1.1 },
-  { id: "hr-coordinator", name: "HR Coordinator", department: "hr", x: 75, y: 65, size: 0.9 },
-  { id: "hr-manager", name: "HR Manager", department: "hr", x: 60, y: 70, size: 1.1 },
-  { id: "recruiter", name: "Recruiter", department: "hr", x: 80, y: 75, size: 0.8 },
-  { id: "sales-manager", name: "Sales Manager", department: "sales", x: 30, y: 65, size: 1.1 },
-  { id: "product-engineering-manager", name: "Product Engineering Manager", department: "engineering", x: 20, y: 45, size: 1.2 },
-  { id: "design-lead", name: "Design Lead", department: "design", x: 25, y: 25, size: 1.0 },
-  { id: "product-manager", name: "Product Manager", department: "product", x: 40, y: 40, size: 1.1 },
-  { id: "marketing-manager", name: "Marketing Manager", department: "marketing", x: 35, y: 75, size: 1.0 },
-  { id: "product-owner", name: "Product Owner", department: "product", x: 45, y: 30, size: 1.0 },
-  { id: "ux-designer", name: "UX Designer", department: "design", x: 30, y: 20, size: 0.9 },
-  { id: "senior-software-engineer", name: "Senior Software Engineer", department: "engineering", x: 15, y: 35, size: 1.1 },
-  { id: "software-engineer", name: "Software Engineer", department: "engineering", x: 10, y: 50, size: 1.0 },
-  { id: "server-developer", name: "Server Developer", department: "engineering", x: 5, y: 40, size: 0.9 },
-  { id: "devops-engineer", name: "DevOps Engineer", department: "engineering", x: 8, y: 60, size: 0.9 },
-];
-
-const CONNECTIONS = [
-  { source: "operations-manager", target: "financial-analyst", strength: 0.7 },
-  { source: "operations-manager", target: "business-analyst", strength: 0.8 },
-  { source: "operations-manager", target: "finance-manager", strength: 0.75 },
-  { source: "operations-manager", target: "hr-coordinator", strength: 0.6 },
-  { source: "operations-manager", target: "hr-manager", strength: 0.8 },
-  { source: "operations-manager", target: "recruiter", strength: 0.5 },
-  { source: "operations-manager", target: "sales-manager", strength: 0.7 },
-  { source: "operations-manager", target: "product-engineering-manager", strength: 0.8 },
-  { source: "operations-manager", target: "design-lead", strength: 0.6 },
-  { source: "operations-manager", target: "product-manager", strength: 0.9 },
-  { source: "operations-manager", target: "marketing-manager", strength: 0.7 },
-  { source: "operations-manager", target: "product-owner", strength: 0.8 },
-  { source: "operations-manager", target: "ux-designer", strength: 0.5 },
-  { source: "operations-manager", target: "senior-software-engineer", strength: 0.6 },
-  { source: "operations-manager", target: "software-engineer", strength: 0.5 },
-  { source: "operations-manager", target: "server-developer", strength: 0.4 },
-  { source: "operations-manager", target: "devops-engineer", strength: 0.5 },
-];
 
 const DEPARTMENT_COLORS: Record<string, string> = {
   hr: "#EF4444",
@@ -140,24 +104,50 @@ const DEPARTMENT_COLORS: Record<string, string> = {
   design: "#06B6D4",
 };
 
-const DEPARTMENTS = [
-  { id: "hr", name: "HR", color: DEPARTMENT_COLORS.hr },
-  { id: "finance", name: "Finance", color: DEPARTMENT_COLORS.finance },
-  { id: "sales", name: "Sales", color: DEPARTMENT_COLORS.sales },
-  { id: "product", name: "Product", color: DEPARTMENT_COLORS.product },
-  { id: "engineering", name: "Engineering", color: DEPARTMENT_COLORS.engineering },
-  { id: "marketing", name: "Marketing", color: DEPARTMENT_COLORS.marketing },
-  { id: "operations", name: "Operations", color: DEPARTMENT_COLORS.operations },
-  { id: "design", name: "Design", color: DEPARTMENT_COLORS.design },
-];
+const getKpiApiUrl = (sessionData: { url: string; subInstituteId: string; userId: string }) => {
+  if (!sessionData.url || !sessionData.subInstituteId) return '';
+  return `${sessionData.url}/api/competency/kpi?sub_institute_id=${sessionData.subInstituteId}&user_id=${sessionData.userId}`;
+};
 
-const KPIS = [
-  { title: "Total Roles", value: "247", subtitle: "Across 12 departments", delta: "+4% vs last month" },
-  { title: "Mapped Tasks", value: "1,834", subtitle: "87% completion rate", delta: "+3% vs last month" },
-  { title: "Skill Coverage", value: "92%", subtitle: "2.1k skills mapped", delta: "+2% vs last month" },
-  { title: "Risk Score", value: "68", subtitle: "Medium risk level", delta: "-1% vs last month" },
-  { title: "Future Ready", value: "74%", subtitle: "AI adaptation prepared", delta: "+5% vs last quarter" },
-  { title: "Active Reviews", value: "23", subtitle: "Pending approvals" },
+const formatWholeNumber = (value: any) => {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return "0";
+  }
+
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(numericValue);
+};
+
+const formatPercentage = (value: any) => {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return "0%";
+  }
+
+  return `${new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: numericValue % 1 === 0 ? 0 : 1,
+    maximumFractionDigits: 1,
+  }).format(numericValue)}%`;
+};
+
+const buildTopKpis = (kpiApiData: any) => [
+  {
+    title: "Total Roles",
+    value: formatWholeNumber(kpiApiData?.total_roles),
+    subtitle: `Across ${formatWholeNumber(kpiApiData?.total_departments)} departments`,
+  },
+  {
+    title: "Mapped Tasks",
+    value: formatWholeNumber(kpiApiData?.total_mapped_tasks),
+    subtitle: `${formatWholeNumber(kpiApiData?.total_mapped_skills)} skills mapped`,
+  },
+  {
+    title: "Skill Coverage",
+    value: formatPercentage(kpiApiData?.skill_coverage_percentage),
+    subtitle: `${formatWholeNumber(kpiApiData?.total_mapped_skills)} skills mapped`,
+  },
 ];
 
 const HEATMAP = [
@@ -675,13 +665,53 @@ const DrillDownPanel = ({ selectedRole }: any) => {
 
 export default function MainDashboard() {
   const [activeTab, setActiveTab] = useState("balance-equity");
+  const [kpiApiData, setKpiApiData] = useState<any>(null);
+  const [sessionData, setSessionData] = useState({ url: '', subInstituteId: '', userId: '' });
 
   // Fetch tour steps from API
   const { tourStepsFromAPI, isLoading: isTourLoading } = useTourStepsFromAPI(182);
 
   useEffect(() => {
+    setSessionData(getSessionData());
+  }, []);
+
+  useEffect(() => {
     setActiveTab("balance-equity");
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const kpiUrl = getKpiApiUrl(sessionData);
+
+    if (!kpiUrl) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    fetch(kpiUrl)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`KPI API request failed with status ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (isMounted) {
+          setKpiApiData(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching KPI data:", err);
+        if (isMounted) {
+          setKpiApiData(null);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [sessionData]);
 
   // Initialize tour only when triggered via sidebar tour flow OR automatically when data is available
   useEffect(() => {
@@ -736,6 +766,8 @@ export default function MainDashboard() {
     }
   };
 
+  const topKpis = buildTopKpis(kpiApiData);
+
   return (
     <div className="p-6 bg-slate-50 min-h-screen" id="tour-dashboard-container">
       {/* Top KPI cards */}
@@ -754,8 +786,8 @@ export default function MainDashboard() {
           Restart Tour
         </button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6" id="tour-kpi-cards">
-        {KPIS.map((kpi, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-6" id="tour-kpi-cards">
+        {topKpis.map((kpi, i) => (
           <Card key={i} className="shadow-sm border rounded-xl bg-white/90">
             <CardContent className="p-4 flex flex-col justify-between">
               <div className="text-xs text-slate-500">{kpi.title}</div>

@@ -26,7 +26,6 @@ interface MenuRowProps {
   ) => void;
 }
 
-// Recursive row renderer
 function MenuRow({
   menu,
   path,
@@ -54,12 +53,10 @@ function MenuRow({
     }
   };
 
-  // ✅ Only update this row
   const handleDirectToggle = (type: keyof Permission, checked: boolean) => {
     onPermissionChange(path, type, checked);
   };
 
-  // ✅ Update this row + all children
   const handleCascadeToggle = (type: keyof Permission, checked: boolean) => {
     onPermissionChange(path, type, checked);
 
@@ -105,7 +102,6 @@ function MenuRow({
           </div>
         </td>
 
-        {/* View */}
         <td className="px-4 py-4 text-center">
           <Switch
             checked={menu.permissions.view}
@@ -119,7 +115,6 @@ function MenuRow({
           />
         </td>
 
-        {/* Add */}
         <td className="px-4 py-4 text-center">
           <Switch
             checked={menu.permissions.add}
@@ -133,7 +128,6 @@ function MenuRow({
           />
         </td>
 
-        {/* Edit */}
         <td className="px-4 py-4 text-center">
           <Switch
             checked={menu.permissions.edit}
@@ -147,7 +141,6 @@ function MenuRow({
           />
         </td>
 
-        {/* Delete */}
         <td className="px-4 py-4 text-center">
           <Switch
             checked={menu.permissions.delete}
@@ -161,7 +154,6 @@ function MenuRow({
           />
         </td>
 
-        {/* Dashboard */}
         <td className="px-4 py-4 text-center">
           <Switch
             checked={menu.permissions.dashboard}
@@ -170,13 +162,25 @@ function MenuRow({
                 ? handleCascadeToggle("dashboard", checked)
                 : handleDirectToggle("dashboard", checked)
             }
-            aria-label={`${menu.name} - Dashboard`}
+            aria-label={`${menu.name} - Desk`}
+            className={getLevelColor()}
+          />
+        </td>
+
+        <td className="px-4 py-4 text-center">
+          <Switch
+            checked={menu.permissions.mobile}
+            onCheckedChange={(checked) =>
+              hasChildren
+                ? handleCascadeToggle("mobile", checked)
+                : handleDirectToggle("mobile", checked)
+            }
+            aria-label={`${menu.name} - Mobile`}
             className={getLevelColor()}
           />
         </td>
       </tr>
 
-      {/* Recursive children */}
       {hasChildren &&
         isExpanded &&
         menu.children!.map((child, i) => (
@@ -192,7 +196,6 @@ function MenuRow({
   );
 }
 
-// ✅ Main component
 export function HierarchicalPermissionsTable({
   permissions,
   onPermissionChange,
@@ -202,6 +205,7 @@ export function HierarchicalPermissionsTable({
   const [masterEdit, setMasterEdit] = useState(false);
   const [masterDelete, setMasterDelete] = useState(false);
   const [masterDashboard, setMasterDashboard] = useState(false);
+  const [masterMobile, setMasterMobile] = useState(false);
 
   const toggleAll = (
     menuItems: MenuPermission[],
@@ -234,6 +238,9 @@ export function HierarchicalPermissionsTable({
     } else if (type === "dashboard") {
       setMasterDashboard(value);
       toggleAll(permissions, "dashboard", value);
+    } else if (type === "mobile") {
+      setMasterMobile(value);
+      toggleAll(permissions, "mobile", value);
     }
   };
 
@@ -247,7 +254,6 @@ export function HierarchicalPermissionsTable({
                 Menu Name
               </th>
 
-              {/* View */}
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
                 <div className="flex items-center justify-center gap-2">
                   <span>View</span>
@@ -262,7 +268,6 @@ export function HierarchicalPermissionsTable({
                 </div>
               </th>
 
-              {/* Add */}
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
                 <div className="flex items-center justify-center gap-2">
                   <span>Add</span>
@@ -277,7 +282,6 @@ export function HierarchicalPermissionsTable({
                 </div>
               </th>
 
-              {/* Edit */}
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
                 <div className="flex items-center justify-center gap-2">
                   <span>Edit</span>
@@ -292,7 +296,6 @@ export function HierarchicalPermissionsTable({
                 </div>
               </th>
 
-              {/* Delete */}
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
                 <div className="flex items-center justify-center gap-2">
                   <span>Delete</span>
@@ -307,7 +310,6 @@ export function HierarchicalPermissionsTable({
                 </div>
               </th>
 
-              {/* Dashboard */}
               <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
                 <div className="flex items-center justify-center gap-2">
                   <span>Desk</span>
@@ -316,8 +318,22 @@ export function HierarchicalPermissionsTable({
                     onCheckedChange={(checked) =>
                       handleMasterToggle("dashboard", checked)
                     }
-                    aria-label="Toggle all Dashboard permissions"
+                    aria-label="Toggle all Desk permissions"
                     className="data-[state=checked]:bg-[#7B4F32]"
+                  />
+                </div>
+              </th>
+
+              <th className="px-4 py-4 text-center text-sm font-semibold text-foreground min-w-[120px]">
+                <div className="flex items-center justify-center gap-2">
+                  <span>Mobile</span>
+                  <Switch
+                    checked={masterMobile}
+                    onCheckedChange={(checked) =>
+                      handleMasterToggle("mobile", checked)
+                    }
+                    aria-label="Toggle all Mobile permissions"
+                    className="data-[state=checked]:bg-[#2F855A]"
                   />
                 </div>
               </th>
