@@ -12,7 +12,8 @@ export interface Permission {
   view: boolean;
   edit: boolean;
   delete: boolean;
-  dashboard: boolean;   // ✅ new
+  dashboard: boolean;
+  mobile: boolean;
 }
 
 export interface MenuPermission {
@@ -44,6 +45,8 @@ interface ApiMenuData {
   can_edit: number;
   can_delete: number;
   dashboard_right: number;
+  is_mobile?: number;
+  mobile_right?: number;
 }
 
 interface ApiResponse {
@@ -51,6 +54,9 @@ interface ApiResponse {
   level_2: ApiMenuData[] | Record<string | number, ApiMenuData[]>;
   level_3: ApiMenuData[] | Record<string | number, ApiMenuData[]>;
 }
+
+const getMobilePermissionValue = (menu: ApiMenuData) =>
+  Boolean(menu.is_mobile ?? menu.mobile_right);
 
 export function RightsManagement() {
   const [roles, setRoles] = useState<RoleApi[]>([]);
@@ -65,7 +71,6 @@ export function RightsManagement() {
 
   const currentPermissions = permissions[selectedRole] || [];
 
-  // ✅ Load session data from localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userData = localStorage.getItem("userData");
@@ -88,7 +93,6 @@ export function RightsManagement() {
     }
   }, []);
 
-  // ✅ Fetch roles
   useEffect(() => {
     const fetchRoles = async () => {
       if (!sessionData) return;
@@ -129,7 +133,6 @@ export function RightsManagement() {
     fetchRoles();
   }, [sessionData, toast]);
 
-  // ✅ Fetch permissions
   useEffect(() => {
     const fetchPermissions = async () => {
       if (!sessionData || !selectedProfileId) return;
@@ -149,7 +152,7 @@ export function RightsManagement() {
         if (!response.ok) throw new Error(`HTTP error! ${response.status}`);
 
         const apiData: ApiResponse = await response.json();
-        console.log("API Permissions Response:", apiData); // 🔍 Debugging log
+        console.log("API Permissions Response:", apiData);
 
         const transformedPermissions = transformApiDataToPermissions(apiData);
 
@@ -177,7 +180,6 @@ export function RightsManagement() {
     if (selectedRole) fetchPermissions();
   }, [sessionData, selectedRole, selectedProfileId, toast]);
 
-  // ✅ Transform API → UI
   const transformApiDataToPermissions = (apiData: ApiResponse): MenuPermission[] => {
     const level1 = apiData.level_1 || [];
     const level2 = apiData.level_2 || {};
@@ -192,7 +194,8 @@ export function RightsManagement() {
           add: Boolean(menu1.can_add),
           edit: Boolean(menu1.can_edit),
           delete: Boolean(menu1.can_delete),
-          dashboard: Boolean(menu1.dashboard_right), // default since API does not provide
+          dashboard: Boolean(menu1.dashboard_right),
+          mobile: getMobilePermissionValue(menu1),
         },
         children: [],
       };
@@ -210,6 +213,7 @@ export function RightsManagement() {
             edit: Boolean(menu2.can_edit),
             delete: Boolean(menu2.can_delete),
             dashboard: Boolean(menu2.dashboard_right),
+            mobile: getMobilePermissionValue(menu2),
           },
           children: [],
         };
@@ -225,7 +229,8 @@ export function RightsManagement() {
             add: Boolean(menu3.can_add),
             edit: Boolean(menu3.can_edit),
             delete: Boolean(menu3.can_delete),
-            dashboard: Boolean(menu3.dashboard_right),  // ✅ new
+            dashboard: Boolean(menu3.dashboard_right),
+            mobile: getMobilePermissionValue(menu3),
           },
         }));
 
@@ -295,6 +300,7 @@ export function RightsManagement() {
     if (menu.permissions.edit) formData.append(`edit[${menu.id}][]`, "1");
     if (menu.permissions.delete) formData.append(`delete[${menu.id}][]`, "1");
     if (menu.permissions.dashboard) formData.append(`dashboard[${menu.id}][]`, "1");
+    if (menu.permissions.mobile) formData.append(`is_mobile[${menu.id}]`, "1");
 
     if (menu.children) {
       menu.children.forEach((child) => appendPermissionsToFormData(formData, child));
@@ -311,6 +317,7 @@ export function RightsManagement() {
         can_edit: menu.permissions.edit ? 1 : 0,
         can_delete: menu.permissions.delete ? 1 : 0,
         can_dashboard: menu.permissions.dashboard ? 1 : 0,
+        can_mobile: menu.permissions.mobile ? 1 : 0,
       });
       if (menu.children) menu.children.forEach(process);
     };
