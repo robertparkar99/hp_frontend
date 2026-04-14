@@ -334,9 +334,16 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
         const editEmployee = {
           text: "Edit Employee",
           action: () => {
+            // Try to preserve the selected employee so the edit page can fetch the record
+            const actionButton = document.querySelector('.table-actions-menu-first[data-employee-id]') as HTMLElement | null;
+            const employeeId = actionButton?.dataset?.employeeId;
+            if (employeeId) {
+              localStorage.setItem('clickedUser', employeeId);
+            }
+
             // Navigate to edit employee page
             sessionStorage.setItem('triggerPageTour', 'edit-employee');
-            localStorage.removeItem('employeeEditTourCompleted');
+            localStorage.removeItem('editEmployeeTourCompleted');
             window.location.href = '/content/user/edit/';
           },
           classes: "shepherd-next",

@@ -10,15 +10,18 @@ const EmployeeCard = ({ employee, onViewProfile, onEdit }) => {
   const [showActions, setShowActions] = useState(null);
   const [clickedButtonRect, setClickedButtonRect] = useState(null);
   const fallbackImage =
-    "https://cdn.builder.io/api/v1/image/assets/TEMP/630b9c5d4cf92bb87c22892f9e41967c298051a0?placeholderIfAbsent=true&apiKey=f18a54c668db405eb048e2b0a7685d39";
+    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNFNUU3RUIiLz4KPHBhdGggZD0iTTIwIDIwQzIyLjc2MTQgMjAgMjUgMTcuNzYxNCAyNSAxNUMyNSAxMi4yMzg2IDIyLjc2MTQgMTAgMjAgMTBDMTcuMjM4NiAxMCAxNSAxMi4yMzg2IDE1IDE1QzE1IDE3Ljc2MTQgMTcgMjAgMTdaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPgo=";
 
-  const [imgSrc, setImgSrc] = useState(
-    employee.image && employee.image.trim()
-      ? employee.image.startsWith("http")
-        ? employee.image
-        : `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}`
-      : fallbackImage
-  );
+  const [imgSrc, setImgSrc] = useState(() => {
+    if (employee.image && employee.image.trim()) {
+      if (employee.image.startsWith("http")) {
+        return employee.image;
+      } else {
+        return `https://s3-triz.fra1.cdn.digitaloceanspaces.com/public/hp_user/${employee.image}`;
+      }
+    }
+    return fallbackImage;
+  });
 
   const getSkillLevelColor = (level) => {
     switch (level) {
