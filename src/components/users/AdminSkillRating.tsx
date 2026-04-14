@@ -398,7 +398,7 @@ export default function Page({
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showEmptyState, setShowEmptyState] = useState(false);
   const [showFullscreenChart, setShowFullscreenChart] = useState(false);
-  const [activeTab, setActiveTab] = useState<"skills" | "kaab">("skills");
+  const [activeTab, setActiveTab] = useState<"skill-gap" | "skill-rating" | "kaab">("skill-rating");
 
   const [sessionData, setSessionData] = useState({
     APP_URL: "",
@@ -1228,14 +1228,24 @@ export default function Page({
                 {/* Tabs */}
                 <div className="flex border-b border-gray-200">
                   <button
-                    onClick={() => setActiveTab("skills")}
+                    onClick={() => setActiveTab("skill-rating")}
                     className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition-colors ${
-                      activeTab === "skills"
+                      activeTab === "skill-rating"
                         ? "border-b-2 border-blue-500 text-blue-600"
                         : "text-gray-500 hover:text-gray-700"
                     }`}
                   >
-                    Skill Ratings
+                    Skill Rating
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("skill-gap")}
+                    className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition-colors ${
+                      activeTab === "skill-gap"
+                        ? "border-b-2 border-blue-500 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    Skill Gap
                   </button>
                   <button
                     onClick={() => setActiveTab("kaab")}
@@ -1249,17 +1259,17 @@ export default function Page({
                   </button>
                 </div>
               </div>
-              <button
-                onClick={() => setShowRecommendations(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-xs sm:text-sm"
-              >
-                View Actions
-              </button>
+                {/* <button
+                  onClick={() => setShowRecommendations(true)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-xs sm:text-sm"
+                >
+                  View Actions
+                </button> */}
             </div>
 
             <div className="space-y-3 sm:space-y-5 h-auto overflow-y-auto hide-scroll">
               {userRatedSkills && userRatedSkills.length > 0 ? (
-                activeTab === "skills" ? (
+                activeTab === "skill-gap" || activeTab === "skill-rating" ? (
                   userRatedSkills.map((ratedSkill: RatedSkill) => {
                     const totalLevels = ratedSkill.proficiency_level || 5;
                     const currentLevel = ratedSkill.skill_level
@@ -1295,6 +1305,7 @@ export default function Page({
                           <h3 className="font-semibold text-gray-800 text-sm sm:text-base" ratedSKill={ratedSkill.id}>
                             {ratedSkill.title || ratedSkill.skill || "Untitled Skill"}
                           </h3>
+                          {activeTab === "skill-gap" && (
                           <span className="font-medium text-gray-500 flex items-center space-x-1 text-[10px] sm:text-xs">
                             Gap:{(() => {
                               const gap = selfRating - expected;
@@ -1322,50 +1333,61 @@ export default function Page({
                               }
                             })()}
                           </span>
-                          <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                          )}
+                          {/* <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                             {created_at}
-                          </span>
+                          </span> */}
                         </div>
 
                         <p className="text-xs sm:text-sm text-gray-600">
-                          {ratedSkill.category || "General"} •{" "}
-                          {ratedSkill.sub_category || "Uncategorized"}
+                          category: {ratedSkill.category || "General"}<br />
+                          sub_category: {ratedSkill.sub_category || "Uncategorized"}
                         </p>
 
+                        {activeTab === "skill-gap" && (
                         <div className="w-full bg-gray-300 rounded h-2 mt-2 overflow-hidden">
                           <div
                             className="bg-blue-600 h-2 rounded"
                             style={{ width: `${Math.max(0, Math.min(100, completionPercentage))}%` }}
                           ></div>
                         </div>
+                        )}
 
                         <div className="grid grid-cols-2 text-xs sm:text-sm font-semibold text-gray-700 border-b pb-1 mt-3 sm:mt-4">
-                          <p>Self Rating</p>
-                          <p>Expected</p>
+                          {activeTab === "skill-gap" ? (
+                            <>
+                              <p>Self Rating</p>
+                              <p>Expected</p>
+                            </>
+                          ) : (
+                            <p className="col-span-2">Self Rating</p>
+                          )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-xs items-center">
-                          {/* Self Rating */}
-                          <div className="flex items-center space-x-1 sm:space-x-2">
+                        <div className={`grid gap-2 sm:gap-4 mt-2 text-xs items-center ${activeTab === "skill-rating" ? "grid-cols-1" : "grid-cols-2"}`}>
+                          {/* Self Rating - Always show */}
+                          <div className={`flex items-center space-x-1 sm:space-x-2 ${activeTab === "skill-rating" ? "mb-2" : ""}`}>
                             {renderCircles(selfRating, Math.max(0, Math.ceil(selfRating)))}
                             <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{selfRating}</span>
                           </div>
 
-                          {/* Expected Rating */}
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center space-x-1 sm:space-x-2">
-                              {renderCircles(expected, Number(totalLevels))}
-                              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}</span>
-                            </div>
+                          {/* Expected Rating - Only show in skill-gap tab */}
+                          {activeTab === "skill-gap" && (
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center space-x-1 sm:space-x-2">
+                                {renderCircles(expected, Number(totalLevels))}
+                                <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">{expected}</span>
+                              </div>
 
-                            <span
-                              className={`inline-flex items-center rounded-full border px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold transition-colors
-                                focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
-                                hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
-                            >
-                              {status}
-                            </span>
-                          </div>
+                              <span
+                                className={`inline-flex items-center rounded-full border px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold transition-colors
+                                  focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-red-50 text-red-700 border-red-200
+                                  hover:bg-primary/80 bg-success-light text-excellent border-excellent/20 ${statusColor}`}
+                              >
+                                {status}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Add detailed ratings expandable here */}
@@ -1427,9 +1449,9 @@ export default function Page({
                                 </div>
                               )}
                             </span>
-                            <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            {/* <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                               {created_at}
-                            </span>
+                            </span> */}
                           </div>
 
                           <div className="w-full bg-gray-300 rounded h-2 mt-2 overflow-hidden">
