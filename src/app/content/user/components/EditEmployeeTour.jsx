@@ -3,21 +3,171 @@
 import React, { useEffect, useState, useRef } from "react";
 import Shepherd from "shepherd.js";
 import "shepherd.js/dist/css/shepherd.css";
-import { editEmployeeTourSteps, detailedTourSteps, TAB_IDS } from "@/lib/editEmployeeTourSteps";
+import { getEditEmployeeTourSteps, getDetailedTourSteps, TAB_IDS } from "@/lib/editEmployeeTourSteps";
 import Icon from "@/components/AppIcon";
+import { getPageInfo } from "@/utils/journeyLogger";
 
 const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
   const [isTourActive, setIsTourActive] = useState(false);
-  const [currentTabIndex, setCurrentTabIndex] = useState(0);
+  const [tourStepsFromAPI, setTourStepsFromAPI] = useState([]);
+  const [sessionData, setSessionData] = useState(null);
   const tourInstanceRef = useRef(null);
   const detailedTourInstanceRef = useRef(null);
   const isInDetailedTour = useRef(false);
-
-  // Map tab index to tab ID
-  const getTabIdFromIndex = (index) => {
-    const tabIds = Object.keys(TAB_IDS);
-    return tabIds[index] || tabIds[0];
+  const apiStepsMapRef = useRef(new Map());
+  const mainTourStepOrder = [
+    "welcome",
+    "tab-personal-info",
+    "tab-upload-docs",
+    "tab-jobrole-skill",
+    "tab-jobrole-tasks",
+    "tab-responsibility",
+    "tab-skill-rating",
+    "tab-competency",
+    "tour-complete",
+  ];
+  const mainTourTabMap = {
+    "tab-personal-info": "personal-info",
+    "tab-upload-docs": "upload-docs",
+    "tab-jobrole-skill": "jobrole-skill",
+    "tab-jobrole-tasks": "jobrole-tasks",
+    "tab-responsibility": "responsibility",
+    "tab-skill-rating": "skill-rating",
+    "tab-competency": "Jobrole-Type",
   };
+  const mainTourContentMap = {
+    "personal-info": "#content-personal-info",
+    "upload-docs": "#content-upload-docs",
+    "jobrole-skill": "#content-jobrole-skill",
+    "jobrole-tasks": "#content-jobrole-tasks",
+    "responsibility": "#content-responsibility",
+    "skill-rating": "#content-skill-rating",
+    "Jobrole-Type": "#content-competency",
+  };
+
+  const activateTab = (tabId) => {
+    if (typeof onSwitchView === "function") {
+      onSwitchView(tabId);
+    } else {
+      const tabButton = document.querySelector(`#tab-${tabId}`);
+      if (tabButton) {
+        tabButton.click();
+      }
+    }
+  };
+
+  const waitForTabActivation = (tabId, delay = 600) => {
+    return new Promise((resolve) => {
+      activateTab(tabId);
+      const contentSelector = mainTourContentMap[tabId];
+      const startedAt = Date.now();
+
+      const checkReady = () => {
+        if (!contentSelector) {
+          setTimeout(resolve, delay);
+          return;
+        }
+
+        const contentEl = document.querySelector(contentSelector);
+        if (contentEl) {
+          setTimeout(resolve, 250);
+          return;
+        }
+
+        if (Date.now() - startedAt > 4000) {
+          setTimeout(resolve, delay);
+          return;
+        }
+
+        requestAnimationFrame(checkReady);
+      };
+
+      checkReady();
+    });
+  };
+
+  // Load session data from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      try {
+        const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+        setSessionData({
+          url: APP_URL,
+          token,
+          subInstituteId: String(sub_institute_id),
+        });
+      } catch (e) {
+        console.error("Invalid userData in localStorage", e);
+      }
+    }
+  }, []);
+
+  // Fetch tour steps from API
+  useEffect(() => {
+    async function fetchTourSteps() {
+      if (!sessionData) return;
+
+      try {
+        const pageInfo = getPageInfo();
+        console.log('[EditEmployeeTour] Current page menuId:', pageInfo.menuId, 'accessLink:', pageInfo.accessLink);
+
+        // Fetch tour steps with proper authentication and filtering
+        const res = await fetch(
+          `${sessionData.url}/table_data?table=Onboarding_tour_details&filters[menu_id]=22&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`
+        );
+
+        if (!res.ok) {
+          const errorRes = res.clone();
+          try {
+            const errorText = await errorRes.text();
+            console.error('[EditEmployeeTour] Tour steps API error:', res.status, errorText);
+          } catch (e) {
+            console.error('[EditEmployeeTour] Tour steps API error:', res.status);
+          }
+          throw new Error(`Failed to fetch tour steps: ${res.status}`);
+        }
+
+        let json;
+        try {
+          json = await res.json();
+        } catch (parseError) {
+          console.error('[EditEmployeeTour] Failed to parse JSON response:', parseError);
+          const responseText = await res.text();
+          console.error('[EditEmployeeTour] Response text:', responseText);
+          throw new Error('API returned non-JSON response');
+        }
+        console.log('[EditEmployeeTour] Tour steps API response:', json);
+
+        // Handle different response formats
+        let tourData = [];
+        if (Array.isArray(json)) {
+          tourData = json;
+        } else if (json.data && Array.isArray(json.data)) {
+          tourData = json.data;
+        } else if (json.result && Array.isArray(json.result)) {
+          tourData = json.result;
+        }
+
+        console.log('[EditEmployeeTour] Parsed tour data:', tourData);
+
+        // Filter by menu_id and access_link from getPageInfo
+        console.log('[EditEmployeeTour] Filtering by menuId:', pageInfo.menuId, 'accessLink:', pageInfo.accessLink);
+
+        const filteredData = tourData.filter((step) =>
+          step.menu_id === pageInfo.menuId && step.access_link === pageInfo.accessLink
+        );
+
+        console.log('[EditEmployeeTour] Filtered tour data:', filteredData);
+
+        setTourStepsFromAPI(filteredData.length > 0 ? filteredData : tourData);
+      } catch (error) {
+        console.error("[EditEmployeeTour] Error fetching tour steps:", error);
+      }
+    }
+
+    fetchTourSteps();
+  }, [sessionData]);
 
   useEffect(() => {
     // Check if tour has already been completed
@@ -40,12 +190,12 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
         detailedTourInstanceRef.current.cancel();
       }
     };
-  }, []);
+  }, [tourStepsFromAPI]);
 
   // Function to start detailed tour for a specific tab
   const startDetailedTour = (tabId) => {
     console.log('Starting detailed tour for:', tabId);
-    const steps = detailedTourSteps[tabId];
+    const steps = getDetailedTourSteps(apiStepsMapRef.current)[tabId];
     if (!steps || steps.length === 0) {
       console.warn(`No detailed steps found for tab: ${tabId}`);
       alert(`No detailed steps found for ${tabId}`);
@@ -178,7 +328,9 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
         text: "Skip Detailed Tour",
         action: () => {
           detailedTour.cancel();
-          document.head.removeChild(style);
+          if (style.parentNode === document.head) {
+            document.head.removeChild(style);
+          }
           isInDetailedTour.current = false;
           // Continue with main tour
           if (tourInstanceRef.current) {
@@ -208,18 +360,6 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
         text: "Continue to Next Tab",
         action: () => {
           detailedTour.complete();
-          document.head.removeChild(style);
-          isInDetailedTour.current = false;
-          // Move to next tab in main tour
-          setCurrentTabIndex((prev) => {
-            const nextIndex = prev + 1;
-            if (nextIndex < editEmployeeTourSteps.length - 1) {
-              if (tourInstanceRef.current) {
-                tourInstanceRef.current.next();
-              }
-            }
-            return nextIndex;
-          });
         },
         classes: "shepherd-finish",
       };
@@ -243,27 +383,34 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
 
     // Handle completion
     detailedTour.on('complete', () => {
-      document.head.removeChild(style);
+      if (style.parentNode === document.head) {
+        document.head.removeChild(style);
+      }
       isInDetailedTour.current = false;
       // Move to next tab
-      setCurrentTabIndex((prev) => {
-        const nextIndex = prev + 1;
-        if (nextIndex < editEmployeeTourSteps.length - 1 && tourInstanceRef.current) {
-          tourInstanceRef.current.next();
-        }
-        return nextIndex;
-      });
+      if (tourInstanceRef.current) {
+        tourInstanceRef.current.next();
+      }
     });
 
     // Handle cancellation
     detailedTour.on('cancel', () => {
-      document.head.removeChild(style);
+      if (style.parentNode === document.head) {
+        document.head.removeChild(style);
+      }
       isInDetailedTour.current = false;
     });
   };
 
   const startTour = () => {
     setIsTourActive(true);
+
+    // Create API steps map for overriding titles and descriptions
+    const apiStepsMap = new Map();
+    tourStepsFromAPI.forEach(item => {
+      apiStepsMap.set(item.on_click, { title: item.title, text: item.description });
+    });
+    apiStepsMapRef.current = apiStepsMap;
 
     const tour = new Shepherd.Tour({
       useModalOverlay: true,
@@ -451,7 +598,6 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
       const back = {
         text: "Back",
         action: () => {
-          setCurrentTabIndex((prev) => Math.max(0, prev - 1));
           tour.back();
         },
         classes: "shepherd-back",
@@ -460,7 +606,6 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
       const next = {
         text: "Next",
         action: () => {
-          setCurrentTabIndex((prev) => prev + 1);
           tour.next();
         },
         classes: "shepherd-next",
@@ -478,27 +623,32 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
       };
 
       if (index === 0) return [skip, next];
-      if (index === editEmployeeTourSteps.length - 1) return [skip, back, finish];
+      if (index === mainTourStepOrder.length - 1) return [skip, back, finish];
       return [skip, back, next];
     };
 
     // Add steps to tour with Detailed Tour button and progress bar
-    editEmployeeTourSteps.forEach((step, index) => {
-      // Add Detailed Tour button HTML between text and buttons (only for steps after welcome)
-      let stepText = step.text;
+    const mainTourSteps = getEditEmployeeTourSteps(apiStepsMap);
+    mainTourSteps.forEach((step, index) => {
+      const tabId = mainTourTabMap[step.id];
+      const apiText = apiStepsMap.get(step.id)?.text;
+      const apiTitle = apiStepsMap.get(step.id)?.title;
 
-      if (index > 0 && index < editEmployeeTourSteps.length - 1) {
+      // Add Detailed Tour button HTML between text and buttons (only for steps after welcome)
+      let stepText = step.text || "";
+
+      if (index > 0 && index < mainTourSteps.length - 1) {
         // Get the tab ID for this step
         const tabIds = Object.keys(TAB_IDS);
-        const tabId = tabIds[index - 1] || tabIds[0];
-        const tabLabel = tabId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const buttonTabId = tabIds[index - 1] || tabIds[0];
+        const tabLabel = buttonTabId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
         const detailedTourButton = `
           <div class="shepherd-detailed-tour-wrapper" style="margin-top: 1rem; margin-bottom: 0.5rem;">
             <button 
               class="shepherd-detailed-tour-btn" 
-              id="detailed-tour-btn-${tabId}"
-              data-tab-id="${tabId}"
+              id="detailed-tour-btn-${buttonTabId}"
+              data-tab-id="${buttonTabId}"
               style="
                 width: 100%;
                 padding: 0.5rem 1rem;
@@ -511,7 +661,7 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
                 cursor: pointer;
                 transition: all 0.2s ease;
               "
-              onclick="if(window.startDetailedTourForTab) window.startDetailedTourForTab('${tabId}');"
+              onclick="if(window.startDetailedTourForTab) window.startDetailedTourForTab('${buttonTabId}');"
             >
               🔍 View ${tabLabel} Details
             </button>
@@ -521,11 +671,11 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
       }
 
       // Add progress bar for tab tour steps (show on all steps except welcome and tour complete)
-      const totalSteps = editEmployeeTourSteps.length - 2; // Exclude welcome and tour complete
+      const totalSteps = mainTourSteps.length - 2; // Exclude welcome and tour complete
       const currentStep = index; // index 1 = step 1, index 2 = step 2, etc.
 
       // Only show progress for tab tour steps (not first welcome step and not last tour complete)
-      if (index > 0 && index < editEmployeeTourSteps.length - 1) {
+      if (index > 0 && index < mainTourStepOrder.length - 1) {
         const segments = Array.from({ length: totalSteps }, (_, i) => {
           const isActive = i < currentStep;
           return `
@@ -565,8 +715,13 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
 
       tour.addStep({
         ...step,
-        title: step.title || "Tour",
-        text: stepText,
+        beforeShowPromise: tabId
+          ? function () {
+            return waitForTabActivation(tabId);
+          }
+          : step.beforeShowPromise,
+        title: apiTitle || step.title || "Tour",
+        text: apiText ? `${apiText}${stepText ? `<div class="mt-3">${stepText}</div>` : ""}` : stepText,
         buttons: getButtons(index),
       });
     });
@@ -602,7 +757,9 @@ const EditEmployeeTour = ({ onComplete, onSwitchView }) => {
     // Cleanup function
     return () => {
       tour.cancel();
-      document.head.removeChild(style);
+      if (style.parentNode === document.head) {
+        document.head.removeChild(style);
+      }
       setIsTourActive(false);
       // Clean up global function
       if (window['startDetailedTourForTab']) {

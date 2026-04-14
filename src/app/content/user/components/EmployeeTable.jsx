@@ -374,15 +374,16 @@ const EmployeeTable = ({
       name: "Actions",
       cell: (row, index) => (
         <div className="relative">
-          <Button
-            id="table-actions-menu"
-            variant="ghost"
-            size="icon"
-            onClick={(e) => handleMenuToggle(row.id, e)}
-            className={`h-8 w-8 ${index === 0 ? 'table-actions-menu-first' : ''}`}
-          >
-            <Icon name="MoreHorizontal" size={16} />
-          </Button>
+            <Button
+              id="table-actions-menu"
+              variant="ghost"
+              size="icon"
+              onClick={(e) => handleMenuToggle(row.id, e)}
+              className={`h-8 w-8 ${index === 0 ? 'table-actions-menu-first' : ''}`}
+              data-employee-id={row.id}
+            >
+              <Icon name="MoreHorizontal" size={16} />
+            </Button>
 
           {showActions === row.id &&
             createPortal(

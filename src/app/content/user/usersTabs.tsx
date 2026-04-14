@@ -359,7 +359,7 @@ export default function EditProfilePage() {
       )}
 
       {/* Tour Component */}
-      {showTour && <EditEmployeeTour onComplete={handleTourComplete} onSwitchView={() => { }} />}
+      {showTour && <EditEmployeeTour onComplete={handleTourComplete} onSwitchView={setActiveTab} />}
     </>
   );
 

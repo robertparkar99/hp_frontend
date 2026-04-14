@@ -729,7 +729,6 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               <option
                                 key={level.id}
                                 value={level.id}
-                                selected={userDetails?.subject_ids == level.id}
                               >
                                 {level.level}
                               </option>
@@ -799,9 +798,6 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               <option
                                 key={userProfile.id}
                                 value={userProfile.id}
-                                selected={
-                                  userDetails?.user_profile_id == userProfile.id
-                                }
                               >
                                 {userProfile.name}
                               </option>
@@ -1059,9 +1055,6 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                             <option
                               key={option.value}
                               value={option.value}
-                              selected={
-                                userDetails?.supervisor_opt == option.value
-                              }
                             >
                               {option.label}
                             </option>
@@ -1088,9 +1081,6 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
                               <option
                                 key={userList.id}
                                 value={userList.id}
-                                selected={
-                                  userDetails?.employee_id == userList.id
-                                }
                               >
                                 {userList.first_name} {userList.middle_name}{" "}
                                 {userList.last_name}
