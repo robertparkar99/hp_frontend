@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { createPortal } from "react-dom";
 import { useNode } from "@craftjs/core";
 import { useEditor as useTiptapEditor, EditorContent } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
@@ -138,27 +139,26 @@ export const TextBlock = ({
         });
     }, [editor]);
 
-    // ── Register editor with Top Contextual Bar ──
+    // ── Exit edit mode when clicking outside the text block ──
     React.useEffect(() => {
-        if (editMode && editor) {
-            window.dispatchEvent(new CustomEvent("set-active-editor", { detail: { editor } }));
-        } else {
-            window.dispatchEvent(new CustomEvent("clear-active-editor"));
-        }
+        if (!editMode) return;
+        const handlePointerDown = (e: PointerEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setEditMode(false);
+                if (editor) {
+                    editor.setEditable(false);
+                }
+            }
+        };
+        // Use a microtask delay so the double-click that entered edit mode doesn't immediately exit
+        const timer = setTimeout(() => {
+            document.addEventListener('pointerdown', handlePointerDown, true);
+        }, 100);
         return () => {
-            window.dispatchEvent(new CustomEvent("clear-active-editor"));
+            clearTimeout(timer);
+            document.removeEventListener('pointerdown', handlePointerDown, true);
         };
     }, [editMode, editor]);
-
-    // ── Exit edit mode via custom event (e.g., from the top toolbar) ──
-    React.useEffect(() => {
-        const handleExit = () => {
-            setEditMode(false);
-            if (editor) editor.setEditable(false);
-        };
-        window.addEventListener('exit-text-edit-mode', handleExit);
-        return () => window.removeEventListener('exit-text-edit-mode', handleExit);
-    }, [editor]);
 
     // ── Also exit edit mode on Escape key ──
     React.useEffect(() => {
@@ -195,7 +195,115 @@ export const TextBlock = ({
 
     return (
         <OverlayWrapper isOverlay={isOverlay} isText={true} x={x} y={y} width={width} height={height} rotation={rotation} zIndex={zIndex}>
+            {/* Toolbar outside of canvas */}
+            {editor && editMode && typeof document !== "undefined" && createPortal(
+                <div
+                    className="flex flex-nowrap bg-white/95 backdrop-blur-xl border border-sky-100/60 rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] ring-1 ring-black/[0.03] pointer-events-auto overflow-x-auto overflow-y-hidden divide-x divide-sky-50/50 items-stretch h-14 w-max max-w-[90vw] md:max-w-[700px] px-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sky-200 [&::-webkit-scrollbar-thumb]:rounded-full pb-1"
+                >
 
+                        {/* Font Family */}
+                        <div className="flex items-center px-2 py-1">
+                            <select
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()}
+                                value={editor.getAttributes("textStyle").fontFamily || "Inter"}
+                                className="h-full px-2 text-[15px] font-medium border-0 outline-none bg-transparent hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer w-36 truncate"
+                            >
+                                <optgroup label="Sans-Serif">
+                                    <option value="Inter">Inter</option>
+                                    <option value="Arial">Arial</option>
+                                    <option value="Helvetica">Helvetica</option>
+                                    <option value="Verdana">Verdana</option>
+                                    <option value="Open Sans">Open Sans</option>
+                                    <option value="Roboto">Roboto</option>
+                                    <option value="Lato">Lato</option>
+                                    <option value="Montserrat">Montserrat</option>
+                                    <option value="Poppins">Poppins</option>
+                                </optgroup>
+                                <optgroup label="Serif">
+                                    <option value="Georgia">Georgia</option>
+                                    <option value="Times New Roman">Times New Roman</option>
+                                    <option value="Playfair Display">Playfair Display</option>
+                                    <option value="Merriweather">Merriweather</option>
+                                    <option value="Lora">Lora</option>
+                                    <option value="PT Serif">PT Serif</option>
+                                </optgroup>
+                                <optgroup label="Monospace">
+                                    <option value="Courier New">Courier New</option>
+                                    <option value="Consolas">Consolas</option>
+                                    <option value="Menlo">Menlo</option>
+                                    <option value="Monaco">Monaco</option>
+                                    <option value="Fira Code">Fira Code</option>
+                                </optgroup>
+                                <optgroup label="Display">
+                                    <option value="Comic Sans MS">Comic Sans MS</option>
+                                    <option value="Impact">Impact</option>
+                                    <option value="Oswald">Oswald</option>
+                                    <option value="Bebas Neue">Bebas Neue</option>
+                                    <option value="Lobster">Lobster</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        {/* Font Size */}
+                        <div className="flex items-center px-2 py-1 space-x-1">
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); const currentSize = parseInt(editor.getAttributes("textStyle").fontSize) || 16; editor.chain().focus().setFontSize(`${currentSize - 1}px`).run(); }} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-sky-50 hover:text-sky-600 text-neutral-600 hover:text-neutral-900 font-bold transition-colors">-</button>
+                            <input type="number" onMouseDown={(e) => e.stopPropagation()} className="w-12 h-8 text-[15px] text-center font-semibold border-0 outline-none bg-transparent hover:bg-neutral-50 rounded transition-colors" value={editor.getAttributes("textStyle").fontSize ? parseInt(editor.getAttributes("textStyle").fontSize) : 16} onChange={(e) => { if (e.target.value) editor.chain().focus().setFontSize(`${e.target.value}px`).run(); }} />
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); const currentSize = parseInt(editor.getAttributes("textStyle").fontSize) || 16; editor.chain().focus().setFontSize(`${currentSize + 1}px`).run(); }} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-sky-50 hover:text-sky-600 text-neutral-600 hover:text-neutral-900 font-bold transition-colors">+</button>
+                        </div>
+
+                        {/* Text Color */}
+                        <div className="flex items-center px-3 py-1">
+                            <div className="relative flex items-center justify-center w-8 h-8 rounded-md hover:bg-sky-50 hover:text-sky-600 hover:scale-105 cursor-pointer overflow-hidden transition-all group" title="Text Color">
+                                <span className="font-bold text-neutral-800 text-[15px] pointer-events-none pb-1 border-b-4 group-hover:border-b-8 transition-all" style={{ borderColor: editor.getAttributes("textStyle").color || "#000000" }}>A</span>
+                                <input type="color" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()} value={editor.getAttributes("textStyle").color || "#000000"} className="absolute inset-0 w-[200%] h-[200%] -top-1/2 -left-1/2 opacity-0 cursor-pointer" />
+                            </div>
+                        </div>
+
+                        {/* Highlight Color */}
+                        <div className="flex items-center px-3 py-1">
+                            <div className="relative flex items-center justify-center w-8 h-8 rounded-md hover:bg-sky-50 hover:text-sky-600 hover:scale-105 cursor-pointer overflow-hidden transition-all group" title="Highlight Color">
+                                <span className="font-bold text-neutral-800 text-xs pointer-events-none pb-1 border-b-4 group-hover:border-b-8 transition-all" style={{ borderColor: editor.getAttributes("highlight").color || "transparent", backgroundColor: editor.getAttributes("highlight").color || "transparent" }}>H</span>
+                                <input type="color" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => editor.chain().focus().setMark('highlight', { color: (e.target as HTMLInputElement).value }).run()} value={editor.getAttributes("highlight").color || "#ffff00"} className="absolute inset-0 w-[200%] h-[200%] -top-1/2 -left-1/2 opacity-0 cursor-pointer" />
+                            </div>
+                        </div>
+
+                        {/* Formatting B I U S */}
+                        <div className="flex items-center px-2 py-1 space-x-1">
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }} className={`w-8 h-8 rounded-md flex items-center justify-center font-bold text-[15px] transition-all hover:scale-105 ${editor.isActive("bold") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`}>B</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }} className={`w-8 h-8 rounded-md flex items-center justify-center italic font-serif text-[15px] transition-all hover:scale-105 ${editor.isActive("italic") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`}>I</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleUnderline().run(); }} className={`w-8 h-8 rounded-md flex items-center justify-center underline font-serif text-[15px] transition-all hover:scale-105 ${editor.isActive("underline") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`}>U</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleStrike().run(); }} className={`w-8 h-8 rounded-md flex items-center justify-center line-through font-serif text-[15px] transition-all hover:scale-105 ${editor.isActive("strike") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`}>S</button>
+                        </div>
+
+                        {/* Alignment */}
+                        <div className="flex items-center px-2 py-1 space-x-1 border-r border-neutral-100">
+                            {['left', 'center', 'right', 'justify'].map((align) => (
+                                <button key={align} type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().setTextAlign(align).run(); }} className={`w-8 h-8 flex items-center justify-center rounded-md transition-all hover:scale-105 ${editor.isActive({ textAlign: align }) ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]' : 'text-neutral-700 hover:bg-sky-50 hover:text-sky-600'}`} title={`Align ${align}`}>
+                                    {align === 'left' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="15" y1="12" x2="3" y2="12"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>}
+                                    {align === 'center' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="19" y1="12" x2="5" y2="12"></line><line x1="17" y1="18" x2="7" y2="18"></line></svg>}
+                                    {align === 'right' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="12" x2="9" y2="12"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>}
+                                    {align === 'justify' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="12" x2="3" y2="12"></line><line x1="21" y1="18" x2="3" y2="18"></line></svg>}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Lists & Blockquote */}
+                        <div className="flex items-center px-2 py-1 space-x-1">
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run(); }} className={`w-8 h-8 flex items-center justify-center rounded-md transition-all hover:scale-105 ${editor.isActive("bulletList") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`} title="Bullet List">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="9" y1="6" x2="20" y2="6"></line><line x1="9" y1="12" x2="20" y2="12"></line><line x1="9" y1="18" x2="20" y2="18"></line><circle cx="4" cy="6" r="1.5"></circle><circle cx="4" cy="12" r="1.5"></circle><circle cx="4" cy="18" r="1.5"></circle></svg>
+                            </button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run(); }} className={`w-8 h-8 flex items-center justify-center rounded-md transition-all hover:scale-105 ${editor.isActive("orderedList") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`} title="Numbered List">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg>
+                            </button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run(); }} className={`w-8 h-8 flex items-center justify-center rounded-md transition-all hover:scale-105 ${editor.isActive("blockquote") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`} title="Quote">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg>
+                            </button>
+                        </div>
+
+                </div>,
+                document.getElementById('text-toolbar-portal') || document.body
+            )}
             {textShape === 'curve' && !editMode ? (
                 <div
                     ref={containerRef}

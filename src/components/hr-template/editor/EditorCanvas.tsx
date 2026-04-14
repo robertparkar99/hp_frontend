@@ -142,7 +142,7 @@ export const EditorCanvas = ({ children, activeTool }: { children: React.ReactNo
                  <button onClick={fitToScreen} className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${zoomMode === 'fit' ? 'bg-sky-100 text-sky-700' : 'hover:bg-neutral-100 text-neutral-600'}`}>Fit</button>
             </div>
 
-            <div className="m-auto p-10 flex-shrink-0 flex items-center justify-center min-h-full min-w-full">
+            <div className="m-auto pt-24 pb-10 px-10 flex-shrink-0 flex items-center justify-center min-h-full min-w-full">
                 <div 
                     style={{ width: 794 * zoom, height: 1123 * zoom, transition: 'width 0.15s ease-out, height 0.15s ease-out' }}
                     className="relative shrink-0 shadow-2xl bg-white"
