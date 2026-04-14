@@ -1,5 +1,5 @@
 import Loader from '@/components/utils/loading';
-import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap, Mail, Search } from 'lucide-react';
+import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap, Mail, Search, FileSpreadsheet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -220,6 +220,23 @@ const agents: Agent[] = [
     outputs: ['Keyword Recommendations', 'Content Optimization Tips', 'SEO Score Analysis', 'Competitor Analysis'],
     cta: 'Launch SEO Agent',
     ctaLink: '/content/AgenticAI/SEOAgent/'
+  },
+  {
+    id: 'excel-automation',
+    name: 'Excel Automation Agent',
+    icon: FileSpreadsheet,
+    module: 'Data Automation',
+    summary: 'Upload content-plan Excel files into the organization\'s master Google Sheet',
+    function: 'The Excel Automation Agent lets each organization connect its own Google Sheet and upload Excel files. It validates headers against the configured template and appends data rows to the master sheet automatically.',
+    workflow: [
+      'Admin connects a Google Sheet with service account credentials',
+      'System validates the sheet structure against the template',
+      'User uploads an Excel file matching the template headers',
+      'Data rows are appended to the Google Sheet automatically'
+    ],
+    outputs: ['Google Sheet Integration', 'Excel Upload & Validation', 'Header Mismatch Detection', 'Automated Data Append'],
+    cta: 'Configure / Launch',
+    ctaLink: '/content/AgenticAI/ExcelAutomation'
   }
 ];
 
