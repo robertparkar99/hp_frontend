@@ -1074,16 +1074,18 @@ ${formData.current_role || "Not provided"}
                         </div>
                       </div>
 
-                      {/* Benefits Section */}
-                      {job.benefits && job.benefits !== "Not specified" && (
-                          <div className="mb-4" id={index === 0 ? 'tour-benefits' : undefined}>
-                          <h4 className="font-semibold text-sm mb-2">Benefits & Perks</h4>
-                          <p className="text-sm text-muted-foreground">{job.benefits}</p>
+                        {/* Benefits Section */}
+                        <div className="mb-4" id="tour-benefits">
+                          {job.benefits && job.benefits !== "Not specified" && (
+                            <>
+                              <h4 className="font-semibold text-sm mb-2">Benefits & Perks</h4>
+                              <p className="text-sm text-muted-foreground">{job.benefits}</p>
+                            </>
+                          )}
                         </div>
-                      )}
 
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                          <Badge variant="outline" id={index === 0 ? 'tour-department-badge' : undefined}>{job.department}</Badge>
+                          <Badge variant="outline" id="tour-department-badge">{job.department}</Badge>
 
                         <div className="flex gap-2">
                             <Button variant="outline" id={index === 0 ? 'tour-learn-more' : undefined}>Learn More</Button>

@@ -183,6 +183,23 @@ export const setTourMode = (mode: boolean) => {
 
 export const getTourMode = () => isTourMode;
 
+// Helper function to wait for element to be available
+const waitForElement = (selector: string, maxAttempts: number = 20): Promise<void> => {
+    return new Promise((resolve) => {
+        let attempts = 0;
+        const checkElement = () => {
+            const element = document.querySelector(selector);
+            if (element || attempts >= maxAttempts) {
+                resolve();
+            } else {
+                attempts++;
+                setTimeout(checkElement, 100);
+            }
+        };
+        checkElement();
+    });
+};
+
 // Force show a specific step
 export const forceShowStep = (stepId: string) => {
     if (CandidatePortalTourSteps.tour) {
@@ -573,6 +590,7 @@ export const candidatePortalTourSteps: CandidatePortalTourStep[] = [
             element: '#tour-benefits',
             on: 'top'
         },
+        beforeShowPromise: () => waitForElement('#tour-benefits', 25),
         buttons: [
             {
                 text: 'Next',
@@ -588,8 +606,9 @@ export const candidatePortalTourSteps: CandidatePortalTourStep[] = [
         text: apiStepsMap.get('tour-department-badge')?.description || 'This badge shows which department the job belongs to within the organization.',
         attachTo: {
             element: '#tour-department-badge',
-            on: 'left'
+            on: 'bottom'
         },
+        beforeShowPromise: () => waitForElement('#tour-department-badge', 25),
         buttons: [
             {
                 text: 'Next',
@@ -622,8 +641,9 @@ export const candidatePortalTourSteps: CandidatePortalTourStep[] = [
         text: 'Click "Learn More" to see additional details about the job before deciding to apply.',
         attachTo: {
             element: '#tour-learn-more',
-            on: 'left'
+            on: 'bottom'
         },
+        beforeShowPromise: () => waitForElement('#tour-learn-more', 25),
         buttons: [
             {
                 text: 'Next',
@@ -640,8 +660,9 @@ export const candidatePortalTourSteps: CandidatePortalTourStep[] = [
         text: apiStepsMap.get('tour-apply-button')?.description || 'Click "Apply Now" to submit your application for this job. This is the final step!',
         attachTo: {
             element: '#tour-apply-button',
-            on: 'left'
+            on: 'bottom'
         },
+        beforeShowPromise: () => waitForElement('#tour-apply-button', 25),
         buttons: [
             {
                 text: 'Finish Tour',

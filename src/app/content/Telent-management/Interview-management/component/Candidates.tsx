@@ -452,7 +452,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
             Manage and track all candidate applications
           </p>
         </div>
-       <div className="flex space-x-2">
+        <div className="flex space-x-2" id="tour-candidates-export">
          <PrintButton
            data={filteredData.length > 0 ? filteredData : candidates}
            title="Candidates"
@@ -488,7 +488,7 @@ export default function Candidates({ onReviewApplication }: CandidatesProps) {
       <Card className="widget-card">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
+            <div className="relative flex-1" id="tour-candidates-search">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search candidates by name, position, email..."

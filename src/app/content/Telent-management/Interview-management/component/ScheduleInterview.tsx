@@ -502,7 +502,7 @@ export default function ScheduleInterview({ interview, candidateId, positionId }
                 </div>
               )))}
               
-              <div className="pt-4 border-t" id="tour-schedule-button">
+              <div className="pt-4 border-t" >
                 <Button onClick={handleSchedule} className="w-full bg-blue-600 hover:bg-blue-700 text-white" id="schedule-submit-button">
                   {interview ? "Reschedule Interview" : "Schedule Interview"}
                 </Button>
