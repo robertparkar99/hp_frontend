@@ -790,7 +790,7 @@ export default function MainDashboard() {
         {topKpis.map((kpi, i) => (
           <Card key={i} className="shadow-sm border rounded-xl bg-white/90">
             <CardContent className="p-4 flex flex-col justify-between">
-              <div className="text-xs text-slate-500">{kpi.title}</div>
+              <div className="text-xs text-slate-500">{kpi.title}</div>  
               <div className="text-2xl font-semibold mt-2">{kpi.value}</div>
               <div className="text-xs text-slate-400 mt-1">{kpi.subtitle}</div>
               {kpi.delta && <div className="text-xs text-green-500 mt-2">{kpi.delta}</div>}
@@ -827,7 +827,7 @@ export default function MainDashboard() {
 
 // Role–Task–Skill Balance & Equity View
 function BalanceEquityView() {
-  const [similarityThreshold, setSimilarityThreshold] = useState(63);
+  const [similarityThreshold, setSimilarityThreshold] = useState(50);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [hoveredRole, setHoveredRole] = useState<string | null>(null);
   const [heatmapData, setHeatmapData] = useState<any[]>([]);
@@ -847,6 +847,42 @@ function BalanceEquityView() {
     if (value <= 60) return "bg-amber-400";
     if (value <= 80) return "bg-red-500";
     return "bg-gray-300";
+  };
+
+  const toId = (val: any): string => {
+    if (val && typeof val === 'object') {
+      const candidate = val.id ?? val.nodeId ?? val.roleId ?? val.value ?? val.key;
+      return candidate !== undefined && candidate !== null ? String(candidate).trim() : '';
+    }
+
+    return val !== undefined && val !== null ? String(val).trim() : '';
+  };
+
+  const getNodeId = (node: any): string => {
+    return toId(node?.id ?? node?.roleId ?? node?.nodeId);
+  };
+
+  const getSimilarity = (edge: any): number => {
+    let raw: any = edge?.similarity ?? edge?.score ?? edge?.weight ?? edge?.percentage ?? 0;
+
+    if (typeof raw === 'string') {
+      const parsed = parseFloat(raw);
+      raw = Number.isNaN(parsed) ? 0 : parsed;
+    }
+
+    if (raw > 0 && raw <= 1) raw = raw * 100;
+    if (raw < 0) raw = 0;
+    if (raw > 100) raw = 100;
+
+    return Number(raw);
+  };
+
+  const getEdgeSource = (edge: any): string => {
+    return toId(edge?.source ?? edge?.sourceId ?? edge?.from ?? edge?.sourceNode);
+  };
+
+  const getEdgeTarget = (edge: any): string => {
+    return toId(edge?.target ?? edge?.targetId ?? edge?.to ?? edge?.targetNode);
   };
 
   useEffect(() => {
@@ -885,7 +921,7 @@ function BalanceEquityView() {
         .catch(err => console.error('Error fetching heatmap data:', err));
 
       // Fetch role similarity data
-      fetch(`${sessionData.url}/api/competency/role-similarity?threshold=${similarityThreshold}&sub_institute_id=${sessionData.subInstituteId}`, {
+      fetch(`${sessionData.url}/api/competency/role-similarity?threshold=0&sub_institute_id=${sessionData.subInstituteId}`, {
         credentials: 'include',
         headers: {
           'Authorization': `Bearer ${sessionData.token}`,
@@ -904,23 +940,34 @@ function BalanceEquityView() {
           // Dynamic radius based on node count
           const baseRadius = 100;
           const radius = Math.max(baseRadius, data.nodes.length * 8);
-          const mappedNodes = data.nodes.map((node: any, index: number) => {
-            const angle = (index / data.nodes.length) * 2 * Math.PI;
+          const apiNodes = Array.isArray(data?.nodes) ? data.nodes : [];
+          const apiEdges = Array.isArray(data?.edges) ? data.edges : [];
+          const mappedNodes = apiNodes.map((node: any, index: number) => {
+            const angle = (index / Math.max(apiNodes.length, 1)) * 2 * Math.PI;
             const x = node.x ?? centerX + radius * Math.cos(angle);
             const y = node.y ?? centerY + radius * Math.sin(angle);
-            // Scale node size: importance * 10 for larger nodes
-            const size = node.importance * 8;
             return { 
               ...node, 
+              id: getNodeId(node),
               x, 
               y, 
-              size, 
               uniqueKey: `${node.id}-${index}`,
               label: node.label || node.name || node.id
             };
           });
+
+          const mappedEdges = apiEdges
+            .map((edge: any, index: number) => ({
+              ...edge,
+              source: getEdgeSource(edge),
+              target: getEdgeTarget(edge),
+              similarity: getSimilarity(edge),
+              uniqueKey: `${getEdgeSource(edge)}-${getEdgeTarget(edge)}-${index}`,
+            }))
+            .filter((edge: any) => edge.source && edge.target);
+
           setNodes(mappedNodes);
-          setEdges(data.edges);
+          setEdges(mappedEdges);
         })
         .catch(err => console.error('Error fetching role similarity data:', err));
 
@@ -937,72 +984,28 @@ function BalanceEquityView() {
         })
         .catch(err => console.error('Error fetching scorecard data:', err));
     }
-  }, [sessionData, similarityThreshold]);
-
-
-
-  // ID and similarity helpers with normalization
-  const toId = (val: any): string => {
-    if (val && typeof val === 'object') {
-      const candidate = val.id ?? val.nodeId ?? val.roleId ?? val.value ?? val.key;
-      return candidate !== undefined && candidate !== null ? String(candidate) : '';
-    }
-    return val !== undefined && val !== null ? String(val) : '';
-  };
-
-  // Helper function to get node ID (string) with fallback for different field names
-  const getNodeId = (node: any): string => {
-    return toId(node?.id ?? node?.roleId ?? node?.nodeId);
-  };
+  }, [sessionData]);
 
   const filteredRoles = selectedDepartment === "all"
     ? nodes
     : nodes.filter((node: any) => node.department === selectedDepartment);
+  const nodeLookup = filteredRoles.reduce((acc: Record<string, any>, node: any) => {
+    acc[getNodeId(node)] = node;
+    return acc;
+  }, {});
 
-  // Helper function to get similarity percentage (0–100), handling 0–1 and string values
-  const getSimilarity = (edge: any): number => {
-    let raw: any = edge?.similarity ?? edge?.score ?? edge?.weight ?? edge?.percentage ?? 0;
-    if (typeof raw === 'string') {
-      const parsed = parseFloat(raw);
-      raw = isNaN(parsed) ? 0 : parsed;
-    }
-    // If API returns 0–1, convert to percentage; clamp to [0,100]
-    if (raw > 0 && raw <= 1) raw = raw * 100;
-    if (raw < 0) raw = 0;
-    if (raw > 100) raw = 100;
-    return Number(raw);
-  };
+  // ALL edges should always be visible - use thickness/color to show importance
+  const displayConnections = edges.filter((edge: any) => {
+    const sourceId = getEdgeSource(edge);
+    const targetId = getEdgeTarget(edge);
 
-  // Helper to get edge source/target with fallback for different field names
-  const getEdgeSource = (edge: any): string => {
-    return toId(edge?.source ?? edge?.sourceId ?? edge?.from ?? edge?.sourceNode);
-  };
-  const getEdgeTarget = (edge: any): string => {
-    return toId(edge?.target ?? edge?.targetId ?? edge?.to ?? edge?.targetNode);
-  };
-
-  const filteredConnections = edges.filter((edge: any) => {
-    const sourceId: string = getEdgeSource(edge);
-    const targetId: string = getEdgeTarget(edge);
-    const similarity = getSimilarity(edge);
     return (
-      similarity >= similarityThreshold &&
-      filteredRoles.some((node: any) => getNodeId(node) === String(sourceId)) &&
-      filteredRoles.some((node: any) => getNodeId(node) === String(targetId))
+      Boolean(nodeLookup[sourceId]) &&
+      Boolean(nodeLookup[targetId])
     );
   });
 
-  // If no edges pass the threshold filter, show all edges between visible nodes
-  const displayConnections = filteredConnections.length > 0 ? filteredConnections : edges.filter((edge: any) => {
-    const sourceId: string = getEdgeSource(edge);
-    const targetId: string = getEdgeTarget(edge);
-    return (
-      filteredRoles.some((node: any) => getNodeId(node) === String(sourceId)) &&
-      filteredRoles.some((node: any) => getNodeId(node) === String(targetId))
-    );
-  });
-
-  console.log('Debug - Edges:', edges.length, 'Filtered connections:', filteredConnections.length, 'Display connections:', displayConnections.length);
+  console.log('Debug - Edges:', edges.length, 'Display connections:', displayConnections.length);
   console.log('Debug - similarityThreshold:', similarityThreshold);
 
   const uniqueDepartments = Array.from(new Set(nodes.map((node: any) => node.department)));
@@ -1014,6 +1017,39 @@ function BalanceEquityView() {
     }
     return acc;
   }, {});
+
+  // Calculate node connectivity (number of connections per node)
+  const nodeConnectivity = React.useMemo(() => {
+    const connectivity: Record<string, number> = {};
+    edges.forEach((edge: any) => {
+      const sourceId = getEdgeSource(edge);
+      const targetId = getEdgeTarget(edge);
+      connectivity[sourceId] = (connectivity[sourceId] || 0) + 1;
+      connectivity[targetId] = (connectivity[targetId] || 0) + 1;
+    });
+    return connectivity;
+  }, [edges]);
+
+  // Calculate node sizes based on connectivity: 20-30px (few) to 50-60px (hub)
+  const getNodeSize = (nodeId: string): number => {
+    const connections = nodeConnectivity[nodeId] || 0;
+    if (connections <= 2) return 20 + Math.random() * 10;
+    if (connections <= 5) return 30 + Math.random() * 10;
+    if (connections <= 10) return 40 + Math.random() * 10;
+    return 50 + Math.random() * 10;
+  };
+
+  // Get edge color based on similarity value
+  const getEdgeColor = (similarity: number): string => {
+    if (similarity >= 75) return '#4CAF50'; // Strong - Green
+    if (similarity >= 50) return '#FFD93D'; // Moderate - Yellow/Orange
+    return '#D3D3D3'; // Weak - Light Gray
+  };
+
+  // Get edge thickness based on similarity (proportional, min 1px, max 8px)
+  const getEdgeThickness = (similarity: number): number => {
+    return Math.max(1, (similarity / 100) * 8);
+  };
 
   return (
     <div className="space-y-6">
@@ -1104,9 +1140,6 @@ function BalanceEquityView() {
               <h3 className="text-lg font-semibold mb-1">Role Similarity Network</h3>
               <p className="text-xs text-slate-400">Visualize overlaps between roles based on skill/task similarity</p>
             </div>
-            <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-              Similarity ≥ {similarityThreshold}%
-            </div>
           </div>
 
           {/* Network Visualization - Fixed with larger circles */}
@@ -1116,20 +1149,23 @@ function BalanceEquityView() {
               {displayConnections.map((conn, i) => {
                 const sourceId = getEdgeSource(conn);
                 const targetId = getEdgeTarget(conn);
-                const source = filteredRoles.find((n: any) => getNodeId(n) === sourceId);
-                const target = filteredRoles.find((n: any) => getNodeId(n) === targetId);
+                const source = nodeLookup[sourceId];
+                const target = nodeLookup[targetId];
                 if (!source || !target) return null;
+                const similarity = getSimilarity(conn);
+                const edgeColor = getEdgeColor(similarity);
+                const edgeThickness = getEdgeThickness(similarity);
 
                 return (
                   <line
-                    key={`${sourceId}-${targetId}-${i}`}
+                    key={conn.uniqueKey || `${sourceId}-${targetId}-${i}`}
                     x1={source.x}
                     y1={source.y}
                     x2={target.x}
                     y2={target.y}
-                    stroke={source.color || DEPARTMENT_COLORS[source.department] || '#64748B'}
-                    strokeWidth={Math.max(1.5, (getSimilarity(conn) / 100) * 6)}
-                    strokeOpacity={0.5}
+                    stroke={edgeColor}
+                    strokeWidth={edgeThickness}
+                    strokeOpacity={0.8}
                     className="transition-all duration-200"
                   />
                 );
@@ -1138,6 +1174,7 @@ function BalanceEquityView() {
               {/* Draw nodes with larger circles */}
               {filteredRoles.map((role: any) => {
                 const isHovered = hoveredRole === role.id;
+                const nodeSize = getNodeSize(role.id);
                 
                 return (
                   <g
@@ -1151,7 +1188,7 @@ function BalanceEquityView() {
                       <circle
                         cx={role.x}
                         cy={role.y}
-                        r={role.size * 1.2}
+                        r={nodeSize * 1.2}
                         fill="none"
                         stroke={role.color || DEPARTMENT_COLORS[role.department] || '#64748B'}
                         strokeWidth="3"
@@ -1159,11 +1196,11 @@ function BalanceEquityView() {
                       />
                     )}
                     
-                    {/* Main circle - LARGER SIZE */}
+                    {/* Main circle - size based on connectivity */}
                     <circle
                       cx={role.x}
                       cy={role.y}
-                      r={role.size} // Size is already multiplied by 12 in the node mapping
+                      r={nodeSize}
                       fill={role.color || DEPARTMENT_COLORS[role.department] || '#64748B'}
                       stroke="#fff"
                       strokeWidth="2"
@@ -1181,7 +1218,7 @@ function BalanceEquityView() {
                       y={role.y + 2}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fontSize={role.size * 0.6}
+                      fontSize={nodeSize * 0.6}
                       fill="white"
                       fontWeight="bold"
                       className="pointer-events-none select-none"
@@ -1193,7 +1230,7 @@ function BalanceEquityView() {
                     {isHovered && (
                       <text
                         x={role.x}
-                        y={role.y - role.size - 5}
+                        y={role.y - nodeSize - 5}
                         textAnchor="middle"
                         fontSize="6"
                         fill="#1e293b"
@@ -1211,9 +1248,28 @@ function BalanceEquityView() {
 
           {/* Filters & Controls */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Edge Color Legend - moved from below */}
+            <div>
+              <label className="text-xs text-slate-600 font-medium mb-2 block">Edge Color (Similarity)</label>
+              <div className="flex flex-col gap-2 text-xs">
+                <div className="flex items-center">
+                  <div className="w-8 h-1 rounded mr-2" style={{ backgroundColor: '#4CAF50' }}></div>
+                  <span className="text-slate-700">Strong (75-100)</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-8 h-1 rounded mr-2" style={{ backgroundColor: '#FFD93D' }}></div>
+                  <span className="text-slate-700">Moderate (50-74)</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-8 h-1 rounded mr-2" style={{ backgroundColor: '#D3D3D3' }}></div>
+                  <span className="text-slate-700">Weak (Below 50)</span>
+                </div>
+              </div>
+            </div>
+
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs text-slate-600 font-medium">Similarity Threshold</label>
+                <label className="text-xs text-slate-600 font-medium">Similarity Highlight</label>
                 <span className="text-xs text-slate-500">{similarityThreshold}%</span>
               </div>
               <input
@@ -1225,7 +1281,7 @@ function BalanceEquityView() {
                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
               />
               <div className="text-xs text-slate-400 mt-1">
-                Show connections with similarity ≥ {similarityThreshold}%
+                Highlight connections with similarity ≥ {similarityThreshold}%
               </div>
             </div>
 
@@ -1242,31 +1298,27 @@ function BalanceEquityView() {
                 ))}
               </select>
             </div>
-
-            {/* Color Legend */}
-            <div>
-              <label className="text-xs text-slate-600 font-medium mb-2 block">Role Colors</label>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.entries(departmentColorMap).slice(0, 6).map(([dept, color]: [string, any]) => (
-                  <div key={dept} className="flex items-center text-xs">
-                    <div
-                      className="w-3 h-3 rounded-full mr-1 flex-shrink-0"
-                      style={{ backgroundColor: color }}
-                    ></div>
-                    <span className="text-slate-700 truncate capitalize">{dept}</span>
-                  </div>
-                ))}
-                {Object.keys(departmentColorMap).length > 6 && (
-                  <span className="text-xs text-slate-400">+{Object.keys(departmentColorMap).length - 6} more</span>
-                )}
-              </div>
-            </div>
           </div>
 
           {/* Node size and edge thickness info */}
-          <div className="mt-4 text-xs text-slate-500 border-t pt-3 flex justify-between">
-            <span>⚪ Node size: Role importance (larger = more critical)</span>
-            <span>📊 Edge thickness: Similarity strength (thicker = more overlap)</span>
+          <div className="mt-4 text-xs text-slate-500 border-t pt-3 flex justify-between items-center flex-wrap gap-2">
+            <div className="flex gap-4">
+              <span>⚪ Node size: Based on connectivity (20-60px)</span>
+              <span>📊 Edge thickness: Similarity strength</span>
+            </div>
+            {/* Role Colors Legend */}
+            <div className="flex items-center gap-2">
+              <span className="text-slate-600">Role Colors:</span>
+              {Object.entries(departmentColorMap).slice(0, 4).map(([dept, color]: [string, any]) => (
+                <div key={dept} className="flex items-center">
+                  <div
+                    className="w-3 h-3 rounded-full mr-1"
+                    style={{ backgroundColor: color }}
+                  ></div>
+                  <span className="capitalize text-slate-700">{dept}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
