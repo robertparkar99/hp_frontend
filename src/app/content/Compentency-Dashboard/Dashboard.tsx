@@ -1206,9 +1206,7 @@ function BalanceEquityView() {
                       strokeWidth="2"
                       className="transition-all duration-200"
                       style={{
-                        filter: isHovered ? 'drop-shadow(0 0 6px rgba(0,0,0,0.3))' : 'none',
-                        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
-                        transformOrigin: `${role.x}px ${role.y}px`
+                        filter: isHovered ? 'drop-shadow(0 0 6px rgba(0,0,0,0.3))' : 'none'
                       }}
                     />
                     
@@ -1226,16 +1224,16 @@ function BalanceEquityView() {
                       {role.label.split(' ').map((word: string) => word[0]).join('').substring(0, 3)}
                     </text>
                     
-                    {/* Role label on hover */}
+                    {/* Role label on hover - larger font for readability */}
                     {isHovered && (
                       <text
                         x={role.x}
-                        y={role.y - nodeSize - 5}
+                        y={role.y - nodeSize - 8}
                         textAnchor="middle"
-                        fontSize="6"
+                        fontSize="14"
                         fill="#1e293b"
                         fontWeight="bold"
-                        className="pointer-events-none select-none bg-white bg-opacity-75 px-1 py-0.5 rounded"
+                        className="pointer-events-none select-none"
                       >
                         {role.label}
                       </text>
