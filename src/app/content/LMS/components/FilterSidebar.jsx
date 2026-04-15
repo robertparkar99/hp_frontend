@@ -243,7 +243,7 @@ const fetchFilters = async () => {
   }, 0);
 
   return (
-    <div id="lc-filter-sidebar-component"  className="bg-card border border-border rounded-lg p-4 h-fit sticky top-20">
+    <div className="bg-card border border-border rounded-lg p-4 h-fit sticky top-20">
       {/* Header */}
       <div id="lc-filter-header" className="flex items-center justify-between mb-4">
         <h3 id="lc-filter-title"  className="font-semibold text-foreground">Filters</h3>

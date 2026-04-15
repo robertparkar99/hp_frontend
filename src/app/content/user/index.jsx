@@ -10,10 +10,10 @@ import PaginationControls from './components/PaginationControls';
 import { Button } from '../../../components/ui/button';
 import dynamic from 'next/dynamic';
 import EmployeeDirectoryTour from './components/EmployeeDirectoryTour';
-  const AddUserModal = dynamic(() => import('./AddUserModal'), {
-    ssr: false,
-    loading: () => <p>Loading...</p>
-  });
+const AddUserModal = dynamic(() => import('./AddUserModal'), {
+  ssr: false,
+  loading: () => <p>Loading...</p>
+});
 
   const BulkEmployeeUpload = dynamic(() => import('./BulkEmployeeUpload'), {
     ssr: false,
@@ -362,7 +362,7 @@ const EmployeeDirectory = () => {
       <div className="mb-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Employee Directory</h1>
+                <h1 id="employee-directory-header" className="text-2xl font-bold text-foreground">Employee Directory</h1>
             <p className="text-muted-foreground mt-2 text-sm">
               Search, filter, and manage workforce information efficiently
             </p>
