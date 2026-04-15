@@ -656,7 +656,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
             }`}
           >
             {isEnrolling ? (
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" id='lc-enroll-btn-0'></div>
             ) : completed ? (
               <>
                 <Icon name="Award" size={14} className="mr-1" />

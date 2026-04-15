@@ -374,40 +374,46 @@ const createOffersTabSteps = (): ManagerHubTourStep[] => [
             }
         ]
     },
-    {
-        id: 'offers-status',
-        title: '🏷️ Offer Status Tracking',
-        text: 'Track the status of each offer through the hiring pipeline. Filter by status to find offers that need your attention.',
-        attachTo: {
-            element: '#tour-offer-tabs',
-            on: 'top'
-        },
-        beforeShowPromise: async () => {
-            // Ensure we're on offers tab
-            switchManagerHubTab('offers');
-        },
-        buttons: [
-            {
-                text: 'Back',
-                action: () => {
-                    managerHubTourInstance?.show('offers-offer-cards');
-                },
-                classes: 'shepherd-button-secondary'
+        {
+            id: 'offers-status',
+            title: '🏷️ Offer Status Tracking',
+            text: 'Track the status of each offer through the hiring pipeline. Filter by status to find offers that need your attention.',
+            attachTo: {
+                element: '#tour-offer-tabs',
+                on: 'top'
             },
-            {
-                text: 'Finish Tour',
-                action: () => {
-                    // Mark offers tab tour as completed and start team overview tour
-                    if (typeof window !== 'undefined') {
-                        sessionStorage.setItem('offersTabTourCompleted', 'true');
-                    }
-                    // Start team overview tour
-                    managerHubTourInstance?.cancel();
-                    startTabTourWithCallback('team');
+            scrollTo: false,
+            beforeShowPromise: async () => {
+                // Ensure we're on offers tab
+                switchManagerHubTab('offers');
+                // Scroll to top to show step at top
+                if (typeof window !== 'undefined') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    await new Promise(resolve => setTimeout(resolve, 200));
                 }
-            }
-        ]
-    }
+            },
+            buttons: [
+                {
+                    text: 'Back',
+                    action: () => {
+                        managerHubTourInstance?.show('offers-offer-cards');
+                    },
+                    classes: 'shepherd-button-secondary'
+                },
+                {
+                    text: 'Finish Tour',
+                    action: () => {
+                        // Mark offers tab tour as completed and start team overview tour
+                        if (typeof window !== 'undefined') {
+                            sessionStorage.setItem('offersTabTourCompleted', 'true');
+                        }
+                        // Start team overview tour
+                        managerHubTourInstance?.cancel();
+                        startTabTourWithCallback('team');
+                    }
+                }
+            ]
+        }
 ];
 
 // Team Tab Tour Steps
@@ -828,8 +834,14 @@ const createTourSteps = (apiStepsFromAPI: ManagerHubTourStepData[] = []): Manage
                 element: '#tour-offer-tabs',
                 on: 'top'
             },
+            scrollTo: false,
             beforeShowPromise: async () => {
                 switchManagerHubTab('offers');
+                // Scroll to top to show step at top
+                if (typeof window !== 'undefined') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
             },
             buttons: [
                 {

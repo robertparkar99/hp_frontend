@@ -524,7 +524,7 @@ export default function InterviewPanels() {
 
       {/* Filters and Search */}
       <div className="flex items-center space-x-4">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 max-w-sm" id="tour-panel-search">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search panels..."
@@ -533,8 +533,8 @@ export default function InterviewPanels() {
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40">
+        <Select value={statusFilter} onValueChange={setStatusFilter} >
+          <SelectTrigger className="w-40" id="tour-panel-filters">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue />
           </SelectTrigger>
@@ -548,13 +548,13 @@ export default function InterviewPanels() {
 
       {/* Panels Grid */}
       {loading ? (
-        <div className="text-center py-12">
+        <div className="text-center py-12" >
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <div className="mt-2 text-muted-foreground">Loading interview panels...</div>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="tour-panel-cards">
             {filteredPanels.map((panel) => (
               <Card key={panel.id} className="widget-card">
                 <CardHeader>

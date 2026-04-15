@@ -319,7 +319,7 @@ const createTourSteps = (apiStepsFromAPI: InterviewTourStepData[] = []): Shepher
       id: 'tour-interview-panel',
       title: apiStepsMap.get('tour-interview-panel')?.title || ' Interview Panel',
       text: apiStepsMap.get('tour-interview-panel')?.description || 'Select an interview panel for this interview.',
-      attachTo: { element: '#tour-interview-panel', on: 'top' },
+      attachTo: { element: '#tour-interview-panel', on: 'bottom' },
       beforeShowPromise: () => waitForElement('#tour-interview-panel', 25),
       buttons: [{ text: 'Next', action: () => { (window as any).interviewDashboardTour?.next(); } }]
     },

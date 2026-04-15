@@ -35,7 +35,7 @@ export const getDetailedTourSteps = (apiStepsMap = new Map()) => ({
       highlightClass: 'highlight',
       scrollTo: false,
       cancelIcon: { enabled: true },
-      title: apiStepsMap.get('personal-welcome')?.title || 'Personal Information Details  43534tr',
+      title: apiStepsMap.get('personal-welcome')?.title || 'Personal Information Details fixed',
       text: apiStepsMap.get('personal-welcome')?.text || 'This tab contains all personal details of the employee. Let\'s explore each section!'
     },
     {
@@ -48,7 +48,7 @@ export const getDetailedTourSteps = (apiStepsMap = new Map()) => ({
       highlightClass: 'highlight',
       scrollTo: false,
       cancelIcon: { enabled: true },
-      title: apiStepsMap.get('personal-sidebar')?.title || 'Sidebar Menu',
+      title: apiStepsMap.get('personal-sidebar')?.title || 'Sidebar Menu fixed ',
       text: apiStepsMap.get('personal-sidebar')?.text || 'This sidebar contains 5 sections: Personal Details, Address, Reporting, Attendance, and Direct Deposit. Click on any section to navigate.'
     },
     {

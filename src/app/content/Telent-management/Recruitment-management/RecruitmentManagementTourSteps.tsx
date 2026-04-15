@@ -433,7 +433,6 @@ export const getRecruitmentDashboardTourSteps = (tourStepsFromAPI: any[] = []): 
             },
             beforeShowPromise: async () => {
                 await switchToTab('jobs');
-                await scrollToElement('#tour-job-postings-list');
             },
             buttons: [
                 {
@@ -611,7 +610,7 @@ export const getScreeningAllTabTourSteps = (tourStepsFromAPI: any[] = []): Recru
             text: apiStepsMap.get('screening-all-welcome')?.description || 'Welcome to the Candidate Screening section! This tab shows all candidates who have applied across your job postings.',
             attachTo: {
                 element: '#tour-candidate-overview',
-                on: 'bottom'
+                on: 'top'
             },
             beforeShowPromise: async () => {
                 await switchToTab('all');
@@ -662,11 +661,10 @@ export const getScreeningAllTabTourSteps = (tourStepsFromAPI: any[] = []): Recru
             text: apiStepsMap.get('screening-all-search')?.description || 'Search candidates by name, skills, or position. Use the filter dropdown to filter by candidate status.',
             attachTo: {
                 element: '#tour-screening-search',
-                on: 'bottom'
+                on: 'top'
             },
             beforeShowPromise: async () => {
                 await switchToTab('all');
-                await scrollToElement('#tour-screening-search');
             },
             buttons: [
                 {
@@ -718,7 +716,6 @@ export const getScreeningAllTabTourSteps = (tourStepsFromAPI: any[] = []): Recru
             },
             beforeShowPromise: async () => {
                 await switchToTab('all');
-                await scrollToElement('#tour-candidate-list');
             },
             buttons: [
                 {
@@ -1401,11 +1398,10 @@ export const getApplicationsTabTourSteps = (tourStepsFromAPI: any[] = []): Recru
             text: apiStepsMap.get('applications-progress')?.description || 'Each application shows its progress through your hiring pipeline. See which stage the candidate is currently in.',
             attachTo: {
                 element: '#tour-applications-progress',
-                on: 'left'
+                on: 'top'
             },
             beforeShowPromise: async () => {
                 await switchToTab('applications');
-                await scrollToElement('#tour-applications-progress');
             },
             buttons: [
                 {
@@ -1449,11 +1445,10 @@ export const getApplicationsTabTourSteps = (tourStepsFromAPI: any[] = []): Recru
             text: apiStepsMap.get('applications-complete')?.description || 'Congratulations! You now know how to manage all job applications. Use the filters and actions to efficiently track and move candidates through your hiring pipeline.',
             attachTo: {
                 element: '#tour-applications-overview',
-                on: 'bottom'
+                on: 'top'
             },
             beforeShowPromise: async () => {
                 await switchToTab('applications');
-                await scrollToElement('#tour-applications-overview');
             },
             buttons: [
                 {
@@ -1554,7 +1549,6 @@ export const createRecruitmentDashboardTour = (tourStepsFromAPI: any[] = []): Sh
         defaultStepOptions: {
             cancelIcon: { enabled: true },
             classes: 'shepherd-theme-recruitment',
-            scrollTo: { behavior: 'smooth', block: 'center' },
             modalOverlayOpeningPadding: 10,
             modalOverlayOpeningRadius: 8
         },
@@ -1603,7 +1597,6 @@ export const createScreeningAllTabTour = (tourStepsFromAPI: any[] = []): Shepher
         defaultStepOptions: {
             cancelIcon: { enabled: true },
             classes: 'shepherd-theme-recruitment',
-            scrollTo: { behavior: 'smooth', block: 'center' },
             modalOverlayOpeningPadding: 10,
             modalOverlayOpeningRadius: 8
         },
@@ -1652,7 +1645,6 @@ export const createScreeningShortlistedTabTour = (tourStepsFromAPI: any[] = []):
         defaultStepOptions: {
             cancelIcon: { enabled: true },
             classes: 'shepherd-theme-recruitment',
-            scrollTo: { behavior: 'smooth', block: 'center' },
             modalOverlayOpeningPadding: 10,
             modalOverlayOpeningRadius: 8
         },
@@ -1701,7 +1693,6 @@ export const createScreeningPendingTabTour = (tourStepsFromAPI: any[] = []): She
         defaultStepOptions: {
             cancelIcon: { enabled: true },
             classes: 'shepherd-theme-recruitment',
-            scrollTo: { behavior: 'smooth', block: 'center' },
             modalOverlayOpeningPadding: 10,
             modalOverlayOpeningRadius: 8
         },
@@ -1750,7 +1741,6 @@ export const createScreeningRejectedTabTour = (tourStepsFromAPI: any[] = []): Sh
         defaultStepOptions: {
             cancelIcon: { enabled: true },
             classes: 'shepherd-theme-recruitment',
-            scrollTo: { behavior: 'smooth', block: 'center' },
             modalOverlayOpeningPadding: 10,
             modalOverlayOpeningRadius: 8
         },
@@ -1799,7 +1789,6 @@ export const createScreeningHiredTabTour = (tourStepsFromAPI: any[] = []): Sheph
         defaultStepOptions: {
             cancelIcon: { enabled: true },
             classes: 'shepherd-theme-recruitment',
-            scrollTo: { behavior: 'smooth', block: 'center' },
             modalOverlayOpeningPadding: 10,
             modalOverlayOpeningRadius: 8
         },
@@ -1848,7 +1837,6 @@ export const createApplicationsTabTour = (tourStepsFromAPI: any[] = []): Shepher
         defaultStepOptions: {
             cancelIcon: { enabled: true },
             classes: 'shepherd-theme-recruitment',
-            scrollTo: { behavior: 'smooth', block: 'center' },
             modalOverlayOpeningPadding: 10,
             modalOverlayOpeningRadius: 8
         },
@@ -1897,7 +1885,6 @@ export const createApplicationDialogTour = (tourStepsFromAPI: any[] = []): Sheph
         defaultStepOptions: {
             cancelIcon: { enabled: true },
             classes: 'shepherd-theme-recruitment',
-            scrollTo: { behavior: 'smooth', block: 'center' },
             modalOverlayOpeningPadding: 10,
             modalOverlayOpeningRadius: 8
         },
