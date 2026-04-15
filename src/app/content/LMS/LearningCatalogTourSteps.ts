@@ -41,6 +41,32 @@ const getUserData = (): { url: string; token: string; subInstituteId: string } |
     return null;
 };
 
+// Helper to get session data for role checks
+const getSessionData = (): { user_profile_name?: string } | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const userData = localStorage.getItem("userData");
+        if (userData) {
+            const parsed = JSON.parse(userData);
+            return {
+                user_profile_name: parsed.org_type
+            };
+        }
+    } catch (e) {
+        console.error('[Learning Catalog Tour] Error getting sessionData:', e);
+    }
+    return null;
+};
+
+// Helper to check if admin actions should be shown
+const canShowAdminActions = (sessionData: { user_profile_name?: string } | null): boolean => {
+    return (
+        sessionData &&
+        sessionData.user_profile_name &&
+        ["ADMIN", "HR"].includes(sessionData.user_profile_name.toUpperCase())
+    );
+};
+
 // Fetch tour steps from API
 const fetchLearningCatalogTourStepsFromAPI = async (menuId: number): Promise<LearningCatalogTourStepData[]> => {
     const userData = getUserData();
@@ -164,6 +190,9 @@ export const createLearningCatalogSteps = (
 ): TourStep[] => {
     const steps: TourStep[] = [];
     let currentStepIndex = 0;
+
+    // Get session data for role checks
+    const sessionData = getSessionData();
 
     // Access link for journey logging
     const { accessLink } = getPageInfo();
@@ -303,82 +332,84 @@ export const createLearningCatalogSteps = (
     currentStepIndex++;
 
     // Step 3: Admin Actions (External Course, AI, Create Course)
-    steps.push({
-        id: 'lc-admin-actions',
-        title: apiStepsMap.get('lc-admin-actions')?.title || '⚡ Admin Actions',
-        text: apiStepsMap.get('lc-admin-actions')?.description || 'As an admin, you have special actions available:\n\n• **External Course**: Browse and add courses from Udemy\n• **Build with AI**: Generate new courses using AI\n• **Create Course**: Manually create a new course',
-        attachTo: {
-            element: '#lc-admin-actions',
-            on: 'bottom'
-        },
-        when: {
-            show: () => {
-                // Log tour step view
-                logUserJourney({
-                    eventType: 'tour_step_view',
-                    stepKey: 'lc-admin-actions',
-                    menuId: menuId,
-                    accessLink: accessLink,
-                });
-            }
-        },
-        buttons: [
-            {
-                text: 'Back',
-                action: createBackAction(),
-                classes: 'shepherd-button-secondary'
+    if (canShowAdminActions(sessionData)) {
+        steps.push({
+            id: 'lc-admin-actions',
+            title: apiStepsMap.get('lc-admin-actions')?.title || '⚡ Admin Actions',
+            text: apiStepsMap.get('lc-admin-actions')?.description || 'As an admin, you have special actions available:\n\n• **External Course**: Browse and add courses from Udemy\n• **Build with AI**: Generate new courses using AI\n• **Create Course**: Manually create a new course',
+            attachTo: {
+                element: '#lc-admin-actions',
+                on: 'bottom'
             },
-            {
-                text: 'Next',
-                action: createNextAction('lc-admin-actions')
-            }
-        ]
-    });
-    currentStepIndex++;
+            when: {
+                show: () => {
+                    // Log tour step view
+                    logUserJourney({
+                        eventType: 'tour_step_view',
+                        stepKey: 'lc-admin-actions',
+                        menuId: menuId,
+                        accessLink: accessLink,
+                    });
+                }
+            },
+            buttons: [
+                {
+                    text: 'Back',
+                    action: createBackAction(),
+                    classes: 'shepherd-button-secondary'
+                },
+                {
+                    text: 'Next',
+                    action: createNextAction('lc-admin-actions')
+                }
+            ]
+        });
+        currentStepIndex++;
+    }
 
     // Step 5: Filter Sidebar
-    steps.push({
-        id: 'lc-filter-sidebar',
-        title: apiStepsMap.get('lc-filter-sidebar')?.title || '🎯 Filter Sidebar',
-        text: apiStepsMap.get('lc-filter-sidebar')?.description || 'Use these filters to find courses that match your needs:\n\n• **Subject Types**: Filter by type (video, document, etc.)\n• **Categories**: Filter by course category\n• **Clear All**: Reset all filters at once',
-        attachTo: {
-            element: '#lc-filter-sidebar',
-            on: 'right'
-        },
-        when: {
-            show: () => {
-                // Log tour step view
-                logUserJourney({
-                    eventType: 'tour_step_view',
-                    stepKey: 'lc-filter-sidebar',
-                    menuId: menuId,
-                    accessLink: accessLink,
-                });
-            }
-        },
-        beforeShowPromise: () => {
-            return new Promise(resolve => {
-                // Ensure filter sidebar is visible
-                const filterToggle = document.querySelector('#lc-filters-toggle') as HTMLElement;
-                if (filterToggle) {
-                    filterToggle.click();
-                }
-                setTimeout(resolve, 300);
-            });
-        },
-        buttons: [
-            {
-                text: 'Back',
-                action: createBackAction(),
-                classes: 'shepherd-button-secondary'
-            },
-            {
-                text: 'Next',
-                action: createNextAction('lc-filter-sidebar')
-            }
-        ]
-    });
-    currentStepIndex++;
+    // steps.push({
+    //     id: 'lc-filter-sidebar',
+    //     title: apiStepsMap.get('lc-filter-sidebar')?.title || '🎯 Filter Sidebar',
+    //     text: apiStepsMap.get('lc-filter-sidebar')?.description || 'Use these filters to find courses that match your needs:\n\n• **Subject Types**: Filter by type (video, document, etc.)\n• **Categories**: Filter by course category\n• **Clear All**: Reset all filters at once',
+    //     attachTo: {
+    //         element: '#lc-filter-sidebar',
+    //         on: 'right'
+    //     },
+    //     when: {
+    //         show: () => {
+    //             // Log tour step view
+    //             logUserJourney({
+    //                 eventType: 'tour_step_view',
+    //                 stepKey: 'lc-filter-sidebar',
+    //                 menuId: menuId,
+    //                 accessLink: accessLink,
+    //             });
+    //         }
+    //     },
+    //     beforeShowPromise: () => {
+    //         return new Promise(resolve => {
+    //             // Ensure filter sidebar is visible
+    //             const filterToggle = document.querySelector('#lc-filters-toggle') as HTMLElement;
+    //             if (filterToggle) {
+    //                 filterToggle.click();
+    //             }
+    //             setTimeout(resolve, 300);
+    //         });
+    //     },
+    //     buttons: [
+    //         {
+    //             text: 'Back',
+    //             action: createBackAction(),
+    //             classes: 'shepherd-button-secondary'
+    //         },
+    //         {
+    //             text: 'Next',
+    //             action: createNextAction('lc-filter-sidebar')
+    //         }
+    //     ]
+    // });
+    // currentStepIndex++;
 
     // Step 6: Search Toolbar - Search Bar Only
     steps.push({
@@ -490,106 +521,112 @@ export const createLearningCatalogSteps = (
     currentStepIndex++;
 
     // Step 11: External Course Dialog (if applicable)
-    steps.push({
-        id: 'lc-external-course',
-        title: apiStepsMap.get('lc-external-course')?.title || '🌐 External Course Integration',
-        text: apiStepsMap.get('lc-external-course')?.description || 'Browse courses from external platforms like Udemy directly from your dashboard. Add them to your catalog for unified learning.',
-        attachTo: {
-            element: '#lc-admin-actions',
-            on: 'bottom'
-        },
-        when: {
-            show: () => {
-                // Log tour step view
-                logUserJourney({
-                    eventType: 'tour_step_view',
-                    stepKey: 'lc-external-course',
-                    menuId: menuId,
-                    accessLink: accessLink,
-                });
-            }
-        },
-        buttons: [
-            {
-                text: 'Back',
-                action: createBackAction(),
-                classes: 'shepherd-button-secondary'
+    if (canShowAdminActions(sessionData)) {
+        steps.push({
+            id: 'lc-external-course',
+            title: apiStepsMap.get('lc-external-course')?.title || '🌐 External Course Integration',
+            text: apiStepsMap.get('lc-external-course')?.description || 'Browse courses from external platforms like Udemy directly from your dashboard. Add them to your catalog for unified learning.',
+            attachTo: {
+                element: '#lc-admin-actions',
+                on: 'bottom'
             },
-            {
-                text: 'Next',
-                action: createNextAction('lc-external-course')
-            }
-        ]
-    });
-    currentStepIndex++;
+            when: {
+                show: () => {
+                    // Log tour step view
+                    logUserJourney({
+                        eventType: 'tour_step_view',
+                        stepKey: 'lc-external-course',
+                        menuId: menuId,
+                        accessLink: accessLink,
+                    });
+                }
+            },
+            buttons: [
+                {
+                    text: 'Back',
+                    action: createBackAction(),
+                    classes: 'shepherd-button-secondary'
+                },
+                {
+                    text: 'Next',
+                    action: createNextAction('lc-external-course')
+                }
+            ]
+        });
+        currentStepIndex++;
+    }
 
     // Step 12: AI Course Builder
-    steps.push({
-        id: 'lc-ai-builder',
-        title: apiStepsMap.get('lc-ai-builder')?.title || '🤖 AI Course Builder',
-        text: apiStepsMap.get('lc-ai-builder')?.description || 'Use AI to generate customized courses based on your requirements. Simply provide a topic, and AI will create a structured course for you.',
-        attachTo: {
-            element: '#lc-admin-actions',
-            on: 'bottom'
-        },
-        when: {
-            show: () => {
-                // Log tour step view
-                logUserJourney({
-                    eventType: 'tour_step_view',
-                    stepKey: 'lc-ai-builder',
-                    menuId: menuId,
-                    accessLink: accessLink,
-                });
-            }
-        },
-        buttons: [
-            {
-                text: 'Back',
-                action: createBackAction(),
-                classes: 'shepherd-button-secondary'
+    if (canShowAdminActions(sessionData)) {
+        steps.push({
+            id: 'lc-ai-builder',
+            title: apiStepsMap.get('lc-ai-builder')?.title || '🤖 AI Course Builder',
+            text: apiStepsMap.get('lc-ai-builder')?.description || 'Use AI to generate customized courses based on your requirements. Simply provide a topic, and AI will create a structured course for you.',
+            attachTo: {
+                element: '#lc-admin-actions',
+                on: 'bottom'
             },
-            {
-                text: 'Next',
-                action: createNextAction('lc-ai-builder')
-            }
-        ]
-    });
-    currentStepIndex++;
+            when: {
+                show: () => {
+                    // Log tour step view
+                    logUserJourney({
+                        eventType: 'tour_step_view',
+                        stepKey: 'lc-ai-builder',
+                        menuId: menuId,
+                        accessLink: accessLink,
+                    });
+                }
+            },
+            buttons: [
+                {
+                    text: 'Back',
+                    action: createBackAction(),
+                    classes: 'shepherd-button-secondary'
+                },
+                {
+                    text: 'Next',
+                    action: createNextAction('lc-ai-builder')
+                }
+            ]
+        });
+        currentStepIndex++;
+    }
 
     // Step 13: Create Course Form
-    steps.push({
-        id: 'lc-create-course',
-        title: apiStepsMap.get('lc-create-course')?.title || '✏️ Create Course Manually',
-        text: apiStepsMap.get('lc-create-course')?.description || 'Create courses manually with full control over content:\n\n• **Course Details**: Set title, description, and thumbnail\n• **Subject Mapping**: Link to subjects and standards\n• **Settings**: Configure difficulty, status, and more',
-        attachTo: {
-            element: '#lc-admin-actions',
-            on: 'bottom'
-        },
-        when: {
-            show: () => {
-                // Log tour step view
-                logUserJourney({
-                    eventType: 'tour_step_view',
-                    stepKey: 'lc-create-course',
-                    menuId: menuId,
-                    accessLink: accessLink,
-                });
-            }
-        },
-        buttons: [
-            {
-                text: 'Back',
-                action: createBackAction(),
-                classes: 'shepherd-button-secondary'
+    if (canShowAdminActions(sessionData)) {
+        steps.push({
+            id: 'lc-create-course',
+            title: apiStepsMap.get('lc-create-course')?.title || '✏️ Create Course Manually',
+            text: apiStepsMap.get('lc-create-course')?.description || 'Create courses manually with full control over content:\n\n• **Course Details**: Set title, description, and thumbnail\n• **Subject Mapping**: Link to subjects and standards\n• **Settings**: Configure difficulty, status, and more',
+            attachTo: {
+                element: '#lc-admin-actions',
+                on: 'bottom'
             },
-            {
-                text: 'Next',
-                action: createNextAction('lc-create-course')
-            }
-        ]
-    });
-    currentStepIndex++;
+            when: {
+                show: () => {
+                    // Log tour step view
+                    logUserJourney({
+                        eventType: 'tour_step_view',
+                        stepKey: 'lc-create-course',
+                        menuId: menuId,
+                        accessLink: accessLink,
+                    });
+                }
+            },
+            buttons: [
+                {
+                    text: 'Back',
+                    action: createBackAction(),
+                    classes: 'shepherd-button-secondary'
+                },
+                {
+                    text: 'Next',
+                    action: createNextAction('lc-create-course')
+                }
+            ]
+        });
+        currentStepIndex++;
+    }
 
     // Step 14: Tour Complete
     steps.push({

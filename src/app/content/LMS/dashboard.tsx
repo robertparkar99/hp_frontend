@@ -199,7 +199,7 @@ const LearningCatalog: React.FC = () => {
     })
 
     // Fetch API data and create steps with API overrides
-    const steps = await fetchAndCreateLearningCatalogSteps(tour, menuId, undefined, () => {
+    const steps = await fetchAndCreateLearningCatalogSteps(tour, menuId, sessionData, undefined, () => {
       console.log('🎉 Learning Catalog tour completed')
       setIsTourActive(false)
     })
@@ -603,7 +603,7 @@ const LearningCatalog: React.FC = () => {
               {/* Body */}
               <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
                 {isFilterVisible && (
-                  <div id="lc-filter-sidebar" className="lg:col-span-3 hidden lg:block">
+                  <div className="lg:col-span-3 hidden lg:block">
                     <FilterSidebar
                       filters={filters}
                       onFilterChange={handleFilterChange}

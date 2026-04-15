@@ -371,27 +371,59 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
     /* ------------------------------
        ADD STEPS
     ------------------------------ */
+    const validSteps: any[] = [];
+
     if (isUsingAPI) {
-      // Map API data to tour steps format
-      stepsToUse.forEach((apiStep, index) => {
+      // Map API data to tour steps format and filter valid steps
+      stepsToUse.forEach((apiStep) => {
         const attachTo = getAttachToConfig((apiStep as TourStepFromAPI).on_click);
         const stepId = (apiStep as TourStepFromAPI).on_click;
 
+        // Check if the element exists in the DOM
+        if (document.querySelector(attachTo.element)) {
+          validSteps.push({
+            id: stepId,
+            title: apiStep.title,
+            text: (apiStep as TourStepFromAPI).description,
+            attachTo,
+            stepId,
+            isApiStep: true,
+          });
+        }
+      });
+    } else {
+      // Use hardcoded steps and filter valid steps
+      stepsToUse.forEach((step: any) => {
+        // Check if the element exists in the DOM
+        if (document.querySelector(step.attachTo.element)) {
+          validSteps.push({
+            ...step,
+            title: step.title || "Tour",
+            stepId: step.id,
+            isApiStep: false,
+          });
+        }
+      });
+    }
+
+    // Now add only the valid steps
+    validSteps.forEach((step, index) => {
+      if (step.isApiStep) {
         tour.addStep({
-          id: stepId,
-          title: apiStep.title,
-          text: (apiStep as TourStepFromAPI).description,
-          attachTo,
+          id: step.id,
+          title: step.title,
+          text: step.text,
+          attachTo: step.attachTo,
           beforeShowPromise: function () {
             return new Promise(resolve => setTimeout(resolve, 300));
           },
-          buttons: getButtons(index, stepId),
+          buttons: getButtons(index, step.stepId),
           // @ts-ignore - Shepherd.js types are not fully compatible with our dynamic step creation
           highlightClass: 'highlight',
           scrollTo: { behavior: 'smooth', block: 'center' },
           cancelIcon: { enabled: true },
           // For the actions menu step, show without modal so users can click the buttons
-          when: stepId === 'table-actions-menu' ? {
+          when: step.stepId === 'table-actions-menu' ? {
             show: () => {
               // Remove modal overlay for this step to allow clicking
               const overlay = document.querySelector('.shepherd-modal-overlay-container');
@@ -408,17 +440,12 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
             }
           } : undefined,
         });
-      });
-    } else {
-      // Use hardcoded steps
-      stepsToUse.forEach((step: any, index: number) => {
-        // For the actions menu step, we'll handle it specially
+      } else {
         tour.addStep({
           ...step,
-          title: step.title || "Tour",
-          buttons: getButtons(index, step.id),
+          buttons: getButtons(index, step.stepId),
           // For the actions menu step, show without modal so users can click the buttons
-          when: step.id === 'table-actions-menu' ? {
+          when: step.stepId === 'table-actions-menu' ? {
             show: () => {
               // Remove modal overlay for this step to allow clicking
               const overlay = document.querySelector('.shepherd-modal-overlay-container');
@@ -435,8 +462,8 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
             }
           } : undefined,
         } as any);
-      });
-    }
+      }
+    });
 
     // Log tour step view event when steps are shown
     tour.on('show', (e: any) => {
