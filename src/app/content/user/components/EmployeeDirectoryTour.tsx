@@ -11,6 +11,7 @@ interface SessionData {
   url: string;
   token: string;
   subInstituteId: string;
+  userProfileName?: string;
 }
 
 interface TourStepFromAPI {
@@ -28,9 +29,10 @@ interface TourStepFromAPI {
 
 interface EmployeeDirectoryTourProps {
   onComplete?: () => void;
+  loading?: boolean;
 }
 
-const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplete }) => {
+const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplete, loading = false }) => {
   const tourInstanceRef = useRef<Shepherd.Tour | null>(null);
 
   // State for storing tour steps from API
@@ -44,11 +46,12 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
     const userData = localStorage.getItem("userData");
     if (userData) {
       try {
-        const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
+        const { APP_URL, token, sub_institute_id, user_profile_name } = JSON.parse(userData);
         setSessionData({
           url: APP_URL,
           token,
           subInstituteId: String(sub_institute_id),
+          userProfileName: user_profile_name,
         });
       } catch (e) {
         console.error("[EmployeeDirectoryTour] Invalid userData in localStorage", e);
@@ -126,18 +129,59 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
       'view-mode-toggle': { element: '#view-mode-toggle-container', on: 'bottom' },
       'employee-table-section': { element: '#employee-table-section', on: 'top' },
       'table-actions-menu': { element: '.table-actions-menu-first', on: 'left' },
-      'stats-sidebar-overview': { element: '#stats-sidebar-overview', on: 'auto' },
+
       'tour-complete': { element: '#employee-directory-header', on: 'bottom' },
     };
     return configs[stepId] || { element: '#employee-directory-header', on: 'bottom' };
   };
 
   useEffect(() => {
+    // Don't start tour while loading
+    if (loading) return;
+
     // Determine which steps to use: API data or fallback to hardcoded
     const stepsToUse = tourStepsFromAPI.length > 0 ? tourStepsFromAPI : employeeDirectoryTourSteps;
     const isUsingAPI = tourStepsFromAPI.length > 0;
 
-    console.log('[EmployeeDirectoryTour] Using API data:', isUsingAPI, 'Steps count:', stepsToUse.length);
+    // Check user role for filtering steps
+    const isEmployee = sessionData?.userProfileName?.toLowerCase() === 'employee';
+
+    // Filter steps based on user role and unwanted steps (explicit filtering)
+    const roleFilteredSteps = stepsToUse.filter((step: any) => {
+      const stepId = isUsingAPI ? (step as TourStepFromAPI).on_click : step.id;
+
+      // Hide these steps for Employee role
+      if (isEmployee && ['add-employee-btn', 'upload-employee-btn'].includes(stepId)) {
+        console.log(`[EmployeeDirectoryTour] Skipping step for Employee role: ${stepId}`);
+        return false;
+      }
+
+      // Skip unwanted steps like stats sidebar
+      if (stepId === 'stats-sidebar-overview') {
+        console.log(`[EmployeeDirectoryTour] Skipping unwanted step: ${stepId}`);
+        return false;
+      }
+
+      return true;
+    });
+
+    // Filter steps to only include those where the element exists in the DOM
+    const filteredSteps = roleFilteredSteps.filter((step, index) => {
+      let elementSelector;
+      if (isUsingAPI) {
+        elementSelector = getAttachToConfig((step as TourStepFromAPI).on_click).element;
+      } else {
+        elementSelector = (step as any).attachTo.element;
+      }
+      const element = document.querySelector(elementSelector);
+      if (!element) {
+        console.log(`[EmployeeDirectoryTour] Skipping step ${index} (${isUsingAPI ? (step as TourStepFromAPI).on_click : (step as any).id}) because element ${elementSelector} not found`);
+        return false;
+      }
+      return true;
+    });
+
+    console.log('[EmployeeDirectoryTour] Using API data:', isUsingAPI, 'Original steps count:', stepsToUse.length, 'Role filtered steps count:', roleFilteredSteps.length, 'Final filtered steps count:', filteredSteps.length);
 
     // Log tour start event
     const pageInfo = getPageInfo();
@@ -277,7 +321,7 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
        BUTTON LOGIC
     ------------------------------ */
     const getButtons = (index: number, stepId?: string) => {
-      const currentStep = stepsToUse[index];
+      const currentStep = filteredSteps[index];
       const stepKey = isUsingAPI ? (currentStep as TourStepFromAPI)?.on_click : currentStep?.id;
 
       const skip = {
@@ -364,66 +408,34 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
       }
 
       if (index === 0) return [skip, next];
-      if (index === stepsToUse.length - 1) return [skip, back, finish];
+      if (index === filteredSteps.length - 1) return [skip, back, finish];
       return [skip, back, next];
     };
 
     /* ------------------------------
        ADD STEPS
     ------------------------------ */
-    const validSteps: any[] = [];
-
     if (isUsingAPI) {
-      // Map API data to tour steps format and filter valid steps
-      stepsToUse.forEach((apiStep) => {
+      // Map API data to tour steps format
+      filteredSteps.forEach((apiStep, index) => {
         const attachTo = getAttachToConfig((apiStep as TourStepFromAPI).on_click);
         const stepId = (apiStep as TourStepFromAPI).on_click;
 
-        // Check if the element exists in the DOM
-        if (document.querySelector(attachTo.element)) {
-          validSteps.push({
-            id: stepId,
-            title: apiStep.title,
-            text: (apiStep as TourStepFromAPI).description,
-            attachTo,
-            stepId,
-            isApiStep: true,
-          });
-        }
-      });
-    } else {
-      // Use hardcoded steps and filter valid steps
-      stepsToUse.forEach((step: any) => {
-        // Check if the element exists in the DOM
-        if (document.querySelector(step.attachTo.element)) {
-          validSteps.push({
-            ...step,
-            title: step.title || "Tour",
-            stepId: step.id,
-            isApiStep: false,
-          });
-        }
-      });
-    }
-
-    // Now add only the valid steps
-    validSteps.forEach((step, index) => {
-      if (step.isApiStep) {
         tour.addStep({
-          id: step.id,
-          title: step.title,
-          text: step.text,
-          attachTo: step.attachTo,
+          id: stepId,
+          title: apiStep.title,
+          text: (apiStep as TourStepFromAPI).description,
+          attachTo,
           beforeShowPromise: function () {
             return new Promise(resolve => setTimeout(resolve, 300));
           },
-          buttons: getButtons(index, step.stepId),
+          buttons: getButtons(index, stepId),
           // @ts-ignore - Shepherd.js types are not fully compatible with our dynamic step creation
           highlightClass: 'highlight',
           scrollTo: { behavior: 'smooth', block: 'center' },
           cancelIcon: { enabled: true },
           // For the actions menu step, show without modal so users can click the buttons
-          when: step.stepId === 'table-actions-menu' ? {
+          when: stepId === 'table-actions-menu' ? {
             show: () => {
               // Remove modal overlay for this step to allow clicking
               const overlay = document.querySelector('.shepherd-modal-overlay-container');
@@ -440,12 +452,17 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
             }
           } : undefined,
         });
-      } else {
+      });
+    } else {
+      // Use hardcoded steps
+      filteredSteps.forEach((step: any, index: number) => {
+      // For the actions menu step, we'll handle it specially
         tour.addStep({
           ...step,
-          buttons: getButtons(index, step.stepId),
+          title: step.title || "Tour",
+          buttons: getButtons(index, step.id),
           // For the actions menu step, show without modal so users can click the buttons
-          when: step.stepId === 'table-actions-menu' ? {
+          when: step.id === 'table-actions-menu' ? {
             show: () => {
               // Remove modal overlay for this step to allow clicking
               const overlay = document.querySelector('.shepherd-modal-overlay-container');
@@ -462,8 +479,8 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
             }
           } : undefined,
         } as any);
-      }
-    });
+      });
+    }
 
     // Log tour step view event when steps are shown
     tour.on('show', (e: any) => {
@@ -471,10 +488,10 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
       const stepId = step.id;
 
       const stepIndex = isUsingAPI
-        ? stepsToUse.findIndex((s: any) => (s as TourStepFromAPI).on_click === stepId)
-        : stepsToUse.findIndex((s: any) => s.id === stepId);
+        ? filteredSteps.findIndex((s: any) => (s as TourStepFromAPI).on_click === stepId)
+        : filteredSteps.findIndex((s: any) => s.id === stepId);
 
-      const currentStep = stepsToUse[stepIndex] as TourStepFromAPI;
+      const currentStep = filteredSteps[stepIndex] as TourStepFromAPI;
       const currentStepKey = isUsingAPI ? currentStep?.on_click : currentStep?.id;
 
       logUserJourney({
@@ -490,17 +507,17 @@ const EmployeeDirectoryTour: React.FC<EmployeeDirectoryTourProps> = ({ onComplet
       localStorage.setItem('employeeDirectoryTourCompleted', 'true');
     });
 
-    // Start the tour after a short delay to ensure API data is loaded
+    // Start the tour after a delay to ensure DOM is ready
     const timer = setTimeout(() => {
       tour.start();
-    }, 1500);
+    }, 3000);
 
     return () => {
       clearTimeout(timer);
       tour.cancel();
       document.head.removeChild(style);
     };
-  }, [onComplete, tourStepsFromAPI]);
+  }, [onComplete, tourStepsFromAPI, loading]);
 
   return null;
 };

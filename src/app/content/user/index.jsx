@@ -315,8 +315,33 @@ const EmployeeDirectory = () => {
   }, []);
 
   const handleExport = useCallback(() => {
-    console.log('Export employees');
-  }, []);
+    // Export filtered employees to CSV
+    const exportData = sortedEmployees.map(emp => ({
+      'Full Name': emp.full_name,
+      'Email': emp.email,
+      'Mobile': emp.mobile,
+      'Department': emp.department_name,
+      'Job Role': emp.jobRole,
+      'Status': emp.status,
+      'Join Date': emp.join_Date,
+      'Skills': emp.skills?.map(s => s.name).join(', ') || ''
+    }));
+
+    const csvContent = [
+      Object.keys(exportData[0]).join(','),
+      ...exportData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'employees.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [sortedEmployees]);
 
   const handleBulkAssignTask = useCallback(() => {
     console.log('Bulk assign to', selectedEmployees.length, 'employees');
@@ -569,7 +594,7 @@ const EmployeeDirectory = () => {
   />
 
       {/* Tour Component */}
-      {showTour && <EmployeeDirectoryTour onComplete={handleTourComplete} />}
+      {showTour && <EmployeeDirectoryTour onComplete={handleTourComplete} loading={loading} />}
 
   {/* <QuickActionMenu /> */}
 </div>

@@ -26,7 +26,7 @@ const StatsSidebar = ({
   // const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   
   return (
-    <div className="space-y-6" id="stats-sidebar-overview">
+    <div className="space-y-6 stats-sidebar-overview">
       {/* Add User Modal */}
       {/* {isAddUserModalOpen && (
         <AddUserModal
