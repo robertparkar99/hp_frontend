@@ -651,7 +651,11 @@ export const useTourStepsFromAPI = (menuId: number = 182) => {
           } catch (e) {
             console.error('[CompetencyDashboardTour] Tour steps API error:', res.status);
           }
-          throw new Error(`Failed to fetch tour steps: ${res.status}`);
+          // Instead of throwing, set empty array and continue
+          console.warn('[CompetencyDashboardTour] API failed, using empty tour steps');
+          setTourStepsFromAPI([]);
+          setIsLoading(false);
+          return;
         }
 
         const json = await res.json();
