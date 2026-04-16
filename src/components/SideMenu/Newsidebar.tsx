@@ -844,10 +844,10 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
                 if (isCollapsed) {
                     setIsCollapsed(false);
                     setTimeout(() => {
-                        tourRef.current?.startTour();
+                        tourRef.current?.startTourFromActive(activeSection, activeSubItem, activeSubSubItem);
                     }, 300);
                 } else {
-                    tourRef.current.startTour();
+                    tourRef.current.startTourFromActive(activeSection, activeSubItem, activeSubSubItem);
                 }
             }
         };
@@ -856,7 +856,7 @@ export default function Sidebar({ mobileOpen, onClose, userSessionData }: Sideba
         return () => {
             window.removeEventListener('start-sidebar-tour', handleStartTour);
         };
-    }, [isCollapsed]);
+    }, [isCollapsed, activeSection, activeSubItem, activeSubSubItem]);
 
     const expandSidebar = () => setIsCollapsed(false);
     const expandSection = (sectionKey: string) => setOpen(o => ({ ...o, [sectionKey]: true }));

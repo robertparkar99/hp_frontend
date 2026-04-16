@@ -927,12 +927,11 @@ export class SidebarTourGuide {
         return descriptions[subSubItem.label] || 'Use this specific functionality.';
     }
 
-    public startTour(): void {
-        // Check if there's a paused state to resume from
+    public startTourFromActive(activeSection?: string, activeSubItem?: string, activeSubSubItem?: string): void {
+        // Check if there's a paused state to resume from first
         const savedState = this.loadTourState();
         const savedPausedStep = parseInt(localStorage.getItem(SidebarTourGuide.PAUSED_STEP_KEY) || '0', 10);
 
-        // Use saved paused step if available
         if (savedPausedStep > 0) {
             console.log('Found saved paused step:', savedPausedStep);
             this.startTourFromStep(savedPausedStep);
@@ -948,14 +947,13 @@ export class SidebarTourGuide {
         // Check if sidebar is active (expanded) before starting tour
         if (this.isSidebarActive && !this.isSidebarActive()) {
             console.log('Sidebar is not active (collapsed), delaying tour start');
-            // Try again after a delay when sidebar might be expanded
-            setTimeout(() => this.startTour(), 500);
+            setTimeout(() => this.startTourFromActive(activeSection, activeSubItem, activeSubSubItem), 500);
             return;
         }
 
         if (this.isActive && !this.isPaused) return;
 
-        console.log('Starting sidebar tour');
+        console.log('Starting sidebar tour from active section:', activeSection, activeSubItem, activeSubSubItem);
 
         // Log tour started journey event
         const { menuId, accessLink } = getPageInfo();
@@ -994,12 +992,10 @@ export class SidebarTourGuide {
 
         // Handle tour events
         this.tour.on('cancel', () => {
-            // Only mark as inactive if not paused
             if (!this.isPaused) {
                 this.isActive = false;
                 this.clearTourState();
 
-                // Log tour skipped journey event
                 const { menuId, accessLink } = getPageInfo();
                 logUserJourney({
                     eventType: "tour_skipped",
@@ -1013,10 +1009,48 @@ export class SidebarTourGuide {
         this.tour.on('show', this.handleShow);
         this.tour.on('hide', this.handleHide);
         this.tour.on('complete', this.handleComplete);
+
+        // Find the starting step index based on active states
+        let startStepIndex = 0; // Default to welcome (0)
+
+        if (activeSubSubItem) {
+            // Find subsub step
+            const stepIndex = steps.findIndex(step => step.id === `subsub-${activeSubSubItem}`);
+            if (stepIndex >= 0) startStepIndex = stepIndex;
+        } else if (activeSubItem) {
+            // Find sub step
+            const stepIndex = steps.findIndex(step => step.id === `sub-${activeSubItem}`);
+            if (stepIndex >= 0) startStepIndex = stepIndex;
+        } else if (activeSection) {
+            if (activeSection === '___dashboard___') {
+                const stepIndex = steps.findIndex(step => step.id === 'dashboard');
+                if (stepIndex >= 0) startStepIndex = stepIndex;
+            } else {
+                // Find section intro step
+                const stepIndex = steps.findIndex(step => step.id === `section-intro-${activeSection}`);
+                if (stepIndex >= 0) startStepIndex = stepIndex;
+            }
+        }
+
+        // If no active section found, start from dashboard instead of welcome
+        if (startStepIndex === 0) {
+            const dashboardIndex = steps.findIndex(step => step.id === 'dashboard');
+            if (dashboardIndex >= 0) startStepIndex = dashboardIndex;
+        }
+
+        console.log('Starting tour from step index:', startStepIndex);
+
         setTimeout(() => {
-            console.log('Calling tour.start()');
-            this.tour?.start();
+            if (startStepIndex > 0 && steps[startStepIndex]) {
+                this.tour?.show(steps[startStepIndex].id);
+            } else {
+                this.tour?.start();
+            }
         }, 100);
+    }
+
+    public startTour(): void {
+        this.startTourFromActive();
     }
 
     public pauseTour(): void {
