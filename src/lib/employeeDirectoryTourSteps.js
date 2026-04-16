@@ -130,22 +130,7 @@ export const employeeDirectoryTourSteps = [
     text: ['Click on "Edit Employee" or "Assign Task" buttons in the dropdown menu to navigate to those pages. The tour will continue on the respective page.']
   },
 
-  // Step 9: Stats Sidebar - Overview
-  {
-    id: 'stats-sidebar-overview',
-    attachTo: { element: '#stats-sidebar-overview', on: 'auto' },
-    beforeShowPromise: function() {
-      return new Promise(resolve => setTimeout(resolve, 500));
-    },
-    buttons: [],
-    highlightClass: 'highlight',
-    scrollTo: true,
-    cancelIcon: { enabled: true },
-    title: 'Quick Statistics',
-    text: ['View quick statistics about your workforce including active count and inactive count at a glance.']
-  },
-
-  // Step 10: Completion
+  // Step 9: Completion
   {
     id: 'tour-complete',
     attachTo: { element: '#employee-directory-header', on: 'bottom' },
