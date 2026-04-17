@@ -212,6 +212,8 @@ const handleBulkGenerate = async () => {
       },
       body: JSON.stringify({
         rows: validRows,
+        contentType: "jobrole",
+        content_quantity: "bulk",
       }),
     });
 
@@ -239,6 +241,8 @@ const handleBulkGenerate = async () => {
           sub_institute_id: sessionData.sub_institute_id,
           user_id: sessionData.user_id,
           created_by: sessionData.user_id,
+          contentType: "jobrole",
+          content_quantity: "bulk",
 
 
         }),
