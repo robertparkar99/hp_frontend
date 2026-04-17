@@ -23,7 +23,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   "Job Role Category": "jobRoleCategory",
   "Chapter": "chapterName",
   "Topic": "chapterName",
-  "Description": "chapterName",
+  "Description": "chapter_desc",
   "Content Type": "contentType",
   "Type": "contentType",
   "Question": "question",
@@ -147,7 +147,10 @@ export default function BulkContentGenerate({ sessionData }: BulkContentGenerate
         // Keep the Excel values if they exist, don't override to 0
         mappedRow.contentType = "none";
       }
-      
+
+      // Fallback for chapterName if missing
+      mappedRow.chapterName = mappedRow.chapterName || mappedRow.jobrole;
+
       return mappedRow;
     });
   }, [rawExcelData]);
