@@ -119,6 +119,7 @@ export default function Succession() {
   const [nextRole, setNextRole] = useState("Nurse Manager")
   const [sessionData, setSessionData] = useState<SessionData>({});
   const [loading, setLoading] = useState(true);
+  const [dataFetched, setDataFetched] = useState(false);
 
   // Load session data from localStorage
   useEffect(() => {
@@ -203,6 +204,7 @@ export default function Succession() {
         console.error('Error fetching career journey:', error)
       } finally {
         setLoading(false);
+        setDataFetched(true);
       }
     };
 
@@ -334,11 +336,11 @@ export default function Succession() {
                     </div>
                   </div>
                 </div>
-              ) : (
+              ) : dataFetched ? (
                 <div className="text-center py-8 text-slate-500">
                   No career journey data available
                 </div>
-              )}
+              ) : null}
 
               {careerSteps.length > 0 && (
                 <div className="mt-6 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">
