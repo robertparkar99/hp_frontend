@@ -394,7 +394,7 @@ export default function Succession() {
                 <Sparkles className="h-5 w-5 text-blue-500" />
                 Your Career Journey
               </CardTitle>
-              <p className="text-sm text-slate-500">Step-by-step progression based on role hierarchy</p>
+
             </CardHeader>
             <CardContent className="p-4 sm:p-5">
               {careerLoading ? (
@@ -425,7 +425,22 @@ export default function Succession() {
                       </div>
                       <div className="relative flex items-start justify-between gap-3">
                         {careerSteps.map((step, index) => (
-                          <div key={step.role} className={`flex w-[130px] flex-col items-center sm:w-[140px] cursor-pointer ${step.id === selectedRoleId ? 'ring-2 ring-blue-500 rounded-2xl' : ''}`} onClick={() => { setSelectedRoleId(step.id); setSelectedRole({ role: step.role, level: step.level, id: step.id, readiness: step.readiness }); }}>
+                          <div
+                            key={step.role}
+                            className={`flex w-[130px] flex-col items-center cursor-pointer transition-all duration-300 sm:w-[140px] ${step.id === selectedRoleId
+                                ? "scale-105 rounded-2xl"
+                                : "scale-95 opacity-80"
+                              }`}
+                            onClick={() => {
+                              setSelectedRoleId(step.id);
+                              setSelectedRole({
+                                role: step.role,
+                                level: step.level,
+                                id: step.id,
+                                readiness: step.readiness,
+                              });
+                            }}
+                          >
                             <div className={`z-10 flex h-10 w-10 items-center justify-center rounded-full border-4 border-white text-sm font-bold text-white shadow-sm ${index % 6 === 0 ? "bg-blue-500" :
                               index % 6 === 1 ? "bg-emerald-500" :
                                 index % 6 === 2 ? "bg-orange-500" :
@@ -474,11 +489,22 @@ export default function Succession() {
               {careerSteps.length > 0 && (
                 <div className="mt-6 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm">
-                      <Sparkles className="h-4 w-4" />
-                    </div>
-                    <div className="text-sm text-slate-700">
-                      <span className="font-semibold text-slate-900">Total Journey:</span> {careerSteps.length - 1} progression steps from current role to top leadership
+
+
+                    {/* Content */}
+                    <div className="flex-1">
+                      <div className="text-sm text-slate-700">
+                        <span className="font-semibold text-slate-900">
+                          Total Journey:
+                        </span>{" "}
+                        {careerSteps.length - 1} progression steps from current role to top leadership
+                      </div>
+
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        Step-by-step progression based on role hierarchy. Click any step to
+                        view its required skills, skill gaps, and readiness in the Development
+                        Focus Areas section.
+                      </p>
                     </div>
                   </div>
                 </div>
