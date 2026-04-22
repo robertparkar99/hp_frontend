@@ -2,7 +2,7 @@
 import Header from "@/components/Header/Header";
 import Sidebar from "@/components/SideMenu/Newsidebar";
 import LearningCatalog from "@/app/content/LMS/dashboard";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -38,7 +38,9 @@ export default function HomePage() {
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
       <div className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-[304px]" : "md:ml-24"} ml-0 p-4 md:p-6`}>
-        <LearningCatalog />
+        <Suspense fallback={<div>Loading...</div>}>
+          <LearningCatalog />
+        </Suspense>
       </div>
     </>
   );

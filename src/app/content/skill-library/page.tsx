@@ -1,7 +1,8 @@
 //src/app/content/skill-library/page.tsx
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import AddDialog from "@/components/skillComponent/addDialouge";
@@ -74,9 +75,10 @@ type Department = {
 
 interface PageProps {
   showDetailTour?: boolean | { show: boolean; onComplete?: () => void };
+  initialSearch?: string;
 }
 
-export default function Page({ showDetailTour = false }: PageProps) {
+function PageContent({ showDetailTour = false, initialSearch = '' }: PageProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [userSkills, setUserSkills] = useState<Skill[]>([]);
   const [jobRoleSkills, setJobRoleSkills] = useState<JobRoleSkill[]>([]);
@@ -161,6 +163,15 @@ export default function Page({ showDetailTour = false }: PageProps) {
   const [showTour, setShowTour] = useState(false);
   const [tourStepsFromAPI, setTourStepsFromAPI] = useState<any[]>([]);
   const [isLoadingTourSteps, setIsLoadingTourSteps] = useState(true);
+  const searchParams = useSearchParams();
+
+  // Set searchTerm from query param
+  useEffect(() => {
+    const search = searchParams.get('search');
+    if (search) {
+      setSearchTerm(search);
+    }
+  }, [searchParams]);
 
   // Toggle function for the actions menu
   const toggleActionsMenu = () => {
@@ -1337,5 +1348,22 @@ export default function Page({ showDetailTour = false }: PageProps) {
         )}
       </div>
     </>
+  );
+}
+
+// Wrapper component that uses useSearchParams - wrapped in Suspense
+function PageWithSearchParams({ showDetailTour = false }: PageProps) {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+
+  return <PageContent showDetailTour={showDetailTour} initialSearch={initialSearch} />;
+}
+
+// Export the Page component wrapped in Suspense
+export default function Page({ showDetailTour = false }: PageProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PageWithSearchParams showDetailTour={showDetailTour} />
+    </Suspense>
   );
 }

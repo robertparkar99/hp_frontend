@@ -1,14 +1,14 @@
 import { useEffect, useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
-  ArrowRight,
+  ChevronRight,
+  ChevronDown,
   Award,
   Briefcase,
-  Clock3,
-  CheckCircle2,
-  AlertCircle,
   GraduationCap,
   Landmark,
   Link2,
@@ -17,6 +17,7 @@ import {
   Target,
   TrendingUp,
   Users,
+  ArrowRight
 } from "lucide-react"
 
 interface SessionData {
@@ -37,6 +38,19 @@ interface SkillData {
   user_rating: string;
   status: string;
 }
+
+interface CourseRecommendation {
+  type: 'course';
+  skill: string;
+  courses: any[];
+}
+
+interface SuggestionRecommendation {
+  type: 'suggestion';
+  skill: string;
+}
+
+type Recommendation = CourseRecommendation | SuggestionRecommendation;
 
 
 
@@ -100,6 +114,7 @@ const getToneForIndex = (index: number) => {
 }
 
 export default function Succession() {
+  const router = useRouter()
   const [userName, setUserName] = useState("John Doe");
   const [department, setDepartment] = useState("Nursing");
   const [showLearningPlan, setShowLearningPlan] = useState(false)
@@ -117,7 +132,10 @@ export default function Succession() {
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState({ role: "", level: "", id: 0, readiness: 100 });
+  const [selectedSource, setSelectedSource] = useState<"career" | "lateral">("career");
   const [skillsLoading, setSkillsLoading] = useState(false);
+  const [lmsCourses, setLmsCourses] = useState<any[]>([]);
+  const [showCourseDetails, setShowCourseDetails] = useState(false);
 
   // Load session data from localStorage
   useEffect(() => {
@@ -185,6 +203,7 @@ export default function Succession() {
           }
           const fullCareerSteps = [currentStep, ...vertical]
           const lateral = (data.lateral_data || []).map((item: any, index: number) => ({
+            id: item.jobrole_id || item.id,
             role: item.role_name,
             level: item.job_level,
             icon: getIconForRole(item.role_name),
@@ -203,6 +222,61 @@ export default function Succession() {
             const totalReadiness = vertical.reduce((sum: number, item: any) => sum + item.readiness, 0)
             setOverallReadiness(Math.round(totalReadiness / vertical.length))
           }
+
+          // Compute readiness for next role based on skill matching
+          if (vertical.length > 0) {
+            const nextRoleId = vertical[0].id
+            const nextJobroleUrl = `${sessionData.url}/get-kaba?sub_institute_id=${sessionData.sub_institute_id}&type=jobrole&type_id=${nextRoleId}`;
+            const ratingsUrl = `${sessionData.url}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${sessionData.user_id}&filters[jobrole_id]=${data.current_jobrole.id}`;
+
+            try {
+              const [nextJobroleResponse, ratingsResponse] = await Promise.all([
+                fetch(nextJobroleUrl, {
+                  headers: {
+                    Authorization: `Bearer ${sessionData.token}`
+                  },
+                }),
+                fetch(ratingsUrl, {
+                  headers: {
+                    Authorization: `Bearer ${sessionData.token}`
+                  },
+                })
+              ]);
+
+              const nextJobroleData = await nextJobroleResponse.json();
+              const ratingsData = await ratingsResponse.json();
+
+              const userRatingsMap: { [key: string]: number } = {};
+              if (ratingsData && Array.isArray(ratingsData) && ratingsData.length > 0 && ratingsData[0].skill_ids) {
+                let parsedSkillIds = {};
+                if (typeof ratingsData[0].skill_ids === "string") {
+                  parsedSkillIds = JSON.parse(ratingsData[0].skill_ids);
+                } else {
+                  parsedSkillIds = ratingsData[0].skill_ids;
+                }
+                Object.entries(parsedSkillIds).forEach(([skillId, rating]) => {
+                  userRatingsMap[skillId] = Number(rating);
+                });
+              }
+
+              let totalCompleted = 0;
+              let totalRequired = 0;
+              (nextJobroleData.skill || []).forEach((skill: any) => {
+                const required = Number(skill.proficiency_level);
+                const completed = userRatingsMap[skill.id.toString()] || 0;
+                totalCompleted += completed;
+                totalRequired += required;
+              });
+
+              const calculatedReadiness = totalRequired > 0 ? Math.round((totalCompleted / totalRequired) * 100) : 0;
+
+              // Update the readiness for the next role
+              fullCareerSteps[1].readiness = calculatedReadiness;
+              setCareerSteps([...fullCareerSteps]);
+            } catch (error) {
+              console.error('Error computing readiness for next role:', error);
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching career journey:', error)
@@ -218,19 +292,19 @@ export default function Succession() {
 
   // Fetch development skills data
   useEffect(() => {
-    if (!sessionData.url || !sessionData.sub_institute_id || !sessionData.user_id || !selectedRoleId) {
+    if (!sessionData.url || !sessionData.sub_institute_id || !sessionData.user_id || !selectedRoleId || !currentRole.id) {
       return;
     }
 
     const fetchDevelopmentSkills = async () => {
       setSkillsLoading(true);
       try {
-        // Fetch job role skills and user ratings in parallel
+        // Fetch selected job role skills and current job role user ratings in parallel
         const jobroleUrl = `${sessionData.url}/get-kaba?sub_institute_id=${sessionData.sub_institute_id}&type=jobrole&type_id=${selectedRoleId}`;
-        const ratingsUrl = `${sessionData.url}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${sessionData.user_id}&filters[jobrole_id]=${selectedRoleId}`;
+        const ratingsUrl = `${sessionData.url}/table_data?table=user_rating_details&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[user_id]=${sessionData.user_id}&filters[jobrole_id]=${currentRole.id}`;
 
-        console.log('Fetching job role skills from:', jobroleUrl);
-        console.log('Fetching user ratings from:', ratingsUrl);
+        console.log('Fetching selected job role skills from:', jobroleUrl);
+        console.log('Fetching current job role user ratings from:', ratingsUrl);
 
         const [jobroleResponse, ratingsResponse] = await Promise.all([
           fetch(jobroleUrl, {
@@ -248,9 +322,9 @@ export default function Succession() {
         const jobroleData = await jobroleResponse.json();
         const ratingsData = await ratingsResponse.json();
 
-        console.log("ratingsData =>", ratingsData);
+        console.log("current ratingsData =>", ratingsData);
 
-        // Correct user rating mapping
+        // Correct user rating mapping from current role
         const userRatingsMap: { [key: string]: string } = {};
 
         if (
@@ -275,13 +349,13 @@ export default function Succession() {
 
         console.log("userRatingsMap =>", userRatingsMap);
 
-        // Process skills
+        // Process skills for selected role, using current role ratings as baseline
         const skills: SkillData[] = (jobroleData.skill || []).map((skill: any) => {
-          const userRating = userRatingsMap[skill.id.toString()];
+          const userRating = userRatingsMap[skill.id.toString()] || 'Not Rated';
+          const required = parseInt(skill.proficiency_level);
+          const user = userRating !== 'Not Rated' ? parseInt(userRating) : 0;
           let status = 'Pending';
-          if (userRating) {
-            const required = parseInt(skill.proficiency_level);
-            const user = parseInt(userRating);
+          if (userRating !== 'Not Rated') {
             status = user >= required ? 'Completed' : 'In Progress';
           }
           return {
@@ -291,12 +365,20 @@ export default function Succession() {
             title: skill.title,
             description: skill.description,
             proficiency_level: skill.proficiency_level,
-            user_rating: userRating || 'Not Rated',
+            user_rating: userRating,
             status,
           };
         });
 
         setDevelopmentSkills(skills);
+
+        // Compute readiness for selected role (except current role which stays 100)
+        if (selectedRoleId !== currentRole.id) {
+          const totalCompleted = skills.reduce((sum, skill) => sum + (skill.user_rating !== "Not Rated" ? Number(skill.user_rating) : 0), 0);
+          const totalRequired = skills.reduce((sum, skill) => sum + Number(skill.proficiency_level), 0);
+          const calculatedReadiness = totalRequired > 0 ? Math.round((totalCompleted / totalRequired) * 100) : 0;
+          setSelectedRole(prev => ({ ...prev, readiness: calculatedReadiness }));
+        }
       } catch (error) {
         console.error('Error fetching development skills:', error);
       } finally {
@@ -305,7 +387,37 @@ export default function Succession() {
     };
 
     fetchDevelopmentSkills();
-  }, [sessionData.url, sessionData.sub_institute_id, sessionData.user_id, sessionData.token, selectedRoleId]);
+  }, [sessionData.url, sessionData.sub_institute_id, sessionData.user_id, sessionData.token, selectedRoleId, currentRole.id]);
+
+  // Fetch LMS courses
+  useEffect(() => {
+    if (!sessionData.url || !sessionData.sub_institute_id || !sessionData.user_id) {
+      return;
+    }
+
+    const fetchLmsCourses = async () => {
+      try {
+        const url = `${sessionData.url}/lms/course_master?type=API&sub_institute_id=${sessionData.sub_institute_id}&syear=2025&user_id=${sessionData.user_id}&user_profile_name=Admin`;
+        console.log('Fetching LMS courses from:', url);
+
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${sessionData.token}`
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.message === "SUCCESS" && data.lms_subject?.Skill) {
+          setLmsCourses(data.lms_subject.Skill);
+        }
+      } catch (error) {
+        console.error('Error fetching LMS courses:', error);
+      }
+    };
+
+    fetchLmsCourses();
+  }, [sessionData.url, sessionData.sub_institute_id, sessionData.user_id, sessionData.token]);
 
   // Memoize skill statistics to avoid recalculating on every render
   const skillStats = useMemo(() => ({
@@ -315,27 +427,31 @@ export default function Succession() {
     pending: developmentSkills.filter(s => s.status === "Pending").length,
   }), [developmentSkills]);
 
-  // Memoize progress summary data
-  const progressSummary = useMemo(() => {
-    const completedSkills = developmentSkills.filter(s => s.status === "Completed");
+  // Memoize skill improvement recommendations
+  const skillRecommendations = useMemo(() => {
+    const pendingSkills = developmentSkills.filter(s => s.status === "Pending");
     const inProgressSkills = developmentSkills.filter(s => s.status === "In Progress");
+    const relevantSkills = [...pendingSkills, ...inProgressSkills];
 
-    // Strengths: Get unique categories from completed skills
-    const strengthsCategories = [...new Set(completedSkills.map(s => s.category).filter(Boolean))].slice(0, 2);
-    const strengths = strengthsCategories.length > 0 ? strengthsCategories.join(', ') : 'Building foundation skills';
+    // Courses: For each relevant skill, check for LMS course matches
+    const courseRecommendations: Recommendation[] = relevantSkills.map(skill => {
+      const matchingCourses = lmsCourses.filter(course => course.subject_name === skill.title);
+      if (matchingCourses.length > 0) {
+        return { type: 'course' as const, skill: skill.title, courses: matchingCourses };
+      } else {
+        return { type: 'suggestion' as const, skill: skill.title };
+      }
+    });
 
-    // Focus: Get unique categories from in-progress skills
-    const focusCategories = [...new Set(inProgressSkills.map(s => s.category).filter(Boolean))].slice(0, 2);
-    const focus = focusCategories.length > 0 ? focusCategories.join(', ') : 'Skill development in progress';
+    const courseRecs = courseRecommendations.filter(rec => rec.type === 'course');
+    const coursesCount = courseRecs.length;
+    const courseSkills = courseRecs.map(rec => rec.skill).slice(0, 2).join(' and ');
+    const description = courseSkills ? `Courses for ${courseSkills} will close your top skill gaps.` : 'Recommended courses will help close your skill gaps.';
 
-    // Estimated time: 6-9 months per pending/in-progress skill
-    const pendingCount = skillStats.pending + skillStats.inProgress;
-    const minMonths = pendingCount * 6;
-    const maxMonths = pendingCount * 9;
-    const estimatedTime = pendingCount > 0 ? `${minMonths}-${maxMonths} Months` : 'Ready for next level';
-
-    return { strengths, focus, estimatedTime };
-  }, [developmentSkills, skillStats]);
+    return {
+      courses: { recommendations: courseRecommendations, count: coursesCount, description }
+    };
+  }, [developmentSkills, lmsCourses]);
 
   if (loading) {
     return (
@@ -441,6 +557,7 @@ export default function Succession() {
                                 id: step.id,
                                 readiness: step.readiness,
                               });
+                              setSelectedSource("career");
                             }}
                           >
                             <div className={`z-10 flex h-10 w-10 items-center justify-center rounded-full border-4 border-white text-sm font-bold text-white shadow-sm ${index % 6 === 0 ? "bg-blue-500" :
@@ -467,11 +584,11 @@ export default function Succession() {
                               </div>
                               <div className="mt-1 text-sm font-bold leading-tight text-slate-900">{step.role}</div>
                               <div className="mt-1 text-xs font-medium text-slate-500">{step.level}</div>
-                              <Badge className={`mt-3 rounded-full border px-2.5 py-1 text-xs font-semibold ${index % 6 === 0 ? "border-blue-200 bg-blue-100 text-blue-700" :
-                                index % 6 === 1 ? "border-emerald-200 bg-emerald-100 text-emerald-700" :
-                                  index % 6 === 2 ? "border-orange-200 bg-orange-100 text-orange-700" :
-                                    index % 6 === 3 ? "border-violet-200 bg-violet-100 text-violet-700" :
-                                      index % 6 === 4 ? "border-pink-200 bg-pink-100 text-pink-700" : "border-cyan-200 bg-cyan-100 text-cyan-700"
+                              <Badge className={`mt-3 rounded-full border px-2.5 py-1 text-xs font-semibold ${index % 6 === 0 ? "border-blue-200 bg-blue-100 text-blue-700 hover:bg-blue-200 hover:border-blue-300" :
+                                index % 6 === 1 ? "border-emerald-200 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 hover:border-emerald-300" :
+                                  index % 6 === 2 ? "border-orange-200 bg-orange-100 text-orange-700 hover:bg-orange-200 hover:border-orange-300" :
+                                    index % 6 === 3 ? "border-violet-200 bg-violet-100 text-violet-700 hover:bg-violet-200 hover:border-violet-300" :
+                                      index % 6 === 4 ? "border-pink-200 bg-pink-100 text-pink-700 hover:bg-pink-200 hover:border-pink-300" : "border-cyan-200 bg-cyan-100 text-cyan-700 hover:bg-cyan-200 hover:border-cyan-300"
                                 }`}>
                                 {step.readiness}% Ready
                               </Badge>
@@ -524,6 +641,9 @@ export default function Succession() {
               <p className="text-sm text-slate-500">
                 Skill readiness for {selectedRole.role} ({selectedRole.level})
               </p>
+              <p className="text-sm text-slate-500">
+                Source: {selectedSource === "career" ? "Career Journey Progression" : "Alternative (Lateral) Opportunity"}
+              </p>
             </CardHeader>
 
             <CardContent className="p-5 space-y-5">
@@ -572,12 +692,12 @@ export default function Succession() {
                         .slice(0, showAllSkills ? developmentSkills.length : 2)
                         .map((skill) => {
                           const required = Number(skill.proficiency_level)
-                          const user = skill.user_rating !== "Not Rated"
+                          const completedFromCurrent = skill.user_rating !== "Not Rated"
                             ? Number(skill.user_rating)
                             : 0
 
-                          const progress = Math.min((user / required) * 100, 100)
-                          const gap = required - user > 0 ? required - user : 0
+                          const remainingGap = Math.max(0, required - completedFromCurrent)
+                          const progress = Math.min((completedFromCurrent / required) * 100, 100)
 
                           const statusColor =
                             skill.status === "Completed"
@@ -588,10 +708,10 @@ export default function Succession() {
 
                           const badgeColor =
                             skill.status === "Completed"
-                              ? "bg-emerald-100 text-emerald-700"
+                              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 hover:border-emerald-300"
                               : skill.status === "In Progress"
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-slate-100 text-slate-700"
+                                ? "bg-amber-100 text-amber-700 hover:bg-amber-200 hover:border-amber-300"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:border-slate-300"
 
                           return (
                             <div
@@ -621,16 +741,16 @@ export default function Succession() {
                                 </div>
 
                                 <div>
-                                  <p className="text-xs text-slate-500">Your Rating</p>
+                                  <p className="text-xs text-slate-500">Completed from Current</p>
                                   <p className="font-semibold">
-                                    {skill.user_rating}
+                                    {completedFromCurrent}
                                   </p>
                                 </div>
 
                                 <div>
-                                  <p className="text-xs text-slate-500">Skill Gap</p>
+                                  <p className="text-xs text-slate-500">Remaining Gap</p>
                                   <p className="font-semibold text-red-500">
-                                    {gap}
+                                    {remainingGap}
                                   </p>
                                 </div>
 
@@ -724,6 +844,16 @@ export default function Succession() {
                       <div
                         key={opp.role}
                         className={`flex min-h-[74px] cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-200 ${opp.tone.card}`}
+                        onClick={() => {
+                          setSelectedRoleId(opp.id);
+                          setSelectedRole({
+                            role: opp.role,
+                            level: opp.level,
+                            id: opp.id,
+                            readiness: 0,
+                          });
+                          setSelectedSource("lateral");
+                        }}
                       >
                         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${opp.tone.icon}`}>
                           <Icon className="h-5 w-5" />
@@ -750,62 +880,26 @@ export default function Succession() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100 text-teal-600">
                   <TrendingUp className="h-4 w-4" />
                 </div>
-                Progress Summary
+                Skill Improvement Recommendations
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-5">
-              <div className="rounded-2xl bg-slate-50 p-3 sm:p-4">
-                <div className="grid gap-3 lg:grid-cols-[0.92fr_1.08fr]">
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3.5 shadow-sm">
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-slate-500">Readiness for</div>
-                      <div className="text-xs font-medium text-slate-500">Selected Role</div>
+              <div className="space-y-4">
+                {/* Complete Recommended Courses */}
+                <div className="rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => setShowCourseDetails(!showCourseDetails)}>
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
+                      <GraduationCap className="h-6 w-6" />
                     </div>
-
-                    <div className="relative h-14 w-14 shrink-0">
-                      <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 120 120">
-                        <circle cx="60" cy="60" r="48" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-slate-200" />
-                        <circle
-                          cx="60"
-                          cy="60"
-                          r="48"
-                          stroke="currentColor"
-                          strokeWidth="10"
-                          fill="transparent"
-                          strokeDasharray={301.59}
-                          strokeDashoffset={301.59 * (1 - selectedRole.readiness / 100)}
-                          className="text-teal-500"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-slate-900">{selectedRole.readiness}%</div>
-                        </div>
-                      </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-slate-900">Complete Recommended Courses</div>
+                      <p className="text-sm text-slate-700 mt-1">{skillRecommendations.courses.description}</p>
                     </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3.5 shadow-sm">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-slate-700">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                        </div>
-                        <span><span className="font-semibold text-slate-900">Strengths:</span> {progressSummary.strengths}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-700">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-white">
-                          <AlertCircle className="h-3.5 w-3.5" />
-                        </div>
-                        <span><span className="font-semibold text-slate-900">Focus:</span> {progressSummary.focus}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-700">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white">
-                          <Clock3 className="h-3.5 w-3.5" />
-                        </div>
-                        <span><span className="font-semibold text-slate-900">Estimated Time:</span> {progressSummary.estimatedTime}</span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-200 hover:border-green-700">
+                        {skillRecommendations.courses.count} Courses
+                      </Badge>
+                      {showCourseDetails ? <ChevronDown className="h-4 w-4 text-green-600" /> : <ChevronRight className="h-4 w-4 text-green-600" />}
                     </div>
                   </div>
                 </div>
@@ -813,6 +907,57 @@ export default function Succession() {
             </CardContent>
           </Card>
         </section>
+
+        {showCourseDetails && (
+          <section className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-[0_8px_22px_rgba(15,23,42,0.07)]">
+            <CardHeader className="border-b border-slate-100 pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                  <GraduationCap className="h-4 w-4" />
+                </div>
+                Skill-wise Course Recommendations
+              </CardTitle>
+              <p className="text-sm text-slate-500">Detailed course recommendations based on your pending and in-progress skills</p>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-5">
+              <div className="space-y-4">
+                {skillRecommendations.courses.recommendations.map((rec, index) => (
+                  <div key={index} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm font-medium text-slate-900">{rec.skill}</div>
+                    {rec.type === 'course' ? (
+                      <div className="mt-2">
+                        <div className="text-sm text-slate-700 mb-2">Available Course(s):</div>
+                        <div className="flex flex-wrap gap-2">
+                           {rec.courses.map((course, idx) => (
+                             <Link
+                               key={idx}
+                               href={`/content/LMS?search=${encodeURIComponent(course.subject_name)}`}
+                               className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200 transition-colors"
+                             >
+                               {course.subject_name}
+                             </Link>
+                           ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-2">
+                        <p className="text-sm text-slate-700 mb-2">
+                          Course not available for this skill. Suggested to create a new learning course for: <span className="font-medium">{rec.skill}</span>
+                        </p>
+                        <button
+                          onClick={() => router.push('/content/Libraries/skillLibrary?search=' + encodeURIComponent(rec.skill))}
+                          className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-200 transition-colors"
+                        >
+                          Create Course
+                        </button>
+                        </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </section>
+        )}
       </div>
     </div>
   )
