@@ -75,29 +75,11 @@ const Index = () => {
       icon: Target,
     },
     {
-      title: "Offer Acceptance Rate",
-      change: "+2%",
-      trend: "up",
-      icon: Award,
-    },
-    {
       title: "Candidate Drop-off Rate",
       change: "-4%",
       trend: "down",
       icon: Users,
-    },
-    {
-      title: "Team Performance Trend",
-      change: "+0.3",
-      trend: "up",
-      icon: TrendingUp,
-    },
-    {
-      title: "Avg Time-to-Fill",
-      change: "-3 days",
-      trend: "down",
-      icon: Clock,
-    },
+    }
   ];
 
 
@@ -349,7 +331,7 @@ const Index = () => {
             Key Performance Indicators
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-5">
             {kpiData.map((kpi, index) => (
               <Card
                 key={index}
@@ -365,7 +347,7 @@ const Index = () => {
                         {kpi.value}
                       </p>
 
-                      <div className="flex items-center gap-1 mt-2">
+                      {/* <div className="flex items-center gap-1 mt-2">
                         {kpi.trend === "up" ? (
                           <TrendingUp className="h-3.5 w-3.5 text-green-600" />
                         ) : (
@@ -380,7 +362,7 @@ const Index = () => {
                         <span className="text-xs text-muted-foreground ml-1">
                           vs last period
                         </span>
-                      </div>
+                      </div> */}
                     </div>
 
                     <div className="p-2.5 bg-primary/10 rounded-xl">
