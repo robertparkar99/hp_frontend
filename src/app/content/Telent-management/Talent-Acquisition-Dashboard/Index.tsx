@@ -83,121 +83,146 @@ const Index = () => {
   ];
 
 
-  const fetchDropoffData = async () => {
-    try {
-      const response = await fetch(
-        `${sessionData.APP_URL}/api/talent-acquisition/dropoff?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Dropoff data:', result.data);
-        setDropoffData(Array.isArray(result.data) ? result.data : []);
-      } else {
-        // Keep default data if API fails
-        console.warn("Failed to fetch dropoff data");
+  // ✅ Dropoff API FIX
+const fetchDropoffData = async () => {
+  try {
+    const response = await fetch(
+      `${sessionData.APP_URL}/api/talent-acquisition/dropoff`,
+      {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${sessionData.token}`, // ✅ ADDED
+        },
+        body: JSON.stringify({
+          "type": "API",
+          // ❌ token removed
+          "sub_institute_id": sessionData.sub_institute_id,
+        }),
       }
-    } catch (error) {
-      console.warn("Error fetching dropoff data:", error);
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Dropoff data:', result.data);
+      setDropoffData(Array.isArray(result.data) ? result.data : []);
     }
-  };
+  } catch (error) {
+    console.warn("Error fetching dropoff data:", error);
+  }
+};
 
-  const fetchFunnelData = async () => {
-    try {
-      const response = await fetch(
-        `${sessionData.APP_URL}/api/talent-acquisition/funnel?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Funnel data:', result.data);
-        const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
-        setFunnelData(
-          Array.isArray(result.data)
-            ? result.data.map((item: any, index: number) => ({
+// ✅ Funnel API FIX
+const fetchFunnelData = async () => {
+  try {
+    const response = await fetch(
+      `${sessionData.APP_URL}/api/talent-acquisition/funnel`,
+      {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${sessionData.token}`, // ✅ ADDED
+        },
+        body: JSON.stringify({
+          "type": "API",
+          // ❌ token removed
+          "sub_institute_id": sessionData.sub_institute_id,
+        }),
+      }
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Funnel data:', result.data);
+
+      const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+
+      setFunnelData(
+        Array.isArray(result.data)
+          ? result.data.map((item: any, index: number) => ({
               ...item,
               fill: item.fill || colors[index % colors.length],
             }))
-            : []
-        );
-      } else {
-        // Keep default data if API fails
-        console.warn("Failed to fetch funnel data");
-      }
-    } catch (error) {
-      console.warn("Error fetching funnel data:", error);
-    }
-  };
-
-  const fetchKpiData = async () => {
-    try {
-      const response = await fetch(
-        `${sessionData.APP_URL}/api/talent-acquisition/kpis?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+          : []
       );
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('KPI data:', result);
-        // Update the structure with API values
-        const updatedKpiData = kpiStructure.map(kpi => {
-          if (kpi.title === "Open Positions") {
-            return { ...kpi, value: result.open_positions.toString() };
-          } else if (kpi.title === "Interview-to-Offer Ratio") {
-            return { ...kpi, value: result.interview_to_offer_ratio.toString() };
-          } else if (kpi.title === "Candidate Drop-off Rate") {
-            return { ...kpi, value: result.drop_off_rate.toFixed(2) };
-          }
-          return { ...kpi, value: "N/A" };
-        });
-        setKpiData(updatedKpiData);
-      } else {
-        console.warn("Failed to fetch KPI data");
-        setKpiData(kpiStructure.map(k => ({ ...k, value: "N/A" })));
-      }
-    } catch (error) {
-      console.warn("Error fetching KPI data:", error);
-      setKpiData(kpiStructure.map(k => ({ ...k, value: "Error" })));
     }
-  };
+  } catch (error) {
+    console.warn("Error fetching funnel data:", error);
+  }
+};
 
-  const fetchRequisitionData = async () => {
-    try {
-      const response = await fetch(
-        `${sessionData.APP_URL}/api/talent-acquisition/requisitions?page=1&limit=10&department=all-dept&location=all-loc&timePeriod=monthly&jobLevel=all-level&diversity=all-gender&status=active&sortBy=age&order=desc&type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
+
+// ✅ KPI API FIX (ONLY Bearer added)
+const fetchKpiData = async () => {
+  try {
+    const response = await fetch(
+      `${sessionData.APP_URL}/api/talent-acquisition/kpis`,
+      {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${sessionData.token}`, // 🔥 FIXED
+        },
+        body: JSON.stringify({
+          "type": "API",
+          "sub_institute_id": sessionData.sub_institute_id,
+        }),
+      }
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('KPI data:', result);
+
+      const updatedKpiData = kpiStructure.map(kpi => {
+        if (kpi.title === "Open Positions") {
+          return { ...kpi, value: result.open_positions.toString() };
+        } else if (kpi.title === "Interview-to-Offer Ratio") {
+          return { ...kpi, value: result.interview_to_offer_ratio.toString() };
+        } else if (kpi.title === "Candidate Drop-off Rate") {
+          return { ...kpi, value: result.drop_off_rate.toFixed(2) };
         }
-      );
+        return { ...kpi, value: "N/A" };
+      });
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Requisition data:', result.data);
-        setRequisitionData(Array.isArray(result.data) ? result.data : []);
-      } else {
-        // Keep default data if API fails
-        console.warn("Failed to fetch requisition data");
-      }
-    } catch (error) {
-      console.warn("Error fetching requisition data:", error);
+      setKpiData(updatedKpiData);
     }
-  };
+  } catch (error) {
+    console.warn("Error fetching KPI data:", error);
+  }
+};
+
+
+// ✅ Requisition API FIX
+const fetchRequisitionData = async () => {
+  try {
+    const response = await fetch(
+      `${sessionData.APP_URL}/api/talent-acquisition/requisitions?page=1&limit=10&department=all-dept&location=all-loc&timePeriod=monthly&jobLevel=all-level&diversity=all-gender&status=active&sortBy=age&order=desc`,
+      {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${sessionData.token}`, // ✅ ADDED
+        },
+        body: JSON.stringify({
+          "type": "API",
+          // ❌ token removed
+          "sub_institute_id": sessionData.sub_institute_id,
+        }),
+      }
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Requisition data:', result.data);
+      setRequisitionData(Array.isArray(result.data) ? result.data : []);
+    }
+  } catch (error) {
+    console.warn("Error fetching requisition data:", error);
+  }
+};
+
 
   useEffect(() => {
     if (!sessionData) {
