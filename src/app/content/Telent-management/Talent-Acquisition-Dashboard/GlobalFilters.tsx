@@ -10,7 +10,7 @@ export const GlobalFilters = () => {
           <Filter className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold">Global Filters</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
           <Select defaultValue="all-dept">
             <SelectTrigger>
               <SelectValue placeholder="Department" />
@@ -25,15 +25,7 @@ export const GlobalFilters = () => {
           </Select>
 
           <Select defaultValue="all-loc">
-            <SelectTrigger>
-              <SelectValue placeholder="Location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all-loc">All Locations</SelectItem>
-              <SelectItem value="us">United States</SelectItem>
-              <SelectItem value="uk">United Kingdom</SelectItem>
-              <SelectItem value="asia">Asia Pacific</SelectItem>
-            </SelectContent>
+            
           </Select>
 
           <Select defaultValue="monthly">
@@ -60,29 +52,7 @@ export const GlobalFilters = () => {
             </SelectContent>
           </Select>
 
-          <Select defaultValue="all-gender">
-            <SelectTrigger>
-              <SelectValue placeholder="Diversity" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all-gender">All Categories</SelectItem>
-              <SelectItem value="gender">Gender</SelectItem>
-              <SelectItem value="ethnicity">Ethnicity</SelectItem>
-              <SelectItem value="age">Age Group</SelectItem>
-            </SelectContent>
-          </Select>
 
-          <Select defaultValue="active">
-            <SelectTrigger>
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="onboarding">Onboarding</SelectItem>
-              <SelectItem value="terminated">Terminated</SelectItem>
-              <SelectItem value="all">All Status</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </CardContent>
     </Card>
