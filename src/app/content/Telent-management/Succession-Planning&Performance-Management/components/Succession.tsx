@@ -101,6 +101,7 @@ const getToneForIndex = (index: number) => {
 
 export default function Succession() {
   const [userName, setUserName] = useState("John Doe");
+  const [department, setDepartment] = useState("Nursing");
   const [showLearningPlan, setShowLearningPlan] = useState(false)
   const [careerSteps, setCareerSteps] = useState<any[]>([])
   const [lateralOpportunities, setLateralOpportunities] = useState<any[]>([])
@@ -164,6 +165,7 @@ export default function Succession() {
           // Set user name from API response
           if (data.user) {
             setUserName(data.user.name);
+            setDepartment(data.user.department_name || "Nursing");
           }
 
           const vertical = (data.vertical_data || []).map((item: any) => ({
@@ -365,7 +367,7 @@ export default function Succession() {
                     <div className="min-w-0">
                       <div className="text-xs text-slate-500">Employee</div>
                       <div className="truncate text-sm font-semibold text-slate-900">{userName}</div>
-                      <div className="text-xs text-slate-500">Department: <span className="text-blue-600">Nursing</span></div>
+                      <div className="text-xs text-slate-500">Department: <span className="text-blue-600">{department}</span></div>
                     </div>
                   </div>
                 </CardContent>
