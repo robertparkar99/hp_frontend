@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import ViewSkill from "@/components/skillComponent/viewDialouge";
 import EditDialog from "@/components/skillComponent/editDialouge";
 import AddDialog from "@/components/skillComponent/addDialouge";
@@ -161,6 +162,15 @@ export default function Page({ showDetailTour = false }: PageProps) {
   const [showTour, setShowTour] = useState(false);
   const [tourStepsFromAPI, setTourStepsFromAPI] = useState<any[]>([]);
   const [isLoadingTourSteps, setIsLoadingTourSteps] = useState(true);
+  const searchParams = useSearchParams();
+
+  // Set searchTerm from query param
+  useEffect(() => {
+    const search = searchParams.get('search');
+    if (search) {
+      setSearchTerm(search);
+    }
+  }, [searchParams]);
 
   // Toggle function for the actions menu
   const toggleActionsMenu = () => {

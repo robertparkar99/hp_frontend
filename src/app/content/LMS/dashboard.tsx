@@ -1,7 +1,7 @@
   // 'use client'
 
 import React, { useState, useEffect, useCallback , useRef} from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Shepherd from 'shepherd.js'
 
 import FilterSidebar from './components/FilterSidebar'
@@ -74,6 +74,7 @@ const DEFAULT_THUMBNAIL =
 
 const LearningCatalog: React.FC = () => {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -129,6 +130,14 @@ const LearningCatalog: React.FC = () => {
     // Dispatch event to notify chatbot of module change
     window.dispatchEvent(new Event('activeItemChange'));
   }, [])
+
+  // Set searchQuery from query param
+  useEffect(() => {
+    const search = searchParams.get('search');
+    if (search) {
+      setSearchQuery(search);
+    }
+  }, [searchParams]);
 
   // ✅ Tour: Check for trigger and initialize tour
   useEffect(() => {
