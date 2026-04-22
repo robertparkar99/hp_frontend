@@ -208,10 +208,7 @@ const LearningCatalog: React.FC = () => {
     })
 
     // Fetch API data and create steps with API overrides
-    const steps = await fetchAndCreateLearningCatalogSteps(tour, menuId, sessionData, undefined, () => {
-      console.log('🎉 Learning Catalog tour completed')
-      setIsTourActive(false)
-    })
+    const steps = await fetchAndCreateLearningCatalogSteps(tour, menuId, sessionData)
 
     steps.forEach(step => {
       tour.addStep(step)
