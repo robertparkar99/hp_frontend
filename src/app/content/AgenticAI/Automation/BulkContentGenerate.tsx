@@ -36,14 +36,14 @@ const COLUMN_MAPPING: Record<string, string> = {
 
 // Default values for missing fields
 const DEFAULT_VALUES = {
-  contentType: "both",
+  contentType: "jobrole",
   template: "standard",
   scheduleType: "immediate",
 };
 
 // Content type options
 const CONTENT_TYPES = [
-  { value: "both", label: "Both (Assessment + Course)", icon: Layers },
+  { value: "jobrole", label: "jobrole (Assessment + Course)", icon: Layers },
   { value: "assessment", label: "Assessment Only", icon: GraduationCap },
   { value: "course", label: "Course Only", icon: FileText },
 ];
@@ -75,13 +75,13 @@ export default function BulkContentGenerate({ sessionData }: BulkContentGenerate
           if (targetField === "contentType") {
             const normalizedValue = String(value).toLowerCase().trim();
             if (normalizedValue.includes("assessment") && normalizedValue.includes("course")) {
-              value = "both";
+              value = "jobrole";
             } else if (normalizedValue.includes("assessment")) {
               value = "assessment";
             } else if (normalizedValue.includes("course") || normalizedValue.includes("ppt") || normalizedValue.includes("slide")) {
               value = "course";
             } else {
-              value = "both";
+              value = "jobrole";
             }
           }
           
@@ -137,7 +137,7 @@ export default function BulkContentGenerate({ sessionData }: BulkContentGenerate
       const hasAnySlides = hasSlides || hasSlideCount;
       
       if (hasAnyQuestion && hasAnySlides) {
-        mappedRow.contentType = "both";
+        mappedRow.contentType = "jobrole";
       } else if (hasAnyQuestion && !hasAnySlides) {
         mappedRow.contentType = "assessment";
       } else if (!hasAnyQuestion && hasAnySlides) {
@@ -377,12 +377,12 @@ const handleBulkGenerate = async () => {
                     <td className="px-3 py-2 text-foreground">{row.jobrole || "-"}</td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        row.contentType === 'both' ? 'bg-purple-100 text-purple-800' :
+                        row.contentType === 'jobrole' ? 'bg-purple-100 text-purple-800' :
                         row.contentType === 'assessment' ? 'bg-green-100 text-green-800' :
                         row.contentType === 'course' ? 'bg-blue-100 text-blue-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {row.contentType === 'both' ? 'Both' : row.contentType === 'assessment' ? 'Assessment' : row.contentType === 'course' ? 'Course' : 'None'}
+                        {row.contentType === 'jobrole' ? 'jobrole' : row.contentType === 'assessment' ? 'Assessment' : row.contentType === 'course' ? 'Course' : 'None'}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-foreground">

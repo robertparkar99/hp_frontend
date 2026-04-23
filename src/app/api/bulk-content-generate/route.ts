@@ -173,7 +173,7 @@ export async function POST(req: Request) {
 
     const { 
       rows, 
-      contentType = "both" 
+      contentType = "jobrole" 
     } = body;
 
     if (!rows || !Array.isArray(rows) || rows.length === 0) {
@@ -199,7 +199,7 @@ export async function POST(req: Request) {
 
       try {
         // Generate Assessment if requested
-        if (row.contentType === "assessment" || row.contentType === "both") {
+        if (row.contentType === "assessment" || row.contentType === "jobrole") {
           try {
             const questionCount = row.questionCount || 0;
             const assessmentData = await generateAssessmentQuestions(
@@ -223,7 +223,7 @@ export async function POST(req: Request) {
         }
 
         // Generate Course if requested
-        if (row.contentType === "course" || row.contentType === "both") {
+        if (row.contentType === "course" || row.contentType === "jobrole") {
           try {
             const slideCount = row.slideCount || 0;
             const courseData = await generateCourseContent(
@@ -244,10 +244,10 @@ export async function POST(req: Request) {
         }
 
         // Mark as success if at least one content type succeeded
-        if (row.contentType === "assessment" || row.contentType === "both") {
+        if (row.contentType === "assessment" || row.contentType === "jobrole") {
           rowResult.success = rowResult.assessment?.success;
         }
-        if (row.contentType === "course" || row.contentType === "both") {
+        if (row.contentType === "course" || row.contentType === "jobrole") {
           rowResult.success = rowResult.success || rowResult.course?.success;
         }
 
