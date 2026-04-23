@@ -55,7 +55,7 @@ Output must be valid JSON in this exact format:
         },
         { role: "user", content: prompt }
       ],
-      max_tokens: 3000,
+      max_tokens: 2500,
       temperature: 0.0,
     }),
   });
