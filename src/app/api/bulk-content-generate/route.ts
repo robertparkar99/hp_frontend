@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 
 // Environment variables
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY_NEW || "";
+// const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY_NEW || "";
 const GAMMA_API_KEY = process.env.GAMMA_API_KEY || "";
 const MODEL = process.env.AI_MODEL || "deepseek/deepseek-chat";
 const MAX_POLL_ATTEMPTS = parseInt(process.env.GAMMA_MAX_POLL_ATTEMPTS || "120", 10);
 
 // Validate API keys on startup
-if (!OPENROUTER_API_KEY || !GAMMA_API_KEY) {
-  console.error("Missing required API keys: OPENROUTER_API_KEY_NEW, GAMMA_API_KEY");
-}
+// if (!OPENROUTER_API_KEY || !GAMMA_API_KEY) {
+//   console.error("Missing required API keys: OPENROUTER_API_KEY_NEW, GAMMA_API_KEY");
+// }
 
 function extractJSON(text: string) {
   return text
@@ -19,61 +19,61 @@ function extractJSON(text: string) {
 }
 
 // Generate assessment questions using OpenRouter
-async function generateAssessmentQuestions(topic: string, jobRole: string, department: string, questionCount: number = 5) {
-  const prompt = `Generate ${questionCount} high-quality assessment questions about "${topic}" for ${jobRole} role in ${department} department.
+// async function generateAssessmentQuestions(topic: string, jobRole: string, department: string, questionCount: number = 5) {
+//   const prompt = `Generate ${questionCount} high-quality assessment questions about "${topic}" for ${jobRole} role in ${department} department.
 
-Output must be valid JSON in this exact format:
-{
-  "questions": [
-    {
-      "id": 1,
-      "question_title": "Question text here?",
-      "answers": [
-        { "answer": "Option A", "correct_answer": 1 },
-        { "answer": "Option B", "correct_answer": 0 },
-        { "answer": "Option C", "correct_answer": 0 },
-        { "answer": "Option D", "correct_answer": 0 }
-      ],
-      "marks": 1,
-      "reason": "Explanation of correct answer"
-    }
-  ]
-}`;
+// Output must be valid JSON in this exact format:
+// {
+//   "questions": [
+//     {
+//       "id": 1,
+//       "question_title": "Question text here?",
+//       "answers": [
+//         { "answer": "Option A", "correct_answer": 1 },
+//         { "answer": "Option B", "correct_answer": 0 },
+//         { "answer": "Option C", "correct_answer": 0 },
+//         { "answer": "Option D", "correct_answer": 0 }
+//       ],
+//       "marks": 1,
+//       "reason": "Explanation of correct answer"
+//     }
+//   ]
+// }`;
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert assessment question generator. Generate valid JSON only, no explanations."
-        },
-        { role: "user", content: prompt }
-      ],
-      max_tokens: 2500,
-      temperature: 0.0,
-    }),
-  });
+//   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+//     method: "POST",
+//     headers: {
+//       Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify({
+//       model: MODEL,
+//       messages: [
+//         {
+//           role: "system",
+//           content: "You are an expert assessment question generator. Generate valid JSON only, no explanations."
+//         },
+//         { role: "user", content: prompt }
+//       ],
+//       max_tokens: 2500,
+//       temperature: 0.0,
+//     }),
+//   });
 
-  const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content;
+//   const data = await response.json();
+//   const content = data?.choices?.[0]?.message?.content;
 
-  if (!content) {
-    const errorMessage = data?.error?.message || "Empty AI response for questions";
-    throw new Error(errorMessage);
-  }
+//   if (!content) {
+//     const errorMessage = data?.error?.message || "Empty AI response for questions";
+//     throw new Error(errorMessage);
+//   }
 
-  try {
-    return JSON.parse(extractJSON(content));
-  } catch {
-    throw new Error("Invalid JSON from AI for questions");
-  }
-}
+//   try {
+//     return JSON.parse(extractJSON(content));
+//   } catch {
+//     throw new Error("Invalid JSON from AI for questions");
+//   }
+// }
 
 // Generate course content using Gamma API
 async function generateCourseContent(topic: string, slideCount: number = 10) {
@@ -198,7 +198,8 @@ export async function POST(req: Request) {
       };
 
       try {
-        // Generate Assessment if requested
+        // Commented out: Generate Assessment if requested
+        /*
         if (row.contentType === "assessment" || row.contentType === "jobrole") {
           try {
             const questionCount = row.questionCount || 0;
@@ -221,6 +222,7 @@ export async function POST(req: Request) {
             rowResult.errors.push(`Assessment error: ${assessmentError.message}`);
           }
         }
+        */
 
         // Generate Course if requested
         if (row.contentType === "course" || row.contentType === "jobrole") {
@@ -243,13 +245,13 @@ export async function POST(req: Request) {
           }
         }
 
-        // Mark as success if at least one content type succeeded
-        if (row.contentType === "assessment" || row.contentType === "jobrole") {
-          rowResult.success = rowResult.assessment?.success;
-        }
+        // Commented out: Mark as success if at least one content type succeeded
+        // Assessment generation is commented out, so success based only on course
+        rowResult.success = false; // default
         if (row.contentType === "course" || row.contentType === "jobrole") {
-          rowResult.success = rowResult.success || rowResult.course?.success;
+          rowResult.success = rowResult.course?.success || false;
         }
+        // For assessment contentType, success remains false since assessment is commented out
 
       } catch (error: any) {
         rowResult.errors.push(`Row processing error: ${error.message}`);

@@ -26,9 +26,9 @@ const COLUMN_MAPPING: Record<string, string> = {
   "Description": "chapter_desc",
   "Content Type": "contentType",
   "Type": "contentType",
-  "Question": "question",
-  "Questions": "question",
-  "Question Text": "question",
+  // "Question": "question",
+  // "Questions": "question",
+  // "Question Text": "question",
   "Slides": "slides",
   "Slide Content": "slides",
   "Slides Content": "slides",
@@ -44,7 +44,7 @@ const DEFAULT_VALUES = {
 // Content type options
 const CONTENT_TYPES = [
   { value: "jobrole", label: "jobrole (Assessment + Course)", icon: Layers },
-  { value: "assessment", label: "Assessment Only", icon: GraduationCap },
+  // { value: "assessment", label: "Assessment Only", icon: GraduationCap },
   { value: "course", label: "Course Only", icon: FileText },
 ];
 
@@ -76,8 +76,8 @@ export default function BulkContentGenerate({ sessionData }: BulkContentGenerate
             const normalizedValue = String(value).toLowerCase().trim();
             if (normalizedValue.includes("assessment") && normalizedValue.includes("course")) {
               value = "jobrole";
-            } else if (normalizedValue.includes("assessment")) {
-              value = "assessment";
+            // } else if (normalizedValue.includes("assessment")) {
+            //   value = "assessment";
             } else if (normalizedValue.includes("course") || normalizedValue.includes("ppt") || normalizedValue.includes("slide")) {
               value = "course";
             } else {
@@ -85,7 +85,8 @@ export default function BulkContentGenerate({ sessionData }: BulkContentGenerate
             }
           }
           
-          // For question field - check if value is a number (count) or text (content)
+          // Commented out: For question field - check if value is a number (count) or text (content)
+          /*
           if (targetField === "question") {
             const strValue = String(value || "").trim();
             // Check if it's a number - treat as question count
@@ -98,7 +99,8 @@ export default function BulkContentGenerate({ sessionData }: BulkContentGenerate
               // It's text content - use as question
               mappedRow.question = strValue;
             }
-          } else if (targetField === "slides") {
+          }
+          */ else if (targetField === "slides") {
             // For slides field - check if value is a number (count) or text (content)
             const strValue = String(value || "").trim();
             // Check if it's a number - treat as slide count
@@ -123,7 +125,8 @@ export default function BulkContentGenerate({ sessionData }: BulkContentGenerate
         }
       });
       
-      // Determine contentType based on presence of question or slide content
+      // Commented out: Determine contentType based on presence of question or slide content
+      /*
       // Both question and slides fields can contain either text content or numeric counts
       // We check if they have non-empty values (either text or numbers)
       const hasQuestion = mappedRow.question !== undefined && mappedRow.question !== null && String(mappedRow.question).trim() !== "";
@@ -135,11 +138,18 @@ export default function BulkContentGenerate({ sessionData }: BulkContentGenerate
       
       const hasAnyQuestion = hasQuestion || hasQuestionCount;
       const hasAnySlides = hasSlides || hasSlideCount;
+      */
+
+      // Since question generation is commented out, only check slides
+      const hasSlides = mappedRow.slides !== undefined && mappedRow.slides !== null && String(mappedRow.slides).trim() !== "";
+      const hasSlideCount = mappedRow.slideCount && mappedRow.slideCount > 0;
+      const hasAnySlides = hasSlides || hasSlideCount;
+      const hasAnyQuestion = false; // commented out
       
       if (hasAnyQuestion && hasAnySlides) {
         mappedRow.contentType = "jobrole";
-      } else if (hasAnyQuestion && !hasAnySlides) {
-        mappedRow.contentType = "assessment";
+      // } else if (hasAnyQuestion && !hasAnySlides) {
+      //   mappedRow.contentType = "assessment";
       } else if (!hasAnyQuestion && hasAnySlides) {
         mappedRow.contentType = "course";
       } else {
@@ -279,7 +289,7 @@ const handleBulkGenerate = async () => {
 
       // Mark as success only if both generation and storage succeeded
       rowResult.success = genResult.success && storeResponse.ok;
-      rowResult.assessment = genResult.assessment;
+      // rowResult.assessment = genResult.assessment;
       rowResult.course = genResult.course;
       if (rowResult.success) {
         successCount++;
@@ -344,12 +354,12 @@ const handleBulkGenerate = async () => {
             <span>• Job Role</span>
             <span>• Chapter/Topic</span>
             <span>• Content Type</span>
-            <span>• Question</span>
+            {/* <span>• Question</span> */}
             <span>• Slides</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
+          {/* <p className="text-xs text-muted-foreground mt-2">
             <strong>For Questions:</strong> Enter a number (e.g., 5) for question count, or enter question text for custom content
-          </p>
+          </p> */}
           <p className="text-xs text-muted-foreground mt-1">
             <strong>For Slides:</strong> Enter a number (e.g., 10) for slide count, or enter slide content for custom content
           </p>
@@ -407,7 +417,7 @@ const handleBulkGenerate = async () => {
                   <th className="px-3 py-2 text-foreground">Department</th>
                   <th className="px-3 py-2 text-foreground">Job Role</th>
                   <th className="px-3 py-2 text-foreground">Content Type</th>
-                  <th className="px-3 py-2 text-foreground">Questions</th>
+                  {/* <th className="px-3 py-2 text-foreground">Questions</th> */}
                   <th className="px-3 py-2 text-foreground">Slides</th>
                 </tr>
               </thead>
@@ -428,7 +438,7 @@ const handleBulkGenerate = async () => {
                         {row.contentType === 'jobrole' ? 'jobrole' : row.contentType === 'assessment' ? 'Assessment' : row.contentType === 'course' ? 'Course' : 'None'}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-foreground">
+                    {/* <td className="px-3 py-2 text-foreground">
                       {row.contentType === 'none' ? (
                         <span className="text-gray-400">0</span>
                       ) : row.question ? (
@@ -440,7 +450,7 @@ const handleBulkGenerate = async () => {
                       ) : (
                         <span>-</span>
                       )}
-                    </td>
+                    </td> */}
                     <td className="px-3 py-2 text-foreground">
                       {row.contentType === 'none' ? (
                         <span className="text-gray-400">0</span>
@@ -512,12 +522,12 @@ const handleBulkGenerate = async () => {
                     </span>
                   </div>
                   <div className="flex items-center space-x-3 text-sm">
-                    {result.assessment?.success && (
+                    {/* {result.assessment?.success && (
                       <span className="text-green-600 flex items-center">
                         <GraduationCap className="w-4 h-4 mr-1" />
                         Questions Generated
                       </span>
-                    )}
+                    )} */}
                     {result.course?.success && (
                       <span className="text-blue-600 flex items-center">
                         <FileText className="w-4 h-4 mr-1" />

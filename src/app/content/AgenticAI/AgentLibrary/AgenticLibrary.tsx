@@ -1,5 +1,5 @@
 import Loader from '@/components/utils/loading';
-import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap, Mail, Search, FileSpreadsheet } from 'lucide-react';
+import { Globe, CheckSquare, Award, Briefcase, ShieldCheck, BookOpen, Brain, Users, TrendingUp, Zap, Mail, Search, Workflow } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -222,19 +222,18 @@ const agents: Agent[] = [
     ctaLink: '/content/AgenticAI/SEOAgent/'
   },
   {
-    id: 'excel-automation',
-    name: 'Excel Automation Agent',
-    icon: FileSpreadsheet,
-    module: 'Data Automation',
-    summary: 'Upload content-plan Excel files into the organization\'s master Google Sheet',
-    function: 'The Excel Automation Agent lets each organization connect its own Google Sheet and upload Excel files. It validates headers against the configured template and appends data rows to the master sheet automatically.',
+    id: 'social-media-automation',
+    name: 'Social Media Content Automation',
+    icon: Workflow,
+    module: 'Social Media Content Automation',
+    summary: 'Automatically transforms Google Sheet content rows into LinkedIn posts, branded infographics, and SEO-optimized blog content for multi-platform publishing',
+    function: 'The agent acts as a contextual translator. It parses a single row from your Google Sheet (Topic/Thesis) and simultaneously reasons how to adapt that message for professional social feeds versus long-form SEO content.',
     workflow: [
-      'Admin connects a Google Sheet with service account credentials',
-      'System validates the sheet structure against the template',
-      'User uploads an Excel file matching the template headers',
-      'Data rows are appended to the Google Sheet automatically'
+      'Trigger: Detects a status change (e.g., "Ready to Post") in a Google Sheet row.',
+      'Generation (Parallel):LinkedIn Worker: Drafts copy and triggers an image API (like BannerBear) to overlay sheet data onto  a branded infographic template.',
+      'Blog Worker: Expands the topic into a structured, SEO-optimized text narrative.'
     ],
-    outputs: ['Google Sheet Integration', 'Excel Upload & Validation', 'Header Mismatch Detection', 'Automated Data Append'],
+    outputs: ['LinkedIn: A 200-word professional post with a strong hook, key value bullet points, CTA, and a high-resolution (1080x1350) branded infographic visualizing the row’s key insights and statistics'],
     cta: 'Configure / Launch',
     ctaLink: '/content/AgenticAI/ExcelAutomation'
   }
