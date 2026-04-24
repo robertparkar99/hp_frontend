@@ -200,34 +200,24 @@ const handleBulkGenerate = async () => {
   setGenerationProgress({ current: 0, total: validRows.length });
   setGenerationResults([]);
 
-  try {
-    // 1️⃣ Generate Assessment + Course
-    const response = await fetch("/api/bulk-content-generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(sessionData.token
-          ? { Authorization: `Bearer ${sessionData.token}` }
-          : {}),
-      },
-      body: JSON.stringify({
-        rows: validRows,
-        contentType: "jobrole",
-        content_quantity: "bulk",
-      }),
-    });
+  let successCount = 0;
+  let errorCount = 0;
 
-    if (!response.ok) {
-      throw new Error("Generation failed");
-    }
+  for (let i = 0; i < validRows.length; i++) {
+    const row = validRows[i];
+    const rowResult: any = {
+      rowIndex: i + 1,
+      topic: row.chapterName || row.topic || "",
+      department: row.department || "",
+      jobRole: row.jobrole || "",
+      contentType: row.contentType,
+      success: false,
+      errors: [],
+    };
 
-    const data = await response.json();
-    setGenerationResults(data.results || []);
-
-    // 2️⃣ Store Generated Data to Laravel API
-    const storeResponse = await fetch(
-      `${sessionData.url}/lms/blukCourseAndQuestion/store`,
-      {
+    try {
+      // 1️⃣ Generate Assessment + Course for this row
+      const response = await fetch("/api/bulk-content-generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -236,31 +226,84 @@ const handleBulkGenerate = async () => {
             : {}),
         },
         body: JSON.stringify({
-          rows: validRows,        // Original mapped rows
-          previewData: data,      // Full preview response
-          sub_institute_id: sessionData.sub_institute_id,
-          user_id: sessionData.user_id,
-          created_by: sessionData.user_id,
-          contentType: "jobrole",
-          content_quantity: "bulk",
-
-
+          rows: [row],  // Process one row at a time
+          contentType: row.contentType,
+          content_quantity: "single",
         }),
-      }
-    );
+      });
 
-    if (!storeResponse.ok) {
-      throw new Error("Store API failed");
+      if (!response.ok) {
+        throw new Error(`Generation failed for row ${i + 1}`);
+      }
+
+      const data = await response.json();
+
+      // Check if generation succeeded
+      if (!data.success || !data.results || data.results.length === 0) {
+        throw new Error("No generation results received");
+      }
+
+      const genResult = data.results[0];
+
+      // Check if the specific row generation succeeded
+      if (!genResult.success) {
+        throw new Error(`Generation failed for row ${i + 1}: ${genResult.errors?.join(', ') || 'Unknown error'}`);
+      }
+
+      // 2️⃣ Store Generated Data to Laravel API immediately (only if generation succeeded)
+      const storeResponse = await fetch(
+        `${sessionData.url}/lms/blukCourseAndQuestion/store`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(sessionData.token
+              ? { Authorization: `Bearer ${sessionData.token}` }
+              : {}),
+          },
+          body: JSON.stringify({
+            rows: [row],        // Store this single row
+            previewData: data,  // Generation response for this row
+            sub_institute_id: sessionData.sub_institute_id,
+            user_id: sessionData.user_id,
+            created_by: sessionData.user_id,
+            contentType: row.contentType,
+            content_quantity: "single",
+          }),
+        }
+      );
+
+      if (!storeResponse.ok) {
+        throw new Error(`Store failed for row ${i + 1}`);
+      }
+
+      // Mark as success only if both generation and storage succeeded
+      rowResult.success = genResult.success && storeResponse.ok;
+      rowResult.assessment = genResult.assessment;
+      rowResult.course = genResult.course;
+      if (rowResult.success) {
+        successCount++;
+      }
+
+    } catch (error: any) {
+      console.error(`Error processing row ${i + 1}:`, error);
+      rowResult.success = false;
+      rowResult.errors.push(error.message);
+      errorCount++;
     }
 
-    alert("Bulk generation + store completed successfully ✅");
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Error generating or storing data.");
-  } finally {
-    setIsGenerating(false);
-    setGenerationProgress(null);
+    // Update results after each row
+    setGenerationResults(prev => [...prev, rowResult]);
+
+    // Update progress
+    setGenerationProgress({ current: i + 1, total: validRows.length });
   }
+
+  setIsGenerating(false);
+  setGenerationProgress(null);
+
+  // Show summary
+  alert(`Generation completed! ${successCount} succeeded, ${errorCount} failed.`);
 };
 
 
