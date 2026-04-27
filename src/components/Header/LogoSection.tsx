@@ -3,7 +3,7 @@ import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { Bot } from 'lucide-react';
+import { Bot, DollarSign } from 'lucide-react';
 import WelcomeModal from '@/app/content/Onboarding/Competency-Management/WelcomeModal';
 import { logUserJourney, setCurrentPageMenuId } from "@/utils/journeyLogger";
 
@@ -422,6 +422,18 @@ export const LogoSection: React.FC = () => {
     </span>
   )}
 </div>
+
+        {/* finance chatbot icon */}
+        <div className="cursor-pointer relative z-40">
+          <button
+            onClick={() => {
+              router.push('/content/Finance-Chatbot');
+            }}
+            className="p-2 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-all"
+          >
+            <DollarSign className="w-6 h-6 text-green-600" />
+          </button>
+        </div>
 
         {/* chatbot icon */}
         <div className="cursor-pointer relative z-40">
