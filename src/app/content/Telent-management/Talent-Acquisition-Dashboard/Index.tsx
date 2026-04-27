@@ -30,6 +30,7 @@ import {
   Clock,
   AlertCircle,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 
@@ -45,6 +46,22 @@ const Index = () => {
   const [requisitionData, setRequisitionData] = useState<any[]>([]);
   const [kpiData, setKpiData] = useState<any[]>([]);
   const [sessionData, setSessionData] = useState<any>(null);
+  const [loadingKpi, setLoadingKpi] = useState(false);
+  const [loadingDropoff, setLoadingDropoff] = useState(false);
+  const [loadingFunnel, setLoadingFunnel] = useState(false);
+  const [loadingRequisition, setLoadingRequisition] = useState(false);
+  const [funnelMaxDomain, setFunnelMaxDomain] = useState<number | null>(null);
+  const [dropoffMaxDomain, setDropoffMaxDomain] = useState<number | null>(null);
+  const [filters, setFilters] = useState({
+    department: 'all-dept',
+    location: 'all-loc',
+    timePeriod: 'monthly',
+    jobLevel: 'all-level',
+  });
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (userData) {
@@ -52,13 +69,27 @@ const Index = () => {
     }
   }, []);
 
+  // Set fixed max domains based on initial data load
+  useEffect(() => {
+    if (funnelData.length > 0 && funnelMaxDomain === null) {
+      const maxValue = Math.max(...funnelData.map((d: any) => d.value));
+      setFunnelMaxDomain(Math.ceil(maxValue * 1.2));
+    }
+  }, [funnelData, funnelMaxDomain]);
+
+  useEffect(() => {
+    if (dropoffData.length > 0 && dropoffMaxDomain === null) {
+      const maxValue = Math.max(...dropoffData.map((d: any) => (d.voluntary || 0) + (d.involuntary || 0)));
+      setDropoffMaxDomain(Math.ceil(maxValue * 1.2));
+    }
+  }, [dropoffData, dropoffMaxDomain]);
+
   const { domain, ticks } = useMemo(() => {
-    if (funnelData.length === 0) return { domain: [0, 1400], ticks: [0, 350, 700, 1050, 1400] };
-    const maxValue = Math.max(...funnelData.map((d: any) => d.value));
-    const domain = [0, maxValue];
-    const ticks = [0, Math.round(maxValue / 4), Math.round(maxValue / 2), Math.round(3 * maxValue / 4), maxValue];
+    const maxDomain = funnelMaxDomain || 1400;
+    const domain = [0, maxDomain];
+    const ticks = [0, Math.round(maxDomain / 4), Math.round(maxDomain / 2), Math.round(3 * maxDomain / 4), maxDomain];
     return { domain, ticks };
-  }, [funnelData]);
+  }, [funnelMaxDomain]);
 
   // KPI Structure
   const kpiStructure = [
@@ -85,7 +116,23 @@ const Index = () => {
 
   // ✅ Dropoff API FIX
 const fetchDropoffData = async () => {
+  setLoadingDropoff(true);
   try {
+    const bodyData: any = {
+      "type": "API",
+      "sub_institute_id": sessionData.sub_institute_id,
+      "time_period": filters.timePeriod,
+    };
+    if (filters.department !== 'all-dept') {
+      bodyData.department_id = filters.department;
+    }
+    if (filters.location !== 'all-loc') {
+      bodyData.location = filters.location;
+    }
+    if (filters.jobLevel !== 'all-level') {
+      bodyData.experience = filters.jobLevel;
+    }
+
     const response = await fetch(
       `${sessionData.APP_URL}/api/talent-acquisition/dropoff`,
       {
@@ -94,11 +141,7 @@ const fetchDropoffData = async () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${sessionData.token}`, // ✅ ADDED
         },
-        body: JSON.stringify({
-          "type": "API",
-          // ❌ token removed
-          "sub_institute_id": sessionData.sub_institute_id,
-        }),
+        body: JSON.stringify(bodyData),
       }
     );
 
@@ -109,13 +152,31 @@ const fetchDropoffData = async () => {
     }
   } catch (error) {
     console.warn("Error fetching dropoff data:", error);
+  } finally {
+    setLoadingDropoff(false);
   }
 };
 
 
 // ✅ Funnel API FIX
 const fetchFunnelData = async () => {
+  setLoadingFunnel(true);
   try {
+    const bodyData: any = {
+      "type": "API",
+      "sub_institute_id": sessionData.sub_institute_id,
+      "time_period": filters.timePeriod,
+    };
+    if (filters.department !== 'all-dept') {
+      bodyData.department_id = filters.department;
+    }
+    if (filters.location !== 'all-loc') {
+      bodyData.location = filters.location;
+    }
+    if (filters.jobLevel !== 'all-level') {
+      bodyData.experience = filters.jobLevel;
+    }
+
     const response = await fetch(
       `${sessionData.APP_URL}/api/talent-acquisition/funnel`,
       {
@@ -124,11 +185,7 @@ const fetchFunnelData = async () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${sessionData.token}`, // ✅ ADDED
         },
-        body: JSON.stringify({
-          "type": "API",
-          // ❌ token removed
-          "sub_institute_id": sessionData.sub_institute_id,
-        }),
+        body: JSON.stringify(bodyData),
       }
     );
 
@@ -149,13 +206,31 @@ const fetchFunnelData = async () => {
     }
   } catch (error) {
     console.warn("Error fetching funnel data:", error);
+  } finally {
+    setLoadingFunnel(false);
   }
 };
 
 
 // ✅ KPI API FIX (ONLY Bearer added)
 const fetchKpiData = async () => {
+  setLoadingKpi(true);
   try {
+    const bodyData: any = {
+      "type": "API",
+      "sub_institute_id": sessionData.sub_institute_id,
+      "time_period": filters.timePeriod,
+    };
+    if (filters.department !== 'all-dept') {
+      bodyData.department_id = filters.department;
+    }
+    if (filters.location !== 'all-loc') {
+      bodyData.location = filters.location;
+    }
+    if (filters.jobLevel !== 'all-level') {
+      bodyData.experience = filters.jobLevel;
+    }
+
     const response = await fetch(
       `${sessionData.APP_URL}/api/talent-acquisition/kpis`,
       {
@@ -164,10 +239,7 @@ const fetchKpiData = async () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${sessionData.token}`, // 🔥 FIXED
         },
-        body: JSON.stringify({
-          "type": "API",
-          "sub_institute_id": sessionData.sub_institute_id,
-        }),
+        body: JSON.stringify(bodyData),
       }
     );
 
@@ -190,26 +262,44 @@ const fetchKpiData = async () => {
     }
   } catch (error) {
     console.warn("Error fetching KPI data:", error);
+  } finally {
+    setLoadingKpi(false);
   }
 };
 
 
 // ✅ Requisition API FIX
 const fetchRequisitionData = async () => {
+  setLoadingRequisition(true);
   try {
+    const bodyData: any = {
+      "type": "API",
+      "sub_institute_id": sessionData.sub_institute_id,
+      "time_period": filters.timePeriod,
+    };
+    if (filters.department !== 'all-dept') {
+      bodyData.department_id = filters.department;
+    }
+    if (filters.location !== 'all-loc') {
+      bodyData.location = filters.location;
+    }
+    if (filters.jobLevel !== 'all-level') {
+      bodyData.experience = filters.jobLevel;
+    }
+
+    const departmentQuery = filters.department !== 'all-dept' ? `&department=${filters.department}` : '';
+    const locationQuery = filters.location !== 'all-loc' ? `&location=${filters.location}` : '';
+    const jobLevelQuery = filters.jobLevel !== 'all-level' ? `&experience=${filters.jobLevel}` : '';
+
     const response = await fetch(
-      `${sessionData.APP_URL}/api/talent-acquisition/requisitions?page=1&limit=10&department=all-dept&location=all-loc&timePeriod=monthly&jobLevel=all-level&diversity=all-gender&status=active&sortBy=age&order=desc`,
+      `${sessionData.APP_URL}/api/talent-acquisition/requisitions?page=1&limit=10${departmentQuery}${locationQuery}&time_period=${filters.timePeriod}${jobLevelQuery}&diversity=all-gender&status=active&sortBy=age&order=desc`,
       {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${sessionData.token}`, // ✅ ADDED
         },
-        body: JSON.stringify({
-          "type": "API",
-          // ❌ token removed
-          "sub_institute_id": sessionData.sub_institute_id,
-        }),
+        body: JSON.stringify(bodyData),
       }
     );
 
@@ -220,6 +310,8 @@ const fetchRequisitionData = async () => {
     }
   } catch (error) {
     console.warn("Error fetching requisition data:", error);
+  } finally {
+    setLoadingRequisition(false);
   }
 };
 
@@ -231,8 +323,18 @@ const fetchRequisitionData = async () => {
       setDropoffData([]);
       setKpiData(kpiStructure.map(k => ({ ...k, value: "N/A" })));
       setRequisitionData([]);
+      setLoadingKpi(false);
+      setLoadingDropoff(false);
+      setLoadingFunnel(false);
+      setLoadingRequisition(false);
       return;
     }
+
+    // Set loading states to true before fetching
+    setLoadingKpi(true);
+    setLoadingDropoff(true);
+    setLoadingFunnel(true);
+    setLoadingRequisition(true);
 
     // Fetch all data in parallel to improve performance
     Promise.all([
@@ -243,7 +345,7 @@ const fetchRequisitionData = async () => {
     ]).catch((error) => {
       console.warn("Error fetching some data:", error);
     });
-  }, [sessionData]);
+  }, [sessionData, filters]);
 
 
 
@@ -346,58 +448,64 @@ const fetchRequisitionData = async () => {
       <main className="container mx-auto px-6 py-8">
         {/* Global Filters */}
         <div className="mb-8">
-          <GlobalFilters />
+          <GlobalFilters filters={filters} onFilterChange={handleFilterChange} />
         </div>
 
-        {/* KPI Tiles */}
         {/* KPI Tiles */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold mb-6 text-foreground">
             Key Performance Indicators
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-5">
-            {kpiData.map((kpi, index) => (
-              <Card
-                key={index}
-                className="rounded-2xl border border-border bg-card hover:shadow-lg transition-all duration-200"
-              >
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground font-medium mb-1">
-                        {kpi.title}
-                      </p>
-                      <p className="text-3xl font-extrabold text-foreground leading-tight">
-                        {kpi.value}
-                      </p>
+          {loadingKpi ? (
+            <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+              <Loader2 className="animate-spin h-8 w-8 mr-2" />
+              Loading KPI data...
+            </div>
+          ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-5">
+                {kpiData.map((kpi, index) => (
+                  <Card
+                    key={index}
+                    className="rounded-2xl border border-border bg-card hover:shadow-lg transition-all duration-200"
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground font-medium mb-1">
+                            {kpi.title}
+                          </p>
+                          <p className="text-3xl font-extrabold text-foreground leading-tight">
+                            {kpi.value}
+                          </p>
 
-                      {/* <div className="flex items-center gap-1 mt-2">
-                        {kpi.trend === "up" ? (
-                          <TrendingUp className="h-3.5 w-3.5 text-green-600" />
-                        ) : (
-                          <TrendingDown className="h-3.5 w-3.5 text-red-500" />
-                        )}
-                        <span
-                          className={`text-sm font-semibold ${kpi.trend === "up" ? "text-green-600" : "text-red-500"
-                            }`}
-                        >
-                          {kpi.change}
-                        </span>
-                        <span className="text-xs text-muted-foreground ml-1">
-                          vs last period
-                        </span>
-                      </div> */}
-                    </div>
+                          {/* <div className="flex items-center gap-1 mt-2">
+                          {kpi.trend === "up" ? (
+                            <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                          ) : (
+                            <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+                          )}
+                          <span
+                            className={`text-sm font-semibold ${kpi.trend === "up" ? "text-green-600" : "text-red-500"
+                              }`}
+                          >
+                            {kpi.change}
+                          </span>
+                          <span className="text-xs text-muted-foreground ml-1">
+                            vs last period
+                          </span>
+                        </div> */}
+                        </div>
 
-                    <div className="p-2.5 bg-primary/10 rounded-xl">
-                      <kpi.icon className="h-5 w-5 text-primary" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                        <div className="p-2.5 bg-primary/10 rounded-xl">
+                          <kpi.icon className="h-5 w-5 text-primary" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+          )}
         </section>
 
 
@@ -411,61 +519,72 @@ const fetchRequisitionData = async () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={funnelData}
-                  layout="vertical"
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(var(--border))"
-                    horizontal={false}
-                  />
-                  <XAxis
-                    type="number"
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    domain={domain}
-                    ticks={ticks}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    width={80}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#ffffff",
-                      border: "2px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                      color: "hsl(var(--foreground))",
-                    }}
-                    formatter={(value) => [`${value} candidates`, "Count"]}
-                  />
-                  <Bar
-                    dataKey="value"
-                    radius={[0, 8, 8, 0]}
-                    barSize={40}
-                  >
-                    {funnelData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.fill}
-                        stroke="hsl(var(--background))"
-                        strokeWidth={2}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              {loadingFunnel ? (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  <Loader2 className="animate-spin h-8 w-8 mr-2" />
+                  Loading funnel data...
+                </div>
+              ) : funnelData.length === 0 ? (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  <p className="text-lg">No data available for the selected filters.</p>
+                </div>
+              ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart
+                        data={funnelData}
+                        layout="vertical"
+                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="hsl(var(--border))"
+                          horizontal={false}
+                        />
+                        <XAxis
+                          type="number"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          domain={domain}
+                          ticks={ticks}
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          width={80}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#ffffff",
+                            border: "2px solid hsl(var(--border))",
+                            borderRadius: "0.5rem",
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                            color: "hsl(var(--foreground))",
+                          }}
+                          formatter={(value) => [`${value} candidates`, "Count"]}
+                        />
+                        <Bar
+                          dataKey="value"
+                          radius={[0, 8, 8, 0]}
+                          barSize={40}
+                        >
+                          {funnelData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.fill}
+                              stroke="hsl(var(--background))"
+                              strokeWidth={2}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
@@ -477,55 +596,67 @@ const fetchRequisitionData = async () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={dropoffData}
-                  margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(var(--border))"
-                  />
-                  <XAxis
-                    dataKey="stage"
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    width={50}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#ffffff",
-                      border: "2px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                      color: "hsl(var(--foreground))",
-                    }}
-                  />
-                  <Legend />
-                  <Bar
-                    dataKey="voluntary"
-                    stackId="a"
-                    fill="#3b82f6" // Blue
-                    name="Voluntary"
-                    radius={[0, 0, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="involuntary"
-                    stackId="a"
-                    fill="#ef4444" // Red
-                    name="Involuntary"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              {loadingDropoff ? (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  <Loader2 className="animate-spin h-8 w-8 mr-2" />
+                  Loading drop-off data...
+                </div>
+              ) : dropoffData.length === 0 ? (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  <p className="text-lg">No records found for this department/location/time period.</p>
+                </div>
+              ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart
+                        data={dropoffData}
+                        margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="hsl(var(--border))"
+                        />
+                        <XAxis
+                          dataKey="stage"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          domain={[0, dropoffData.length > 0 ? Math.ceil(Math.max(...dropoffData.map((d: any) => (d.voluntary || 0) + (d.involuntary || 0))) * 1.2) : 500]}
+                          width={50}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#ffffff",
+                            border: "2px solid hsl(var(--border))",
+                            borderRadius: "0.5rem",
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                            color: "hsl(var(--foreground))",
+                          }}
+                        />
+                        <Legend />
+                        <Bar
+                          dataKey="voluntary"
+                          stackId="a"
+                          fill="#3b82f6" // Blue
+                          name="Voluntary"
+                          radius={[0, 0, 0, 0]}
+                        />
+                        <Bar
+                          dataKey="involuntary"
+                          stackId="a"
+                          fill="#ef4444" // Red
+                          name="Involuntary"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -539,62 +670,77 @@ const fetchRequisitionData = async () => {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b bg-gray-50">
-                  <tr>
-                    <th className="text-left p-4 font-semibold text-foreground border-r">
-                      Requisition Title
-                    </th>
-                    <th className="text-left p-4 font-semibold text-foreground border-r">
-                      Age (Days)
-                    </th>
-                    <th className="text-left p-4 font-semibold text-foreground border-r">
-                      Interviewed
-                    </th>
-                    <th className="text-left p-4 font-semibold text-foreground border-r">
-                      Offers
-                    </th>
-                    <th className="text-left p-4 font-semibold text-foreground border-r">
-                      Hires
-                    </th>
-                    <th className="text-left p-4 font-semibold text-foreground">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {requisitionData.map((req, index) => (
-                    <tr
-                      key={index}
-                      className="border-b hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="p-4 font-medium text-foreground border-r">
-                        {req.title}
-                      </td>
-                      <td className="p-4 text-muted-foreground border-r">{req.age}</td>
-                      <td className="p-4 text-muted-foreground border-r">
-                        {req.interviewed}
-                      </td>
-                      <td className="p-4 text-muted-foreground border-r">{req.offers}</td>
-                      <td className="p-4 text-muted-foreground border-r">{req.hires}</td>
-                      <td className="p-4">
-                        <Badge
-                          variant={
-                            req.status === "Active" ? "default" : "secondary"
-                          }
-                          className={
-                            req.status === "Active"
-                              ? "bg-green-100 text-green-800 border-green-200"
-                              : "bg-gray-100 text-gray-800 border-gray-200"
-                          }
-                        >
-                          {req.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {loadingRequisition ? (
+                <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                  <Loader2 className="animate-spin h-8 w-8 mr-2" />
+                  Loading requisition data...
+                </div>
+              ) : (
+                  <table className="w-full text-sm">
+                    <thead className="border-b bg-gray-50">
+                      <tr>
+                        <th className="text-left p-4 font-semibold text-foreground border-r">
+                          Requisition Title
+                        </th>
+                        <th className="text-left p-4 font-semibold text-foreground border-r">
+                          Age (Days)
+                        </th>
+                        <th className="text-left p-4 font-semibold text-foreground border-r">
+                          Interviewed
+                        </th>
+                        <th className="text-left p-4 font-semibold text-foreground border-r">
+                          Offers
+                        </th>
+                        <th className="text-left p-4 font-semibold text-foreground border-r">
+                          Hires
+                        </th>
+                        <th className="text-left p-4 font-semibold text-foreground">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {requisitionData.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                            No records found for this department/location/time period.
+                          </td>
+                        </tr>
+                      ) : (
+                        requisitionData.map((req, index) => (
+                          <tr
+                            key={index}
+                            className="border-b hover:bg-muted/30 transition-colors"
+                          >
+                            <td className="p-4 font-medium text-foreground border-r">
+                              {req.title}
+                            </td>
+                            <td className="p-4 text-muted-foreground border-r">{req.age}</td>
+                            <td className="p-4 text-muted-foreground border-r">
+                              {req.interviewed}
+                            </td>
+                            <td className="p-4 text-muted-foreground border-r">{req.offers}</td>
+                            <td className="p-4 text-muted-foreground border-r">{req.hires}</td>
+                            <td className="p-4">
+                              <Badge
+                                variant={
+                                  req.status === "Active" ? "default" : "secondary"
+                                }
+                                className={
+                                  req.status === "Active"
+                                    ? "bg-green-100 text-green-800 border-green-200"
+                                    : "bg-gray-100 text-gray-800 border-gray-200"
+                                }
+                              >
+                                {req.status}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+              )}
             </div>
           </CardContent>
         </Card>
