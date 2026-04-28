@@ -34,6 +34,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
     const [toolboxTab, setToolboxTab] = useState<string | null>(null);
     const [activeTool, setActiveTool] = useState<WhiteboardTool>('select');
     const [isFloatingToolbarVisible, setIsFloatingToolbarVisible] = useState(true);
+    const [offerData, setOfferData] = useState<any>(null);
 
     const handleSetToolboxTab = (tab: string | null) => {
         setToolboxTab(tab);
@@ -43,6 +44,62 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
     };
     const [sessionData, setSessionData] = useState<SessionData>({});
 
+    // Function to replace placeholders in template content
+    const replacePlaceholders = (content: any, offerData: any) => {
+        if (!offerData) return content;
+
+        const replacements = {
+            '{{employee_name}}': offerData.candidateName || '',
+            '{{candidate_name}}': offerData.candidateName || '',
+            '{{designation}}': offerData.position || '',
+            '{{position}}': offerData.position || '',
+            '{{joining_date}}': offerData.startDate || '',
+            '{{start_date}}': offerData.startDate || '',
+            '{{salary_amount}}': offerData.salary || '',
+            '{{salary}}': offerData.salary || '',
+            '{{company_name}}': offerData.companyData?.legal_name || offerData.companyData?.name || '',
+            '{{company_address}}': offerData.companyData?.registered_address || offerData.companyData?.address || '',
+            '{{company_email}}': offerData.companyData?.email || '',
+            '{{company_phone}}': offerData.companyData?.mobile_no || offerData.companyData?.phone || '',
+            '{{company_website}}': offerData.companyData?.website || '',
+            '{{company_logo}}': offerData.companyData?.logo || '',
+            '{{company_cin}}': offerData.companyData?.cin || '',
+            '{{company_gstin}}': offerData.companyData?.gstin || '',
+            '{{company_pan}}': offerData.companyData?.pan || '',
+            '{{department_name}}': offerData.employeeData?.department_name || '',
+            '{{candidate_email}}': offerData.employeeData?.email || '',
+            '{{candidate_mobile}}': offerData.employeeData?.mobile || '',
+            '{{hr_name}}': offerData.hrData?.name || '',
+            '{{hr_designation}}': offerData.hrData?.designation || '',
+            '{{hr_email}}': offerData.hrData?.email || '',
+            '{{offer_date}}': new Date().toLocaleDateString(),
+            '{{reporting_manager}}': offerData.companyData?.reporting_manager || 'Manager Name',
+            '{{probation_period}}': '3 months',
+            '{{notes}}': offerData.notes || ''
+        };
+
+        const traverseAndReplace = (obj: any): any => {
+            if (typeof obj === 'string') {
+                let replaced = obj;
+                Object.entries(replacements).forEach(([placeholder, value]) => {
+                    replaced = replaced.replace(new RegExp(placeholder, 'g'), value);
+                });
+                return replaced;
+            } else if (Array.isArray(obj)) {
+                return obj.map(traverseAndReplace);
+            } else if (obj && typeof obj === 'object') {
+                const newObj: any = {};
+                for (const key in obj) {
+                    newObj[key] = traverseAndReplace(obj[key]);
+                }
+                return newObj;
+            }
+            return obj;
+        };
+
+        return traverseAndReplace(content);
+    };
+
     useEffect(() => {
         setMounted(true);
         if (typeof window !== "undefined") {
@@ -50,6 +107,13 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
             if (userData) {
                 const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
                 setSessionData({ url: APP_URL, token, sub_institute_id });
+            }
+
+            // Load offer data if present
+            const storedOfferData = localStorage.getItem("offerData");
+            if (storedOfferData) {
+                setOfferData(JSON.parse(storedOfferData));
+                localStorage.removeItem("offerData"); // Clear after loading
             }
         }
     }, []);
@@ -61,7 +125,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
     return (
         <div className="flex flex-col h-screen overflow-hidden">
             <Editor resolver={{ TextBlock, ImageBlock, ContainerBlock, A4PageBlock, ButtonBlock, DividerBlock, GridBlock, ShapeBlock, TableBlock, DrawingBlock, LineBlock }}>
-                <Topbar templateId={templateId} />
+                <Topbar templateId={templateId} offerData={offerData} />
 
                 <div className="flex flex-1 overflow-hidden relative">
                     <div className="z-20 flex flex-col border-r border-border bg-white h-full relative" style={{ width: toolboxTab ? "368px" : "80px", transition: "width 0.3s ease-in-out" }}>
@@ -91,7 +155,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
                             />
                         )}
                         <EditorCanvas activeTool={activeTool}>
-                            <FrameLoader templateId={templateId} sessionData={sessionData} />
+                            <FrameLoader templateId={templateId} sessionData={sessionData} offerData={offerData} replacePlaceholders={replacePlaceholders} />
                         </EditorCanvas>
                     </div>
                 </div>
@@ -100,7 +164,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
     );
 }
 
-function FrameLoader({ templateId, sessionData }: { templateId: string; sessionData: SessionData }) {
+function FrameLoader({ templateId, sessionData, offerData, replacePlaceholders }: { templateId: string; sessionData: SessionData; offerData: any; replacePlaceholders: (content: any, data: any) => any }) {
     const { actions } = useEditor();
     const [loaded, setLoaded] = useState(false);
 
@@ -152,8 +216,12 @@ function FrameLoader({ templateId, sessionData }: { templateId: string; sessionD
 
                 if (response.ok && isMounted) {
                     const template = await response.json();
-                    const content = template.content;
+                    let content = template.content;
                     if (content) {
+                        // Replace placeholders if offerData exists
+                        if (offerData) {
+                            content = replacePlaceholders(content, offerData);
+                        }
                         timeoutId = setTimeout(() => {
                             if (isMounted) {
                                 try {

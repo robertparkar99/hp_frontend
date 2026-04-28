@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useEditor } from "@craftjs/core";
 import { useRouter } from "next/navigation";
 import { Button } from "../../ui/button";
-import { Save, Download, Trash2, FilePlus, ArrowLeft, Loader2, ChevronDown, FileText, Image as ImageIcon, Undo2, Redo2 } from "lucide-react";
+import { Save, Download, Trash2, FilePlus, ArrowLeft, Loader2, ChevronDown, FileText, Image as ImageIcon, Undo2, Redo2, Send } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
@@ -16,10 +16,12 @@ interface SessionData {
     token?: string;
     sub_institute_id?: string;
     org_type?: string;
+    user_id?: number;
+    id?: number;
 }
 
 
-export const Topbar = ({ templateId }: { templateId?: string }) => {
+export const Topbar = ({ templateId, offerData }: { templateId?: string; offerData?: any }) => {
     const router = useRouter();
     const { actions, query } = useEditor();
     const [currentId, setCurrentId] = React.useState(templateId || uuidv4());
@@ -29,6 +31,7 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
     const [tempName, setTempName] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [isSending, setIsSending] = useState(false);
 
     // ── Reactive canvas-level undo/redo ──
     // Sync with Craft.js history on every state change (zero polling, instant response)
@@ -109,8 +112,8 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
         if (typeof window !== "undefined") {
             const userData = localStorage.getItem("userData");
             if (userData) {
-                const { APP_URL, token, sub_institute_id, org_type } = JSON.parse(userData);
-                setSessionData({ url: APP_URL, token, sub_institute_id, org_type });
+                const { APP_URL, token, sub_institute_id, org_type, user_id } = JSON.parse(userData);
+                setSessionData({ url: APP_URL, token, sub_institute_id, org_type, user_id });
             }
         }
     }, []);
@@ -254,6 +257,48 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
         router.push("/content/hr-templates");
     };
 
+    const handleSendOffer = async () => {
+        if (!offerData || !sessionData.url || !sessionData.token) return;
+
+        setIsSending(true);
+        try {
+            // Mark the offer as sent (backend will handle email sending)
+            const body: any = {
+                type: 'API',
+                token: sessionData.token,
+                sub_institute_id: sessionData.sub_institute_id,
+                user_id: sessionData.user_id,
+                application_id: offerData.candidateId,
+                job_id: offerData.jobId,
+                position: offerData.position,
+                candidateEmail: offerData.employeeData?.email || `${offerData.candidateName.toLowerCase().replace(' ', '.')}@example.com`,
+                offerDetails: offerData
+            };
+            const sendResponse = await fetch(`${sessionData.url}/api/talent-offers`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (sendResponse.ok) {
+                alert('Offer sent successfully!');
+                // Clear offer data and trigger offers refresh
+                localStorage.removeItem('offerData');
+                localStorage.setItem('refreshOffers', 'true');
+                router.push('/content/Telent-management/ManagerHub');
+            } else {
+                alert('Failed to send offer. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error sending offer:', error);
+            alert('Error sending offer. Please try again.');
+        } finally {
+            setIsSending(false);
+        }
+    };
+
     const handleExport = async (format: "pdf" | "png" | "jpg" | "docx") => {
         const element = document.getElementById("editor-canvas");
         if (!element) return;
@@ -389,6 +434,11 @@ export const Topbar = ({ templateId }: { templateId?: string }) => {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+                {offerData && (
+                    <Button size="sm" disabled={isSending} onClick={() => handleSendOffer()} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.23)] hover:-translate-y-[1px] rounded-lg transition-all duration-200 border-0">
+                        {isSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />} Send Offer
+                    </Button>
+                )}
                 <Button size="sm" onClick={isEditing ? handleUpdate : handleSaveClick} className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-[0_4px_14px_0_rgba(14,165,233,0.39)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.23)] hover:-translate-y-[1px] rounded-lg transition-all duration-200 border-0">
                     {isEditing ? <><Save className="w-4 h-4 mr-2" /> save </> : <><Save className="w-4 h-4 mr-2" /> Save</>}
                 </Button>
