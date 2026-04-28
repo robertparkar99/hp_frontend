@@ -24,6 +24,7 @@ export default function DashboardTemplatesPage() {
     const router = useRouter();
     const [templates, setTemplates] = useState<ApiTemplate[]>([]);
     const [sessionData, setSessionData] = useState<SessionData>({});
+    const [offerData, setOfferData] = useState<any>(null);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -31,6 +32,14 @@ export default function DashboardTemplatesPage() {
             if (userData) {
                 const { APP_URL, token, sub_institute_id } = JSON.parse(userData);
                 setSessionData({ url: APP_URL, token, sub_institute_id });
+            }
+
+            // Load offer data if present
+            const storedOfferData = localStorage.getItem("offerData");
+            if (storedOfferData) {
+                const data = JSON.parse(storedOfferData);
+                setOfferData(data);
+                console.log('Offer data loaded in dashboard:', data);
             }
         }
     }, []);
@@ -81,7 +90,9 @@ export default function DashboardTemplatesPage() {
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Templates </h1>
-                    <p className="text-muted-foreground mt-1">Manage your HR document templates..</p>
+                    <p className="text-muted-foreground mt-1">
+                        {offerData ? `Creating offer letter for ${offerData.candidateName} - ${offerData.position}` : 'Manage your HR document templates..'}
+                    </p>
                 </div>
                 <button
                     onClick={() => router.push(`/content/hr-templates/editor/${uuidv4()}`)}
@@ -105,19 +116,27 @@ export default function DashboardTemplatesPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {templates.map((template) => (
-                        <div key={template.id} className="bg-white border rounded-lg hover:shadow-md transition-shadow overflow-hidden">
+                    {templates.map((template) => {
+                        const isOfferTemplate = template.name.toLowerCase().includes('offer') || template.name.toLowerCase().includes('letter');
+                        return (
+                        <div key={template.id} className={`bg-white border rounded-lg hover:shadow-md transition-shadow overflow-hidden ${offerData && isOfferTemplate ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}>
                             <div className="p-6">
-                                <h3 className="font-medium text-lg truncate mb-1" title={template.name}>{template.name}</h3>
+                                <h3 className="font-medium text-lg truncate mb-1" title={template.name}>
+                                    {template.name}
+                                    {offerData && isOfferTemplate && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Recommended</span>}
+                                </h3>
                                 <span className="text-xs text-muted-foreground">ID: {template.id}</span>
 
                                 <div className="flex space-x-2 mt-4">
-                                    <Link
-                                        href={`/content/hr-templates/editor/${template.id}`}
+                                    <Button
+                                        onClick={() => {
+                                            console.log('Selected template:', template.id, 'with offer data:', offerData);
+                                            router.push(`/content/hr-templates/editor/${template.id}`);
+                                        }}
                                         className="flex-1 inline-flex items-center justify-center rounded-md font-medium h-9 px-3 text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
                                     >
                                         <Edit className="w-4 h-4 mr-2" /> Edit
-                                    </Link>
+                                    </Button>
                                     <Button
                                         variant="outline"
                                         size="icon"
@@ -129,7 +148,8 @@ export default function DashboardTemplatesPage() {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

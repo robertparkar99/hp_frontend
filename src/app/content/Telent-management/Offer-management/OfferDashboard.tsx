@@ -198,6 +198,77 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     }
   }, [positions, candidate, position, candidateId]);
 
+  // Effect to refresh offers when flag is set
+  useEffect(() => {
+    const checkRefresh = () => {
+      const shouldRefresh = localStorage.getItem('refreshOffers');
+      if (shouldRefresh && sessionData.APP_URL && sessionData.token) {
+        localStorage.removeItem('refreshOffers');
+        // Refetch offers
+        fetchOffers();
+      }
+    };
+
+    const interval = setInterval(checkRefresh, 1000); // Check every second
+    return () => clearInterval(interval);
+  }, [sessionData]);
+
+  const fetchOffers = async () => {
+    try {
+      // First fetch applications for candidate names
+      const applicationsResponse = await fetch(
+        `${sessionData.APP_URL}/api/job-applications?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      let candidateMap: { [key: number]: string } = {};
+      if (applicationsResponse.ok) {
+        const applicationsResult = await applicationsResponse.json();
+        applicationsResult.data.forEach((app: any) => {
+          const fullName = [app.first_name, app.middle_name, app.last_name].filter(Boolean).join(' ');
+          candidateMap[app.id] = fullName || `Candidate ${app.id}`;
+        });
+      }
+
+      const offersResponse = await fetch(
+        `${sessionData.APP_URL}/api/offers?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (offersResponse.ok) {
+        const offersResult = await offersResponse.json();
+        const mappedOffers = offersResult.data.map((item: any) => ({
+          id: item.id,
+          candidateId: item.application_id,
+          candidateName: candidateMap[item.application_id] || `Candidate ${item.application_id}`,
+          position: item.position,
+          jobTitle: item.position,
+          salary: item.salary,
+          startDate: item.start_date,
+          status: item.status as 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired',
+          createdAt: new Date(item.created_at).toISOString().split('T')[0],
+          expiresAt: item.expires_at ? new Date(item.expires_at).toISOString().split('T')[0] : '',
+          sentAt: item.sent_at ? new Date(item.sent_at).toISOString().split('T')[0] : undefined,
+          acceptedAt: undefined,
+          rejectedAt: item.rejected_at ? new Date(item.rejected_at).toISOString().split('T')[0] : undefined,
+          offerLetterUrl: item.offer_letter_url,
+          notes: item.notes,
+        }));
+        setOffers(mappedOffers);
+      }
+    } catch (error) {
+      console.warn("Error refreshing offers:", error);
+    }
+  };
+
   useEffect(() => {
     if (!sessionData || !sessionData.APP_URL || !sessionData.token) return;
 
@@ -223,47 +294,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           });
         }
 
-        // Try to fetch real offers data
-        const offersResponse = await fetch(
-          `${sessionData.APP_URL}/api/offers?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (offersResponse.ok) {
-          const offersResult = await offersResponse.json();
-          const mappedOffers = offersResult.data.map((item: any) => {
-            const createdAt = new Date(item.created_at).toISOString().split('T')[0];
-            const startDate = item.start_date;
-            const expiresAt = item.expires_at ? new Date(item.expires_at).toISOString().split('T')[0] : '';
-            const sentAt = item.sent_at ? new Date(item.sent_at).toISOString().split('T')[0] : undefined;
-            const rejectedAt = item.rejected_at ? new Date(item.rejected_at).toISOString().split('T')[0] : undefined;
-            return {
-              id: item.id,
-              candidateId: item.application_id,
-              candidateName: candidateMap[item.application_id] || `Candidate ${item.application_id}`,
-              position: item.position,
-              jobTitle: item.position,
-              salary: item.salary,
-              startDate,
-              status: item.status as 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired',
-              createdAt,
-              expiresAt,
-              sentAt,
-              acceptedAt: undefined,
-              rejectedAt,
-              offerLetterUrl: item.offer_letter_url,
-              notes: item.notes,
-            };
-          });
-          setOffers(mappedOffers);
-        } else {
-          // No data available
-          setOffers([]);
-        }
+        // Offers will be fetched only after successful send via refreshOffers flag
 
         // Try to fetch templates
         const templatesResponse = await fetch(
@@ -311,12 +342,117 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     fetchData();
   }, [sessionData]);
 
+  // const createOffer = async () => {
+  //   if (!sessionData) return;
+
+  //   setIsCreatingOffer(true);
+  //   try {
+  //     const response = await fetch(`${sessionData.APP_URL}/api/talent-offers`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         type: "API",
+  //         token: sessionData.token,
+  //         sub_institute_id: sessionData.sub_institute_id,
+  //         user_id: sessionData.user_id,
+  //         position: newOffer.position,
+  //         application_id: parseInt(newOffer.candidateId),
+  //         job_id: parseInt(newOffer.jobId),
+  //         salary: newOffer.salary,
+  //         start_date: newOffer.startDate,
+  //         notes: newOffer.notes
+  //       })
+  //     });
+
+  //     if (response.ok) {
+  //       const result = await response.json();
+
+  //       // Fetch additional data for template filling
+  //       const [employeeRes, companyRes, hrRes, templatesRes] = await Promise.all([
+  //         fetch(`${sessionData.APP_URL}/api/job-applications/${newOffer.candidateId}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`),
+  //         fetch(`${sessionData.APP_URL}/settings/organization_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`),
+  //         fetch(`${sessionData.APP_URL}/api/hr?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`),
+  //         fetch(`${sessionData.APP_URL}/api/templates?sub_institute_id=${sessionData.sub_institute_id}`, {
+  //           headers: { "Authorization": `Bearer ${sessionData.token}` }
+  //         })
+  //       ]);
+
+  //       let employeeData = {};
+  //       let companyData = {};
+  //       let hrData = {};
+
+  //       let templateId = null;
+
+  //       if (employeeRes.ok) {
+  //         const emp = await employeeRes.json();
+  //         employeeData = emp.data || {};
+  //       }
+
+  //       if (companyRes.ok) {
+  //         const comp = await companyRes.json();
+  //         companyData = comp.data || {};
+  //       }
+
+  //       if (hrRes.ok) {
+  //         const hr = await hrRes.json();
+  //         hrData = hr.data || {};
+  //       }
+
+
+
+  //       if (templatesRes.ok) {
+  //         const temps = await templatesRes.json();
+  //         const offerTemplate = temps.find((t: any) => t.name.toLowerCase().includes('offer'));
+  //         templateId = offerTemplate?.id || temps[0]?.id; // Use first template if no offer template found
+  //       }
+
+  //       if (templateId) {
+  //         // Prepare offer data for template
+  //         const offerData = {
+  //           candidateId: newOffer.candidateId,
+  //           candidateName: newOffer.candidateName,
+  //           position: newOffer.position,
+  //           salary: newOffer.salary,
+  //           startDate: newOffer.startDate,
+  //           notes: newOffer.notes,
+  //           employeeData,
+  //           companyData,
+  //           hrData,
+  //           offerId: result.data?.id
+  //         };
+
+  //         // Store in localStorage for template dashboard/editor
+  //         localStorage.setItem('offerData', JSON.stringify(offerData));
+  //         console.log('Offer data stored:', offerData);
+
+  //         // Redirect to template dashboard
+  //         router.push(`/content/hr-templates`);
+  //       } else {
+  //         alert('No offer template found. Please create an offer letter template first.');
+  //       }
+
+  //       setIsCreateDialogOpen(false);
+  //       resetNewOfferForm();
+  //     } else {
+  //       alert('Failed to create offer');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error creating offer:', error);
+  //     alert('Error creating offer');
+  //   } finally {
+  //     setIsCreatingOffer(false);
+  //   }
+  // };
+
   const createOffer = async () => {
     if (!sessionData) return;
 
     setIsCreatingOffer(true);
     try {
-      const response = await fetch(`${sessionData.APP_URL}/api/talent-offers`, {
+      // First create the offer in database
+      const createResponse = await fetch(`${sessionData.APP_URL}/api/talent-offers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -335,31 +471,100 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
         })
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        alert('Offer created successfully!');
+      if (!createResponse.ok) {
+        alert('Failed to create offer. Please try again.');
+        return;
+      }
 
-        // Add to local state
-        const newOfferWithId: Offer = {
-          id: result.data?.id || Date.now(),
-          candidateId: parseInt(newOffer.candidateId),
+      const createResult = await createResponse.json();
+      const offerId = createResult.data?.id;
+
+      // Add the new offer to local state immediately
+      const newOfferData = {
+        id: offerId,
+        candidateId: parseInt(newOffer.candidateId),
+        candidateName: newOffer.candidateName,
+        position: newOffer.position,
+        jobTitle: newOffer.position,
+        salary: newOffer.salary,
+        startDate: newOffer.startDate,
+        status: 'draft' as const,
+        createdAt: new Date().toISOString().split('T')[0],
+        expiresAt: '',
+        notes: newOffer.notes
+      };
+      setOffers(prev => [...prev, newOfferData]);
+
+      // Fetch additional data for template filling
+      console.log('APP_URL:', sessionData.APP_URL);
+      const [employeeRes, companyRes, hrRes, templatesRes] = await Promise.all([
+        fetch(`${sessionData.APP_URL}/api/job-applications/${newOffer.candidateId}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`),
+        fetch(`${sessionData.APP_URL}/settings/organization_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`),
+        fetch(`${sessionData.APP_URL}/api/hr?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`),
+        fetch(`${sessionData.APP_URL}/api/templates?sub_institute_id=${sessionData.sub_institute_id}`, {
+          headers: { "Authorization": `Bearer ${sessionData.token}` }
+        })
+      ]);
+
+      let employeeData = {};
+      let companyData = {};
+      let hrData = {};
+
+      let templateId = null;
+
+      if (employeeRes.ok) {
+        const emp = await employeeRes.json();
+        employeeData = emp.data || {};
+      }
+
+      if (companyRes.ok) {
+        const comp = await companyRes.json();
+        companyData = comp.org_data && comp.org_data.length > 0 ? comp.org_data[0] : {};
+        console.log('Company data fetched:', companyData);
+      } else {
+        console.error('Failed to fetch company data:', companyRes.status, companyRes.statusText);
+      }
+
+      if (hrRes.ok) {
+        const hr = await hrRes.json();
+        hrData = hr.data || {};
+      }
+
+      if (templatesRes.ok) {
+        const temps = await templatesRes.json();
+        const offerTemplate = temps.find((t: any) => t.name.toLowerCase().includes('offer'));
+        templateId = offerTemplate?.id || temps[0]?.id; // Use first template if no offer template found
+      }
+
+      if (templateId) {
+        // Prepare offer data for template
+        const offerData = {
+          candidateId: newOffer.candidateId,
           candidateName: newOffer.candidateName,
           position: newOffer.position,
-          jobTitle: newOffer.jobTitle,
+          jobId: newOffer.jobId,
           salary: newOffer.salary,
           startDate: newOffer.startDate,
-          status: 'draft',
-          createdAt: new Date().toISOString().split('T')[0],
-          expiresAt: '',
-          notes: newOffer.notes
+          notes: newOffer.notes,
+          employeeData,
+          companyData,
+          hrData,
+          offerId: offerId // Now includes the created offer ID
         };
-        setOffers(prev => [...prev, newOfferWithId]);
 
-        setIsCreateDialogOpen(false);
-        resetNewOfferForm();
+        // Store in localStorage for template dashboard/editor
+        localStorage.setItem('offerData', JSON.stringify(offerData));
+        console.log('Offer data stored:', offerData);
+        console.log('Company data in offerData:', offerData.companyData);
+
+        // Redirect to template dashboard
+        router.push(`/content/hr-templates`);
       } else {
-        alert('Failed to create offer');
+        alert('No offer template found. Please create an offer letter template first.');
       }
+
+      setIsCreateDialogOpen(false);
+      resetNewOfferForm();
     } catch (error) {
       console.error('Error creating offer:', error);
       alert('Error creating offer');
@@ -399,38 +604,38 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     }
   };
 
-  const sendOffer = async (offer: Offer) => {
-    if (!sessionData) return;
+  // const sendOffer = async (offer: Offer) => {
+  //   if (!sessionData) return;
 
-    try {
-      const response = await fetch(`${sessionData.APP_URL}/api/talent-offers/${offer.id}/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: "API",
-          token: sessionData.token,
-          candidateEmail: `${offer.candidateName.toLowerCase().replace(' ', '.')}@example.com`,
-          offerDetails: offer
-        })
-      });
+  //   try {
+  //     const response = await fetch(`${sessionData.APP_URL}/api/talent-offers/${offer.id}/send`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         type: "API",
+  //         token: sessionData.token,
+  //         candidateEmail: `${offer.candidateName.toLowerCase().replace(' ', '.')}@example.com`,
+  //         offerDetails: offer
+  //       })
+  //     });
 
-      if (response.ok) {
-        updateOffer(offer.id, {
-          status: 'sent',
-          sentAt: new Date().toISOString().split('T')[0],
-          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 14 days from now
-        });
-        alert('Offer sent successfully!');
-      } else {
-        alert('Failed to send offer');
-      }
-    } catch (error) {
-      console.error('Error sending offer:', error);
-      alert('Error sending offer');
-    }
-  };
+  //     if (response.ok) {
+  //       updateOffer(offer.id, {
+  //         status: 'sent',
+  //         sentAt: new Date().toISOString().split('T')[0],
+  //         expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 14 days from now
+  //       });
+  //       alert('Offer sent successfully!');
+  //     } else {
+  //       alert('Failed to send offer');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error sending offer:', error);
+  //     alert('Error sending offer');
+  //   }
+  // };
 
   const rejectOffer = async (offer: Offer) => {
     if (!sessionData) return;
@@ -522,88 +727,88 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     }
 
     // Fallback: Generate HTML template if no URL is available
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Offer Letter - ${offer.candidateName}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .date { text-align: right; margin-bottom: 20px; }
-        .address { margin-bottom: 20px; }
-        .salutation { margin-bottom: 20px; }
-        .content { margin-bottom: 20px; }
-        .closing { margin-top: 30px; }
-        .signature { margin-top: 40px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>[Company Name]</h1>
-        <p>[Company Address]</p>
-        <p>[City, State, ZIP Code]</p>
-        <p>[Phone] | [Email]</p>
-    </div>
+//     const htmlContent = `
+// <!DOCTYPE html>
+// <html>
+// <head>
+//     <title>Offer Letter - ${offer.candidateName}</title>
+//     <style>
+//         body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+//         .header { text-align: center; margin-bottom: 30px; }
+//         .date { text-align: right; margin-bottom: 20px; }
+//         .address { margin-bottom: 20px; }
+//         .salutation { margin-bottom: 20px; }
+//         .content { margin-bottom: 20px; }
+//         .closing { margin-top: 30px; }
+//         .signature { margin-top: 40px; }
+//     </style>
+// </head>
+// <body>
+//     <div class="header">
+//         <h1>[Company Name]</h1>
+//         <p>[Company Address]</p>
+//         <p>[City, State, ZIP Code]</p>
+//         <p>[Phone] | [Email]</p>
+//     </div>
 
-    <div class="date">
-        ${new Date().toLocaleDateString()}
-    </div>
+//     <div class="date">
+//         ${new Date().toLocaleDateString()}
+//     </div>
 
-    <div class="address">
-        ${offer.candidateName}<br>
-        [Candidate Address]<br>
-        [City, State, ZIP Code]
-    </div>
+//     <div class="address">
+//         ${offer.candidateName}<br>
+//         [Candidate Address]<br>
+//         [City, State, ZIP Code]
+//     </div>
 
-    <div class="salutation">
-        Dear ${offer.candidateName},
-    </div>
+//     <div class="salutation">
+//         Dear ${offer.candidateName},
+//     </div>
 
-    <div class="content">
-        <p>We are pleased to offer you the position of <strong>${offer.position}</strong> at [Company Name]. This offer is contingent upon satisfactory completion of background checks and reference verification.</p>
+//     <div class="content">
+//         <p>We are pleased to offer you the position of <strong>${offer.position}</strong> at [Company Name]. This offer is contingent upon satisfactory completion of background checks and reference verification.</p>
 
-        <h3>Position Details:</h3>
-        <ul>
-            <li><strong>Job Title:</strong> ${offer.position}</li>
-            <li><strong>Start Date:</strong> ${offer.startDate}</li>
-            <li><strong>Compensation:</strong> ${offer.salary}</li>
-            <li><strong>Location:</strong> [Location]</li>
-        </ul>
+//         <h3>Position Details:</h3>
+//         <ul>
+//             <li><strong>Job Title:</strong> ${offer.position}</li>
+//             <li><strong>Start Date:</strong> ${offer.startDate}</li>
+//             <li><strong>Compensation:</strong> ${offer.salary}</li>
+//             <li><strong>Location:</strong> [Location]</li>
+//         </ul>
 
-        <h3>Benefits:</h3>
-        <ul>
-            <li>Health insurance</li>
-            <li>Paid time off</li>
-            <li>Professional development allowance</li>
-        </ul>
+//         <h3>Benefits:</h3>
+//         <ul>
+//             <li>Health insurance</li>
+//             <li>Paid time off</li>
+//             <li>Professional development allowance</li>
+//         </ul>
 
-        <p>Please review this offer and let us know your decision by ${offer.expiresAt}.</p>
+//         <p>Please review this offer and let us know your decision by ${offer.expiresAt}.</p>
 
-        <p>If you have any questions, please contact us at [Contact Information].</p>
+//         <p>If you have any questions, please contact us at [Contact Information].</p>
 
-        <p>We look forward to welcoming you to the team!</p>
-    </div>
+//         <p>We look forward to welcoming you to the team!</p>
+//     </div>
 
-    <div class="closing">
-        Sincerely,<br><br>
+//     <div class="closing">
+//         Sincerely,<br><br>
 
-        [Your Name]<br>
-        [Your Position]<br>
-        [Company Name]<br>
-        [Contact Information]
-    </div>
+//         [Your Name]<br>
+//         [Your Position]<br>
+//         [Company Name]<br>
+//         [Contact Information]
+//     </div>
 
-    <div class="signature" style="border-top: 1px solid #000; width: 200px; margin-top: 20px; padding-top: 10px;">
-        Signature
-    </div>
-</body>
-</html>
-    `;
+//     <div class="signature" style="border-top: 1px solid #000; width: 200px; margin-top: 20px; padding-top: 10px;">
+//         Signature
+//     </div>
+// </body>
+// </html>
+//     `;
 
     const newWindow = window.open('', '_blank');
     if (newWindow) {
-      newWindow.document.write(htmlContent);
+      // newWindow.document.write(htmlContent);
       newWindow.document.close();
       newWindow.print();
     }
@@ -858,10 +1063,10 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-end gap-2" id="tour-draft-actions">
-                  <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => sendOffer(offer)}  id="tour-send-offer">
+                  {/* <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => sendOffer(offer)}  id="tour-send-offer">
                     <Send className="w-4 h-4 mr-2" />
                     Send
-                  </Button>
+                  </Button> */}
                   <Button variant="destructive" size="sm" className="w-full sm:w-auto" onClick={() => rejectOffer(offer)}>
                     <X className="w-4 h-4 mr-2" />
                     Reject
