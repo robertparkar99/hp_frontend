@@ -36,7 +36,7 @@ export default function GroupWiseRightsPage() {
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
       <div className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-[304px]" : "md:ml-24"} ml-0 p-2`}>
         <iframe
-          src="https://finance-chatbot-five.vercel.app/"
+          src="https://finance-chatbot-ebon.vercel.app/sign-in"
           width="100%"
           height="600px"
           style={{ border: 'none' }}
