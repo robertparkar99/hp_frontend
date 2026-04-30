@@ -431,7 +431,12 @@ export const LogoSection: React.FC = () => {
             }}
             className="p-2 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-all"
           >
-            <DollarSign className="w-6 h-6 text-green-600" />
+            {/* <DollarSign className="w-6 h-6 text-green-600" /> */}
+            <img
+              src="/chat-bot.png"   // 🔁 tamaro image path (public folder ma mukvu)
+              alt="Finance Chatbot"
+              className="w-7 h-7 object-contain"
+            />
           </button>
         </div>
 
