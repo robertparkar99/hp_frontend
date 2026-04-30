@@ -30,7 +30,7 @@ export default function GroupWiseRightsPage() {
 
   return (
     <>
-      <div className="mb-5">
+      <div className="">
         <Header />
       </div>
       {/* <Sidebar mobileOpen={mobileOpen} onClose={handleCloseMobileSidebar} /> */}
@@ -38,7 +38,7 @@ export default function GroupWiseRightsPage() {
         <iframe
           src="https://finance-chatbot-ebon.vercel.app/sign-in"
           width="100%"
-          height="600px"
+          height="715px"
           style={{ border: 'none' }}
           title="Finance Chatbot"
         ></iframe>
