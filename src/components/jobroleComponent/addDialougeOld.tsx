@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 interface AddDialogProps {
   skillId: number | null;
@@ -31,6 +31,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen }) => 
   const [departments, setDepartments] = useState<{ name: string, id: number }[]>([]);
   const [subDepartments, setSubDepartments] = useState<any[]>([]);
   const [allSubDepartments, setAllSubDepartments] = useState<any>({});
+  const [loading, setLoading] = useState(false);
   // const [jobroles, setJobroles] = useState<{ name: string }[]>([]);
   const [formData, setFormData] = useState<FormData>({
     jobrole: "",
@@ -44,42 +45,49 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen }) => 
   // const [showJobroleDropdown, setShowJobroleDropdown] = useState(false);
 
   useEffect(() => {
-    const userData = localStorage.getItem("userData");
-    if (userData) {
-      const { APP_URL, token, org_type, sub_institute_id, user_id, user_profile_name } = JSON.parse(userData);
-      setSessionData({
-        url: APP_URL,
-        token,
-        orgType: org_type,
-        subInstituteId: sub_institute_id,
-        userId: user_id,
-        userProfile: user_profile_name
-      });
-    }
+    const data = localStorage.getItem("userData");
+    if (!data) return;
+    const parsed = JSON.parse(data);
+    setSessionData({
+      url: parsed.APP_URL,
+      token: parsed.token,
+      orgType: parsed.org_type,
+      subInstituteId: parsed.sub_institute_id,
+      userId: parsed.user_id,
+      userProfile: parsed.user_profile_name
+    });
   }, []);
+
+  const fetchDepartments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const url = new URL(`${sessionData.url}/api/departments-management`);
+      url.searchParams.set("type", "api");
+      url.searchParams.set("token", sessionData.token);
+      url.searchParams.set("sub_institute_id", sessionData.subInstituteId);
+      const res = await fetch(url.toString());
+      const data = await res.json();
+      console.log('Fetched data:', data);
+      setDepartments(
+        (data.main_departments || []).map((d: any) => ({
+          name: d.department,
+          id: d.id
+        }))
+      );
+      setAllSubDepartments(data.sub_departments || {});
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      alert("Failed to load departments");
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionData.url, sessionData.token, sessionData.subInstituteId]);
 
   useEffect(() => {
     if (sessionData.url && sessionData.token) {
       fetchDepartments();
-      // fetchJobroles();
     }
-  }, [sessionData.url, sessionData.token]);
-
-  const fetchDepartments = async () => {
-    try {
-      const res = await fetch(`${sessionData.url}/api/departments-management?type=api&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`);
-      const data = await res.json();
-      console.log('Fetched data:', data);
-      const mainDepts = data.main_departments || [];
-      const subDepts = data.sub_departments || {};
-      const depts = mainDepts.map((dept: any) => ({ name: dept.department, id: dept.id }));
-      setDepartments(depts);
-      setAllSubDepartments(subDepts);
-    } catch (error) {
-      console.error("Error fetching departments:", error);
-      alert("Failed to load departments");
-    }
-  };
+  }, [sessionData.url, sessionData.token, fetchDepartments]);
 
   // const fetchJobroles = async () => {
   //   try {
@@ -181,6 +189,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen }) => 
                   name="department"
                   className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
                   value={formData.department}
+                  disabled={loading}
                   onChange={(e) => {
                     handleFormChange(e);
                     const value = e.target.value;
@@ -209,7 +218,7 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen }) => 
                   className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
                   value={formData.subDepartment}
                   onChange={handleFormChange}
-                  disabled={!formData.department}
+                  disabled={!formData.department || loading}
                 >
                   <option value="">Select Sub-Department...</option>
                   {subDepartments.map((subDept, index) => (
