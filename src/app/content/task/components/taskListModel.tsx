@@ -59,6 +59,8 @@ const TaskListData: React.FC<Props> = ({
 
   // Initialize form data with default values and process employees
   useEffect(() => {
+    if (!taskListArr || !Array.isArray(taskListArr)) return;
+
     const initialFormData: typeof formData = {};
     taskListArr.forEach((task: Task, index: number) => {
       const taskTitle = task.task;
@@ -75,7 +77,7 @@ const TaskListData: React.FC<Props> = ({
     // Process selected employees
     const processedEmployees = getSelectedEmployeesArray();
     setEmployeesArray(processedEmployees);
-    
+
     console.log('Original selectedEmployees:', selectedEmployees);
     console.log('Processed employees array:', processedEmployees);
   }, [taskListArr, ObserverList, selectedEmployees]);
