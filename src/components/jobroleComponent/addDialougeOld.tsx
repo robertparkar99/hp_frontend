@@ -30,6 +30,8 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen }) => 
   });
   const [departments, setDepartments] = useState<{ name: string, id: number }[]>([]);
   const [subDepartments, setSubDepartments] = useState<any[]>([]);
+  const [allSubDepartments, setAllSubDepartments] = useState<any>({});
+  // const [jobroles, setJobroles] = useState<{ name: string }[]>([]);
   const [formData, setFormData] = useState<FormData>({
     jobrole: "",
     description: "",
@@ -38,7 +40,8 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen }) => 
     subDepartment: "",
     performance_expectation: ""
   });
-  const [showDeptDropdown, setShowDeptDropdown] = useState(false);
+
+  // const [showJobroleDropdown, setShowJobroleDropdown] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
@@ -56,82 +59,60 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen }) => 
   }, []);
 
   useEffect(() => {
-    if (sessionData.url && sessionData.token) fetchDepartments();
+    if (sessionData.url && sessionData.token) {
+      fetchDepartments();
+      // fetchJobroles();
+    }
   }, [sessionData.url, sessionData.token]);
 
   const fetchDepartments = async () => {
     try {
-      const res = await fetch(`${sessionData.url}/api/jobroles-by-department?sub_institute_id=${sessionData.subInstituteId}`);
+      const res = await fetch(`${sessionData.url}/api/departments-management?type=api&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}`);
       const data = await res.json();
       console.log('Fetched data:', data);
-      let depts: { name: string, id: number }[] = [];
-      if (Array.isArray(data)) {
-        const deptMap = new Map<string, number>();
-        data.forEach((item: any) => {
-          if (item.department_name && item.department_id && !deptMap.has(item.department_name)) {
-            deptMap.set(item.department_name, item.department_id);
-          }
-        });
-        depts = Array.from(deptMap.entries()).map(([name, id]) => ({ name, id }));
-      } else if (data.data && typeof data.data === 'object') {
-        // Assuming data.data is object with department names as keys, but to get ids, need to extract from values
-        const deptMap = new Map<string, number>();
-        Object.entries(data.data).forEach(([name, jobroles]: [string, any]) => {
-          if (Array.isArray(jobroles) && jobroles.length > 0) {
-            deptMap.set(name, jobroles[0].department_id);
-          }
-        });
-        depts = Array.from(deptMap.entries()).map(([name, id]) => ({ name, id }));
-      } else if (data.jobroles && Array.isArray(data.jobroles)) {
-        const deptMap = new Map<string, number>();
-        data.jobroles.forEach((item: any) => {
-          if (item.department_name && item.department_id && !deptMap.has(item.department_name)) {
-            deptMap.set(item.department_name, item.department_id);
-          }
-        });
-        depts = Array.from(deptMap.entries()).map(([name, id]) => ({ name, id }));
-      } else if (typeof data === 'object') {
-        const deptMap = new Map<string, number>();
-        Object.entries(data).forEach(([name, jobroles]: [string, any]) => {
-          if (Array.isArray(jobroles) && jobroles.length > 0) {
-            deptMap.set(name, jobroles[0].department_id);
-          }
-        });
-        depts = Array.from(deptMap.entries()).map(([name, id]) => ({ name, id }));
-      }
+      const mainDepts = data.main_departments || [];
+      const subDepts = data.sub_departments || {};
+      const depts = mainDepts.map((dept: any) => ({ name: dept.department, id: dept.id }));
       setDepartments(depts);
+      setAllSubDepartments(subDepts);
     } catch (error) {
       console.error("Error fetching departments:", error);
       alert("Failed to load departments");
     }
   };
 
-  const fetchSubDepartments = async (department: string) => {
-    try {
-      const res = await fetch(`${sessionData.url}/search_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.subInstituteId}&org_type=${sessionData.orgType}&searchType=sub_department&searchWord=${encodeURIComponent(department)}`);
-      const data = await res.json();
-      setSubDepartments(data.searchData || []);
-    } catch (error) {
-      console.error("Error fetching sub-departments:", error);
-      alert("Failed to load sub-departments");
-    }
-  };
+  // const fetchJobroles = async () => {
+  //   try {
+  //     const res = await fetch(`${sessionData.url}/table_data?table=s_user_jobrole&filters[sub_institute_id]=${sessionData.subInstituteId}`);
+  //     const json = await res.json();
+  //     let data: any[] = [];
+  //     if (Array.isArray(json)) {
+  //       data = json;
+  //     } else if (json?.data) {
+  //       data = json.data;
+  //     }
+  //     const roles = data.map((item: any) => ({ name: item.jobrole }));
+  //     setJobroles(roles);
+  //   } catch (error) {
+  //     console.error("Error fetching jobroles:", error);
+  //   }
+  // };
+
+
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-
-    // If department changes, fetch sub-departments
-    if (name === "department" && value) {
-      fetchSubDepartments(value);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    const { subDepartment, ...rest } = formData;
+
     const payload = {
-      ...formData,
+      ...rest,
+      sub_department: subDepartment,
       department_id: formData.department_id,
       type: "API",
       method_field: 'POST',
@@ -194,71 +175,49 @@ const AddDialog: React.FC<AddDialogProps> = ({ onClose, onSuccess, isOpen }) => 
           <form className="w-[100%]" onSubmit={handleSubmit}>
             {/* Job Role and Location */}
             <div className="flex gap-4">
-              <div className="relative z-50 w-full mb-5 group text-left">
+              <div className="relative z-0 w-full mb-5 group text-left">
                 <label htmlFor="department" className="text-left">Jobrole Department</label><br />
-                <div className="relative w-full">
-                  <input
-                    type="text"
-                    name="department"
-                    className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
-                    placeholder="Search or Add Department..."
-                    value={formData.department}
-                    onChange={(e) => {
-                      handleFormChange(e);
-                      setShowDeptDropdown(true);
-                    }}
-                    onFocus={() => setShowDeptDropdown(true)}
-                    autoComplete="off"
-                  />
-
-                  {/* Custom Dropdown (Always Comes Under Input) */}
-                  {showDeptDropdown && (
-                    <ul className="absolute top-[42px] left-0 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-43 overflow-y-auto hide-scrollbar z-50">
-                      {departments
-                        .filter((d) =>
-                          d.name.toLowerCase().includes(formData.department?.toLowerCase() || "")
-                        )
-                        .map((dept, index) => (
-                          <li
-                            key={index}
-                            className="px-3 py-2 hover:bg-blue-100 cursor-pointer"
-                            onClick={() => {
-                              setFormData(prev => ({ ...prev, department: dept.name, department_id: dept.id }));
-                              fetchSubDepartments(dept.name);
-                              setShowDeptDropdown(false);
-                            }}
-                          >
-                            {dept.name}
-                          </li>
-                        ))}
-                    </ul>
-                  )}
-                </div>
-
+                <select
+                  name="department"
+                  className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
+                  value={formData.department}
+                  onChange={(e) => {
+                    handleFormChange(e);
+                    const value = e.target.value;
+                    const selectedDept = departments.find(d => d.name === value);
+                    if (selectedDept) {
+                      setFormData(prev => ({ ...prev, department_id: selectedDept.id, subDepartment: "" }));
+                      setSubDepartments((allSubDepartments[selectedDept.id] || []).map((sub: any) => sub.department));
+                    } else {
+                      setFormData(prev => ({ ...prev, department_id: undefined, subDepartment: "" }));
+                      setSubDepartments([]);
+                    }
+                  }}
+                >
+                  <option value="">Select Department...</option>
+                  {departments.map((dept, index) => (
+                    <option key={index} value={dept.name}>{dept.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="relative z-0 w-full mb-5 group text-left">
                 <label htmlFor="subDepartment" className="text-left">Jobrole Sub-Department</label><br />
 
-                <input
-                  type="text"
-                  name="subDepartment"   // ✅ FIXED
-                  list="subDepartments"
+                <select
+                  name="subDepartment"
                   className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
-                  placeholder="Search or Add Sub-Department..."
-                  onChange={handleFormChange}
                   value={formData.subDepartment}
-                  autoComplete="off"
+                  onChange={handleFormChange}
                   disabled={!formData.department}
-                />
-
-                <datalist id="subDepartments">
+                >
+                  <option value="">Select Sub-Department...</option>
                   {subDepartments.map((subDept, index) => (
                     <option key={index} value={subDept}>
                       {subDept}
                     </option>
                   ))}
-                </datalist>
+                </select>
               </div>
 
             </div>
