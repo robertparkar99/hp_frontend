@@ -292,7 +292,7 @@ export default function GenerateAssessmentModal({
 
     try {
       console.log("Making fetch to /api/generate-questions");
-      const res = await fetch("/api/generate-questions", {
+      const res = await fetch(`${sessionData.url}/api/gemini/generate-questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -310,14 +310,14 @@ export default function GenerateAssessmentModal({
       const result = await res.json();
       console.log("Fetch result:", result);
 
-      if (!Array.isArray(result.questions)) {
+      if (!Array.isArray(result.data?.questions)) {
         throw new Error("No questions array in response");
       }
 
-      console.log("Generated questions:", result.questions);
-      console.log("Generated question ids:", (result.questions as Question[]).map(q => q.id));
-      setQuestions(result.questions as Question[]);
-      // setQuestionIds((result.questions as Question[]).map(q => q.id).filter(Boolean));
+      console.log("Generated questions:", result.data.questions);
+      console.log("Generated question ids:", (result.data.questions as Question[]).map(q => q.id));
+      setQuestions(result.data.questions as Question[]);
+      // setQuestionIds((result.data.questions as Question[]).map(q => q.id).filter(Boolean));
       setQuestionsGenerated(true);
       console.log("[DEBUG] questionsGenerated set to true");
     } catch (err: any) {
