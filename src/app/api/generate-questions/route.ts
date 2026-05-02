@@ -7,13 +7,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log("Request body:", body);
 
-    const { sessionData } = body;
-    if (!sessionData || !sessionData.url) {
-      return NextResponse.json(
-        { error: "Session data not provided or invalid" },
-        { status: 400 }
-      );
-    }
+
 
     // Prepare payload for the new API
     const payload = {
@@ -26,7 +20,7 @@ export async function POST(req: Request) {
 
     console.log("Payload for new API:", payload);
 
-    const response = await fetch(`${sessionData.url}/api/gemini/generate-questions`, {
+    const response = await fetch("https://hp.triz.co.in/api/gemini/generate-questions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
