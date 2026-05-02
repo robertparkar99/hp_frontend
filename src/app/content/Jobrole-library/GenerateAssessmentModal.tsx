@@ -185,15 +185,20 @@ export default function GenerateAssessmentModal({
 
   const isStep1Invalid = !assessmentName || !assessmentDescription || totalMarks === 0 || questionCount === 0;
 
+  const domainCategoryMap: Record<string, string> = {
+    "Depth of Knowledge": "Knowledge",
+    "Proficiency & Mastery": "Skill",
+    "Frequency & Application": "Skill",
+    "Complexity": "Ability",
+    "Scope": "Ability",
+    "Behavioral Evidence Strength": "Behaviour",
+    "Learning Agility & Acquisition": "Ability",
+    "Impact & Result Orientation": "Attitude",
+    "Motivation & Affinity": "Attitude",
+  };
+
   const getDomainCategory = (typeName: string): string => {
-    const lower = typeName.toLowerCase();
-    if (lower.includes('behaviour')) return 'Behaviour';
-    if (lower.includes('attitude')) return 'Attitude';
-    if (lower.includes('ability')) return 'Ability';
-    if (lower.includes('knowledge')) return 'Knowledge';
-    if (lower.includes('skill')) return 'Skill';
-    if (lower.includes('task')) return 'Task';
-    return '';
+    return domainCategoryMap[typeName] || "";
   };
 
   const toggleQuestion = (id: number) => {
@@ -297,7 +302,7 @@ export default function GenerateAssessmentModal({
           questionCount: questionCount,
           mappings: mappings,
           data: data,
-
+          sessionData: sessionData,
         }),
       });
 
