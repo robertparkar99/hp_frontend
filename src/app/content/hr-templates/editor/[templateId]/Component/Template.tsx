@@ -35,6 +35,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
     const [activeTool, setActiveTool] = useState<WhiteboardTool>('select');
     const [isFloatingToolbarVisible, setIsFloatingToolbarVisible] = useState(true);
     const [offerData, setOfferData] = useState<any>(null);
+    const [form16Data, setForm16Data] = useState<any>(null);
 
     const handleSetToolboxTab = (tab: string | null) => {
         setToolboxTab(tab);
@@ -45,44 +46,90 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
     const [sessionData, setSessionData] = useState<SessionData>({});
 
     // Function to replace placeholders in template content
-    const replacePlaceholders = (content: any, offerData: any) => {
-        if (!offerData) return content;
+    const replacePlaceholders = (content: any, data: any) => {
+        if (!data) return content;
 
-        const replacements = {
-            '{{employee_name}}': offerData.candidateName || '',
-            '{{candidate_name}}': offerData.candidateName || '',
-            '{{designation}}': offerData.position || '',
-            '{{position}}': offerData.position || '',
-            '{{joining_date}}': offerData.startDate || '',
-            '{{start_date}}': offerData.startDate || '',
-            '{{salary_amount}}': offerData.salary || '',
-            '{{salary}}': offerData.salary || '',
-            '{{company_name}}': offerData.companyData?.legal_name || offerData.companyData?.name || '',
-            '{{company_address}}': offerData.companyData?.registered_address || offerData.companyData?.address || '',
-            '{{company_email}}': offerData.companyData?.email || '',
-            '{{company_phone}}': offerData.companyData?.mobile_no || offerData.companyData?.phone || '',
-            '{{company_website}}': offerData.companyData?.website || '',
-            '{{company_logo}}': offerData.companyData?.logo || '',
-            '{{company_cin}}': offerData.companyData?.cin || '',
-            '{{company_gstin}}': offerData.companyData?.gstin || '',
-            '{{company_pan}}': offerData.companyData?.pan || '',
-            '{{department_name}}': offerData.employeeData?.department_name || '',
-            '{{candidate_email}}': offerData.employeeData?.email || '',
-            '{{candidate_mobile}}': offerData.employeeData?.mobile || '',
-            '{{hr_name}}': offerData.hrData?.name || '',
-            '{{hr_designation}}': offerData.hrData?.designation || '',
-            '{{hr_email}}': offerData.hrData?.email || '',
-            '{{offer_date}}': new Date().toLocaleDateString(),
-            '{{reporting_manager}}': offerData.companyData?.reporting_manager || 'Manager Name',
-            '{{probation_period}}': '3 months',
-            '{{notes}}': offerData.notes || ''
-        };
+        console.log('Replacing placeholders with data:', data);
+
+        let employeeFullName = '';
+        let replacements: { [key: string]: string } = {};
+
+        if (data.selectedYear) {
+            // Form 16 data
+            employeeFullName = `${data.employeeData.first_name} ${data.employeeData.middle_name || ''} ${data.employeeData.last_name}`.trim();
+
+            replacements = {
+                '{{employee_name}}': employeeFullName, // Hardcoded as in original
+                '{{employee_email}}': data.employeeData?.email || '',
+                '{{employee_mobile}}': data.employeeData?.mobile || '',
+                '{{employee_address}}': data.employeeData?.current_location || '',
+                '{{company_name}}': data.companyData?.name || data.companyData?.legal_name || 'Triz International School',
+                '{{company_address}}': data.companyData?.address || data.companyData?.registered_address || 'Adajan-Surat',
+                '{{company_email}}': data.company_email || data.companyData?.email || '',
+                '{{company_mobile}}': data.company_phone || data.companyData?.mobile_no || data.companyData?.phone || '',
+                '{{company_logo}}': data.company_logo || data.companyData?.logo || '',
+                '{{company_website}}': data.company_website || data.companyData?.website || '',
+                '{{pan_deductor}}': data.companyData?.pan || 'ABCDE1234F',
+                '{{tan_deductor}}': data.companyData?.tan || 'SURP12345F',
+                '{{pan_employee}}': data.employeeData?.pan || 'TIWAD1234E',
+                '{{cit_tds}}': 'Surat',
+                '{{assessment_year}}': data.selectedYear || '',
+                '{{period_from}}': data.selectedYear ? `01/Apr/${data.selectedYear.split('-')[0]}` : '',
+                '{{period_to}}': data.selectedYear ? `31/Mar/${data.selectedYear.split('-')[1]}` : '',
+                '{{department}}': data.selectedDepartment || data.employeeData?.department || '',
+                '{{place}}': 'Surat',
+                '{{date}}': new Date().toLocaleDateString(),
+                '{{designation}}': data.employeeData?.transfer_type || '',
+                '{{full_name}}': employeeFullName,
+            };
+        } else {
+            // Offer data
+            employeeFullName = data.selectedEmployeeData ? `${data.selectedEmployeeData.first_name} ${data.selectedEmployeeData.middle_name || ''} ${data.selectedEmployeeData.last_name}`.trim() : data.candidateName || '';
+
+            replacements = {
+                '{{employee_name}}': employeeFullName,
+                '{{candidate_name}}': employeeFullName,
+                '{{employee_email}}': data.employeeData?.email || '',
+                '{{candidate_email}}': data.selectedEmployeeData?.employee_email || data.employeeData?.email || '',
+                '{{employee_mobile}}': data.selectedEmployeeData?.mobile || data.employeeData?.mobile || '',
+                '{{candidate_mobile}}': data.selectedEmployeeData?.mobile || data.employeeData?.mobile || '',
+                '{{employee_address}}': data.employeeData?.current_location || '',
+                '{{designation}}': data.selectedEmployeeData?.department || data.position || '',
+                '{{position}}': data.selectedEmployeeData?.transfer_type || data.position || '',
+                '{{joining_date}}': data.startDate || '',
+                '{{start_date}}': data.startDate || '',
+                '{{salary_amount}}': data.selectedEmployeeData?.amount || data.salary || '',
+                '{{salary}}': data.selectedEmployeeData?.amount || data.salary || '',
+                '{{company_name}}': data.company_name || data.companyData?.legal_name || data.companyData?.name || '',
+                '{{company_address}}': data.company_address || data.companyData?.registered_address || data.companyData?.address || '',
+                '{{company_email}}': data.company_email || data.companyData?.email || '',
+                '{{company_mobile}}': data.company_phone || data.companyData?.mobile_no || data.companyData?.phone || '',
+                '{{company_website}}': data.company_website || data.companyData?.website || '',
+                '{{company_logo}}': data.company_logo || data.companyData?.logo || '',
+                '{{company_cin}}': data.company_cin || data.companyData?.cin || '',
+                '{{company_gstin}}': data.company_gstin || data.companyData?.gstin || '',
+                '{{company_pan}}': data.company_pan || data.companyData?.pan || '',
+                '{{department_name}}': data.selectedDepartment || data.employeeData?.department_name || '',
+                '{{hr_name}}': data.hrData?.name || '',
+                '{{hr_designation}}': data.hrData?.designation || '',
+                '{{hr_email}}': data.hrData?.email || '',
+                '{{offer_date}}': new Date().toLocaleDateString(),
+                '{{reporting_manager}}': data.reporting_manager || data.companyData?.reporting_manager || 'Manager Name',
+                '{{probation_period}}': '3 months',
+                '{{notes}}': data.notes || '',
+            };
+        }
 
         const traverseAndReplace = (obj: any): any => {
             if (typeof obj === 'string') {
                 let replaced = obj;
                 Object.entries(replacements).forEach(([placeholder, value]) => {
-                    replaced = replaced.replace(new RegExp(placeholder, 'g'), value);
+                    const regex = new RegExp(placeholder, 'g');
+                    const before = replaced;
+                    replaced = replaced.replace(regex, value);
+                    if (before !== replaced) {
+                        console.log(`Replaced "${placeholder}" with "${value}"`);
+                    }
                 });
                 return replaced;
             } else if (Array.isArray(obj)) {
@@ -114,6 +161,13 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
             if (storedOfferData) {
                 setOfferData(JSON.parse(storedOfferData));
                 localStorage.removeItem("offerData"); // Clear after loading
+            }
+
+            // Load form16 data if present
+            const storedForm16Data = localStorage.getItem("form16Data");
+            if (storedForm16Data) {
+                setForm16Data(JSON.parse(storedForm16Data));
+                localStorage.removeItem("form16Data"); // Clear after loading
             }
         }
     }, []);
@@ -155,7 +209,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
                             />
                         )}
                         <EditorCanvas activeTool={activeTool}>
-                            <FrameLoader templateId={templateId} sessionData={sessionData} offerData={offerData} replacePlaceholders={replacePlaceholders} />
+                            <FrameLoader templateId={templateId} sessionData={sessionData} offerData={offerData} form16Data={form16Data} replacePlaceholders={replacePlaceholders} />
                         </EditorCanvas>
                     </div>
                 </div>
@@ -164,9 +218,10 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
     );
 }
 
-function FrameLoader({ templateId, sessionData, offerData, replacePlaceholders }: { templateId: string; sessionData: SessionData; offerData: any; replacePlaceholders: (content: any, data: any) => any }) {
+function FrameLoader({ templateId, sessionData, offerData, form16Data, replacePlaceholders }: { templateId: string; sessionData: SessionData; offerData: any; form16Data: any; replacePlaceholders: (content: any, data: any) => any }) {
     const { actions } = useEditor();
     const [loaded, setLoaded] = useState(false);
+    const [rawContent, setRawContent] = useState<any>(null);
 
     // Use a ref for actions so we always call the latest version
     // WITHOUT re-triggering the useEffect when Craft.js state changes.
@@ -218,9 +273,12 @@ function FrameLoader({ templateId, sessionData, offerData, replacePlaceholders }
                     const template = await response.json();
                     let content = template.content;
                     if (content) {
-                        // Replace placeholders if offerData exists
-                        if (offerData) {
-                            content = replacePlaceholders(content, offerData);
+                        setRawContent(content);
+                        // Replace placeholders if data exists
+                        const data = offerData || form16Data;
+                        if (data) {
+                            console.log('Replacing placeholders in initial template load');
+                            content = replacePlaceholders(content, data);
                         }
                         timeoutId = setTimeout(() => {
                             if (isMounted) {
@@ -248,6 +306,23 @@ function FrameLoader({ templateId, sessionData, offerData, replacePlaceholders }
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [templateId]);
+
+    // Effect to re-deserialize when data changes
+    useEffect(() => {
+        if (!rawContent || (!offerData && !form16Data) || !hasLoaded.current) return;
+
+        const data = offerData || form16Data;
+        if (data) {
+            console.log('Re-deserializing template with data');
+            const content = replacePlaceholders(rawContent, data);
+            try {
+                const normalizedContent = normalizeTemplateDocument(content);
+                actionsRef.current.deserialize(normalizedContent);
+            } catch (err) {
+                console.error("Failed to re-deserialize template with data:", err);
+            }
+        }
+    }, [offerData, form16Data, rawContent]);
 
     if (!loaded) return <div className="p-8 text-center text-muted-foreground flex justify-center items-center h-full">Loading workspace...</div>;
 

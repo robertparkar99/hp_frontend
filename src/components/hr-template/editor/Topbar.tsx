@@ -283,6 +283,25 @@ export const Topbar = ({ templateId, offerData }: { templateId?: string; offerDa
             });
 
             if (sendResponse.ok) {
+                // Mark interview as hired
+                if (offerData.interviewId) {
+                    const decisionResponse = await fetch(`${sessionData.url}/api/interviews/${offerData.interviewId}/decision?token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&type=API`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            status: 'Hired',
+                            notes: '',
+                        }),
+                    });
+
+                    if (!decisionResponse.ok) {
+                        console.error('Failed to update interview decision:', decisionResponse.statusText);
+                        // Continue anyway, offer was sent
+                    }
+                }
+
                 alert('Offer sent successfully!');
                 // Clear offer data and trigger offers refresh
                 localStorage.removeItem('offerData');

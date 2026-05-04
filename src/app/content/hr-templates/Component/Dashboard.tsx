@@ -118,12 +118,15 @@ export default function DashboardTemplatesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {templates.map((template) => {
                         const isOfferTemplate = template.name.toLowerCase().includes('offer') || template.name.toLowerCase().includes('letter');
+                        const isForm16Template = template.name.toLowerCase().includes('form 16');
+                        const hasForm16Data = typeof window !== 'undefined' && localStorage.getItem('form16Data');
                         return (
-                        <div key={template.id} className={`bg-white border rounded-lg hover:shadow-md transition-shadow overflow-hidden ${offerData && isOfferTemplate ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}>
+                            <div key={template.id} className={`bg-white border rounded-lg hover:shadow-md transition-shadow overflow-hidden ${(offerData && isOfferTemplate) || (hasForm16Data && isForm16Template) ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}>
                             <div className="p-6">
                                 <h3 className="font-medium text-lg truncate mb-1" title={template.name}>
                                     {template.name}
                                     {offerData && isOfferTemplate && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Recommended</span>}
+                                        {hasForm16Data && isForm16Template && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Form 16</span>}
                                 </h3>
                                 <span className="text-xs text-muted-foreground">ID: {template.id}</span>
 
@@ -140,7 +143,7 @@ export default function DashboardTemplatesPage() {
                                     <Button
                                         variant="outline"
                                         size="icon"
-                                        className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                            className="text-destructive hover:bg-red-200 hover:text-destructive-foreground"
                                         onClick={() => handleDelete(template.id)}
                                     >
                                         <Trash2 className="w-4 h-4" />

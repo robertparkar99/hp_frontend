@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { form16Tour, Form16Tour } from './form16TourSteps';
 
 interface Employee {
@@ -38,6 +39,7 @@ interface YearData {
 }
 
 const EmployeeDashboard: React.FC = () => {
+  const router = useRouter();
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>('');
@@ -276,9 +278,59 @@ const EmployeeDashboard: React.FC = () => {
     }
   }, [selectedDepartment, employees]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Commented out: const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setShowForm16(true);
+  // };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowForm16(true);
+
+    // Fetch organization data
+    try {
+      const orgResponse = await fetch(`${sessionData.url}/settings/organization_data?type=API&sub_institute_id=${sessionData.subInstituteId}&token=${sessionData.token}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+
+      let organizationData = {};
+      if (orgResponse.ok) {
+        organizationData = await orgResponse.json();
+      }
+
+      // Get selected employee data
+      const selectedEmployeeData = employees.find(emp => getEmployeeFullName(emp) === selectedEmployee);
+
+      // Store form16 data in localStorage
+      const form16Data = {
+        selectedDepartment,
+        selectedEmployee,
+        selectedYear,
+        employeeData: selectedEmployeeData,
+        organizationData,
+      };
+
+      localStorage.setItem('form16Data', JSON.stringify(form16Data));
+
+      // Navigate to dashboard
+      router.push('/content/hr-templates');
+    } catch (error) {
+      console.error('Error fetching organization data:', error);
+      // Still navigate even if org data fails
+      const selectedEmployeeData = employees.find(emp => getEmployeeFullName(emp) === selectedEmployee);
+      const form16Data = {
+        selectedDepartment,
+        selectedEmployee,
+        selectedYear,
+        employeeData: selectedEmployeeData,
+        organizationData: {},
+      };
+      localStorage.setItem('form16Data', JSON.stringify(form16Data));
+      router.push('/content/hr-templates/dashboard');
+    }
   };
 
   // Get employee full name

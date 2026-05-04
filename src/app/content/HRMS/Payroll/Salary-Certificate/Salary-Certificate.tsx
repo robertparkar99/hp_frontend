@@ -154,34 +154,14 @@ const SalaryCertificate: React.FC = () => {
     fetchEmployees();
   }, [selectedDepartment, sessionData]);
 
-  // Fetch months from API
+  // Set default months as numbers (1-12)
   useEffect(() => {
-    const fetchMonths = async () => {
-      if (!sessionData.token || !sessionData.subInstituteId) return;
-      try {
-        setLoadingMonths(true);
-        const params = new URLSearchParams({
-          token: sessionData.token,
-          type: "API",
-          sub_institute_id: sessionData.subInstituteId,
-        });
-        const res = await fetch(`${sessionData.url}/hrms-salary-months?${params}`);
-        const data: ApiResponse = await res.json();
-
-        if (Array.isArray(data.months)) {
-          setAvailableMonths(data.months);
-        } else {
-          setAvailableMonths([]);
-        }
-      } catch (err) {
-        console.error("Error fetching months:", err);
-        setAvailableMonths([]);
-      } finally {
-        setLoadingMonths(false);
-      }
-    };
-    fetchMonths();
-  }, [sessionData]);
+    const defaultMonths = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    setAvailableMonths(defaultMonths);
+  }, []);
 
   // Mock Payroll Types
   useEffect(() => {
@@ -214,8 +194,12 @@ const SalaryCertificate: React.FC = () => {
         reason,
       });
 
+      console.log("Generating certificate with params:", Object.fromEntries(params));
+
       const res = await fetch(`${sessionData.url}/generate-salary-certificate?${params}`);
       const result = await res.json();
+
+      console.log("API response:", result);
 
       if (res.ok && result.status === "1") {
         if (result.pdf_url) window.open(result.pdf_url, "_blank");
@@ -289,21 +273,38 @@ const SalaryCertificate: React.FC = () => {
         {/* Month (Multi-select) */}
         <div id="tour-months-select">
           <label className="block mb-2 font-semibold">Month(s) *</label>
+
           <select
             multiple
             value={selectedMonths}
             onChange={(e) =>
-              setSelectedMonths(Array.from(e.target.selectedOptions, (opt) => opt.value))
+              setSelectedMonths(
+                Array.from(e.target.selectedOptions, (opt) => opt.value)
+              )
             }
-            className="w-full p-3 border rounded-md h-40"
+            className="w-full p-3 border rounded-md min-h-[200px] overflow-y-auto bg-white"
+            size={availableMonths.length > 0 ? availableMonths.length : 6}
           >
-            {availableMonths.map((m, idx) => (
-              <option key={idx} value={m.toLowerCase()}>
-                {m}
-              </option>
-            ))}
+            {availableMonths.length > 0 ? (
+              availableMonths.map((m, idx) => (
+                <option
+                  key={idx}
+                  value={(idx + 1).toString()}
+                  className="py-2 px-2"
+                >
+                  {m}
+                </option>
+              ))
+            ) : (
+              <option disabled>No months available</option>
+            )}
           </select>
-          {loadingMonths && <p>Loading months...</p>}
+
+          {loadingMonths && (
+            <p className="text-sm text-gray-500 mt-2">
+              Loading months...
+            </p>
+          )}
         </div>
 
         {/* Year */}
