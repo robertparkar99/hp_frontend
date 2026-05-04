@@ -200,7 +200,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
 
                     <div className="flex-1 flex overflow-hidden relative">
                         {/* Portal target for the Text block's bubble menu so it perfectly centers over the canvas */}
-                        <div id="text-toolbar-portal" className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-max" />
+                        <div id="text-toolbar-portal" className="absolute top-4 left-1/2 -translate-x-1/2 z-50 w-max" />
                         
                         {isFloatingToolbarVisible && (
                             <FloatingToolbar

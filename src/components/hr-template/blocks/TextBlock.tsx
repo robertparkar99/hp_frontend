@@ -226,8 +226,8 @@ export const TextBlock = ({
         }
     }, [alignment, backgroundColor, color, effectColor, editor, getToolbarFontSize, textEffect]);
 
-    const toolbarButtonClass = "h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950 active:bg-neutral-200 transition-colors";
-    const activeToolbarButtonClass = "bg-[#111827] text-white hover:bg-[#111827] hover:text-white active:bg-[#111827]";
+    const toolbarButtonClass = "h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 transition-colors";
+    const activeToolbarButtonClass = "bg-[#111827] hover:scale-105 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)";
     const toolbarGroupClass = "flex h-9 items-center gap-0.5 px-1";
     const toolbarDivider = <div className="mx-1 h-7 w-px bg-neutral-200" />;
 

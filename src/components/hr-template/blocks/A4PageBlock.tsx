@@ -87,7 +87,6 @@ export const A4PageBlock = ({ children }: any) => {
                 boxSizing: "border-box",
             }}
             data-page-id={id}
-            onClick={selectPage}
         >
             <div
                 className={`absolute left-0 top-2 z-30 flex h-9 w-full items-center justify-between transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover/page:opacity-100"}`}
@@ -150,14 +149,7 @@ export const A4PageBlock = ({ children }: any) => {
 };
 
 export const A4PageBlockSettings = () => {
-    return (
-        <div className="flex flex-col space-y-4 text-sm text-muted-foreground p-4">
-            <p><strong>A4 Document Page</strong></p>
-            <p>This is the root document layer.</p>
-            <p>Dimensions: 210mm × 297mm (794px × 1123px at 96 DPI).</p>
-            <p>You can drag items anywhere strictly inside this page layout.</p>
-        </div>
-    );
+    return null;
 };
 
 A4PageBlock.craft = {
@@ -169,7 +161,5 @@ A4PageBlock.craft = {
         canDrag: () => false, // Cannot drag the root page
         canDelete: () => true,
     },
-    related: {
-        settings: A4PageBlockSettings,
-    }
+    related: {}
 };

@@ -16,17 +16,18 @@ interface TransformControlsProps {
     };
     children: React.ReactNode;
     selected?: boolean;
+    isHovered?: boolean;
     noResize?: boolean;
 }
 
-export const TransformControls = ({ controls, handlers, children, selected, noResize = false }: TransformControlsProps) => {
+export const TransformControls = ({ controls, handlers, children, selected, isHovered = false, noResize = false }: TransformControlsProps) => {
     return (
         <div className={`relative w-full h-full group/transform`}>
             {children}
 
-            <div className={`absolute inset-0 pointer-events-none ${selected ? 'opacity-100' : 'opacity-0'} transition-opacity duration-150`}>
+            <div className={`absolute inset-0 pointer-events-none ${(selected || isHovered) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-150`}>
                 {/* Floating Toolbar */}
-                <div className="absolute -top-[40px] left-1/2 -translate-x-1/2 flex items-center gap-[6px] pointer-events-auto z-[9999] select-none">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 flex items-center gap-[6px] pointer-events-auto z-[9999] select-none">
                     {/* Rotate Button */}
                     <div
                         className="w-[40px] h-[40px] rounded-full bg-white shadow-sm border border-neutral-200 text-neutral-600 flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-neutral-50 transition-colors transform-handle"

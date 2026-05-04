@@ -38,6 +38,8 @@ export const OverlayWrapper = ({
         selected: node.events.selected
     }));
 
+    const [isHovered, setIsHovered] = React.useState(false);
+
     const { query, actions: { delete: deleteNode } } = useEditor();
 
     const [mounted, setMounted] = React.useState(false);
@@ -142,6 +144,8 @@ export const OverlayWrapper = ({
                     }
                 }}
                 {...handlers}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
                 style={{
                     position: "absolute",
                     top: 0,
@@ -183,6 +187,7 @@ export const OverlayWrapper = ({
                     }}
                     handlers={handlers}
                     selected={selected}
+                    isHovered={isHovered}
                     noResize={noResize}
                 >
                     <div className="w-full h-full">
