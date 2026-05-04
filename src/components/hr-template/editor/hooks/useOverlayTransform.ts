@@ -141,7 +141,8 @@ export function useOverlayTransform({
 
     const handleMoveStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         if (!domRef.current) return;
-        const target = e.target as HTMLElement;
+        const target = e.currentTarget as HTMLElement;
+        const currentTarget = e.currentTarget as HTMLElement;
         const isMoveHandle = !!target.closest(".move-handle");
         
         // Disable body-drag if actively editing text or selecting inside an input
@@ -158,8 +159,9 @@ export function useOverlayTransform({
 
         // For explicit move-handles, start move immediately
         if (isMoveHandle) {
+            e.preventDefault();
             e.stopPropagation();
-            target.setPointerCapture(e.pointerId);
+            currentTarget.setPointerCapture(e.pointerId);
             isInteracting.current = "move";
             interactionStartPos.current = { x: e.clientX, y: e.clientY };
             state.current.scaleMultiplier = 1;
@@ -240,9 +242,11 @@ export function useOverlayTransform({
     // ==== RESIZE ====
     const handleResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         if (!domRef.current) return;
+        e.preventDefault();
         e.stopPropagation();
-        const target = e.target as HTMLElement;
-        target.setPointerCapture(e.pointerId);
+        const target = e.currentTarget as HTMLElement;
+        const currentTarget = e.currentTarget as HTMLElement;
+        currentTarget.setPointerCapture(e.pointerId);
 
         isInteracting.current = "resize";
         interactionDirection.current = target.getAttribute("data-dir") || "se";
@@ -356,9 +360,10 @@ export function useOverlayTransform({
     // ==== ROTATE ====
     const handleRotateStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         if (!domRef.current) return;
+        e.preventDefault();
         e.stopPropagation();
-        const target = e.target as HTMLElement;
-        target.setPointerCapture(e.pointerId);
+        const currentTarget = e.currentTarget as HTMLElement;
+        currentTarget.setPointerCapture(e.pointerId);
 
         isInteracting.current = "rotate";
         originalState.current = { ...state.current };
@@ -399,8 +404,8 @@ export function useOverlayTransform({
 
         if (!isInteracting.current || !domRef.current) return;
         e.stopPropagation();
-        const target = e.target as HTMLElement;
-        try { target.releasePointerCapture(e.pointerId); } catch (_) { /* already released */ }
+        const currentTarget = e.currentTarget as HTMLElement;
+        try { currentTarget.releasePointerCapture(e.pointerId); } catch (_) { /* already released */ }
 
         document.body.style.userSelect = "";
 

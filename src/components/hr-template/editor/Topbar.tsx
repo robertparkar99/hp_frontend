@@ -3,11 +3,11 @@ import React, { useState, useEffect } from "react";
 import { useEditor } from "@craftjs/core";
 import { useRouter } from "next/navigation";
 import { Button } from "../../ui/button";
-import { Save, Download, Trash2, FilePlus, ArrowLeft, Loader2, ChevronDown, FileText, Image as ImageIcon, Undo2, Redo2, Send } from "lucide-react";
+import { Save, Download, Trash2, FilePlus, ArrowLeft, Loader2, ChevronDown, FileText, Image as ImageIcon, Undo2, Redo2, Send, Plus } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
-import { createEmptyDocument } from "./utils/documentModel";
+import { createA4PageNodeTree, createEmptyDocument, scrollPageIntoView } from "./utils/documentModel";
 import { toast } from "../../ui/use-toast";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../../ui/dropdown-menu";
 
@@ -253,6 +253,21 @@ export const Topbar = ({ templateId, offerData }: { templateId?: string; offerDa
         router.push("/content/hr-templates/editor/new");
     };
 
+    const handleAddPage = () => {
+        // Find the DocumentContainer (ROOT)
+        const rootNode = query.node('ROOT').get();
+        if (!rootNode || rootNode.data.name !== 'DocumentContainer') return;
+
+        // Create new A4PageBlock from the serialized resolver name. This avoids
+        // component identity mismatches during HMR while keeping saved JSON stable.
+        const newPageNode = createA4PageNodeTree(query);
+        actions.addNodeTree(newPageNode, 'ROOT');
+        actions.selectNode(newPageNode.rootNodeId);
+        scrollPageIntoView(newPageNode.rootNodeId);
+
+        toast({ title: "Success", description: "New page added!" });
+    };
+
     const handleBack = () => {
         router.push("/content/hr-templates");
     };
@@ -321,56 +336,68 @@ export const Topbar = ({ templateId, offerData }: { templateId?: string; offerDa
     const handleExport = async (format: "pdf" | "png" | "jpg" | "docx") => {
         const element = document.getElementById("editor-canvas");
         if (!element) return;
-        
+
         setIsExporting(true);
         // Clear selection to remove blue focus bounding boxes from final export
         actions.selectNode();
-        
+
         setTimeout(async () => {
+            // Store inline styles to restore after export
+            const originalTransform = element.style.transform;
+            const originalTransition = element.style.transition;
+
             try {
-                // Store inline styles to restore after export
-                const originalTransform = element.style.transform;
-                const originalTransition = element.style.transition;
-                
+
                 // Force scale 1 (100%) immediately so capture isn't pixelated or scaled down
                 element.style.transition = 'none';
                 element.style.transform = 'scale(1)';
-                
+
                 // Wait briefly for DOM to paint un-scaled state
                 await new Promise(r => setTimeout(r, 50));
-                
-                const canvas = await html2canvas(element, {
-                    scale: 3, // HD capture
-                    useCORS: true,
-                    allowTaint: true,
-                    logging: false,
-                    backgroundColor: "#ffffff"
-                });
-                
-                // Automatically restore layout so user perceives minimal flicker
-                element.style.transform = originalTransform;
-                element.style.transition = originalTransition;
-                
+
+                // Get all page elements (A4PageBlocks)
+                const pageElements = element.querySelectorAll('[data-craft-node="A4PageBlock"]');
+                const pages = Array.from(pageElements);
+
                 const safeName = templateName.replace(/[^a-z0-9]/gi, '_').toLowerCase() || "template";
 
                 if (format === "pdf") {
-                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
                     const pdf = new jsPDF("p", "mm", "a4");
-                    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+
+                    for (let i = 0; i < pages.length; i++) {
+                        const pageElement = pages[i] as HTMLElement;
+                        const canvas = await html2canvas(pageElement, {
+                            scale: 3, // HD capture
+                            useCORS: true,
+                            allowTaint: true,
+                            logging: false,
+                            backgroundColor: "#ffffff"
+                        });
+
+                        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+
+                        if (i > 0) {
+                            pdf.addPage();
+                        }
+                        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                    }
+
                     pdf.save(`${safeName}.pdf`);
-                } 
-                else if (format === "png") {
-                    const imgData = canvas.toDataURL('image/png');
-                    const a = document.createElement('a');
-                    a.href = imgData;
-                    a.download = `${safeName}.png`;
-                    a.click();
                 }
-                else if (format === "jpg") {
-                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                else if (format === "png" || format === "jpg") {
+                    // For single image formats, capture the entire document
+                    const canvas = await html2canvas(element, {
+                        scale: 3, // HD capture
+                        useCORS: true,
+                        allowTaint: true,
+                        logging: false,
+                        backgroundColor: "#ffffff"
+                    });
+
+                    const imgData = canvas.toDataURL(format === "png" ? 'image/png' : 'image/jpeg', 0.95);
                     const a = document.createElement('a');
                     a.href = imgData;
-                    a.download = `${safeName}.jpg`;
+                    a.download = `${safeName}.${format}`;
                     a.click();
                 }
                 toast({ title: "Success", description: `Exported as ${format.toUpperCase()} successfully!` });
@@ -378,6 +405,9 @@ export const Topbar = ({ templateId, offerData }: { templateId?: string; offerDa
                 console.error("Export error:", error);
                 toast({ title: "Error", description: `Failed to export ${format.toUpperCase()}! Check console.`, variant: "destructive" });
             } finally {
+                // Restore original styles
+                element.style.transform = originalTransform;
+                element.style.transition = originalTransition;
                 setIsExporting(false);
             }
         }, 150); // Give react state selection clearing brief moment to flush
@@ -428,6 +458,9 @@ export const Topbar = ({ templateId, offerData }: { templateId?: string; offerDa
                 <span className="text-xs text-muted-foreground mr-4">ID: {templateId && !isNaN(Number(templateId)) ? templateId : currentId.split("-")[0]}...</span>
                 <Button variant="outline" size="sm" onClick={handleNew} className="bg-white hover:bg-sky-50 border-neutral-200 shadow-sm rounded-lg transition-all duration-200 hover:border-sky-200 hover:text-sky-700">
                     <FilePlus className="w-4 h-4 mr-2 text-sky-500" /> New
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleAddPage} className="bg-white hover:bg-green-50 border-neutral-200 shadow-sm rounded-lg transition-all duration-200 hover:border-green-200 hover:text-green-700">
+                    <Plus className="w-4 h-4 mr-2 text-green-500" /> Add Page
                 </Button>
                 {isEditing && (
                     <Button variant="outline" size="sm" onClick={handleDelete} className="bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 border-neutral-200 text-destructive shadow-sm rounded-lg transition-all duration-200">
