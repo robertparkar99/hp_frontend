@@ -8,6 +8,27 @@ import { TableRow } from "@tiptap/extension-table-row";
 import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, Trash2, FoldVertical, Combine, Split } from "lucide-react";
+import { BubbleMenu } from "@tiptap/react/menus";
+import { TextStyle } from "@tiptap/extension-text-style";
+import Color from "@tiptap/extension-color";
+import Highlight from "@tiptap/extension-highlight";
+import Underline from "@tiptap/extension-underline";
+import Strike from "@tiptap/extension-strike";
+import FontFamily from "@tiptap/extension-font-family";
+import TextAlign from "@tiptap/extension-text-align";
+import { Extension } from "@tiptap/core";
+import {
+    AlignCenter,
+    AlignLeft,
+    AlignRight,
+    Bold,
+    CaseSensitive,
+    Italic,
+    List,
+    ListOrdered,
+    Strikethrough,
+    Underline as UnderlineIcon,
+} from "lucide-react";
 import { PositionControl } from "../editor/settings/PositionControl";
 import { ColorPicker } from "../editor/settings/ColorPicker";
 import { OverlayWrapper } from "../editor/settings/OverlayWrapper";
@@ -29,6 +50,41 @@ const DROPDOWN_PRESETS: Record<string, string[]> = {
     "Priority": ["Low", "Medium", "High", "Critical"],
     "Rating": ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"],
 };
+
+declare module "@tiptap/core" {
+    interface Commands<ReturnType> {
+        fontSize: {
+            setFontSize: (size: string) => ReturnType;
+            unsetFontSize: () => ReturnType;
+        };
+    }
+}
+
+const FontSize = Extension.create({
+    name: "fontSize",
+    addOptions() { return { types: ["textStyle"] }; },
+    addGlobalAttributes() {
+        return [{
+            types: this.options.types,
+            attributes: {
+                fontSize: {
+                    default: null,
+                    parseHTML: (element) => element.style.fontSize.replace(/['"]+/g, ""),
+                    renderHTML: (attributes) => {
+                        if (!attributes.fontSize) return {};
+                        return { style: `font-size: ${attributes.fontSize}` };
+                    },
+                },
+            },
+        }];
+    },
+    addCommands() {
+        return {
+            setFontSize: (fontSize) => ({ chain }) => chain().setMark("textStyle", { fontSize }).run(),
+            unsetFontSize: () => ({ chain }) => chain().setMark("textStyle", { fontSize: null }).removeEmptyTextStyle().run(),
+        };
+    },
+});
 
 // ═══════════════════════════════════════════════════════════════════════
 // SHARED EDITOR REF — lets Settings panel access the Tiptap editor
@@ -79,6 +135,7 @@ export const TableBlock = ({
     const { query } = useEditor();
 
     const [editMode, setEditMode] = useState(false);
+    const [hasTextSelection, setHasTextSelection] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     // ── Column / row resize state (local during drag) ─────────────────
@@ -119,6 +176,14 @@ export const TableBlock = ({
             TableHeader.configure({
                 HTMLAttributes: { class: "tiptap-table-header" },
             }),
+            TextStyle,
+            Color,
+            Highlight.configure({ multicolor: true }),
+            Underline,
+            Strike,
+            FontFamily,
+            FontSize,
+            TextAlign.configure({ types: ["heading", "paragraph"] }),
         ],
         content: initialContent,
         immediatelyRender: false,
@@ -130,6 +195,7 @@ export const TableBlock = ({
         onSelectionUpdate: ({ editor: ed }) => {
             const pos = getCurrentCellPos(ed);
             registryUpdateCellPos(id, pos);
+            setHasTextSelection(pos !== null && !ed.state.selection.empty);
         },
         editorProps: {
             attributes: { class: "tiptap-table-editor focus:outline-none" },
@@ -152,6 +218,38 @@ export const TableBlock = ({
         editor.setEditable(editMode);
         if (editMode) setTimeout(() => editor.commands.focus(), 50);
     }, [editMode, editor]);
+
+    // ── Text toolbar helpers ───────────────────────────────────────────
+    const getToolbarFontSize = useCallback(() => {
+        const activeSize = editor?.getAttributes("textStyle").fontSize;
+        return activeSize ? parseFloat(activeSize) : 16;
+    }, [editor]);
+
+    const applyFontSize = useCallback((nextSize: number) => {
+        if (!editor || Number.isNaN(nextSize)) return;
+        const clampedSize = Math.max(4, Math.min(nextSize, 240));
+        const roundedSize = Math.round(clampedSize * 10) / 10;
+        editor.chain().focus().setFontSize(`${roundedSize}px`).run();
+    }, [editor]);
+
+    const setAlignment = useCallback((align: string) => {
+        if (!editor) return;
+        editor.chain().focus().setTextAlign(align).run();
+    }, [editor]);
+
+    const toggleTextCase = useCallback(() => {
+        if (!editor) return;
+        const { from, to, empty } = editor.state.selection;
+        const currentText = empty ? editor.getText() : editor.state.doc.textBetween(from, to, "\n");
+        if (!currentText) return;
+        const nextText = currentText === currentText.toUpperCase() ? currentText.toLowerCase() : currentText.toUpperCase();
+
+        if (empty) {
+            editor.commands.setContent(`<p>${nextText}</p>`);
+        } else {
+            editor.chain().focus().insertContentAt({ from, to }, nextText).run();
+        }
+    }, [editor]);
 
     // Exit edit mode on deselect
     useEffect(() => { if (!selected && editMode) setEditMode(false); }, [selected, editMode]);
@@ -497,6 +595,112 @@ export const TableBlock = ({
                         <button className="px-1.5 py-0.5 text-[10px] font-medium rounded hover:bg-sky-100 text-neutral-700 whitespace-nowrap" onClick={() => editor.chain().focus().mergeCells().run()} title="Select cells first (Shift+Click or drag), then merge">Merge</button>
                         <button className="px-1.5 py-0.5 text-[10px] font-medium rounded hover:bg-sky-100 text-neutral-700 whitespace-nowrap" onClick={() => editor.chain().focus().splitCell().run()}>Split</button>
                     </div>
+                )}
+
+                {/* ── Text formatting toolbar ───────────────────────────── */}
+                {editMode && hasTextSelection && editor && (
+                    <BubbleMenu editor={editor}>
+                        <div
+                            className="flex flex-nowrap items-center gap-0 bg-white border border-neutral-200 rounded-xl shadow-[0_8px_24px_-14px_rgba(15,23,42,0.45)] ring-1 ring-black/[0.02] pointer-events-auto overflow-x-auto overflow-y-hidden h-14 w-max max-w-[90vw] md:max-w-[700px] px-2 text-neutral-950 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sky-200 [&::-webkit-scrollbar-thumb]:rounded-full"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex h-9 items-center gap-0.5 px-1">
+                                <select
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()}
+                                    value={editor.getAttributes("textStyle").fontFamily || "Inter"}
+                                    className="h-9 px-3 text-[14px] font-semibold border border-neutral-200 outline-none bg-white hover:bg-neutral-50 rounded-lg transition-colors cursor-pointer w-32 truncate"
+                                >
+                                    <optgroup label="Sans-Serif">
+                                        <option value="Inter">Inter</option>
+                                        <option value="Arial">Arial</option>
+                                        <option value="Helvetica">Helvetica</option>
+                                        <option value="Verdana">Verdana</option>
+                                        <option value="Open Sans">Open Sans</option>
+                                        <option value="Roboto">Roboto</option>
+                                        <option value="Lato">Lato</option>
+                                        <option value="Montserrat">Montserrat</option>
+                                        <option value="Poppins">Poppins</option>
+                                    </optgroup>
+                                    <optgroup label="Serif">
+                                        <option value="Georgia">Georgia</option>
+                                        <option value="Times New Roman">Times New Roman</option>
+                                        <option value="Playfair Display">Playfair Display</option>
+                                        <option value="Merriweather">Merriweather</option>
+                                        <option value="Lora">Lora</option>
+                                        <option value="PT Serif">PT Serif</option>
+                                    </optgroup>
+                                    <optgroup label="Monospace">
+                                        <option value="Courier New">Courier New</option>
+                                        <option value="Consolas">Consolas</option>
+                                        <option value="Menlo">Menlo</option>
+                                        <option value="Monaco">Monaco</option>
+                                        <option value="Fira Code">Fira Code</option>
+                                    </optgroup>
+                                    <optgroup label="Display">
+                                        <option value="Comic Sans MS">Comic Sans MS</option>
+                                        <option value="Impact">Impact</option>
+                                        <option value="Oswald">Oswald</option>
+                                        <option value="Bebas Neue">Bebas Neue</option>
+                                        <option value="Lobster">Lobster</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+
+                            <div className="flex h-9 items-center gap-0.5 px-1 rounded-lg border border-neutral-200 bg-white">
+                                <button type="button" onMouseDown={(e) => { e.preventDefault(); applyFontSize(getToolbarFontSize() - 1); }} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-neutral-100 text-neutral-700 hover:text-neutral-950 font-bold transition-colors">-</button>
+                                <input type="number" step="0.1" onMouseDown={(e) => e.stopPropagation()} className="w-11 h-7 text-[14px] text-center font-semibold border-0 outline-none bg-transparent rounded transition-colors" value={getToolbarFontSize()} onChange={(e) => { if (e.target.value) applyFontSize(Number(e.target.value)); }} />
+                                <button type="button" onMouseDown={(e) => { e.preventDefault(); applyFontSize(getToolbarFontSize() + 1); }} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-neutral-100 text-neutral-700 hover:text-neutral-950 font-bold transition-colors">+</button>
+                            </div>
+
+                            <div className="flex h-9 items-center gap-0.5 px-1">
+                                <div className="relative flex items-center justify-center h-9 min-w-9 rounded-lg hover:bg-neutral-100 cursor-pointer overflow-hidden transition-colors group" title="Text Color">
+                                    <span className="font-bold text-neutral-800 text-[15px] pointer-events-none pb-1 border-b-4 group-hover:border-b-8 transition-all" style={{ borderColor: editor.getAttributes("textStyle").color || "#000000" }}>A</span>
+                                    <input type="color" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()} value={editor.getAttributes("textStyle").color || "#000000"} className="absolute inset-0 w-[200%] h-[200%] -top-1/2 -left-1/2 opacity-0 cursor-pointer" />
+                                </div>
+                            </div>
+
+                            <div className="flex h-9 items-center gap-0.5 px-1">
+                                <div className="relative flex items-center justify-center h-9 min-w-9 rounded-lg hover:bg-neutral-100 cursor-pointer overflow-hidden transition-colors group" title="Highlight Color">
+                                    <span className="font-bold text-neutral-800 text-xs pointer-events-none pb-1 border-b-4 group-hover:border-b-8 transition-all" style={{ borderColor: editor.getAttributes("highlight").color || "transparent", backgroundColor: editor.getAttributes("highlight").color || "transparent" }}>H</span>
+                                    <input type="color" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => editor.chain().focus().setMark('highlight', { color: (e.target as HTMLInputElement).value }).run()} value={editor.getAttributes("highlight").color || "#ffff00"} className="absolute inset-0 w-[200%] h-[200%] -top-1/2 -left-1/2 opacity-0 cursor-pointer" />
+                                </div>
+                            </div>
+
+                            <div className="flex h-9 items-center gap-0.5 px-1">
+                                <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }} className={`h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 transition-colors ${editor.isActive("bold") ? "bg-[#111827] hover:scale-105 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)" : ""}`} title="Bold"><Bold className="h-5 w-5" /></button>
+                                <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }} className={`h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 transition-colors ${editor.isActive("italic") ? "bg-[#111827] hover:scale-105 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)" : ""}`} title="Italic"><Italic className="h-5 w-5" /></button>
+                                <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleUnderline().run(); }} className={`h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 transition-colors ${editor.isActive("underline") ? "bg-[#111827] hover:scale-105 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)" : ""}`} title="Underline"><UnderlineIcon className="h-5 w-5" /></button>
+                                <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleStrike().run(); }} className={`h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 transition-colors ${editor.isActive("strike") ? "bg-[#111827] hover:scale-105 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)" : ""}`} title="Strikethrough"><Strikethrough className="h-5 w-5" /></button>
+                                <button type="button" onMouseDown={(e) => { e.preventDefault(); toggleTextCase(); }} className="h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 transition-colors" title="Toggle case"><CaseSensitive className="h-5 w-5" /></button>
+                            </div>
+
+                            <div className="flex h-9 items-center gap-0.5 px-1">
+                                {[
+                                    { id: 'left', icon: AlignLeft },
+                                    { id: 'center', icon: AlignCenter },
+                                    { id: 'right', icon: AlignRight },
+                                ].map(({ id: align, icon: Icon }) => (
+                                    <button key={align} type="button" onMouseDown={(e) => { e.preventDefault(); setAlignment(align); }} className={`h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 transition-colors ${editor.isActive({ textAlign: align }) ? "bg-[#111827] hover:scale-105 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)" : ""}`} title={`Align ${align}`}>
+                                        <Icon className="h-5 w-5" />
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="flex h-9 items-center gap-0.5 px-1">
+                                <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run(); }} className={`h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 transition-colors ${editor.isActive("bulletList") ? "bg-[#111827] hover:scale-105 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)" : ""}`} title="Bullet list">
+                                    <List className="h-5 w-5" />
+                                </button>
+                                <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run(); }} className={`h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 transition-colors ${editor.isActive("orderedList") ? "bg-[#111827] hover:scale-105 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)" : ""}`} title="Numbered list">
+                                    <ListOrdered className="h-5 w-5" />
+                                </button>
+                                <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run(); }} className={`h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 transition-colors ${editor.isActive("blockquote") ? "bg-[#111827] hover:scale-105 bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)" : ""}`} title="Quote">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </BubbleMenu>
                 )}
             </div>
         </OverlayWrapper>
