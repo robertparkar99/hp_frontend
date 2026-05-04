@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { createPortal } from "react-dom";
-import { useNode } from "@craftjs/core";
+import { useEditor as useCraftEditor, useNode } from "@craftjs/core";
 import { useEditor as useTiptapEditor, EditorContent } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
@@ -16,6 +16,22 @@ import { Extension } from "@tiptap/core";
 import { PositionControl } from "../editor/settings/PositionControl";
 import { ColorPicker } from "../editor/settings/ColorPicker";
 import { OverlayWrapper } from "../editor/settings/OverlayWrapper";
+import {
+    AlignCenter,
+    AlignLeft,
+    AlignRight,
+    Bold,
+    BringToFront,
+    CaseSensitive,
+    Italic,
+    List,
+    ListOrdered,
+    PaintRoller,
+    Palette,
+    Sparkles,
+    Strikethrough,
+    Underline as UnderlineIcon,
+} from "lucide-react";
 
 declare module "@tiptap/core" {
     interface Commands<ReturnType> {
@@ -74,7 +90,11 @@ export const TextBlock = ({
     const {
         connectors: { connect },
         actions: { setProp },
-    } = useNode();
+        selected,
+    } = useNode((node) => ({
+        selected: node.events.selected,
+    }));
+    const { query } = useCraftEditor();
 
     const getEffectStyles = (): React.CSSProperties => {
         switch (textEffect) {
@@ -94,6 +114,7 @@ export const TextBlock = ({
     // ── Two-phase interaction: object-selected vs text-edit-mode ──
     const [editMode, setEditMode] = React.useState(false);
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const toolbarRef = React.useRef<HTMLDivElement>(null);
 
     const editor = useTiptapEditor({
         extensions: [
@@ -109,7 +130,7 @@ export const TextBlock = ({
         ],
         content: html || "<p>Type your text here...</p>",
         immediatelyRender: false,
-        editable: false, // Start non-editable; only enabled on double-click
+        editable: false,
         onUpdate: ({ editor: ed }) => {
             setTimeout(() => {
                 setProp((props: any) => (props.html = ed.getHTML()));
@@ -128,22 +149,118 @@ export const TextBlock = ({
         }
     }, [editor, alignment]);
 
-    // ── Enter edit mode on double-click ──
-    const handleDoubleClick = React.useCallback(() => {
+    const getToolbarFontSize = React.useCallback(() => {
+        const activeSize = editor?.getAttributes("textStyle").fontSize;
+        return activeSize ? parseFloat(activeSize) : Number(fontSize || 16);
+    }, [editor, fontSize]);
+
+    const applyFontSize = React.useCallback((nextSize: number) => {
+        if (!editor || Number.isNaN(nextSize)) return;
+        const clampedSize = Math.max(4, Math.min(nextSize, 240));
+        const roundedSize = Math.round(clampedSize * 10) / 10;
+        editor.chain().focus().setFontSize(`${roundedSize}px`).run();
+        setProp((props: any) => {
+            props.fontSize = roundedSize;
+        });
+    }, [editor, setProp]);
+
+    const setAlignment = React.useCallback((align: string) => {
+        if (!editor) return;
+        editor.chain().focus().setTextAlign(align).run();
+        setProp((props: any) => {
+            props.alignment = align;
+        });
+    }, [editor, setProp]);
+
+    const toggleTextCase = React.useCallback(() => {
+        if (!editor) return;
+        const { from, to, empty } = editor.state.selection;
+        const currentText = empty ? editor.getText() : editor.state.doc.textBetween(from, to, "\n");
+        if (!currentText) return;
+        const nextText = currentText === currentText.toUpperCase() ? currentText.toLowerCase() : currentText.toUpperCase();
+
+        if (empty) {
+            editor.commands.setContent(`<p>${nextText}</p>`);
+        } else {
+            editor.chain().focus().insertContentAt({ from, to }, nextText).run();
+        }
+    }, [editor]);
+
+    const cycleTextEffect = React.useCallback(() => {
+        const effects = ["none", "shadow", "lift", "outline", "neon", "background"];
+        const currentIndex = Math.max(0, effects.indexOf(textEffect));
+        const nextEffect = effects[(currentIndex + 1) % effects.length];
+        setProp((props: any) => {
+            props.textEffect = nextEffect;
+        });
+    }, [setProp, textEffect]);
+
+    const bringToFront = React.useCallback(() => {
+        const nodes = query.getNodes();
+        let maxZ = 20;
+        Object.values(nodes).forEach((node: any) => {
+            const nodeZ = node.data?.props?.zIndex;
+            if (typeof nodeZ === "number" && nodeZ > maxZ) maxZ = nodeZ;
+        });
+
+        setProp((props: any) => {
+            props.zIndex = maxZ + 1;
+        });
+    }, [query, setProp]);
+
+    const copyStyleToClipboard = React.useCallback(async () => {
+        const stylePayload = JSON.stringify({
+            fontFamily: editor?.getAttributes("textStyle").fontFamily || "Inter",
+            fontSize: getToolbarFontSize(),
+            color: editor?.getAttributes("textStyle").color || color || "#000000",
+            backgroundColor,
+            alignment,
+            textEffect,
+            effectColor,
+        });
+
+        try {
+            await navigator.clipboard.writeText(stylePayload);
+        } catch {
+            // Clipboard access can be blocked in some browser contexts.
+        }
+    }, [alignment, backgroundColor, color, effectColor, editor, getToolbarFontSize, textEffect]);
+
+    const toolbarButtonClass = "h-9 min-w-9 inline-flex items-center justify-center rounded-lg px-2 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950 active:bg-neutral-200 transition-colors";
+    const activeToolbarButtonClass = "bg-[#111827] text-white hover:bg-[#111827] hover:text-white active:bg-[#111827]";
+    const toolbarGroupClass = "flex h-9 items-center gap-0.5 px-1";
+    const toolbarDivider = <div className="mx-1 h-7 w-px bg-neutral-200" />;
+
+    const enterEditMode = React.useCallback((focusPosition: "end" | "all" | number = "end") => {
         if (!editor) return;
         setEditMode(true);
         editor.setEditable(true);
-        // Small delay to let editable state propagate before focusing
         requestAnimationFrame(() => {
-            editor.commands.focus('end');
+            editor.commands.focus(focusPosition);
         });
     }, [editor]);
+
+    // Open the text toolbar as soon as a text block is selected.
+    React.useEffect(() => {
+        if (!editor) return;
+
+        if (selected) {
+            enterEditMode("end");
+        } else {
+            setEditMode(false);
+            editor.setEditable(false);
+        }
+    }, [editor, enterEditMode, selected]);
 
     // ── Exit edit mode when clicking outside the text block ──
     React.useEffect(() => {
         if (!editMode) return;
         const handlePointerDown = (e: PointerEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+            const target = e.target as Node;
+            const clickedText = containerRef.current?.contains(target);
+            const clickedToolbar = toolbarRef.current?.contains(target);
+
+            if (!clickedText && !clickedToolbar) {
                 setEditMode(false);
                 if (editor) {
                     editor.setEditable(false);
@@ -198,16 +315,19 @@ export const TextBlock = ({
             {/* Toolbar outside of canvas */}
             {editor && editMode && typeof document !== "undefined" && createPortal(
                 <div
-                    className="flex flex-nowrap bg-white/95 backdrop-blur-xl border border-sky-100/60 rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] ring-1 ring-black/[0.03] pointer-events-auto overflow-x-auto overflow-y-hidden divide-x divide-sky-50/50 items-stretch h-14 w-max max-w-[90vw] md:max-w-[700px] px-2 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sky-200 [&::-webkit-scrollbar-thumb]:rounded-full pb-1"
+                    ref={toolbarRef}
+                    className="flex flex-nowrap items-center gap-0 bg-white border border-neutral-200 rounded-xl shadow-[0_8px_24px_-14px_rgba(15,23,42,0.45)] ring-1 ring-black/[0.02] pointer-events-auto overflow-x-auto overflow-y-hidden h-14 w-max max-w-[90vw] md:max-w-[700px] px-2 text-neutral-950 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-sky-200 [&::-webkit-scrollbar-thumb]:rounded-full "
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
                 >
 
                         {/* Font Family */}
-                        <div className="flex items-center px-2 py-1">
+                    <div className={toolbarGroupClass}>
                             <select
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()}
                                 value={editor.getAttributes("textStyle").fontFamily || "Inter"}
-                                className="h-full px-2 text-[15px] font-medium border-0 outline-none bg-transparent hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer w-36 truncate"
+                            className="h-9 px-3 text-[14px] font-semibold border border-neutral-200 outline-none bg-white hover:bg-neutral-50 rounded-lg transition-colors cursor-pointer w-32 truncate"
                             >
                                 <optgroup label="Sans-Serif">
                                     <option value="Inter">Inter</option>
@@ -246,60 +366,78 @@ export const TextBlock = ({
                         </div>
 
                         {/* Font Size */}
-                        <div className="flex items-center px-2 py-1 space-x-1">
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); const currentSize = parseInt(editor.getAttributes("textStyle").fontSize) || 16; editor.chain().focus().setFontSize(`${currentSize - 1}px`).run(); }} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-sky-50 hover:text-sky-600 text-neutral-600 hover:text-neutral-900 font-bold transition-colors">-</button>
-                            <input type="number" onMouseDown={(e) => e.stopPropagation()} className="w-12 h-8 text-[15px] text-center font-semibold border-0 outline-none bg-transparent hover:bg-neutral-50 rounded transition-colors" value={editor.getAttributes("textStyle").fontSize ? parseInt(editor.getAttributes("textStyle").fontSize) : 16} onChange={(e) => { if (e.target.value) editor.chain().focus().setFontSize(`${e.target.value}px`).run(); }} />
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); const currentSize = parseInt(editor.getAttributes("textStyle").fontSize) || 16; editor.chain().focus().setFontSize(`${currentSize + 1}px`).run(); }} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-sky-50 hover:text-sky-600 text-neutral-600 hover:text-neutral-900 font-bold transition-colors">+</button>
+                    <div className={`${toolbarGroupClass} rounded-lg border border-neutral-200 bg-white`}>
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); applyFontSize(getToolbarFontSize() - 1); }} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-neutral-100 text-neutral-700 hover:text-neutral-950 font-bold transition-colors">-</button>
+                        <input type="number" step="0.1" onMouseDown={(e) => e.stopPropagation()} className="w-11 h-7 text-[14px] text-center font-semibold border-0 outline-none bg-transparent rounded transition-colors" value={getToolbarFontSize()} onChange={(e) => { if (e.target.value) applyFontSize(Number(e.target.value)); }} />
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); applyFontSize(getToolbarFontSize() + 1); }} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-neutral-100 text-neutral-700 hover:text-neutral-950 font-bold transition-colors">+</button>
                         </div>
 
                         {/* Text Color */}
-                        <div className="flex items-center px-3 py-1">
-                            <div className="relative flex items-center justify-center w-8 h-8 rounded-md hover:bg-sky-50 hover:text-sky-600 hover:scale-105 cursor-pointer overflow-hidden transition-all group" title="Text Color">
+                    <div className={toolbarGroupClass}>
+                        <div className="relative flex items-center justify-center h-9 min-w-9 rounded-lg hover:bg-neutral-100 cursor-pointer overflow-hidden transition-colors group" title="Text Color">
                                 <span className="font-bold text-neutral-800 text-[15px] pointer-events-none pb-1 border-b-4 group-hover:border-b-8 transition-all" style={{ borderColor: editor.getAttributes("textStyle").color || "#000000" }}>A</span>
                                 <input type="color" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()} value={editor.getAttributes("textStyle").color || "#000000"} className="absolute inset-0 w-[200%] h-[200%] -top-1/2 -left-1/2 opacity-0 cursor-pointer" />
                             </div>
                         </div>
 
                         {/* Highlight Color */}
-                        <div className="flex items-center px-3 py-1">
-                            <div className="relative flex items-center justify-center w-8 h-8 rounded-md hover:bg-sky-50 hover:text-sky-600 hover:scale-105 cursor-pointer overflow-hidden transition-all group" title="Highlight Color">
+                    <div className={toolbarGroupClass}>
+                        <div className="relative flex items-center justify-center h-9 min-w-9 rounded-lg hover:bg-neutral-100 cursor-pointer overflow-hidden transition-colors group" title="Highlight Color">
                                 <span className="font-bold text-neutral-800 text-xs pointer-events-none pb-1 border-b-4 group-hover:border-b-8 transition-all" style={{ borderColor: editor.getAttributes("highlight").color || "transparent", backgroundColor: editor.getAttributes("highlight").color || "transparent" }}>H</span>
                                 <input type="color" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => editor.chain().focus().setMark('highlight', { color: (e.target as HTMLInputElement).value }).run()} value={editor.getAttributes("highlight").color || "#ffff00"} className="absolute inset-0 w-[200%] h-[200%] -top-1/2 -left-1/2 opacity-0 cursor-pointer" />
                             </div>
                         </div>
 
                         {/* Formatting B I U S */}
-                        <div className="flex items-center px-2 py-1 space-x-1">
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }} className={`w-8 h-8 rounded-md flex items-center justify-center font-bold text-[15px] transition-all hover:scale-105 ${editor.isActive("bold") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`}>B</button>
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }} className={`w-8 h-8 rounded-md flex items-center justify-center italic font-serif text-[15px] transition-all hover:scale-105 ${editor.isActive("italic") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`}>I</button>
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleUnderline().run(); }} className={`w-8 h-8 rounded-md flex items-center justify-center underline font-serif text-[15px] transition-all hover:scale-105 ${editor.isActive("underline") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`}>U</button>
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleStrike().run(); }} className={`w-8 h-8 rounded-md flex items-center justify-center line-through font-serif text-[15px] transition-all hover:scale-105 ${editor.isActive("strike") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`}>S</button>
+                    <div className={toolbarGroupClass}>
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }} className={`${toolbarButtonClass} ${editor.isActive("bold") ? activeToolbarButtonClass : ""}`} title="Bold"><Bold className="h-5 w-5" /></button>
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }} className={`${toolbarButtonClass} ${editor.isActive("italic") ? activeToolbarButtonClass : ""}`} title="Italic"><Italic className="h-5 w-5" /></button>
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleUnderline().run(); }} className={`${toolbarButtonClass} ${editor.isActive("underline") ? activeToolbarButtonClass : ""}`} title="Underline"><UnderlineIcon className="h-5 w-5" /></button>
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleStrike().run(); }} className={`${toolbarButtonClass} ${editor.isActive("strike") ? activeToolbarButtonClass : ""}`} title="Strikethrough"><Strikethrough className="h-5 w-5" /></button>
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); toggleTextCase(); }} className={toolbarButtonClass} title="Toggle case"><CaseSensitive className="h-5 w-5" /></button>
                         </div>
 
                         {/* Alignment */}
-                        <div className="flex items-center px-2 py-1 space-x-1 border-r border-neutral-100">
-                            {['left', 'center', 'right', 'justify'].map((align) => (
-                                <button key={align} type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().setTextAlign(align).run(); }} className={`w-8 h-8 flex items-center justify-center rounded-md transition-all hover:scale-105 ${editor.isActive({ textAlign: align }) ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]' : 'text-neutral-700 hover:bg-sky-50 hover:text-sky-600'}`} title={`Align ${align}`}>
-                                    {align === 'left' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="15" y1="12" x2="3" y2="12"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>}
-                                    {align === 'center' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="19" y1="12" x2="5" y2="12"></line><line x1="17" y1="18" x2="7" y2="18"></line></svg>}
-                                    {align === 'right' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="12" x2="9" y2="12"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>}
-                                    {align === 'justify' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="12" x2="3" y2="12"></line><line x1="21" y1="18" x2="3" y2="18"></line></svg>}
+                    <div className={toolbarGroupClass}>
+                        {[
+                            { id: 'left', icon: AlignLeft },
+                            { id: 'center', icon: AlignCenter },
+                            { id: 'right', icon: AlignRight },
+                        ].map(({ id: align, icon: Icon }) => (
+                            <button key={align} type="button" onMouseDown={(e) => { e.preventDefault(); setAlignment(align); }} className={`${toolbarButtonClass} ${editor.isActive({ textAlign: align }) || alignment === align ? activeToolbarButtonClass : ""}`} title={`Align ${align}`}>
+                                <Icon className="h-5 w-5" />
                                 </button>
                             ))}
                         </div>
 
                         {/* Lists & Blockquote */}
-                        <div className="flex items-center px-2 py-1 space-x-1">
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run(); }} className={`w-8 h-8 flex items-center justify-center rounded-md transition-all hover:scale-105 ${editor.isActive("bulletList") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`} title="Bullet List">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="9" y1="6" x2="20" y2="6"></line><line x1="9" y1="12" x2="20" y2="12"></line><line x1="9" y1="18" x2="20" y2="18"></line><circle cx="4" cy="6" r="1.5"></circle><circle cx="4" cy="12" r="1.5"></circle><circle cx="4" cy="18" r="1.5"></circle></svg>
+                    <div className={toolbarGroupClass}>
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run(); }} className={`${toolbarButtonClass} ${editor.isActive("bulletList") ? activeToolbarButtonClass : ""}`} title="Bullet list">
+                            <List className="h-5 w-5" />
                             </button>
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run(); }} className={`w-8 h-8 flex items-center justify-center rounded-md transition-all hover:scale-105 ${editor.isActive("orderedList") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`} title="Numbered List">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg>
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run(); }} className={`${toolbarButtonClass} ${editor.isActive("orderedList") ? activeToolbarButtonClass : ""}`} title="Numbered list">
+                            <ListOrdered className="h-5 w-5" />
                             </button>
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run(); }} className={`w-8 h-8 flex items-center justify-center rounded-md transition-all hover:scale-105 ${editor.isActive("blockquote") ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-[0_2px_10px_rgba(14,165,233,0.3)]" : "text-neutral-700 hover:bg-sky-50 hover:text-sky-600"}`} title="Quote">
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run(); }} className={`${toolbarButtonClass} ${editor.isActive("blockquote") ? activeToolbarButtonClass : ""}`} title="Quote">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg>
                             </button>
                         </div>
+
+                    {toolbarDivider}
+
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); cycleTextEffect(); }} className={`${toolbarButtonClass} ${textEffect !== "none" ? "bg-neutral-100 text-neutral-950" : ""}`} title="Effects">
+                        <Sparkles className="h-5 w-5" />
+                    </button>
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); setProp((props: any) => { props.textEffect = props.textEffect === "lift" ? "none" : "lift"; }); }} className={toolbarButtonClass} title="Animate">
+                        <Palette className="h-5 w-5" />
+                    </button>
+                    {toolbarDivider}
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); bringToFront(); }} className={`${toolbarButtonClass} bg-neutral-100 text-neutral-950 hover:bg-neutral-200`} title="Position">
+                        <BringToFront className="h-5 w-5" />
+                    </button>
+                    <button type="button" onMouseDown={(e) => { e.preventDefault(); copyStyleToClipboard(); }} className={toolbarButtonClass} title="Copy text style">
+                        <PaintRoller className="h-5 w-5" />
+                    </button>
 
                 </div>,
                 document.getElementById('text-toolbar-portal') || document.body
@@ -307,7 +445,8 @@ export const TextBlock = ({
             {textShape === 'curve' && !editMode ? (
                 <div
                     ref={containerRef}
-                    onDoubleClick={handleDoubleClick}
+                    onClick={() => enterEditMode("end")}
+                    onDoubleClick={() => enterEditMode("all")}
                     style={{
                         width: "100%",
                         height: "100%",
@@ -330,7 +469,8 @@ export const TextBlock = ({
             ) : (
                 <div
                     ref={containerRef}
-                    onDoubleClick={handleDoubleClick}
+                        onClick={() => enterEditMode("end")}
+                        onDoubleClick={() => enterEditMode("all")}
                     style={{
                         width: "100%",
                         height: "100%",

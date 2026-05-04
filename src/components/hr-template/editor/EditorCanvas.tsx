@@ -8,22 +8,36 @@ import { LineBlock } from "../blocks/LineBlock";
 import { DrawingOverlay } from "./DrawingOverlay";
 import { ZoomIn, ZoomOut } from "lucide-react";
 
+const A4_PAGE_WIDTH = 794;
+const A4_PAGE_HEIGHT = 1123;
+const PAGE_CHROME_HEIGHT = 48;
+const PAGE_GAP = 32;
+const PAGE_EDITOR_HEIGHT = A4_PAGE_HEIGHT + PAGE_CHROME_HEIGHT;
+
 export const EditorCanvas = ({ children, activeTool }: { children: React.ReactNode, activeTool?: WhiteboardTool }) => {
     const { actions, query } = useEditor((state) => ({
         selectedNodeId: state.events.selected,
     }));
 
+    // Get all page nodes (children of DocumentContainer)
+    const rootNode = query.node('ROOT').get();
+    const pageNodes = rootNode?.data?.nodes?.filter((nodeId: string) => {
+        const node = query.node(nodeId).get();
+        return node?.data?.name === 'A4PageBlock';
+    }) || [];
+
     const selectedNodeId = useEditor((state) => state.events.selected);
     const [zoom, setZoom] = React.useState(1);
     const [zoomMode, setZoomMode] = React.useState<"fit" | "manual">("fit");
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const editorContentHeight = Math.max(1, pageNodes.length) * PAGE_EDITOR_HEIGHT + Math.max(0, pageNodes.length - 1) * PAGE_GAP;
 
     const fitToScreen = React.useCallback(() => {
         if (containerRef.current) {
             const { width, height } = containerRef.current.getBoundingClientRect();
             // 794x1123 is the A4 size. We leave an 80px buffer (40px padding on each side).
-            const widthRatio = (width - 80) / 794;
-            const heightRatio = (height - 80) / 1123;
+            const widthRatio = (width - 80) / A4_PAGE_WIDTH;
+            const heightRatio = (height - 80) / A4_PAGE_HEIGHT;
             // Limit fit to a max of 1.5 zoom to avoid ridiculous scaling on huge screens.
             const newZoom = Math.min(widthRatio, heightRatio, 1.5);
             setZoom(Math.max(0.2, newZoom));
@@ -142,15 +156,23 @@ export const EditorCanvas = ({ children, activeTool }: { children: React.ReactNo
                  <button onClick={fitToScreen} className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${zoomMode === 'fit' ? 'bg-sky-100 text-sky-700' : 'hover:bg-neutral-100 text-neutral-600'}`}>Fit</button>
             </div>
 
-            <div className="m-auto pt-24 pb-10 px-10 flex-shrink-0 flex items-center justify-center min-h-full min-w-full">
-                <div 
-                    style={{ width: 794 * zoom, height: 1123 * zoom, transition: 'width 0.15s ease-out, height 0.15s ease-out' }}
-                    className="relative shrink-0 shadow-2xl bg-white"
+            <div className="m-auto pt-15 pb-10 px-10 flex-shrink-0 flex items-center justify-center min-h-full min-w-full overflow-y-auto">
+                <div
+                    style={{
+                        width: A4_PAGE_WIDTH * zoom,
+                        minHeight: editorContentHeight * zoom,
+                        transition: 'width 0.15s ease-out, minHeight 0.15s ease-out'
+                    }}
+                    className="relative shrink-0"
                 >
                     <div
                         id="editor-canvas"
-                        className={`absolute top-0 left-0 w-[794px] h-[1123px] flex-shrink-0 origin-top-left ${activeTool && (activeTool !== 'select' && !activeTool.startsWith('draw')) ? 'cursor-crosshair' : ''}`}
-                        style={{ transform: `scale(${zoom})`, transition: 'transform 0.15s ease-out' }}
+                        className={`absolute top-0 left-0 w-[794px] flex-shrink-0 origin-top-left ${activeTool && (activeTool !== 'select' && !activeTool.startsWith('draw')) ? 'cursor-crosshair' : ''}`}
+                        style={{
+                            transform: `scale(${zoom})`,
+                            minHeight: editorContentHeight,
+                            transition: 'transform 0.15s ease-out'
+                        }}
                         onClick={(e) => {
                             // Store last click position in page coordinates (zoom-normalized)
                             const canvasEl = document.getElementById('editor-canvas');
@@ -161,7 +183,7 @@ export const EditorCanvas = ({ children, activeTool }: { children: React.ReactNo
                                 // Clamp to A4 bounds with a small margin
                                 (window as any).__craft_last_click = {
                                     x: Math.max(10, Math.min(pageX, 744)),
-                                    y: Math.max(10, Math.min(pageY, 1073)),
+                                    y: Math.max(10, Math.min(pageY, editorContentHeight - 10)),
                                     timestamp: Date.now(),
                                 };
                             }

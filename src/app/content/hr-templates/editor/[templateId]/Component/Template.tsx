@@ -10,6 +10,7 @@ import { TextBlock } from "../../../../../../components/hr-template/blocks/TextB
 import { ImageBlock } from "../../../../../../components/hr-template/blocks/ImageBlock";
 import { ContainerBlock } from "../../../../../../components/hr-template/blocks/ContainerBlock";
 import { A4PageBlock } from "../../../../../../components/hr-template/blocks/A4PageBlock";
+import { DocumentContainer } from "../../../../../../components/hr-template/blocks/DocumentContainer";
 import { normalizeTemplateDocument, createEmptyDocument } from "../../../../../../components/hr-template/editor/utils/documentModel";
 import { ButtonBlock } from "../../../../../../components/hr-template/blocks/ButtonBlock";
 import { DividerBlock } from "../../../../../../components/hr-template/blocks/DividerBlock";
@@ -178,7 +179,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
 
     return (
         <div className="flex flex-col h-screen overflow-hidden">
-            <Editor resolver={{ TextBlock, ImageBlock, ContainerBlock, A4PageBlock, ButtonBlock, DividerBlock, GridBlock, ShapeBlock, TableBlock, DrawingBlock, LineBlock }}>
+            <Editor resolver={{ TextBlock, ImageBlock, ContainerBlock, A4PageBlock, DocumentContainer, ButtonBlock, DividerBlock, GridBlock, ShapeBlock, TableBlock, DrawingBlock, LineBlock }}>
                 <Topbar templateId={templateId} offerData={offerData} />
 
                 <div className="flex flex-1 overflow-hidden relative">
@@ -199,7 +200,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
 
                     <div className="flex-1 flex overflow-hidden relative">
                         {/* Portal target for the Text block's bubble menu so it perfectly centers over the canvas */}
-                        <div id="text-toolbar-portal" className="absolute top-4 left-1/2 -translate-x-1/2 z-50 w-max" />
+                        <div id="text-toolbar-portal" className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-max" />
                         
                         {isFloatingToolbarVisible && (
                             <FloatingToolbar
@@ -328,7 +329,7 @@ function FrameLoader({ templateId, sessionData, offerData, form16Data, replacePl
 
     return (
         <Frame>
-            <Element is={A4PageBlock} canvas />
+            <Element is={DocumentContainer} canvas />
         </Frame>
     );
 }
