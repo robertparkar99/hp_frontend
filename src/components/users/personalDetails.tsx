@@ -65,13 +65,16 @@ const PersonalDetails: React.FC<userDetailsprops> = ({
       reporting_method: userDetails?.reporting_method || "",
     },
     attendance: {
-      working_days: userDetails?.working_days || [
-        "Mon",
-        "Tue",
-        "Wed",
-        "Thu",
-        "Fri",
-      ],
+      working_days: (() => {
+        const days = [];
+        if (userDetails?.monday === 1 || userDetails?.monday === "1") days.push("Mon");
+        if (userDetails?.tuesday === 1 || userDetails?.tuesday === "1") days.push("Tue");
+        if (userDetails?.wednesday === 1 || userDetails?.wednesday === "1") days.push("Wed");
+        if (userDetails?.thursday === 1 || userDetails?.thursday === "1") days.push("Thu");
+        if (userDetails?.friday === 1 || userDetails?.friday === "1") days.push("Fri");
+        if (userDetails?.saturday === 1 || userDetails?.saturday === "1") days.push("Sat");
+        return days.length > 0 ? days : ["Mon", "Tue", "Wed", "Thu", "Fri"];
+      })(),
       monday_in: userDetails?.monday_in_date || "",
       monday_out: userDetails?.monday_out_date || "",
       tuesday_in: userDetails?.tuesday_in_date || "",
