@@ -170,8 +170,8 @@ const AssessmentLibrary = () => {
 
     // If tour is NOT completed, try to start it
     if (tourCompleted !== 'true') {
-      // Start if triggered from sidebar OR if we're on Assessment Library URL
-      if (triggerValue || isAssessmentLibraryUrl) {
+      // Start only if triggered from sidebar
+      if (triggerValue) {
         console.log('[AssessmentLibrary] Auto-starting tour...');
         // Add a delay to ensure all elements are rendered
         const timer = setTimeout(() => {
