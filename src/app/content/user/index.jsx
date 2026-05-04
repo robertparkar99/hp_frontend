@@ -142,7 +142,7 @@ const EmployeeDirectory = () => {
         email: item.email || 'N/A',
         mobile: item.mobile || 'N/A',
         department_name: item.department_name || 'N/A',
-        jobRole: item.designation || 'N/A',
+        jobRole: item.jobrole || 'N/A',
         address: item.address || 'N/A',
         image: item.image?.trim()
           ? item.image

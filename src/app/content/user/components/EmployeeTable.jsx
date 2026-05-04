@@ -345,11 +345,11 @@ const EmployeeTable = ({
     {
       name: (
         <div>
-          <div>Status</div>
+          <div>Job Role</div>
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("status", e.target.value)}
+            onChange={(e) => handleColumnFilter("jobRole", e.target.value)}
             style={{
               width: "100%",
               padding: "4px",
@@ -360,12 +360,11 @@ const EmployeeTable = ({
           />
         </div>
       ),
-      selector: row => row.status,
+      selector: row => row.jobRole,
       sortable: true,
       cell: (row) => (
-        <div className="flex items-center space-x-2 text-sm text-foreground">
-          <span className={`inline-block w-2 h-2 rounded-full ${getStatusColor(row.status)}`} />
-          <span>{row.status}</span>
+        <div className="text-sm text-foreground">
+          {row.jobRole}
         </div>
       ),
       omit: window.innerWidth < 1024 // Hide on mobile

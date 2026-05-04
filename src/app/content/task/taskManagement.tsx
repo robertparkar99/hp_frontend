@@ -813,7 +813,7 @@ const TaskManagement = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          prompt: prompt + ` for jobrole ${selJobroleText}, Generate a single JSON object with the following fields: task_description, repeat_once_in_every, repeat_until_date (format: YYYY-MM-DD), observation_point, kras (only 1), kpis(only 1), monitoring_point, task_type(High,Medium,Low), skill_required return in array and select from givien list ${skillsData}. Return as a single-element array containing only this object.`
+          prompt: prompt + ` for jobrole ${selJobroleText}, Generate a single JSON object with the following fields: task_description, repeat_once_in_every, repeat_until_date (format: YYYY-MM-DD), observation_point, kras (only 1), kpis(only 1), monitoring_point, task_type(High,Medium,Low), skill_required return in array and select only the most relevant 1-3 skills from given list ${skillsData}. Return as a single-element array containing only this object.`
         })
       })
 
@@ -834,8 +834,10 @@ const TaskManagement = () => {
         };
         setRepeatDays(repeatMapping[geminiData.repeat_once_in_every] || "1");
 
-        const formattedDate = formatDateForInput(geminiData.repeat_until_date);
-        setRepeatUntil(formattedDate);
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+        const defaultDate = oneYearFromNow.toISOString().split('T')[0];
+        setRepeatUntil(defaultDate);
 
         setObservationPoint(geminiData.observation_point);
         setKras(geminiData.kras);
@@ -843,7 +845,7 @@ const TaskManagement = () => {
         const selectedSkillIds = geminiData.skill_required.map((skillName: string) => {
           const skillObj = skillList.find(s => s.skill === skillName);
           return skillObj ? skillObj.skill_id.toString() : '';
-        }).filter(id => id);
+        }).filter(id => id).slice(0, 3); // Limit to 3 skills
         setSelSkill(selectedSkillIds);
         setTaskType(geminiData.task_type || "Medium");
       } else {
