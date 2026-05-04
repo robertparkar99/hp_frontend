@@ -56,9 +56,10 @@ interface OfferDashboardProps {
   candidate?: string;
   position?: string;
   candidateId?: number;
+  interviewId?: number;
 }
 
-export default function OfferDashboard({ showHeader = true, candidate, position, candidateId }: OfferDashboardProps) {
+export default function OfferDashboard({ showHeader = true, candidate, position, candidateId, interviewId }: OfferDashboardProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -549,7 +550,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           employeeData,
           companyData,
           hrData,
-          offerId: offerId // Now includes the created offer ID
+          offerId: offerId, // Now includes the created offer ID
+          interviewId: interviewId
         };
 
         // Store in localStorage for template dashboard/editor

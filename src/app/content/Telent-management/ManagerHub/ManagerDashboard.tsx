@@ -90,6 +90,7 @@ const ManagerDashboard = () => {
   const [selectedCandidate, setSelectedCandidate] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("");
   const [selectedCandidateId, setSelectedCandidateId] = useState(0);
+  const [selectedInterviewId, setSelectedInterviewId] = useState(0);
 
   // Listen for tab switch events from tour
   useEffect(() => {
@@ -109,32 +110,12 @@ const ManagerDashboard = () => {
   }, []);
 
   const handleHired = async (interview: InterviewFeedback) => {
-    try {
-      const response = await fetch(`${sessionData.url}/api/interviews/${interview.id}/decision?token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&type=API`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: 'Hired',
-          notes: hiringNotes[interview.id] || '',
-        }),
-      });
-
-      if (response.ok) {
-        // Switch to offer management tab with candidate data
-        setSelectedCandidate(interview.candidate);
-        setSelectedPosition(interview.position);
-        setSelectedCandidateId(interview.candidateId);
-        setActiveTab("offers");
-      } else {
-        console.error('Failed to hire candidate:', response.statusText);
-        alert('Failed to hire candidate. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error hiring candidate:', error);
-      alert('Error hiring candidate. Please try again.');
-    }
+    // Switch to offer management tab with candidate data
+    setSelectedCandidate(interview.candidate);
+    setSelectedPosition(interview.position);
+    setSelectedCandidateId(interview.candidateId);
+    setSelectedInterviewId(interview.id);
+    setActiveTab("offers");
   };
 
   const handleReject = async (interview: InterviewFeedback) => {
@@ -468,7 +449,7 @@ const ManagerDashboard = () => {
           </TabsContent>
 
           <TabsContent value="offers" className="space-y-6" id="tour-offers-tab-content">
-            <OfferDashboard showHeader={false} candidate={selectedCandidate} position={selectedPosition} candidateId={selectedCandidateId} />
+            <OfferDashboard showHeader={false} candidate={selectedCandidate} position={selectedPosition} candidateId={selectedCandidateId} interviewId={selectedInterviewId} />
           </TabsContent>
 
           <TabsContent value="team" className="space-y-6" id="tour-team-tab-content">
