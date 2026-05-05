@@ -834,9 +834,9 @@ const TaskManagement = () => {
         };
         setRepeatDays(repeatMapping[geminiData.repeat_once_in_every] || "1");
 
-        const oneYearFromNow = new Date();
-        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-        const defaultDate = oneYearFromNow.toISOString().split('T')[0];
+        const nextDay = new Date();
+        nextDay.setDate(nextDay.getDate() + 1);
+        const defaultDate = nextDay.toISOString().split('T')[0];
         setRepeatUntil(defaultDate);
 
         setObservationPoint(geminiData.observation_point);
