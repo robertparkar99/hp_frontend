@@ -330,7 +330,11 @@ const ProgressDashboard = () => {
       // Append all task data
       Object.keys(currentTask).forEach(key => {
         if (key !== 'task_attachment') {
-          formData.append(key, currentTask[key]);
+          if (key === 'task_allocated') {
+            formData.append('manageby', currentTask[key]);
+          } else {
+            formData.append(key, currentTask[key]);
+          }
         }
       });
 
@@ -779,23 +783,23 @@ const ProgressDashboard = () => {
               {/* Task Details Section */}
               <div className="border rounded-lg p-4">
                 <h3 className="text-lg font-semibold mb-4 text-black-700">Task Details :</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Input
-                      label="Task Title"
-                      value={currentTask.task_title}
-                      onChange={(e) => handleInputChange('task_title', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      label="Observer"
-                      value={currentTask.ALLOCATOR}
-                      disabled
-                    />
-                  </div>
-                </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                     <Input
+                       label="Task Title"
+                       value={currentTask.task_title}
+                       onChange={(e) => handleInputChange('task_title', e.target.value)}
+                       required
+                     />
+                   </div>
+                   <div>
+                     <Input
+                       label="Observer"
+                       value={employees.find(emp => emp.id == currentTask.task_allocated)?.first_name + ' ' + employees.find(emp => emp.id == currentTask.task_allocated)?.last_name || currentTask.ALLOCATOR}
+                       disabled
+                     />
+                   </div>
+                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div>
                     <div className="space-y-2">
