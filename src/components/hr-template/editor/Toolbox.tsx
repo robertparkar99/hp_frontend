@@ -724,7 +724,7 @@ export const Toolbox = ({ activeTab, setActiveTab, isFloatingToolbarVisible, tog
 
 function TableTabContent({ query, actions, getParentId }: any) {
     const [customRows, setCustomRows] = React.useState(3);
-    const [customCols, setCustomCols] = React.useState(3);
+    const [customCols, setCustomCols] = React.useState(4);
 
     const addTable = (r: number, c: number) => {
         const lastClick = (window as any).__craft_last_click;
@@ -733,8 +733,24 @@ function TableTabContent({ query, actions, getParentId }: any) {
             pt = { x: lastClick.x, y: lastClick.y };
             (window as any).__craft_last_click = { x: Math.min(lastClick.x + 20, 700), y: Math.min(lastClick.y + 20, 1050), timestamp: lastClick.timestamp };
         }
+
+        // Constants for page layout
+        const PAGE_CONTENT_START = 64; // py-4 (16px) + pt-12 (48px)
+        const PAGE_HEIGHT = 1123;
+        const PAGE_SPACING = PAGE_HEIGHT + 32; // page height + gap-8 (32px)
+        const PAGE_WIDTH = 794;
+        const TABLE_WIDTH = 540;
+
+        // Determine the page index based on insertion point y
+        const pageIndex = Math.max(0, Math.floor((pt.y - PAGE_CONTENT_START) / PAGE_SPACING));
+        const pageTop = PAGE_CONTENT_START + pageIndex * PAGE_SPACING;
+
+        // Center the table on the page
+        const centerX = (PAGE_WIDTH - TABLE_WIDTH) / 2;
+        const centerY = pageTop + PAGE_HEIGHT / 2 - 100; // Rough center, assuming table height ~200px
+
         const nodeTree = query.parseReactElement(
-            <TableBlock rows={r} cols={c} content={createStarterTableContent(r, c)} x={pt.x} y={pt.y} />
+            <TableBlock rows={r} cols={c} content={createStarterTableContent(r, c)} x={centerX} y={centerY} />
         ).toNodeTree();
         actions.addNodeTree(nodeTree, getParentId());
     };
@@ -753,11 +769,11 @@ function TableTabContent({ query, actions, getParentId }: any) {
             <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-2">Tables</div>
 
             <div
-                onClick={() => addTable(3, 3)}
+                onClick={() => addTable(customRows, customCols)}
                 className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl p-3 flex items-center justify-center text-sm font-semibold cursor-pointer shadow-[0_4px_14px_0_rgba(14,165,233,0.39)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.23)] hover:-translate-y-[1px] transition-all mb-4"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 3v18"/><path d="M3 12h18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
-                Add a Table
+                Add a Table ({customRows}×{customCols})
             </div>
 
             <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-2 mt-2">Quick Add</div>
