@@ -367,16 +367,51 @@ const TaskManagement = () => {
         `${sessionData.url}/api/get-employee-tasks?user_id=${userId}&sub_institute_id=${sessionData.subInstituteId}`
       );
       const data = await response.json();
-      
+
       // Extract unique task titles from previously allocated tasks
       const uniqueTasks = Array.isArray(data)
         ? data.map((task: any) => ({ task: task.task_title || task.task }))
         : [];
-      
+
       setPreviouslyAllocatedTasks(uniqueTasks);
     } catch (error) {
       console.error("Error fetching previously allocated tasks:", error);
       setPreviouslyAllocatedTasks([]);
+    }
+  };
+
+  const fetchSupervisor = async (employeeId: string) => {
+    try {
+      const response = await fetch(
+        `${sessionData.url}/getSupervisor?user_id=${employeeId}&sub_institute_id=${sessionData.subInstituteId}`
+      );
+      const data = await response.json();
+
+      console.log('Supervisor API response:', data);
+
+      // The API returns { status_code, message, data: { id, name, email, mobile } }
+      if (data && data.data && data.data.id) {
+        const supervisor = data.data;
+        setSelObserver(supervisor.id.toString());
+
+        // Transform supervisor data to match ObserverList format
+        const supervisorForList = {
+          id: supervisor.id,
+          first_name: supervisor.name.split(' ')[0] || supervisor.name,
+          middle_name: supervisor.name.split(' ').slice(1, -1).join(' ') || '',
+          last_name: supervisor.name.split(' ').slice(-1)[0] || '',
+          email: supervisor.email,
+          mobile: supervisor.mobile,
+        };
+
+        // Add supervisor to ObserverList if not already present
+        const existing = ObserverList.find(observer => observer.id == supervisor.id);
+        if (!existing) {
+          setObserverList(prev => [...prev, supervisorForList]);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching supervisor:", error);
     }
   };
 
@@ -976,6 +1011,7 @@ const TaskManagement = () => {
                         setSelEmployee(userIds);
                         if (userIds.length > 0) {
                           fetchEmployeeDetails(userIds[userIds.length - 1]);
+                          fetchSupervisor(userIds[userIds.length - 1]);
                         }
                         setIsJobroleList(true);
                       }}
@@ -1194,7 +1230,7 @@ const TaskManagement = () => {
                   </div>
 
                   {/* Observer */}
-                  <div id="assignment-observer">
+                  <div id="assignment-observer" >
                     <label
                       htmlFor="observer"
                       className="block mb-1 text-sm text-gray-900"
@@ -1204,8 +1240,7 @@ const TaskManagement = () => {
                     </label>
                     <Select
                       value={selObserver}
-                      onValueChange={(value) => setSelObserver(value)}
-                      required
+                      disabled
                     >
                       <SelectTrigger className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-400 text-sm focus:ring-2 focus:ring-[#D0E7FF] focus:outline-none">
                         <SelectValue placeholder="Select Observer" />

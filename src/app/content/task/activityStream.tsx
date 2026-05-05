@@ -51,6 +51,7 @@ const ActivityStream = () => {
   const [todayTaskList, setTodayTaskList] = useState<any[]>([]);
   const [upcomingTaskList, setUpcomingTaskList] = useState<any[]>([]);
   const [recentTaskLists, setRecentTaskLists] = useState<any[]>([]);
+  const [observationTaskLists, setObservationTaskLists] = useState<any[]>([]);
   const [employees] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -97,6 +98,7 @@ const ActivityStream = () => {
       'tab-today': { element: '#tour-tab-today', on: 'bottom' },
       'tab-upcoming': { element: '#tour-tab-upcoming', on: 'bottom' },
       'tab-recent': { element: '#tour-tab-recent', on: 'bottom' },
+      'tab-observation': { element: '#tour-tab-observation', on: 'bottom' },
       'task-card': { element: '.space-y-4 .rounded-xl', on: 'top' },
       'task-reply': { element: '.bg-gray-50.border-t', on: 'top' },
     };
@@ -335,6 +337,24 @@ const ActivityStream = () => {
         ...(data.recent?.taskAssigned?.map((t: any) => ({ ...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status })) || []),
         ...(data.recent?.complianceAssigned?.map((t: any) => ({ ...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status })) || [])
       ]);
+      const observationTasks: any[] = [];
+      (data.observer?.taskAssigned || []).forEach((t: any) => {
+        observationTasks.push({ ...t, is_jobrole_task: false, type: 'task', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status });
+        if (t.subordinates && Array.isArray(t.subordinates)) {
+          t.subordinates.forEach((sub: any) => {
+            observationTasks.push({ ...sub, is_subordinate: true, type: 'task', status: sub.status === 'IN-PROGRES' ? 'IN-PROGRESS' : sub.status });
+          });
+        }
+      });
+      (data.observer?.complianceAssigned || []).forEach((t: any) => {
+        observationTasks.push({ ...t, is_jobrole_task: false, type: 'compliance', status: t.status === 'IN-PROGRES' ? 'IN-PROGRESS' : t.status });
+        if (t.subordinates && Array.isArray(t.subordinates)) {
+          t.subordinates.forEach((sub: any) => {
+            observationTasks.push({ ...sub, is_subordinate: true, type: 'compliance', status: sub.status === 'IN-PROGRES' ? 'IN-PROGRESS' : sub.status });
+          });
+        }
+      });
+      setObservationTaskLists(observationTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       setTasks([]);
@@ -418,11 +438,27 @@ const ActivityStream = () => {
     });
   }, [recentTaskLists, searchQuery, filterStatus, selectedEmployee, taskTypeFilter]);
 
+  const filteredObservationTasks = useMemo(() => {
+    return observationTaskLists.filter(task => {
+      const matchesSearch =
+        (task.task_title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+        (task.task_description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+      const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
+      const matchesEmployee = selectedEmployee === 'all' || task.allocatedBy === selectedEmployee;
+      const matchesTaskType = taskTypeFilter === 'all' ||
+        (taskTypeFilter === 'jobrole' && task.is_jobrole_task !== undefined && task.is_jobrole_task) ||
+        (taskTypeFilter === 'allocated' && (!task.is_jobrole_task || task.is_jobrole_task === false));
+
+      return matchesSearch && matchesStatus && matchesEmployee && matchesTaskType;
+    });
+  }, [observationTaskLists, searchQuery, filterStatus, selectedEmployee, taskTypeFilter]);
+
   const stats = useMemo(() => {
     const allFilteredTasks = [
       ...filteredTodayTasks,
       ...filteredUpcomingTasks,
-      ...filteredRecentTasks
+      ...filteredRecentTasks,
+      ...filteredObservationTasks
     ];
 
     const total = allFilteredTasks.length;
@@ -431,7 +467,7 @@ const ActivityStream = () => {
     const pending = allFilteredTasks.filter(t => t.status === 'PENDING').length;
 
     return { total, completed, inProgress, pending };
-  }, [filteredTodayTasks, filteredUpcomingTasks, filteredRecentTasks]);
+  }, [filteredTodayTasks, filteredUpcomingTasks, filteredRecentTasks, filteredObservationTasks]);
 
   if (loading) {
     return (
@@ -547,7 +583,7 @@ const ActivityStream = () => {
 
               {/* Task Tabs */}
               <Tabs defaultValue="today" className="w-full " id="tour-tabs">
-                <TabsList className="grid w-full grid-cols-3 bg-[#EFF4FF]" id="tour-tabs-list">
+                <TabsList className="grid w-full grid-cols-4 bg-[#EFF4FF]" id="tour-tabs-list">
                   <TabsTrigger value="today" className="flex items-center gap-2" id="tour-tab-today">
                     <Calendar className="w-4 h-4" />
                     Today ({filteredTodayTasks.length})
@@ -559,6 +595,10 @@ const ActivityStream = () => {
                   <TabsTrigger value="recent" className="flex items-center gap-2" id="tour-tab-recent">
                     <CheckCircle className="w-4 h-4" />
                     Recent ({filteredRecentTasks.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="observation" className="flex items-center gap-2" id="tour-tab-observation">
+                    <HelpCircle className="w-4 h-4" />
+                    Subordinate Tasks ({filteredObservationTasks.length})
                   </TabsTrigger>
                 </TabsList>
 
@@ -572,6 +612,7 @@ const ActivityStream = () => {
                         onStatusUpdate={handleStatusUpdate}
                         onRefetch={fetchTask}
                         employees={employees}
+                        showFooter={!task.is_subordinate}
                       />
                     ))
                   ) : (
@@ -593,6 +634,7 @@ const ActivityStream = () => {
                         onStatusUpdate={handleStatusUpdate}
                         onRefetch={fetchTask}
                         employees={employees}
+                        showFooter={!task.is_subordinate}
                       />
                     ))
                   ) : (
@@ -614,6 +656,7 @@ const ActivityStream = () => {
                         onStatusUpdate={handleStatusUpdate}
                         onRefetch={fetchTask}
                         employees={employees}
+                        showFooter={!task.is_subordinate}
                       />
                     ))
                   ) : (
@@ -621,6 +664,28 @@ const ActivityStream = () => {
                       <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">No recent activity</h3>
                       <p className="text-gray-600">No tasks have been updated recently.</p>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="observation" className="space-y-4">
+                  {filteredObservationTasks.length > 0 ? (
+                    filteredObservationTasks.map((task, index) => (
+                      <TaskCard
+                        key={index}
+                        sessionData={sessionData}
+                        task={task}
+                        onStatusUpdate={handleStatusUpdate}
+                        onRefetch={fetchTask}
+                        employees={employees}
+                        showFooter={false}
+                      />
+                    ))
+                  ) : (
+                    <Card className="p-8 text-center">
+                      <HelpCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No observation tasks</h3>
+                      <p className="text-gray-600">No observation tasks available.</p>
                     </Card>
                   )}
                 </TabsContent>

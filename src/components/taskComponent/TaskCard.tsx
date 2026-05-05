@@ -37,9 +37,10 @@ interface TaskCardProps {
   onStatusUpdate: (taskId: string, status: Task['status'], reply?: string) => void;
   onRefetch: () => void;
   employees: any[];
+  showFooter?: boolean;
 }
 
-export function TaskCard({ task, sessionData, onStatusUpdate, onRefetch, employees }: TaskCardProps) {
+export function TaskCard({ task, sessionData, onStatusUpdate, onRefetch, employees, showFooter = true }: TaskCardProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [isReplied, setIsReplied] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
@@ -159,7 +160,7 @@ export function TaskCard({ task, sessionData, onStatusUpdate, onRefetch, employe
               Created by <span className="text-black">{task.allocatedBy}</span>
             </div>
           </div>
-          {task.reply != '' && (
+          {showFooter && task.reply != '' && (
             <div className="mt-4">
               <Separator className="mb-3" />
               <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -182,6 +183,25 @@ export function TaskCard({ task, sessionData, onStatusUpdate, onRefetch, employe
                     <p className="text-gray-600 mt-1">{task.reply ? task.reply : 'No Reply'}</p>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+          {task.subordinates && task.subordinates.length > 0 && (
+            <div className="mt-4">
+              <Separator className="mb-3" />
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Subordinate Tasks</h4>
+              <div className="space-y-2">
+                {task.subordinates.map((subtask: any, index: number) => (
+                  <TaskCard
+                    key={index}
+                    task={subtask}
+                    sessionData={sessionData}
+                    onStatusUpdate={onStatusUpdate}
+                    onRefetch={onRefetch}
+                    employees={employees}
+                    showFooter={false}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -222,148 +242,150 @@ export function TaskCard({ task, sessionData, onStatusUpdate, onRefetch, employe
               )}
             </div>
           )} */}
+
         </div>
       </CardContent>
 
-      <CardFooter className="pt-3">
-        {!isReplying ? (
-          <div className="flex gap-2 w-full">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsReplying(true)}
-              className="flex-1"
-            >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Reply & Update
-            </Button>
-          </div>
-        ) : (
-          <div className="w-full space-y-3">
-            {/* Hidden task_id field */}
-            <input type="hidden" name="task_id" value={task.id} />
-
-
-            <div className="flex gap-2">
-              <Popover modal={false}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-40 justify-between"
-                  >
-                    {newStatus}
-                    <ChevronDown className="h-4 w-4 opacity-60" />
-                  </Button>
-                </PopoverTrigger>
-
-                <PopoverContent
-                  side="bottom"
-                  align="start"
-                  className="w-40 p-1 z-[9999]"
-                >
-                  {STATUSES.map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      onClick={() => setNewStatus(status)}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-gray-100"
-                    >
-                      <Check
-                        className={`h-4 w-4 ${newStatus === status ? "opacity-100" : "opacity-0"
-                          }`}
-                      />
-                      {status}
-                    </button>
-                  ))}
-                </PopoverContent>
-              </Popover>
-            </div>
-
-
-
-            <Textarea
-              placeholder="Add a reply and update task status..."
-              value={replyMessage}
-              onChange={(e) => setReplyMessage(e.target.value)}
-              className="min-h-[80px]"
-            />
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={async () => {
-                  try {
-                    // Map status to API format
-                    const statusMap: { [key: string]: string } = {
-                      'pending': 'pending',
-                      'in-progress': 'in-progress',
-                      'completed': 'completed'
-                    };
-                    const apiStatus = statusMap[newStatus] || newStatus;
-
-                    // Prepare payload according to API specification
-                    const payload = {
-                      token: sessionData.token,
-                      row: {
-                        data: {
-                          status: apiStatus,
-                          taskcompletation_remarks: replyMessage
-                        }
-                      }
-                    };
-
-                    // Make API call
-                    const response = await fetch(
-                      `${sessionData.url}/task/update-status/${task.id}`,
-                      {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                      }
-                    );
-
-                    if (!response.ok) {
-                      throw new Error('Failed to update task status');
-                    }
-
-                    const result = await response.json();
-                    // Refetch data to update UI
-                    onRefetch();
-                    // Reset form
-                    setIsReplying(false);
-                    setReplyMessage('');
-                    setNewStatus(task.status);
-
-                    // Optional: Show success message
-                    // toast.success('Task status updated successfully');
-                  } catch (error) {
-                    console.error('Error updating task status:', error);
-                    // Optional: Show error message
-                    // toast.error('Failed to update task status');
-                  }
-                }}
-                className="flex-1"
-                disabled={!task.id}
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Send Reply
-              </Button>
+      {showFooter && (
+        <CardFooter className="pt-3">
+          {!isReplying ? (
+            <div className="flex gap-2 w-full">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setIsReplying(false);
-                  setReplyMessage('');
-                  setNewStatus(task.status);
-                }}
+                onClick={() => setIsReplying(true)}
+                className="flex-1"
               >
-                Cancel
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Reply & Update
               </Button>
             </div>
-          </div>
-        )}
-      </CardFooter>
+          ) : (
+            <div className="w-full space-y-3">
+              {/* Hidden task_id field */}
+              <input type="hidden" name="task_id" value={task.id} />
+
+              <div className="flex gap-2">
+                <Popover modal={false}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-40 justify-between"
+                    >
+                      {newStatus}
+                      <ChevronDown className="h-4 w-4 opacity-60" />
+                    </Button>
+                  </PopoverTrigger>
+
+                  <PopoverContent
+                    side="bottom"
+                    align="start"
+                    className="w-40 p-1 z-[9999]"
+                  >
+                    {STATUSES.map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => setNewStatus(status)}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-gray-100"
+                      >
+                        <Check
+                          className={`h-4 w-4 ${newStatus === status ? "opacity-100" : "opacity-0"
+                            }`}
+                        />
+                        {status}
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+
+
+              <Textarea
+                placeholder="Add a reply and update task status..."
+                value={replyMessage}
+                onChange={(e) => setReplyMessage(e.target.value)}
+                className="min-h-[80px]"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      // Map status to API format
+                      const statusMap: { [key: string]: string } = {
+                        'pending': 'pending',
+                        'in-progress': 'in-progress',
+                        'completed': 'completed'
+                      };
+                      const apiStatus = statusMap[newStatus] || newStatus;
+
+                      // Prepare payload according to API specification
+                      const payload = {
+                        token: sessionData.token,
+                        row: {
+                          data: {
+                            status: apiStatus,
+                            taskcompletation_remarks: replyMessage
+                          }
+                        }
+                      };
+
+                      // Make API call
+                      const response = await fetch(
+                        `${sessionData.url}/task/update-status/${task.id}`,
+                        {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify(payload)
+                        }
+                      );
+
+                      if (!response.ok) {
+                        throw new Error('Failed to update task status');
+                      }
+
+                      const result = await response.json();
+                      // Refetch data to update UI
+                      onRefetch();
+                      // Reset form
+                      setIsReplying(false);
+                      setReplyMessage('');
+                      setNewStatus(task.status);
+
+                      // Optional: Show success message
+                      // toast.success('Task status updated successfully');
+                    } catch (error) {
+                      console.error('Error updating task status:', error);
+                      // Optional: Show error message
+                      // toast.error('Failed to update task status');
+                    }
+                  }}
+                  className="flex-1"
+                  disabled={!task.id}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Send Reply
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsReplying(false);
+                    setReplyMessage('');
+                    setNewStatus(task.status);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardFooter>
+      )}
     </Card>
   );
 }
