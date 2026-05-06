@@ -143,6 +143,7 @@ const EmployeeDirectory = () => {
         mobile: item.mobile || 'N/A',
         department_name: item.department_name || 'N/A',
         jobRole: item.jobrole || 'N/A',
+        designation: item.designation || 'N/A',
         address: item.address || 'N/A',
         image: item.image?.trim()
           ? item.image
@@ -240,6 +241,8 @@ const EmployeeDirectory = () => {
       currentPage * itemsPerPage
     );
   }, [sortedEmployees, currentPage, itemsPerPage]);
+
+  const isDesignationMode = sessionData.sub_institute_id == 2 || sessionData.sub_institute_id == '2';
 
   const stats = useMemo(() => {
     const total = employees.length;
@@ -552,6 +555,7 @@ const EmployeeDirectory = () => {
               onViewProfile={handleViewProfile}
               onAssignTask={handleAssignTask}
               onEdit={handleEdit}
+              isDesignationMode={isDesignationMode}
             />
             </div>
           ) : (
@@ -563,6 +567,7 @@ const EmployeeDirectory = () => {
                   onViewProfile={handleViewProfile}
                   onAssignTask={handleAssignTask}
                   onEdit={handleEdit}
+                  isDesignationMode={isDesignationMode}
                 />
               ))}
             </div>

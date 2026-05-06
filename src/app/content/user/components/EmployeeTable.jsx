@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DataTable from 'react-data-table-component';
 import Image from '../../../../components/AppImage';
 import Icon from '../../../../components/AppIcon';
@@ -60,7 +60,8 @@ const EmployeeTable = ({
   onSelectEmployee,
   onSelectAll,
   onSort,
-  sortConfig
+  sortConfig,
+  isDesignationMode = false
 }) => {
   const [showActions, setShowActions] = useState(null);
   const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0 });
@@ -212,7 +213,7 @@ const EmployeeTable = ({
     },
   };
 
-  const columns = [
+  const columns = useMemo(() => [
         {
       name: (
         <div>
@@ -225,7 +226,7 @@ const EmployeeTable = ({
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              
+
               marginTop: "5px"
             }}
           />
@@ -276,28 +277,7 @@ const EmployeeTable = ({
         </div>
       ),
     },
-    {
-      name: (
-        <div>
-          <div>Mobile</div>
-          <input
-            type="text"
-            placeholder="Search..."
-            onChange={(e) => handleColumnFilter("mobile", e.target.value)}
-            style={{
-              width: "100%",
-              padding: "4px",
-              fontSize: "12px",
-             
-              marginTop: "5px"
-            }}
-          />
-        </div>
-      ),
-      selector: row => row.mobile,
-      sortable: true,
-      omit: window.innerWidth < 1024 // Hide on mobile
-    },
+    
     {
       name: (
         <div>
@@ -310,7 +290,7 @@ const EmployeeTable = ({
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-             
+
               marginTop: "5px"
             }}
           />
@@ -320,7 +300,28 @@ const EmployeeTable = ({
       sortable: true,
       omit: window.innerWidth < 1024 // Hide on mobile
     },
-    {
+    ...(isDesignationMode ? [{
+      name: (
+        <div>
+          <div>Designation</div>
+          <input
+            type="text"
+            placeholder="Search..."
+            onChange={(e) => handleColumnFilter("designation", e.target.value)}
+            style={{
+              width: "100%",
+              padding: "4px",
+              fontSize: "12px",
+
+              marginTop: "5px"
+            }}
+          />
+        </div>
+      ),
+      selector: row => row.designation,
+      sortable: true,
+      omit: window.innerWidth < 1280 // Hide on smaller screens
+    }] : [{
       name: (
         <div>
           <div>Role</div>
@@ -332,7 +333,7 @@ const EmployeeTable = ({
               width: "100%",
               padding: "4px",
               fontSize: "12px",
-              
+
               marginTop: "5px"
             }}
           />
@@ -341,7 +342,7 @@ const EmployeeTable = ({
       selector: row => row.profile_name,
       sortable: true,
       omit: window.innerWidth < 1280 // Hide on smaller screens
-    },
+    }]),
     {
       name: (
         <div>
@@ -415,7 +416,7 @@ const EmployeeTable = ({
       button: true,
       width: "80px"
     },
-  ];
+  ], [isDesignationMode]);
 
   return (
     <div className="bg-card rounded-lg overflow-hidden">
