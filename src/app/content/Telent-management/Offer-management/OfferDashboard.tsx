@@ -525,10 +525,10 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
 
       // Fetch additional data for template filling
       console.log('APP_URL:', sessionData.APP_URL);
-      const [employeeRes, companyRes, hrRes, templatesRes] = await Promise.all([
+      const [employeeRes, companyRes, /* hrRes, */ templatesRes] = await Promise.all([
         fetch(`${sessionData.APP_URL}/api/job-applications/${newOffer.candidateId}?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`),
         fetch(`${sessionData.APP_URL}/settings/organization_data?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`),
-        fetch(`${sessionData.APP_URL}/api/hr?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`),
+        // fetch(`${sessionData.APP_URL}/api/hr?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}`),
         fetch(`${sessionData.APP_URL}/api/templates?sub_institute_id=${sessionData.sub_institute_id}`, {
           headers: { "Authorization": `Bearer ${sessionData.token}` }
         })
@@ -536,7 +536,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
 
       let employeeData = {};
       let companyData = {};
-      let hrData = {};
+      // let hrData = {};
 
       let templateId = null;
 
@@ -553,10 +553,10 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
         console.error('Failed to fetch company data:', companyRes.status, companyRes.statusText);
       }
 
-      if (hrRes.ok) {
-        const hr = await hrRes.json();
-        hrData = hr.data || {};
-      }
+      // if (hrRes.ok) {
+      //   const hr = await hrRes.json();
+      //   hrData = hr.data || {};
+      // }
 
       if (templatesRes.ok) {
         const temps = await templatesRes.json();
@@ -579,7 +579,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           workScheduleEnd: newOffer.workScheduleEnd,
           employeeData,
           companyData,
-          hrData,
+          // hrData,
           offerId: offerId, // Now includes the created offer ID
           interviewId: interviewId
         };
@@ -1016,8 +1016,19 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={createOffer}>
-                Create Offer
+              <Button
+                onClick={createOffer}
+                disabled={isCreatingOffer}
+                className="flex items-center"
+              >
+                {isCreatingOffer ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  "Select Offer Template"
+                )}
               </Button>
             </div>
           </div>
