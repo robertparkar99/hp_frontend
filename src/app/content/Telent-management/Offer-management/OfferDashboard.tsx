@@ -65,6 +65,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   const [offers, setOffers] = useState<Offer[]>([]);
   const [templates, setTemplates] = useState<OfferTemplate[]>([]);
   const [positions, setPositions] = useState<{id: number, title: string}[]>([]);
+  const [managers, setManagers] = useState<{ id: number, name: string }[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -105,7 +106,10 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     salary: '',
     startDate: '',
     templateId: 'standard',
-    notes: ''
+    notes: '',
+    reportManager: '',
+    workScheduleStart: '',
+    workScheduleEnd: ''
   });
 
   useEffect(() => {
@@ -331,6 +335,29 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
         } else {
           setPositions([]);
         }
+
+        // Try to fetch managers (users data)
+        const managersResponse = await fetch(
+          `${sessionData.APP_URL}/user/add_user?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&org_type=${sessionData.org_type}&user_id=${sessionData.user_id}&user_profile_name=Admin&syear=${sessionData.syear}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (managersResponse.ok) {
+          const managersResult = await managersResponse.json();
+          const mappedManagers = (managersResult.data || []).map((user: any) => ({
+            id: user.id,
+            name: user.user_name || `User ${user.id}`
+          }));
+          setManagers(mappedManagers);
+          console.log('Fetched managers:', mappedManagers);
+        } else {
+          console.error('Failed to fetch managers:', managersResponse.status, managersResponse.statusText);
+          setManagers([{ id: 6, name: 'healthcareuser' }]); // Temporary dummy data for testing
+        }
       } catch (error) {
         console.warn("API error:", error);
         setOffers([]);
@@ -547,6 +574,9 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           salary: newOffer.salary,
           startDate: newOffer.startDate,
           notes: newOffer.notes,
+          reportManager: newOffer.reportManager,
+          workScheduleStart: newOffer.workScheduleStart,
+          workScheduleEnd: newOffer.workScheduleEnd,
           employeeData,
           companyData,
           hrData,
@@ -687,7 +717,10 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
       salary: '',
       startDate: '',
       templateId: 'standard',
-      notes: ''
+      notes: '',
+      reportManager: '',
+      workScheduleStart: '',
+      workScheduleEnd: ''
     });
   };
 
@@ -923,6 +956,52 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
               </Select>
             </div> */}
 
+
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Report Manager</label>
+                <Select
+                  value={newOffer.reportManager}
+                  onValueChange={(value) =>
+                    setNewOffer(prev => ({ ...prev, reportManager: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a report manager" />
+                  </SelectTrigger>
+
+                  <SelectContent className="max-h-60 overflow-y-auto z-[100]">
+                    {managers.map((manager) => (
+                      <SelectItem
+                        key={manager.id}
+                        value={manager.name}
+                      >
+                        {manager.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Check-In Time</label>
+                  <Input
+                    type="time"
+                    value={newOffer.workScheduleStart}
+                    onChange={(e) => setNewOffer(prev => ({ ...prev, workScheduleStart: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Check-Out Time</label>
+                  <Input
+                    type="time"
+                    value={newOffer.workScheduleEnd}
+                    onChange={(e) => setNewOffer(prev => ({ ...prev, workScheduleEnd: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
             <div>
               <label className="text-sm font-medium">Notes</label>
               <Textarea
