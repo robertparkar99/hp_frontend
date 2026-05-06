@@ -287,6 +287,12 @@ export const Topbar = ({ templateId, offerData }: { templateId?: string; offerDa
                 job_id: offerData.jobId,
                 position: offerData.position,
                 candidateEmail: offerData.employeeData?.email || `${offerData.candidateName.toLowerCase().replace(' ', '.')}@example.com`,
+                salary: offerData.salary,
+                start_date: offerData.startDate,
+                notes: offerData.notes,
+                reportmanager: offerData.reportManager,
+                punchintime: offerData.workScheduleStart,
+                punchouttime: offerData.workScheduleEnd,
                 offerDetails: offerData
             };
             const sendResponse = await fetch(`${sessionData.url}/api/talent-offers`, {

@@ -82,6 +82,10 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
                 '{{date}}': new Date().toLocaleDateString(),
                 '{{designation}}': data.employeeData?.transfer_type || '',
                 '{{full_name}}': employeeFullName,
+                '{{reporting_manager}}': data.reporting_manager || data.companyData?.reporting_manager || 'Manager Name',
+                '{{start_time}}': data.workScheduleStart || '',
+                '{{end_time}}': data.workScheduleEnd || '',
+
             };
         } else {
             // Offer data
@@ -115,7 +119,9 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
                 '{{hr_designation}}': data.hrData?.designation || '',
                 '{{hr_email}}': data.hrData?.email || '',
                 '{{offer_date}}': new Date().toLocaleDateString(),
-                '{{reporting_manager}}': data.reporting_manager || data.companyData?.reporting_manager || 'Manager Name',
+                '{{reporting_manager}}': data.reportManager || data.companyData?.reporting_manager || 'Manager Name',
+                '{{start_time}}': data.workScheduleStart || '',
+                '{{end_time}}': data.workScheduleEnd || '',
                 '{{probation_period}}': '3 months',
                 '{{notes}}': data.notes || '',
             };
