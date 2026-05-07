@@ -6,7 +6,7 @@ import Image from '../../../../components/AppImage';
 import Icon from '../../../../components/AppIcon';
 import { Button } from '../../../../components/ui/button';
 
-const EmployeeCard = ({ employee, onViewProfile, onEdit, isDesignationMode = false }) => {
+const EmployeeCard = ({ employee, onViewProfile, onEdit}) => {
   const [showActions, setShowActions] = useState(null);
   const [clickedButtonRect, setClickedButtonRect] = useState(null);
   const fallbackImage =
@@ -93,7 +93,7 @@ const EmployeeCard = ({ employee, onViewProfile, onEdit, isDesignationMode = fal
                 {employee.full_name}
               </h3>
               <p className="text-sm text-muted-foreground">{employee.mobile}</p>
-              <p className="text-sm text-muted-foreground">{isDesignationMode ? 'Designation' : 'Role'}: {isDesignationMode ? employee.designation : employee.profile_name}</p>
+              <p className="text-sm text-muted-foreground">{employee.profile_name}</p>
             </div>
 
             <div className="relative">
