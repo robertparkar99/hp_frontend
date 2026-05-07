@@ -64,7 +64,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   const router = useRouter();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [templates, setTemplates] = useState<OfferTemplate[]>([]);
-  const [positions, setPositions] = useState<{id: number, title: string}[]>([]);
+  const [positions, setPositions] = useState<{ id: number, title: string, benefits: string }[]>([]);
   const [managers, setManagers] = useState<{ id: number, name: string }[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -134,7 +134,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
             candidateName: candidateParam,
             position: pos.title,
             jobTitle: pos.title,
-            jobId: pos.id.toString()
+            jobId: pos.id.toString(),
+            notes: pos.benefits
           }));
         } else {
           const pos2 = positions.find(p => p.id.toString() === positionParam);
@@ -145,7 +146,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
               candidateName: candidateParam,
               position: pos2.title,
               jobTitle: pos2.title,
-              jobId: pos2.id.toString()
+              jobId: pos2.id.toString(),
+              notes: pos2.benefits
             }));
           } else {
             setNewOffer(prev => ({
@@ -174,7 +176,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           candidateName: candidate,
           position: pos.title,
           jobTitle: pos.title,
-          jobId: pos.id.toString()
+          jobId: pos.id.toString(),
+          notes: pos.benefits
         }));
       } else {
         const pos2 = positions.find(p => p.id.toString() === position);
@@ -185,7 +188,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
             candidateName: candidate,
             position: pos2.title,
             jobTitle: pos2.title,
-            jobId: pos2.id.toString()
+            jobId: pos2.id.toString(),
+            notes: pos2.benefits
           }));
         } else {
           setNewOffer(prev => ({
@@ -301,23 +305,24 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
 
         // Offers will be fetched only after successful send via refreshOffers flag
 
-        // Try to fetch templates
-        const templatesResponse = await fetch(
-          `${sessionData.APP_URL}/api/offer-templates?type=API&token=${sessionData.token}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        // // Try to fetch templates
+        // const templatesResponse = await fetch(
+        //   `${sessionData.APP_URL}/api/offer-templates?type=API&token=${sessionData.token}`,
+        //   {
+        //     headers: {
+        //       "Content-Type": "application/json",
+        //     },
+        //   }
+        // );
 
-        if (templatesResponse.ok) {
-          const templatesResult = await templatesResponse.json();
-          setTemplates(templatesResult.data || []);
-        } else {
-          // No templates available
-          setTemplates([]);
-        }
+        // if (templatesResponse.ok) {
+        //   const templatesResult = await templatesResponse.json();
+        //   setTemplates(templatesResult.data || []);
+        // } else {
+        //   // No templates available
+        //   setTemplates([]);
+        // }
+        setTemplates([]);
 
         // Try to fetch positions
         const positionsResponse = await fetch(
@@ -1003,7 +1008,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Notes</label>
+              <label className="text-sm font-medium">Benifts</label>
               <Textarea
                 value={newOffer.notes}
                 onChange={(e) => setNewOffer(prev => ({ ...prev, notes: e.target.value }))}
