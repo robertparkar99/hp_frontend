@@ -114,7 +114,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
                 '{{company_cin}}': data.company_cin || data.companyData?.cin || '',
                 '{{company_gstin}}': data.company_gstin || data.companyData?.gstin || '',
                 '{{company_pan}}': data.company_pan || data.companyData?.pan || '',
-                '{{department_name}}': data.selectedDepartment || data.employeeData?.department_name || '',
+                 '{{department_name}}': data.department_name || data.selectedDepartment || data.employeeData?.department_name || '',
                 '{{hr_name}}': data.hrData?.name || '',
                 '{{hr_designation}}': data.hrData?.designation || '',
                 '{{hr_email}}': data.hrData?.email || '',
