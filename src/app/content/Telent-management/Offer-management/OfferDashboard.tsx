@@ -41,6 +41,7 @@ interface Offer {
   rejectedAt?: string;
   offerLetterUrl?: string;
   notes?: string;
+  keyResponsibility?: string;
 }
 
 interface OfferTemplate {
@@ -109,7 +110,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     notes: '',
     reportManager: '',
     workScheduleStart: '',
-    workScheduleEnd: ''
+    workScheduleEnd: '',
+    keyResponsibility: ''
   });
 
   useEffect(() => {
@@ -207,6 +209,31 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
     }
   }, [positions, candidate, position, candidateId]);
 
+  // Fetch key responsibility when jobId changes
+  useEffect(() => {
+    if (newOffer.jobId && sessionData.APP_URL && sessionData.token && sessionData.sub_institute_id && sessionData.org_type && positions.length > 0) {
+      const pos = positions.find(p => p.id.toString() === newOffer.jobId);
+      if (pos) {
+        fetch(`${sessionData.APP_URL}/jobrole_library/create?type=API&token=${sessionData.token}&sub_institute_id=${sessionData.sub_institute_id}&org_type=${encodeURIComponent(sessionData.org_type)}&jobrole=${encodeURIComponent(pos.title)}&formType=tasks`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.usertaskData && data.usertaskData.length > 0) {
+              const criticalWorkFunctions = [
+                ...new Set(
+                  data.usertaskData
+                    .map((item: any) => item.critical_work_function?.trim())
+                    .filter(Boolean)
+                )
+              ];
+              const combinedResponsibilities = criticalWorkFunctions.join('; ');
+              setNewOffer(prev => ({ ...prev, keyResponsibility: combinedResponsibilities }));
+            }
+          })
+          .catch(err => console.error('Error fetching key responsibility:', err));
+      }
+    }
+  }, [newOffer.jobId, positions, sessionData]);
+
   // Effect to refresh offers when flag is set
   useEffect(() => {
     const checkRefresh = () => {
@@ -270,6 +297,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           rejectedAt: item.rejected_at ? new Date(item.rejected_at).toISOString().split('T')[0] : undefined,
           offerLetterUrl: item.offer_letter_url,
           notes: item.notes,
+          keyResponsibility: item.key_responsibility || '',
         }));
         setOffers(mappedOffers);
       }
@@ -524,7 +552,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
         status: 'draft' as const,
         createdAt: new Date().toISOString().split('T')[0],
         expiresAt: '',
-        notes: newOffer.notes
+        notes: newOffer.notes,
+        keyResponsibility: newOffer.keyResponsibility
       };
       setOffers(prev => [...prev, newOfferData]);
 
@@ -582,6 +611,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           reportManager: newOffer.reportManager,
           workScheduleStart: newOffer.workScheduleStart,
           workScheduleEnd: newOffer.workScheduleEnd,
+          keyResponsibility: newOffer.keyResponsibility,
           employeeData,
           companyData,
           // hrData,
@@ -725,7 +755,8 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
       notes: '',
       reportManager: '',
       workScheduleStart: '',
-      workScheduleEnd: ''
+      workScheduleEnd: '',
+      keyResponsibility: ''
     });
   };
 
@@ -892,7 +923,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
       )}
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Offer</DialogTitle>
           </DialogHeader>
@@ -1013,6 +1044,15 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
                 value={newOffer.notes}
                 onChange={(e) => setNewOffer(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Add any special terms or notes..."
+                rows={3}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Key Responsibility</label>
+              <Textarea
+                value={newOffer.keyResponsibility}
+                onChange={(e) => setNewOffer(prev => ({ ...prev, keyResponsibility: e.target.value }))}
+                placeholder="Describe the key responsibilities for this role..."
                 rows={3}
               />
             </div>
