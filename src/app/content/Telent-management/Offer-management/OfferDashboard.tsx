@@ -65,7 +65,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
   const router = useRouter();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [templates, setTemplates] = useState<OfferTemplate[]>([]);
-  const [positions, setPositions] = useState<{ id: number, title: string, benefits: string }[]>([]);
+  const [positions, setPositions] = useState<{ id: number, title: string, benefits: string, department_name: string }[]>([]);
   const [managers, setManagers] = useState<{ id: number, name: string }[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -364,7 +364,12 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
 
         if (positionsResponse.ok) {
           const positionsResult = await positionsResponse.json();
-          setPositions(positionsResult.data || []);
+          setPositions(positionsResult.data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            benefits: item.benefits,
+            department_name: item.department_name
+          })) || []);
         } else {
           setPositions([]);
         }
@@ -599,6 +604,10 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
       }
 
       if (templateId) {
+        // Get department_name from selected position
+        const selectedPosition = positions.find(p => p.id.toString() === newOffer.jobId);
+        const departmentName = selectedPosition?.department_name || '';
+
         // Prepare offer data for template
         const offerData = {
           candidateId: newOffer.candidateId,
@@ -612,6 +621,7 @@ export default function OfferDashboard({ showHeader = true, candidate, position,
           workScheduleStart: newOffer.workScheduleStart,
           workScheduleEnd: newOffer.workScheduleEnd,
           keyResponsibility: newOffer.keyResponsibility,
+          department_name: departmentName,
           employeeData,
           companyData,
           // hrData,
