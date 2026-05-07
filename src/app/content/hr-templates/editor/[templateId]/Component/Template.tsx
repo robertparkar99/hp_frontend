@@ -124,6 +124,7 @@ export default function EditorPage({ params }: { params: Promise<{ templateId: s
                 '{{end_time}}': data.workScheduleEnd || '',
                 '{{probation_period}}': '3 months',
                 '{{notes}}': data.notes || '',
+                '{{key_responsibility}}': data.keyResponsibility || '',
             };
         }
 
