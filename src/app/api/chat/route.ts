@@ -44,7 +44,7 @@ export async function POST(request: Request) {
             }
         }
         
-        console.log('[chat] Received userId:', userId, 'subInstituteId:', subInstituteId);
+        // console.log('[chat] Received userId:', userId, 'subInstituteId:', subInstituteId);
 
         let result: any = null;
 
@@ -73,6 +73,10 @@ export async function POST(request: Request) {
         // This directly calls the skills API after job role is selected
         const skillsPattern = /^(?:select\s+(?:my\s+)?)?(?:skills\s+for|jobrole\s+as)\s+(.+)$/i;
         const skillsMatch = rawQuery.match(skillsPattern);
+
+        // Check if this is a month response for attendance (e.g., "January", "January 2025", "current month", "current")
+        const monthPattern = /^(?:for\s+)?(?:(january|february|march|april|may|june|july|august|september|october|november|december|current(?:\s+month)?)(?:\s+(\d{4}))?)$/i;
+        const monthMatch = rawQuery.match(monthPattern);
         
         if (departmentMatch && departmentMatch[1]) {
             // Extract industry name from the query
@@ -402,6 +406,31 @@ export async function POST(request: Request) {
                 result = {
                     answer: "Sorry, I couldn't fetch the skills. Please try again.",
                     error: String(skillsError)
+                };
+            }
+        } else if (monthMatch && monthMatch[1]) {
+            // Handle month response for attendance records
+            const month = monthMatch[1].toLowerCase();
+            const year = monthMatch[2] || new Date().getFullYear().toString();
+
+            console.log('[chat] Detected month response for attendance, month:', month, 'year:', year);
+
+            // Modify the query to include month information and call handleChatRequest
+            const modifiedQuery = (month === 'current month' || month === 'current') ? 'show attendance records for current month' : `show attendance records for ${month} ${year}`;
+
+            try {
+                result = await handleChatRequest({
+                    query: modifiedQuery,
+                    sessionId: body.sessionId,
+                    conversationHistory: body.conversationHistory,
+                    userId: userId,
+                    subInstituteId: subInstituteId
+                });
+            } catch (monthError) {
+                console.error('[chat] Error handling month response:', monthError);
+                result = {
+                    answer: "Sorry, I couldn't process the month selection. Please try again.",
+                    error: String(monthError)
                 };
             }
         } else {

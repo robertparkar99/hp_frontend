@@ -1,5 +1,10 @@
 import { supabaseAdmin } from './supabase-admin';
 
+// Check if Supabase is properly configured
+const supabaseEnabled = process.env.SUPABASE_URL &&
+  process.env.SUPABASE_URL !== 'rlqosgegreuvzwbntflq.supabase.co' &&
+  process.env.SUPABASE_ANON_KEY;
+
 export interface ConversationSession {
   id: string;
   sessionId: string;
@@ -105,6 +110,11 @@ export async function saveMessage(
   errorDetected?: boolean,
   errorMessage?: string
 ): Promise<MessageRecord | null> {
+  if (!supabaseEnabled) {
+    // Return null when Supabase is not enabled
+    return null;
+  }
+
   try {
     const { data, error } = await supabaseAdmin
       .from('chatbot_messages')

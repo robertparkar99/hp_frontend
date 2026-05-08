@@ -2,7 +2,7 @@ import { googleAI } from '@genkit-ai/google-genai';
 import dotenv from 'dotenv';
 
 if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config({ path: '.env.local' });
+  dotenv.config({ path: '.env.local' });
 }
 
 const apiKey = process.env.GEMINI_API_KEY;

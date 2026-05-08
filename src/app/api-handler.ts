@@ -13,6 +13,11 @@ import {
 import { createEscalation } from "@/lib1/escalation-service";
 import { v4 as uuidv4 } from 'uuid';
 
+// Check if Supabase is properly configured
+const supabaseEnabled = process.env.SUPABASE_URL &&
+  process.env.SUPABASE_URL !== 'rlqosgegreuvzwbntflq.supabase.co' &&
+  process.env.SUPABASE_ANON_KEY;
+
 // Import course recommendation flow
 // @ts-ignore - Flow is a JavaScript module
 import { courseRecommendationFlow } from "@/ai/flows/courseRecommendationFlow";
@@ -75,7 +80,1472 @@ interface ChatResponse {
     createdBy?: string;
     similarUsers?: string[];
   }>;
+  // Additional fields for structured responses
+  data?: any;
+  blocks?: any[];
+  query?: string;
+  // Query suggestions for the detected intent
+  querySuggestions?: Array<{
+    text: string;
+    description: string;
+    intent: string;
+  }>;
 }
+
+// ================= QUERY SUGGESTIONS MAPPING =================
+
+/**
+ * Maps each intent to user-friendly query examples that explain what data will be returned
+ */
+const intentQuerySuggestions: Record<string, Array<{ text: string; description: string }>> = {
+  // HRMS intents
+  HRMS_USERS_FETCH: [
+    { text: "Show me all users", description: "View complete list of all users in your institute" },
+    { text: "List all employees", description: "Get a list of all employee records" },
+    { text: "Who are the staff members?", description: "Display all staff and their basic information" },
+    { text: "Get user directory", description: "Access the complete user directory" }
+  ],
+  HRMS_PROFILE_FETCH: [
+    { text: "Get my profile details", description: "View your complete profile information including personal details" },
+    { text: "Show my profile", description: "Display your user profile with all information" },
+    { text: "What are my details?", description: "Access your personal and professional profile data" }
+  ],
+  HRMS_DEPARTMENTS_FETCH: [
+    { text: "Show departments", description: "List all departments in your organization" },
+    { text: "What departments exist?", description: "View the complete list of organizational departments" },
+    { text: "List all departments", description: "Get department names and their details" }
+  ],
+  HRMS_ATTENDANCE_FETCH: [
+    { text: "Show attendance records", description: "View your attendance history and current status" },
+    { text: "My attendance history", description: "Display all your attendance records" },
+    { text: "Check my attendance", description: "See your daily attendance log" },
+    { text: "Attendance summary", description: "Get overview of your attendance patterns" }
+  ],
+  HRMS_ATTENDANCE_UPDATE: [
+    { text: "Update my attendance for today", description: "Mark your attendance for the current day" },
+    { text: "Punch in for today", description: "Record your arrival time" },
+    { text: "Clock in", description: "Start your attendance for the day" }
+  ],
+  HRMS_ATTENDANCE_PUNCH_OUT: [
+    { text: "Punch out for the day", description: "Record your departure time and end attendance" },
+    { text: "Clock out", description: "End your attendance for today" },
+    { text: "Mark end of day", description: "Complete your daily attendance record" }
+  ],
+  HRMS_LEAVE_TYPES_FETCH: [
+    { text: "Show leave types", description: "List all available types of leave (sick, vacation, etc.)" },
+    { text: "What leave types are available?", description: "View different categories of leave you can apply for" },
+    { text: "List leave categories", description: "Get all leave type options and their details" }
+  ],
+  HRMS_LEAVE_TYPE_CREATE: [
+    { text: "Add a new leave type", description: "Create a new category of leave for the organization" },
+    { text: "Create leave category", description: "Add a new type of leave to the system" }
+  ],
+  HRMS_LEAVE_APPLY: [
+    { text: "Apply for leave", description: "Submit a leave application request" },
+    { text: "Request time off", description: "Apply for leave from work" }
+  ],
+  HRMS_LEAVE_SUMMARY_FETCH: [
+    { text: "Show leave summary report", description: "View your leave balance and usage history" },
+    { text: "My leave balance", description: "Check remaining leave days and taken leave" },
+    { text: "Leave status", description: "Get summary of your leave entitlements" }
+  ],
+  HRMS_LEAVE_AUTHORIZE: [
+    { text: "Authorize leave for employee X", description: "Approve or reject a leave application" },
+    { text: "Approve leave request", description: "Authorize pending leave applications" }
+  ],
+  HRMS_HOLIDAYS_FETCH: [
+    { text: "Show holidays", description: "List all upcoming and past holidays" },
+    { text: "What are the holidays?", description: "View the holiday calendar for your organization" },
+    { text: "Holiday list", description: "Get complete list of organizational holidays" }
+  ],
+  HRMS_HOLIDAY_CREATE: [
+    { text: "Add a holiday", description: "Create a new holiday entry in the calendar" },
+    { text: "Schedule a holiday", description: "Add a new holiday to the system" }
+  ],
+  HRMS_SALARY_STRUCTURE_FETCH: [
+    { text: "Show salary structures", description: "View salary components and structures" },
+    { text: "Salary details", description: "Get information about salary components" },
+    { text: "Pay structure", description: "View how salaries are structured" }
+  ],
+  HRMS_PAYROLL_DEDUCTIONS_FETCH: [
+    { text: "Show payroll deductions", description: "List all deductions from payroll" },
+    { text: "What deductions are there?", description: "View payroll deduction details" },
+    { text: "Payroll deductions list", description: "Get complete list of salary deductions" }
+  ],
+  HRMS_PAYROLL_MONTHLY_FETCH: [
+    { text: "Show monthly payroll", description: "View your monthly payroll report" },
+    { text: "Monthly salary report", description: "Get your monthly payroll details" },
+    { text: "Payroll report", description: "Access monthly payroll information" }
+  ],
+  HRMS_PAYROLL_GENERATE: [
+    { text: "Generate monthly payroll", description: "Create payroll for the current month" },
+    { text: "Run payroll", description: "Process monthly payroll calculations" }
+  ],
+
+  // LMS intents
+  LMS_COURSES_FETCH: [
+    { text: "Show all courses", description: "List all available courses in the LMS" },
+    { text: "What courses are available?", description: "View complete course catalog" },
+    { text: "List courses", description: "Get all course offerings" },
+    { text: "Available courses", description: "Display courses you can enroll in" }
+  ],
+  LMS_MODULES_FETCH: [
+    { text: "List modules for course X", description: "View all modules within a specific course" },
+    { text: "What are the modules in this course?", description: "Show course curriculum breakdown" },
+    { text: "Course modules", description: "List learning modules for a course" }
+  ],
+  LMS_CONTENT_FETCH: [
+    { text: "Show content for module Y", description: "View learning materials in a specific module" },
+    { text: "What content is in this module?", description: "Access module learning resources" },
+    { text: "Module materials", description: "Display content items in a module" }
+  ],
+  LMS_CONTENT_CREATE: [
+    { text: "Create new content", description: "Add new learning material to a course" },
+    { text: "Add course content", description: "Create new content for a module" }
+  ],
+  LMS_QUESTION_CHAPTERS_FETCH: [
+    { text: "Show question chapters", description: "List chapters containing questions" },
+    { text: "Question chapters", description: "View chapters organized by questions" },
+    { text: "Chapters with questions", description: "Get question-based chapter structure" }
+  ],
+  LMS_QUESTION_ADD: [
+    { text: "Add a question", description: "Create a new question for assessments" },
+    { text: "Create question", description: "Add a question to the question bank" }
+  ],
+  LMS_QUESTION_PAPERS_SEARCH: [
+    { text: "Search question papers", description: "Find question papers by criteria" },
+    { text: "Find question papers", description: "Search through available question papers" }
+  ],
+  LMS_QUESTION_PAPER_STORE: [
+    { text: "Store a question paper", description: "Save a new question paper" },
+    { text: "Create question paper", description: "Add a new question paper to the system" }
+  ],
+  LMS_EXAMS_FETCH: [
+    { text: "Show online exams", description: "List all available online examinations" },
+    { text: "Available exams", description: "View exams you can take" },
+    { text: "Online exams list", description: "Get complete list of online assessments" }
+  ],
+  LMS_EXAM_SUBMIT: [
+    { text: "Submit online exam", description: "Complete and submit an online examination" },
+    { text: "Finish exam", description: "Submit your exam answers" }
+  ],
+
+  // Skills and Job Roles intents
+  SKILLS_FETCH: [
+    { text: "Show all skills", description: "List all available skills in the system" },
+    { text: "What skills are available?", description: "View complete skill catalog" },
+    { text: "Skill list", description: "Get all skills and their details" }
+  ],
+  SKILL_CREATE: [
+    { text: "Create a new skill", description: "Add a new skill to the system" },
+    { text: "Add skill", description: "Create a new skill entry" }
+  ],
+  SKILL_CATEGORIES_FETCH: [
+    { text: "Show skill categories", description: "List all skill categories and subcategories" },
+    { text: "Skill categories", description: "View how skills are organized by category" },
+    { text: "What are the skill categories?", description: "Get skill category structure" }
+  ],
+  SKILL_KNOWLEDGE_ABILITIES_FETCH: [
+    { text: "Show skill knowledge abilities", description: "View knowledge and ability components of skills" },
+    { text: "Knowledge and abilities", description: "List skill knowledge and ability requirements" }
+  ],
+  SKILL_PROFICIENCY_LEVELS_FETCH: [
+    { text: "Show proficiency levels", description: "List skill proficiency levels and descriptions" },
+    { text: "Skill levels", description: "View proficiency level definitions" },
+    { text: "What are the proficiency levels?", description: "Get skill proficiency scale" }
+  ],
+  SKILL_ATTRIBUTES_ADD: [
+    { text: "Add skill attributes", description: "Add attributes to an existing skill" },
+    { text: "Add skill properties", description: "Enhance skill with additional attributes" }
+  ],
+  JOB_ROLES_FETCH: [
+    { text: "Show job roles", description: "List all available job roles in the organization" },
+    { text: "What job roles exist?", description: "View complete job role catalog" },
+    { text: "Job role list", description: "Get all job positions and their details" }
+  ],
+  JOB_ROLE_CREATE: [
+    { text: "Create a job role", description: "Add a new job role to the system" },
+    { text: "Add job role", description: "Create a new position definition" }
+  ],
+  JOB_ROLE_UPDATE: [
+    { text: "Update job role X", description: "Modify an existing job role" },
+    { text: "Edit job role", description: "Change job role details and requirements" }
+  ],
+  JOB_ROLE_DELETE: [
+    { text: "Delete job role Y", description: "Remove a job role from the system" },
+    { text: "Remove job role", description: "Delete a job position" }
+  ],
+  JOB_ROLE_SKILLS_FETCH: [
+    { text: "Show job role skills", description: "View skills required for a specific job role" },
+    { text: "What skills are needed for this role?", description: "List job role skill requirements" },
+    { text: "Job role skill requirements", description: "Get skills associated with a position" }
+  ],
+  JOB_ROLE_SKILL_CREATE: [
+    { text: "Create job role skill", description: "Add a skill requirement to a job role" },
+    { text: "Add skill to job role", description: "Associate a skill with a position" }
+  ],
+  JOB_ROLE_TASKS_FETCH: [
+    { text: "Show job role tasks", description: "View tasks and responsibilities for a job role" },
+    { text: "What are the job responsibilities?", description: "List job role tasks and duties" },
+    { text: "Job role tasks", description: "Get position responsibilities and tasks" }
+  ],
+  JOB_ROLE_TASK_CREATE: [
+    { text: "Create job role task", description: "Add a task or responsibility to a job role" },
+    { text: "Add task to job role", description: "Include a new responsibility in a position" }
+  ],
+
+  // Organization and Industries intents
+  USER_JOB_ROLES_FETCH: [
+    { text: "Show user job roles", description: "View job roles assigned to users" },
+    { text: "What roles do users have?", description: "List user job role assignments" },
+    { text: "User job role assignments", description: "Get mapping of users to their roles" }
+  ],
+  INDUSTRIES_FETCH: [
+    { text: "Show industries", description: "List all industry types in the system" },
+    { text: "What industries are available?", description: "View industry classifications" },
+    { text: "Industry list", description: "Get complete list of industries" }
+  ],
+  DEPARTMENT_MASTER_FETCH: [
+    { text: "Show department master", description: "View master list of all departments" },
+    { text: "Department master data", description: "Get complete department information" }
+  ],
+  NEO_INDUSTRIES_FETCH: [
+    { text: "Get Neo4J industries", description: "View industries from the graph database" },
+    { text: "Neo4J industries", description: "Access industry data from Neo4J" }
+  ],
+  DEPARTMENTS_FOR_INDUSTRY_FETCH: [
+    { text: "Show departments for industry X", description: "List departments within a specific industry" },
+    { text: "What departments are in this industry?", description: "View industry department structure" },
+    { text: "Industry departments", description: "Get departments belonging to an industry" }
+  ],
+  JOB_ROLES_FOR_DEPARTMENT_FETCH: [
+    { text: "Show job roles for department Y", description: "List job roles within a specific department" },
+    { text: "What roles are in this department?", description: "View department job role structure" },
+    { text: "Department job roles", description: "Get positions available in a department" }
+  ],
+  SKILLS_FOR_JOB_ROLE_FETCH: [
+    { text: "Show skills for job role Z", description: "List skills required for a specific job role" },
+    { text: "What skills does this role need?", description: "View skill requirements for a position" },
+    { text: "Job role skill requirements", description: "Get skills associated with a role" }
+  ],
+
+  // Reports and Misc intents
+  TASK_ANALYSIS_REPORT_FETCH: [
+    { text: "Show task analysis report", description: "View task analysis and performance metrics" },
+    { text: "Task analysis", description: "Get task completion and analysis data" },
+    { text: "Analysis report", description: "Access task analysis reports" }
+  ],
+  EMPLOYEE_REPORT_FETCH: [
+    { text: "Show employee report", description: "View employee performance and data reports" },
+    { text: "Employee report", description: "Get comprehensive employee information" },
+    { text: "Staff report", description: "Access employee directory reports" }
+  ],
+  ORGANIZATION_DASHBOARD_FETCH: [
+    { text: "Show organization dashboard", description: "View organization-wide metrics and KPIs" },
+    { text: "Organization dashboard", description: "Access org-level performance dashboard" },
+    { text: "Org dashboard", description: "Get organizational overview data" }
+  ],
+  DASHBOARD_FETCH: [
+    { text: "Show dashboard", description: "View main dashboard with key metrics" },
+    { text: "Dashboard view", description: "Access primary dashboard interface" },
+    { text: "Main dashboard", description: "Get overview dashboard data" }
+  ],
+  COMPLIANCE_LIST_FETCH: [
+    { text: "Show compliance list", description: "List all compliance requirements and status" },
+    { text: "Compliance list", description: "View compliance items and their details" },
+    { text: "Compliance items", description: "Get complete compliance checklist" }
+  ],
+  COMPLIANCE_CREATE: [
+    { text: "Create compliance", description: "Add a new compliance requirement" },
+    { text: "Add compliance item", description: "Create a new compliance entry" }
+  ],
+  COMPLIANCE_UPDATE: [
+    { text: "Update compliance X", description: "Modify an existing compliance requirement" },
+    { text: "Edit compliance", description: "Change compliance item details" }
+  ],
+  COMPLIANCE_DELETE: [
+    { text: "Delete compliance Y", description: "Remove a compliance requirement" },
+    { text: "Remove compliance item", description: "Delete a compliance entry" }
+  ],
+  JOB_POSTINGS_FETCH: [
+    { text: "Show job postings", description: "List all available job openings" },
+    { text: "Job postings", description: "View current job vacancies" },
+    { text: "Available jobs", description: "Get list of open positions" }
+  ],
+  JOB_POSTING_CREATE: [
+    { text: "Create job posting", description: "Add a new job opening" },
+    { text: "Post a job", description: "Create a new job advertisement" }
+  ],
+  JOB_POSTING_UPDATE: [
+    { text: "Update job posting X", description: "Modify an existing job posting" },
+    { text: "Edit job posting", description: "Change job posting details" }
+  ],
+
+  // General/Academic intents
+  STANDARDS_FETCH: [
+    { text: "Show standards", description: "List all academic standards" },
+    { text: "What standards are there?", description: "View academic standard definitions" },
+    { text: "Academic standards", description: "Get complete standards list" }
+  ],
+  SECTIONS_FETCH: [
+    { text: "Show sections", description: "List all academic sections/classes" },
+    { text: "What sections exist?", description: "View available class sections" },
+    { text: "Academic sections", description: "Get complete sections list" }
+  ],
+  SUBJECTS_FETCH: [
+    { text: "Show subjects", description: "List all academic subjects" },
+    { text: "What subjects are offered?", description: "View available subjects" },
+    { text: "Academic subjects", description: "Get complete subjects list" }
+  ],
+  QUESTIONS_FETCH: [
+    { text: "Show questions", description: "List all questions in the question bank" },
+    { text: "What questions are available?", description: "View question bank contents" },
+    { text: "Question bank", description: "Access all available questions" }
+  ],
+  MENUS_FETCH: [
+    { text: "Show menus", description: "List all menu items and navigation options" },
+    { text: "What menus are there?", description: "View application menu structure" },
+    { text: "Menu items", description: "Get complete menu navigation" }
+  ],
+
+  // AI and Auth intents
+  GEMINI_CHAT: [
+    { text: "Chat with Gemini", description: "Start a conversation with Gemini AI" },
+    { text: "Talk to Gemini", description: "Interact with Google's Gemini AI assistant" },
+    { text: "Ask Gemini", description: "Get AI assistance from Gemini" }
+  ],
+  AI_COURSE_GENERATE: [
+    { text: "Generate AI course", description: "Create a new course using AI" },
+    { text: "Create AI course", description: "Use AI to generate course content" }
+  ],
+  GAMMA_CONTENT_FETCH: [
+    { text: "Get gamma content", description: "Access Gamma content and materials" },
+    { text: "Show gamma content", description: "View Gamma learning resources" }
+  ],
+  FORGET_PASSWORD: [
+    { text: "Forget password", description: "Initiate password reset process" },
+    { text: "Forgot password", description: "Reset your account password" }
+  ],
+  RESET_PASSWORD: [
+    { text: "Reset password", description: "Change your account password" },
+    { text: "Change password", description: "Update your login credentials" }
+  ]
+};
+
+/**
+ * Get query suggestions for a specific intent
+ */
+function getIntentQuerySuggestions(intent: string): Array<{ text: string; description: string; intent: string }> {
+  const suggestions = intentQuerySuggestions[intent] || [];
+  return suggestions.map(suggestion => ({
+    ...suggestion,
+    intent
+  }));
+}
+// ================= NEW INTENT HANDLERS =================
+
+// Helper function to create structured responses for different data types
+function createStructuredResponse(intent: string, data: any[], query: string, querySuggestions?: Array<{ text: string; description: string; intent: string }>): ChatResponse {
+  // Ensure data is an array and handle null/undefined cases
+  if (!Array.isArray(data)) {
+    data = data ? [data] : [];
+  }
+
+  // Determine the best UI format based on data structure
+  if (data.length === 0) {
+    return {
+      answer: 'No data found matching your query.',
+      intent,
+      data: [],
+      query,
+      querySuggestions
+    };
+  }
+
+  const blocks: any[] = [];
+
+  // Special handling for HRMS_PROFILE_FETCH - use card format to show user profile
+  if (intent === 'HRMS_PROFILE_FETCH' && data.length > 0) {
+    const profile = data[0]; // Assuming single user profile
+
+    // Build metadata dynamically based on available fields
+    const metadata: Record<string, any> = {};
+
+    // Always include these core fields
+    if (profile.email) metadata['Email'] = profile.email;
+    if (profile.joining_date || profile.created_at) metadata['Joining Date'] = profile.joining_date || profile.created_at;
+    if (profile.phone || profile.mobile) metadata['Phone'] = profile.phone || profile.mobile;
+    if (profile.location) metadata['Location'] = profile.location;
+
+    // Include optional fields if they exist
+    if (profile.skills) metadata['Skills'] = profile.skills;
+    if (profile.experience_years) metadata['Experience'] = profile.experience_years;
+    if (profile.department || profile.department_name) metadata['Department'] = profile.department || profile.department_name;
+    if (profile.job_role || profile.role || profile.position) metadata['Job Role'] = profile.job_role || profile.role || profile.position;
+    if (profile.tasks || profile.assigned_tasks) metadata['Tasks'] = profile.tasks || profile.assigned_tasks;
+
+    // Add any other relevant fields that might be in the profile
+    const relevantFields = ['designation', 'manager', 'team', 'projects', 'certifications'];
+    relevantFields.forEach(field => {
+      if (profile[field]) metadata[field.charAt(0).toUpperCase() + field.slice(1)] = profile[field];
+    });
+
+    blocks.push({
+      type: 'cards',
+      title: 'Your Profile',
+      data: [{
+        id: profile.id || profile.user_id,
+        title: profile.name || profile.full_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User',
+        description: profile.bio || profile.description || 'Employee profile information',
+        tag: profile.job_role || profile.role || profile.position || 'Employee',
+        metadata
+      }]
+    });
+  }
+  // Special handling for HRMS_USERS_FETCH - use table format to show all employee data
+  else if (intent === 'HRMS_USERS_FETCH') {
+    const processedData = data.map(user => ({
+      name: user.name || user.full_name || (user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : 'N/A'),
+      role: user.role || user.job_role || user.position || 'N/A',
+      email: user.email || 'N/A',
+      department: user.department || user.department_name || 'N/A',
+      status: user.status || 'Active'
+    }));
+
+    const columns = [
+      { key: 'name', label: 'Name' },
+      { key: 'role', label: 'Role' },
+      { key: 'email', label: 'Email' },
+      { key: 'department', label: 'Department' },
+      { key: 'status', label: 'Status' }
+    ];
+
+    blocks.push({
+      type: 'table',
+      title: getIntentTitle(intent),
+      data: {
+        columns,
+        rows: processedData
+      }
+    });
+  }
+  // Special handling for HRMS_LEAVE_TYPES_FETCH - use list format to show leave types
+  else if (intent === 'HRMS_LEAVE_TYPES_FETCH' && Array.isArray(data)) {
+    blocks.push({
+      type: 'list',
+      title: getIntentTitle(intent),
+      data: data.map((leaveType, index) => ({
+        id: index,
+        label: leaveType.name || leaveType.leave_type || leaveType.leave_type_id || 'N/A'
+      }))
+    });
+  }
+  // For table-like data, use table format
+  else if (data.length > 0 && data[0] && typeof data[0] === 'object' && data[0] !== null && !Array.isArray(data[0])) {
+    const columns = Object.keys(data[0]).map(key => ({
+      key,
+      label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    }));
+
+    blocks.push({
+      type: 'table',
+      title: getIntentTitle(intent),
+      data: {
+        columns,
+        rows: data
+      }
+    });
+  } else {
+    // For simple lists, use list format
+    blocks.push({
+      type: 'list',
+      title: getIntentTitle(intent),
+      data: data.map((item, index) => ({
+        id: index,
+        label: item && typeof item === 'string' ? item : (item ? JSON.stringify(item) : 'N/A'),
+        value: item
+      }))
+    });
+  }
+
+  // Add query suggestions block if available
+  if (querySuggestions && querySuggestions.length > 0) {
+    blocks.push({
+      type: 'query-suggestions',
+      title: 'Related Queries',
+      data: querySuggestions
+    });
+  }
+
+  // Customize answer text based on intent
+  let answerText = `Found ${data.length} result(s) for your query.`;
+  if (intent === 'HRMS_PROFILE_FETCH') {
+    answerText = 'Here are your profile details.';
+  }
+
+  return {
+    answer: answerText,
+    intent,
+    data: {
+      blocks
+    },
+    query,
+    querySuggestions
+  };
+}
+
+function getIntentTitle(intent: string): string {
+  const titles: Record<string, string> = {
+    'HRMS_USERS_FETCH': 'Users',
+    'HRMS_PROFILE_FETCH': 'Profile Details',
+    'HRMS_DEPARTMENTS_FETCH': 'Departments',
+    'HRMS_ATTENDANCE_FETCH': 'Attendance Records',
+    'HRMS_LEAVE_TYPES_FETCH': 'Leave Types',
+    'HRMS_LEAVE_SUMMARY_FETCH': 'Leave Summary',
+    'HRMS_HOLIDAYS_FETCH': 'Holidays',
+    'HRMS_SALARY_STRUCTURE_FETCH': 'Salary Structures',
+    'HRMS_PAYROLL_DEDUCTIONS_FETCH': 'Payroll Deductions',
+    'HRMS_PAYROLL_MONTHLY_FETCH': 'Monthly Payroll',
+    'LMS_COURSES_FETCH': 'Courses',
+    'LMS_MODULES_FETCH': 'Course Modules',
+    'LMS_CONTENT_FETCH': 'Content',
+    'LMS_QUESTION_CHAPTERS_FETCH': 'Question Chapters',
+    'LMS_EXAMS_FETCH': 'Online Exams',
+    'SKILLS_FETCH': 'Skills',
+    'SKILL_CATEGORIES_FETCH': 'Skill Categories',
+    'JOB_ROLES_FETCH': 'Job Roles',
+    'USER_JOB_ROLES_FETCH': 'User Job Roles',
+    'INDUSTRIES_FETCH': 'Industries',
+    'DEPARTMENT_MASTER_FETCH': 'Department Master',
+    'STANDARDS_FETCH': 'Standards',
+    'SECTIONS_FETCH': 'Sections',
+    'SUBJECTS_FETCH': 'Subjects',
+    'QUESTIONS_FETCH': 'Questions',
+    'MENUS_FETCH': 'Menus'
+  };
+  return titles[intent] || intent.replace(/_/g, ' ');
+}
+
+// ================= HRMS HANDLER =================
+async function handleHRMSRequest(
+  request: ChatRequest,
+  intent: string,
+  conversationId: string,
+  entities: any
+): Promise<ChatResponse> {
+  try {
+    let apiKey: string;
+    let method: "GET" | "POST" = "GET";
+    let body: any = {};
+    let params: any = {};
+
+    // Map intents to API endpoints
+    const intentToApiMap: Record<string, string> = {
+      'HRMS_USERS_FETCH': 'table_data',
+      'HRMS_PROFILE_FETCH': 'table_data',
+      'HRMS_DEPARTMENTS_FETCH': 'hrms_departments',
+      'HRMS_ATTENDANCE_FETCH': 'table_data',
+      'HRMS_LEAVE_TYPES_FETCH': 'table_data',
+      'HRMS_LEAVE_SUMMARY_FETCH': 'hrms_leave_summary_report',
+      'HRMS_HOLIDAYS_FETCH': 'table_data',
+      'HRMS_SALARY_STRUCTURE_FETCH': 'employee_salary_structure',
+      'HRMS_PAYROLL_DEDUCTIONS_FETCH': 'payroll_deduction',
+      'HRMS_PAYROLL_MONTHLY_FETCH': 'monthly_payroll'
+    };
+
+    const actionIntentToApiMap: Record<string, { api: string; method: "GET" | "POST" }> = {
+      'HRMS_ATTENDANCE_UPDATE': { api: 'hrms_attendance_update', method: 'POST' },
+      'HRMS_ATTENDANCE_PUNCH_OUT': { api: 'hrms_punch_out', method: 'POST' },
+      'HRMS_LEAVE_TYPE_CREATE': { api: 'hrms_leave_type_add', method: 'POST' },
+      'HRMS_LEAVE_APPLY': { api: 'hrms_leave_apply', method: 'POST' },
+      'HRMS_LEAVE_AUTHORIZE': { api: 'hrms_leave_authorization', method: 'POST' },
+      'HRMS_HOLIDAY_CREATE': { api: 'hrms_holiday_add', method: 'POST' },
+      'HRMS_PAYROLL_GENERATE': { api: 'monthly_payroll_store', method: 'POST' }
+    };
+
+    if (actionIntentToApiMap[intent]) {
+      const config = actionIntentToApiMap[intent];
+      apiKey = config.api;
+      method = config.method;
+
+      // For actions, we need user input - for now, return a message asking for required fields
+      // Special handling for LMS content creation due to image processing limitations
+      if (intent === 'LMS_CONTENT_CREATE') {
+        return {
+          answer: `Content creation in LMS currently has limitations with image processing. For creating content with images, please use the bulk content generation feature instead. For simple text content, please provide the content details.`,
+          conversationId,
+          intent,
+          error: 'LMS_CONTENT_CREATE_LIMITED',
+          recoverable: true,
+          suggestion: 'Use bulk content generation for content with images, or provide text-only content details.',
+          canEscalate: true,
+          querySuggestions: getIntentQuerySuggestions(intent)
+        };
+      }
+
+      return {
+        answer: `I need more information to ${intent.replace(/_/g, ' ').toLowerCase()}. Please provide the required details.`,
+        conversationId,
+        intent,
+        error: 'Missing action parameters',
+        recoverable: true,
+        suggestion: 'Please provide the necessary information to complete this action.',
+        canEscalate: true,
+        querySuggestions: getIntentQuerySuggestions(intent)
+      };
+    } else {
+      apiKey = intentToApiMap[intent] || 'table_data';
+    }
+
+    // Set table parameter for table_data endpoint
+    if (apiKey === 'table_data') {
+      const tableMap: Record<string, string> = {
+        'HRMS_USERS_FETCH': 'tbluser',
+        'HRMS_PROFILE_FETCH': 'tbluserprofilemaster',
+        'HRMS_ATTENDANCE_FETCH': 'hrms_attendances',
+        'HRMS_LEAVE_TYPES_FETCH': 'hrms_leave_types',
+        'HRMS_HOLIDAYS_FETCH': 'hrms_holidays'
+      };
+      params.table = tableMap[intent] || 'tbluser';
+      // Add sub_institute_id filter for table_data
+      params[`filters[sub_institute_id]`] = request.subInstituteId;
+
+      // For profile fetch, also filter by current user
+    } else if (apiKey === 'hrms_departments') {
+      // Add sub_institute_id filter for hrms_departments endpoint
+      params.sub_institute_id = request.subInstituteId;
+      if (intent === 'HRMS_PROFILE_FETCH' && request.userId) {
+        params[`filters[user_id]`] = request.userId;
+      }
+      // For attendance fetch, filter by specific user if mentioned, current user for "my" queries, otherwise show all users in sub-institute
+      if (intent === 'HRMS_ATTENDANCE_FETCH') {
+        // Check if query is about the current user's attendance ("my", "check my", etc.)
+        const queryLower = request.query.toLowerCase();
+        const myAttendancePatterns = [
+          /\bmy\s+attendance/i,
+          /check\s+my\s+attendance/i,
+          /my\s+attendance\s+history/i,
+          /my\s+attendance\s+records/i
+        ];
+
+        const isMyAttendance = myAttendancePatterns.some(pattern => pattern.test(queryLower));
+
+        if (isMyAttendance && request.userId) {
+          // For "my attendance" queries, always filter by current user
+          params[`filters[user_id]`] = request.userId;
+        } else {
+          // Check if query mentions a specific user (not "my")
+          const userMentionPatterns = [
+            /attendance\s+(?:for|of)\s+(.+?)(?:\s|$)/i,
+            /(.+?)(?:'s|s')\s+attendance/i,
+            /attendance\s+records?\s+(?:for|of)\s+(.+?)(?:\s|$)/i
+          ];
+
+          let mentionedUserId = null;
+          for (const pattern of userMentionPatterns) {
+            const match = request.query.match(pattern);
+            if (match && !match[1].toLowerCase().includes('my')) { // Exclude "my" matches
+              const userName = match[1].trim();
+              // Try to find user by name in the system
+              try {
+                const userSearchParams = {
+                  table: 'tbluser',
+                  [`filters[sub_institute_id]`]: request.subInstituteId,
+                  [`filters[name]`]: userName
+                };
+                const userData = await callHpApi('GET', hpApiMap['table_data'].url, userSearchParams);
+                if (Array.isArray(userData) && userData.length > 0) {
+                  mentionedUserId = userData[0].id || userData[0].user_id;
+                }
+              } catch (error) {
+                console.error('Error searching for user:', error);
+              }
+              break;
+            }
+          }
+
+          // If a specific user was mentioned, filter by that user
+          if (mentionedUserId) {
+            params[`filters[user_id]`] = mentionedUserId;
+          }
+          // If no specific user mentioned and not "my" query, don't filter by user (show all in sub-institute)
+        }
+      }
+    }
+
+    const apiEntry = hpApiMap[apiKey];
+    if (!apiEntry) {
+      throw new Error(`No API mapping found for intent: ${intent}`);
+    }
+
+    let data = await callHpApi(method, apiEntry.url, params, body);
+
+    // Apply client-side filtering for endpoints that don't support server-side filtering
+    if (intent === 'HRMS_DEPARTMENTS_FETCH' && Array.isArray(data)) {
+      const originalCount = data.length;
+      data = data.filter(dept => dept.sub_institute_id == request.subInstituteId);
+      console.log(`Filtered departments from ${originalCount} to ${data.length} for sub_institute_id ${request.subInstituteId}`);
+    }
+
+    await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} HRMS record(s)`, intent);
+
+    // Special handling for HRMS_PROFILE_FETCH - fetch comprehensive profile data
+    if (intent === 'HRMS_PROFILE_FETCH') {
+      let profileData = Array.isArray(data) ? data[0] : data;
+
+      if (!profileData) {
+        return {
+          answer: 'No profile data found for your account.',
+          intent,
+          data: [],
+          query: request.query,
+          querySuggestions: getIntentQuerySuggestions(intent)
+        };
+      }
+
+      // For now, just use the basic profile data and let the frontend display what it can
+      // Additional API calls for departments/job roles/tasks can be added later when endpoints are verified
+      return createStructuredResponse(intent, [profileData], request.query, getIntentQuerySuggestions(intent));
+    }
+
+    // Special handling for HRMS_USERS_FETCH to ensure name and role are displayed properly
+    if (intent === 'HRMS_USERS_FETCH' && Array.isArray(data)) {
+      const processedData = data.map(user => {
+        // Extract name and role, remove image fields
+        const { profile_image, avatar, image, ...userData } = user;
+        return {
+          name: user.name || user.full_name || user.first_name + ' ' + user.last_name || 'N/A',
+          role: user.role || user.job_role || user.position || 'N/A',
+          ...userData // Include all other fields
+        };
+      });
+      return createStructuredResponse(intent, processedData, request.query, getIntentQuerySuggestions(intent));
+    }
+
+    // Special handling for HRMS_HOLIDAYS_FETCH to show only specific fields
+    if (intent === 'HRMS_HOLIDAYS_FETCH' && Array.isArray(data)) {
+      const processedData = data.map(holiday => ({
+        holiday_name: holiday.holiday_name || holiday.name || 'N/A',
+        from_date: holiday.from_date || holiday.start_date || 'N/A',
+        to_date: holiday.to_date || holiday.end_date || 'N/A'
+      }));
+
+      // Ensure we have valid data for table rendering
+      if (processedData.length > 0) {
+        const columns = [
+          { key: 'holiday_name', label: 'Holiday Name' },
+          { key: 'from_date', label: 'From Date' },
+          { key: 'to_date', label: 'To Date' }
+        ];
+
+        const blocks = [{
+          type: 'table',
+          title: getIntentTitle(intent),
+          data: {
+            columns,
+            rows: processedData
+          }
+        }];
+
+        // Add query suggestions block if available
+        const querySuggestions = getIntentQuerySuggestions(intent);
+        if (querySuggestions && querySuggestions.length > 0) {
+          blocks.push({
+            type: 'query-suggestions',
+            title: 'Related Queries',
+            data: querySuggestions
+          });
+        }
+
+        return {
+          answer: `Found ${processedData.length} holiday(s) in the calendar.`,
+          intent,
+          data: {
+            blocks
+          },
+          query: request.query,
+          querySuggestions
+        };
+      }
+
+      return {
+        answer: 'No holidays found in the calendar.',
+        intent,
+        data: [],
+        query: request.query,
+        querySuggestions: getIntentQuerySuggestions(intent)
+      };
+    }
+
+    // Special handling for HRMS_ATTENDANCE_FETCH to show specific attendance fields
+    if (intent === 'HRMS_ATTENDANCE_FETCH' && Array.isArray(data)) {
+      // Check if query is about current user's attendance or mentions another user
+      const queryLower = request.query.toLowerCase();
+      const myAttendancePatterns = [
+        /\bmy\s+attendance/i,
+        /check\s+my\s+attendance/i,
+        /my\s+attendance\s+history/i,
+        /my\s+attendance\s+records/i
+      ];
+
+      const isMyAttendance = myAttendancePatterns.some(pattern => pattern.test(queryLower));
+
+      let mentionedUser = null;
+      if (isMyAttendance) {
+        mentionedUser = 'me'; // Special marker for current user
+      } else {
+        // Check if query mentions a specific user (not "my")
+        const userMentionPatterns = [
+          /attendance\s+(?:for|of)\s+(.+?)(?:\s|$)/i,
+          /(.+?)(?:'s|s')\s+attendance/i,
+          /attendance\s+records?\s+(?:for|of)\s+(.+?)(?:\s|$)/i
+        ];
+
+        for (const pattern of userMentionPatterns) {
+          const match = request.query.match(pattern);
+          if (match && !match[1].toLowerCase().includes('my')) { // Exclude "my" matches
+            mentionedUser = match[1].trim();
+            break;
+          }
+        }
+      }
+
+      const processedData = data.map(attendance => ({
+        date: attendance.day || attendance.date || attendance.attendance_date || 'N/A',
+        punch_in_time: attendance.punchin_time || attendance.punch_in || attendance.check_in_time || 'N/A',
+        punch_out_time: attendance.punchout_time || attendance.punch_out || attendance.check_out_time || 'N/A',
+        duration: attendance.timestamp_diff || attendance.duration || attendance.working_hours || 'N/A',
+        user_id: attendance.user_id || attendance.employee_id || 'N/A',
+        user_name: attendance.user_name || attendance.employee_name || attendance.name || 'N/A'
+      }));
+
+      // Ensure we have valid data for table rendering
+      if (processedData.length > 0) {
+        const columns = [
+          { key: 'date', label: 'Date' },
+          { key: 'punch_in_time', label: 'Punch In Time' },
+          { key: 'punch_out_time', label: 'Punch Out Time' },
+          { key: 'duration', label: 'Duration' },
+          { key: 'user_id', label: 'User ID' },
+          { key: 'user_name', label: 'User Name' }
+        ];
+
+        const blocks = [{
+          type: 'table',
+          title: getIntentTitle(intent),
+          data: {
+            columns,
+            rows: processedData
+          }
+        }];
+
+        // Add query suggestions block if available
+        const querySuggestions = getIntentQuerySuggestions(intent);
+        if (querySuggestions && querySuggestions.length > 0) {
+          blocks.push({
+            type: 'query-suggestions',
+            title: 'Related Queries',
+            data: querySuggestions
+          });
+        }
+
+        const userContext = mentionedUser === 'me' ? ' for you' :
+                           mentionedUser ? ` for ${mentionedUser}` : ' for all users';
+        return {
+          answer: `Found ${processedData.length} attendance record(s)${userContext}.`,
+          intent,
+          data: {
+            blocks
+          },
+          query: request.query,
+          querySuggestions
+        };
+      }
+
+      const userContext = mentionedUser === 'me' ? ' for you' :
+                         mentionedUser ? ` for ${mentionedUser}` : '';
+      return {
+        answer: `No attendance records found${userContext}.`,
+        intent,
+        data: [],
+        query: request.query,
+        querySuggestions: getIntentQuerySuggestions(intent)
+      };
+    }
+
+    // Special handling for HRMS_DEPARTMENTS_FETCH to show only department and status fields
+    if (intent === 'HRMS_DEPARTMENTS_FETCH' && Array.isArray(data)) {
+      const processedData = data.map(dept => ({
+        department: dept.department || dept.departmentName || 'N/A',
+        status: dept.status || 'Active'
+      }));
+
+      // Ensure we have valid data for table rendering
+      if (processedData.length > 0) {
+        const columns = [
+          { key: 'department', label: 'Department' },
+          { key: 'status', label: 'Status' }
+        ];
+
+        const blocks = [{
+          type: 'table',
+          title: getIntentTitle(intent),
+          data: {
+            columns,
+            rows: processedData
+          }
+        }];
+
+        // Add query suggestions block if available
+        const querySuggestions = getIntentQuerySuggestions(intent);
+        if (querySuggestions && querySuggestions.length > 0) {
+          blocks.push({
+            type: 'query-suggestions',
+            title: 'Related Queries',
+            data: querySuggestions
+          });
+        }
+
+        return {
+          answer: `Found ${processedData.length} department(s).`,
+          intent,
+          data: {
+            blocks
+          },
+          query: request.query,
+          querySuggestions
+        };
+      }
+
+      return {
+        answer: 'No departments found.',
+        intent,
+        data: [],
+        query: request.query,
+        querySuggestions: getIntentQuerySuggestions(intent)
+      };
+    }
+
+    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
+
+  } catch (error) {
+    console.error('HRMS Request Error:', error);
+    await saveMessage(conversationId, 'bot', `Error processing HRMS request: ${(error as Error).message}`, intent, undefined, undefined, true);
+    return {
+      answer: `Error processing your HRMS request: ${(error as Error).message}`,
+      conversationId,
+      intent,
+      error: 'HRMS_API_ERROR',
+      recoverable: true,
+      canEscalate: true
+    };
+  }
+}
+
+// ================= LMS HANDLER =================
+async function handleLMSRequest(
+  request: ChatRequest,
+  intent: string,
+  conversationId: string,
+  entities: any
+): Promise<ChatResponse> {
+  try {
+    let apiKey: string;
+    let method: "GET" | "POST" = "GET";
+    let body: any = {};
+    let params: any = { sub_institute_id: request.subInstituteId };
+
+    const intentToApiMap: Record<string, string> = {
+      'LMS_COURSES_FETCH': 'lms_course_master',
+      'LMS_MODULES_FETCH': 'chapter_master',
+      'LMS_CONTENT_FETCH': 'content_master',
+      'LMS_QUESTION_CHAPTERS_FETCH': 'question_chapter_master',
+      'LMS_QUESTION_PAPERS_SEARCH': 'question_paper_search',
+      'LMS_EXAMS_FETCH': 'online_exam'
+    };
+
+    const actionIntentToApiMap: Record<string, { api: string; method: "GET" | "POST" }> = {
+      'LMS_CONTENT_CREATE': { api: 'content_master_create', method: 'GET' },
+      'LMS_QUESTION_ADD': { api: 'question_master', method: 'POST' },
+      'LMS_QUESTION_PAPER_STORE': { api: 'question_paper_store', method: 'POST' },
+      'LMS_EXAM_SUBMIT': { api: 'online_exam_submit', method: 'POST' }
+    };
+
+    if (actionIntentToApiMap[intent]) {
+      const config = actionIntentToApiMap[intent];
+      apiKey = config.api;
+      method = config.method;
+
+      return {
+        answer: `I need more information to ${intent.replace(/_/g, ' ').toLowerCase()}. Please provide the required details.`,
+        conversationId,
+        intent,
+        error: 'Missing action parameters',
+        recoverable: true,
+        suggestion: 'Please provide the necessary information to complete this action.',
+        canEscalate: true,
+        querySuggestions: getIntentQuerySuggestions(intent)
+      };
+    } else {
+      apiKey = intentToApiMap[intent] || 'course_master';
+    }
+
+    // Add filters based on entities (e.g., course_id, module_id)
+    if (entities.courseId) params.course_id = entities.courseId;
+    if (entities.moduleId) params.module_id = entities.moduleId;
+
+    const apiEntry = hpApiMap[apiKey];
+    if (!apiEntry) {
+      throw new Error(`No API mapping found for intent: ${intent}`);
+    }
+
+    let data = await callHpApi(method, apiEntry.url, params, body);
+
+    // Apply client-side filtering for LMS endpoints that don't support server-side filtering
+    if (intent === 'LMS_COURSES_FETCH' && Array.isArray(data)) {
+      const originalCount = data.length;
+      data = data.filter(course => course.sub_institute_id == request.subInstituteId);
+      console.log(`Filtered courses from ${originalCount} to ${data.length} for sub_institute_id ${request.subInstituteId}`);
+    }
+
+    await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} LMS record(s)`, intent);
+
+    // Special handling for LMS_COURSES_FETCH to show only display_name and subject_category fields
+    if (intent === 'LMS_COURSES_FETCH' && Array.isArray(data)) {
+      const processedData = data.map(course => ({
+        display_name: course.display_name || course.name || course.course_name || 'N/A',
+        subject_category: course.subject_category || course.category || course.subject || 'N/A'
+      }));
+
+      // Ensure we have valid data for table rendering
+      if (processedData.length > 0) {
+        const columns = [
+          { key: 'display_name', label: 'Course Name' },
+          { key: 'subject_category', label: 'Subject Category' }
+        ];
+
+        const blocks = [{
+          type: 'table',
+          title: getIntentTitle(intent),
+          data: {
+            columns,
+            rows: processedData
+          }
+        }];
+
+        // Add query suggestions block if available
+        const querySuggestions = getIntentQuerySuggestions(intent);
+        if (querySuggestions && querySuggestions.length > 0) {
+          blocks.push({
+            type: 'query-suggestions',
+            title: 'Related Queries',
+            data: querySuggestions
+          });
+        }
+
+        return {
+          answer: `Found ${processedData.length} course(s).`,
+          intent,
+          data: {
+            blocks
+          },
+          query: request.query,
+          querySuggestions
+        };
+      }
+
+      return {
+        answer: 'No courses found.',
+        intent,
+        data: [],
+        query: request.query,
+        querySuggestions: getIntentQuerySuggestions(intent)
+      };
+    }
+
+    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
+
+  } catch (error) {
+    console.error('LMS Request Error:', error);
+    const errorMessage = (error as Error).message;
+
+    // Handle image processing errors specifically
+    if (errorMessage.includes('image') && errorMessage.includes('model does not support')) {
+      const fallbackMessage = `I'm sorry, but the LMS content operation requires image processing capabilities that aren't currently available. Please try using the bulk content generation feature instead, which supports image generation.`;
+      await saveMessage(conversationId, 'bot', fallbackMessage, intent, undefined, undefined, true);
+      return {
+        answer: fallbackMessage,
+        conversationId,
+        intent,
+        error: 'LMS_IMAGE_PROCESSING_ERROR',
+        recoverable: true,
+        canEscalate: true,
+        suggestion: 'Try using the bulk content generation feature for content with images.'
+      };
+    }
+
+    // Handle 500 Internal Server Error specifically
+    if (errorMessage.includes('500') && errorMessage.includes('Internal Server Error')) {
+      const fallbackMessage = `The LMS service is currently experiencing issues. Please try again later or contact support if the problem persists.`;
+      await saveMessage(conversationId, 'bot', fallbackMessage, intent, undefined, undefined, true);
+      return {
+        answer: fallbackMessage,
+        conversationId,
+        intent,
+        error: 'LMS_SERVICE_UNAVAILABLE',
+        recoverable: true,
+        canEscalate: true,
+        suggestion: 'Try again later or contact support.'
+      };
+    }
+
+    await saveMessage(conversationId, 'bot', `Error processing LMS request: ${errorMessage}`, intent, undefined, undefined, true);
+    return {
+      answer: `Error processing your LMS request: ${errorMessage}`,
+      conversationId,
+      intent,
+      error: 'LMS_API_ERROR',
+      recoverable: true,
+      canEscalate: true
+    };
+  }
+}
+
+// ================= SKILLS AND JOB ROLES HANDLER =================
+async function handleSkillsAndJobRolesRequest(
+  request: ChatRequest,
+  intent: string,
+  conversationId: string,
+  entities: any
+): Promise<ChatResponse> {
+  try {
+    let apiKey: string;
+    let method: "GET" | "POST" = "GET";
+    let body: any = {};
+    let params: any = { sub_institute_id: request.subInstituteId };
+
+    const intentToApiMap: Record<string, string> = {
+      'SKILLS_FETCH': 'skill_library',
+      'SKILL_CATEGORIES_FETCH': 'skill_category',
+      'SKILL_KNOWLEDGE_ABILITIES_FETCH': 'skill_knowledge_ability',
+      'SKILL_PROFICIENCY_LEVELS_FETCH': 'proficiency_levels',
+      'JOB_ROLES_FETCH': 'jobroleOccupation',
+      'JOB_ROLE_SKILLS_FETCH': 'jobroleSkill',
+      'JOB_ROLE_TASKS_FETCH': 'jobroleTask'
+    };
+
+    const actionIntentToApiMap: Record<string, { api: string; method: "GET" | "POST" }> = {
+      'SKILL_CREATE': { api: 'skill_library_create', method: 'POST' },
+      'SKILL_ATTRIBUTES_ADD': { api: 'skill_attribute_taxonomy', method: 'POST' },
+      'JOB_ROLE_CREATE': { api: 'jobroleOccupation_create', method: 'POST' },
+      'JOB_ROLE_UPDATE': { api: 'jobroleOccupation_update', method: 'POST' },
+      'JOB_ROLE_DELETE': { api: 'jobroleOccupation_delete', method: 'POST' },
+      'JOB_ROLE_SKILL_CREATE': { api: 'jobroleSkill_create', method: 'POST' },
+      'JOB_ROLE_TASK_CREATE': { api: 'jobroleTask_create', method: 'POST' }
+    };
+
+    if (actionIntentToApiMap[intent]) {
+      const config = actionIntentToApiMap[intent];
+      apiKey = config.api;
+      method = config.method;
+
+      return {
+        answer: `I need more information to ${intent.replace(/_/g, ' ').toLowerCase()}. Please provide the required details.`,
+        conversationId,
+        intent,
+        error: 'Missing action parameters',
+        recoverable: true,
+        suggestion: 'Please provide the necessary information to complete this action.',
+        canEscalate: true,
+        querySuggestions: getIntentQuerySuggestions(intent)
+      };
+    } else {
+      apiKey = intentToApiMap[intent] || 'skill_library';
+    }
+
+    const apiEntry = hpApiMap[apiKey];
+    if (!apiEntry) {
+      throw new Error(`No API mapping found for intent: ${intent}`);
+    }
+
+    const data = await callHpApi(method, apiEntry.url, params, body);
+
+    await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} skills/job roles record(s)`, intent);
+
+    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
+
+  } catch (error) {
+    console.error('Skills and Job Roles Request Error:', error);
+    await saveMessage(conversationId, 'bot', `Error processing skills/job roles request: ${(error as Error).message}`, intent, undefined, undefined, true);
+    return {
+      answer: `Error processing your skills/job roles request: ${(error as Error).message}`,
+      conversationId,
+      intent,
+      error: 'SKILLS_API_ERROR',
+      recoverable: true,
+      canEscalate: true
+    };
+  }
+}
+
+// ================= ORGANIZATION AND INDUSTRIES HANDLER =================
+async function handleOrganizationAndIndustriesRequest(
+  request: ChatRequest,
+  intent: string,
+  conversationId: string,
+  entities: any
+): Promise<ChatResponse> {
+  try {
+    let apiKey: string;
+    let params: any = { sub_institute_id: request.subInstituteId };
+
+    const intentToApiMap: Record<string, string> = {
+      'USER_JOB_ROLES_FETCH': 's_user_jobrole',
+      'INDUSTRIES_FETCH': 's_industries',
+      'DEPARTMENT_MASTER_FETCH': 'department_master',
+      'NEO_INDUSTRIES_FETCH': 'neo_industries',
+      'DEPARTMENTS_FOR_INDUSTRY_FETCH': 'neo_industry_departments',
+      'JOB_ROLES_FOR_DEPARTMENT_FETCH': 'neo_jobroles',
+      'SKILLS_FOR_JOB_ROLE_FETCH': 'neo_skills'
+    };
+
+    apiKey = intentToApiMap[intent] || 's_industries';
+
+    // Add path parameters for Neo4J endpoints
+    if (entities.industrySlug && intent === 'DEPARTMENTS_FOR_INDUSTRY_FETCH') {
+      apiKey = apiKey.replace('{slug}', entities.industrySlug);
+    }
+    if (entities.departmentSlug && intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') {
+      apiKey = apiKey.replace('{slug}', entities.departmentSlug);
+    }
+    if (entities.jobRoleName && intent === 'SKILLS_FOR_JOB_ROLE_FETCH') {
+      params.name = entities.jobRoleName;
+    }
+
+    const apiEntry = hpApiMap[apiKey];
+    if (!apiEntry) {
+      throw new Error(`No API mapping found for intent: ${intent}`);
+    }
+
+    const data = await callHpApi('GET', apiEntry.url, params);
+
+    await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} organization/industries record(s)`, intent);
+
+    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
+
+  } catch (error) {
+    console.error('Organization and Industries Request Error:', error);
+    await saveMessage(conversationId, 'bot', `Error processing organization/industries request: ${(error as Error).message}`, intent, undefined, undefined, true);
+    return {
+      answer: `Error processing your organization/industries request: ${(error as Error).message}`,
+      conversationId,
+      intent,
+      error: 'ORG_API_ERROR',
+      recoverable: true,
+      canEscalate: true
+    };
+  }
+}
+
+// ================= REPORTS AND MISC HANDLER =================
+async function handleReportsAndMiscRequest(
+  request: ChatRequest,
+  intent: string,
+  conversationId: string,
+  entities: any
+): Promise<ChatResponse> {
+  try {
+    let apiKey: string;
+    let method: "GET" | "POST" = "GET";
+    let body: any = {};
+    let params: any = { sub_institute_id: request.subInstituteId };
+
+    const intentToApiMap: Record<string, string> = {
+      'TASK_ANALYSIS_REPORT_FETCH': 'task_analysis_report',
+      'EMPLOYEE_REPORT_FETCH': 'employee_report',
+      'ORGANIZATION_DASHBOARD_FETCH': 'organization_dashboard',
+      'DASHBOARD_FETCH': 'dashboard',
+      'COMPLIANCE_LIST_FETCH': 'compliance_list',
+      'JOB_POSTINGS_FETCH': 'job_postings'
+    };
+
+    const actionIntentToApiMap: Record<string, { api: string; method: "GET" | "POST" }> = {
+      'COMPLIANCE_CREATE': { api: 'compliance_create', method: 'POST' },
+      'COMPLIANCE_UPDATE': { api: 'compliance_update', method: 'POST' },
+      'COMPLIANCE_DELETE': { api: 'compliance_delete', method: 'POST' },
+      'JOB_POSTING_CREATE': { api: 'job_posting_create', method: 'POST' },
+      'JOB_POSTING_UPDATE': { api: 'job_posting_update', method: 'POST' }
+    };
+
+    if (actionIntentToApiMap[intent]) {
+      const config = actionIntentToApiMap[intent];
+      apiKey = config.api;
+      method = config.method;
+
+      return {
+        answer: `I need more information to ${intent.replace(/_/g, ' ').toLowerCase()}. Please provide the required details.`,
+        conversationId,
+        intent,
+        error: 'Missing action parameters',
+        recoverable: true,
+        suggestion: 'Please provide the necessary information to complete this action.',
+        canEscalate: true,
+        querySuggestions: getIntentQuerySuggestions(intent)
+      };
+    } else {
+      apiKey = intentToApiMap[intent] || 'dashboard';
+    }
+
+    const apiEntry = hpApiMap[apiKey];
+    if (!apiEntry) {
+      throw new Error(`No API mapping found for intent: ${intent}`);
+    }
+
+    const data = await callHpApi(method, apiEntry.url, params, body);
+
+    await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} reports/misc record(s)`, intent);
+
+    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
+
+  } catch (error) {
+    console.error('Reports and Misc Request Error:', error);
+    await saveMessage(conversationId, 'bot', `Error processing reports/misc request: ${(error as Error).message}`, intent, undefined, undefined, true);
+    return {
+      answer: `Error processing your reports/misc request: ${(error as Error).message}`,
+      conversationId,
+      intent,
+      error: 'REPORTS_API_ERROR',
+      recoverable: true,
+      canEscalate: true
+    };
+  }
+}
+
+// ================= GENERAL AND ACADEMIC HANDLER =================
+async function handleGeneralAndAcademicRequest(
+  request: ChatRequest,
+  intent: string,
+  conversationId: string,
+  entities: any
+): Promise<ChatResponse> {
+  try {
+    let apiKey: string;
+    let params: any = { sub_institute_id: request.subInstituteId };
+
+    const intentToApiMap: Record<string, string> = {
+      'STANDARDS_FETCH': 'table_data',
+      'SECTIONS_FETCH': 'table_data',
+      'SUBJECTS_FETCH': 'table_data',
+      'QUESTIONS_FETCH': 'table_data',
+      'MENUS_FETCH': 'table_data'
+    };
+
+    const tableMap: Record<string, string> = {
+      'STANDARDS_FETCH': 'standard',
+      'SECTIONS_FETCH': 'academic_section',
+      'SUBJECTS_FETCH': 'subject_master',
+      'QUESTIONS_FETCH': 'question_master',
+      'MENUS_FETCH': 'tblmenumaster'
+    };
+
+    apiKey = intentToApiMap[intent] || 'table_data';
+    params.table = tableMap[intent] || 'standard';
+    // Add sub_institute_id filter for table_data
+    params[`filters[sub_institute_id]`] = request.subInstituteId;
+
+    const apiEntry = hpApiMap[apiKey];
+    if (!apiEntry) {
+      throw new Error(`No API mapping found for intent: ${intent}`);
+    }
+
+    const data = await callHpApi('GET', apiEntry.url, params);
+
+    await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} general/academic record(s)`, intent);
+
+    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
+
+  } catch (error) {
+    console.error('General and Academic Request Error:', error);
+    await saveMessage(conversationId, 'bot', `Error processing general/academic request: ${(error as Error).message}`, intent, undefined, undefined, true);
+    return {
+      answer: `Error processing your general/academic request: ${(error as Error).message}`,
+      conversationId,
+      intent,
+      error: 'GENERAL_API_ERROR',
+      recoverable: true,
+      canEscalate: true
+    };
+  }
+}
+
+// ================= AI AND AUTH HANDLER =================
+async function handleAIAndAuthRequest(
+  request: ChatRequest,
+  intent: string,
+  conversationId: string,
+  entities: any
+): Promise<ChatResponse> {
+  try {
+    let apiKey: string;
+    let method: "GET" | "POST" = "GET";
+    let body: any = {};
+    let params: any = { sub_institute_id: request.subInstituteId };
+
+    const intentToApiMap: Record<string, string> = {
+      'GAMMA_CONTENT_FETCH': 'gammaContent'
+    };
+
+    const actionIntentToApiMap: Record<string, { api: string; method: "GET" | "POST" }> = {
+      'GEMINI_CHAT': { api: 'gemini_chat', method: 'POST' },
+      'AI_COURSE_GENERATE': { api: 'AICourseGeneration', method: 'GET' },
+      'FORGET_PASSWORD': { api: 'forget-password', method: 'POST' },
+      'RESET_PASSWORD': { api: 'reset-password', method: 'POST' }
+    };
+
+    if (actionIntentToApiMap[intent]) {
+      const config = actionIntentToApiMap[intent];
+      apiKey = config.api;
+      method = config.method;
+
+      return {
+        answer: `I need more information to ${intent.replace(/_/g, ' ').toLowerCase()}. Please provide the required details.`,
+        conversationId,
+        intent,
+        error: 'Missing action parameters',
+        recoverable: true,
+        suggestion: 'Please provide the necessary information to complete this action.',
+        canEscalate: true,
+        querySuggestions: getIntentQuerySuggestions(intent)
+      };
+    } else {
+      apiKey = intentToApiMap[intent] || 'gammaContent';
+    }
+
+    const apiEntry = hpApiMap[apiKey];
+    if (!apiEntry) {
+      throw new Error(`No API mapping found for intent: ${intent}`);
+    }
+
+    const data = await callHpApi(method, apiEntry.url, params, body);
+
+    await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} AI/auth record(s)`, intent);
+
+    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
+
+  } catch (error) {
+    console.error('AI and Auth Request Error:', error);
+    await saveMessage(conversationId, 'bot', `Error processing AI/auth request: ${(error as Error).message}`, intent, undefined, undefined, true);
+    return {
+      answer: `Error processing your AI/auth request: ${(error as Error).message}`,
+      conversationId,
+      intent,
+      error: 'AI_AUTH_API_ERROR',
+      recoverable: true,
+      canEscalate: true
+    };
+  }
+}
+
 
 interface SuggestionRequest {
   module: string; // 'course', 'assessment', 'learning', 'question-bank'
@@ -208,19 +1678,27 @@ interface GenkitCompetencyResponse {
 }
 
 let debugModeEnabled = false;
-const OPENROUTER_SQL_MAX_TOKENS = 300;
-const OPENROUTER_INSIGHTS_MAX_TOKENS = 400;
-const OPENROUTER_FALLBACK_MAX_TOKENS = 400;
+const OPENROUTER_SQL_MAX_TOKENS = 80;
+const OPENROUTER_INSIGHTS_MAX_TOKENS = 120;
+const OPENROUTER_FALLBACK_MAX_TOKENS = 100;
+
+// Set to true when credits are critically low to disable AI generation
+const DISABLE_AI_LOW_CREDITS = false; // Temporarily disabled due to low credits (134 remaining)
 const OPENROUTER_STRUCTURED_MAX_TOKENS = 1200;
 
 function enableDebugMode() {
   debugModeEnabled = true;
 }
 
-async function generateSQL(query: string, context: Array<{ role: string; content: string }>): Promise<string> {
+
+async function generateSQL(query: string, context: Array<{ role: string; content: string }>, subInstituteId?: string): Promise<string> {
   const contextPrompt = context.length > 0
     ? `Previous conversation:\n${context.map(c => `${c.role}: ${c.content}`).join('\n')}\n\n`
     : '';
+
+  const subInstituteNote = subInstituteId ? `\n\nIMPORTANT: Always include "WHERE sub_institute_id = ${subInstituteId}" in your SQL query if the table has a sub_institute_id column. This ensures users only see data from their institute.` : '';
+
+  const tableAliasesNote = `\n\nAvailable table aliases (use these for table names): ${Object.entries(tableAliasMap).map(([alias, table]) => `${alias} -> ${table}`).join(', ')}`;
 
   const prompt = `${contextPrompt}Convert the following natural language query to MySQL SQL:
   Query: "${query}"
@@ -228,7 +1706,7 @@ async function generateSQL(query: string, context: Array<{ role: string; content
   Database Schema (example - replace with your actual schema):
   - users (id, name, email, created_at)
   - projects (id, user_id, title, status, updated_at)
-  - tasks (id, project_id, title, completed, due_date)
+  - tasks (id, project_id, title, completed, due_date)${tableAliasesNote}${subInstituteNote}
 
   Return only the SQL query without explanations.`;
 
@@ -301,6 +1779,42 @@ const tableAliasMap: Record<string, string> = {
   "menu": "tblmenumaster",
   "menus": "tblmenumaster",
 
+  // hrms leave
+  "leave": "hrms_leave_type",
+  "leave_type": "hrms_leave_type",
+  "leave_types": "hrms_leave_type",
+
+  // hrms attendance and holidays
+  "attendance": "hrms_attendance",
+  "holiday": "hrms_holiday",
+  "holidays": "hrms_holiday",
+
+  // payroll
+  "payroll_deduction": "payroll_deduction",
+
+  // lms
+  "question_paper": "question_paper",
+  "online_exam": "online_exam",
+
+  // skills
+  "skill_attribute_taxonomy": "skill_attribute_taxonomy",
+
+  // organization
+  "neo_industries": "neo_industries",
+  "neo_industry_departments": "neo_industry_departments",
+  "neo_jobroles": "neo_jobroles",
+  "neo_skills": "neo_skills",
+
+  // reports
+  "task_analysis_report": "task_analysis_report",
+  "employee_report": "employee_report",
+  "organization_dashboard": "organization_dashboard",
+  "dashboard": "dashboard",
+
+  // misc
+  "compliance": "compliance",
+  "job_postings": "job_postings",
+
   // lms
   "course": "lms_course_master",
   "courses": "lms_course_master",
@@ -308,7 +1822,6 @@ const tableAliasMap: Record<string, string> = {
   "modules": "chapter_master",
   "content": "content_master",
   "questionpaper": "question_paper",
-  "question_paper": "question_paper",
 
   // hrms / users
   "user": "tbluser",
@@ -330,8 +1843,8 @@ const tableAliasMap: Record<string, string> = {
   "payroll": "monthly_payroll",
 
   // skills / jobrole
-  "skill": "skill_library",
-  "skills": "skill_library",
+  "skill": "s_user_skill",
+  "skills": "s_user_skill",
   "skill_category": "skill_category",
   "jobrole": "jobroleOccupation",
   "jobroles": "jobroleOccupation",
@@ -398,7 +1911,7 @@ const hpApiMap: Record<string, { method: "GET" | "POST"; url: string }> = {
   "hrms_departments": { method: "GET", url: "https://hp.triz.co.in/table_data?table=hrms_departments" },
   "hrms_department_add": { method: "POST", url: "https://hp.triz.co.in/hrms/add_department" },
 
-  "hrms_attendance": { method: "GET", url: "https://hp.triz.co.in/hrms/attendance" },
+  "hrms_attendances": { method: "GET", url: "https://hp.triz.co.in/hrms/attendances" },
   "hrms_attendance_update": { method: "POST", url: "https://hp.triz.co.in/hrms/update_user_att" },
   "hrms_punch_out": { method: "POST", url: "https://hp.triz.co.in/hrms-out-time/store" },
 
@@ -422,7 +1935,7 @@ const hpApiMap: Record<string, { method: "GET" | "POST"; url: string }> = {
   // Skill Library
   // -----------------------
   "skill_library": { method: "GET", url: "https://erp.triz.co.in/lms/skill_library" },
-  "skill_library_create": { method: "POST", url: "https://erp.triz.co.in/lms/skill_library" },
+  ";skill_library_create": { method: "POST", url: "https://erp.triz.co.in/lms/skill_library" },
   "skill_category": { method: "GET", url: "https://erp.triz.co.in/lms/skill_library/create" },
   "skill_knowledge_ability": { method: "GET", url: "https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability" },
   "proficiency_levels": { method: "GET", url: "https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability&group_by=proficiency_level" },
@@ -447,6 +1960,7 @@ const hpApiMap: Record<string, { method: "GET" | "POST"; url: string }> = {
   // LMS - other / exam / question paper
   // -----------------------
   "course_master": { method: "GET", url: "https://hp.triz.co.in/lms/course_master" },
+  "lms_course_master": { method: "GET", url: "https://hp.triz.co.in/table_data?table=sub_std_map" },
   "question_paper_search": { method: "GET", url: "https://hp.triz.co.in/question_paper/search_question" },
   "question_paper_store": { method: "POST", url: "https://hp.triz.co.in/lms/question_paper/storeData" },
   "online_exam": { method: "GET", url: "https://hp.triz.co.in/lms/online_exam" },
@@ -528,8 +2042,8 @@ async function callHpApi(method: "GET" | "POST", url: string, params?: Record<st
     method,
     headers: {
       "Content-Type": "application/json",
-      // if you prefer token in header uncomment below and set env var
-      // "Authorization": `Bearer ${process.env.HP_API_BEARER}`
+      // Use HP API bearer token for authentication
+      "Authorization": `Bearer ${process.env.HP_API_BEARER || process.env.LLM_API_KEY || ''}`
     }
   };
 
@@ -765,6 +2279,23 @@ async function executeSQLQuery(sql: string, originalQuery?: string): Promise<any
   // prefer passing env vars if available
   if (process.env.HP_API_TOKEN) params["token"] = process.env.HP_API_TOKEN;
   if (process.env.HP_SUB_INSTITUTE_ID) params["sub_institute_id"] = process.env.HP_SUB_INSTITUTE_ID;
+
+  // Always add sub_institute_id as a filter if the table has this column
+  const tablesWithSubInstituteId = [
+    'tbluser', 'tbluserprofilemaster', 'hrms_departments', 'hrms_attendance',
+    'hrms_leave_type', 'hrms_holiday', 'employee_salary_structure', 'payroll_deduction',
+    'monthly_payroll', 'lms_course_master', 'chapter_master', 'content_master',
+    'question_chapter_master', 'question_master', 'question_paper', 'online_exam',
+    'skill_library', 'skill_category', 's_skill_knowledge_ability', 'jobroleOccupation',
+    'jobroleSkill', 'jobroleTask', 's_user_jobrole', 's_industries', 'standard',
+    'academic_section', 'subject_master', 'tblmenumaster'
+  ];
+
+  const hasSubInstituteId = tablesWithSubInstituteId.includes(table);
+  if (hasSubInstituteId && process.env.HP_SUB_INSTITUTE_ID) {
+    filters['sub_institute_id'] = process.env.HP_SUB_INSTITUTE_ID;
+  }
+
   // incorporate filters from WHERE
   if (Object.keys(filters).length > 0) {
     params["table"] = table; // ensure table param is present for table_data
@@ -934,6 +2465,191 @@ function isExplicitMockQuery(query: string): boolean {
   ].some((pattern) => pattern.test(normalizedQuery));
 }
 
+// Define queries that should use direct API endpoints instead of SQL
+const apiEndpointQueries: Record<string, { apiKey: string; method?: "GET" | "POST"; params?: any }> = {
+  // Courses - use direct API instead of SQL
+  'show all courses': { apiKey: 'course_master', method: 'GET' },
+  'list courses': { apiKey: 'course_master', method: 'GET' },
+  'get courses': { apiKey: 'course_master', method: 'GET' },
+
+  // Modules
+  'list modules for course x': { apiKey: 'chapter_master', method: 'GET' },
+  'show modules': { apiKey: 'chapter_master', method: 'GET' },
+  'get modules': { apiKey: 'chapter_master', method: 'GET' },
+
+  // Content
+  'show content for module y': { apiKey: 'content_master', method: 'GET' },
+  'get content': { apiKey: 'content_master', method: 'GET' },
+
+  // Question chapters
+  'show question chapters': { apiKey: 'question_chapter_master', method: 'GET' },
+  'question chapters': { apiKey: 'question_chapter_master', method: 'GET' },
+
+  // Exams
+  'show online exams': { apiKey: 'online_exam', method: 'GET' },
+  'list exams': { apiKey: 'online_exam', method: 'GET' },
+  'available exams': { apiKey: 'online_exam', method: 'GET' },
+};
+
+function getPredefinedSQL(query: string, subInstituteId?: string): string | null {
+  const lowerQuery = query.toLowerCase().trim();
+
+  // Check if this should use direct API endpoint instead of SQL
+  if (apiEndpointQueries[lowerQuery]) {
+    return null; // Signal to use API endpoint instead
+  }
+
+  // Debug logging for troubleshooting
+  console.log(`Checking predefined SQL for query: "${lowerQuery}"`);
+
+  const subInstituteFilter = subInstituteId ? ` WHERE sub_institute_id = ${subInstituteId}` : '';
+
+  // Exact matches for SQL queries (tables that exist)
+  const exactMatches: Record<string, string> = {
+    'show me all users': `SELECT id, name, email FROM tbluser${subInstituteFilter} LIMIT 50`,
+    'list all users': `SELECT id, name, email FROM tbluser${subInstituteFilter} LIMIT 50`,
+    'get all users': `SELECT id, name, email FROM tbluser${subInstituteFilter} LIMIT 50`,
+    'show users': `SELECT id, name, email FROM tbluser${subInstituteFilter} LIMIT 50`,
+    'list users': `SELECT id, name, email FROM tbluser${subInstituteFilter} LIMIT 50`,
+    'get users': `SELECT id, name, email FROM tbluser${subInstituteFilter} LIMIT 50`,
+
+    'show departments': `SELECT name, description, status FROM hrms_departments${subInstituteFilter} LIMIT 50`,
+    'list departments': `SELECT name, description, status FROM hrms_departments${subInstituteFilter} LIMIT 50`,
+    'get departments': `SELECT name, description, status FROM hrms_departments${subInstituteFilter} LIMIT 50`,
+
+    'show all skills': `SELECT name, category FROM skill_library${subInstituteFilter} LIMIT 50`,
+    'list skills': `SELECT name, category FROM skill_library${subInstituteFilter} LIMIT 50`,
+    'get skills': `SELECT name, category FROM skill_library${subInstituteFilter} LIMIT 50`,
+
+    'show job roles': `SELECT id, name, description FROM jobroleOccupation${subInstituteFilter} LIMIT 50`,
+    'list job roles': `SELECT id, name, description FROM jobroleOccupation${subInstituteFilter} LIMIT 50`,
+    'get job roles': `SELECT id, name, description FROM jobroleOccupation${subInstituteFilter} LIMIT 50`,
+
+    'show industries': `SELECT id, name FROM s_industries${subInstituteFilter} LIMIT 50`,
+    'list industries': `SELECT id, name FROM s_industries${subInstituteFilter} LIMIT 50`,
+    'get industries': `SELECT id, name FROM s_industries${subInstituteFilter} LIMIT 50`,
+
+    'show standards': `SELECT id, name FROM standard${subInstituteFilter} LIMIT 50`,
+    'list standards': `SELECT id, name FROM standard${subInstituteFilter} LIMIT 50`,
+    'get standards': `SELECT id, name FROM standard${subInstituteFilter} LIMIT 50`,
+
+    'show sections': `SELECT id, name FROM academic_section${subInstituteFilter} LIMIT 50`,
+    'list sections': `SELECT id, name FROM academic_section${subInstituteFilter} LIMIT 50`,
+    'get sections': `SELECT id, name FROM academic_section${subInstituteFilter} LIMIT 50`,
+
+    'show subjects': `SELECT id, name FROM subject_master${subInstituteFilter} LIMIT 50`,
+    'list subjects': `SELECT id, name FROM subject_master${subInstituteFilter} LIMIT 50`,
+    'get subjects': `SELECT id, name FROM subject_master${subInstituteFilter} LIMIT 50`,
+
+    'show questions': `SELECT id, question_text FROM question_master${subInstituteFilter} LIMIT 50`,
+    'list questions': `SELECT id, question_text FROM question_master${subInstituteFilter} LIMIT 50`,
+    'get questions': `SELECT id, question_text FROM question_master${subInstituteFilter} LIMIT 50`,
+
+    'show menus': `SELECT id, name FROM tblmenumaster${subInstituteFilter} LIMIT 50`,
+    'list menus': `SELECT id, name FROM tblmenumaster${subInstituteFilter} LIMIT 50`,
+    'get menus': `SELECT id, name FROM tblmenumaster${subInstituteFilter} LIMIT 50`,
+
+    'show attendance records': `SELECT date, status, check_in_time, check_out_time FROM hrms_attendance WHERE user_id = CURRENT_USER()${subInstituteFilter ? ` AND ${subInstituteFilter.replace('WHERE ', '')}` : ''} LIMIT 50`,
+    'my attendance': `SELECT date, status, check_in_time, check_out_time FROM hrms_attendance WHERE user_id = CURRENT_USER()${subInstituteFilter ? ` AND ${subInstituteFilter.replace('WHERE ', '')}` : ''} LIMIT 50`,
+
+    'show leave types': `SELECT id, name, description FROM hrms_leave_type${subInstituteFilter} LIMIT 50`,
+    'list leave types': `SELECT id, name, description FROM hrms_leave_type${subInstituteFilter} LIMIT 50`,
+
+    'show holidays': `SELECT date, name, description FROM hrms_holiday${subInstituteFilter} LIMIT 50`,
+    'list holidays': `SELECT date, name, description FROM hrms_holiday${subInstituteFilter} LIMIT 50`
+  };
+
+  // Check for exact matches first
+  if (exactMatches[lowerQuery]) {
+    return exactMatches[lowerQuery];
+  }
+
+  // Pattern-based matching for flexibility (only for tables that exist)
+  // Skills queries
+  if (lowerQuery.includes('skill') && (lowerQuery.includes('available') || lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('what'))) {
+    return `SELECT name, category FROM skill_library${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Users queries
+  if (lowerQuery.includes('user') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT id, name, email FROM tbluser${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Departments queries
+  if (lowerQuery.includes('department') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT name, description, status FROM hrms_departments${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Job roles queries
+  if (lowerQuery.includes('job role') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT id, name, description FROM jobroleOccupation${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Industries queries
+  if (lowerQuery.includes('industr') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT id, name FROM s_industries${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Standards queries
+  if (lowerQuery.includes('standard') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT id, name FROM standard${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Sections queries
+  if (lowerQuery.includes('section') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT id, name FROM academic_section${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Subjects queries
+  if (lowerQuery.includes('subject') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT id, name FROM subject_master${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Questions queries
+  if (lowerQuery.includes('question') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT id, question_text FROM question_master${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Menus queries
+  if (lowerQuery.includes('menu') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT id, name FROM tblmenumaster${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Attendance queries
+  if (lowerQuery.includes('attendance') && (lowerQuery.includes('record') || lowerQuery.includes('show') || lowerQuery.includes('my'))) {
+    return `SELECT date, status, check_in_time, check_out_time FROM hrms_attendance WHERE user_id = CURRENT_USER()${subInstituteFilter ? ` AND ${subInstituteFilter.replace('WHERE ', '')}` : ''} LIMIT 50`;
+  }
+
+  // Leave types queries
+  if (lowerQuery.includes('leave type') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT id, name, description FROM hrms_leave_type${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Holidays queries
+  if (lowerQuery.includes('holiday') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
+    return `SELECT date, name, description FROM hrms_holiday${subInstituteFilter} LIMIT 50`;
+  }
+
+  // Final fallback - try to match keywords to working queries
+  if (lowerQuery.includes('user') && (lowerQuery.includes('show') || lowerQuery.includes('list') || lowerQuery.includes('all'))) {
+    console.log('Fallback: matched user query');
+    return `SELECT id, name, email FROM tbluser${subInstituteFilter} LIMIT 50`;
+  }
+
+  if (lowerQuery.includes('department') && (lowerQuery.includes('show') || lowerQuery.includes('list'))) {
+    console.log('Fallback: matched department query');
+    return `SELECT name, description, status FROM hrms_departments${subInstituteFilter} LIMIT 50`;
+  }
+
+  if (lowerQuery.includes('job role') && (lowerQuery.includes('show') || lowerQuery.includes('list'))) {
+    console.log('Fallback: matched job role query');
+    return `SELECT id, name, description FROM jobroleOccupation${subInstituteFilter} LIMIT 50`;
+  }
+
+  console.log(`No predefined SQL match found for: "${lowerQuery}"`);
+  return null;
+}
+
 export async function handleChatRequest(request: ChatRequest): Promise<ChatResponse> {
   if (request.debugMode) {
     enableDebugMode();
@@ -1048,6 +2764,47 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
       return handleCreateJobDescriptionAction(request, { userId: anonymousId, role: request.role }, conversationId);
     }
 
+    // === HRMS Routing ===
+    if (intent.intent.startsWith('HRMS_')) {
+      return handleHRMSRequest(request, intent.intent, conversationId, entities);
+    }
+
+    // === LMS Routing ===
+    if (intent.intent.startsWith('LMS_')) {
+      return handleLMSRequest(request, intent.intent, conversationId, entities);
+    }
+
+    // === Skills and Job Roles Routing ===
+    if (['SKILLS_FETCH', 'SKILL_CREATE', 'SKILL_CATEGORIES_FETCH', 'SKILL_KNOWLEDGE_ABILITIES_FETCH',
+         'SKILL_PROFICIENCY_LEVELS_FETCH', 'SKILL_ATTRIBUTES_ADD', 'JOB_ROLES_FETCH', 'JOB_ROLE_CREATE',
+         'JOB_ROLE_UPDATE', 'JOB_ROLE_DELETE', 'JOB_ROLE_SKILLS_FETCH', 'JOB_ROLE_SKILL_CREATE',
+         'JOB_ROLE_TASKS_FETCH', 'JOB_ROLE_TASK_CREATE'].includes(intent.intent)) {
+      return handleSkillsAndJobRolesRequest(request, intent.intent, conversationId, entities);
+    }
+
+    // === Organization and Industries Routing ===
+    if (['USER_JOB_ROLES_FETCH', 'INDUSTRIES_FETCH', 'DEPARTMENT_MASTER_FETCH', 'NEO_INDUSTRIES_FETCH',
+         'DEPARTMENTS_FOR_INDUSTRY_FETCH', 'JOB_ROLES_FOR_DEPARTMENT_FETCH', 'SKILLS_FOR_JOB_ROLE_FETCH'].includes(intent.intent)) {
+      return handleOrganizationAndIndustriesRequest(request, intent.intent, conversationId, entities);
+    }
+
+    // === Reports and Misc Routing ===
+    if (['TASK_ANALYSIS_REPORT_FETCH', 'EMPLOYEE_REPORT_FETCH', 'ORGANIZATION_DASHBOARD_FETCH',
+         'DASHBOARD_FETCH', 'COMPLIANCE_LIST_FETCH', 'COMPLIANCE_CREATE', 'COMPLIANCE_UPDATE',
+         'COMPLIANCE_DELETE', 'JOB_POSTINGS_FETCH', 'JOB_POSTING_CREATE', 'JOB_POSTING_UPDATE'].includes(intent.intent)) {
+      return handleReportsAndMiscRequest(request, intent.intent, conversationId, entities);
+    }
+
+    // === General/Academic Routing ===
+    if (['STANDARDS_FETCH', 'SECTIONS_FETCH', 'SUBJECTS_FETCH', 'QUESTIONS_FETCH', 'MENUS_FETCH'].includes(intent.intent)) {
+      return handleGeneralAndAcademicRequest(request, intent.intent, conversationId, entities);
+    }
+
+    // === AI and Auth Routing ===
+    if (['GEMINI_CHAT', 'AI_COURSE_GENERATE', 'GAMMA_CONTENT_FETCH', 'FORGET_PASSWORD', 'RESET_PASSWORD'].includes(intent.intent)) {
+      return handleAIAndAuthRequest(request, intent.intent, conversationId, entities);
+    }
+
     if (shouldRouteToAction(intent.intent)) {
       const actionResponse = {
         answer: `I detected this might be a ${intent.intent} request. For actions and support requests, please contact a support representative or escalate this conversation.`,
@@ -1067,23 +2824,140 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
     let results: any[] = [];
     let answer = '';
 
+    // Check for simple predefined queries to avoid AI generation
+    const predefinedSQL = getPredefinedSQL(request.query, request.subInstituteId);
+    const isPredefined = !!predefinedSQL;
+
+    // Check if this should use direct API endpoint instead of SQL
+    const lowerQuery = request.query.toLowerCase().trim();
+    const apiEndpointConfig = apiEndpointQueries[lowerQuery];
+
+    if (apiEndpointConfig) {
+      // Route to appropriate handler based on API key
+      if (apiEndpointConfig.apiKey === 'course_master') {
+        return handleLMSRequest(request, 'LMS_COURSES_FETCH', conversationId, {});
+      }
+      if (apiEndpointConfig.apiKey === 'chapter_master') {
+        return handleLMSRequest(request, 'LMS_MODULES_FETCH', conversationId, {});
+      }
+      if (apiEndpointConfig.apiKey === 'content_master') {
+        return handleLMSRequest(request, 'LMS_CONTENT_FETCH', conversationId, {});
+      }
+      if (apiEndpointConfig.apiKey === 'question_chapter_master') {
+        return handleLMSRequest(request, 'LMS_QUESTION_CHAPTERS_FETCH', conversationId, {});
+      }
+      if (apiEndpointConfig.apiKey === 'online_exam') {
+        return handleLMSRequest(request, 'LMS_EXAMS_FETCH', conversationId, {});
+      }
+    }
+
+    if (predefinedSQL) {
+      sql = predefinedSQL;
+    }
+
     while (attempt < maxAttempts) {
       attempt++;
       try {
         const startTime = Date.now();
-        sql = await generateSQL(request.query, history);
+
+        if (!sql) {
+          // Check if we should disable AI due to low credits
+          if (DISABLE_AI_LOW_CREDITS) {
+            return {
+              answer: `I'm currently operating in low-credit mode and can only process predefined queries. Here are some queries I can help with:
+
+• "show me all users" - View all users
+• "show departments" - List departments
+• "show job roles" - View job roles
+• "show industries" - List industries
+• "show standards" - View academic standards
+• "show sections" - List academic sections
+• "show subjects" - List academic subjects
+• "show questions" - View question bank
+• "show attendance records" - View your attendance
+• "show leave types" - List leave categories
+
+Please try one of these queries, or contact support to restore full AI functionality.`,
+              conversationId,
+              intent: intent.intent,
+              error: 'AI_DISABLED_LOW_CREDITS',
+              recoverable: true,
+              suggestion: 'Try using one of the predefined queries above.',
+              canEscalate: true,
+              querySuggestions: getIntentQuerySuggestions(intent.intent)
+            };
+          }
+
+          try {
+            sql = await generateSQL(request.query, history, request.subInstituteId);
+          } catch (aiError: any) {
+            // If AI generation fails due to credits, provide helpful fallback
+            if (aiError.message && aiError.message.includes('credits')) {
+              return {
+                answer: `I'm sorry, but I don't have enough AI credits to process complex queries right now. However, I can help with these common requests that don't require AI processing:
+
+• "show me all users" - View all users
+• "show departments" - List departments
+• "show job roles" - View job roles
+• "show industries" - List industries
+• "show standards" - View academic standards
+• "show sections" - List academic sections
+
+Please try one of these queries, or contact support to upgrade your AI credits.`,
+                conversationId,
+                intent,
+                error: 'INSUFFICIENT_AI_CREDITS',
+                recoverable: true,
+                suggestion: 'Try using one of the predefined queries above, or upgrade AI credits.',
+                canEscalate: true,
+                querySuggestions: getIntentQuerySuggestions(intent)
+              };
+            }
+            throw aiError;
+          }
+        }
         const genTime = Date.now() - startTime;
 
         if (!validateSQL(sql)) {
           throw new Error('SQL validation failed - contains dangerous keywords');
         }
 
-        results = await executeSQLQuery(sql, request.query);
-        const execTime = Date.now() - startTime;
+        try {
+          results = await executeSQLQuery(sql, request.query);
+          const execTime = Date.now() - startTime;
 
-        await logQuery(conversationId, 'data_retrieval', sql, execTime, true);
+          await logQuery(conversationId, 'data_retrieval', sql, execTime, true);
+        } catch (sqlError) {
+          console.error('SQL execution failed:', sqlError);
+          // If predefined SQL fails, try to generate SQL with AI as fallback
+          if (isPredefined) {
+            console.log('Predefined SQL failed, trying AI generation as fallback');
+            sql = await generateSQL(request.query, history, request.subInstituteId);
+            results = await executeSQLQuery(sql, request.query);
+            const execTime = Date.now() - startTime;
+            await logQuery(conversationId, 'data_retrieval', sql, execTime, true);
+          } else {
+            throw sqlError;
+          }
+        }
 
-        answer = await generateInsights(request.query, sql, results);
+        if (isPredefined && !sql.includes('generateSQL')) {
+          // For predefined queries that didn't fall back to AI, create simple answer
+          answer = `Found ${results.length} result(s).`;
+        } else {
+          try {
+            answer = await generateInsights(request.query, sql, results);
+          } catch (insightsError: any) {
+            console.error('Insights generation failed:', insightsError);
+            // Check if it's a credit issue
+            if (insightsError.message && insightsError.message.includes('credits')) {
+              answer = `Found ${results.length} result(s) matching your query. (Note: AI insights unavailable due to low credits)`;
+            } else {
+              // Fallback to simple answer if insights generation fails
+              answer = `Found ${results.length} result(s) matching your query.`;
+            }
+          }
+        }
 
         const tables = extractTablesFromSQL(sql);
 
@@ -1098,7 +2972,7 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
         );
 
         if (debugModeEnabled) {
-          const trace = formatDebugTrace(intent.intent, sql, execTime, results);
+          const trace = formatDebugTrace(intent.intent, sql, genTime, results);
           console.log(trace);
         }
 
@@ -1109,6 +2983,8 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
           sql,
           tables_used: tables,
           insights: `Found ${results.length} result(s)`,
+          data: results, // Include the actual data for ResponseRenderer
+          query: request.query, // Include the original query for ResponseRenderer
           canEscalate: true
         };
       } catch (error) {
@@ -1156,7 +3032,7 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
     );
     if (!shouldUseFallback(intent.intent)) {
       const errorDetails = `Intent: ${intent.intent}, Confidence: ${intent.confidence}, Reasoning: ${intent.reasoning}`;
-      const errorMessage = `An unexpected error occurred. Details: ${errorDetails}`;
+      const errorMessage = `I'm sorry, I couldn't process your request right now. Please try rephrasing your question or contact support if the issue persists.`;
 
       await saveMessage(
         conversationId,
@@ -1174,14 +3050,17 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
         conversationId,
         intent: intent.intent,
         error: 'UNKNOWN',
-        recoverable: false,
-        suggestion: 'Please contact support with the above details.',
-        canEscalate: true
+        recoverable: true,
+        suggestion: 'Please try rephrasing your question in simpler terms.',
+        canEscalate: true,
+        querySuggestions: getIntentQuerySuggestions(intent.intent)
       };
     }
     if (shouldUseFallback(intent.intent)) {
       try {
-        const fallbackMessages = request.conversationHistory ? [...request.conversationHistory] : [];
+        // Limit conversation history to last 5 messages to avoid huge prompts
+        const fallbackMessages = request.conversationHistory ?
+          request.conversationHistory.slice(-5) : [];
         fallbackMessages.push({ role: 'user', content: request.query });
 
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -1232,6 +3111,11 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
 }
 
 async function ensureConversation(request: ChatRequest): Promise<string> {
+  if (!supabaseEnabled) {
+    // Return sessionId as fallback when Supabase is not enabled
+    return request.sessionId;
+  }
+
   const existingConv = await getConversationBySessionId(request.sessionId);
 
   if (existingConv) {
@@ -2387,4 +4271,3 @@ function getFallbackSuggestions(module: string): { suggestions: string[]; module
     module
   };
 }
-
