@@ -1,12 +1,14 @@
 //
 "use client"
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Users, Database, Loader2, ThumbsUp, ThumbsDown, X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff, ChevronDown, FileText, Target, Wrench, BookOpen, Zap, Heart, Smile, CheckCircle, Save, TrendingUp, Mail, Briefcase } from 'lucide-react';
+import { Send, Bot, User, Users,Database, Loader2, ThumbsUp, ThumbsDown,X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff, ChevronDown, FileText, Target, Wrench, BookOpen, Zap, Heart, Smile, CheckCircle, Save, TrendingUp, Mail, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { submitFeedback } from "@/lib1/feedback-service";
 import SkillGapReport from "@/components/users/SkillGapReport";
 import { v4 as uuidv4 } from 'uuid';
+import ResponseRenderer from "@/components/flow/ResponseRenderer";
+import { createIntelligentQueryResponse } from "@/lib1/structured-response";
 
 // Question suggestions for different LMS modules (based on URL path)
 const moduleSuggestions: Record<string, string[]> = {
@@ -68,6 +70,7 @@ interface Message {
     intent?: string;
     action?: string;
     missingFields?: string[];
+    data?: any[]; // For structured data responses
     entities?: {
       industry?: string;
       jobRole?: string;
@@ -228,7 +231,7 @@ function parseMockEmployeeRecords(content: string): MockEmployeeRecord[] {
     return parsedFromBlocks;
   }
 
-  const lineMatches = [...normalizedContent.matchAll(/name\s*:\s*(.+?)\s*(?:\n|$).*?role\s*:\s*(.+?)\s*(?:\n|$).*?email\s*:\s*(.+?)\s*(?:\n|$).*?occupation\s*:\s*(.+?)\s*(?:\n|$)/gis)];
+  const lineMatches = [...normalizedContent.matchAll(/name\s*:\s*(.+?)\s*(?:\n|$).*?role\s*:\s*(.+?)\s*(?:\n|$).*?email\s*:\s*(.+?)\s*(?:\n|$).*?occupation\s*:\s*(.+?)\s*(?:\n|$)/g)];
 
   return lineMatches.map((match) => ({
     name: match[1].trim(),
@@ -361,6 +364,58 @@ export default function ChatbotCopilot({
   apiEndpoint = '/api/chat',
   userId,
 }: ChatbotCopilotProps) {
+  const getSavedQueryFallbackMetadata = (query?: string) => {
+    const normalizedQuery = (query || '').toLowerCase().trim();
+
+    const savedQueryMap: Record<string, { sql: string; tablesUsed: string[] }> = {
+      'show all courses': {
+        sql: 'SELECT display_name, subject_category FROM course_master WHERE sub_institute_id = CURRENT_SUB_INSTITUTE() LIMIT 50',
+        tablesUsed: ['course_master'],
+      },
+      'show attendance records': {
+        sql: 'SELECT date, status, check_in_time, check_out_time FROM hrms_attendance WHERE user_id = CURRENT_USER() AND sub_institute_id = CURRENT_SUB_INSTITUTE() LIMIT 50',
+        tablesUsed: ['hrms_attendance'],
+      },
+      'show leave types': {
+        sql: 'SELECT id, name, description FROM hrms_leave_type WHERE sub_institute_id = CURRENT_SUB_INSTITUTE() LIMIT 50',
+        tablesUsed: ['hrms_leave_type'],
+      },
+      'show leave summary report': {
+        sql: 'SELECT * FROM hrms_leave_summary_report WHERE sub_institute_id = CURRENT_SUB_INSTITUTE() LIMIT 50',
+        tablesUsed: ['hrms_leave_summary_report'],
+      },
+      'show holidays': {
+        sql: 'SELECT date, name, description FROM hrms_holiday WHERE sub_institute_id = CURRENT_SUB_INSTITUTE() LIMIT 50',
+        tablesUsed: ['hrms_holiday'],
+      },
+    };
+
+    return savedQueryMap[normalizedQuery];
+  };
+
+  const ensureSummaryBlock = (structuredResponse: any, content?: string) => {
+    if (!structuredResponse?.blocks || !Array.isArray(structuredResponse.blocks)) {
+      return structuredResponse;
+    }
+
+    const hasTextBlock = structuredResponse.blocks.some((block: any) => block?.type === 'text');
+    if (hasTextBlock || !content) {
+      return structuredResponse;
+    }
+
+    return {
+      ...structuredResponse,
+      blocks: [
+        {
+          type: 'text',
+          title: 'Text',
+          content,
+        },
+        ...structuredResponse.blocks,
+      ],
+    };
+  };
+
   const hasStructuredBotLayout = (message: Message) => {
     if (message.type !== 'bot') {
       return false;
@@ -370,10 +425,19 @@ export default function ChatbotCopilot({
 
     return Boolean(
       mockEmployeeRecords.length > 0 ||
+      (message.metadata?.data && Array.isArray(message.metadata.data)) ||
+      (message.metadata?.data?.blocks && Array.isArray(message.metadata.data.blocks)) ||
       (message.metadata?.action === 'SHOW_SKILL_GAP_REPORT' && message.metadata?.skillGapReportData) ||
       (message.metadata?.action === 'SHOW_COURSE_RECOMMENDATIONS' && message.metadata?.courseRecommendations?.length) ||
       (message.metadata?.action === 'SHOW_GENERATED_PROFILE' && message.metadata?.generatedProfile)
     );
+  };
+
+  const handleQuerySuggestion = (action: string, value?: any) => {
+    if (action === 'query_suggestion' && value) {
+      // Submit the suggested query as a new message
+      handleSubmit({ preventDefault: () => {} } as any, value);
+    }
   };
 
   const renderBotMessageContent = (message: Message) => {
@@ -399,9 +463,110 @@ export default function ChatbotCopilot({
       return <span></span>;
     }
 
+    // Use the central UI system (ResponseRenderer) for mock queries
     if (mockEmployeeRecords.length > 0) {
-      return <MockQueryResultCards records={mockEmployeeRecords} />;
+      try {
+        // Create structured response using the intelligent query system
+        const structuredResponse = createIntelligentQueryResponse(
+          "Show employee data",
+          mockEmployeeRecords
+        );
+
+        // Check if response has blocks
+        if (!structuredResponse.blocks || structuredResponse.blocks.length === 0) {
+          throw new Error('No blocks in structured response');
+        }
+
+        // Use the central ResponseRenderer
+        return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} sql={message.metadata?.sql} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
+      } catch (error) {
+        console.error('ResponseRenderer error for mock query:', error);
+        // Fallback to the existing system
+        return <MockQueryResultCards records={mockEmployeeRecords} />;
+      }
     }
+
+    // Use ResponseRenderer for structured responses with blocks
+    if (message.metadata?.data && message.metadata.data.blocks && Array.isArray(message.metadata.data.blocks)) {
+      try {
+        // Use the structured response directly
+        const structuredResponse = ensureSummaryBlock(message.metadata.data, message.content);
+
+        // Check if response has blocks
+        if (!structuredResponse.blocks || structuredResponse.blocks.length === 0) {
+          throw new Error('No blocks in structured response');
+        }
+
+        // Use the central ResponseRenderer
+        return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} sql={message.metadata?.sql} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
+      } catch (error) {
+        console.error('ResponseRenderer error for structured response:', error);
+        // Continue to check for array data below
+      }
+    }
+
+    // Use ResponseRenderer for any response that contains array data
+    if (message.metadata?.data && Array.isArray(message.metadata.data)) {
+      try {
+        // Create structured response using the intelligent query system
+        const query = message.metadata.query || message.content; // Use the original query text
+        const structuredResponse = createIntelligentQueryResponse(
+          query,
+          message.metadata.data
+        );
+
+        // Check if response has blocks
+        if (!structuredResponse.blocks || structuredResponse.blocks.length === 0) {
+          throw new Error('No blocks in structured response');
+        }
+
+        // Use the central ResponseRenderer
+        return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} sql={message.metadata?.sql} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
+      } catch (error) {
+        console.error('ResponseRenderer error for API data:', error);
+        // Fallback to simple table display
+        const data = message.metadata.data;
+        if (data.length > 0) {
+          const columns = Object.keys(data[0]).map(key => ({ key, label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }));
+          return (
+            <div className="bg-white rounded-lg border overflow-hidden">
+              <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {columns.map(col => (
+                        <th key={col.key} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          {col.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {data.slice(0, 50).map((row: any, index: number) => (
+                      <tr key={index}>
+                        {columns.map(col => (
+                          <td key={col.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {row[col.key] !== null ? String(row[col.key]) : '-'}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {data.length > 50 && (
+                <div className="px-6 py-3 bg-gray-50 text-sm text-gray-700">
+                  Showing first 50 of {data.length} results
+                </div>
+              )}
+            </div>
+          );
+        }
+        return message.content;
+      }
+    }
+
+
 
     return message.content;
   };
@@ -425,6 +590,7 @@ export default function ChatbotCopilot({
   const [conversationId, setConversationId] = useState<string>();
   const [showEscalationModal, setShowEscalationModal] = useState(false);
   const [feedbackState, setFeedbackState] = useState<{ messageId: string; rating: 1 | -1 } | null>(null);
+  const [expandedSqlMessages, setExpandedSqlMessages] = useState<Record<string, boolean>>({});
   const [isListening, setIsListening] = useState(false);
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
   const [isPanelExpanded, setIsPanelExpanded] = useState(false);
@@ -690,6 +856,13 @@ const [sessionData, setSessionData] = useState({
     } catch (error) {
       console.error('Error submitting feedback:', error);
     }
+  };
+
+  const toggleSqlMessage = (messageId: string) => {
+    setExpandedSqlMessages((prev) => ({
+      ...prev,
+      [messageId]: !prev[messageId],
+    }));
   };
 
   // Phase 3: Form handling functions
@@ -1069,6 +1242,9 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
 
     try {
       console.log('[ChatbotCopilot] Sending request with userId:', userId, 'subInstituteId:', subInstituteId);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -1083,14 +1259,17 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
           })),
           userId,
           subInstituteId
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Failed to get response');
       }
 
       const data = await response.json();
+      const fallbackMetadata = getSavedQueryFallbackMetadata(data.query || userMessage.content);
 
       const botMessage: Message = {
         id: data.id || uuidv4(),
@@ -1099,13 +1278,15 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
         timestamp: new Date(),
         conversationId: data.conversationId,
         metadata: {
-          sql: data.sql,
-          tablesUsed: data.tables_used,
+          sql: data.sql || fallbackMetadata?.sql,
+          tablesUsed: data.tables_used?.length ? data.tables_used : fallbackMetadata?.tablesUsed,
           insights: data.insights,
           canEscalate: data.canEscalate,
           action: data.action,
           missingFields: data.missingFields,
           entities: data.entities,
+          data: data.data, // Include the data for ResponseRenderer
+          query: data.query, // Include the original query for ResponseRenderer
           // Skill Gap Analysis fields
           selectionOptions: data.selectionOptions,
           stepLabel: data.stepLabel,
@@ -1122,10 +1303,14 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
       setMessages(prev => [...prev, botMessage]);
 
     } catch (error) {
+      console.error('[ChatbotCopilot] Fetch error:', error);
+      const isTimeout = error instanceof Error && error.name === 'AbortError';
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: 'Sorry, I encountered an error while processing your request. Please check your connection and try again.',
+        content: isTimeout
+          ? 'The request timed out. Please try again or contact support if the issue persists.'
+          : 'Sorry, I encountered an error while processing your request. Please check your connection and try again.',
         timestamp: new Date(),
         metadata: {
           canEscalate: true
@@ -2915,7 +3100,7 @@ ${skillsList}
                     .finally(() => {
                       setIsLoading(false);
                     });
-                  } else if (currentStep === 'skills') {
+                  } else if (currentStep === 'skill_rating') {
                     // When user selects a skill, trigger the rating prompt flow
                     console.log('[SkillGapSelection] Skills selected - triggering rating prompt');
                     // Update state and call API
@@ -3746,10 +3931,10 @@ ${skillsList}
 
                   {/* Message Content */}
                   <div
-                    className={`flex min-w-0 flex-col gap-1 ${message.type === "user"
-                      ? "items-end max-w-[75%] sm:max-w-[80%] md:max-w-[85%]"
-                      : "flex-1 items-start max-w-full"
-                      }`}
+                  className={`flex min-w-0 flex-col gap-1 ${message.type === "user"
+                    ? "items-end max-w-[75%] sm:max-w-[80%] md:max-w-[85%]"
+                    : "flex-1 items-start max-w-full"
+                  }`}
                   >
                     <div
                       className={`max-w-full text-sm ${message.type === "user"
@@ -3777,46 +3962,57 @@ ${skillsList}
                       </div>
                     )}
 
-                    {message.metadata?.sql && (
-                      <details className="w-full text-sm cursor-pointer group">
-                        <summary className="hover:text-blue-600 font-medium text-gray-600 list-none flex items-center gap-2 transition-colors">
-                          <Database className="w-4 h-4" />
-                          View SQL Query
-                          <span className="text-xs text-gray-400 group-hover:text-blue-400">▾</span>
-                        </summary>
-                        <div className="mt-3 p-4 bg-gray-900 text-green-400 rounded-xl overflow-x-auto border border-gray-700 shadow-lg">
-                          <pre className="text-xs font-mono leading-relaxed">
-                            {formatSQL(message.metadata.sql)}
-                          </pre>
-                        </div>
-                      </details>
+                    {message.type === 'bot' && message.metadata?.sql && (
+                      <div className="mt-1 flex w-full flex-col items-start gap-2">
+                        <button
+                          onClick={() => toggleSqlMessage(message.id)}
+                          className="inline-flex items-center gap-2 text-[13px] font-medium text-gray-600 transition-colors hover:text-gray-800"
+                        >
+                          <Database className="h-4 w-4 text-gray-500" />
+                          <span>View SQL Query</span>
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 text-gray-400 transition-transform ${
+                              expandedSqlMessages[message.id] ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+
+                        {expandedSqlMessages[message.id] && (
+                          <div className="w-full max-w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-900 shadow-sm">
+                            <pre className="overflow-x-auto p-3 text-xs text-gray-100 whitespace-pre-wrap break-words">
+                              {message.metadata.sql}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
                     )}
 
-
-                    {message.type === 'bot' && message.metadata?.canEscalate && (
-                      <div className="flex gap-2 pt-1">
+                    {message.type === 'bot' && message.id !== '1' && (
+                      <div className="mt-1 flex items-center gap-3 px-1">
                         <button
                           onClick={() => handleFeedback(message.id, 1)}
-                          className="p-1.5 rounded-full hover:bg-green-100 transition-colors"
+                          className={`transition-colors ${
+                            feedbackMessage === message.id && feedbackState?.rating === 1
+                              ? 'text-green-600'
+                              : 'text-gray-400 hover:text-gray-600'
+                          }`}
+                          aria-label="Helpful"
                           title="Helpful"
                         >
-                          <ThumbsUp className={`w-4 h-4 ${feedbackMessage === message.id && feedbackState?.rating === 1 ? 'text-green-600' : 'text-gray-400'}`} />
+                          <ThumbsUp className="h-5 w-5" />
                         </button>
                         <button
                           onClick={() => handleFeedback(message.id, -1)}
-                          className="p-1.5 rounded-full hover:bg-red-100 transition-colors"
+                          className={`transition-colors ${
+                            feedbackMessage === message.id && feedbackState?.rating === -1
+                              ? 'text-red-600'
+                              : 'text-gray-400 hover:text-gray-600'
+                          }`}
+                          aria-label="Not helpful"
                           title="Not helpful"
                         >
-                          <ThumbsDown className={`w-4 h-4 ${feedbackMessage === message.id && feedbackState?.rating === -1 ? 'text-red-600' : 'text-gray-400'}`} />
+                          <ThumbsDown className="h-5 w-5" />
                         </button>
-                        {!conversationId && userId && (
-                          <button
-                            onClick={() => setShowEscalationModal(true)}
-                            className="ml-auto px-2 py-1 rounded-full text-xs bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors"
-                          >
-                            Escalate
-                          </button>
-                        )}
                       </div>
                     )}
 

@@ -55,6 +55,15 @@ export async function getUserRole(userId: string): Promise<UserRole> {
 }
 
 export async function getRoleContext(userId: string): Promise<RoleContext> {
+  if (!process.env.SUPABASE_URL || process.env.SUPABASE_URL === 'rlqosgegreuvzwbntflq.supabase.co') {
+    // Return default role when Supabase is not configured
+    return {
+      userId,
+      role: 'user',
+      permissions: rolePermissions['user']
+    };
+  }
+
   const role = await getUserRole(userId);
 
   return {
