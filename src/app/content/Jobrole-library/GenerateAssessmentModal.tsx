@@ -550,7 +550,7 @@ export default function GenerateAssessmentModal({
     console.log("Assessment payload question_ids:", finalQuestionIds.join(','));
     // console.log("Assessment payload questionmaster_id:", finalQuestionMasterId);
     console.log("Full assessment store payload:", payload);
-    alert("Assessment Store Payload:\n" + JSON.stringify(payload, null, 2));
+    // alert("Assessment Store Payload:\n" + JSON.stringify(payload, null, 2));
 
     try {
       setLoading(true);
