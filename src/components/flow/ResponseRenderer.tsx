@@ -225,7 +225,6 @@ import {
   StepsBlock,
   ListBlock,
   QuerySuggestionsBlock,
-  QuerySuggestionItem,
   UIBlockType,
   StructuredResponse
 } from '@/types/flow-output';
@@ -858,7 +857,7 @@ function QuerySuggestionsBlockRenderer({
   onAction,
   className = ''
 }: {
-  suggestions: QuerySuggestionItem[];
+  suggestions: string[];
   onAction?: (action: string, value?: any) => void;
   className?: string;
 }) {
@@ -880,15 +879,12 @@ function QuerySuggestionsBlockRenderer({
           <div
             key={index}
             className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group"
-            onClick={() => onAction?.('query_suggestion', suggestion.text)}
+            onClick={() => onAction?.('query_suggestion', suggestion)}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <div className="font-medium text-gray-900 mb-1">
-                  {suggestion.text}
-                </div>
-                <div className="text-sm text-gray-600">
-                  {suggestion.description}
+                <div className="font-medium text-gray-900">
+                  {suggestion}
                 </div>
               </div>
               <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0 mt-1" />
