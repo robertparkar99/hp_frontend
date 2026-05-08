@@ -198,7 +198,7 @@ export default function GenerateAssessmentModal({
   };
 
   const getDomainCategory = (typeName: string): string => {
-    return domainCategoryMap[typeName] || "";
+    return domainCategoryMap[typeName?.trim()] || "General";
   };
 
   const toggleQuestion = (id: number) => {
@@ -255,7 +255,7 @@ export default function GenerateAssessmentModal({
             fetchMappingReason(value as number).then(reason => {
               setMappings(prev => prev.map((m, i) => i === index ? { ...m, reason } : m));
             });
-            const domainCat = getDomainCategory(selectedType.name);
+            const domainCat = getDomainCategory(selectedType.name?.trim());
             return { ...mapping, typeId: value as number, typeName: selectedType.name, valueId: 0, valueName: "", reason: "", domainCategory: domainCat };
           }
         } else if (field === 'valueId') {
@@ -292,6 +292,13 @@ export default function GenerateAssessmentModal({
 
     try {
       console.log("Making fetch to /api/generate-questions");
+
+      const updatedMappings = mappings.map((m) => ({
+        ...m,
+        typeName: m.typeName?.trim(),
+        domainCategory: getDomainCategory(m.typeName),
+      }));
+
       const res = await fetch(`${sessionData.url}/api/gemini/generate-questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -300,7 +307,7 @@ export default function GenerateAssessmentModal({
           question_type: "multiple",
           // difficultyLevel: "intermediate",
           questionCount: questionCount,
-          mappings: mappings,
+          mappings: updatedMappings,
           data: data,
           sessionData: sessionData,
         }),
@@ -496,7 +503,7 @@ export default function GenerateAssessmentModal({
     console.log("finalQuestionIds:", finalQuestionIds);
 
     // Build mappings object per question
-    const questionMappings: { [key: string]: { mapping_type_id: number; mapping_value_id: number; reasons: string }[] } = {};
+    const questionMappings: { [key: string]: { mapping_type_id: number; mapping_value_id: number; reasons: string; domainCategory: string }[] } = {};
     let questionIndex = 0;
     mappings.forEach(mapping => {
       for (let i = 0; i < mapping.questionCount && questionIndex < finalQuestionIds.length; i++) {
@@ -507,7 +514,8 @@ export default function GenerateAssessmentModal({
         questionMappings[qId].push({
           mapping_type_id: mapping.typeId,
           mapping_value_id: mapping.valueId,
-          reasons: mapping.reason
+          reasons: mapping.reason,
+          domainCategory: mapping.domainCategory
         });
         questionIndex++;
       }
