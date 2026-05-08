@@ -203,6 +203,141 @@ function getEmailDomain(email: string) {
   return email.split('@')[1] || 'unknown';
 }
 
+// Helper functions for generating dynamic suggestions
+function getQuestionType(query: string): string {
+  const lower = query.toLowerCase().trim();
+  if (lower.startsWith('how')) return 'how';
+  if (lower.startsWith('what')) return 'what';
+  if (lower.startsWith('who')) return 'who';
+  if (lower.startsWith('when')) return 'when';
+  if (lower.startsWith('where')) return 'where';
+  if (lower.startsWith('why')) return 'why';
+  return 'general';
+}
+
+function extractSubject(query: string, type: string): string {
+  const lower = query.toLowerCase();
+  const starters: Record<string, string[]> = {
+    how: ['how do i', 'how to', 'how does', 'how can i', 'how many', 'how much'],
+    what: ['what is', 'what are', 'what do', 'what does'],
+    who: ['who is', 'who are', 'who does'],
+    when: ['when is', 'when are', 'when do', 'when does'],
+    where: ['where is', 'where are', 'where do', 'where does'],
+    why: ['why is', 'why are', 'why do', 'why does'],
+    general: []
+  };
+  const prefixes = starters[type] || [];
+  for (const prefix of prefixes) {
+    if (lower.startsWith(prefix)) {
+      const subject = query.slice(prefix.length).trim();
+      return cleanSubject(subject);
+    }
+  }
+  return cleanSubject(query);
+}
+
+function cleanSubject(subject: string): string {
+  const stopWords = new Set(['the', 'a', 'an', 'is', 'are', 'do', 'does', 'can', 'will', 'have', 'has', 'there', 'here', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'this', 'that', 'these', 'those']);
+  const words = subject.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(word => word.length > 2 && !stopWords.has(word));
+  return words.slice(0, 2).join(' ') || 'this';
+}
+
+function getRelatedTypes(type: string): string[] {
+  const map: Record<string, string[]> = {
+    how: ['what', 'why', 'when'],
+    what: ['how', 'why', 'when'],
+    who: ['when', 'how', 'what'],
+    when: ['how', 'why', 'what'],
+    where: ['how', 'why', 'what'],
+    why: ['how', 'what', 'when'],
+    general: ['how', 'what', 'why']
+  };
+  return map[type] || ['how', 'what', 'why'];
+}
+
+function getTemplate(type: string, originalType: string): string {
+  const templates: Record<string, Record<string, string>> = {
+    how: {
+      fromHow: "What is the process for [subject]?",
+      fromWhat: "How do I find [subject]?",
+      fromWho: "How did [subject] happen?",
+      fromWhen: "How can I [subject]?",
+      fromWhere: "How do I get to [subject]?",
+      fromWhy: "How does [subject] work?",
+      fromGeneral: "How can I [subject]?"
+    },
+    what: {
+      fromHow: "What are the [subject]?",
+      fromWhat: "What are the details of [subject]?",
+      fromWho: "What did [subject] do?",
+      fromWhen: "What happens with [subject]?",
+      fromWhere: "What is at [subject]?",
+      fromWhy: "What are the reasons for [subject]?",
+      fromGeneral: "What is [subject]?"
+    },
+    why: {
+      fromHow: "Why are there [subject]?",
+      fromWhat: "Why is [subject] important?",
+      fromWho: "Why did [subject] do that?",
+      fromWhen: "Why does [subject] happen then?",
+      fromWhere: "Why is [subject] there?",
+      fromWhy: "Why is that the case for [subject]?",
+      fromGeneral: "Why should I care about [subject]?"
+    },
+    when: {
+      fromHow: "When were [subject] discovered?",
+      fromWhat: "When does [subject] occur?",
+      fromWho: "When did [subject] do that?",
+      fromWhen: "When is the best time for [subject]?",
+      fromWhere: "When can I visit [subject]?",
+      fromWhy: "When did [subject] become important?",
+      fromGeneral: "When is [subject]?"
+    }
+  };
+  const typeTemplates = templates[type];
+  if (typeTemplates) {
+    const key = 'from' + originalType.charAt(0).toUpperCase() + originalType.slice(1);
+    return typeTemplates[key] || typeTemplates.fromGeneral;
+  }
+  return "Tell me more about [subject]?";
+}
+
+
+
+// Generate suggested questions based on the user's query and intent
+function generateSuggestedQuestions(userQuery: string, intent?: string, metadata?: any): string[] {
+  const suggestions: string[] = [];
+
+  if (!userQuery.trim()) {
+    // Default suggestions for initial state
+    suggestions.push(
+      "How can I help you today?",
+      "What features are available?",
+      "Show me examples"
+    );
+    return suggestions;
+  }
+
+  // Get question type
+  const questionType = getQuestionType(userQuery);
+
+  // Extract subject
+  const subject = extractSubject(userQuery, questionType);
+
+  // Get related types
+  const relatedTypes = getRelatedTypes(questionType);
+
+  // Generate suggestions
+  for (const type of relatedTypes) {
+    const template = getTemplate(type, questionType);
+    const question = template.replace('[subject]', subject).replace('[action]', subject);
+    suggestions.push(question);
+  }
+
+  // Limit to 3-4 suggestions to keep it clean
+  return suggestions.slice(0, 4);
+}
+
 function parseMockEmployeeRecords(content: string): MockEmployeeRecord[] {
   if (!content || typeof content !== 'string') return [];
 
@@ -435,8 +570,13 @@ export default function ChatbotCopilot({
 
   const handleQuerySuggestion = (action: string, value?: any) => {
     if (action === 'query_suggestion' && value) {
-      // Submit the suggested query as a new message
-      handleSubmit({ preventDefault: () => {} } as any, value);
+      // Insert the suggested query into the input box
+      setInput(value);
+      // Focus the textarea
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        textareaRef.current?.setSelectionRange(value.length, value.length);
+      }, 100);
     }
   };
 
@@ -477,6 +617,18 @@ export default function ChatbotCopilot({
           throw new Error('No blocks in structured response');
         }
 
+        // Add suggested questions if not present
+        // if (!structuredResponse.blocks.some((block: any) => block.type === 'query-suggestions')) {
+        //   const suggestedQuestions = generateSuggestedQuestions(lastUserQuery, message.metadata?.intent, message.metadata);
+        //   if (suggestedQuestions.length > 0) {
+        //     structuredResponse.blocks.push({
+        //       type: 'query-suggestions',
+        //       title: 'Suggested Questions',
+        //       data: suggestedQuestions
+        //     });
+        //   }
+        // }
+
         // Use the central ResponseRenderer
         return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} sql={message.metadata?.sql} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
       } catch (error) {
@@ -496,6 +648,18 @@ export default function ChatbotCopilot({
         if (!structuredResponse.blocks || structuredResponse.blocks.length === 0) {
           throw new Error('No blocks in structured response');
         }
+
+        // Add suggested questions if not present
+        // if (!structuredResponse.blocks.some((block: any) => block.type === 'query-suggestions')) {
+        //   const suggestedQuestions = generateSuggestedQuestions(lastUserQuery, message.metadata?.intent, message.metadata);
+        //   if (suggestedQuestions.length > 0) {
+        //     structuredResponse.blocks.push({
+        //       type: 'query-suggestions',
+        //       title: 'Suggested Questions',
+        //       data: suggestedQuestions
+        //     });
+        //   }
+        // }
 
         // Use the central ResponseRenderer
         return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} sql={message.metadata?.sql} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
@@ -519,6 +683,18 @@ export default function ChatbotCopilot({
         if (!structuredResponse.blocks || structuredResponse.blocks.length === 0) {
           throw new Error('No blocks in structured response');
         }
+
+        // Add suggested questions if not present
+        // if (!structuredResponse.blocks.some((block: any) => block.type === 'query-suggestions')) {
+        //   const suggestedQuestions = generateSuggestedQuestions(lastUserQuery, message.metadata?.intent, message.metadata);
+        //   if (suggestedQuestions.length > 0) {
+        //     structuredResponse.blocks.push({
+        //       type: 'query-suggestions',
+        //       title: 'Suggested Questions',
+        //       data: suggestedQuestions
+        //     });
+        //   }
+        // }
 
         // Use the central ResponseRenderer
         return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} sql={message.metadata?.sql} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
@@ -566,9 +742,34 @@ export default function ChatbotCopilot({
       }
     }
 
+    // For all other responses, wrap in ResponseRenderer with text and suggested questions
+    const structuredResponse = {
+      blocks: [
+        {
+          type: 'text',
+          content: message.content
+        }
+      ]
+    };
 
+    // Add suggested questions
+    // const suggestedQuestions = generateSuggestedQuestions(message.content, message.metadata?.intent, message.metadata);
+    // if (suggestedQuestions.length > 0) {
+    //   structuredResponse.blocks.push({
+    //     type: 'query-suggestions',
+    //     title: 'Suggested Questions',
+    //     data: suggestedQuestions
+    //   });
+    // }
 
-    return message.content;
+    return (
+      <ResponseRenderer
+        response={structuredResponse}
+        onAction={handleQuerySuggestion}
+        onFeedback={(rating) => handleFeedback(message.id, rating)}
+        feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null}
+      />
+    );
   };
 
   const [messages, setMessages] = useState<Message[]>([
@@ -838,6 +1039,9 @@ const [sessionData, setSessionData] = useState({
     }
   }, []);
 
+  // Compute last user query for dynamic suggestions
+  const lastUserQuery = messages.filter(m => m.type === 'user').pop()?.content || '';
+
   const positionClasses = {
     'bottom-right': 'bottom-6 right-6',
     'bottom-left': 'bottom-6 left-6',
@@ -934,6 +1138,7 @@ const [sessionData, setSessionData] = useState({
           action: data.action,
           missingFields: data.missingFields,
           entities: data.entities,
+          querySuggestions: data.querySuggestions,
           // Skill Gap Analysis fields
           selectionOptions: data.selectionOptions,
           stepLabel: data.stepLabel,
@@ -1287,6 +1492,7 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
           entities: data.entities,
           data: data.data, // Include the data for ResponseRenderer
           query: data.query, // Include the original query for ResponseRenderer
+          querySuggestions: data.querySuggestions,
           // Skill Gap Analysis fields
           selectionOptions: data.selectionOptions,
           stepLabel: data.stepLabel,

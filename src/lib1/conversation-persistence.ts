@@ -111,8 +111,19 @@ export async function saveMessage(
   errorMessage?: string
 ): Promise<MessageRecord | null> {
   if (!supabaseEnabled) {
-    // Return null when Supabase is not enabled
-    return null;
+    // Return a mock message record when Supabase is not enabled
+    return {
+      id: `mock-${Date.now()}-${Math.random()}`,
+      conversationId,
+      messageType,
+      content,
+      intent,
+      sqlQuery,
+      tablesUsed: tablesUsed || [],
+      errorDetected: errorDetected || false,
+      errorMessage,
+      createdAt: new Date()
+    };
   }
 
   try {

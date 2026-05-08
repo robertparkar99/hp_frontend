@@ -85,11 +85,7 @@ interface ChatResponse {
   blocks?: any[];
   query?: string;
   // Query suggestions for the detected intent
-  querySuggestions?: Array<{
-    text: string;
-    description: string;
-    intent: string;
-  }>;
+  querySuggestions?: string[];
 }
 
 // ================= QUERY SUGGESTIONS MAPPING =================
@@ -435,17 +431,14 @@ const intentQuerySuggestions: Record<string, Array<{ text: string; description: 
 /**
  * Get query suggestions for a specific intent
  */
-function getIntentQuerySuggestions(intent: string): Array<{ text: string; description: string; intent: string }> {
+function getIntentQuerySuggestions(intent: string): string[] {
   const suggestions = intentQuerySuggestions[intent] || [];
-  return suggestions.map(suggestion => ({
-    ...suggestion,
-    intent
-  }));
+  return suggestions.map(suggestion => suggestion.text);
 }
 // ================= NEW INTENT HANDLERS =================
 
 // Helper function to create structured responses for different data types
-function createStructuredResponse(intent: string, data: any[], query: string, querySuggestions?: Array<{ text: string; description: string; intent: string }>): ChatResponse {
+function createStructuredResponse(intent: string, data: any[], query: string, querySuggestions?: string[]): ChatResponse {
   // Ensure data is an array and handle null/undefined cases
   if (!Array.isArray(data)) {
     data = data ? [data] : [];
@@ -2819,6 +2812,92 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
       return actionResponse;
     }
 
+    // Direct fallback for unclear or support intents (no intent matched)
+    if (intent.intent === 'unclear' || intent.intent === 'support') {
+      try {
+        // Limit conversation history to last 5 messages to avoid huge prompts
+        const fallbackMessages = request.conversationHistory ?
+          request.conversationHistory.slice(-5) : [];
+        fallbackMessages.push({ role: 'user', content: request.query });
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.LLM_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'deepseek/deepseek-chat',
+            messages: [
+              { role: 'system', content: 'You are a friendly assistant like ChatGPT. Answer questions naturally with appropriate emojis. Maintain conversation context. After your answer, provide 2-3 related follow-up questions or suggestions that the user might ask next, each on a new line, starting with "Suggestions:".' },
+              ...fallbackMessages
+            ],
+            max_tokens: OPENROUTER_FALLBACK_MAX_TOKENS
+          })
+        });
+
+        const data = await response.json();
+        let fallbackAnswer = data.choices?.[0]?.message?.content?.trim() || 'I\'m sorry, I couldn\'t generate a response right now.';
+
+        let querySuggestions: Array<{ text: string; description: string; intent: string }> = [];
+        if (fallbackAnswer.includes('Suggestions:')) {
+          const parts = fallbackAnswer.split('Suggestions:');
+          fallbackAnswer = parts[0].trim();
+          const suggestionsText = parts[1].trim();
+          const suggestions = suggestionsText.split('\n').filter(s => s.trim()).map(s => s.trim());
+          querySuggestions = suggestions.map(s => ({ text: s, description: s, intent: 'unclear' }));
+        }
+
+        // If no suggestions were generated, add some default relevant ones based on the query
+        if (querySuggestions.length === 0) {
+          const lowerQuery = request.query.toLowerCase();
+          if (lowerQuery.includes('india') || lowerQuery.includes('father') || lowerQuery.includes('nation')) {
+            querySuggestions = [
+              { text: 'Tell me about Mahatma Gandhi\'s life', description: 'Learn more about his biography and achievements', intent: 'unclear' },
+              { text: 'What was India\'s freedom struggle?', description: 'Explore the history of India\'s independence movement', intent: 'unclear' },
+              { text: 'Who were other freedom fighters in India?', description: 'Discover key figures in India\'s independence', intent: 'unclear' }
+            ];
+          } else if (lowerQuery.includes('hello') || lowerQuery.includes('hi')) {
+            querySuggestions = [
+              { text: 'What can you help me with?', description: 'Learn about available features and capabilities', intent: 'unclear' },
+              { text: 'How do I use this chatbot?', description: 'Get guidance on interacting with the system', intent: 'unclear' },
+              { text: 'Show me examples of questions I can ask', description: 'See sample queries and use cases', intent: 'unclear' }
+            ];
+          } else {
+            // Generic suggestions
+            querySuggestions = [
+              { text: 'Can you explain that in more detail?', description: 'Get deeper insights on the topic', intent: 'unclear' },
+              { text: 'What are some related topics?', description: 'Explore connected subjects', intent: 'unclear' },
+              { text: 'Give me examples', description: 'See practical examples or applications', intent: 'unclear' }
+            ];
+          }
+        }
+
+        const botMessage = await saveMessage(conversationId, 'bot', fallbackAnswer, intent.intent);
+        if (!botMessage) {
+          throw new Error('Failed to save bot message');
+        }
+        return {
+          answer: fallbackAnswer,
+          conversationId,
+          id: botMessage.id,
+          intent: intent.intent,
+          querySuggestions: querySuggestions.map(s => s.text),
+          canEscalate: true
+        };
+      } catch (fallbackError) {
+        console.error('Direct fallback LLM failed:', fallbackError);
+        return {
+          answer: 'I\'m sorry, I\'m having trouble connecting to my chat service right now. Please try again later or contact support.',
+          conversationId,
+          intent: intent.intent,
+          error: 'FALLBACK_FAILED',
+          recoverable: true,
+          canEscalate: true
+        };
+      }
+    }
+
     const history = request.conversationHistory || [];
     let sql = '';
     let results: any[] = [];
@@ -2905,12 +2984,12 @@ Please try one of these queries, or contact support to restore full AI functiona
 
 Please try one of these queries, or contact support to upgrade your AI credits.`,
                 conversationId,
-                intent,
+                intent: intent.intent,
                 error: 'INSUFFICIENT_AI_CREDITS',
                 recoverable: true,
                 suggestion: 'Try using one of the predefined queries above, or upgrade AI credits.',
                 canEscalate: true,
-                querySuggestions: getIntentQuerySuggestions(intent)
+                querySuggestions: getIntentQuerySuggestions(intent.intent)
               };
             }
             throw aiError;
@@ -3072,7 +3151,7 @@ Please try one of these queries, or contact support to upgrade your AI credits.`
           body: JSON.stringify({
             model: 'deepseek/deepseek-chat',
             messages: [
-              { role: 'system', content: 'You are a friendly assistant. Answer normally in plain English. Maintain conversation context.' },
+              { role: 'system', content: 'You are a friendly assistant like ChatGPT. Answer questions naturally with appropriate emojis. Maintain conversation context. After your answer, provide 2-3 related follow-up questions or suggestions that the user might ask next, each on a new line, starting with "Suggestions:".' },
               ...fallbackMessages
             ],
             max_tokens: OPENROUTER_FALLBACK_MAX_TOKENS
@@ -3080,7 +3159,41 @@ Please try one of these queries, or contact support to upgrade your AI credits.`
         });
 
         const data = await response.json();
-        const fallbackAnswer = data.choices?.[0]?.message?.content?.trim() || errorMessage;
+        let fallbackAnswer = data.choices?.[0]?.message?.content?.trim() || errorMessage;
+
+        let querySuggestions: Array<{ text: string; description: string; intent: string }> = [];
+        if (fallbackAnswer.includes('Suggestions:')) {
+          const parts = fallbackAnswer.split('Suggestions:');
+          fallbackAnswer = parts[0].trim();
+          const suggestionsText = parts[1].trim();
+          const suggestions = suggestionsText.split('\n').filter(s => s.trim()).map(s => s.trim());
+          querySuggestions = suggestions.map(s => ({ text: s, description: s, intent: 'unclear' }));
+        }
+
+        // If no suggestions were generated, add some default relevant ones based on the query
+        if (querySuggestions.length === 0) {
+          const lowerQuery = request.query.toLowerCase();
+          if (lowerQuery.includes('india') || lowerQuery.includes('father') || lowerQuery.includes('nation')) {
+            querySuggestions = [
+              { text: 'Tell me about Mahatma Gandhi\'s life', description: 'Learn more about his biography and achievements', intent: 'unclear' },
+              { text: 'What was India\'s freedom struggle?', description: 'Explore the history of India\'s independence movement', intent: 'unclear' },
+              { text: 'Who were other freedom fighters in India?', description: 'Discover key figures in India\'s independence', intent: 'unclear' }
+            ];
+          } else if (lowerQuery.includes('hello') || lowerQuery.includes('hi')) {
+            querySuggestions = [
+              { text: 'What can you help me with?', description: 'Learn about available features and capabilities', intent: 'unclear' },
+              { text: 'How do I use this chatbot?', description: 'Get guidance on interacting with the system', intent: 'unclear' },
+              { text: 'Show me examples of questions I can ask', description: 'See sample queries and use cases', intent: 'unclear' }
+            ];
+          } else {
+            // Generic suggestions
+            querySuggestions = [
+              { text: 'Can you explain that in more detail?', description: 'Get deeper insights on the topic', intent: 'unclear' },
+              { text: 'What are some related topics?', description: 'Explore connected subjects', intent: 'unclear' },
+              { text: 'Give me examples', description: 'See practical examples or applications', intent: 'unclear' }
+            ];
+          }
+        }
 
         const botMessage = await saveMessage(conversationId, 'bot', fallbackAnswer, intent.intent);
         if (!botMessage) {
@@ -3095,6 +3208,14 @@ Please try one of these queries, or contact support to upgrade your AI credits.`
         };
       } catch (fallbackError) {
         console.error('Fallback LLM failed:', fallbackError);
+        return {
+          answer: 'I\'m sorry, I\'m having trouble connecting to my chat service right now. Please try again later or contact support.',
+          conversationId,
+          intent: intent.intent,
+          error: 'FALLBACK_FAILED',
+          recoverable: true,
+          canEscalate: true
+        };
       }
     }
 
@@ -3421,6 +3542,24 @@ async function handleSkillGapAnalysisRequest(
   entities: any
 ): Promise<ChatResponse> {
   console.log('[handleSkillGapAnalysisRequest] Processing skill gap analysis request');
+
+  // Validate that this is actually a skill gap related query
+  const lowerQuery = request.query.toLowerCase();
+  const hasSkillGapKeywords = lowerQuery.includes('skill gap') ||
+                             lowerQuery.includes('gap analysis') ||
+                             lowerQuery.includes('competency gap');
+
+  if (!hasSkillGapKeywords) {
+    // Not a valid skill gap query, redirect to fallback
+    return {
+      answer: 'I\'m sorry, I didn\'t understand your request. Could you please rephrase it or provide more details?',
+      conversationId,
+      intent: 'unclear',
+      error: 'INVALID_INTENT',
+      recoverable: true,
+      canEscalate: true
+    };
+  }
 
   try {
     let currentStep = 'industry';
