@@ -165,7 +165,7 @@ const Login: React.FC = () => {
                     >
                       Forgot Password?
                     </a>
-                    <p className="text-center text-sm text-gray-600">
+                    {/* <p className="text-center text-sm text-gray-600">
                       Don't have an account?{" "}
                       <Link
                         href="/signup"
@@ -173,7 +173,7 @@ const Login: React.FC = () => {
                       >
                         Sign up
                       </Link>
-                    </p>
+                    </p> */}
                   </div>
                 </div>
               </div>
