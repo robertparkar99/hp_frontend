@@ -106,6 +106,9 @@ export type UIBlock =
 export interface StructuredResponse {
   blocks: UIBlock[];
   intent: string;
+  sql?: string;
+  tables_used?: string[];
+  answer?: string;
   nextAction?: {
     type: 'continue' | 'form' | 'escalate' | 'none';
     prompt?: string;
