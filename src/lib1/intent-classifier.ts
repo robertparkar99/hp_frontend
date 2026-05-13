@@ -281,11 +281,13 @@ const intentPatterns: Record<QueryIntent, string[]> = {
      'generate monthly payroll', 'create payroll', 'run payroll'
    ],
 
-   // LMS intents
-   LMS_COURSES_FETCH: [
-     'show all courses', 'list courses', 'get courses', 'fetch courses',
-     'available courses', 'course list'
-   ],
+    // LMS intents
+     LMS_COURSES_FETCH: [
+       'show all courses', 'list courses', 'get courses', 'fetch courses',
+       'available courses', 'course list', 'view complete course catalog',
+       'course catalog', 'show my courses', 'list my courses', 'my courses',
+       'my enrolled courses', 'what courses are available', 'enrolled courses'
+     ],
    LMS_MODULES_FETCH: [
      'list modules for', 'show modules', 'get modules', 'modules for course',
      'course modules'
@@ -334,9 +336,11 @@ const intentPatterns: Record<QueryIntent, string[]> = {
    SKILL_ATTRIBUTES_ADD: [
      'add skill attributes', 'add attributes', 'skill attributes'
    ],
-   JOB_ROLES_FETCH: [
-     'show job roles', 'list job roles', 'get job roles', 'job role list'
-   ],
+    JOB_ROLES_FETCH: [
+      'show job roles', 'list job roles', 'get job roles', 'job role list',
+      'show job roles for', 'list job roles for', 'get job roles for', 'job roles for',
+      'department job roles', 'job roles in department', 'job roles for department'
+    ],
    JOB_ROLE_CREATE: [
      'create a job role', 'add job role', 'new job role'
    ],
@@ -502,15 +506,17 @@ export function extractEntities(query: string): ExtractedEntities {
     }
   }
 
-  // Extract department
-  const departmentPatterns = [
-    /department[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
-    /(?:in|for|within) ([a-zA-Z]+(?:\s+[a-zA-Z]+)*) department/i,
-    // Handle "Selected [value] for department" pattern
-    /selected[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+for\s+department/i,
-    // Handle "[value] department" pattern
-    /^([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+department/i,
-  ];
+   // Extract department
+   const departmentPatterns = [
+     /department[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
+     /(?:in|for|within) ([a-zA-Z]+(?:\s+[a-zA-Z]+)*) department/i,
+     // Handle "Selected [value] for department" pattern
+     /selected[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+for\s+department/i,
+     // Handle "[value] department" pattern
+     /^([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+department/i,
+     // Handle "job roles for [department]" pattern
+     /job roles for ([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
+   ];
 
   for (const pattern of departmentPatterns) {
     const match = query.match(pattern);

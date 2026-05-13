@@ -213,7 +213,7 @@ import {
 import {
   LayoutGrid, List, BarChart3, Table2, Zap, FileText, ChevronRight,
   CheckCircle, Circle, AlertCircle, Clock, ArrowRight, Target,
-  GripVertical, Sparkles
+  GripVertical, Sparkles, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import {
   UIBlock,
@@ -233,12 +233,15 @@ interface ResponseRendererProps {
   response: StructuredResponse;
   className?: string;
   onAction?: (action: string, value?: any) => void;
+  tablesUsed?: string[];
 }
 
 const DEFAULT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
-const ResponseRenderer: React.FC<ResponseRendererProps> = ({ response, className = '', onAction }) => {
+const ResponseRenderer: React.FC<ResponseRendererProps> = ({ response, className = '', onAction, tablesUsed }) => {
   const [activeBlock, setActiveBlock] = useState<number>(0);
+  const [showSql, setShowSql] = useState<boolean>(false);
+  const [feedbackRating, setFeedbackRating] = useState<number | null>(null);
 
   if (!response?.blocks || response.blocks.length === 0) {
     return (
@@ -253,9 +256,37 @@ const ResponseRenderer: React.FC<ResponseRendererProps> = ({ response, className
   const sqlQueryBlocks = response.blocks.filter(block => block.title === 'View SQL Query');
   const regularBlocks = response.blocks.filter(block => block.title !== 'View SQL Query');
 
+  // Get SQL content from the first SQL block
+  const sqlContent = sqlQueryBlocks.length > 0 && sqlQueryBlocks[0].type === 'text'
+    ? (sqlQueryBlocks[0] as TextBlock).content
+    : null;
+
+  // Get tables used from prop or response
+  const displayTablesUsed = tablesUsed || response.tables_used || [];
+
+  // Render database badges
+  const renderDatabaseBadges = () => {
+    if (!displayTablesUsed || displayTablesUsed.length === 0) return null;
+
+    return (
+      <div className="flex flex-wrap gap-2 mb-4">
+        {displayTablesUsed.map((table, idx) => (
+          <div
+            key={idx}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium shadow-sm"
+          >
+            <Database className="w-3 h-3" />
+            <span>{table}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   if (regularBlocks.length === 1) {
     return (
       <div className={className}>
+        {renderDatabaseBadges()}
         {renderBlockTitle(regularBlocks[0])}
         {renderBlock(regularBlocks[0], onAction)}
         {sqlQueryBlocks.map((block, index) => (
@@ -270,6 +301,7 @@ const ResponseRenderer: React.FC<ResponseRendererProps> = ({ response, className
 
   return (
     <div className={className}>
+      {renderDatabaseBadges()}
       <Tabs value={String(activeBlock)} onValueChange={(v) => setActiveBlock(Number(v))}>
         <TabsList className="mb-4 flex flex-wrap justify-start h-auto gap-1 bg-transparent">
           {regularBlocks.map((block, index) => (
@@ -289,12 +321,12 @@ const ResponseRenderer: React.FC<ResponseRendererProps> = ({ response, className
           </TabsContent>
         ))}
       </Tabs>
-      {sqlQueryBlocks.map((block, index) => (
+      {/* {sqlQueryBlocks.map((block, index) => (
         <div key={`sql-${index}`} className="mt-4">
           {renderBlockTitle(block)}
           {renderBlock(block, onAction)}
         </div>
-      ))}
+      ))} */}
     </div>
   );
 };
@@ -344,7 +376,7 @@ function renderBlock(block: UIBlock, onAction?: (action: string, value?: any) =>
     case 'attendance-summary' as UIBlockType:
       return <AttendanceSummaryBlockRenderer data={(block as any).data} />;
     case 'query-suggestions':
-      return <QuerySuggestionsBlockRenderer suggestions={(block as QuerySuggestionsBlock).data} onAction={onAction} />;
+      return <QuerySuggestionsBlockRenderer suggestions={(block as QuerySuggestionsBlock).data.map((item: any) => item.query || item)} onAction={onAction} />;
     default:
       return <div className="text-gray-500 text-sm">Unsupported format</div>;
   }
@@ -892,72 +924,6 @@ function QuerySuggestionsBlockRenderer({
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function renderSqlSection() {
-  if (!sql) return null;
-
-  return (
-    <div className="mt-4">
-      <Card className="border-gray-200">
-        <CardHeader className="pb-2">
-          <button
-            onClick={() => {/* TODO: implement show/hide SQL logic */}}
-            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors w-full text-left"
-          >
-            <FileText className="h-4 w-4 text-blue-600" />
-            View SQL Query
-            <ChevronRight className={`h-4 w-4 ml-auto transition-transform ${false ? 'rotate-90' : ''}`} />
-          </button>
-        </CardHeader>
-        {false && (
-          <CardContent className="pt-0">
-            <div className="bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-sm overflow-x-auto">
-              <pre>{sql || ''}</pre>
-            </div>
-          </CardContent>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-function renderFeedbackButtons() {
-  if (!onFeedback) return null;
-
-  return (
-    <div className="mt-4">
-      <Card className="border-gray-200">
-        <CardContent className="pt-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Was this helpful?</span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onFeedback(1)}
-                className={`p-2 rounded-full transition-colors ${
-                  feedbackRating === 1
-                    ? 'bg-green-100 text-green-600 border border-green-200'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
-                }`}
-              >
-                <ThumbsUp className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => onFeedback(-1)}
-                className={`p-2 rounded-full transition-colors ${
-                  feedbackRating === -1
-                    ? 'bg-red-100 text-red-600 border border-red-200'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
-                }`}
-              >
-                <ThumbsDown className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

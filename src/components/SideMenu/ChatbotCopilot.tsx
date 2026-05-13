@@ -630,7 +630,7 @@ export default function ChatbotCopilot({
         // }
 
         // Use the central ResponseRenderer
-        return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} sql={message.metadata?.sql} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
+        return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} tablesUsed={structuredResponse.tables_used} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
       } catch (error) {
         console.error('ResponseRenderer error for mock query:', error);
         // Fallback to the existing system
@@ -662,7 +662,7 @@ export default function ChatbotCopilot({
         // }
 
         // Use the central ResponseRenderer
-        return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} sql={message.metadata?.sql} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
+        return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} tablesUsed={message.metadata?.tablesUsed} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
       } catch (error) {
         console.error('ResponseRenderer error for structured response:', error);
         // Continue to check for array data below
@@ -697,7 +697,7 @@ export default function ChatbotCopilot({
         // }
 
         // Use the central ResponseRenderer
-        return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} sql={message.metadata?.sql} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
+        return <ResponseRenderer response={structuredResponse} onAction={handleQuerySuggestion} onFeedback={(rating) => handleFeedback(message.id, rating)} tablesUsed={message.metadata?.tablesUsed} feedbackRating={feedbackMessage === message.id ? feedbackState?.rating : null} />;
       } catch (error) {
         console.error('ResponseRenderer error for API data:', error);
         // Fallback to simple table display

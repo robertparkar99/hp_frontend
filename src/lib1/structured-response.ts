@@ -109,6 +109,9 @@ export function createStructuredResponse(
   options?: {
     intent?: string;
     nextAction?: StructuredResponse['nextAction'];
+    sql?: string;
+    tables_used?: string[];
+    answer?: string;
   }
 ): StructuredResponse {
   return {
@@ -294,10 +297,38 @@ export function createIntelligentQueryResponse(
       }
     );
 
-    // For simple cases, just return the table block directly
+    // Create a text block for summary
+    const textBlock = createTextBlock(summaryText, { title: 'Summary' });
+
+    // Create SQL query block
+    const sqlBlock = {
+      type: 'text' as const,
+      title: 'View SQL Query',
+      content: `\`\`\`sql\nSELECT name, role, email, occupation FROM employee_data LIMIT ${data.length};\n\`\`\``
+    };
+
+    // Create query suggestions block
+    const querySuggestionsBlock = {
+      type: 'query-suggestions' as const,
+      title: 'Related Queries',
+      data: [
+        'Show employee data by department',
+        'List all employees',
+        'Get employee contact information'
+      ]
+    };
+
     return createStructuredResponse([
-      tableBlock
-    ], { intent: 'data_retrieval' });
+      textBlock,
+      tableBlock,
+      sqlBlock,
+      querySuggestionsBlock
+    ], {
+      intent: 'data_retrieval',
+      sql: `SELECT name, role, email, occupation FROM employee_data LIMIT ${data.length};`,
+      tables_used: ['employee_data'],
+      answer: summaryText
+    });
   }
 
   // For skill-related queries

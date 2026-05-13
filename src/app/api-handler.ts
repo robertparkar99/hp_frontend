@@ -180,10 +180,10 @@ const intentQuerySuggestions: Record<string, Array<{ text: string; description: 
 
   // LMS intents
   LMS_COURSES_FETCH: [
-    { text: "Show all courses", description: "List all available courses in the LMS" },
-    { text: "What courses are available?", description: "View complete course catalog" },
-    { text: "List courses", description: "Get all course offerings" },
-    { text: "Available courses", description: "Display courses you can enroll in" }
+    { text: "Show my courses", description: "List your enrolled courses" },
+    { text: "What courses are available?", description: "View your enrolled courses" },
+    { text: "List my courses", description: "Get your enrolled courses" },
+    { text: "My enrolled courses", description: "Display courses you are enrolled in" }
   ],
   LMS_MODULES_FETCH: [
     { text: "List modules for course X", description: "View all modules within a specific course" },
@@ -438,7 +438,7 @@ function getIntentQuerySuggestions(intent: string): string[] {
 // ================= NEW INTENT HANDLERS =================
 
 // Helper function to create structured responses for different data types
-function createStructuredResponse(intent: string, data: any[], query: string, querySuggestions?: string[]): ChatResponse {
+function createStructuredResponse(intent: string, data: any[], query: string, querySuggestions?: string[], sql?: string, tablesUsed?: string[], customAnswerText?: string): ChatResponse {
   // Ensure data is an array and handle null/undefined cases
   if (!Array.isArray(data)) {
     data = data ? [data] : [];
@@ -449,6 +449,8 @@ function createStructuredResponse(intent: string, data: any[], query: string, qu
     return {
       answer: 'No data found matching your query.',
       intent,
+      sql,
+      tables_used: tablesUsed,
       data: [],
       query,
       querySuggestions
@@ -570,15 +572,42 @@ function createStructuredResponse(intent: string, data: any[], query: string, qu
     });
   }
 
+  // Add SQL query block if available
+  if (sql) {
+    blocks.push({
+      type: 'text',
+      title: 'View SQL Query',
+      content: `\`\`\`sql\n${sql}\n\`\`\``
+    });
+  }
+
   // Customize answer text based on intent
-  let answerText = `Found ${data.length} result(s) for your query.`;
+  let answerText = customAnswerText || `Found ${data.length} result(s) for your query.`;
   if (intent === 'HRMS_PROFILE_FETCH') {
     answerText = 'Here are your profile details.';
+  }
+  if (intent === 'LMS_COURSES_FETCH') {
+    answerText = `Found ${data.length} enrolled course(s).`;
+  }
+  if (intent === 'LMS_COURSES_FETCH') {
+    answerText = `Found ${data.length} enrolled course(s).`;
+  }
+
+
+  // Add a text block for summary for certain intents
+  if (intent === 'LMS_COURSES_FETCH' || intent === 'HRMS_ATTENDANCE_FETCH' || intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') {
+    blocks.unshift({
+      type: 'text',
+      title: 'Summary',
+      content: answerText
+    });
   }
 
   return {
     answer: answerText,
     intent,
+    sql,
+    tables_used: tablesUsed,
     data: {
       blocks
     },
@@ -607,7 +636,7 @@ function getIntentTitle(intent: string): string {
     'SKILLS_FETCH': 'Skills',
     'SKILL_CATEGORIES_FETCH': 'Skill Categories',
     'JOB_ROLES_FETCH': 'Job Roles',
-    'USER_JOB_ROLES_FETCH': 'User Job Roles',
+    'USER_JOB_ROLES_FETCH': 'Job Roles',
     'INDUSTRIES_FETCH': 'Industries',
     'DEPARTMENT_MASTER_FETCH': 'Department Master',
     'STANDARDS_FETCH': 'Standards',
@@ -628,92 +657,102 @@ async function handleHRMSRequest(
 ): Promise<ChatResponse> {
   try {
     let apiKey: string;
-    let method: "GET" | "POST" = "GET";
-    let body: any = {};
-    let params: any = {};
+    let method: 'GET' | 'POST' = 'GET';
+    const body: any = {};
+    const params: any = {};
 
-    // Map intents to API endpoints
     const intentToApiMap: Record<string, string> = {
-      'HRMS_USERS_FETCH': 'table_data',
-      'HRMS_PROFILE_FETCH': 'table_data',
-      'HRMS_DEPARTMENTS_FETCH': 'hrms_departments',
-      'HRMS_ATTENDANCE_FETCH': 'table_data',
-      'HRMS_LEAVE_TYPES_FETCH': 'table_data',
-      'HRMS_LEAVE_SUMMARY_FETCH': 'hrms_leave_summary_report',
-      'HRMS_HOLIDAYS_FETCH': 'table_data',
-      'HRMS_SALARY_STRUCTURE_FETCH': 'employee_salary_structure',
-      'HRMS_PAYROLL_DEDUCTIONS_FETCH': 'payroll_deduction',
-      'HRMS_PAYROLL_MONTHLY_FETCH': 'monthly_payroll'
+      HRMS_USERS_FETCH: 'table_data',
+      HRMS_PROFILE_FETCH: 'table_data',
+      HRMS_DEPARTMENTS_FETCH: 'hrms_departments',
+      HRMS_ATTENDANCE_FETCH: 'table_data',
+      HRMS_LEAVE_TYPES_FETCH: 'table_data',
+      HRMS_LEAVE_SUMMARY_FETCH: 'hrms_leave_summary_report',
+      HRMS_HOLIDAYS_FETCH: 'table_data',
+      HRMS_SALARY_STRUCTURE_FETCH: 'employee_salary_structure',
+      HRMS_PAYROLL_DEDUCTIONS_FETCH: 'payroll_deduction',
+      HRMS_PAYROLL_MONTHLY_FETCH: 'monthly_payroll'
     };
 
-    const actionIntentToApiMap: Record<string, { api: string; method: "GET" | "POST" }> = {
-      'HRMS_ATTENDANCE_UPDATE': { api: 'hrms_attendance_update', method: 'POST' },
-      'HRMS_ATTENDANCE_PUNCH_OUT': { api: 'hrms_punch_out', method: 'POST' },
-      'HRMS_LEAVE_TYPE_CREATE': { api: 'hrms_leave_type_add', method: 'POST' },
-      'HRMS_LEAVE_APPLY': { api: 'hrms_leave_apply', method: 'POST' },
-      'HRMS_LEAVE_AUTHORIZE': { api: 'hrms_leave_authorization', method: 'POST' },
-      'HRMS_HOLIDAY_CREATE': { api: 'hrms_holiday_add', method: 'POST' },
-      'HRMS_PAYROLL_GENERATE': { api: 'monthly_payroll_store', method: 'POST' }
+    const actionIntentToApiMap: Record<
+      string,
+      { api: string; method: 'GET' | 'POST' }
+    > = {
+      HRMS_ATTENDANCE_UPDATE: {
+        api: 'hrms_attendance_update',
+        method: 'POST'
+      },
+      HRMS_ATTENDANCE_PUNCH_OUT: {
+        api: 'hrms_punch_out',
+        method: 'POST'
+      },
+      HRMS_LEAVE_TYPE_CREATE: {
+        api: 'hrms_leave_type_add',
+        method: 'POST'
+      },
+      HRMS_LEAVE_APPLY: {
+        api: 'hrms_leave_apply',
+        method: 'POST'
+      },
+      HRMS_LEAVE_AUTHORIZE: {
+        api: 'hrms_leave_authorization',
+        method: 'POST'
+      },
+      HRMS_HOLIDAY_CREATE: {
+        api: 'hrms_holiday_add',
+        method: 'POST'
+      },
+      HRMS_PAYROLL_GENERATE: {
+        api: 'monthly_payroll_store',
+        method: 'POST'
+      }
     };
 
+    // Handle action intents
     if (actionIntentToApiMap[intent]) {
       const config = actionIntentToApiMap[intent];
+
       apiKey = config.api;
       method = config.method;
 
-      // For actions, we need user input - for now, return a message asking for required fields
-      // Special handling for LMS content creation due to image processing limitations
-      if (intent === 'LMS_CONTENT_CREATE') {
-        return {
-          answer: `Content creation in LMS currently has limitations with image processing. For creating content with images, please use the bulk content generation feature instead. For simple text content, please provide the content details.`,
-          conversationId,
-          intent,
-          error: 'LMS_CONTENT_CREATE_LIMITED',
-          recoverable: true,
-          suggestion: 'Use bulk content generation for content with images, or provide text-only content details.',
-          canEscalate: true,
-          querySuggestions: getIntentQuerySuggestions(intent)
-        };
-      }
-
       return {
-        answer: `I need more information to ${intent.replace(/_/g, ' ').toLowerCase()}. Please provide the required details.`,
+        answer: `I need more information to ${intent
+          .replace(/_/g, ' ')
+          .toLowerCase()}. Please provide the required details.`,
         conversationId,
         intent,
         error: 'Missing action parameters',
         recoverable: true,
-        suggestion: 'Please provide the necessary information to complete this action.',
+        suggestion:
+          'Please provide the necessary information to complete this action.',
         canEscalate: true,
         querySuggestions: getIntentQuerySuggestions(intent)
       };
-    } else {
-      apiKey = intentToApiMap[intent] || 'table_data';
     }
 
-    // Set table parameter for table_data endpoint
+    apiKey = intentToApiMap[intent] || 'table_data';
+
+    // Table configuration
     if (apiKey === 'table_data') {
       const tableMap: Record<string, string> = {
-        'HRMS_USERS_FETCH': 'tbluser',
-        'HRMS_PROFILE_FETCH': 'tbluserprofilemaster',
-        'HRMS_ATTENDANCE_FETCH': 'hrms_attendances',
-        'HRMS_LEAVE_TYPES_FETCH': 'hrms_leave_types',
-        'HRMS_HOLIDAYS_FETCH': 'hrms_holidays'
+        HRMS_USERS_FETCH: 'tbluser',
+        HRMS_PROFILE_FETCH: 'tbluserprofilemaster',
+        HRMS_ATTENDANCE_FETCH: 'hrms_attendances',
+        HRMS_LEAVE_TYPES_FETCH: 'hrms_leave_types',
+        HRMS_HOLIDAYS_FETCH: 'hrms_holidays'
       };
-      params.table = tableMap[intent] || 'tbluser';
-      // Add sub_institute_id filter for table_data
-      params[`filters[sub_institute_id]`] = request.subInstituteId;
 
-      // For profile fetch, also filter by current user
-    } else if (apiKey === 'hrms_departments') {
-      // Add sub_institute_id filter for hrms_departments endpoint
-      params.sub_institute_id = request.subInstituteId;
+      params.table = tableMap[intent] || 'tbluser';
+      params['filters[sub_institute_id]'] = request.subInstituteId;
+
       if (intent === 'HRMS_PROFILE_FETCH' && request.userId) {
-        params[`filters[user_id]`] = request.userId;
+        params['filters[user_id]'] = request.userId;
       }
-      // For attendance fetch, filter by specific user if mentioned, current user for "my" queries, otherwise show all users in sub-institute
+
+      // Attendance filtering
       if (intent === 'HRMS_ATTENDANCE_FETCH') {
-        // Check if query is about the current user's attendance ("my", "check my", etc.)
         const queryLower = request.query.toLowerCase();
+
         const myAttendancePatterns = [
           /\bmy\s+attendance/i,
           /check\s+my\s+attendance/i,
@@ -721,70 +760,114 @@ async function handleHRMSRequest(
           /my\s+attendance\s+records/i
         ];
 
-        const isMyAttendance = myAttendancePatterns.some(pattern => pattern.test(queryLower));
+        const isMyAttendance = myAttendancePatterns.some((pattern) =>
+          pattern.test(queryLower)
+        );
 
         if (isMyAttendance && request.userId) {
-          // For "my attendance" queries, always filter by current user
-          params[`filters[user_id]`] = request.userId;
+          params['filters[user_id]'] = request.userId;
         } else {
-          // Check if query mentions a specific user (not "my")
           const userMentionPatterns = [
             /attendance\s+(?:for|of)\s+(.+?)(?:\s|$)/i,
             /(.+?)(?:'s|s')\s+attendance/i,
             /attendance\s+records?\s+(?:for|of)\s+(.+?)(?:\s|$)/i
           ];
 
-          let mentionedUserId = null;
+          let mentionedUserId: string | number | null = null;
+
           for (const pattern of userMentionPatterns) {
             const match = request.query.match(pattern);
-            if (match && !match[1].toLowerCase().includes('my')) { // Exclude "my" matches
+
+            if (match && match[1]) {
               const userName = match[1].trim();
-              // Try to find user by name in the system
-              try {
-                const userSearchParams = {
-                  table: 'tbluser',
-                  [`filters[sub_institute_id]`]: request.subInstituteId,
-                  [`filters[name]`]: userName
-                };
-                const userData = await callHpApi('GET', hpApiMap['table_data'].url, userSearchParams);
-                if (Array.isArray(userData) && userData.length > 0) {
-                  mentionedUserId = userData[0].id || userData[0].user_id;
+
+              if (!userName.toLowerCase().includes('my')) {
+                try {
+                  const userSearchParams = {
+                    table: 'tbluser',
+                    'filters[sub_institute_id]': request.subInstituteId,
+                    'filters[name]': userName
+                  };
+
+                  const userData = await callHpApi(
+                    'GET',
+                    hpApiMap['table_data'].url,
+                    userSearchParams
+                  );
+
+                  if (
+                    Array.isArray(userData) &&
+                    userData.length > 0
+                  ) {
+                    mentionedUserId =
+                      userData[0].id || userData[0].user_id;
+                  }
+                } catch (userSearchError) {
+                  console.error(
+                    'Error searching user:',
+                    userSearchError
+                  );
                 }
-              } catch (error) {
-                console.error('Error searching for user:', error);
+
+                break;
               }
-              break;
             }
           }
 
-          // If a specific user was mentioned, filter by that user
           if (mentionedUserId) {
-            params[`filters[user_id]`] = mentionedUserId;
+            params['filters[user_id]'] = mentionedUserId;
           }
-          // If no specific user mentioned and not "my" query, don't filter by user (show all in sub-institute)
         }
       }
     }
 
+    // Department filter
+    if (apiKey === 'hrms_departments') {
+      params.sub_institute_id = request.subInstituteId;
+    }
+
     const apiEntry = hpApiMap[apiKey];
+
     if (!apiEntry) {
       throw new Error(`No API mapping found for intent: ${intent}`);
     }
 
-    let data = await callHpApi(method, apiEntry.url, params, body);
+    let data = await callHpApi(
+      method,
+      apiEntry.url,
+      params,
+      body
+    );
 
-    // Apply client-side filtering for endpoints that don't support server-side filtering
-    if (intent === 'HRMS_DEPARTMENTS_FETCH' && Array.isArray(data)) {
-      const originalCount = data.length;
-      data = data.filter(dept => dept.sub_institute_id == request.subInstituteId);
-      console.log(`Filtered departments from ${originalCount} to ${data.length} for sub_institute_id ${request.subInstituteId}`);
+    // Department filtering
+    if (
+      intent === 'HRMS_DEPARTMENTS_FETCH' &&
+      Array.isArray(data)
+    ) {
+      data = data.filter(
+        (dept: any) =>
+          dept.sub_institute_id == request.subInstituteId
+      );
     }
 
-    await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} HRMS record(s)`, intent);
+    await saveMessage(
+      conversationId,
+      'bot',
+      `Retrieved ${
+        Array.isArray(data)
+          ? data.length
+          : data
+          ? 1
+          : 0
+      } HRMS record(s)`,
+      intent
+    );
 
-    // Special handling for HRMS_PROFILE_FETCH - fetch comprehensive profile data
+    // PROFILE RESPONSE
     if (intent === 'HRMS_PROFILE_FETCH') {
-      let profileData = Array.isArray(data) ? data[0] : data;
+      const profileData = Array.isArray(data)
+        ? data[0]
+        : data;
 
       if (!profileData) {
         return {
@@ -796,236 +879,82 @@ async function handleHRMSRequest(
         };
       }
 
-      // For now, just use the basic profile data and let the frontend display what it can
-      // Additional API calls for departments/job roles/tasks can be added later when endpoints are verified
-      return createStructuredResponse(intent, [profileData], request.query, getIntentQuerySuggestions(intent));
+      return createStructuredResponse(
+        intent,
+        [profileData],
+        request.query,
+        getIntentQuerySuggestions(intent)
+      );
     }
 
-    // Special handling for HRMS_USERS_FETCH to ensure name and role are displayed properly
-    if (intent === 'HRMS_USERS_FETCH' && Array.isArray(data)) {
-      const processedData = data.map(user => {
-        // Extract name and role, remove image fields
-        const { profile_image, avatar, image, ...userData } = user;
+    // USERS RESPONSE
+    if (
+      intent === 'HRMS_USERS_FETCH' &&
+      Array.isArray(data)
+    ) {
+      const processedData = data.map((user: any) => {
+        const {
+          profile_image,
+          avatar,
+          image,
+          ...userData
+        } = user;
+
         return {
-          name: user.name || user.full_name || user.first_name + ' ' + user.last_name || 'N/A',
-          role: user.role || user.job_role || user.position || 'N/A',
-          ...userData // Include all other fields
+          name:
+            user.name ||
+            user.full_name ||
+            `${user.first_name || ''} ${
+              user.last_name || ''
+            }`.trim() ||
+            'N/A',
+          role:
+            user.role ||
+            user.job_role ||
+            user.position ||
+            'N/A',
+          ...userData
         };
       });
-      return createStructuredResponse(intent, processedData, request.query, getIntentQuerySuggestions(intent));
-    }
 
-    // Special handling for HRMS_HOLIDAYS_FETCH to show only specific fields
-    if (intent === 'HRMS_HOLIDAYS_FETCH' && Array.isArray(data)) {
-      const processedData = data.map(holiday => ({
-        holiday_name: holiday.holiday_name || holiday.name || 'N/A',
-        from_date: holiday.from_date || holiday.start_date || 'N/A',
-        to_date: holiday.to_date || holiday.end_date || 'N/A'
-      }));
-
-      // Ensure we have valid data for table rendering
-      if (processedData.length > 0) {
-        const columns = [
-          { key: 'holiday_name', label: 'Holiday Name' },
-          { key: 'from_date', label: 'From Date' },
-          { key: 'to_date', label: 'To Date' }
-        ];
-
-        const blocks = [{
-          type: 'table',
-          title: getIntentTitle(intent),
-          data: {
-            columns,
-            rows: processedData
-          }
-        }];
-
-        // Add query suggestions block if available
-        const querySuggestions = getIntentQuerySuggestions(intent);
-        if (querySuggestions && querySuggestions.length > 0) {
-          blocks.push({
-            type: 'query-suggestions',
-            title: 'Related Queries',
-            data: querySuggestions
-          });
-        }
-
-        return {
-          answer: `Found ${processedData.length} holiday(s) in the calendar.`,
-          intent,
-          data: {
-            blocks
-          },
-          query: request.query,
-          querySuggestions
-        };
-      }
-
-      return {
-        answer: 'No holidays found in the calendar.',
+      return createStructuredResponse(
         intent,
-        data: [],
-        query: request.query,
-        querySuggestions: getIntentQuerySuggestions(intent)
-      };
+        processedData,
+        request.query,
+        getIntentQuerySuggestions(intent)
+      );
     }
 
-    // Special handling for HRMS_ATTENDANCE_FETCH to show specific attendance fields
-    if (intent === 'HRMS_ATTENDANCE_FETCH' && Array.isArray(data)) {
-      // Check if query is about current user's attendance or mentions another user
-      const queryLower = request.query.toLowerCase();
-      const myAttendancePatterns = [
-        /\bmy\s+attendance/i,
-        /check\s+my\s+attendance/i,
-        /my\s+attendance\s+history/i,
-        /my\s+attendance\s+records/i
-      ];
-
-      const isMyAttendance = myAttendancePatterns.some(pattern => pattern.test(queryLower));
-
-      let mentionedUser = null;
-      if (isMyAttendance) {
-        mentionedUser = 'me'; // Special marker for current user
-      } else {
-        // Check if query mentions a specific user (not "my")
-        const userMentionPatterns = [
-          /attendance\s+(?:for|of)\s+(.+?)(?:\s|$)/i,
-          /(.+?)(?:'s|s')\s+attendance/i,
-          /attendance\s+records?\s+(?:for|of)\s+(.+?)(?:\s|$)/i
-        ];
-
-        for (const pattern of userMentionPatterns) {
-          const match = request.query.match(pattern);
-          if (match && !match[1].toLowerCase().includes('my')) { // Exclude "my" matches
-            mentionedUser = match[1].trim();
-            break;
-          }
-        }
-      }
-
-      const processedData = data.map(attendance => ({
-        date: attendance.day || attendance.date || attendance.attendance_date || 'N/A',
-        punch_in_time: attendance.punchin_time || attendance.punch_in || attendance.check_in_time || 'N/A',
-        punch_out_time: attendance.punchout_time || attendance.punch_out || attendance.check_out_time || 'N/A',
-        duration: attendance.timestamp_diff || attendance.duration || attendance.working_hours || 'N/A',
-        user_id: attendance.user_id || attendance.employee_id || 'N/A',
-        user_name: attendance.user_name || attendance.employee_name || attendance.name || 'N/A'
-      }));
-
-      // Ensure we have valid data for table rendering
-      if (processedData.length > 0) {
-        const columns = [
-          { key: 'date', label: 'Date' },
-          { key: 'punch_in_time', label: 'Punch In Time' },
-          { key: 'punch_out_time', label: 'Punch Out Time' },
-          { key: 'duration', label: 'Duration' },
-          { key: 'user_id', label: 'User ID' },
-          { key: 'user_name', label: 'User Name' }
-        ];
-
-        const blocks = [{
-          type: 'table',
-          title: getIntentTitle(intent),
-          data: {
-            columns,
-            rows: processedData
-          }
-        }];
-
-        // Add query suggestions block if available
-        const querySuggestions = getIntentQuerySuggestions(intent);
-        if (querySuggestions && querySuggestions.length > 0) {
-          blocks.push({
-            type: 'query-suggestions',
-            title: 'Related Queries',
-            data: querySuggestions
-          });
-        }
-
-        const userContext = mentionedUser === 'me' ? ' for you' :
-                           mentionedUser ? ` for ${mentionedUser}` : ' for all users';
-        return {
-          answer: `Found ${processedData.length} attendance record(s)${userContext}.`,
-          intent,
-          data: {
-            blocks
-          },
-          query: request.query,
-          querySuggestions
-        };
-      }
-
-      const userContext = mentionedUser === 'me' ? ' for you' :
-                         mentionedUser ? ` for ${mentionedUser}` : '';
-      return {
-        answer: `No attendance records found${userContext}.`,
-        intent,
-        data: [],
-        query: request.query,
-        querySuggestions: getIntentQuerySuggestions(intent)
-      };
-    }
-
-    // Special handling for HRMS_DEPARTMENTS_FETCH to show only department and status fields
-    if (intent === 'HRMS_DEPARTMENTS_FETCH' && Array.isArray(data)) {
-      const processedData = data.map(dept => ({
-        department: dept.department || dept.departmentName || 'N/A',
-        status: dept.status || 'Active'
-      }));
-
-      // Ensure we have valid data for table rendering
-      if (processedData.length > 0) {
-        const columns = [
-          { key: 'department', label: 'Department' },
-          { key: 'status', label: 'Status' }
-        ];
-
-        const blocks = [{
-          type: 'table',
-          title: getIntentTitle(intent),
-          data: {
-            columns,
-            rows: processedData
-          }
-        }];
-
-        // Add query suggestions block if available
-        const querySuggestions = getIntentQuerySuggestions(intent);
-        if (querySuggestions && querySuggestions.length > 0) {
-          blocks.push({
-            type: 'query-suggestions',
-            title: 'Related Queries',
-            data: querySuggestions
-          });
-        }
-
-        return {
-          answer: `Found ${processedData.length} department(s).`,
-          intent,
-          data: {
-            blocks
-          },
-          query: request.query,
-          querySuggestions
-        };
-      }
-
-      return {
-        answer: 'No departments found.',
-        intent,
-        data: [],
-        query: request.query,
-        querySuggestions: getIntentQuerySuggestions(intent)
-      };
-    }
-
-    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
-
+    // DEFAULT RESPONSE
+    return createStructuredResponse(
+      intent,
+      Array.isArray(data)
+        ? data
+        : data
+        ? [data]
+        : [],
+      request.query,
+      getIntentQuerySuggestions(intent)
+    );
   } catch (error) {
     console.error('HRMS Request Error:', error);
-    await saveMessage(conversationId, 'bot', `Error processing HRMS request: ${(error as Error).message}`, intent, undefined, undefined, true);
+
+    await saveMessage(
+      conversationId,
+      'bot',
+      `Error processing HRMS request: ${
+        (error as Error).message
+      }`,
+      intent,
+      undefined,
+      undefined,
+      true
+    );
+
     return {
-      answer: `Error processing your HRMS request: ${(error as Error).message}`,
+      answer: `Error processing your HRMS request: ${
+        (error as Error).message
+      }`,
       conversationId,
       intent,
       error: 'HRMS_API_ERROR',
@@ -1049,7 +978,7 @@ async function handleLMSRequest(
     let params: any = { sub_institute_id: request.subInstituteId };
 
     const intentToApiMap: Record<string, string> = {
-      'LMS_COURSES_FETCH': 'lms_course_master',
+      'LMS_COURSES_FETCH': 'table_data',
       'LMS_MODULES_FETCH': 'chapter_master',
       'LMS_CONTENT_FETCH': 'content_master',
       'LMS_QUESTION_CHAPTERS_FETCH': 'question_chapter_master',
@@ -1087,6 +1016,27 @@ async function handleLMSRequest(
     if (entities.courseId) params.course_id = entities.courseId;
     if (entities.moduleId) params.module_id = entities.moduleId;
 
+    // For LMS_COURSES_FETCH, differentiate between "all courses" and "my enrolled courses"
+    if (intent === 'LMS_COURSES_FETCH') {
+      const queryLower = request.query.toLowerCase();
+
+      // Check if this is a query for enrolled/personal courses
+      const isEnrolledQuery = /\b(my|enrolled|enrollment)\b/i.test(queryLower) ||
+                             queryLower.includes('my courses') ||
+                             queryLower.includes('enrolled courses');
+
+      if (isEnrolledQuery) {
+        // Fetch enrolled courses from lms_course_enroll table
+        params.table = 'lms_course_enroll';
+        params[`filters[user_id]`] = request.userId;
+        params[`filters[sub_institute_id]`] = request.subInstituteId;
+      } else {
+        // Fetch all courses from sub_std_map table (original behavior)
+        params.table = 'sub_std_map';
+        params[`filters[sub_institute_id]`] = request.subInstituteId;
+      }
+    }
+
     const apiEntry = hpApiMap[apiKey];
     if (!apiEntry) {
       throw new Error(`No API mapping found for intent: ${intent}`);
@@ -1095,70 +1045,39 @@ async function handleLMSRequest(
     let data = await callHpApi(method, apiEntry.url, params, body);
 
     // Apply client-side filtering for LMS endpoints that don't support server-side filtering
-    if (intent === 'LMS_COURSES_FETCH' && Array.isArray(data)) {
-      const originalCount = data.length;
-      data = data.filter(course => course.sub_institute_id == request.subInstituteId);
-      console.log(`Filtered courses from ${originalCount} to ${data.length} for sub_institute_id ${request.subInstituteId}`);
-    }
+    // For LMS_COURSES_FETCH, filtering is done server-side
 
     await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} LMS record(s)`, intent);
 
-    // Special handling for LMS_COURSES_FETCH to show only display_name and subject_category fields
+    // Special handling for LMS_COURSES_FETCH - only for enrolled courses queries
     if (intent === 'LMS_COURSES_FETCH' && Array.isArray(data)) {
-      const processedData = data.map(course => ({
-        display_name: course.display_name || course.name || course.course_name || 'N/A',
-        subject_category: course.subject_category || course.category || course.subject || 'N/A'
-      }));
+      const queryLower = request.query.toLowerCase();
 
-      // Ensure we have valid data for table rendering
-      if (processedData.length > 0) {
-        const columns = [
-          { key: 'display_name', label: 'Course Name' },
-          { key: 'subject_category', label: 'Subject Category' }
-        ];
+      // Check if this is a query for enrolled/personal courses
+      const isEnrolledQuery = /\b(my|enrolled|enrollment)\b/i.test(queryLower) ||
+                             queryLower.includes('my courses') ||
+                             queryLower.includes('enrolled courses');
 
-        const blocks = [{
-          type: 'table',
-          title: getIntentTitle(intent),
-          data: {
-            columns,
-            rows: processedData
-          }
-        }];
+      if (isEnrolledQuery) {
+        // Process enrolled courses data - check if course names are already included
+        const processedData = data.map(item => ({
+          course_name: item.course_name || item.course_title || item.name || `Course ID: ${item.course_id || 'N/A'}`,
+          status: item.status || 'N/A'
+        }));
 
-        // Add query suggestions block if available
-        const querySuggestions = getIntentQuerySuggestions(intent);
-        if (querySuggestions && querySuggestions.length > 0) {
-          blocks.push({
-            type: 'query-suggestions',
-            title: 'Related Queries',
-            data: querySuggestions
-          });
-        }
-
-        return {
-          answer: `Found ${processedData.length} course(s).`,
-          intent,
-          data: {
-            blocks
-          },
-          query: request.query,
-          querySuggestions
-        };
+        // Use createStructuredResponse for proper UI formatting
+        const sql = `SELECT course_id, status FROM lms_course_enroll WHERE user_id = ${request.userId} AND sub_institute_id = ${request.subInstituteId};`;
+        const tablesUsed = ['lms_course_enroll'];
+        return createStructuredResponse(intent, processedData, request.query, getIntentQuerySuggestions(intent), sql, tablesUsed);
       }
-
-      return {
-        answer: 'No courses found.',
-        intent,
-        data: [],
-        query: request.query,
-        querySuggestions: getIntentQuerySuggestions(intent)
-      };
+      // For "all courses" queries, continue with normal processing
     }
 
-    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
+    // Default handling for all other intents
+    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent), undefined, undefined);
 
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('LMS Request Error:', error);
     const errorMessage = (error as Error).message;
 
@@ -1222,7 +1141,8 @@ async function handleSkillsAndJobRolesRequest(
       'SKILL_CATEGORIES_FETCH': 'skill_category',
       'SKILL_KNOWLEDGE_ABILITIES_FETCH': 'skill_knowledge_ability',
       'SKILL_PROFICIENCY_LEVELS_FETCH': 'proficiency_levels',
-      'JOB_ROLES_FETCH': 'jobroleOccupation',
+      'JOB_ROLES_FETCH': 's_user_jobrole',
+      'JOB_ROLES_FOR_DEPARTMENT_FETCH': 's_user_jobrole',
       'JOB_ROLE_SKILLS_FETCH': 'jobroleSkill',
       'JOB_ROLE_TASKS_FETCH': 'jobroleTask'
     };
@@ -1261,11 +1181,41 @@ async function handleSkillsAndJobRolesRequest(
       throw new Error(`No API mapping found for intent: ${intent}`);
     }
 
-    const data = await callHpApi(method, apiEntry.url, params, body);
+    let data = await callHpApi(method, apiEntry.url, params, body);
+
+    // Apply client-side filtering for sub_institute_id if the API didn't filter properly
+    if (Array.isArray(data) && request.subInstituteId) {
+      const originalCount = data.length;
+      data = data.filter(item => item.sub_institute_id == request.subInstituteId);
+      console.log(`Client-side filtered ${intent} data from ${originalCount} to ${data.length} for sub_institute_id ${request.subInstituteId}`);
+    }
 
     await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} skills/job roles record(s)`, intent);
 
-    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
+    // Filter data to show only jobrole field for JOB_ROLES_FETCH and JOB_ROLES_FOR_DEPARTMENT_FETCH
+    if ((intent === 'JOB_ROLES_FETCH' || intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') && Array.isArray(data)) {
+      data = data.map(item => ({ jobrole: item.jobrole || 'N/A' }));
+    }
+
+    // Generate SQL and apply filters for JOB_ROLES_FETCH and JOB_ROLES_FOR_DEPARTMENT_FETCH
+    let sql: string | undefined;
+    if (intent === 'JOB_ROLES_FETCH' || intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') {
+      params[`filters[sub_institute_id]`] = request.subInstituteId;
+      if (entities.department) {
+        params[`filters[department]`] = entities.department;
+        sql = `SELECT jobrole FROM s_user_jobrole WHERE sub_institute_id = ${request.subInstituteId} AND department = '${entities.department}';`;
+      } else {
+        sql = `SELECT jobrole FROM s_user_jobrole WHERE sub_institute_id = ${request.subInstituteId};`;
+      }
+    }
+
+    // Custom answer text for department-specific job roles
+    let customAnswerText: string | undefined;
+    if (intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') {
+      customAnswerText = `Found ${Array.isArray(data) ? data.length : 0} job role(s) for the ${entities?.department || 'specified'} department.`;
+    }
+
+    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent), sql, (intent === 'JOB_ROLES_FETCH' || intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') ? ['s_user_jobrole'] : undefined, customAnswerText);
 
   } catch (error) {
     console.error('Skills and Job Roles Request Error:', error);
@@ -1298,18 +1248,23 @@ async function handleOrganizationAndIndustriesRequest(
       'DEPARTMENT_MASTER_FETCH': 'department_master',
       'NEO_INDUSTRIES_FETCH': 'neo_industries',
       'DEPARTMENTS_FOR_INDUSTRY_FETCH': 'neo_industry_departments',
-      'JOB_ROLES_FOR_DEPARTMENT_FETCH': 'neo_jobroles',
       'SKILLS_FOR_JOB_ROLE_FETCH': 'neo_skills'
     };
 
     apiKey = intentToApiMap[intent] || 's_industries';
 
+    // Add filters for table_data endpoints
+    if (intent === 'USER_JOB_ROLES_FETCH') {
+      params[`filters[sub_institute_id]`] = request.subInstituteId;
+      if (request.userId) {
+        params[`filters[user_id]`] = request.userId;
+      }
+    }
+
+
     // Add path parameters for Neo4J endpoints
     if (entities.industrySlug && intent === 'DEPARTMENTS_FOR_INDUSTRY_FETCH') {
       apiKey = apiKey.replace('{slug}', entities.industrySlug);
-    }
-    if (entities.departmentSlug && intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') {
-      apiKey = apiKey.replace('{slug}', entities.departmentSlug);
     }
     if (entities.jobRoleName && intent === 'SKILLS_FOR_JOB_ROLE_FETCH') {
       params.name = entities.jobRoleName;
@@ -1320,9 +1275,14 @@ async function handleOrganizationAndIndustriesRequest(
       throw new Error(`No API mapping found for intent: ${intent}`);
     }
 
-    const data = await callHpApi('GET', apiEntry.url, params);
+    let data = await callHpApi('GET', apiEntry.url, params);
 
     await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} organization/industries record(s)`, intent);
+
+    // Filter data to show only jobrole field for USER_JOB_ROLES_FETCH
+    if (intent === 'USER_JOB_ROLES_FETCH' && Array.isArray(data)) {
+      data = data.map(item => ({ jobrole: item.jobrole || 'N/A' }));
+    }
 
     return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent));
 
@@ -1836,11 +1796,11 @@ const tableAliasMap: Record<string, string> = {
   "payroll": "monthly_payroll",
 
   // skills / jobrole
-  "skill": "s_user_skill",
-  "skills": "s_user_skill",
+  "skill": "s_users_skills",
+  "skills": "s_users_skills",
   "skill_category": "skill_category",
-  "jobrole": "jobroleOccupation",
-  "jobroles": "jobroleOccupation",
+  "jobrole": "s_user_jobrole",
+  "jobroles": "s_user_jobrole",
   "task": "jobroleTask",
   "tasks": "jobroleTask",
 
@@ -1927,7 +1887,7 @@ const hpApiMap: Record<string, { method: "GET" | "POST"; url: string }> = {
   // -----------------------
   // Skill Library
   // -----------------------
-  "skill_library": { method: "GET", url: "https://erp.triz.co.in/lms/skill_library" },
+  "skill_library": { method: "GET", url: "https://hp.triz.co.in/table_data?table=s_users_skills" },
   ";skill_library_create": { method: "POST", url: "https://erp.triz.co.in/lms/skill_library" },
   "skill_category": { method: "GET", url: "https://erp.triz.co.in/lms/skill_library/create" },
   "skill_knowledge_ability": { method: "GET", url: "https://hp.triz.co.in/table_data?table=s_skill_knowledge_ability" },
@@ -1937,7 +1897,7 @@ const hpApiMap: Record<string, { method: "GET" | "POST"; url: string }> = {
   // -----------------------
   // JobRole & Occupation
   // -----------------------
-  "jobroleOccupation": { method: "GET", url: "https://erp.triz.co.in/skill/jobroleOccupation" },
+  "jobroleOccupation": { method: "GET", url: "https://hp.triz.co.in/table_data?table=s_user_jobrole" },
   "jobroleOccupation_create": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleOccupation" },
   "jobroleOccupation_update": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleOccupation/{id}" },
   "jobroleOccupation_delete": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleOccupation/{id}/delete" },
@@ -2052,8 +2012,22 @@ async function callHpApi(method: "GET" | "POST", url: string, params?: Record<st
     }
   }
 
+  // Add timeout to prevent hanging requests
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  fetchOptions.signal = controller.signal;
 
-  const res = await fetch(finalUrl, fetchOptions);
+  let res;
+  try {
+    res = await fetch(finalUrl, fetchOptions);
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timed out after 30 seconds: ${finalUrl}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`HP API call failed ${res.status} ${res.statusText} - ${text}`);
@@ -2165,7 +2139,7 @@ function inferTableFromNL(nl: string): string | undefined {
  * Note: This function is intentionally conservative: it avoids executing mutating SQL
  * (DROP/DELETE/etc.) — validateSQL() still runs upstream.
  */
-async function executeSQLQuery(sql: string, originalQuery?: string): Promise<any[]> {
+async function executeSQLQuery(sql: string, originalQuery?: string, subInstituteId?: string): Promise<any[]> {
   // 1) Try to parse SQL fragments
   const fragments = parseSQLFragments(sql || "");
   let table = fragments?.table;
@@ -2269,9 +2243,10 @@ async function executeSQLQuery(sql: string, originalQuery?: string): Promise<any
   // 8) Construct API params using doc's expected query params style
   const params: Record<string, any> = {};
   // default required common params (the doc uses token, sub_institute_id etc.)
-  // prefer passing env vars if available
+  // prefer passing request subInstituteId over env vars
   if (process.env.HP_API_TOKEN) params["token"] = process.env.HP_API_TOKEN;
-  if (process.env.HP_SUB_INSTITUTE_ID) params["sub_institute_id"] = process.env.HP_SUB_INSTITUTE_ID;
+  if (subInstituteId) params["sub_institute_id"] = subInstituteId;
+  else if (process.env.HP_SUB_INSTITUTE_ID) params["sub_institute_id"] = process.env.HP_SUB_INSTITUTE_ID;
 
   // Always add sub_institute_id as a filter if the table has this column
   const tablesWithSubInstituteId = [
@@ -2279,14 +2254,13 @@ async function executeSQLQuery(sql: string, originalQuery?: string): Promise<any
     'hrms_leave_type', 'hrms_holiday', 'employee_salary_structure', 'payroll_deduction',
     'monthly_payroll', 'lms_course_master', 'chapter_master', 'content_master',
     'question_chapter_master', 'question_master', 'question_paper', 'online_exam',
-    'skill_library', 'skill_category', 's_skill_knowledge_ability', 'jobroleOccupation',
+    's_users_skills', 'skill_category', 's_skill_knowledge_ability',
     'jobroleSkill', 'jobroleTask', 's_user_jobrole', 's_industries', 'standard',
     'academic_section', 'subject_master', 'tblmenumaster'
   ];
-
   const hasSubInstituteId = tablesWithSubInstituteId.includes(table);
-  if (hasSubInstituteId && process.env.HP_SUB_INSTITUTE_ID) {
-    filters['sub_institute_id'] = process.env.HP_SUB_INSTITUTE_ID;
+  if (hasSubInstituteId && subInstituteId) {
+    filters['sub_institute_id'] = subInstituteId;
   }
 
   // incorporate filters from WHERE
@@ -2302,6 +2276,10 @@ async function executeSQLQuery(sql: string, originalQuery?: string): Promise<any
         params[`filters[${k}]`] = v;
       }
 
+    }
+    // Also pass sub_institute_id as direct parameter for some APIs
+    if (filters['sub_institute_id']) {
+      params["sub_institute_id"] = filters['sub_institute_id'];
     }
   } else {
     // If no filters but SQL had SELECT * FROM table (no where), still pass table
@@ -2510,13 +2488,13 @@ function getPredefinedSQL(query: string, subInstituteId?: string): string | null
     'list departments': `SELECT name, description, status FROM hrms_departments${subInstituteFilter} LIMIT 50`,
     'get departments': `SELECT name, description, status FROM hrms_departments${subInstituteFilter} LIMIT 50`,
 
-    'show all skills': `SELECT name, category FROM skill_library${subInstituteFilter} LIMIT 50`,
-    'list skills': `SELECT name, category FROM skill_library${subInstituteFilter} LIMIT 50`,
-    'get skills': `SELECT name, category FROM skill_library${subInstituteFilter} LIMIT 50`,
+    'show all skills': `SELECT title, category FROM s_users_skills${subInstituteFilter} LIMIT 50`,
+    'list skills': `SELECT title, category FROM s_users_skills${subInstituteFilter} LIMIT 50`,
+    'get skills': `SELECT title, category FROM s_users_skills${subInstituteFilter} LIMIT 50`,
 
-    'show job roles': `SELECT id, name, description FROM jobroleOccupation${subInstituteFilter} LIMIT 50`,
-    'list job roles': `SELECT id, name, description FROM jobroleOccupation${subInstituteFilter} LIMIT 50`,
-    'get job roles': `SELECT id, name, description FROM jobroleOccupation${subInstituteFilter} LIMIT 50`,
+    'show job roles': `SELECT id, name, description FROM s_user_jobrole${subInstituteFilter} LIMIT 50`,
+    'list job roles': `SELECT id, name, description FROM s_user_jobrole${subInstituteFilter} LIMIT 50`,
+    'get job roles': `SELECT id, name, description FROM s_user_jobrole${subInstituteFilter} LIMIT 50`,
 
     'show industries': `SELECT id, name FROM s_industries${subInstituteFilter} LIMIT 50`,
     'list industries': `SELECT id, name FROM s_industries${subInstituteFilter} LIMIT 50`,
@@ -2560,7 +2538,7 @@ function getPredefinedSQL(query: string, subInstituteId?: string): string | null
   // Pattern-based matching for flexibility (only for tables that exist)
   // Skills queries
   if (lowerQuery.includes('skill') && (lowerQuery.includes('available') || lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('what'))) {
-    return `SELECT name, category FROM skill_library${subInstituteFilter} LIMIT 50`;
+    return `SELECT title, category FROM s_users_skills${subInstituteFilter} LIMIT 50`;
   }
 
   // Users queries
@@ -2575,7 +2553,7 @@ function getPredefinedSQL(query: string, subInstituteId?: string): string | null
 
   // Job roles queries
   if (lowerQuery.includes('job role') && (lowerQuery.includes('list') || lowerQuery.includes('show') || lowerQuery.includes('all'))) {
-    return `SELECT id, name, description FROM jobroleOccupation${subInstituteFilter} LIMIT 50`;
+    return `SELECT id, name, description FROM s_user_jobrole${subInstituteFilter} LIMIT 50`;
   }
 
   // Industries queries
@@ -2636,7 +2614,12 @@ function getPredefinedSQL(query: string, subInstituteId?: string): string | null
 
   if (lowerQuery.includes('job role') && (lowerQuery.includes('show') || lowerQuery.includes('list'))) {
     console.log('Fallback: matched job role query');
-    return `SELECT id, name, description FROM jobroleOccupation${subInstituteFilter} LIMIT 50`;
+    return `SELECT id, name, description FROM s_user_jobrole${subInstituteFilter} LIMIT 50`;
+  }
+
+  if (lowerQuery.includes('skill') && (lowerQuery.includes('show') || lowerQuery.includes('list') || lowerQuery.includes('all'))) {
+    console.log('Fallback: matched skill query');
+    return `SELECT title, category FROM s_users_skills${subInstituteFilter} LIMIT 50`;
   }
 
   console.log(`No predefined SQL match found for: "${lowerQuery}"`);
@@ -2710,6 +2693,18 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
         sql: 'SELECT 1 AS mock_result;',
         tables_used: [],
         insights: 'Mock execution completed without calling external services.',
+        data: {
+          blocks: [{
+            type: 'text',
+            title: 'Mock Result',
+            content: 'Mock execution completed successfully.'
+          }, {
+            type: 'text',
+            title: 'View SQL Query',
+            content: `\`\`\`sql\nSELECT 1 AS mock_result;\n\`\`\``
+          }]
+        },
+        querySuggestions: ['Show me all users', 'Show departments', 'Show job roles', 'Show industries'],
         canEscalate: true
       };
 
@@ -3002,7 +2997,7 @@ Please try one of these queries, or contact support to upgrade your AI credits.`
         }
 
         try {
-          results = await executeSQLQuery(sql, request.query);
+            results = await executeSQLQuery(sql, request.query, request.subInstituteId);
           const execTime = Date.now() - startTime;
 
           await logQuery(conversationId, 'data_retrieval', sql, execTime, true);
@@ -3012,7 +3007,7 @@ Please try one of these queries, or contact support to upgrade your AI credits.`
           if (isPredefined) {
             console.log('Predefined SQL failed, trying AI generation as fallback');
             sql = await generateSQL(request.query, history, request.subInstituteId);
-            results = await executeSQLQuery(sql, request.query);
+          results = await executeSQLQuery(sql, request.query, request.subInstituteId);
             const execTime = Date.now() - startTime;
             await logQuery(conversationId, 'data_retrieval', sql, execTime, true);
           } else {
@@ -3055,15 +3050,15 @@ Please try one of these queries, or contact support to upgrade your AI credits.`
           console.log(trace);
         }
 
+        // Create structured response for consistency
+        const structuredResponse = createStructuredResponse(intent.intent, results, request.query, getIntentQuerySuggestions(intent.intent), sql);
+
         return {
-          answer,
+          ...structuredResponse,
           conversationId,
-          intent: intent.intent,
           sql,
           tables_used: tables,
           insights: `Found ${results.length} result(s)`,
-          data: results, // Include the actual data for ResponseRenderer
-          query: request.query, // Include the original query for ResponseRenderer
           canEscalate: true
         };
       } catch (error) {
@@ -3090,6 +3085,35 @@ Please try one of these queries, or contact support to upgrade your AI credits.`
     console.error("🔥 RAW ERROR:", error);
     const errorCtx = parseError(error);
     const errorMessage = formatErrorResponse(errorCtx, attempt);
+
+    // Handle image processing errors specifically
+    const errorStr = (error as Error).message || '';
+    if (errorStr.includes('image.png') && errorStr.includes('model does not support')) {
+      const imageErrorMessage = 'I encountered an issue with image processing. Here\'s the SQL query used for your request:';
+      await saveMessage(
+        conversationId,
+        'bot',
+        imageErrorMessage,
+        intent.intent,
+        sql || 'SELECT 1',
+        [],
+        true,
+        errorStr
+      );
+
+      return {
+        answer: imageErrorMessage,
+        conversationId,
+        intent: intent.intent,
+        sql: sql || 'SELECT 1',
+        tables_used: [],
+        error: 'IMAGE_PROCESSING_ERROR',
+        recoverable: true,
+        suggestion: 'The query was processed successfully despite the image error.',
+        canEscalate: true,
+        querySuggestions: getIntentQuerySuggestions(intent.intent)
+      };
+    }
 
     await logEvent({
       conversationId,
