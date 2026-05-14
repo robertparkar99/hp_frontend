@@ -312,9 +312,9 @@ export function createIntelligentQueryResponse(
       type: 'query-suggestions' as const,
       title: 'Related Queries',
       data: [
-        'Show employee data by department',
-        'List all employees',
-        'Get employee contact information'
+        { text: 'Show employee data by department', description: 'View employees organized by their departments', intent: 'data_retrieval' },
+        { text: 'List all employees', description: 'Get a complete list of all employees', intent: 'data_retrieval' },
+        { text: 'Get employee contact information', description: 'Access employee contact details and communication info', intent: 'data_retrieval' }
       ]
     };
 

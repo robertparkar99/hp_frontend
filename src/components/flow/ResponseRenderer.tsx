@@ -234,14 +234,45 @@ interface ResponseRendererProps {
   className?: string;
   onAction?: (action: string, value?: any) => void;
   tablesUsed?: string[];
+  onFeedback?: (rating: number) => void;
+  feedbackRating?: number | null;
 }
 
 const DEFAULT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
-const ResponseRenderer: React.FC<ResponseRendererProps> = ({ response, className = '', onAction, tablesUsed }) => {
+// Helper function to render SQL Query block
+function renderSqlQueryBlock(
+  block: UIBlock,
+  showSql: boolean,
+  setShowSql: (show: boolean) => void
+) {
+  if (block.type !== 'text') return null;
+  const content = (block as TextBlock).content;
+  
+  return (
+    <div className="space-y-2">
+      {/* <button
+        onClick={() => setShowSql(!showSql)}
+        className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+      >
+        <FileText className="h-4 w-4" />
+        <span>View SQL Query</span>
+        <ChevronRight className={`h-4 w-4 transform transition-transform ${showSql ? 'rotate-90' : ''}`} />
+      </button> */}
+      {showSql && (
+        <div className="bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto text-xs font-mono">
+          <ReactMarkdown>{content}</ReactMarkdown>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const ResponseRenderer: React.FC<ResponseRendererProps> = ({ response, className = '', onAction, tablesUsed, onFeedback, feedbackRating: propFeedbackRating }) => {
   const [activeBlock, setActiveBlock] = useState<number>(0);
   const [showSql, setShowSql] = useState<boolean>(false);
   const [feedbackRating, setFeedbackRating] = useState<number | null>(null);
+  const [timestamp] = useState<string>(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
 
   if (!response?.blocks || response.blocks.length === 0) {
     return (
@@ -264,7 +295,7 @@ const ResponseRenderer: React.FC<ResponseRendererProps> = ({ response, className
   // Get tables used from prop or response
   const displayTablesUsed = tablesUsed || response.tables_used || [];
 
-  // Render database badges
+  // Render database badges (table names)
   const renderDatabaseBadges = () => {
     if (!displayTablesUsed || displayTablesUsed.length === 0) return null;
 
@@ -275,7 +306,7 @@ const ResponseRenderer: React.FC<ResponseRendererProps> = ({ response, className
             key={idx}
             className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium shadow-sm"
           >
-            <Database className="w-3 h-3" />
+            <Table2 className="w-3 h-3" />
             <span>{table}</span>
           </div>
         ))}
@@ -283,50 +314,59 @@ const ResponseRenderer: React.FC<ResponseRendererProps> = ({ response, className
     );
   };
 
+  // Single block - display without tabs
   if (regularBlocks.length === 1) {
     return (
       <div className={className}>
         {renderDatabaseBadges()}
         {renderBlockTitle(regularBlocks[0])}
         {renderBlock(regularBlocks[0], onAction)}
-        {sqlQueryBlocks.map((block, index) => (
-          <div key={`sql-${index}`} className="mt-4">
-            {renderBlockTitle(block)}
-            {renderBlock(block, onAction)}
+        {sqlQueryBlocks.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            {renderSqlQueryBlock(sqlQueryBlocks[0], showSql, setShowSql)}
           </div>
-        ))}
+        )}
+        {/* Feedback and timestamp section */}
+       
       </div>
     );
   }
 
+  // Multiple blocks - display with tabs
   return (
     <div className={className}>
       {renderDatabaseBadges()}
-      <Tabs value={String(activeBlock)} onValueChange={(v) => setActiveBlock(Number(v))}>
-        <TabsList className="mb-4 flex flex-wrap justify-start h-auto gap-1 bg-transparent">
+      
+      {/* Tabs Header */}
+      <Tabs value={String(activeBlock)} onValueChange={(v) => setActiveBlock(Number(v))} className="w-full">
+        <TabsList className="mb-0 flex justify-start h-auto gap-0 bg-transparent border-b border-gray-200 rounded-none p-0">
           {regularBlocks.map((block, index) => (
             <TabsTrigger
               key={index}
               value={String(index)}
-              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+              className="rounded-none px-4 py-3 border-b-2 border-transparent font-medium text-sm text-gray-600 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent hover:text-gray-900 transition-colors"
             >
               {block.title || getBlockTypeLabel(block.type)}
             </TabsTrigger>
           ))}
         </TabsList>
-        {regularBlocks.map((block, index) => (
-          <TabsContent key={index} value={String(index)}>
-            {renderBlockTitle(block)}
-            {renderBlock(block, onAction)}
-          </TabsContent>
-        ))}
-      </Tabs>
-      {/* {sqlQueryBlocks.map((block, index) => (
-        <div key={`sql-${index}`} className="mt-4">
-          {renderBlockTitle(block)}
-          {renderBlock(block, onAction)}
+
+        {/* Tab Content */}
+        <div className="mt-4">
+          {regularBlocks.map((block, index) => (
+            <TabsContent key={index} value={String(index)} className="mt-0">
+              {renderBlock(block, onAction)}
+            </TabsContent>
+          ))}
         </div>
-      ))} */}
+      </Tabs>
+
+      {/* SQL Query Block */}
+      {sqlQueryBlocks.length > 0 && (
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          {renderSqlQueryBlock(sqlQueryBlocks[0], showSql, setShowSql)}
+        </div>
+      )}
     </div>
   );
 };
@@ -376,7 +416,7 @@ function renderBlock(block: UIBlock, onAction?: (action: string, value?: any) =>
     case 'attendance-summary' as UIBlockType:
       return <AttendanceSummaryBlockRenderer data={(block as any).data} />;
     case 'query-suggestions':
-      return <QuerySuggestionsBlockRenderer suggestions={(block as QuerySuggestionsBlock).data.map((item: any) => item.query || item)} onAction={onAction} />;
+      return <QuerySuggestionsBlockRenderer suggestions={(block as QuerySuggestionsBlock).data} onAction={onAction} />;
     default:
       return <div className="text-gray-500 text-sm">Unsupported format</div>;
   }
@@ -889,7 +929,7 @@ function QuerySuggestionsBlockRenderer({
   onAction,
   className = ''
 }: {
-  suggestions: string[];
+  suggestions: Array<{ text: string; description: string; intent: string }>;
   onAction?: (action: string, value?: any) => void;
   className?: string;
 }) {
@@ -911,13 +951,18 @@ function QuerySuggestionsBlockRenderer({
           <div
             key={index}
             className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group"
-            onClick={() => onAction?.('query_suggestion', suggestion)}
+            onClick={() => onAction?.('query_suggestion', suggestion.text)}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 <div className="font-medium text-gray-900">
-                  {suggestion}
+                  {suggestion.text}
                 </div>
+                {suggestion.description && (
+                  <div className="text-sm text-gray-600 mt-1">
+                    {suggestion.description}
+                  </div>
+                )}
               </div>
               <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0 mt-1" />
             </div>
