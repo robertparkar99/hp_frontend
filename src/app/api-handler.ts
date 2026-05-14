@@ -429,35 +429,72 @@ const intentQuerySuggestions: Record<string, Array<{ text: string; description: 
 };
 
 /**
- * Get query suggestions for a specific intent
- */
-function getIntentQuerySuggestions(intent: string): string[] {
+  * Get query suggestions for a specific intent
+  */
+function getIntentQuerySuggestions(intent: string): Array<{ text: string; description: string; intent: string }> {
   const suggestions = intentQuerySuggestions[intent] || [];
-  return suggestions.map(suggestion => suggestion.text);
+  return suggestions.map(suggestion => ({
+    text: suggestion.text,
+    description: suggestion.description,
+    intent: intent
+  }));
 }
 // ================= NEW INTENT HANDLERS =================
 
 // Helper function to create structured responses for different data types
-function createStructuredResponse(intent: string, data: any[], query: string, querySuggestions?: string[], sql?: string, tablesUsed?: string[], customAnswerText?: string): ChatResponse {
+function createStructuredResponse(intent: string, data: any[], query: string, querySuggestions?: Array<{ text: string; description: string; intent: string }>, sql?: string, tablesUsed?: string[], customAnswerText?: string): ChatResponse {
   // Ensure data is an array and handle null/undefined cases
   if (!Array.isArray(data)) {
     data = data ? [data] : [];
   }
 
-  // Determine the best UI format based on data structure
+  // Customize answer text based on intent
+  let summaryText = customAnswerText || `Found ${data.length} result(s) for your query.`;
+  if (intent === 'HRMS_PROFILE_FETCH') {
+    summaryText = 'Here are your profile details.';
+  }
+  if (intent === 'LMS_COURSES_FETCH') {
+    summaryText = `Found ${data.length} enrolled course(s).`;
+  }
+
+  // Handle empty data case
   if (data.length === 0) {
     return {
       answer: 'No data found matching your query.',
       intent,
       sql,
       tables_used: tablesUsed,
-      data: [],
+      data: {
+        blocks: [
+          {
+            type: 'text',
+            title: 'Text/Summary',
+            content: 'No data found matching your query.'
+          },
+          {
+            type: 'text',
+            title: 'Query-wise data/results',
+            content: 'No results to display.'
+          },
+          ...(querySuggestions && querySuggestions.length > 0 ? [{
+            type: 'query-suggestions',
+            title: 'Related Queries',
+            data: querySuggestions
+          }] : []),
+          ...(sql ? [{
+            type: 'text',
+            title: 'View SQL Query',
+            content: `\`\`\`sql\n${sql}\n\`\`\``
+          }] : [])
+        ]
+      },
       query,
       querySuggestions
     };
   }
 
-  const blocks: any[] = [];
+  // Create the data/results block based on data type and intent
+  let dataBlock: any;
 
   // Special handling for HRMS_PROFILE_FETCH - use card format to show user profile
   if (intent === 'HRMS_PROFILE_FETCH' && data.length > 0) {
@@ -485,9 +522,9 @@ function createStructuredResponse(intent: string, data: any[], query: string, qu
       if (profile[field]) metadata[field.charAt(0).toUpperCase() + field.slice(1)] = profile[field];
     });
 
-    blocks.push({
+    dataBlock = {
       type: 'cards',
-      title: 'Your Profile',
+      title: 'Query-wise data/results',
       data: [{
         id: profile.id || profile.user_id,
         title: profile.name || profile.full_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User',
@@ -495,7 +532,7 @@ function createStructuredResponse(intent: string, data: any[], query: string, qu
         tag: profile.job_role || profile.role || profile.position || 'Employee',
         metadata
       }]
-    });
+    };
   }
   // Special handling for HRMS_USERS_FETCH - use table format to show all employee data
   else if (intent === 'HRMS_USERS_FETCH') {
@@ -515,25 +552,25 @@ function createStructuredResponse(intent: string, data: any[], query: string, qu
       { key: 'status', label: 'Status' }
     ];
 
-    blocks.push({
+    dataBlock = {
       type: 'table',
-      title: getIntentTitle(intent),
+      title: 'Query-wise data/results',
       data: {
         columns,
         rows: processedData
       }
-    });
+    };
   }
   // Special handling for HRMS_LEAVE_TYPES_FETCH - use list format to show leave types
   else if (intent === 'HRMS_LEAVE_TYPES_FETCH' && Array.isArray(data)) {
-    blocks.push({
+    dataBlock = {
       type: 'list',
-      title: getIntentTitle(intent),
+      title: 'Query-wise data/results',
       data: data.map((leaveType, index) => ({
         id: index,
         label: leaveType.name || leaveType.leave_type || leaveType.leave_type_id || 'N/A'
       }))
-    });
+    };
   }
   // For table-like data, use table format
   else if (data.length > 0 && data[0] && typeof data[0] === 'object' && data[0] !== null && !Array.isArray(data[0])) {
@@ -542,69 +579,56 @@ function createStructuredResponse(intent: string, data: any[], query: string, qu
       label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
     }));
 
-    blocks.push({
+    dataBlock = {
       type: 'table',
-      title: getIntentTitle(intent),
+      title: 'Query-wise data/results',
       data: {
         columns,
         rows: data
       }
-    });
+    };
   } else {
     // For simple lists, use list format
-    blocks.push({
+    dataBlock = {
       type: 'list',
-      title: getIntentTitle(intent),
+      title: 'Query-wise data/results',
       data: data.map((item, index) => ({
         id: index,
         label: item && typeof item === 'string' ? item : (item ? JSON.stringify(item) : 'N/A'),
         value: item
       }))
-    });
+    };
   }
 
-  // Add query suggestions block if available
-  if (querySuggestions && querySuggestions.length > 0) {
-    blocks.push({
+  // Always create the four consistent sections
+  const blocks: any[] = [
+    // 1. Text/Summary
+    {
+      type: 'text',
+      title: 'Text/Summary',
+      content: summaryText
+    },
+
+    // 2. Query-wise data/results
+    dataBlock,
+
+    // 3. Related Queries (if available)
+    ...(querySuggestions && querySuggestions.length > 0 ? [{
       type: 'query-suggestions',
       title: 'Related Queries',
       data: querySuggestions
-    });
-  }
+    }] : []),
 
-  // Add SQL query block if available
-  if (sql) {
-    blocks.push({
+    // 4. View SQL Query (if available)
+    ...(sql ? [{
       type: 'text',
       title: 'View SQL Query',
       content: `\`\`\`sql\n${sql}\n\`\`\``
-    });
-  }
-
-  // Customize answer text based on intent
-  let answerText = customAnswerText || `Found ${data.length} result(s) for your query.`;
-  if (intent === 'HRMS_PROFILE_FETCH') {
-    answerText = 'Here are your profile details.';
-  }
-  if (intent === 'LMS_COURSES_FETCH') {
-    answerText = `Found ${data.length} enrolled course(s).`;
-  }
-  if (intent === 'LMS_COURSES_FETCH') {
-    answerText = `Found ${data.length} enrolled course(s).`;
-  }
-
-
-  // Add a text block for summary for certain intents
-  if (intent === 'LMS_COURSES_FETCH' || intent === 'HRMS_ATTENDANCE_FETCH' || intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') {
-    blocks.unshift({
-      type: 'text',
-      title: 'Summary',
-      content: answerText
-    });
-  }
+    }] : [])
+  ];
 
   return {
-    answer: answerText,
+    answer: summaryText,
     intent,
     sql,
     tables_used: tablesUsed,
@@ -726,7 +750,7 @@ async function handleHRMSRequest(
         suggestion:
           'Please provide the necessary information to complete this action.',
         canEscalate: true,
-        querySuggestions: getIntentQuerySuggestions(intent)
+        querySuggestions: getIntentQuerySuggestions(intent).map(s => s.text)
       };
     }
 
@@ -850,6 +874,20 @@ async function handleHRMSRequest(
       );
     }
 
+    // Generate SQL for HRMS_DEPARTMENTS_FETCH
+    if (intent === 'HRMS_DEPARTMENTS_FETCH') {
+      const sql = `SELECT * FROM hrms_departments WHERE sub_institute_id = ${request.subInstituteId};`;
+      const tablesUsed = ['hrms_departments'];
+      return createStructuredResponse(
+        intent,
+        Array.isArray(data) ? data : (data ? [data] : []),
+        request.query,
+        getIntentQuerySuggestions(intent),
+        sql,
+        tablesUsed
+      );
+    }
+
     await saveMessage(
       conversationId,
       'bot',
@@ -875,7 +913,7 @@ async function handleHRMSRequest(
           intent,
           data: [],
           query: request.query,
-          querySuggestions: getIntentQuerySuggestions(intent)
+          querySuggestions: getIntentQuerySuggestions(intent).map(s => s.text)
         };
       }
 
@@ -917,11 +955,15 @@ async function handleHRMSRequest(
         };
       });
 
+      const sql = `SELECT * FROM tbluser WHERE sub_institute_id = ${request.subInstituteId};`;
+      const tablesUsed = ['tbluser'];
       return createStructuredResponse(
         intent,
         processedData,
         request.query,
-        getIntentQuerySuggestions(intent)
+        getIntentQuerySuggestions(intent),
+        sql,
+        tablesUsed
       );
     }
 
@@ -1006,7 +1048,7 @@ async function handleLMSRequest(
         recoverable: true,
         suggestion: 'Please provide the necessary information to complete this action.',
         canEscalate: true,
-        querySuggestions: getIntentQuerySuggestions(intent)
+        querySuggestions: getIntentQuerySuggestions(intent).map(s => s.text)
       };
     } else {
       apiKey = intentToApiMap[intent] || 'course_master';
@@ -1170,7 +1212,7 @@ async function handleSkillsAndJobRolesRequest(
         recoverable: true,
         suggestion: 'Please provide the necessary information to complete this action.',
         canEscalate: true,
-        querySuggestions: getIntentQuerySuggestions(intent)
+        querySuggestions: getIntentQuerySuggestions(intent).map(s => s.text)
       };
     } else {
       apiKey = intentToApiMap[intent] || 'skill_library';
@@ -1215,7 +1257,16 @@ async function handleSkillsAndJobRolesRequest(
       customAnswerText = `Found ${Array.isArray(data) ? data.length : 0} job role(s) for the ${entities?.department || 'specified'} department.`;
     }
 
-    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent), sql, (intent === 'JOB_ROLES_FETCH' || intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') ? ['s_user_jobrole'] : undefined, customAnswerText);
+    // Generate SQL for SKILLS_FETCH
+    let tablesUsed: string[] | undefined;
+    if (intent === 'SKILLS_FETCH') {
+      sql = `SELECT * FROM skill_library WHERE sub_institute_id = ${request.subInstituteId};`;
+      tablesUsed = ['skill_library'];
+    } else if (intent === 'JOB_ROLES_FETCH' || intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') {
+      tablesUsed = ['s_user_jobrole'];
+    }
+
+    return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent), sql, tablesUsed, customAnswerText);
 
   } catch (error) {
     console.error('Skills and Job Roles Request Error:', error);
@@ -1343,7 +1394,7 @@ async function handleReportsAndMiscRequest(
         recoverable: true,
         suggestion: 'Please provide the necessary information to complete this action.',
         canEscalate: true,
-        querySuggestions: getIntentQuerySuggestions(intent)
+        querySuggestions: getIntentQuerySuggestions(intent).map(s => s.text)
       };
     } else {
       apiKey = intentToApiMap[intent] || 'dashboard';
@@ -1468,7 +1519,7 @@ async function handleAIAndAuthRequest(
         recoverable: true,
         suggestion: 'Please provide the necessary information to complete this action.',
         canEscalate: true,
-        querySuggestions: getIntentQuerySuggestions(intent)
+        querySuggestions: getIntentQuerySuggestions(intent).map(s => s.text)
       };
     } else {
       apiKey = intentToApiMap[intent] || 'gammaContent';
