@@ -57,7 +57,7 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
     Record<number, string[]>
   >({});
   const [taskNames, setTaskNames] = useState<TaskNameEntry[]>([
-    { taskName: "", critical_work_function: "", jobrole: "", department: "", subDepartment: "" },
+    { taskName: "", critical_work_function: "", jobrole: editData?.jobrole || "", department: editData?.department || "", subDepartment: editData?.sub_department || "" },
   ]);
   const [submittedData, setSubmittedData] = useState<SubmittedTaskName[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,6 +93,16 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
       });
     }
   }, []);
+
+  // Update taskNames when editData changes
+  useEffect(() => {
+    setTaskNames(prev => prev.map(task => ({
+      ...task,
+      jobrole: editData?.jobrole || "",
+      department: editData?.department || "",
+      subDepartment: editData?.sub_department || ""
+    })));
+  }, [editData]);
 
   // Fetch Departments
   useEffect(() => {
@@ -254,14 +264,6 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
 
     if (name === "taskName") {
       fetchTaskNameSuggestions(index, value);
-    } else if (name === "department") {
-      setSelectedDepartment(value);
-      // Reset sub-department when department changes
-      const updatedWithResetSubDept = taskNames.map((task, i) =>
-        i === index ? { ...task, department: value, subDepartment: "" } : task
-      );
-      setTaskNames(updatedWithResetSubDept);
-      setSelectedSubDepartment("");
     }
   };
 
@@ -275,7 +277,7 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
 
   // Add New tasks Entry
   const handleAddTaskName = () => {
-    setTaskNames([...taskNames, { taskName: "", critical_work_function: "", jobrole: "", department: "", subDepartment: "" }]);
+    setTaskNames([...taskNames, { taskName: "", critical_work_function: "", jobrole: editData?.jobrole || "", department: editData?.department || "", subDepartment: editData?.sub_department || "" }]);
   };
 
   // Remove tasks Entry
@@ -308,7 +310,7 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
       method_field: "PUT",
       taskName: tasksToSubmit.map((t) => t.taskName),
       critical_work_function: tasksToSubmit.map((t) => t.critical_work_function),
-      sector: tasksToSubmit.map((t) => t.department),
+      sector: tasksToSubmit.map(() => sessionData.orgType),
       track: tasksToSubmit.map((t) => t.subDepartment),
       jobrole: editData?.jobrole,
       token: sessionData.token,
@@ -344,7 +346,7 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
       const data = await res.json();
       alert(data.message);
 
-      setTaskNames([{ taskName: "", critical_work_function: "", jobrole: "", department: "", subDepartment: "" }]);
+      setTaskNames([{ taskName: "", critical_work_function: "", jobrole: editData?.jobrole || "", department: editData?.department || "", subDepartment: editData?.sub_department || "" }]);
       setTaskNameSuggestions({});
       setEditingId(null);
       setSelectedDepartment("");
@@ -368,7 +370,7 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
       taskName: row.taskName,
       critical_work_function: row.critical_work_function,
       jobrole: row.jobrole,
-      department: row.department || "",
+      department: editData?.department || "",
       subDepartment: row.subDepartment || ""
     }]);
 
@@ -461,12 +463,12 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
           <input
             type="text"
             placeholder="Search..."
-            onChange={(e) => handleColumnFilter("subDepartment", e.target.value)}
+            onChange={(e) => handleColumnFilter("department", e.target.value)}
             style={{ width: "100%", padding: "4px", fontSize: "12px" }}
           />
         </div>
       ),
-      selector: (row: SubmittedTaskName) => row.subDepartment || "N/A",
+      selector: (row: SubmittedTaskName) => row.department || "N/A",
       sortable: true,
       wrap: true,
     },
@@ -551,7 +553,7 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
         {taskNames.map((taskName, index) => (
           <div
             key={index}
-            className="grid md:grid-cols-5 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-2 mb-2 rounded-lg relative"
+            className="grid md:grid-cols-4 md:gap-6 bg-[#fff] border-b-1 border-[#ddd] shadow-xl p-2 mb-2 rounded-lg relative"
           >
             {/* Hidden input for jobrole, used to carry its value on edit */}
             <input type="hidden" name="jobrole" id={`jobrole-${index}`} value={taskName.jobrole || ''} />
@@ -574,26 +576,20 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
   </select>
 </div> */}
 
-            <div className="relative z-0 w-full group text-left">
-              <label htmlFor={`subDepartment-${index}`} className="text-left">
-                Department
-              </label>
-              <br />
-              <select
-                name="subDepartment"
-                id={`subDepartment-${index}`}
-                className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-[#fff] text-black focus:outline-none focus:border-blue-500"
-                value={taskName.subDepartment || ""}
-                onChange={(e) => handleTaskNameChange(index, e)}
-              >
-                <option value="">Select Department</option>
-                {subDepartments.map((subDept, i) => (
-                  <option key={i} value={subDept.track}>
-                    {subDept.track}
-                  </option>
-                ))}
-              </select>
-            </div>
+             <div className="relative z-0 w-full group text-left">
+               <label htmlFor={`department-${index}`} className="text-left">
+                 Department
+               </label>
+               <br />
+               <input
+                 type="text"
+                 name="department"
+                 id={`department-${index}`}
+                 className="w-full rounded-lg p-2 border-2 border-[var(--color-blue-100)] h-[38px] bg-gray-100 text-black"
+                 value={editData?.department || ""}
+                 readOnly
+               />
+             </div>
 
             <div className="relative z-10 w-full group text-left">
               <label htmlFor={`taskName-${index}`} className="text-left">
@@ -681,7 +677,7 @@ const TaskData: React.FC<Props> = ({ editData, selectedDept, selectedJobrole, se
             type="button"
             onClick={() => {
               setEditingId(null);
-              setTaskNames([{ taskName: "", critical_work_function: "", jobrole: "", department: "", subDepartment: "" }]);
+              setTaskNames([{ taskName: "", critical_work_function: "", jobrole: editData?.jobrole || "", department: editData?.department || "", subDepartment: editData?.sub_department || "" }]);
               setSelectedDepartment("");
               setSelectedSubDepartment("");
             }}
