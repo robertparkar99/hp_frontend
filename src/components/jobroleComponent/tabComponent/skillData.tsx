@@ -115,7 +115,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
             id: item.id,
             SkillName: typeof item.skillTitle === 'object' && item.skillTitle !== null
               ? (item.skillTitle.title || item.skillTitle.name || String(item.skillTitle))
-              : String(item.skillTitle || ''),
+              : String(item.skillTitle || item.skill || ''),
             description: String(item.description || item.skillDescription || ''),
             jobrole: String(editData?.jobrole || ''),
             proficiency_level: String(item.proficiency_level) || '',
@@ -123,7 +123,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
             sub_category: String(item.sub_category || ''),
             skillTitle: typeof item.skillTitle === 'object' && item.skillTitle !== null
               ? (item.skillTitle.title || item.skillTitle.name || String(item.skillTitle))
-              : String(item.skillTitle || ''),
+              : String(item.skillTitle || item.skill || ''),
             skill_id: String(item.skill_id || ''),
             created_by_user: item?.first_name && item?.last_name ? `${item.first_name} ${item.last_name}` : "N/A",
             created_at: item.created_at,
@@ -134,7 +134,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
               id: data.userskillData.id,
               SkillName: typeof data.userskillData.skillTitle === 'object' && data.userskillData.skillTitle !== null
                 ? (data.userskillData.skillTitle.title || data.userskillData.skillTitle.name || String(data.userskillData.skillTitle))
-                : String(data.userskillData.skillTitle || ''),
+                : String(data.userskillData.skillTitle || data.userskillData.skill || ''),
               description: String(data.userskillData.description || data.userskillData.skillDescription || ''),
               jobrole: String(editData?.jobrole || ''),
               proficiency_level: String(data.userskillData?.proficiency_level) || '',
@@ -142,7 +142,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
               sub_category: String(data.userskillData.sub_category || ''),
               skillTitle: typeof data.userskillData.skillTitle === 'object' && data.userskillData.skillTitle !== null
                 ? (data.userskillData.skillTitle.title || data.userskillData.skillTitle.name || String(data.userskillData.skillTitle))
-                : String(data.userskillData.skillTitle || ''),
+                : String(data.userskillData.skillTitle || data.userskillData.skill || ''),
               skill_id: String(data.userskillData.skill_id || ''),
               created_by_user: data.userskillData?.first_name && data.userskillData?.last_name ? `${data.userskillData.first_name} ${data.userskillData.last_name}` : "N/A",
               created_at: data.userskillData.created_at,
@@ -285,6 +285,7 @@ const SkillData: React.FC<Props> = ({ editData }) => {
       user_profile_name: sessionData.userProfile,
       user_id: sessionData.userId,
       department: editData?.department,
+      department_id: editData?.department_id,
       sub_department: editData?.sub_department,
       formType: "skills",
       skillName_data: JSON.stringify(skillsToSubmit),
