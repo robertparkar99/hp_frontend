@@ -81,8 +81,12 @@ const TaskManagement = () => {
     syear: "",
   });
   const [file, setFile] = useState<File | null>(null);
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const bulkInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const [jobroleList, setJobroleList] = useState<JobRole[]>([]);
@@ -430,6 +434,74 @@ const TaskManagement = () => {
   const handleClick = () => {
     if (inputRef.current) {
       inputRef.current.click();
+    }
+  };
+
+  const handleBulkFileClick = () => {
+    if (bulkInputRef.current) {
+      bulkInputRef.current.click();
+    }
+  };
+
+  const handleBulkFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setBulkFile(selectedFile);
+    }
+  };
+
+  const handleBulkFileSubmit = async () => {
+    if (!bulkFile) {
+      alert("Please choose a CSV file first.");
+      return;
+    }
+
+    if (!sessionData.url || !sessionData.token) {
+      alert("Session not ready. Please try again after a moment.");
+      return;
+    }
+
+    try {
+      setIsBulkUploading(true);
+
+      const formData = new FormData();
+      formData.append("csv_file", bulkFile);
+      formData.append("type", "API");
+      formData.append("token", sessionData.token);
+      formData.append("sub_institute_id", sessionData.subInstituteId);
+      formData.append("syear", sessionData.syear || "2025");
+      formData.append("user_id", sessionData.userId);
+      formData.append("formType", "BulkTask");
+
+      const uploadUrl = `${sessionData.url}/api/bulk-task/import`;
+
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${sessionData.token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Bulk tasks uploaded successfully");
+        console.log("Bulk upload response:", data);
+        setBulkFile(null);
+        if (bulkInputRef.current) {
+          bulkInputRef.current.value = "";
+        }
+      } else {
+        console.error("Bulk upload failed:", data);
+        alert(`Bulk upload failed: ${data?.message || res.statusText}`);
+      }
+    } catch (error) {
+      console.error("Error uploading bulk file:", error);
+      alert("Error uploading bulk file");
+    } finally {
+      setIsBulkUploading(false);
     }
   };
 
@@ -907,7 +979,7 @@ const TaskManagement = () => {
                     Track and monitor task assignment progress
                   </p>
                 </div>
-                <div>
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   {isjobroleList && (
                     <button className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
                       onClick={() => {
@@ -919,6 +991,49 @@ const TaskManagement = () => {
                       ></span>
                       &nbsp; Bulk Tasks
                     </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowBulkUpload((prev) => !prev)}
+                    className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md bg-blue-600 px-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  >
+                    <span className="mdi mdi-upload"></span>
+                    &nbsp; Upload Bulk Task
+                  </button>
+
+                  {showBulkUpload && (
+                    <div className="flex flex-wrap items-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2">
+                      <input
+                        type="file"
+                        ref={bulkInputRef}
+                        onChange={handleBulkFileChange}
+                        accept=".csv,text/csv"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleBulkFileClick}
+                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md bg-blue-600 px-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      >
+                        <span className="mdi mdi-upload"></span>
+                        &nbsp; Choose CSV File
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleBulkFileSubmit}
+                        disabled={!bulkFile || isBulkUploading}
+                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md bg-green-600 px-3 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+                      >
+                        <span className="mdi mdi-check"></span>
+                        &nbsp; {isBulkUploading ? "Uploading..." : "Submit CSV"}
+                      </button>
+                      {bulkFile && (
+                        <span className="max-w-[180px] truncate text-sm text-muted-foreground" title={bulkFile.name}>
+                          {bulkFile.name}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
