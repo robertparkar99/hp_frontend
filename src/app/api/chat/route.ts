@@ -78,6 +78,20 @@ export async function POST(request: Request) {
         const monthPattern = /^(?:for\s+)?(?:(january|february|march|april|may|june|july|august|september|october|november|december|current(?:\s+month)?)(?:\s+(\d{4}))?)$/i;
         const monthMatch = rawQuery.match(monthPattern);
         
+        // Check if this is an attendance update request (e.g., "update my attendance for today", "mark attendance", "punch in", "punch in for today")
+        const attendancePattern = /^(?:update|mark|punch\s+in|record)\s+(?:my\s+)?(?:attendance|punch)(?:\s+for\s+(?:today|now))?$/i;
+        const attendanceMatch = rawQuery.match(attendancePattern);
+
+        // Specific patterns for differentiated redirects
+        const updateAttendancePattern = /^update my attendance for today$/i;
+        const updateAttendanceMatch = rawQuery.match(updateAttendancePattern);
+
+        const punchInPattern = /^punch in for today$/i;
+        const punchInMatch = rawQuery.match(punchInPattern);
+
+        const punchOutPattern = /^punch out for the day$/i;
+        const punchOutMatch = rawQuery.match(punchOutPattern);
+        
         if (departmentMatch && departmentMatch[1]) {
             // Extract industry name from the query
             const industry = departmentMatch[1].trim();
@@ -433,6 +447,49 @@ export async function POST(request: Request) {
                     error: String(monthError)
                 };
             }
+        } else if (updateAttendanceMatch) {
+            // Handle specific "Update my attendance for today" request
+            console.log('[chat] Detected update my attendance for today request');
+
+            result = {
+                answer: "Navigation: Attendance Module → User Attendance\n\nTo update attendance: Open the Attendance module and go to User Attendance page, then mark or update your attendance for today.\n\nRedirecting to attendance screen...",
+                action: 'REDIRECT',
+                redirectUrl: '/content/User-Attendance?intent=update-attendance',
+                actionType: 'navigateTo'
+            };
+        } else if (punchInMatch) {
+            // Handle specific "Punch in for today" request
+            console.log('[chat] Detected punch in for today request');
+
+            result = {
+                answer: "Navigation: Attendance Module → My Attendance\n\nTo punch in for today: Open the Attendance module and navigate to My Attendance page, then click the 'Punch In' button to record your attendance.\n\nRedirecting to attendance screen...",
+                action: 'REDIRECT',
+                redirectUrl: '/content/my-attendance?intent=punch-in',
+                actionType: 'navigateTo'
+            };
+        } else if (punchOutMatch) {
+            // Handle "Punch out for the day" request
+            console.log('[chat] Detected punch out for the day request');
+
+            // Redirect to My Attendance with punch-out intent.
+            // The page will show Punch Out button if user has already punched in today,
+            // otherwise it will guide the user to complete Punch In first.
+            result = {
+                answer: "Navigation: Attendance Module → My Attendance\n\nChecking your punch status for today...\nRedirecting to attendance screen...",
+                action: 'REDIRECT',
+                redirectUrl: '/content/my-attendance?intent=punch-out',
+                actionType: 'navigateTo'
+            };
+        } else if (attendanceMatch) {
+            // Generic attendance update fallback
+            console.log('[chat] Detected generic attendance update request');
+
+            result = {
+                answer: "Navigation: Attendance Module → Attendance\n\nI'll help you with attendance. Redirecting now...",
+                action: 'REDIRECT',
+                redirectUrl: '/content/my-attendance?intent=attendance',
+                actionType: 'navigateTo'
+            };
         } else {
             // Normal chat flow
             try {

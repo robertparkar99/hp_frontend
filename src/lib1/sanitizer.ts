@@ -5,7 +5,8 @@ export interface SanitizationResult {
 }
 
 const dangerousPatterns = [
-  /(\b(DROP|DELETE|TRUNCATE|ALTER|INSERT|UPDATE|EXEC|EXECUTE|UNION|SELECT\s+\*\s+FROM)\b)/gi,
+  // Only flag strong SQL injection patterns, not common action verbs
+  /(\b(DROP|DELETE|TRUNCATE|ALTER|INSERT|EXEC|EXECUTE|UNION|SELECT\s+\*\s+FROM)\b)/gi,
   /(<script|javascript:|onerror=|onload=)/gi,
   /(--|;|\/\*|\*\/|xp_|sp_)/gi,
   /(\[|{|%|\$|#|\^|&|\||\\)/g,

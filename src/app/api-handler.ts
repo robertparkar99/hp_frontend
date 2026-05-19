@@ -489,7 +489,7 @@ function createStructuredResponse(intent: string, data: any[], query: string, qu
         ]
       },
       query,
-      querySuggestions
+      querySuggestions: [],
     };
   }
 
@@ -636,7 +636,7 @@ function createStructuredResponse(intent: string, data: any[], query: string, qu
       blocks
     },
     query,
-    querySuggestions
+    querySuggestions: []
   };
 }
 
@@ -739,18 +739,85 @@ async function handleHRMSRequest(
       apiKey = config.api;
       method = config.method;
 
+      // Intent-specific redirects for proper conversational flow
+      const redirectMap: Record<string, string> = {
+        HRMS_ATTENDANCE_UPDATE: '/User-Attendance',
+        HRMS_ATTENDANCE_PUNCH_OUT: '/User-Attendance',
+        HRMS_LEAVE_TYPE_CREATE: '/content/HRMS/Leave-Management/Leave-Type',
+        HRMS_LEAVE_APPLY: '/content/HRMS/Leave-Management/ApplyLeave',
+        HRMS_LEAVE_SUMMARY_FETCH: '/content/HRMS/Leave-Management/My-Leave',
+        HRMS_LEAVE_AUTHORIZE: '/hrms/leave/authorize',
+        HRMS_HOLIDAY_CREATE: '/content/HRMS/Leave-Management/Holiday-Master',
+        HRMS_PAYROLL_GENERATE: '/hrms/payroll/generate',
+      };
+
+      // Attendance update - exact opening message only (as requested)
+      if (intent === 'HRMS_ATTENDANCE_UPDATE') {
+        return {
+          answer: `Got it — I'll help you update your attendance. Opening the attendance module now...`,
+          conversationId,
+          intent,
+          action: `REDIRECT_${intent}`,
+          redirect: '/content/User-Attendance',
+          recoverable: true
+        };
+      }
+
+      // Leave type create - navigation style message
+      if (intent === 'HRMS_LEAVE_TYPE_CREATE') {
+        return {
+          answer: `Navigation: HRMS → Leave Management → Leave Type\n\nOpening leave type creation form... Redirecting now...`,
+          conversationId,
+          intent,
+          action: `REDIRECT_${intent}`,
+          redirect: redirectMap[intent],
+          recoverable: true
+        };
+      }
+
+      // Leave apply - navigation style message
+      if (intent === 'HRMS_LEAVE_APPLY') {
+        return {
+          answer: `Navigation: HRMS → Leave Management → Apply Leave\n\nYou can apply for leave from work on this page. Redirecting now...`,
+          conversationId,
+          intent,
+          action: `REDIRECT_${intent}`,
+          redirect: redirectMap[intent],
+          recoverable: true
+        };
+      }
+
+      // Leave summary - navigation style message
+      if (intent === 'HRMS_LEAVE_SUMMARY_FETCH') {
+        return {
+          answer: `Navigation: HRMS → Leave Management → My Leave\n\nYou can view leave status, leave history, and summary reports from this page. Redirecting now...`,
+          conversationId,
+          intent,
+          action: `REDIRECT_${intent}`,
+          redirect: redirectMap[intent],
+          recoverable: true
+        };
+      }
+
+      // Holiday create - navigation style message
+      if (intent === 'HRMS_HOLIDAY_CREATE') {
+        return {
+          answer: `Navigation: HRMS → Leave Management → Holiday Master\n\nYou can add and manage holidays from this page. Redirecting now...`,
+          conversationId,
+          intent,
+          action: 'REDIRECT',
+          redirectUrl: redirectMap[intent],
+          recoverable: true
+        };
+      }
+
       return {
-        answer: `I need more information to ${intent
-          .replace(/_/g, ' ')
-          .toLowerCase()}. Please provide the required details.`,
+        answer: `Redirecting to ${intent.replace(/_/g, ' ').toLowerCase()} page.`,
         conversationId,
         intent,
-        error: 'Missing action parameters',
-        recoverable: true,
-        suggestion:
-          'Please provide the necessary information to complete this action.',
-        canEscalate: true,
-        querySuggestions: getIntentQuerySuggestions(intent).map(s => s.text)
+        action: `REDIRECT_${intent}`,
+        redirect: redirectMap[intent] || '/User-Attendance',
+        recoverable: true
       };
     }
 
@@ -2071,8 +2138,8 @@ async function callHpApi(method: "GET" | "POST", url: string, params?: Record<st
   let res;
   try {
     res = await fetch(finalUrl, fetchOptions);
-  } catch (error) {
-    if (error.name === 'AbortError') {
+  } catch (error: any) {
+    if (error && error.name === 'AbortError') {
       throw new Error(`Request timed out after 30 seconds: ${finalUrl}`);
     }
     throw error;
@@ -2845,14 +2912,60 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
     }
 
     if (shouldRouteToAction(intent.intent)) {
+      // Extract action verb and module from original query (more reliable)
+      const lowerQuery = (request.query || '').toLowerCase();
+      let actionVerb = 'update';
+      let moduleName = 'general';
+      let redirectPage = '/dashboard';
+      let flowName = 'Dashboard > General';
+      let filePath = 'src/app/dashboard/page.tsx';
+      
+      if (lowerQuery.includes('attendance')) {
+        moduleName = 'attendance';
+        actionVerb = (lowerQuery.includes('update') || lowerQuery.includes('punch') || lowerQuery.includes('mark')) ? 'update' : 'view';
+        redirectPage = '/user-attendance';
+        flowName = 'Dashboard > Attendance > User Attendance';
+        filePath = 'src/modules/attendance/UserAttendance.tsx';
+      } else if (lowerQuery.includes('leave')) {
+        moduleName = 'leave';
+        actionVerb = lowerQuery.includes('apply') ? 'apply' : lowerQuery.includes('create') || lowerQuery.includes('add') ? 'create' : 'authorize';
+        redirectPage = '/leave-management';
+        flowName = 'Dashboard > HRMS > Leave Management';
+        filePath = 'src/modules/hrms/LeaveManagement.tsx';
+      } else if (lowerQuery.includes('holiday')) {
+        return {
+          answer: `Navigation: HRMS → Leave Management → Holiday Master\n\nYou can add and manage holidays from this page. Redirecting now...`,
+          conversationId,
+          intent: intent.intent,
+          action: 'REDIRECT',
+          redirectUrl: '/content/HRMS/Leave-Management/Holiday-Master',
+          recoverable: true
+        };
+      } else if (lowerQuery.includes('payroll')) {
+        moduleName = 'payroll';
+        actionVerb = 'generate';
+        redirectPage = '/payroll';
+        flowName = 'Dashboard > Payroll > Monthly Payroll';
+        filePath = 'src/modules/payroll/MonthlyPayroll.tsx';
+      } else if (lowerQuery.includes('create') || lowerQuery.includes('add')) {
+        actionVerb = 'create';
+      } else if (lowerQuery.includes('delete') || lowerQuery.includes('remove')) {
+        actionVerb = 'delete';
+      }
+      
       const actionResponse = {
-        answer: `I detected this might be a ${intent.intent} request. For actions and support requests, please contact a support representative or escalate this conversation.`,
+        answer: `Got it — I'll help you ${actionVerb} your ${moduleName}. Opening the ${moduleName} module now...`,
         conversationId,
         intent: intent.intent,
-        error: 'Action routing required',
+        action: actionVerb,
+        module: moduleName,
+        redirectPage,
+        flow: flowName,
+        filePath,
+        requiredPermissions: ['hrms_access'],
+        nextStep: `Please confirm or provide additional details for ${actionVerb} ${moduleName}`,
         recoverable: true,
-        suggestion: 'Would you like me to escalate this to a human agent?',
-        canEscalate: true
+        canEscalate: false
       };
       await saveMessage(conversationId, 'bot', actionResponse.answer, intent.intent);
       return actionResponse;
