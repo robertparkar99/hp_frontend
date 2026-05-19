@@ -239,10 +239,10 @@ const intentPatterns: Record<QueryIntent, string[]> = {
       'my attendance', 'attendance history', 'show attendance for', 'attendance for month',
       'monthly attendance', 'attendance in', 'current month attendance'
     ],
-   HRMS_ATTENDANCE_UPDATE: [
-     'update my attendance', 'mark attendance', 'punch in', 'clock in',
-     'attendance update', 'update attendance for today'
-   ],
+    HRMS_ATTENDANCE_UPDATE: [
+      'update my attendance', 'mark attendance', 'punch in', 'clock in',
+      'attendance update', 'update attendance for today', 'punch in for today'
+    ],
    HRMS_ATTENDANCE_PUNCH_OUT: [
      'punch out', 'clock out', 'punch out for the day', 'end attendance'
    ],
@@ -253,9 +253,10 @@ const intentPatterns: Record<QueryIntent, string[]> = {
    HRMS_LEAVE_TYPE_CREATE: [
      'add a new leave type', 'create leave type', 'new leave type', 'add leave type'
    ],
-   HRMS_LEAVE_APPLY: [
-     'apply for leave', 'request leave', 'submit leave application', 'leave application'
-   ],
+    HRMS_LEAVE_APPLY: [
+      'apply for leave', 'request leave', 'submit leave application', 'leave application',
+      'request time off', 'apply for leave from work'
+    ],
    HRMS_LEAVE_SUMMARY_FETCH: [
      'show leave summary', 'leave summary report', 'my leave balance', 'leave status'
    ],
@@ -798,6 +799,19 @@ export function classifyIntent(
       ? `Detected ${maxMatches} pattern(s) matching "${detectedIntent}" intent`
       : 'No clear intent patterns detected; requires context';
 
+  // Dynamic action verb detection for any unclassified action queries
+  if (detectedIntent === 'unclear' || detectedIntent === 'data_retrieval') {
+    const actionVerbs = ['update', 'add', 'edit', 'delete', 'create', 'modify', 'remove', 'change'];
+    const hasActionVerb = actionVerbs.some(verb => lowerQuery.includes(verb));
+    if (hasActionVerb) {
+      return {
+        intent: 'action',
+        confidence: 0.85,
+        reasoning: 'Dynamically detected action verb in query'
+      };
+    }
+  }
+
   return {
     intent: detectedIntent,
     confidence,
@@ -855,6 +869,7 @@ export function shouldRouteToAction(intent: QueryIntent): boolean {
       intent === 'HRMS_ATTENDANCE_PUNCH_OUT' ||
       intent === 'HRMS_LEAVE_TYPE_CREATE' ||
       intent === 'HRMS_LEAVE_APPLY' ||
+      intent === 'HRMS_LEAVE_SUMMARY_FETCH' ||
       intent === 'HRMS_LEAVE_AUTHORIZE' ||
       intent === 'HRMS_HOLIDAY_CREATE' ||
       intent === 'HRMS_PAYROLL_GENERATE') return true;

@@ -1,6 +1,7 @@
 //
 "use client"
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Send, Bot, User, Users,Database, Loader2, ThumbsUp, ThumbsDown,X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff, ChevronDown, FileText, Target, Wrench, BookOpen, Zap, Heart, Smile, CheckCircle, Save, TrendingUp, Mail, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -499,6 +500,7 @@ export default function ChatbotCopilot({
   apiEndpoint = '/api/chat',
   userId,
 }: ChatbotCopilotProps) {
+  const router = useRouter();
   const getSavedQueryFallbackMetadata = (query?: string) => {
     const normalizedQuery = (query || '').toLowerCase().trim();
 
@@ -772,14 +774,33 @@ export default function ChatbotCopilot({
     );
   };
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
+  // Restore previous conversation from sessionStorage (clears on new login / tab close)
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('chatbotMessages');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+          }
+        } catch {}
+      }
+    }
+    return [{
       id: '1',
       type: 'bot',
       content: 'Hello! I am Conversational AI, your assistant to help you with your queries. How can I assist you today?',
       timestamp: new Date()
+    }];
+  });
+
+  // Save conversation to localStorage whenever it updates (so it survives navigation back to dashboard)
+  useEffect(() => {
+      if (messages.length > 1) {
+      sessionStorage.setItem('chatbotMessages', JSON.stringify(messages));
     }
-  ]);
+  }, [messages]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -1507,6 +1528,21 @@ ${topPrioritySkills.length > 0 ? topPrioritySkills.map((s: any, i: number) => ` 
 
       setConversationId(data.conversationId);
       setMessages(prev => [...prev, botMessage]);
+
+      // Handle redirect action if present in the response
+      if (data.action === 'REDIRECT' && data.redirectUrl) {
+        console.log('[ChatbotCopilot] Redirecting to:', data.redirectUrl);
+        setTimeout(() => {
+          router.push(data.redirectUrl);
+        }, 1000); // 1 second delay to show the message first
+      } else if (data.action && data.action.startsWith('REDIRECT_')) {
+        // Handle older redirect format
+        const redirectUrl = data.redirect || '/User-Attendance';
+        console.log('[ChatbotCopilot] Redirecting (REDIRECT_ format) to:', redirectUrl);
+        setTimeout(() => {
+          router.push(redirectUrl);
+        }, 1000); // 1 second delay to show the message first
+      }
 
     } catch (error) {
       console.error('[ChatbotCopilot] Fetch error:', error);
