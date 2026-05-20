@@ -24,7 +24,7 @@ const ForgotPassword: React.FC = () => {
         body: new URLSearchParams({
           email: email,
           type: "API",
-          reset_url: `https://hp-frontend-three.vercel.app//rest-password`, // from your Postman example
+          reset_url: `https://app.gapstogrowth.com/rest-password`, // from your Postman example
         }),
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
