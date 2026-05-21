@@ -1240,6 +1240,19 @@ async function handleSkillsAndJobRolesRequest(
   entities: any
 ): Promise<ChatResponse> {
   try {
+    // For JOB_ROLE_TASKS_FETCH, require jobRole - otherwise prompt conversationally (like skills flow)
+    if (intent === 'JOB_ROLE_TASKS_FETCH' && !(entities && entities.jobRole)) {
+      await saveMessage(conversationId, 'bot', 'Please enter the job role name.', intent);
+      return {
+        answer: "Please enter the job role name.",
+        conversationId,
+        intent,
+        action: 'ASK_JOB_ROLE_FOR_TASKS',
+        recoverable: true,
+        suggestion: 'Please provide the job role name to list its tasks and responsibilities.',
+      };
+    }
+
     let apiKey: string;
     let method: "GET" | "POST" = "GET";
     let body: any = {};
@@ -1285,6 +1298,14 @@ async function handleSkillsAndJobRolesRequest(
       apiKey = intentToApiMap[intent] || 'skill_library';
     }
 
+    // Support dynamic jobrole filter for JOB_ROLE_TASKS_FETCH (e.g. "What are the job responsibilities")
+    if (intent === 'JOB_ROLE_TASKS_FETCH') {
+      params[`filters[sub_institute_id]`] = request.subInstituteId;
+      if (entities && entities.jobRole) {
+        params[`filters[jobrole]`] = entities.jobRole;
+      }
+    }
+
     const apiEntry = hpApiMap[apiKey];
     if (!apiEntry) {
       throw new Error(`No API mapping found for intent: ${intent}`);
@@ -1304,6 +1325,16 @@ async function handleSkillsAndJobRolesRequest(
     // Filter data to show only jobrole field for JOB_ROLES_FETCH and JOB_ROLES_FOR_DEPARTMENT_FETCH
     if ((intent === 'JOB_ROLES_FETCH' || intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') && Array.isArray(data)) {
       data = data.map(item => ({ jobrole: item.jobrole || 'N/A' }));
+    }
+
+    // Clean mapping for JOB_ROLE_TASKS_FETCH to match dept job roles list UI (only name + cwf, no raw DB noise)
+    if (intent === 'JOB_ROLE_TASKS_FETCH' && Array.isArray(data)) {
+      data = data.map((item: any) => ({
+        id: item.id || null,
+        name: item.task || item.responsibility || item.description || 'Task',
+        criticalWorkFunction: item.critical_work_function || item.cwf || '',
+        jobrole: item.jobrole || entities?.jobRole || ''
+      }));
     }
 
     // Generate SQL and apply filters for JOB_ROLES_FETCH and JOB_ROLES_FOR_DEPARTMENT_FETCH
@@ -1331,6 +1362,16 @@ async function handleSkillsAndJobRolesRequest(
       tablesUsed = ['skill_library'];
     } else if (intent === 'JOB_ROLES_FETCH' || intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') {
       tablesUsed = ['s_user_jobrole'];
+    } else if (intent === 'JOB_ROLE_TASKS_FETCH') {
+      tablesUsed = ['s_user_jobrole_task'];
+      if (entities && entities.jobRole) {
+        sql = `SELECT * FROM s_user_jobrole_task WHERE sub_institute_id = ${request.subInstituteId} AND jobrole = '${String(entities.jobRole).replace(/'/g, "''")}';`;
+      } else {
+        sql = `SELECT * FROM s_user_jobrole_task WHERE sub_institute_id = ${request.subInstituteId};`;
+      }
+      customAnswerText = entities?.jobRole
+        ? `Found ${Array.isArray(data) ? data.length : 0} task(s) for job role "${entities.jobRole}".`
+        : `Found ${Array.isArray(data) ? data.length : 0} job role task(s).`;
     }
 
     return createStructuredResponse(intent, Array.isArray(data) ? data : (data ? [data] : []), request.query, getIntentQuerySuggestions(intent), sql, tablesUsed, customAnswerText);
@@ -1379,8 +1420,14 @@ async function handleOrganizationAndIndustriesRequest(
       }
     }
 
+    if (intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH') {
+      apiKey = 's_user_jobrole';
+      params[`filters[sub_institute_id]`] = request.subInstituteId;
+      if (entities.department) {
+        params[`filters[department]`] = entities.department;
+      }
+    }
 
-    // Add path parameters for Neo4J endpoints
     if (entities.industrySlug && intent === 'DEPARTMENTS_FOR_INDUSTRY_FETCH') {
       apiKey = apiKey.replace('{slug}', entities.industrySlug);
     }
@@ -1397,8 +1444,10 @@ async function handleOrganizationAndIndustriesRequest(
 
     await saveMessage(conversationId, 'bot', `Retrieved ${Array.isArray(data) ? data.length : (data ? 1 : 0)} organization/industries record(s)`, intent);
 
-    // Filter data to show only jobrole field for USER_JOB_ROLES_FETCH
     if (intent === 'USER_JOB_ROLES_FETCH' && Array.isArray(data)) {
+      data = data.map(item => ({ jobrole: item.jobrole || 'N/A' }));
+    }
+    if (intent === 'JOB_ROLES_FOR_DEPARTMENT_FETCH' && Array.isArray(data)) {
       data = data.map(item => ({ jobrole: item.jobrole || 'N/A' }));
     }
 
@@ -2024,7 +2073,7 @@ const hpApiMap: Record<string, { method: "GET" | "POST"; url: string }> = {
   "jobroleSkill_create": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleSkill" },
   "jobroleSkill_update": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleSkill/{id}" },
 
-  "jobroleTask": { method: "GET", url: "https://erp.triz.co.in/skill/jobroleTask" },
+  "jobroleTask": { method: "GET", url: "https://hp.triz.co.in/table_data?table=s_user_jobrole_task" },
   "jobroleTask_create": { method: "POST", url: "https://erp.triz.co.in/skill/jobroleTask" },
 
   // -----------------------
@@ -2939,6 +2988,51 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
           intent: intent.intent,
           action: 'REDIRECT',
           redirectUrl: '/content/HRMS/Leave-Management/Holiday-Master',
+          recoverable: true
+        };
+      } else if (lowerQuery.includes('skill') || lowerQuery.includes('create a new skill')) {
+        return {
+          answer: `Navigation: Libraries → Skill Library\n\nYou can create and manage skills from this page. Redirecting now...`,
+          conversationId,
+          intent: intent.intent,
+          action: 'REDIRECT',
+          redirectUrl: '/content/Libraries/skillLibrary',
+          recoverable: true
+        };
+      } else if (lowerQuery.includes('job role') && (lowerQuery.includes('create') || lowerQuery.includes('add'))) {
+        return {
+          answer: `Navigation: Libraries → Skill Library → Job Roles\n\nYou can create and manage job roles from this page. Redirecting now...`,
+          conversationId,
+          intent: 'Add New Job Role',
+          action: 'REDIRECT',
+          redirectUrl: '/content/Libraries/skillLibrary',
+          recoverable: true
+        };
+      } else if (lowerQuery.includes('department') && (lowerQuery.includes('create') || lowerQuery.includes('add'))) {
+        return {
+          answer: `Navigation: Organization Profile Management → Departments\n\nYou can add and manage departments from this page. Redirecting now...`,
+          conversationId,
+          intent: intent.intent,
+          action: 'REDIRECT',
+          redirectUrl: '/content/organization-profile-management',
+          recoverable: true
+        };
+      } else if ((lowerQuery.includes('task') && (lowerQuery.includes('create') || lowerQuery.includes('add'))) || lowerQuery.includes('add new task')) {
+        return {
+          answer: `Navigation: Task Management → Tasks\n\nYou can add and manage tasks for job roles from this page. Redirecting now...`,
+          conversationId,
+          intent: intent.intent,
+          action: 'REDIRECT',
+          redirectUrl: '/content/task',
+          recoverable: true
+        };
+      } else if (lowerQuery.includes('course') || lowerQuery.includes('enroll')) {
+        return {
+          answer: `Navigation: LMS → Courses\n\nYou can enroll in the selected course from this page. Redirecting now...`,
+          conversationId,
+          intent: intent.intent,
+          action: 'REDIRECT',
+          redirectUrl: '/content/LMS',
           recoverable: true
         };
       } else if (lowerQuery.includes('payroll')) {

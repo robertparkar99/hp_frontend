@@ -120,7 +120,6 @@ const intentPatterns: Record<QueryIntent, string[]> = {
     // Primary triggers - competency framework
     'generate competency profile',
     'competency profile for',
-    'job role responsibilities',
     'skills for',
     'competency framework',
     'CWFKT',
@@ -128,7 +127,6 @@ const intentPatterns: Record<QueryIntent, string[]> = {
     'key tasks',
     // Role exploration patterns
     'what does a',
-    'what are the responsibilities of',
     'role requirements',
     // Proficiency and skills
     'proficiency level',
@@ -357,9 +355,12 @@ const intentPatterns: Record<QueryIntent, string[]> = {
    JOB_ROLE_SKILL_CREATE: [
      'create job role skill', 'add job role skill'
    ],
-   JOB_ROLE_TASKS_FETCH: [
-     'show job role tasks', 'job role tasks', 'tasks for job role'
-   ],
+    JOB_ROLE_TASKS_FETCH: [
+      'show job role tasks', 'job role tasks', 'tasks for job role',
+      'job responsibilities', 'what are the job responsibilities', 'responsibilities for',
+      'what are the responsibilities', 'list job responsibilities', 'responsibilities of',
+      'job duties', 'position responsibilities', 'tasks and responsibilities'
+    ],
    JOB_ROLE_TASK_CREATE: [
      'create job role task', 'add job role task'
    ],
@@ -479,6 +480,9 @@ export function extractEntities(query: string): ExtractedEntities {
     /competency[\s-]?profile[\s-]?for[\s-]?([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
     // Handle "for [job role] in" pattern
     /for[\s-]?([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+in[\s-]/i,
+    // Handle responsibilities/tasks for role
+    /responsibilit(?:y|ies) (?:of|for) ([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
+    /tasks? (?:of|for) ([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
   ];
 
   for (const pattern of jobRolePatterns) {
