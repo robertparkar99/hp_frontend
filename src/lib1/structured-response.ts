@@ -273,12 +273,100 @@ export function createIntelligentQueryResponse(
     }
   }
 
+  // For skill-related queries
+  if (query_lower.includes('skill') || query_lower.includes('competency')) {
+    if (Array.isArray(data)) {
+      if (data.length > 10) {
+        const hasLevel = data.length > 0 && 'level' in data[0];
+        const columns = hasLevel ?
+          [
+            { key: 'name', label: 'Skill Name' },
+            { key: 'level', label: 'Level' },
+            { key: 'category', label: 'Category' }
+          ] :
+          [
+            { key: 'name', label: 'Skill Name' },
+            { key: 'category', label: 'Category' }
+          ];
+        return createStructuredResponse([
+          createTextBlock(`Found ${data.length} skills/competencies.`),
+          createTableBlock(columns, data, { title: 'Skills & Competencies' })
+        ], { intent: 'data_retrieval' });
+      } else {
+        return createStructuredResponse([
+          createTextBlock(`Found ${data.length} skills/competencies.`),
+          createCardsBlock(data.map(skill => ({
+            id: skill.id || skill.name,
+            title: skill.name,
+            description: skill.description || skill.category,
+            tag: skill.category,
+            metadata: skill
+          })), { title: 'Skills & Competencies' })
+        ], { intent: 'list_items' });
+      }
+    }
+  }
+
+  // For task/responsibility queries (job role tasks flow - mirrors Skills & Competencies exactly)
+  if (query_lower.includes('task') || query_lower.includes('responsib') || query_lower.includes('duty')) {
+    if (Array.isArray(data)) {
+      if (data.length > 10) {
+        const columns = [
+          { key: 'name', label: 'Task / Responsibility' },
+          { key: 'criticalWorkFunction', label: 'Critical Work Function' }
+        ];
+        return createStructuredResponse([
+          createTextBlock(`Found ${data.length} tasks/responsibilities.`),
+          createTableBlock(columns, data, { title: 'Task' })
+        ], { intent: 'data_retrieval' });
+      } else {
+        return createStructuredResponse([
+          createTextBlock(`Found ${data.length} tasks/responsibilities.`),
+          createCardsBlock(data.map((t: any) => ({
+            id: t.id || t.name,
+            title: t.name,
+            description: t.criticalWorkFunction || t.jobrole || '',
+            tag: t.criticalWorkFunction || 'Task',
+            metadata: t
+          })), { title: 'Task' })
+        ], { intent: 'list_items' });
+      }
+    }
+  }
+
+  // For task/responsibility queries (job role tasks flow - mirrors Skills & Competencies exactly)
+  if (query_lower.includes('task') || query_lower.includes('responsib') || query_lower.includes('duty')) {
+    if (Array.isArray(data)) {
+      if (data.length > 10) {
+        const columns = [
+          { key: 'name', label: 'Task / Responsibility' },
+          { key: 'criticalWorkFunction', label: 'Critical Work Function' }
+        ];
+        return createStructuredResponse([
+          createTextBlock(`Found ${data.length} tasks/responsibilities.`),
+          createTableBlock(columns, data, { title: 'Task' })
+        ], { intent: 'data_retrieval' });
+      } else {
+        return createStructuredResponse([
+          createTextBlock(`Found ${data.length} tasks/responsibilities.`),
+          createCardsBlock(data.map((t: any) => ({
+            id: t.id || t.name,
+            title: t.name,
+            description: t.criticalWorkFunction || t.jobrole || '',
+            tag: t.criticalWorkFunction || 'Task',
+            metadata: t
+          })), { title: 'Task' })
+        ], { intent: 'list_items' });
+      }
+    }
+  }
+
   // For employee data (mock queries) - improved detection
   const isEmployeeData = (
     query_lower.includes('employee') ||
     query_lower.includes('show employee data') ||
     (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0] === 'object' &&
-     ('name' in data[0] || 'email' in data[0] || 'role' in data[0] || 'occupation' in data[0]))
+     (('email' in data[0]) || ('occupation' in data[0]) || (query_lower.includes('employee') && 'name' in data[0])))
   );
 
   if (isEmployeeData && Array.isArray(data) && data.length > 0) {
@@ -329,43 +417,6 @@ export function createIntelligentQueryResponse(
       tables_used: ['employee_data'],
       answer: summaryText
     });
-  }
-
-  // For skill-related queries
-  if (query_lower.includes('skill') || query_lower.includes('competency')) {
-    if (Array.isArray(data)) {
-      if (data.length > 10) {
-        // Large dataset - use table
-        // Check if data has 'level' field, if not, use available fields
-        const hasLevel = data.length > 0 && 'level' in data[0];
-        const columns = hasLevel ?
-          [
-            { key: 'name', label: 'Skill Name' },
-            { key: 'level', label: 'Level' },
-            { key: 'category', label: 'Category' }
-          ] :
-          [
-            { key: 'name', label: 'Skill Name' },
-            { key: 'category', label: 'Category' }
-          ];
-        return createStructuredResponse([
-          createTextBlock(`Found ${data.length} skills/competencies.`),
-          createTableBlock(columns, data, { title: 'Skills & Competencies' })
-        ], { intent: 'data_retrieval' });
-      } else {
-        // Small dataset - use cards
-        return createStructuredResponse([
-          createTextBlock(`Found ${data.length} skills/competencies.`),
-          createCardsBlock(data.map(skill => ({
-            id: skill.id || skill.name,
-            title: skill.name,
-            description: skill.description || skill.category,
-            tag: skill.category,
-            metadata: skill
-          })), { title: 'Skills & Competencies' })
-        ], { intent: 'list_items' });
-      }
-    }
   }
 
   // For chart/visualization queries
