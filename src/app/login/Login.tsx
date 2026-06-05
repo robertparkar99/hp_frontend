@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { API_BASE_URL } from "../../components/utils/api_url";
-import Loading from "../../components/utils/loading"; // Import the Loading component
+import Loading from "../../components/utils/loading";
+import GoogleLoginButton from "../../components/GoogleLoginButton";
 
 const Login: React.FC = () => {
   const router = useRouter();
@@ -157,6 +158,16 @@ const Login: React.FC = () => {
                       {isSubmitting ? "Logging in..." : "Login"}
                     </button>
                   </form>
+
+                  <div className="flex items-center my-4">
+                    <hr className="flex-1 border-gray-300" />
+                    <span className="px-3 text-sm text-gray-500">OR</span>
+                    <hr className="flex-1 border-gray-300" />
+                  </div>
+
+                  <div className="w-full max-w-sm">
+                    <GoogleLoginButton />
+                  </div>
 
                   <div className="mt-3 flex flex-col items-center gap-2">
                     <a
