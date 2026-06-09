@@ -1,5 +1,6 @@
 // app/layout.tsx
 // import { overflow } from 'html2canvas/dist/types/css/property-descriptors/overflow'
+import './globals.css'
 import { X } from 'lucide-react'
 import StyledComponentsRegistry from '@/lib/StyledComponentsRegistry';
 import Providers from './providers';
