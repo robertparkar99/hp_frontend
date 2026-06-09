@@ -56,28 +56,81 @@ export async function POST(request: Request) {
         const rawQuery = body.query || '';
         const departmentPattern = /^select my department\s+(?:as\s+|in\s+)?(.+?)(?:\s+industry)?$/i;
         const departmentMatch = rawQuery.match(departmentPattern);
-        
-        // Check if this is a "Selected Industry as X" pattern (new format from frontend)
         const selectedIndustryPattern = /^selected industry\s+as\s+(.+)$/i;
         const selectedIndustryMatch = rawQuery.match(selectedIndustryPattern);
-        
-        // Check if user selected a department (e.g., "selected department: design" or "department: design")
         const selectedDeptPattern = /^(?:selected )?department[:\s]+(.+)$/i;
         const selectedDeptMatch = rawQuery.match(selectedDeptPattern);
-        
-        // Check if this is a "Select my job role as X" or "Select my job role in X department" pattern
         const jobRolePattern = /^select (?:my )?job role\s+(?:as\s+|in\s+)?(.+?)(?:\s+department)?$/i;
         const jobRoleMatch = rawQuery.match(jobRolePattern);
-        
-        // Check if this is a "Select my skills for X" or "select my jobrole as X" pattern
-        // This directly calls the skills API after job role is selected
         const skillsPattern = /^(?:select\s+(?:my\s+)?)?(?:skills\s+for|jobrole\s+as)\s+(.+)$/i;
         const skillsMatch = rawQuery.match(skillsPattern);
+        const showJobRolesSpecificDeptPattern = /show (?:me )?job roles? (?:for|in) (?:a |the )?specific department/i;
+        const showJobRolesForDeptPattern = /show (?:me )?job roles? (?:for|in) (.+?)(?:\s+department)?$/i;
+        const lastAssistant = (body.conversationHistory && Array.isArray(body.conversationHistory)) ? [...body.conversationHistory].reverse().find((m: any) => m && m.role === 'assistant' && m.content) : null;
+        const isDeptFollowup = !!(lastAssistant && /please enter the department name/i.test(lastAssistant.content || ''));
+        const showJobRolesSpecificDeptMatch = rawQuery.match(showJobRolesSpecificDeptPattern);
+        const showJobRolesForDeptMatch = rawQuery.match(showJobRolesForDeptPattern);
+        const showJobRoleSkillsPattern = /show (?:me )?(?:job role|jobrole) skills/i;
+        const showJobRoleSkillsForPattern = /show (?:me )?(?:job role|jobrole) skills (?:for|of) (.+)/i;
+        const showJobRoleSkillsMatch = rawQuery.match(showJobRoleSkillsPattern);
+        const showJobRoleSkillsForMatch = rawQuery.match(showJobRoleSkillsForPattern);
+
+        // Job role tasks / responsibilities patterns (for "What are the job responsibilities" flow)
+        const showJobRoleTasksPattern = /(?:show (?:me )?)?(?:job role|jobrole|position)? tasks?/i;
+        const showJobRoleTasksForPattern = /(?:show (?:me )?)?(?:job role|jobrole) tasks? (?:for|of) (.+)/i;
+        const jobResponsibilitiesPattern = /(?:what are the |list |show |get )?(?:job )?responsibilit(?:y|ies)/i;
+        const jobResponsibilitiesForPattern = /(?:responsibilit(?:y|ies)|duties|tasks?) (?:for|of) (?:the |a )?(.+)/i;
+        const showJobRoleTasksMatch = rawQuery.match(showJobRoleTasksPattern);
+        const showJobRoleTasksForMatch = rawQuery.match(showJobRoleTasksForPattern);
+        const jobRespMatch = rawQuery.match(jobResponsibilitiesPattern);
+        const jobRespForMatch = rawQuery.match(jobResponsibilitiesForPattern);
+
+        // Determine if the "Please enter the job role name." followup is for skills or tasks/responsibilities
+        // by inspecting the conversation history (what triggered the prompt)
+        let pendingJobRoleFollowupType: 'skills' | 'tasks' | null = null;
+        if (lastAssistant && /please enter the job role name/i.test(lastAssistant.content || '')) {
+          const history: any[] = (body.conversationHistory && Array.isArray(body.conversationHistory)) ? body.conversationHistory : [];
+          // Find the user query that led to the prompt (the one before the prompt in history)
+          for (let i = history.length - 1; i >= 0; i--) {
+            const m = history[i];
+            if (m && m.role === 'assistant' && /please enter the job role name/i.test(m.content || '')) {
+              // look at previous message (should be user)
+              if (i > 0) {
+                const prev = history[i - 1];
+                if (prev && prev.role === 'user' && prev.content) {
+                  const prevQ = String(prev.content).toLowerCase();
+                  if (/responsib|task.*role|job.*task|duties|responsibilities/i.test(prevQ)) {
+                    pendingJobRoleFollowupType = 'tasks';
+                  } else if (/skill/i.test(prevQ)) {
+                    pendingJobRoleFollowupType = 'skills';
+                  }
+                }
+              }
+              break;
+            }
+          }
+        }
+        const isJobRoleTasksFollowup = pendingJobRoleFollowupType === 'tasks' || !!(lastAssistant && /please enter the job role name/i.test(lastAssistant.content || '') && /task|responsib/i.test( (body.conversationHistory||[]).slice(-2).map((x:any)=>x?.content||'').join(' ') ));
+        const isJobRoleSkillsFollowup = pendingJobRoleFollowupType === 'skills' || (pendingJobRoleFollowupType === null && !!(lastAssistant && /please enter the job role name/i.test(lastAssistant.content || '')));
 
         // Check if this is a month response for attendance (e.g., "January", "January 2025", "current month", "current")
         const monthPattern = /^(?:for\s+)?(?:(january|february|march|april|may|june|july|august|september|october|november|december|current(?:\s+month)?)(?:\s+(\d{4}))?)$/i;
         const monthMatch = rawQuery.match(monthPattern);
         
+        // Check if this is an attendance update request (e.g., "update my attendance for today", "mark attendance", "punch in", "punch in for today")
+        const attendancePattern = /^(?:update|mark|punch\s+in|record)\s+(?:my\s+)?(?:attendance|punch)(?:\s+for\s+(?:today|now))?$/i;
+        const attendanceMatch = rawQuery.match(attendancePattern);
+
+        // Specific patterns for differentiated redirects
+        const updateAttendancePattern = /^update my attendance for today$/i;
+        const updateAttendanceMatch = rawQuery.match(updateAttendancePattern);
+
+        const punchInPattern = /^punch in for today$/i;
+        const punchInMatch = rawQuery.match(punchInPattern);
+
+        const punchOutPattern = /^punch out for the day$/i;
+        const punchOutMatch = rawQuery.match(punchOutPattern);
+
         if (departmentMatch && departmentMatch[1]) {
             // Extract industry name from the query
             const industry = departmentMatch[1].trim();
@@ -433,8 +486,144 @@ export async function POST(request: Request) {
                     error: String(monthError)
                 };
             }
+        } else if (updateAttendanceMatch) {
+            // Handle specific "Update my attendance for today" request
+            console.log('[chat] Detected update my attendance for today request');
+
+            result = {
+                answer: "Navigation: Attendance Module → User Attendance\n\nTo update attendance: Open the Attendance module and go to User Attendance page, then mark or update your attendance for today.\n\nRedirecting to attendance screen...",
+                action: 'REDIRECT',
+                redirectUrl: '/content/User-Attendance?intent=update-attendance',
+                actionType: 'navigateTo'
+            };
+        } else if (punchInMatch) {
+            // Handle specific "Punch in for today" request
+            console.log('[chat] Detected punch in for today request');
+
+            result = {
+                answer: "Navigation: Attendance Module → My Attendance\n\nTo punch in for today: Open the Attendance module and navigate to My Attendance page, then click the 'Punch In' button to record your attendance.\n\nRedirecting to attendance screen...",
+                action: 'REDIRECT',
+                redirectUrl: '/content/my-attendance?intent=punch-in',
+                actionType: 'navigateTo'
+            };
+        } else if (punchOutMatch) {
+            // Handle "Punch out for the day" request
+            console.log('[chat] Detected punch out for the day request');
+
+            // Redirect to My Attendance with punch-out intent.
+            // The page will show Punch Out button if user has already punched in today,
+            // otherwise it will guide the user to complete Punch In first.
+            result = {
+                answer: "Navigation: Attendance Module → My Attendance\n\nChecking your punch status for today...\nRedirecting to attendance screen...",
+                action: 'REDIRECT',
+                redirectUrl: '/content/my-attendance?intent=punch-out',
+                actionType: 'navigateTo'
+            };
+        } else if (attendanceMatch) {
+            result = {
+                answer: "Navigation: Attendance Module → Attendance\n\nI'll help you with attendance. Redirecting now...",
+                action: 'REDIRECT',
+                redirectUrl: '/content/my-attendance?intent=attendance',
+                actionType: 'navigateTo'
+            };
+        } else if (isDeptFollowup || (showJobRolesForDeptMatch && showJobRolesForDeptMatch[1] && !/specific/i.test(showJobRolesForDeptMatch[1]))) {
+            const department = isDeptFollowup ? rawQuery.trim() : (showJobRolesForDeptMatch ? showJobRolesForDeptMatch[1].trim() : '');
+            const subInstituteIdVal = body.subInstituteId || '';
+            try {
+                const subInstituteIdParam = subInstituteIdVal ? `&filters[sub_institute_id]=${subInstituteIdVal}` : '';
+                const apiUrl = `https://hp.triz.co.in/table_data?table=s_user_jobrole&filters[department]=${encodeURIComponent(department)}${subInstituteIdParam}&group_by=jobrole`;
+                const fetchRes = await fetch(apiUrl);
+                if (!fetchRes.ok) throw new Error('Failed to fetch');
+                const fetchData = await fetchRes.json();
+                let rows = Array.isArray(fetchData) ? fetchData : (fetchData.data || fetchData.result || []);
+                if (subInstituteIdVal) {
+                    rows = rows.filter((r: any) => String(r.sub_institute_id) === String(subInstituteIdVal));
+                }
+                const jobRoleList = rows.map((r: any) => ({ id: r.id || null, name: r.jobrole || r.job_role || r.name || 'Unknown' }));
+                result = {
+                    answer: `Job roles related to the ${department} department:`,
+                    data: jobRoleList,
+                    selectionOptions: jobRoleList,
+                    currentStep: 'jobRoles',
+                    action: 'SHOW_JOB_ROLES'
+                };
+            } catch (e) {
+                result = { answer: `Could not fetch job roles for ${department}.` };
+            }
+        } else if (showJobRolesSpecificDeptMatch) {
+            result = {
+                answer: "Please enter the department name.",
+                currentStep: 'departmentForJobRoles',
+                nextStep: 'fetchJobRoles',
+                action: 'ASK_DEPARTMENT_FOR_JOB_ROLES'
+            };
+        } else if (isJobRoleSkillsFollowup || (showJobRoleSkillsForMatch && showJobRoleSkillsForMatch[1])) {
+            const jobRole = isJobRoleSkillsFollowup ? rawQuery.trim() : (showJobRoleSkillsForMatch ? showJobRoleSkillsForMatch[1].trim() : '');
+            const subInstituteIdVal = body.subInstituteId || '';
+            try {
+                const skillsResponse = await fetch(new URL('/api/get-skills-by-job-role', request.url).toString(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jobRole, sub_institute_id: subInstituteIdVal })
+                });
+                if (!skillsResponse.ok) throw new Error('Failed to fetch skills');
+                const skillsData = await skillsResponse.json();
+                const skillsList = skillsData.data || [];
+                result = {
+                    answer: `Skills for the job role ${jobRole}:`,
+                    data: skillsList,
+                    selectionOptions: skillsList,
+                    currentStep: 'skills',
+                    action: 'SHOW_JOB_ROLE_SKILLS'
+                };
+            } catch (e) {
+                result = { answer: `Could not fetch skills for job role ${jobRole}.` };
+            }
+        } else if (showJobRoleSkillsMatch) {
+            result = {
+                answer: "Please enter the job role name.",
+                currentStep: 'jobRoleForSkills',
+                nextStep: 'fetchSkills',
+                action: 'ASK_JOB_ROLE_FOR_SKILLS'
+            };
+        } else if (isJobRoleTasksFollowup || (showJobRoleTasksForMatch && showJobRoleTasksForMatch[1]) || (jobRespForMatch && jobRespForMatch[1])) {
+            const jobRole = isJobRoleTasksFollowup ? rawQuery.trim() : (showJobRoleTasksForMatch ? showJobRoleTasksForMatch[1].trim() : (jobRespForMatch ? jobRespForMatch[1].trim() : ''));
+            const subInstituteIdVal = body.subInstituteId || '';
+            try {
+                const subInstituteIdParam = subInstituteIdVal ? `&filters[sub_institute_id]=${encodeURIComponent(subInstituteIdVal)}` : '';
+                const apiUrl = `https://hp.triz.co.in/table_data?table=s_user_jobrole_task&filters[jobrole]=${encodeURIComponent(jobRole)}${subInstituteIdParam}`;
+                const fetchRes = await fetch(apiUrl);
+                if (!fetchRes.ok) throw new Error('Failed to fetch tasks');
+                const fetchData = await fetchRes.json();
+                let taskRows = Array.isArray(fetchData) ? fetchData : (fetchData.data || fetchData.result || fetchData.rows || []);
+                if (subInstituteIdVal) {
+                    taskRows = taskRows.filter((r: any) => String(r.sub_institute_id) === String(subInstituteIdVal));
+                }
+                // Map to clean {id, name, ...} like dept job roles list for identical UI rendering (no raw DB fields)
+                const taskList = taskRows.map((r: any) => ({
+                  id: r.id || null,
+                  name: r.task || r.responsibility || r.description || r.key_responsibility || (typeof r === 'string' ? r : 'Task'),
+                  criticalWorkFunction: r.critical_work_function || r.cwf || '',
+                  jobrole: r.jobrole || jobRole
+                }));
+                result = {
+                    answer: `Job responsibilities/tasks for "${jobRole}":`,
+                    data: taskList,
+                    selectionOptions: taskList,
+                    currentStep: 'tasks',
+                    action: 'SHOW_JOB_ROLE_TASKS'
+                };
+            } catch (e) {
+                result = { answer: `Could not fetch responsibilities for job role ${jobRole}.` };
+            }
+        } else if (showJobRoleTasksMatch || jobRespMatch) {
+            result = {
+                answer: "Please enter the job role name.",
+                currentStep: 'jobRoleForTasks',
+                nextStep: 'fetchTasks',
+                action: 'ASK_JOB_ROLE_FOR_TASKS'
+            };
         } else {
-            // Normal chat flow
             try {
                 result = await handleChatRequest({
                     query: body.query,
@@ -445,10 +634,10 @@ export async function POST(request: Request) {
                     selectedJobRole: jobRole || undefined,
                     selectedjobRoleId: jobRoleId || undefined
                 });
-
+ 
             } catch (innerError) {
                 console.error("[handleChatRequest ERROR]:", innerError);
-
+ 
                 result = {
                     answer: "I ran into an issue, but I'm still here — try asking in simpler words!",
                     error: innerError instanceof Error ? innerError.message : "Unknown internal error",

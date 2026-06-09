@@ -120,7 +120,6 @@ const intentPatterns: Record<QueryIntent, string[]> = {
     // Primary triggers - competency framework
     'generate competency profile',
     'competency profile for',
-    'job role responsibilities',
     'skills for',
     'competency framework',
     'CWFKT',
@@ -128,7 +127,6 @@ const intentPatterns: Record<QueryIntent, string[]> = {
     'key tasks',
     // Role exploration patterns
     'what does a',
-    'what are the responsibilities of',
     'role requirements',
     // Proficiency and skills
     'proficiency level',
@@ -239,10 +237,10 @@ const intentPatterns: Record<QueryIntent, string[]> = {
       'my attendance', 'attendance history', 'show attendance for', 'attendance for month',
       'monthly attendance', 'attendance in', 'current month attendance'
     ],
-   HRMS_ATTENDANCE_UPDATE: [
-     'update my attendance', 'mark attendance', 'punch in', 'clock in',
-     'attendance update', 'update attendance for today'
-   ],
+    HRMS_ATTENDANCE_UPDATE: [
+      'update my attendance', 'mark attendance', 'punch in', 'clock in',
+      'attendance update', 'update attendance for today', 'punch in for today'
+    ],
    HRMS_ATTENDANCE_PUNCH_OUT: [
      'punch out', 'clock out', 'punch out for the day', 'end attendance'
    ],
@@ -253,9 +251,10 @@ const intentPatterns: Record<QueryIntent, string[]> = {
    HRMS_LEAVE_TYPE_CREATE: [
      'add a new leave type', 'create leave type', 'new leave type', 'add leave type'
    ],
-   HRMS_LEAVE_APPLY: [
-     'apply for leave', 'request leave', 'submit leave application', 'leave application'
-   ],
+    HRMS_LEAVE_APPLY: [
+      'apply for leave', 'request leave', 'submit leave application', 'leave application',
+      'request time off', 'apply for leave from work'
+    ],
    HRMS_LEAVE_SUMMARY_FETCH: [
      'show leave summary', 'leave summary report', 'my leave balance', 'leave status'
    ],
@@ -281,11 +280,13 @@ const intentPatterns: Record<QueryIntent, string[]> = {
      'generate monthly payroll', 'create payroll', 'run payroll'
    ],
 
-   // LMS intents
-   LMS_COURSES_FETCH: [
-     'show all courses', 'list courses', 'get courses', 'fetch courses',
-     'available courses', 'course list'
-   ],
+    // LMS intents
+     LMS_COURSES_FETCH: [
+       'show all courses', 'list courses', 'get courses', 'fetch courses',
+       'available courses', 'course list', 'view complete course catalog',
+       'course catalog', 'show my courses', 'list my courses', 'my courses',
+       'my enrolled courses', 'what courses are available', 'enrolled courses'
+     ],
    LMS_MODULES_FETCH: [
      'list modules for', 'show modules', 'get modules', 'modules for course',
      'course modules'
@@ -334,9 +335,11 @@ const intentPatterns: Record<QueryIntent, string[]> = {
    SKILL_ATTRIBUTES_ADD: [
      'add skill attributes', 'add attributes', 'skill attributes'
    ],
-   JOB_ROLES_FETCH: [
-     'show job roles', 'list job roles', 'get job roles', 'job role list'
-   ],
+    JOB_ROLES_FETCH: [
+      'show job roles', 'list job roles', 'get job roles', 'job role list',
+      'show job roles for', 'list job roles for', 'get job roles for', 'job roles for',
+      'department job roles', 'job roles in department', 'job roles for department'
+    ],
    JOB_ROLE_CREATE: [
      'create a job role', 'add job role', 'new job role'
    ],
@@ -352,9 +355,12 @@ const intentPatterns: Record<QueryIntent, string[]> = {
    JOB_ROLE_SKILL_CREATE: [
      'create job role skill', 'add job role skill'
    ],
-   JOB_ROLE_TASKS_FETCH: [
-     'show job role tasks', 'job role tasks', 'tasks for job role'
-   ],
+    JOB_ROLE_TASKS_FETCH: [
+      'show job role tasks', 'job role tasks', 'tasks for job role',
+      'job responsibilities', 'what are the job responsibilities', 'responsibilities for',
+      'what are the responsibilities', 'list job responsibilities', 'responsibilities of',
+      'job duties', 'position responsibilities', 'tasks and responsibilities'
+    ],
    JOB_ROLE_TASK_CREATE: [
      'create job role task', 'add job role task'
    ],
@@ -474,6 +480,9 @@ export function extractEntities(query: string): ExtractedEntities {
     /competency[\s-]?profile[\s-]?for[\s-]?([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
     // Handle "for [job role] in" pattern
     /for[\s-]?([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+in[\s-]/i,
+    // Handle responsibilities/tasks for role
+    /responsibilit(?:y|ies) (?:of|for) ([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
+    /tasks? (?:of|for) ([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
   ];
 
   for (const pattern of jobRolePatterns) {
@@ -502,15 +511,17 @@ export function extractEntities(query: string): ExtractedEntities {
     }
   }
 
-  // Extract department
-  const departmentPatterns = [
-    /department[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
-    /(?:in|for|within) ([a-zA-Z]+(?:\s+[a-zA-Z]+)*) department/i,
-    // Handle "Selected [value] for department" pattern
-    /selected[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+for\s+department/i,
-    // Handle "[value] department" pattern
-    /^([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+department/i,
-  ];
+   // Extract department
+   const departmentPatterns = [
+     /department[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
+     /(?:in|for|within) ([a-zA-Z]+(?:\s+[a-zA-Z]+)*) department/i,
+     // Handle "Selected [value] for department" pattern
+     /selected[:\s]+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+for\s+department/i,
+     // Handle "[value] department" pattern
+     /^([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+department/i,
+     // Handle "job roles for [department]" pattern
+     /job roles for ([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i,
+   ];
 
   for (const pattern of departmentPatterns) {
     const match = query.match(pattern);
@@ -792,6 +803,19 @@ export function classifyIntent(
       ? `Detected ${maxMatches} pattern(s) matching "${detectedIntent}" intent`
       : 'No clear intent patterns detected; requires context';
 
+  // Dynamic action verb detection for any unclassified action queries
+  if (detectedIntent === 'unclear' || detectedIntent === 'data_retrieval') {
+    const actionVerbs = ['update', 'add', 'edit', 'delete', 'create', 'modify', 'remove', 'change'];
+    const hasActionVerb = actionVerbs.some(verb => lowerQuery.includes(verb));
+    if (hasActionVerb) {
+      return {
+        intent: 'action',
+        confidence: 0.85,
+        reasoning: 'Dynamically detected action verb in query'
+      };
+    }
+  }
+
   return {
     intent: detectedIntent,
     confidence,
@@ -849,6 +873,7 @@ export function shouldRouteToAction(intent: QueryIntent): boolean {
       intent === 'HRMS_ATTENDANCE_PUNCH_OUT' ||
       intent === 'HRMS_LEAVE_TYPE_CREATE' ||
       intent === 'HRMS_LEAVE_APPLY' ||
+      intent === 'HRMS_LEAVE_SUMMARY_FETCH' ||
       intent === 'HRMS_LEAVE_AUTHORIZE' ||
       intent === 'HRMS_HOLIDAY_CREATE' ||
       intent === 'HRMS_PAYROLL_GENERATE') return true;
