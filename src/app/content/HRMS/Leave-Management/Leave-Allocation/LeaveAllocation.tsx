@@ -32,53 +32,53 @@ interface EmployeeAllocation {
   status: "active" | "inactive";
 }
 
-const initialDepartmentAllocations: DepartmentAllocation[] = [
-  {
-    id: 1,
-    department: "Engineering",
-    leaveType: "Annual Leave",
-    year: 2024,
-    days: 25,
-    status: "active",
-  },
-  {
-    id: 2,
-    department: "Marketing",
-    leaveType: "Annual Leave",
-    year: 2024,
-    days: 22,
-    status: "active",
-  },
-  {
-    id: 3,
-    department: "HR",
-    leaveType: "Sick Leave",
-    year: 2024,
-    days: 12,
-    status: "active",
-  },
-];
+// const initialDepartmentAllocations: DepartmentAllocation[] = [
+//   {
+//     id: 1,
+//     department: "Engineering",
+//     leaveType: "Annual Leave",
+//     year: 2024,
+//     days: 25,
+//     status: "active",
+//   },
+//   {
+//     id: 2,
+//     department: "Marketing",
+//     leaveType: "Annual Leave",
+//     year: 2024,
+//     days: 22,
+//     status: "active",
+//   },
+//   {
+//     id: 3,
+//     department: "HR",
+//     leaveType: "Sick Leave",
+//     year: 2024,
+//     days: 12,
+//     status: "active",
+//   },
+// ];
 
-const initialEmployeeAllocations: EmployeeAllocation[] = [
-  {
-    id: 1,
-    department: "Engineering",
-    employee: "John Doe",
-    leaveType: "Annual Leave",
-    year: 2024,
-    days: 28,
-    status: "active",
-  },
-  {
-    id: 2,
-    department: "Marketing",
-    employee: "Sarah Johnson",
-    leaveType: "Emergency Leave",
-    year: 2024,
-    days: 7,
-    status: "active",
-  },
-];
+// const initialEmployeeAllocations: EmployeeAllocation[] = [
+//   {
+//     id: 1,
+//     department: "Engineering",
+//     employee: "John Doe",
+//     leaveType: "Annual Leave",
+//     year: 2024,
+//     days: 28,
+//     status: "active",
+//   },
+//   {
+//     id: 2,
+//     department: "Marketing",
+//     employee: "Sarah Johnson",
+//     leaveType: "Emergency Leave",
+//     year: 2024,
+//     days: 7,
+//     status: "active",
+//   },
+// ];
 
 const departments = ["Engineering", "Marketing", "HR", "Finance", "Operations"];
 const employees = ["John Doe", "Sarah Johnson", "Mike Chen", "Emma Wilson", "David Brown"];
@@ -86,8 +86,8 @@ const leaveTypes = ["Annual Leave", "Sick Leave", "Emergency Leave", "Maternity 
 
 export default function LeaveAllocation() {
   const [isDepartmentWise, setIsDepartmentWise] = useState(true);
-  const [departmentAllocations, setDepartmentAllocations] = useState<DepartmentAllocation[]>(initialDepartmentAllocations);
-  const [employeeAllocations, setEmployeeAllocations] = useState<EmployeeAllocation[]>(initialEmployeeAllocations);
+  const [departmentAllocations, setDepartmentAllocations] = useState<DepartmentAllocation[]>([]);
+  const [employeeAllocations, setEmployeeAllocations] = useState<EmployeeAllocation[]>([]);
   const [showDeptForm, setShowDeptForm] = useState(false);
   const [showEmpForm, setShowEmpForm] = useState(false);
   const { toast } = useToast();
