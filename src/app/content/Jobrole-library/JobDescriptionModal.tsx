@@ -347,6 +347,7 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
             department: jobRole.department,
             jobrole: jobRole.jobrole,
             description: jobRole.description,
+            ...(selectedSkill ? { selected_skill: selectedSkill } : {}),
             // Include ALL Skills
             skills: allSkills,
             // Include Critical Work Functions with Tasks mapped under each function
@@ -495,8 +496,11 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                                                 const payload = {
                                                                     industry: sessionData.orgType,
                                                                     department: jobRole.department,
+                                                                    department_id: (jobRole as any).department_id || "",
                                                                     jobrole: jobRole.jobrole,
                                                                     description: jobRole.description,
+                                                                    selectedCriticalWorkFunction: selectedFunction,
+                                                                    critical_work_function: selectedFunction,
                                                                     // Include ALL Skills
                                                                     skills: skillsData.map(s => ({
                                                                         skillName: s.SkillName,
@@ -623,8 +627,12 @@ export default function JobDescriptionModal({ isOpen, onClose, onConfig, onGener
                                                                 const payload = {
                                                                     industry: sessionData.orgType,
                                                                     department: jobRole.department,
+                                                                    department_id: (jobRole as any).department_id || "",
                                                                     jobrole: jobRole.jobrole,
                                                                     description: jobRole.description,
+                                                                    selected_skill: skill.skill_id || skill.id || skill.SkillName,
+                                                                    selected_skill_id: skill.skill_id || skill.id,
+                                                                    selected_skill_name: skill.SkillName,
                                                                     // Include ALL Skills
                                                                     skills: allSkills,
                                                                     // Include Critical Work Functions with Tasks mapped under each function
