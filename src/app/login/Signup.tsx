@@ -82,7 +82,7 @@ const Signup: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/send-otp?email=${formData.email}&type=API`,
+        `https://hp.triz.co.in/api/send-otp?email=${formData.email}&type=API`,
         {
           method: "post",
           credentials: "include",
@@ -120,7 +120,7 @@ const Signup: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/verify-otp?email=${formData.email}&otp=${otp}&type=API`,
+        `https://hp.triz.co.in/api/verify-otp?email=${formData.email}&otp=${otp}&type=API`,
         {
           method: "post",
           credentials: "include",
@@ -166,7 +166,7 @@ const Signup: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/school-setup`,
+        `https://hp.triz.co.in/api/school-setup`,
         {
           method: "POST",
           credentials: "include",
