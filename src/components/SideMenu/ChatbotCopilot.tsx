@@ -4,12 +4,30 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Send, Bot, User, Users,Database, Loader2, ThumbsUp, ThumbsDown,X, MessageSquare, Maximize2, Minimize2, Trash2, Mic, MicOff, ChevronDown, FileText, Target, Wrench, BookOpen, Zap, Heart, Smile, CheckCircle, Save, TrendingUp, Mail, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LeaveAnalysisSelection } from "@/chat/components/LeaveAnalysisSelection";
+import { ResultRenderer as LeaveAnalysisResultRenderer } from "@/chat/components/ResultRenderer";
+import {
+  buildLeaveAnalysisSelectionMessage,
+  buildLeaveAnalysisResultMessage,
+  isLeavePatternQuery,
+  isLeaveAnalysisResultMessage,
+  type LeaveAnalysisResultPayload,
+  type LeaveAnalysisSummary,
+} from "@/chat/leaveAnalysisHelpers";
 
 import { submitFeedback } from "@/lib1/feedback-service";
 import SkillGapReport from "@/components/users/SkillGapReport";
 import { v4 as uuidv4 } from 'uuid';
 import ResponseRenderer from "@/components/flow/ResponseRenderer";
 import { createIntelligentQueryResponse } from "@/lib1/structured-response";
+
+const leaveAnalysisSelectionOptions = [
+  { id: "total_leave_risk", label: "Show employees with highest leave risk" },
+  { id: "monday_leave_pattern", label: "Show repeated Monday leave patterns" },
+  { id: "friday_leave_pattern", label: "Show repeated Friday leave patterns" },
+  { id: "unplanned_leave_pattern", label: "Show high unplanned leave behaviour" },
+  { id: "leave_clustering", label: "Show leave clustering behaviour" },
+];
 
 // Question suggestions for different LMS modules (based on URL path)
 const moduleSuggestions: Record<string, string[]> = {
@@ -70,8 +88,10 @@ interface Message {
     canEscalate?: boolean;
     intent?: string;
     action?: string;
+    query?: string;
+    querySuggestions?: string[];
     missingFields?: string[];
-    data?: any[]; // For structured data responses
+    data?: any; // For structured data responses or leave-analysis payloads
     entities?: {
       industry?: string;
       jobRole?: string;
@@ -79,9 +99,10 @@ interface Message {
       departmentId?: number | null;
     };
     // Skill Gap Analysis metadata
-    selectionOptions?: Array<{ 
-      id: number; 
-      name: string; 
+    selectionOptions?: Array<{
+      id: string | number;
+      name?: string;
+      label?: string;
       expectedProficiency?: number;
       category?: string;
       subCategory?: string;
@@ -93,8 +114,33 @@ interface Message {
     nextStep?: string;
     showRatingPrompt?: boolean; // Flag to show rating prompt inline with skills
     // Job role info for API calls
+    analysisType?: string;
+    defaultAnalysisType?: string;
     jobRole?: string;
     jobRoleId?: number | null;
+    monthStart?: string;
+    monthEnd?: string;
+    employee_id?: number | null;
+    department_id?: number | null;
+    filters?: {
+      fromDate?: string;
+      toDate?: string;
+      employeeId?: number | null;
+      departmentId?: number | null;
+    };
+    summary?: {
+      analysisLabel?: string;
+      riskAssessment?: string;
+      message?: string;
+      highRiskEmployees?: number;
+      highRiskEmployeeDetails?: Array<{
+        userId?: number | null;
+        riskScore: number;
+        riskLevel?: string;
+        findings?: string[];
+      }>;
+      recommendation?: string;
+    };
     // Skill Gap Report data
     skillGapReportData?: {
       avgUserRating: number;
@@ -601,6 +647,19 @@ export default function ChatbotCopilot({
       );
     }
 
+    if (isLeaveAnalysisResultMessage(message.metadata)) {
+      const leaveResult = message.metadata?.data || {};
+      return (
+        <LeaveAnalysisResultRenderer
+          result={leaveResult}
+          analysisType={message.metadata?.analysisType || leaveResult.analysisType || ''}
+          summary={message.metadata?.summary}
+          monthStart={message.metadata?.monthStart}
+          monthEnd={message.metadata?.monthEnd}
+        />
+      );
+    }
+
     if (message.metadata?.action === 'SHOW_GENERATED_PROFILE' && message.metadata?.generatedProfile) {
       return <span></span>;
     }
@@ -803,6 +862,7 @@ export default function ChatbotCopilot({
   }, [messages]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [leaveAnalysisStatus, setLeaveAnalysisStatus] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [sessionId] = useState(() => `session_${Date.now()}`);
@@ -1212,6 +1272,109 @@ const [sessionData, setSessionData] = useState({
     setPendingFormMessageId(null);
   };
 
+  const handleRunLeaveAnalysis = async (
+    analysisType: string,
+    fromDate: string,
+    toDate: string
+  ) => {
+    if (isLoading) return;
+
+    const userInput = `${analysisType} from ${fromDate} to ${toDate}`;
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: userInput,
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+    const leaveAnalysisStatusMap: Record<string, string> = {
+      total_leave_risk: 'Analyzing employees with highest leave risk...',
+      monday_leave_pattern: 'Analyzing repeated Monday leave patterns...',
+      friday_leave_pattern: 'Analyzing repeated Friday leave patterns...',
+      unplanned_leave_pattern: 'Analyzing high unplanned leave behaviour...',
+      leave_clustering: 'Analyzing leave clustering behaviour...',
+    };
+    setLeaveAnalysisStatus(
+      leaveAnalysisStatusMap[analysisType] || 'Analyzing leave pattern risk...'
+    );
+
+    try {
+      const response = await fetch('/api/leave-management', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          analysisType: analysisType as
+            | "total_leave_risk"
+            | "monday_leave_pattern"
+            | "friday_leave_pattern"
+            | "unplanned_leave_pattern"
+            | "employee_leave_frequency"
+            | "employee_leave_days_consumed"
+            | "department_leave_burden"
+            | "leave_type_utilization"
+            | "leave_consumption_percentage"
+            | "leave_balance_risk"
+            | "leave_type_exhaustion"
+            | "department_leave_risk"
+            | "department_unplanned_leave"
+            | "leave_clustering",
+          start_date: fromDate,
+          end_date: toDate,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            data?.details ||
+            `Leave analysis request failed with status ${response.status}`
+        );
+      }
+
+      if (!data) {
+        throw new Error('Leave analysis returned an empty response');
+      }
+
+      const leaveSummary =
+        typeof data.summary === 'object' && data.summary !== null
+          ? data.summary
+          : undefined;
+      const botMessage = buildLeaveAnalysisResultMessage({
+        result: data as LeaveAnalysisResultPayload,
+        fallbackQuery: userInput,
+        summary: leaveSummary as LeaveAnalysisSummary | undefined,
+      }) as Message;
+
+      setConversationId(data.conversationId);
+      setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('[ChatbotCopilot] Leave analysis run failed:', error);
+      const errorMessageText =
+        error instanceof Error ? error.message : 'Sorry, I could not run the leave analysis right now. Please try again.';
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: errorMessageText,
+        timestamp: new Date(),
+        metadata: {
+          canEscalate: true,
+          insights: errorMessageText,
+        },
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+      setLeaveAnalysisStatus(null);
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -1246,6 +1409,26 @@ const [sessionData, setSessionData] = useState({
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+
+    if (isLeavePatternQuery(userInput)) {
+      const selectionMessage = buildLeaveAnalysisSelectionMessage({
+        selectionOptions: leaveAnalysisSelectionOptions,
+        message: 'Please choose an analysis type.',
+      });
+      const botMessage: Message = {
+        ...selectionMessage,
+        id: Date.now().toString(),
+        content: selectionMessage.content,
+        timestamp: new Date(),
+        metadata: {
+          ...selectionMessage.metadata,
+          canEscalate: false,
+        },
+      };
+      setMessages(prev => [...prev, botMessage]);
+      setIsLoading(false);
+      return;
+    }
 
     // Check if user sent the job role prompt message - if so, show job role input instead of API call
     if (userInput.match(/^You selected .+\. Please enter the job role for this department\.$/)) {
@@ -4270,6 +4453,16 @@ ${skillsList}
                       <CWFKTInput messageId={message.id} jdFormData={jdFormData} setJdFormData={setJdFormData} />
                     )}
 
+                    {/* Phase 4: Leave Analysis Selection */}
+                    {message.type === 'bot' && message.metadata?.action === 'SHOW_LEAVE_ANALYSIS_OPTIONS' && (
+                      <LeaveAnalysisSelection
+                        messageId={message.id}
+                        messages={messages}
+                        setInput={setInput}
+                        onRunAnalysis={handleRunLeaveAnalysis}
+                      />
+                    )}
+
                     {/* Phase 4: Skill Gap Selection */}
                     {message.type === 'bot' && message.metadata?.action === 'SHOW_SKILL_GAP_OPTIONS' && (
                       <SkillGapSelection messageId={message.id} />
@@ -4350,7 +4543,9 @@ ${skillsList}
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                     </div>
-                    <span className="text-sm text-gray-600 font-medium">Analyzing your data...</span>
+                    <span className="text-sm text-gray-600 font-medium">
+                      {leaveAnalysisStatus || 'Analyzing your data...'}
+                    </span>
                   </div>
                 </div>
               )}

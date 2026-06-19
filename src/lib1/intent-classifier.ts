@@ -20,6 +20,7 @@ export type QueryIntent =
   | 'HRMS_LEAVE_APPLY'
   | 'HRMS_LEAVE_SUMMARY_FETCH'
   | 'HRMS_LEAVE_AUTHORIZE'
+  | 'HRMS_LEAVE_PATTERN_ANALYSIS'
   | 'HRMS_HOLIDAYS_FETCH'
   | 'HRMS_HOLIDAY_CREATE'
   | 'HRMS_SALARY_STRUCTURE_FETCH'
@@ -255,13 +256,30 @@ const intentPatterns: Record<QueryIntent, string[]> = {
       'apply for leave', 'request leave', 'submit leave application', 'leave application',
       'request time off', 'apply for leave from work'
     ],
-   HRMS_LEAVE_SUMMARY_FETCH: [
-     'show leave summary', 'leave summary report', 'my leave balance', 'leave status'
-   ],
-   HRMS_LEAVE_AUTHORIZE: [
-     'authorize leave', 'approve leave', 'leave authorization', 'authorize leave for'
-   ],
-   HRMS_HOLIDAYS_FETCH: [
+HRMS_LEAVE_SUMMARY_FETCH: [
+      'show leave summary', 'leave summary report', 'my leave balance', 'leave status'
+    ],
+    HRMS_LEAVE_AUTHORIZE: [
+      'authorize leave', 'approve leave', 'leave authorization', 'authorize leave for'
+    ],
+    HRMS_LEAVE_PATTERN_ANALYSIS: [
+      'show leave abuse risk',
+      'detect abnormal leave pattern',
+      'leave pattern anomaly',
+      'leave misuse analysis',
+      'employee leave risk',
+      'suspicious leave behavior',
+      'leave abuse detection',
+      'frequent leave analysis',
+      'analyze leave misuse',
+      'leave abuse analysis',
+      'leave abuse',
+      'abnormal leave',
+      'leave pattern risk',
+      'leave risk',
+      'leave abuse or abnormal'
+    ],
+    HRMS_HOLIDAYS_FETCH: [
      'show holidays', 'list holidays', 'get holidays', 'holiday list', 'upcoming holidays'
    ],
    HRMS_HOLIDAY_CREATE: [
@@ -667,6 +685,33 @@ export function classifyIntent(
     };
   }
 
+  const leaveAnomalyKeywords = [
+    'leave abuse',
+    'abnormal leave',
+    'leave pattern',
+    'leave pattern risk',
+    'show abnormal leave pattern',
+    'show leave abuse risk',
+    'show repeated monday leave patterns',
+    'show employees with highest leave risk',
+    'show high unplanned leave behaviour',
+    'show leave abuse or abnormal leave pattern risk'
+  ];
+  const leaveAnomalyMatches = leaveAnomalyKeywords.filter(pattern =>
+    lowerQuery.includes(pattern)
+  ).length;
+
+  if (leaveAnomalyMatches > 0) {
+    let confidence = 0.75 + leaveAnomalyMatches * 0.1;
+    confidence = Math.min(confidence, 0.95);
+
+    return {
+      intent: 'HRMS_LEAVE_PATTERN_ANALYSIS',
+      confidence,
+      reasoning: `Detected ${leaveAnomalyMatches} leave anomaly pattern(s)`
+    };
+  }
+
   // Prioritize specific intents over generic data_retrieval
   const intentPriority: Record<QueryIntent, number> = {
     // High priority: specific HRMS intents
@@ -681,6 +726,7 @@ export function classifyIntent(
     'HRMS_LEAVE_APPLY': 10,
     'HRMS_LEAVE_SUMMARY_FETCH': 10,
     'HRMS_LEAVE_AUTHORIZE': 10,
+    'HRMS_LEAVE_PATTERN_ANALYSIS': 10,
     'HRMS_HOLIDAYS_FETCH': 10,
     'HRMS_HOLIDAY_CREATE': 10,
     'HRMS_SALARY_STRUCTURE_FETCH': 10,
@@ -874,6 +920,7 @@ export function shouldRouteToAction(intent: QueryIntent): boolean {
       intent === 'HRMS_LEAVE_TYPE_CREATE' ||
       intent === 'HRMS_LEAVE_APPLY' ||
       intent === 'HRMS_LEAVE_SUMMARY_FETCH' ||
+      intent === 'HRMS_LEAVE_PATTERN_ANALYSIS' ||
       intent === 'HRMS_LEAVE_AUTHORIZE' ||
       intent === 'HRMS_HOLIDAY_CREATE' ||
       intent === 'HRMS_PAYROLL_GENERATE') return true;
@@ -910,5 +957,5 @@ export function shouldRouteToAction(intent: QueryIntent): boolean {
 }
 
 export function shouldUseFallback(intent: QueryIntent): boolean {
-  return intent === 'support' || intent === 'unclear' || intent === 'data_retrieval';
+  return false;
 }
