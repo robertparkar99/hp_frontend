@@ -47,7 +47,7 @@ const Signup: React.FC = () => {
     const fetchIndustries = async () => {
       try {
         const response = await fetch(
-          "https://hp.triz.co.in/table_data?table=s_industries&group_by=industries"
+          "http://127.0.0.1:8000/table_data?table=s_industries&group_by=industries"
         );
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -82,7 +82,7 @@ const Signup: React.FC = () => {
 
     try {
       const response = await fetch(
-        `https://hp.triz.co.in/api/send-otp?email=${formData.email}&type=API`,
+        `http://127.0.0.1:8000/api/send-otp?email=${formData.email}&type=API`,
         {
           method: "post",
           credentials: "include",
@@ -120,7 +120,7 @@ const Signup: React.FC = () => {
 
     try {
       const response = await fetch(
-        `https://hp.triz.co.in/api/verify-otp?email=${formData.email}&otp=${otp}&type=API`,
+        `http://127.0.0.1:8000/api/verify-otp?email=${formData.email}&otp=${otp}&type=API`,
         {
           method: "post",
           credentials: "include",
@@ -166,7 +166,7 @@ const Signup: React.FC = () => {
 
     try {
       const response = await fetch(
-        `https://hp.triz.co.in/api/school-setup`,
+        `http://127.0.0.1:8000/api/school-setup`,
         {
           method: "POST",
           credentials: "include",

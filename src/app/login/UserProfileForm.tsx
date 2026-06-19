@@ -65,7 +65,7 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
       
       try {
         // Fetch user profiles dynamically based on sub_institute_id from props
-        const profileUrl = `http://127.0.0.1:8000/table_data?table=tbluserprofilemaster&filters[sub_institute_id]=${subInstituteId}`;
+        const profileUrl = `https://hp.triz.co.in/table_data?table=tbluserprofilemaster&filters[sub_institute_id]=${subInstituteId}`;
         console.log("Fetching profiles from:", profileUrl);
         const profilesResponse = await fetch(profileUrl);
         const profilesData = await profilesResponse.json();
@@ -75,14 +75,14 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
         }
 
         // Fetch sub institutes
-        const substitutesResponse = await fetch("http://127.0.0.1:8000/table_data?table=tblsubinstitute&fields=id,name");
+        const substitutesResponse = await fetch("https://hp.triz.co.in/table_data?table=tblsubinstitute&fields=id,name");
         const substitutesData = await substitutesResponse.json();
         if (Array.isArray(substitutesData)) {
           setSubstitutes(substitutesData);
         }
 
         // Fetch clients
-        const clientsResponse = await fetch("http://127.0.0.1:8000/table_data?table=tblclient&fields=id,client_name");
+        const clientsResponse = await fetch("https://hp.triz.co.in/table_data?table=tblclient&fields=id,client_name");
         const clientsData = await clientsResponse.json();
         if (Array.isArray(clientsData)) {
           setClients(clientsData);
@@ -90,7 +90,7 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
 
         // Fetch departments
         console.log("Fetching departments for subInstituteId:", subInstituteId);
-        const departmentsResponse = await fetch(`http://127.0.0.1:8000/table_data?table=hrms_departments&fields=id,department&filters[sub_institute_id]=${subInstituteId}`);
+        const departmentsResponse = await fetch(`https://hp.triz.co.in/table_data?table=hrms_departments&fields=id,department&filters[sub_institute_id]=${subInstituteId}`);
         const departmentsData = await departmentsResponse.json();
         console.log("Departments API response:", departmentsData);
         
@@ -110,7 +110,7 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
         }
 
         // Fetch job roles
-        const jobRolesResponse = await fetch(`http://127.0.0.1:8000/table_data?table=s_user_jobrole&fields=id,jobrole&filters[sub_institute_id]=${subInstituteId}`);
+        const jobRolesResponse = await fetch(`https://hp.triz.co.in/table_data?table=s_user_jobrole&fields=id,jobrole&filters[sub_institute_id]=${subInstituteId}`);
         const jobRolesData = await jobRolesResponse.json();
         console.log("Job Roles API response:", jobRolesData);
         
@@ -184,7 +184,7 @@ const UserProfileForm: React.FC<UserProfileFormProps> = ({ email, mobile, firstN
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/user-signup",
+        "https://hp.triz.co.in/api/user-signup",
         {
           method: "POST",
           credentials: "include",
