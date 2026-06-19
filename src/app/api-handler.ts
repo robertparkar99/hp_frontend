@@ -11,12 +11,61 @@ import {
   updateConversationStatus
 } from "@/lib1/conversation-persistence";
 import { createEscalation } from "@/lib1/escalation-service";
+import { queryBusinessData } from "../../apps/ai/mcp-client";
+import type { QueryBusinessDataInput } from "../../apps/ai/mcp-client";
 import { v4 as uuidv4 } from 'uuid';
 
 // Check if Supabase is properly configured
 const supabaseEnabled = process.env.SUPABASE_URL &&
   process.env.SUPABASE_URL !== 'rlqosgegreuvzwbntflq.supabase.co' &&
   process.env.SUPABASE_ANON_KEY;
+
+async function escalateIntentMismatch(
+  conversationId: string,
+  userId: string | undefined,
+  intent: string,
+  query: string,
+  reasoning?: string
+) {
+  const escalationReason = [
+    "Intent mismatch or unsupported request.",
+    `Detected intent: ${intent}.`,
+    reasoning ? `Reasoning: ${reasoning}.` : "",
+    `Query: ${query}`
+  ].filter(Boolean).join(" ");
+
+  const escalation = await handleEscalation(
+    conversationId,
+    userId || "anonymous",
+    escalationReason
+  );
+
+  const answer = escalation.success
+    ? escalation.message
+    : "I couldn't confidently process that request, so I escalated it for review.";
+
+  await saveMessage(
+    conversationId,
+    "bot",
+    answer,
+    intent,
+    undefined,
+    undefined,
+    true,
+    escalationReason
+  );
+
+  return {
+    answer,
+    conversationId,
+    intent,
+    error: "INTENT_MISMATCH_ESCALATED",
+    recoverable: true,
+    canEscalate: true,
+    escalationId: escalation.escalationId,
+    querySuggestions: ["Please rephrase your request", "Contact support for assistance"]
+  };
+}
 
 // Import course recommendation flow
 // @ts-ignore - Flow is a JavaScript module
@@ -36,6 +85,17 @@ interface ChatRequest {
   debugMode?: boolean;
   selectedJobRole?: string;
   selectedjobRoleId?: string;
+  analysisType?: string;
+  start_date?: string;
+  end_date?: string;
+  filters?: {
+    fromDate?: string;
+    toDate?: string;
+    employee_id?: number;
+    department_id?: number;
+    employeeId?: number;
+    departmentId?: number;
+  };
   formData?: {
     industry?: string;
     department?: string;
@@ -797,6 +857,43 @@ async function handleHRMSRequest(
           redirect: redirectMap[intent],
           recoverable: true
         };
+      }
+
+      // Leave pattern analysis - call via MCP client
+      if (intent === 'HRMS_LEAVE_PATTERN_ANALYSIS') {
+        try {
+          const analysisType = request.analysisType as QueryBusinessDataInput["analysisType"] | undefined;
+          const start_date = request.start_date;
+          const end_date = request.end_date;
+          const payload: QueryBusinessDataInput = {
+            analysisType: analysisType as QueryBusinessDataInput["analysisType"],
+            start_date: start_date as string,
+            end_date: end_date as string,
+          };
+          if (!analysisType || !start_date || !end_date) {
+            return {
+              answer: "analysisType, start_date, and end_date are required for leave pattern anomaly analysis.",
+              conversationId,
+              intent,
+              error: "MISSING_LEAVE_ANALYSIS_INPUTS",
+              recoverable: true,
+              canEscalate: false,
+            };
+          }
+          console.log("[API] leave-pattern-anomaly payload:", payload);
+          return await queryBusinessData(payload);
+        } catch (mcpError) {
+          console.error('MCP leave pattern error:', mcpError);
+          return {
+            answer: `Leave analysis failed. ${mcpError instanceof Error ? mcpError.message : String(mcpError)}. Please check database connectivity.`,
+            conversationId,
+            intent,
+            error: 'MCP_LEAVE_ANALYSIS_FAILED',
+            recoverable: true,
+            canEscalate: true,
+            querySuggestions: getIntentQuerySuggestions(intent).map(s => s.text)
+          };
+        }
       }
 
       // Holiday create - navigation style message
@@ -3067,88 +3164,13 @@ export async function handleChatRequest(request: ChatRequest): Promise<ChatRespo
 
     // Direct fallback for unclear or support intents (no intent matched)
     if (intent.intent === 'unclear' || intent.intent === 'support') {
-      try {
-        // Limit conversation history to last 5 messages to avoid huge prompts
-        const fallbackMessages = request.conversationHistory ?
-          request.conversationHistory.slice(-5) : [];
-        fallbackMessages.push({ role: 'user', content: request.query });
-
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.LLM_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'deepseek/deepseek-chat',
-            messages: [
-              { role: 'system', content: 'You are a friendly assistant like ChatGPT. Answer questions naturally with appropriate emojis. Maintain conversation context. After your answer, provide 2-3 related follow-up questions or suggestions that the user might ask next, each on a new line, starting with "Suggestions:".' },
-              ...fallbackMessages
-            ],
-            max_tokens: OPENROUTER_FALLBACK_MAX_TOKENS
-          })
-        });
-
-        const data = await response.json();
-        let fallbackAnswer = data.choices?.[0]?.message?.content?.trim() || 'I\'m sorry, I couldn\'t generate a response right now.';
-
-        let querySuggestions: Array<{ text: string; description: string; intent: string }> = [];
-        if (fallbackAnswer.includes('Suggestions:')) {
-          const parts = fallbackAnswer.split('Suggestions:');
-          fallbackAnswer = parts[0].trim();
-          const suggestionsText = parts[1].trim();
-          const suggestions = suggestionsText.split('\n').filter(s => s.trim()).map(s => s.trim());
-          querySuggestions = suggestions.map(s => ({ text: s, description: s, intent: 'unclear' }));
-        }
-
-        // If no suggestions were generated, add some default relevant ones based on the query
-        if (querySuggestions.length === 0) {
-          const lowerQuery = request.query.toLowerCase();
-          if (lowerQuery.includes('india') || lowerQuery.includes('father') || lowerQuery.includes('nation')) {
-            querySuggestions = [
-              { text: 'Tell me about Mahatma Gandhi\'s life', description: 'Learn more about his biography and achievements', intent: 'unclear' },
-              { text: 'What was India\'s freedom struggle?', description: 'Explore the history of India\'s independence movement', intent: 'unclear' },
-              { text: 'Who were other freedom fighters in India?', description: 'Discover key figures in India\'s independence', intent: 'unclear' }
-            ];
-          } else if (lowerQuery.includes('hello') || lowerQuery.includes('hi')) {
-            querySuggestions = [
-              { text: 'What can you help me with?', description: 'Learn about available features and capabilities', intent: 'unclear' },
-              { text: 'How do I use this chatbot?', description: 'Get guidance on interacting with the system', intent: 'unclear' },
-              { text: 'Show me examples of questions I can ask', description: 'See sample queries and use cases', intent: 'unclear' }
-            ];
-          } else {
-            // Generic suggestions
-            querySuggestions = [
-              { text: 'Can you explain that in more detail?', description: 'Get deeper insights on the topic', intent: 'unclear' },
-              { text: 'What are some related topics?', description: 'Explore connected subjects', intent: 'unclear' },
-              { text: 'Give me examples', description: 'See practical examples or applications', intent: 'unclear' }
-            ];
-          }
-        }
-
-        const botMessage = await saveMessage(conversationId, 'bot', fallbackAnswer, intent.intent);
-        if (!botMessage) {
-          throw new Error('Failed to save bot message');
-        }
-        return {
-          answer: fallbackAnswer,
-          conversationId,
-          id: botMessage.id,
-          intent: intent.intent,
-          querySuggestions: querySuggestions.map(s => s.text),
-          canEscalate: true
-        };
-      } catch (fallbackError) {
-        console.error('Direct fallback LLM failed:', fallbackError);
-        return {
-          answer: 'I\'m sorry, I\'m having trouble connecting to my chat service right now. Please try again later or contact support.',
-          conversationId,
-          intent: intent.intent,
-          error: 'FALLBACK_FAILED',
-          recoverable: true,
-          canEscalate: true
-        };
-      }
+      return escalateIntentMismatch(
+        conversationId,
+        request.userId,
+        intent.intent,
+        request.query,
+        intent.reasoning
+      );
     }
 
     const history = request.conversationHistory || [];
