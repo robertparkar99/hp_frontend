@@ -51,7 +51,43 @@ const DEFAULT_DB_CONFIG = {
   database: "hp_erp",
 } as const;
 
+const DEFAULT_POOL_CONFIG = {
+  connectionLimit: 25,
+  acquireTimeout: 15000,
+  connectTimeout: 15000,
+} as const;
+
 const requiredEnvKeys = ["DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME"] as const;
+
+function parseNumber(value: string | undefined, fallback: number) {
+  if (!value) return fallback;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function parseBoolean(value: string | undefined) {
+  if (value === undefined) return undefined;
+
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+}
+
+function buildSslConfig() {
+  if (process.env.DB_SSL === undefined && process.env.DB_SSL_REJECT_UNAUTHORIZED === undefined) {
+    return undefined;
+  }
+
+  const enabled = parseBoolean(process.env.DB_SSL);
+  if (!enabled) {
+    return undefined;
+  }
+
+  const rejectUnauthorized = parseBoolean(process.env.DB_SSL_REJECT_UNAUTHORIZED);
+
+  return {
+    rejectUnauthorized: rejectUnauthorized ?? true,
+  };
+}
 
 function getDbConfig() {
   const port = process.env.DB_PORT ? Number(process.env.DB_PORT) : undefined;
@@ -97,24 +133,106 @@ function getDbConfig() {
 }
 
 const dbConfig = getDbConfig();
+const poolConfig = {
+  connectionLimit: parseNumber(process.env.DB_CONNECTION_LIMIT, DEFAULT_POOL_CONFIG.connectionLimit),
+  acquireTimeout: parseNumber(process.env.DB_ACQUIRE_TIMEOUT, DEFAULT_POOL_CONFIG.acquireTimeout),
+  connectTimeout: parseNumber(process.env.DB_CONNECT_TIMEOUT, DEFAULT_POOL_CONFIG.connectTimeout),
+  resetAfterUse: true,
+  ssl: buildSslConfig(),
+  socketPath: process.env.DB_SOCKET_PATH || undefined,
+} as const;
 
-if (process.env.NODE_ENV !== "production") {
-  console.info("[mariadb] Using database config:", {
+function logDbConfig(prefix: string) {
+  console.info(prefix, {
     host: dbConfig.host,
     port: dbConfig.port,
     user: dbConfig.user,
     database: dbConfig.database,
+    connectionLimit: poolConfig.connectionLimit,
+    acquireTimeout: poolConfig.acquireTimeout,
+    connectTimeout: poolConfig.connectTimeout,
+    sslEnabled: Boolean(poolConfig.ssl),
+    socketPath: Boolean(poolConfig.socketPath),
+    nodeEnv: process.env.NODE_ENV,
   });
 }
 
-// 1. Raised pool limit slightly for an ERP framework context to prevent choking
 export const pool = mariadb.createPool({
   ...dbConfig,
-  connectionLimit: 25, 
-  acquireTimeout: 15000,
-  connectTimeout: 15000,
-  resetAfterUse: true,
+  ...poolConfig,
 });
+
+if (process.env.NODE_ENV !== "production") {
+  logDbConfig("[mariadb] Using database config:");
+}
+
+function isTransientConnectionError(error: any) {
+  const code = String(error?.code || "");
+  const errno = Number(error?.errno);
+
+  return (
+    code === "POOL_EMPTY" ||
+    code === "ETIMEDOUT" ||
+    code === "ECONNREFUSED" ||
+    code === "ECONNRESET" ||
+    code === "EHOSTUNREACH" ||
+    code === "ENETUNREACH" ||
+    errno === 45028 ||
+    errno === 2002 ||
+    errno === 2003
+  );
+}
+
+function summarizeDbError(error: any) {
+  return {
+    message: error?.message,
+    code: error?.code,
+    errno: error?.errno,
+    sqlState: error?.sqlState,
+    fatal: error?.fatal,
+  };
+}
+
+async function acquireConnection() {
+  const maxAttempts = 2;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await pool.getConnection();
+    } catch (error) {
+      lastError = error;
+
+      console.error("[mariadb] Failed to acquire database connection", {
+        attempt,
+        maxAttempts,
+        db: {
+          host: dbConfig.host,
+          port: dbConfig.port,
+          database: dbConfig.database,
+          user: dbConfig.user,
+        },
+        pool: {
+          connectionLimit: poolConfig.connectionLimit,
+          acquireTimeout: poolConfig.acquireTimeout,
+          connectTimeout: poolConfig.connectTimeout,
+          sslEnabled: Boolean(poolConfig.ssl),
+          socketPath: Boolean(poolConfig.socketPath),
+        },
+        error: summarizeDbError(error),
+      });
+
+      if (attempt < maxAttempts && isTransientConnectionError(error)) {
+        await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw lastError;
+}
 
 /**
  * BEST PRACTICE WRAPPER:
@@ -124,7 +242,7 @@ export const pool = mariadb.createPool({
 export async function dbQuery<T = any>(sql: string, params?: any[]): Promise<T> {
   let conn;
   try {
-    conn = await pool.getConnection();
+    conn = await acquireConnection();
     const result = await conn.query(sql, params);
     return result as T;
   } catch (error) {
@@ -145,7 +263,7 @@ export async function dbTransaction<T>(
 ): Promise<T> {
   let conn;
   try {
-    conn = await pool.getConnection();
+    conn = await acquireConnection();
     await conn.beginTransaction();
     
     const result = await callback(conn);
