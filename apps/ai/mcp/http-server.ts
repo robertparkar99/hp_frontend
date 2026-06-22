@@ -1,6 +1,7 @@
 import { createServer, IncomingMessage } from "node:http";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { checkMariaDbHealth } from "./datasource/mariadb";
 import { registerQueryBusinessDataTool } from "./tools/registerQueryBusinessDataTool";
 
 async function readJsonBody(request: IncomingMessage) {
@@ -33,8 +34,23 @@ export async function startMCPServer() {
   });
 
   const PORT = Number(process.env.MCP_PORT || 3400);
+  const strictHealthCheck = ["1", "true", "yes", "on"].includes(
+    String(process.env.DB_HEALTHCHECK_STRICT || "").trim().toLowerCase()
+  );
 
   registerQueryBusinessDataTool(server);
+
+  const health = await checkMariaDbHealth();
+  if (health.ok) {
+    console.log("[mariadb] Health check passed", health);
+  } else {
+    console.error("[mariadb] Health check failed", health);
+    if (strictHealthCheck) {
+      throw new Error(
+        `MariaDB health check failed during startup (${health.failureType || "unknown"}).`
+      );
+    }
+  }
 
   const httpServer = createServer((req, res) => {
     void (async () => {
