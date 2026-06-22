@@ -193,6 +193,35 @@ function summarizeDbError(error: any) {
   };
 }
 
+function buildConnectionDiagnostics(error: any) {
+  return {
+    target: `${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`,
+    user: dbConfig.user,
+    connectionLimit: poolConfig.connectionLimit,
+    acquireTimeout: poolConfig.acquireTimeout,
+    connectTimeout: poolConfig.connectTimeout,
+    sslEnabled: Boolean(poolConfig.ssl),
+    socketPath: poolConfig.socketPath || null,
+    nodeEnv: process.env.NODE_ENV || "unknown",
+    error: summarizeDbError(error),
+  };
+}
+
+function wrapConnectionError(error: any, scope: "query" | "transaction") {
+  const diagnostics = buildConnectionDiagnostics(error);
+  const message = [
+    `MariaDB connection unavailable during ${scope}.`,
+    `Target: ${diagnostics.target}.`,
+    `Check live firewall/IP allowlist, DB credentials, and TLS settings.`,
+    `Underlying error: ${diagnostics.error.code || "unknown"} (${diagnostics.error.errno ?? "n/a"})`,
+  ].join(" ");
+
+  const wrapped = new Error(message);
+  (wrapped as Error & { cause?: unknown }).cause = error;
+  (wrapped as Error & { diagnostics?: unknown }).diagnostics = diagnostics;
+  return wrapped;
+}
+
 async function acquireConnection() {
   const maxAttempts = 2;
   let lastError: unknown;
@@ -247,6 +276,10 @@ export async function dbQuery<T = any>(sql: string, params?: any[]): Promise<T> 
     return result as T;
   } catch (error) {
     console.error(`[Database Error] Failed executing query: ${sql}`, error);
+    if (error && typeof error === "object" && "sqlState" in error) {
+      throw wrapConnectionError(error, "query");
+    }
+
     throw error;
   } finally {
     if (conn) conn.release(); // Guaranteed to execute & save pool space
@@ -273,6 +306,10 @@ export async function dbTransaction<T>(
   } catch (error) {
     if (conn) await conn.rollback();
     console.error("[Database Transaction Error] Transaction rolled back.", error);
+    if (error && typeof error === "object" && "sqlState" in error) {
+      throw wrapConnectionError(error, "transaction");
+    }
+
     throw error;
   } finally {
     if (conn) conn.release();
