@@ -193,6 +193,34 @@ function summarizeDbError(error: any) {
   };
 }
 
+function classifyConnectionFailure(error: any) {
+  const code = String(error?.code || "");
+  const errno = Number(error?.errno);
+
+  if (code === "ER_ACCESS_DENIED_ERROR" || errno === 1045) {
+    return "auth";
+  }
+
+  if (code === "ER_BAD_DB_ERROR" || errno === 1049) {
+    return "database";
+  }
+
+  if (
+    code === "ETIMEDOUT" ||
+    code === "ECONNREFUSED" ||
+    code === "ECONNRESET" ||
+    code === "EHOSTUNREACH" ||
+    code === "ENETUNREACH" ||
+    errno === 45028 ||
+    errno === 2002 ||
+    errno === 2003
+  ) {
+    return "network";
+  }
+
+  return "unknown";
+}
+
 function buildConnectionDiagnostics(error: any) {
   return {
     target: `${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`,
@@ -220,6 +248,39 @@ function wrapConnectionError(error: any, scope: "query" | "transaction") {
   (wrapped as Error & { cause?: unknown }).cause = error;
   (wrapped as Error & { diagnostics?: unknown }).diagnostics = diagnostics;
   return wrapped;
+}
+
+export async function checkMariaDbHealth() {
+  const startedAt = Date.now();
+  let conn: any;
+
+  try {
+    conn = await pool.getConnection();
+    await conn.query("SELECT 1 AS ok");
+
+    return {
+      ok: true,
+      target: `${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`,
+      user: dbConfig.user,
+      durationMs: Date.now() - startedAt,
+      connectionLimit: poolConfig.connectionLimit,
+      sslEnabled: Boolean(poolConfig.ssl),
+      socketPath: poolConfig.socketPath || null,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      target: `${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`,
+      user: dbConfig.user,
+      durationMs: Date.now() - startedAt,
+      failureType: classifyConnectionFailure(error),
+      diagnostics: buildConnectionDiagnostics(error),
+    };
+  } finally {
+    if (conn) {
+      conn.release?.();
+    }
+  }
 }
 
 async function acquireConnection() {
