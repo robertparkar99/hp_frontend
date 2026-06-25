@@ -72,6 +72,15 @@ interface GeminiResponse {
 
 const BULK_TASK_SAMPLE_CSV_PATH = "/assets/task_management/Task_Formate1.csv";
 
+interface SkippedTask {
+  row: number;
+  reason: string;
+  task_title: string;
+  assigned_to: string;
+  department: string;
+  job_role: string;
+}
+
 const TaskManagement = () => {
   const [sessionData, setSessionData] = useState<SessionData>({
     url: "",
@@ -91,6 +100,10 @@ const TaskManagement = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const [skippedTasks, setSkippedTasks] = useState<SkippedTask[]>([]);
+  const [showSkippedTasks, setShowSkippedTasks] = useState(false);
+  const [importedCount, setImportedCount] = useState(0);
 
   const [jobroleList, setJobroleList] = useState<JobRole[]>([]);
   const [selJobrole, setSelJobrole] = useState<string>("");
@@ -461,6 +474,9 @@ const TaskManagement = () => {
   const resetBulkUploadState = () => {
     setBulkFile(null);
     setHasDownloadedBulkSample(false);
+    setSkippedTasks([]);
+    setShowSkippedTasks(false);
+    setImportedCount(0);
     if (bulkInputRef.current) {
       bulkInputRef.current.value = "";
     }
@@ -526,15 +542,18 @@ const TaskManagement = () => {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Bulk tasks uploaded successfully");
-        console.log("Bulk upload response:", data);
-        setShowBulkUpload(false);
-        resetBulkUploadState();
-      } else {
-        console.error("Bulk upload failed:", data);
-        alert(`Bulk upload failed: ${data?.message || res.statusText}`);
-      }
-    } catch (error) {
+        setImportedCount(data.imported || 0);
+        if (data.skipped_details && data.skipped_details.length > 0) {
+          setSkippedTasks(data.skipped_details);
+          setShowSkippedTasks(true);
+        } else {
+          alert(`Bulk tasks uploaded successfully! ${data.imported || 0} tasks imported.`);
+          setShowBulkUpload(false);
+          resetBulkUploadState();
+        }
+         console.log("Bulk upload response:", data);
+       }
+     } catch (error) {
       console.error("Error uploading bulk file:", error);
       alert("Error uploading bulk file");
     } finally {
@@ -1654,6 +1673,74 @@ const TaskManagement = () => {
             )}
 
             <p className="mt-5 text-base text-gray-500">Each row = one task record</p>
+
+            {showSkippedTasks && skippedTasks.length > 0 && (
+              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-red-800">
+                    {importedCount > 0 ? 'Partially Completed' : 'Upload Failed'} - {skippedTasks.length} row(s) skipped
+                  </h3>
+                  {importedCount > 0 && (
+                    <span className="text-sm font-medium text-green-700 bg-green-100 px-3 py-1 rounded-full">
+                      {importedCount} task(s) imported successfully
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-red-700 mb-4">
+                  The following tasks could not be imported. Please review and fix the issues, then try again.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-red-200">
+                        <th className="text-left py-2 px-3 font-semibold text-red-800">Row</th>
+                        <th className="text-left py-2 px-3 font-semibold text-red-800">Task Title</th>
+                        <th className="text-left py-2 px-3 font-semibold text-red-800">Assigned To</th>
+                        <th className="text-left py-2 px-3 font-semibold text-red-800">Department</th>
+                        <th className="text-left py-2 px-3 font-semibold text-red-800">Job Role</th>
+                        <th className="text-left py-2 px-3 font-semibold text-red-800">Reason</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {skippedTasks.map((task, index) => (
+                        <tr key={index} className="border-b border-red-100 hover:bg-red-50/50">
+                          <td className="py-2 px-3 text-gray-700">{task.row}</td>
+                          <td className="py-2 px-3 text-gray-700 font-medium">{task.task_title}</td>
+                          <td className="py-2 px-3 text-gray-700">{task.assigned_to}</td>
+                          <td className="py-2 px-3 text-gray-700">{task.department}</td>
+                          <td className="py-2 px-3 text-gray-700">{task.job_role}</td>
+                          <td className="py-2 px-3 text-red-600">{task.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-5 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSkippedTasks(false);
+                      setSkippedTasks([]);
+                    }}
+                    className="rounded-lg border border-gray-200 bg-white px-5 py-2 text-base font-medium text-gray-900 transition-colors hover:bg-gray-50"
+                  >
+                    Dismiss
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSkippedTasks(false);
+                      setSkippedTasks([]);
+                      setShowBulkUpload(false);
+                      resetBulkUploadState();
+                    }}
+                    className="rounded-lg bg-blue-600 px-5 py-2 text-base font-medium text-white transition-colors hover:bg-blue-700"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-5 flex justify-end">
