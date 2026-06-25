@@ -72,15 +72,6 @@ interface GeminiResponse {
 
 const BULK_TASK_SAMPLE_CSV_PATH = "/assets/task_management/Task_Formate1.csv";
 
-interface SkippedTask {
-  row: number;
-  reason: string;
-  task_title: string;
-  assigned_to: string;
-  department: string;
-  job_role: string;
-}
-
 const TaskManagement = () => {
   const [sessionData, setSessionData] = useState<SessionData>({
     url: "",
@@ -95,15 +86,12 @@ const TaskManagement = () => {
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [bulkUploadResponse, setBulkUploadResponse] = useState<any>(null);
   const [hasDownloadedBulkSample, setHasDownloadedBulkSample] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
-
-  const [skippedTasks, setSkippedTasks] = useState<SkippedTask[]>([]);
-  const [showSkippedTasks, setShowSkippedTasks] = useState(false);
-  const [importedCount, setImportedCount] = useState(0);
 
   const [jobroleList, setJobroleList] = useState<JobRole[]>([]);
   const [selJobrole, setSelJobrole] = useState<string>("");
@@ -473,10 +461,8 @@ const TaskManagement = () => {
 
   const resetBulkUploadState = () => {
     setBulkFile(null);
+    setBulkUploadResponse(null);
     setHasDownloadedBulkSample(false);
-    setSkippedTasks([]);
-    setShowSkippedTasks(false);
-    setImportedCount(0);
     if (bulkInputRef.current) {
       bulkInputRef.current.value = "";
     }
@@ -542,18 +528,21 @@ const TaskManagement = () => {
       const data = await res.json();
 
       if (res.ok) {
-        setImportedCount(data.imported || 0);
-        if (data.skipped_details && data.skipped_details.length > 0) {
-          setSkippedTasks(data.skipped_details);
-          setShowSkippedTasks(true);
+        setBulkUploadResponse(data);
+        console.log("Bulk upload response:", data);
+
+        if (data?.skipped_count > 0) {
+          alert(`${data?.imported || 0} task(s) imported successfully, ${data.skipped_count} row(s) skipped. Please check skipped details below.`);
         } else {
-          alert(`Bulk tasks uploaded successfully! ${data.imported || 0} tasks imported.`);
+          alert(`${data?.imported || 0} tasks imported successfully`);
           setShowBulkUpload(false);
           resetBulkUploadState();
         }
-         console.log("Bulk upload response:", data);
-       }
-     } catch (error) {
+      } else {
+        console.error("Bulk upload failed:", data);
+        alert(`Bulk upload failed: ${data?.message || res.statusText}`);
+      }
+    } catch (error) {
       console.error("Error uploading bulk file:", error);
       alert("Error uploading bulk file");
     } finally {
@@ -1600,7 +1589,7 @@ const TaskManagement = () => {
       </div>
 
       <Dialog open={showBulkUpload} onOpenChange={handleBulkUploadDialogChange}>
-        <DialogContent className="max-w-4xl rounded-xl p-8">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl p-8">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3 text-2xl font-semibold text-gray-950">
               <span className="mdi mdi-format-list-checks text-3xl text-blue-600"></span>
@@ -1669,78 +1658,63 @@ const TaskManagement = () => {
                     Selected file: {bulkFile.name}
                   </p>
                 )}
+
+                {bulkUploadResponse && (
+                  <div className="mx-auto mt-6 max-w-full rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h4 className="text-base font-semibold text-slate-800">
+                        Upload Result
+                      </h4>
+                      <div className="flex flex-wrap gap-2 text-sm font-medium">
+                        <span className="rounded-full bg-green-50 px-3 py-1 text-green-700">
+                          Imported: {bulkUploadResponse?.imported || 0}
+                        </span>
+                        <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">
+                          Skipped: {bulkUploadResponse?.skipped_count || 0}
+                        </span>
+                      </div>
+                    </div>
+
+                    {bulkUploadResponse?.skipped_count > 0 && (
+                      <div className="mt-4">
+                        <p className="mb-3 text-sm text-red-600">
+                          Some rows were skipped because the uploaded CSV data did not match existing employee, department, or job role records.
+                        </p>
+
+                        <div className="max-h-[360px] overflow-y-auto overflow-x-hidden rounded-lg border border-gray-200">
+                          <table className="w-full table-fixed border-collapse text-sm">
+                            <thead className="sticky top-0 bg-gray-50 text-left text-slate-700">
+                              <tr>
+                                <th className="w-[60px] border-b border-gray-200 p-3 font-semibold">Row</th>
+                                <th className="w-[22%] border-b border-gray-200 p-3 font-semibold">Task Title</th>
+                                <th className="w-[16%] border-b border-gray-200 p-3 font-semibold">Assigned To</th>
+                                <th className="w-[18%] border-b border-gray-200 p-3 font-semibold">Department</th>
+                                <th className="w-[16%] border-b border-gray-200 p-3 font-semibold">Job Role</th>
+                                <th className="w-[28%] border-b border-gray-200 p-3 font-semibold">Reason</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {bulkUploadResponse.skipped_details?.map((item: any, index: number) => (
+                                <tr key={index} className="align-top hover:bg-gray-50">
+                                  <td className="break-words whitespace-normal border-b border-gray-100 p-3 text-slate-700">{item.row}</td>
+                                  <td className="break-words whitespace-normal border-b border-gray-100 p-3 text-slate-700">{item.task_title}</td>
+                                  <td className="break-words whitespace-normal border-b border-gray-100 p-3 text-slate-700">{item.assigned_to}</td>
+                                  <td className="break-words whitespace-normal border-b border-gray-100 p-3 text-slate-700">{item.department}</td>
+                                  <td className="break-words whitespace-normal border-b border-gray-100 p-3 text-slate-700">{item.job_role}</td>
+                                  <td className="break-words whitespace-normal border-b border-gray-100 p-3 text-red-600">{item.reason}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
             <p className="mt-5 text-base text-gray-500">Each row = one task record</p>
-
-            {showSkippedTasks && skippedTasks.length > 0 && (
-              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-red-800">
-                    {importedCount > 0 ? 'Partially Completed' : 'Upload Failed'} - {skippedTasks.length} row(s) skipped
-                  </h3>
-                  {importedCount > 0 && (
-                    <span className="text-sm font-medium text-green-700 bg-green-100 px-3 py-1 rounded-full">
-                      {importedCount} task(s) imported successfully
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-red-700 mb-4">
-                  The following tasks could not be imported. Please review and fix the issues, then try again.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-red-200">
-                        <th className="text-left py-2 px-3 font-semibold text-red-800">Row</th>
-                        <th className="text-left py-2 px-3 font-semibold text-red-800">Task Title</th>
-                        <th className="text-left py-2 px-3 font-semibold text-red-800">Assigned To</th>
-                        <th className="text-left py-2 px-3 font-semibold text-red-800">Department</th>
-                        <th className="text-left py-2 px-3 font-semibold text-red-800">Job Role</th>
-                        <th className="text-left py-2 px-3 font-semibold text-red-800">Reason</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {skippedTasks.map((task, index) => (
-                        <tr key={index} className="border-b border-red-100 hover:bg-red-50/50">
-                          <td className="py-2 px-3 text-gray-700">{task.row}</td>
-                          <td className="py-2 px-3 text-gray-700 font-medium">{task.task_title}</td>
-                          <td className="py-2 px-3 text-gray-700">{task.assigned_to}</td>
-                          <td className="py-2 px-3 text-gray-700">{task.department}</td>
-                          <td className="py-2 px-3 text-gray-700">{task.job_role}</td>
-                          <td className="py-2 px-3 text-red-600">{task.reason}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-5 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowSkippedTasks(false);
-                      setSkippedTasks([]);
-                    }}
-                    className="rounded-lg border border-gray-200 bg-white px-5 py-2 text-base font-medium text-gray-900 transition-colors hover:bg-gray-50"
-                  >
-                    Dismiss
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowSkippedTasks(false);
-                      setSkippedTasks([]);
-                      setShowBulkUpload(false);
-                      resetBulkUploadState();
-                    }}
-                    className="rounded-lg bg-blue-600 px-5 py-2 text-base font-medium text-white transition-colors hover:bg-blue-700"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="mt-5 flex justify-end">
