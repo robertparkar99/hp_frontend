@@ -70,6 +70,8 @@ interface GeminiResponse {
   task_type: string;
 }
 
+const BULK_TASK_SAMPLE_CSV_PATH = "/assets/task_management/Task_Formate1.csv";
+
 const TaskManagement = () => {
   const [sessionData, setSessionData] = useState<SessionData>({
     url: "",
@@ -84,6 +86,7 @@ const TaskManagement = () => {
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [hasDownloadedBulkSample, setHasDownloadedBulkSample] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const bulkInputRef = useRef<HTMLInputElement>(null);
@@ -438,6 +441,11 @@ const TaskManagement = () => {
   };
 
   const handleBulkFileClick = () => {
+    if (!hasDownloadedBulkSample) {
+      alert("Please download the sample CSV first.");
+      return;
+    }
+
     if (bulkInputRef.current) {
       bulkInputRef.current.click();
     }
@@ -448,6 +456,37 @@ const TaskManagement = () => {
     if (selectedFile) {
       setBulkFile(selectedFile);
     }
+  };
+
+  const resetBulkUploadState = () => {
+    setBulkFile(null);
+    setHasDownloadedBulkSample(false);
+    if (bulkInputRef.current) {
+      bulkInputRef.current.value = "";
+    }
+  };
+
+  const handleBulkUploadDialogChange = (open: boolean) => {
+    setShowBulkUpload(open);
+    if (!open) {
+      resetBulkUploadState();
+    }
+  };
+
+  const openBulkUploadDialog = () => {
+    resetBulkUploadState();
+    setShowBulkUpload(true);
+  };
+
+  const handleDownloadBulkSample = () => {
+    const link = document.createElement("a");
+    link.href = BULK_TASK_SAMPLE_CSV_PATH;
+    link.setAttribute("download", "Task_Formate1.csv");
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setHasDownloadedBulkSample(true);
   };
 
   const handleBulkFileSubmit = async () => {
@@ -489,11 +528,8 @@ const TaskManagement = () => {
       if (res.ok) {
         alert("Bulk tasks uploaded successfully");
         console.log("Bulk upload response:", data);
-        setBulkFile(null);
         setShowBulkUpload(false);
-        if (bulkInputRef.current) {
-          bulkInputRef.current.value = "";
-        }
+        resetBulkUploadState();
       } else {
         console.error("Bulk upload failed:", data);
         alert(`Bulk upload failed: ${data?.message || res.statusText}`);
@@ -996,7 +1032,7 @@ const TaskManagement = () => {
 
                   <button
                     type="button"
-                    onClick={() => setShowBulkUpload(true)}
+                    onClick={openBulkUploadDialog}
                     className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md bg-blue-600 px-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                   >
                     <span className="mdi mdi-upload"></span>
@@ -1544,7 +1580,7 @@ const TaskManagement = () => {
         </div>
       </div>
 
-      <Dialog open={showBulkUpload} onOpenChange={setShowBulkUpload}>
+      <Dialog open={showBulkUpload} onOpenChange={handleBulkUploadDialogChange}>
         <DialogContent className="max-w-4xl rounded-xl p-8">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3 text-2xl font-semibold text-gray-950">
@@ -1558,39 +1594,63 @@ const TaskManagement = () => {
               <span className="mdi mdi-file-document-outline text-5xl"></span>
             </div>
 
-            <h3 className="text-2xl font-semibold text-slate-700">Upload CSV File</h3>
+            <h3 className="text-2xl font-semibold text-slate-700">
+              {hasDownloadedBulkSample ? "Upload CSV File" : "Download Sample CSV First"}
+            </h3>
+
+            <p className="mt-3 text-base text-gray-500">
+              {hasDownloadedBulkSample
+                ? "Sample downloaded. You can now choose your CSV and submit it."
+                : "Step 1: download the sample file and follow the same format for your upload."}
+            </p>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-              <input
-                type="file"
-                ref={bulkInputRef}
-                onChange={handleBulkFileChange}
-                accept=".csv,text/csv"
-                className="hidden"
-              />
               <button
                 type="button"
-                onClick={handleBulkFileClick}
+                onClick={handleDownloadBulkSample}
                 className="inline-flex h-12 min-w-[220px] items-center justify-center whitespace-nowrap rounded-lg bg-blue-600 px-5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               >
-                <span className="mdi mdi-upload text-xl"></span>
-                &nbsp; Choose CSV File
-              </button>
-              <button
-                type="button"
-                onClick={handleBulkFileSubmit}
-                disabled={!bulkFile || isBulkUploading}
-                className="inline-flex h-12 min-w-[180px] items-center justify-center whitespace-nowrap rounded-lg bg-green-500 px-5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-green-600 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
-              >
-                <span className="mdi mdi-check text-xl"></span>
-                &nbsp; {isBulkUploading ? "Uploading..." : "Submit CSV"}
+                <span className="mdi mdi-download text-xl"></span>
+                &nbsp; Download Sample CSV
               </button>
             </div>
 
-            {bulkFile && (
-              <p className="mx-auto mt-4 max-w-md truncate text-sm font-medium text-slate-600" title={bulkFile.name}>
-                Selected file: {bulkFile.name}
-              </p>
+            {hasDownloadedBulkSample && (
+              <>
+                <input
+                  type="file"
+                  ref={bulkInputRef}
+                  onChange={handleBulkFileChange}
+                  accept=".csv,text/csv"
+                  className="hidden"
+                />
+
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={handleBulkFileClick}
+                    className="inline-flex h-12 min-w-[220px] items-center justify-center whitespace-nowrap rounded-lg bg-slate-800 px-5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
+                  >
+                    <span className="mdi mdi-upload text-xl"></span>
+                    &nbsp; Choose CSV File
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkFileSubmit}
+                    disabled={!bulkFile || isBulkUploading}
+                    className="inline-flex h-12 min-w-[180px] items-center justify-center whitespace-nowrap rounded-lg bg-green-500 px-5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-green-600 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+                  >
+                    <span className="mdi mdi-check text-xl"></span>
+                    &nbsp; {isBulkUploading ? "Uploading..." : "Submit CSV"}
+                  </button>
+                </div>
+
+                {bulkFile && (
+                  <p className="mx-auto mt-4 max-w-md truncate text-sm font-medium text-slate-600" title={bulkFile.name}>
+                    Selected file: {bulkFile.name}
+                  </p>
+                )}
+              </>
             )}
 
             <p className="mt-5 text-base text-gray-500">Each row = one task record</p>
@@ -1599,7 +1659,7 @@ const TaskManagement = () => {
           <div className="mt-5 flex justify-end">
             <button
               type="button"
-              onClick={() => setShowBulkUpload(false)}
+              onClick={() => handleBulkUploadDialogChange(false)}
               className="rounded-lg border border-gray-200 bg-white px-5 py-2 text-base font-medium text-gray-900 transition-colors hover:bg-gray-50"
             >
               Cancel
