@@ -138,7 +138,7 @@ const SalaryCertificate: React.FC = () => {
       try {
         setLoadingEmployees(true);
 
-        const res = await fetch(`${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${selectedDepartment}&user_id=${sessionData.userId}`);
+        const res = await fetch(`${sessionData.url}/table_data?table=tbluser&token=${sessionData.token}&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${selectedDepartment}&user_id=${sessionData.userId}`);
         const json = await res.json();
 
         const list = Array.isArray(json) ? json : json.data ?? [];

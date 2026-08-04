@@ -467,7 +467,7 @@ const filteredData = useMemo(() => {
       setLoadingEmps(true);
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${formData.department_id}&user_id=${sessionData.userId}`
+          `${sessionData.url}/table_data?table=tbluser&token=${sessionData.token}&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${formData.department_id}&user_id=${sessionData.userId}`
         );
         if (!res.ok) throw new Error(`Emps fetch failed: ${res.status}`);
         const json = await res.json();

@@ -77,7 +77,7 @@ export default function AddUserModal({
     const fetchExistingEmails = async () => {
       try {
         const response = await fetch(
-          `${sessionData.APP_URL}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.sub_institute_id || 1}`,
+          `${sessionData.APP_URL}/table_data?table=tbluser&token=${sessionData.token}&filters[sub_institute_id]=${sessionData.sub_institute_id || 1}`,
           {
             method: "GET",
             headers: { Accept: "application/json" },

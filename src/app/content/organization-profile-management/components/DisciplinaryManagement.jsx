@@ -152,7 +152,7 @@ const SystemConfiguration = () => {
   // ✅ Fetch employees
   const fetchUsers = async (departmentId = '') => {
     try {
-      let url = `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`;
+      let url = `${sessionData.url}/table_data?table=tbluser&token=${sessionData.token}&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`;
       if (departmentId) {
         url += `&filters[department_id]=${departmentId}`;
       }
@@ -178,7 +178,7 @@ const SystemConfiguration = () => {
   // ✅ Fetch employees for edit form
   const fetchEditUsers = async (departmentId = '') => {
     try {
-      let url = `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`;
+      let url = `${sessionData.url}/table_data?table=tbluser&token=${sessionData.token}&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`;
       if (departmentId) {
         url += `&filters[department_id]=${departmentId}`;
       }
@@ -214,7 +214,7 @@ const SystemConfiguration = () => {
   // ✅ Fetch witnesses
   const fetchwitness = async () => {
     try {
-      let url = `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`;
+      let url = `${sessionData.url}/table_data?table=tbluser&token=${sessionData.token}&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`;
       const res = await fetch(url);
       const data = await res.json();
       if (Array.isArray(data)) {

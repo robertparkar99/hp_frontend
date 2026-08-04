@@ -68,7 +68,7 @@ function App() {
     const fetchEmployees = async () => {
       try {
         const res = await fetch(
-          `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
+          `${sessionData.url}/table_data?table=tbluser&token=${sessionData.token}&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
         );
         const json = await res.json();
         console.log("Employees API raw response:", json);

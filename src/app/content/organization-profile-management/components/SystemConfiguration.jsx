@@ -108,7 +108,7 @@ const SystemConfiguration = () => {
   const fetchUsers = async () => {
     try {
       const res = await fetch(
-        `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`
+        `${sessionData.url}/table_data?table=tbluser&token=${sessionData.token}&filters[sub_institute_id]=${sessionData.sub_institute_id}&filters[status]=1`
       );
       const data = await res.json();
       if (Array.isArray(data)) {
