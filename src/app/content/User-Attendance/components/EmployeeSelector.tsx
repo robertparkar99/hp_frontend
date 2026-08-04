@@ -190,7 +190,7 @@ useEffect(() => {
           (!multiSelect && !displayDepartment)
         ) {
           const res = await fetch(
-            `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
+            `${sessionData.url}/table_data?table=tbluser&token=${sessionData.token}&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1`
           );
           const json = await res.json();
           results = Array.isArray(json) ? json : json.data ?? [];
@@ -201,7 +201,7 @@ useEffect(() => {
 
           const requests = deptIds.map((deptId) =>
             fetch(
-              `${sessionData.url}/table_data?table=tbluser&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${deptId}`
+              `${sessionData.url}/table_data?table=tbluser&token=${sessionData.token}&filters[sub_institute_id]=${sessionData.subInstituteId}&filters[status]=1&filters[department_id]=${deptId}`
             ).then((res) => res.json())
           );
           const resAll = await Promise.all(requests);

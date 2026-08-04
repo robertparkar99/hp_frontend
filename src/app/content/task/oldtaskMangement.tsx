@@ -106,7 +106,7 @@ const TaskManagement = () => {
 
     const fetchObserver = async () => {
         try {
-            const res = await fetch(`${sessionData.url}/table_data?table=tbluser&filters['status']=1&filters[sub_institute_id]=${sessionData.subInstituteId}`);
+            const res = await fetch(`${sessionData.url}/table_data?table=tbluser&token=${sessionData.token}&filters['status']=1&filters[sub_institute_id]=${sessionData.subInstituteId}`);
             const data = await res.json();
             setObserverList(data || []);
         } catch (error) {
